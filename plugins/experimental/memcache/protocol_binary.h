@@ -40,9 +40,6 @@
  * to convert each multibyte field to / from network byte order to / from
  * host order.
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Definition of the legal "magic" values used in a packet.
@@ -407,7 +404,3 @@ typedef protocol_binary_request_rangeop protocol_binary_request_rincr;
 typedef protocol_binary_request_rangeop protocol_binary_request_rincrq;
 typedef protocol_binary_request_rangeop protocol_binary_request_rdecr;
 typedef protocol_binary_request_rangeop protocol_binary_request_rdecrq;
-
-#ifdef __cplusplus
-}
-#endif

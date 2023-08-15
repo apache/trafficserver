@@ -29,9 +29,10 @@ Getting Started
    plugin-registration-and-version-checking.en
    naming-conventions.en
 
-The Traffic Server API enables you to create plugins, using the C
+The Traffic Server API enables you to create plugins, using the C++
 programming language, that customize the behavior of your Traffic Server
-installation. This chapter contains the following sections:
+installation. (Your plugin may not work properly if you use a version of C++
+older than C++17.) This chapter contains the following sections:
 
 -  `Understanding Traffic Server Plugins`_ -- a brief introduction to plugins.
 
@@ -137,21 +138,21 @@ The figure below, :ref:`possibleTSplugins`, illustrates several types of plugins
 
 You can find basic examples for many plugins in the SDK sample code:
 
--  ``append_transform.c`` adds text from a specified file to HTTP/text
+-  ``append_transform.cc`` adds text from a specified file to HTTP/text
    responses. This plugin is explained in
    :ref:`developer-plugins-http-transformations-append`
 
 -  The compression plugin in the figure communicates with the server
-   that actually does the compression. The ``server-transform.c`` plugin
+   that actually does the compression. The ``server-transform.cc`` plugin
    shows how to open a connection to a transformation server, have the
    server do the transformation, and send transformed data back to the
    client. Although the transformation is null in
-   ``server-transform.c``, a compression or image translation plugin
+   ``server-transform.cc``, a compression or image translation plugin
    could be implemented in a similar way.
 
--  ``basic_auth.c`` performs basic HTTP proxy authorization.
+-  ``basic_auth.cc`` performs basic HTTP proxy authorization.
 
--  ``denylist_1.c`` reads a list of servers from a configuration file
+-  ``denylist_1.cc`` reads a list of servers from a configuration file
    and denies client access to these servers. This plugin is explained
    in :ref:`developer-plugins-examples-denylist`.
 

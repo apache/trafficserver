@@ -61,7 +61,7 @@ protocol :arg:`tag` being present in the stack.
 Each protocol is represented by tag which is a null terminated string. A particular tag will always
 be returned as the same character pointer and so protocols can be reliably checked with pointer
 comparisons. :func:`TSNormalizedProtocolTag` will return this character pointer for a specific
-:arg:`tag`. A return value of :const:`NULL` indicates the provided :arg:`tag` is not registered as
+:arg:`tag`. A return value of :const:`nullptr` indicates the provided :arg:`tag` is not registered as
 a known protocol tag. :func:`TSRegisterProtocolTag` registers the :arg:`tag` and then returns its
 normalized value. This is useful for plugins that provide custom protocols for user agents.
 
@@ -69,7 +69,7 @@ The protocols are ordered from higher level protocols to the lower level ones on
 operate. For instance a stack might look like "http/1.1,tls/1.2,tcp,ipv4". For
 :func:`TSHttpTxnClientProtocolStackGet`, :func:`TSHttpSsnClientProtocolStackGet`, and :func:`TSHttpTxnServerProtocolStackGet` these values
 are placed in the array :arg:`result`. :arg:`count` is the maximum number of elements of
-:arg:`result` that may be modified by the function call. If :arg:`actual` is not :const:`NULL` then
+:arg:`result` that may be modified by the function call. If :arg:`actual` is not :const:`nullptr` then
 the actual number of elements in the protocol stack will be returned. If this is equal or less than
 :arg:`count` then all elements were returned. If it is larger then some layers were omitted from
 :arg:`result`. If the full stack is required :arg:`actual` can be used to resize :arg:`result` to
@@ -80,7 +80,7 @@ than 10 which therefore should suffice. These functions return :const:`TS_SUCCES
 
 The :func:`TSHttpTxnClientProtocolStackContains`, :func:`TSHttpSsnClientProtocolStackContains`, and :func:`TSHttpTxnServerProtocolStackContains`
 functions are provided for the convenience when only the presence of a protocol is of interest, not
-its location or the presence of other protocols. These functions return :const:`NULL` if the protocol
+its location or the presence of other protocols. These functions return :const:`nullptr` if the protocol
 :arg:`tag` is not present, and a pointer to the normalized tag if it is present. The strings are
 matched with an anchor prefix search, as with debug tags. For instance if :arg:`tag` is "tls" then it
 will match "tls/1.2" or "tls/1.3". This makes checking for TLS or IP more convenient. If more precision

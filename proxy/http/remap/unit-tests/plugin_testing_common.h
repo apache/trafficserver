@@ -86,21 +86,13 @@ public:
   char **argv                                = nullptr; /* plugin instance parameters received by the plugin */
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 using GetPluginDebugObjectFunction = void *();
-GetPluginDebugObjectFunction getPluginDebugObjectTest;
+extern "C" GetPluginDebugObjectFunction getPluginDebugObjectTest;
 
 #define PluginDebug(category, fmt, ...) \
   PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", category, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define PluginError(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 void PrintToStdErr(const char *fmt, ...);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 // functions to support unit-testing of option to enable/disable dynamic reload of plugins
 void enablePluginDynamicReload();

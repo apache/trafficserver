@@ -26,10 +26,6 @@
 // The max number of levels in the stack trace
 #define INK_STACK_TRACE_MAX_LEVELS 100
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* dumps the current back trace to stderr */
 void ink_stack_trace_dump();
 
@@ -37,7 +33,3 @@ void ink_stack_trace_dump();
   Get symbol of @n-th frame
 */
 const void *ink_backtrace(const int n);
-
-#ifdef __cplusplus
-}
-#endif

@@ -27,22 +27,6 @@
 
 // Mock TS API functions.
 
-char *
-_TSstrdup(const char *str, int64_t length, const char *)
-{
-  if (length == -1) {
-    return strdup(str);
-  } else {
-    return strndup(str, length);
-  }
-}
-
-void
-_TSfree(void *ptr)
-{
-  free(ptr);
-}
-
 void
 TSDebug(const char *tag, const char *fmt, ...)
 {
@@ -56,7 +40,7 @@ TSDebug(const char *tag, const char *fmt, ...)
 }
 
 void
-TSError(const char *fmt, ...)
+tsapi::c::TSError(const char *fmt, ...)
 {
   va_list args;
 

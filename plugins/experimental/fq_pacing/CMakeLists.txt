@@ -15,4 +15,4 @@
 #
 #######################
 
-add_atsplugin(fq_pacing fq_pacing.c)
+add_atsplugin(fq_pacing fq_pacing.cc)

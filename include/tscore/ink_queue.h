@@ -56,10 +56,6 @@
 #endif
 */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 void ink_queue_load_64(void *dst, void *src);
 
 #ifdef __x86_64__
@@ -248,7 +244,3 @@ void *ink_atomiclist_popall(InkAtomicList *l);
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
 void *ink_atomiclist_remove(InkAtomicList *l, void *item);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */

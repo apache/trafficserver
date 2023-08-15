@@ -22,13 +22,13 @@
 Sample Source Code
 ******************
 
-.. _denylist-1.c:
+.. _denylist-1.cc:
 
-denylist_1.c
--------------
+denylist_1.cc
+--------------
 
 The sample denylisting plugin included in the Traffic Server SDK is
-``denylist_1.c``. This plugin checks every incoming HTTP client request
+``denylist_1.cc``. This plugin checks every incoming HTTP client request
 against a list of web sites. If the client requests a
 listed site, then the plugin returns an ``Access forbidden``
 message to the client.
@@ -43,5 +43,5 @@ This plugin illustrates:
 
 -  How to use the plugin configuration management interface
 
-.. literalinclude:: ../../../../../example/plugins/c-api/denylist_1/denylist_1.c
+.. literalinclude:: ../../../../../example/plugins/c-api/denylist_1/denylist_1.cc
    :language: c

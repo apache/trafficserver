@@ -267,46 +267,46 @@ Processing a Typical Transaction
 
 The code is contained in the following files:
 
--  ``Protocol.c`` and ``Protocol.h``
+-  ``Protocol.cc`` and ``Protocol.h``
 
--  ``TxnSM.c`` and ``TxnSM.h``
+-  ``TxnSM.cc`` and ``TxnSM.h``
 
 Below is a step-by-step walk-through of the code that processes a
 typical transaction.
 
-#. The :c:func:`TSPluginInit` function is in the ``Protocol.c`` file. It
+#. The :c:func:`TSPluginInit` function is in the ``Protocol.cc`` file. It
    checks the validity of the :file:`plugin.config` entries (there must be two: a client accept port
    and a server port) and runs an initialization routine, ``init``.
 
-#. The ``init`` function (in ``Protocol.c``) creates the plugin's
+#. The ``init`` function (in ``Protocol.cc``) creates the plugin's
    log file using :c:func:`TSTextLogObjectCreate`.
 
 #. The ``init`` function creates the accept state machine using
    ``AcceptCreate``. The code for ``AcceptCreate`` is in the
-   ``Accept.c`` file.
+   ``Accept.cc`` file.
 
 #. The ``init`` function arranges the callback of the accept state
    machine when there is a network connection by using
    :c:func:`TSNetAccept`.
 
 #. The handler for the accept state machine is ``accept_handler`` in
-   the ``Protocol.c`` file. When Traffic Server's Net Processor sends :c:macro:`TS_EVENT_NET_ACCEPT`
+   the ``Protocol.cc`` file. When Traffic Server's Net Processor sends :c:macro:`TS_EVENT_NET_ACCEPT`
    to the accept state machine, ``accept_handler`` creates a transaction state machine (``txn_sm``)
    by calling ``TxnSMCreate``. Notice that ``accept_event`` creates a mutex for the transaction
    state machine, since each transaction state machine has its own mutex.
 
-#. The ``TxnSMCreate`` function is in the ``TxnSM.c`` file. The
+#. The ``TxnSMCreate`` function is in the ``TxnSM.cc`` file. The
    first thing it does is initialize the transaction's data, which is of type ``TxnSM`` (as defined
    in ``TxnSM.h``). Notice that the current handler (``q_current_handler``) is set to
    ``state_start``.
 
 #. ``TxnSMCreate`` then creates a transaction state machine using
    :c:func`TSContCreate`. The handler for the transaction state machine
-   is ``main_handler``, which is in the ``TxnSM.c`` file.
+   is ``main_handler``, which is in the ``TxnSM.cc`` file.
 
 #. When ``accept_event`` receives :c:macro:`TS_EVENT_NET_ACCEPT`, it
    calls the transaction state machine (
-   ``TSContCall (txn_sm, 0, NULL);`` ). The event passed to
+   ``TSContCall (txn_sm, 0, nullptr);`` ). The event passed to
    ``main_handler`` is ``0`` (:c:macro:`TS_EVENT_NONE`).
 
 #. The first thing ``main_handler`` does is examine the current
@@ -317,7 +317,7 @@ typical transaction.
    ``state_start`` by using the function pointer
    ``TxnSMHandler`` (as defined in ``TxnSM.h``).
 
-#. The ``state_start`` handler function (in the ``TxnSM.c`` file)
+#. The ``state_start`` handler function (in the ``TxnSM.cc`` file)
    is handed an event (at this stage, the event is :c:macro:`TS_EVENT_NET_ACCEPT`) and a client
    vconnection. ``state_start`` checks to see if this client vconnection is closed; if it is not,
    then ``state_start`` attempts to read data from the client vconnection into an

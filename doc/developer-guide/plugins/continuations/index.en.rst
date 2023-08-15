@@ -115,7 +115,7 @@ members after a reentrant call - just exit the handler.
 non-null mutexes because they're called within the processing of an HTTP
 transaction, and therefore have the transaction's mutex.
 
-It is also possible to specify a continuation's mutex as ``NULL``. This
+It is also possible to specify a continuation's mutex as ``nullptr``. This
 should be done only when registering a continuation to a global hook, by
 a call to ``TSHttpHookAdd``. In this case, the continuation can be
 called simultaneously by different instances of HTTP SM running on
@@ -125,8 +125,8 @@ mutex. The drawback of not having a mutex is that such a continuation
 cannot have data associated with it (i.e., ``TSContDataGet/Set`` cannot
 be used).
 
-When using a ``NULL`` mutex it is dangerous to access the continuation's
-data, but usually continuations with ``NULL`` mutexes have no data
+When using a ``nullptr`` mutex it is dangerous to access the continuation's
+data, but usually continuations with ``nullptr`` mutexes have no data
 associated with them anyway. An example of such a continuation is one
 that gets called back every time an HTTP request is read, and then
 determines from the request alone if the request should go through or be

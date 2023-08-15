@@ -46,9 +46,9 @@
 #include "tscore/Regression.h"
 #include "tscore/Diags.h"
 
-int diags_on_for_plugins          = 0;
-char ts_new_debug_on_flag_        = 0;
-int DiagsConfigState::_enabled[2] = {0, 0};
+int tsapi::c::diags_on_for_plugins      = 0;
+bool tsapi::c::TSDbgCtlDetail::debug_on = false;
+int DiagsConfigState::_enabled[2]       = {0, 0};
 
 using namespace swoc::literals;
 
@@ -61,8 +61,8 @@ DiagsConfigState::enabled(DiagsTagType dtt, int new_value)
   _enabled[dtt] = new_value;
 
   if (DiagsTagType_Debug == dtt) {
-    diags_on_for_plugins  = 1 == new_value;
-    ts_new_debug_on_flag_ = (1 & new_value) != 0;
+    diags_on_for_plugins     = 1 == new_value;
+    TSDbgCtlDetail::debug_on = (1 & new_value) != 0;
   }
 }
 
@@ -227,7 +227,7 @@ Diags::~Diags()
 //      parentheses if its value is not nullptr.  It takes a <diags_level>,
 //      which is converted to a prefix string.
 //      print_va takes an optional source location structure pointer <loc>,
-//      which can be nullptr.  If <loc> is not NULL, the source code location
+//      which can be nullptr.  If <loc> is not null, the source code location
 //      is converted to a string, and printed between angle brackets.
 //      Finally, it takes a printf format string <format_string>, and a
 //      va_list list of varargs.

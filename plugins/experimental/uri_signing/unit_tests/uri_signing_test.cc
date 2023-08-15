@@ -26,12 +26,13 @@
 extern "C" {
 #include <jansson.h>
 #include <cjose/cjose.h>
+}
+
 #include "../jwt.h"
 #include "../normalize.h"
 #include "../parse.h"
 #include "../match.h"
 #include "../config.h"
-}
 
 static char const *const testConfig =
   R"(
@@ -296,7 +297,7 @@ TEST_CASE("2", "[JWSFromURLTest]")
       "www.foo.com/hellothere/"
       "URISigningPackag=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-      "URISigningPackage", NULL));
+      "URISigningPackage", nullptr));
   }
 
   SECTION("Token in middle of the URL")
@@ -318,12 +319,12 @@ TEST_CASE("2", "[JWSFromURLTest]")
 
   SECTION("Pass empty path parameter at end")
   {
-    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=", "URISigningPackage", NULL));
+    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=", "URISigningPackage", nullptr));
   }
 
   SECTION("Pass empty path parameter in the middle of URL")
   {
-    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=/Something/Else", "URISigningPackage", NULL));
+    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=/Something/Else", "URISigningPackage", nullptr));
   }
 
   SECTION("Partial package name in previous path parameter")
@@ -359,12 +360,12 @@ TEST_CASE("2", "[JWSFromURLTest]")
                                 "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
                                 "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
                                 "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
-                                "URISigningPackage", NULL));
+                                "URISigningPackage", nullptr));
   }
 
   SECTION("Empty string as URL")
   {
-    REQUIRE(!jws_parsing_helper("", "URISigningPackage", NULL));
+    REQUIRE(!jws_parsing_helper("", "URISigningPackage", nullptr));
   }
 
   SECTION("Empty package name to parser")
@@ -373,7 +374,7 @@ TEST_CASE("2", "[JWSFromURLTest]")
       "www.foobar.com/"
       "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-      "", NULL));
+      "", nullptr));
   }
 
   SECTION("Custom package name with a reserved character - at the end of the URI")
@@ -533,22 +534,22 @@ TEST_CASE("4", "[NormalizeTest]")
 
   SECTION("Testing passing too small of a URI to normalize")
   {
-    REQUIRE(!normalize_uri_helper("ht", NULL));
+    REQUIRE(!normalize_uri_helper("ht", nullptr));
   }
 
   SECTION("Testing passing non http/https protocol")
   {
-    REQUIRE(!normalize_uri_helper("ht:", NULL));
+    REQUIRE(!normalize_uri_helper("ht:", nullptr));
   }
 
   SECTION("Passing a uri with half encoded value at end")
   {
-    REQUIRE(!normalize_uri_helper("http://www.foobar.co%4", NULL));
+    REQUIRE(!normalize_uri_helper("http://www.foobar.co%4", nullptr));
   }
 
   SECTION("Passing a uri with half encoded value in the middle")
   {
-    REQUIRE(!normalize_uri_helper("http://www.foobar.co%4psomethin/Path", NULL));
+    REQUIRE(!normalize_uri_helper("http://www.foobar.co%4psomethin/Path", nullptr));
   }
 
   SECTION("Passing a uri with an empty path parameter")
@@ -623,22 +624,22 @@ TEST_CASE("4", "[NormalizeTest]")
 
   SECTION("Testing empty hostname with userinfon")
   {
-    REQUIRE(!normalize_uri_helper("https://foo:something@", NULL));
+    REQUIRE(!normalize_uri_helper("https://foo:something@", nullptr));
   }
 
   SECTION("Testing empty uri after http://")
   {
-    REQUIRE(!normalize_uri_helper("http://", NULL));
+    REQUIRE(!normalize_uri_helper("http://", nullptr));
   }
 
   SECTION("Testing http:///////")
   {
-    REQUIRE(!normalize_uri_helper("http:///////", NULL));
+    REQUIRE(!normalize_uri_helper("http:///////", nullptr));
   }
 
   SECTION("Testing empty uri after http://?/")
   {
-    REQUIRE(!normalize_uri_helper("http://?/", NULL));
+    REQUIRE(!normalize_uri_helper("http://?/", nullptr));
   }
   fprintf(stderr, "\n");
 }
@@ -686,7 +687,7 @@ TEST_CASE("6", "[AudTests]")
 {
   INFO("TEST 6, Test Aud Matching");
 
-  json_error_t *err = NULL;
+  json_error_t *err = nullptr;
   SECTION("Standard aud string match")
   {
     json_t *raw = json_loads("{\"aud\": \"tester\"}", 0, err);
@@ -764,7 +765,7 @@ TEST_CASE("7", "[TestsConfig]")
   SECTION("Config Loading ID Field")
   {
     struct config *cfg = read_config_from_string(testConfig);
-    REQUIRE(cfg != NULL);
+    REQUIRE(cfg != nullptr);
     REQUIRE(strcmp(config_get_id(cfg), "tester") == 0);
     config_delete(cfg);
   }

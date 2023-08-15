@@ -27,10 +27,6 @@
 
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -51,7 +47,3 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   return TS_SUCCESS;
 }
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */

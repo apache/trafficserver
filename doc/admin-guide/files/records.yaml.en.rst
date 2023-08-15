@@ -4173,7 +4173,7 @@ Client-Related Configuration
    Can be useful if using a crypto engine that communicates off chip.  The
    thread will be rescheduled for other work until the crypto engine operation
    completes. A test crypto engine that inserts a 5 second delay on private key
-   operations can be found at :ts:git:`contrib/openssl/async_engine.c`.
+   operations can be found at :ts:git:`contrib/openssl/async_engine.cc`.
 
 .. ts:cv:: CONFIG proxy.config.ssl.engine.conf_file STRING NULL
 

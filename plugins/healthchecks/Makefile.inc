@@ -15,4 +15,4 @@
 #  limitations under the License.
 
 pkglib_LTLIBRARIES += healthchecks/healthchecks.la
-healthchecks_healthchecks_la_SOURCES = healthchecks/healthchecks.c
+healthchecks_healthchecks_la_SOURCES = healthchecks/healthchecks.cc

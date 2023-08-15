@@ -44,7 +44,7 @@ differs from the HTTP type).
 
         TSCacheKey key;
         TSCacheKeyCreate (&key);
-        TSCacheKeyDigestSet (key, (unsigned char *) key_name , strlen(key_name));
+        TSCacheKeyDigestSet (key, const_cast<unsigned char *>(key_name), strlen(key_name));
         TSCacheKeyDestroy (key);
 
 Cache Reads
@@ -124,9 +124,9 @@ as ``content_length``. Assume the following data:
 
         TSIOBuffer       cache_bufp = TSIOBufferCreate ();
         TSIOBufferReader cache_readerp = TSIOBufferReaderAlloc (out_bufp);
-        TSVConn          cache_vconnp = NULL;
-        TSVIO            cache_vio = NULL;
-        int               content_length = 0;
+        TSVConn          cache_vconnp = nullptr;
+        TSVIO            cache_vio = nullptr;
+        int              content_length = 0;
 
 In the ``TS_CACHE_OPEN_READ`` handler:
 

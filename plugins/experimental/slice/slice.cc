@@ -210,7 +210,6 @@ global_read_request_hook(TSCont // contp
 
 ///// remap plugin engine
 
-SLICE_EXPORT
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
@@ -224,13 +223,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 }
 
 ///// remap plugin setup and teardown
-SLICE_EXPORT
 void
 TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 {
 }
 
-SLICE_EXPORT
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
@@ -240,7 +237,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   return TS_SUCCESS;
 }
 
-SLICE_EXPORT
 void
 TSRemapDeleteInstance(void *ih)
 {
@@ -250,7 +246,6 @@ TSRemapDeleteInstance(void *ih)
   }
 }
 
-SLICE_EXPORT
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
 {
@@ -259,7 +254,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
 }
 
 ///// global plugin
-SLICE_EXPORT
 void
 TSPluginInit(int argc, char const *argv[])
 {

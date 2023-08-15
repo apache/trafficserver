@@ -73,8 +73,8 @@ The sample code below shows how to call the alternate APIs.
       TSMLoc content_transform_field;
 
       int accept_transform_len = -1, content_transform_len = -1;
-      const char* accept_transform_value = NULL;
-      const char* content_transform_value = NULL;
+      const char* accept_transform_value = nullptr;
+      const char* content_transform_value = nullptr;
       int content_plugin, accept_plugin;
 
       float quality;
@@ -141,7 +141,7 @@ The sample code below shows how to call the alternate APIs.
 
       switch (event) {
          case TS_EVENT_HTTP_SELECT_ALT:
-            infop = (TSHttpAltInfo)edata;
+            infop = static_cast<TSHttpAltInfo>(edata);
             handle_select_alt(infop);
             break;
 
@@ -155,7 +155,7 @@ The sample code below shows how to call the alternate APIs.
    void TSPluginInit (int argc, const char *argv[])
    {
       TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, TSContCreate (alt_plugin,
-         NULL));
+         nullptr));
    }
 
 Traffic Server augments the alternate selection through these callouts

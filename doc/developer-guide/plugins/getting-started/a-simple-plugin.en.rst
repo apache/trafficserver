@@ -47,10 +47,10 @@ platforms.
 Example
 -------
 
-Assuming the sample program is stored in the file ``hello_world.c``, you
+Assuming the sample program is stored in the file ``hello_world.cc``, you
 could use the following commands to build a shared library::
 
-    tsxs -o hello_world.so -c hello_world.c
+    tsxs -o hello_world.so -c hello_world.cc
 
 ``tsxs`` is installed in the ``bin`` directory of |TS|.
 

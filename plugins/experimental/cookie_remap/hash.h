@@ -22,10 +22,6 @@
 #include <sys/types.h>
 #include <inttypes.h> // NOLINT(modernize-deprecated-headers)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * 32-bit Fowler / Noll / Vo (FNV) Hash.
  *
@@ -45,7 +41,3 @@ uint32_t hash_fnv32_buf(const char *buf, size_t len);
  * if num_buckets is a power of two.
  */
 uint32_t hash_fnv32_buckets(const char *buf, size_t len, uint32_t num_buckets);
-
-#ifdef __cplusplus
-}
-#endif

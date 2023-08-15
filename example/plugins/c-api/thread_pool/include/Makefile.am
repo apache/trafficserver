@@ -16,8 +16,8 @@
 
 all: gen
 
-gen: gen.c
-	$(CC) -o gen gen.c
+gen: gen.cc
+	$(CC) -o gen gen.cc
 
 clean-local:
 	rm -f gen gen.o

@@ -78,23 +78,30 @@
     (log).logError("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
-/**
- * We forward declare this because if we didn't we end up writing our
- * own version to do the vsnprintf just to call TSDebug and have it do
- * an unnecessary vsnprintf.
- *
- * @private
- */
-extern "C" void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
+namespace tsapi
+{
+namespace c
+{
+  /**
+   * We forward declare this because if we didn't we end up writing our
+   * own version to do the vsnprintf just to call TSDebug and have it do
+   * an unnecessary vsnprintf.
+   *
+   * @private
+   */
+  void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
 
-/**
- * We forward declare this because if we didn't we end up writing our
- * own version to do the vsnprintf just to call TSError and have it do
- * an unnecessary vsnprintf.
- *
- * @private
- */
-extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
+  /**
+   * We forward declare this because if we didn't we end up writing our
+   * own version to do the vsnprintf just to call TSError and have it do
+   * an unnecessary vsnprintf.
+   *
+   * @private
+   */
+  void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
+
+} // end namespace c
+} // end namespace tsapi
 
 // This is weird, but see the following:
 //   http://stackoverflow.com/questions/5641427/how-to-make-preprocessor-generate-a-string-for-line-keyword

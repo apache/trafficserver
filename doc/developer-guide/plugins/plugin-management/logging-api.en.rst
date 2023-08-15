@@ -58,7 +58,7 @@ The logging API enables you to:
    :c:func:`TSTextLogObjectDestroy`
 
 The steps below show how the logging API is used in the
-``denylist_1.c`` sample plugin. For the complete source code, see the
+``denylist_1.cc`` sample plugin. For the complete source code, see the
 :ref:`developer-plugins-examples-denylist-code` section.
 
 #. A new log file is defined as a global variable.
@@ -75,7 +75,7 @@ The steps below show how the logging API is used in the
                                 TS_LOG_MODE_ADD_TIMESTAMP, &log);
 
    The new log is named ``denylist.log``. Each entry written to the log
-   will have a timestamp. The ``NULL`` argument specifies that the new
+   will have a timestamp. The ``nullptr`` argument specifies that the new
    log does not have a log header. The error argument stores the result
    of the log creation; if the log is created successfully, then an
    error will be equal to ``TS_LOG_ERROR_NO_ERROR``.

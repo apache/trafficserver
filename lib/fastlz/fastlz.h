@@ -32,10 +32,6 @@
 
 #define FASTLZ_VERSION_STRING "0.5.0"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
   Compress a block of data in the input buffer and returns the size of
   compressed block. The size of input buffer is specified by length. The
@@ -89,9 +85,5 @@ int fastlz_decompress(const void *input, int length, void *output, int maxout);
 */
 
 int fastlz_compress(const void *input, int length, void *output);
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif /* FASTLZ_H */

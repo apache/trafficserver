@@ -32,14 +32,14 @@ It's not safe to assume that string data contained in marshal buffers
 (such as URLs and MIME fields) is stored in null-terminated string
 copies. Therefore, your plugins should always use the length parameter
 when retrieving or manipulating these strings. You **cannot** pass in
-``NULL`` for string-length return values; string values returned from
+``nullptr`` for string-length return values; string values returned from
 marshall buffers are not null-terminated. If you need a null-terminated
 value, then use ``TSstrndup`` to automatically null-terminate a string.
 The strings that come back and are not null-terminated **cannot** be
 passed into the common ``str*()`` routines
 
 .. note::
-   Values returned from a marshall buffer can be ``NULL``, which means the
+   Values returned from a marshall buffer can be ``nullptr``, which means the
    field or object requested does not exist.
 
 For example (from the ``denylist_1`` sample)
