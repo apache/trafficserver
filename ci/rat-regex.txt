@@ -69,3 +69,4 @@ port\.h
 ^yamlcpp$
 ^swoc$
 ^tests/gold_tests/autest-site/min_cfg$
+^clang-tidy.conf$
