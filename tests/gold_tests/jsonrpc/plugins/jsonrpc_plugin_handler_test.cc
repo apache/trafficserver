@@ -38,7 +38,7 @@ namespace
 {
 constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
 
-const std::string MY_YAML_VERSION{"0.7.0"};
+const std::string MY_YAML_VERSION{"0.8.0"};
 const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
 } // namespace
 
