@@ -31,7 +31,7 @@ cmake_dependent_option(YAML_CPP_BUILD_TESTS
 cmake_dependent_option(YAML_MSVC_SHARED_RT
   "MSVC: Build yaml-cpp with shared runtime libs (/MD)" ON
   "CMAKE_SYSTEM_NAME MATCHES Windows" OFF)
- 
+
 if (YAML_CPP_FORMAT_SOURCE)
     find_program(YAML_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 endif()
@@ -104,7 +104,7 @@ endif()
 if(YAML_CPP_MAIN_PROJECT)
   target_compile_options(yaml-cpp
     PRIVATE
-      $<${not-msvc}:-Wall -Wextra -Wshadow -Weffc++ -Wno-long-long>
+      $<${not-msvc}:-Wall -Wextra -Weffc++ -Wno-long-long>
       $<${not-msvc}:-pedantic -pedantic-errors>)
 endif()
 
