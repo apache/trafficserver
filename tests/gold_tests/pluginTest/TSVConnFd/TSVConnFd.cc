@@ -29,10 +29,10 @@
 #include <arpa/inet.h>
 
 #include <ts/ts.h>
-#include <tscpp/api/Cleanup.h>
+#include <ts/Cleanup.h>
 
-using atscppapi::TSContUniqPtr;
-using atscppapi::TSDbgCtlUniqPtr;
+using tsapi::c_support::TSContUniqPtr;
+using tsapi::c_support::TSDbgCtlUniqPtr;
 
 /*
 Plugin for testing TSVConnFdCreate().
@@ -92,7 +92,7 @@ public:
   char const *consume(std::int64_t amount);
 
 private:
-  atscppapi::TSIOBufferReaderUniqPtr _io_buffer_reader;
+  tsapi::c_support::TSIOBufferReaderUniqPtr _io_buffer_reader;
 
   // If there is no current block (_io_block == nullptr), _block_size and _block_avail are both 0.  If there is a
   // current block, _block_size is it's size, and _block_avail is the number of bytes at the end of the block
@@ -228,8 +228,8 @@ protected:
 private:
   TSVConn _vconn;
   TSMutex _mtx_{nonNullPtrDbg(TSMutexCreate())};
-  atscppapi::TSContUniqPtr _cont{nonNullPtrDbg(TSContCreate(_cont_func, _mtx_))};
-  atscppapi::TSIOBufferUniqPtr _io_buffer{nonNullPtrDbg(TSIOBufferCreate())};
+  tsapi::c_support::TSContUniqPtr _cont{nonNullPtrDbg(TSContCreate(_cont_func, _mtx_))};
+  tsapi::c_support::TSIOBufferUniqPtr _io_buffer{nonNullPtrDbg(TSIOBufferCreate())};
   Io_buffer_consume _bc{nonNullPtrDbg(_io_buffer.get())}; // Order is important here, _bc must be destroyed before _io_buffer.
   std::atomic<_Status> _status_{IN_PROGRESS};
   TSEvent _error_event_{TS_EVENT_NONE};
@@ -340,8 +340,8 @@ private:
   int64_t _bytes_to_send;
   TSMutex _mtx{nullptr};
   TSContUniqPtr _cont; // Destroying this destroys _mtx.
-  atscppapi::TSIOBufferUniqPtr _io_buf;
-  atscppapi::TSIOBufferReaderUniqPtr _io_buf_reader; // Order matters, this must be destroyed before _io_buf.
+  tsapi::c_support::TSIOBufferUniqPtr _io_buf;
+  tsapi::c_support::TSIOBufferReaderUniqPtr _io_buf_reader; // Order matters, this must be destroyed before _io_buf.
   std::atomic<Status> _status{IN_PROGRESS};
   TSEvent _error_event{TS_EVENT_NONE};
 

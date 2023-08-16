@@ -32,19 +32,19 @@
 #include <unistd.h>
 
 #include <ts/ts.h>
+#include <ts/Cleanup.h>
 #include "ts/experimental.h"
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "swoc/TextView.h"
-#include "tscpp/api/Cleanup.h"
 
 namespace
 {
 struct BodyBuilder {
-  atscppapi::TSContUniqPtr transform_connp;
-  atscppapi::TSIOBufferUniqPtr output_buffer;
+  tsapi::c_support::TSContUniqPtr transform_connp;
+  tsapi::c_support::TSIOBufferUniqPtr output_buffer;
   // It's important that output_reader comes after output_buffer so it will be deleted first.
-  atscppapi::TSIOBufferReaderUniqPtr output_reader;
+  tsapi::c_support::TSIOBufferReaderUniqPtr output_reader;
   TSVIO output_vio   = nullptr;
   bool wrote_prebody = false;
   bool wrote_body    = false;
@@ -59,9 +59,9 @@ struct XDebugTxnAuxData {
   unsigned xheaders = 0;
 };
 
-atscppapi::TxnAuxMgrData mgrData;
+tsapi::c_support::TxnAuxMgrData mgrData;
 
-using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
+using AuxDataMgr = tsapi::c_support::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
 
 } // end anonymous namespace
 

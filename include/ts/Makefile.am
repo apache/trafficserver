@@ -20,6 +20,7 @@ library_includedir=$(includedir)/ts
 
 library_include_HEADERS = \
 	apidefs.h \
+	Cleanup.h \
 	ts.h \
 	remap.h \
 	experimental.h \

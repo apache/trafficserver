@@ -22,7 +22,6 @@ library_include_HEADERS = \
     AsyncHttpFetch.h \
     AsyncTimer.h \
     CaseInsensitiveStringComparator.h \
-    Cleanup.h \
     ClientRequest.h \
     Continuation.h \
     GlobalPlugin.h \

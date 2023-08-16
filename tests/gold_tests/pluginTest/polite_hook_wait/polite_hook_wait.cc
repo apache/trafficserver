@@ -21,10 +21,10 @@
 #include <atomic>
 
 #include <ts/ts.h>
-#include <tscpp/api/Cleanup.h>
+#include <ts/Cleanup.h>
 
-using atscppapi::TSContUniqPtr;
-using atscppapi::TSThreadUniqPtr;
+using tsapi::c_support::TSContUniqPtr;
+using tsapi::c_support::TSThreadUniqPtr;
 
 /*
 Test handling a blocking call (in a spawned thread) on a transaction hook without blocking the thread executing the hooks.
@@ -40,7 +40,7 @@ namespace
 {
 char PIName[] = PINAME;
 
-atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
+tsapi::c_support::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
 TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
 
 enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT_READ_HDRS, END };
@@ -99,7 +99,7 @@ next_step(int curr)
   test_step.store(curr, std::memory_order_relaxed);
 }
 
-atscppapi::TxnAuxMgrData mgr_data;
+tsapi::c_support::TxnAuxMgrData mgr_data;
 
 class Blocking_action
 {
@@ -129,10 +129,10 @@ private:
 
   bool txn_valid{false};
 
-  friend class atscppapi::TxnAuxDataMgr<Blocking_action, mgr_data>;
+  friend class tsapi::c_support::TxnAuxDataMgr<Blocking_action, mgr_data>;
 };
 
-using AuxDataMgr = atscppapi::TxnAuxDataMgr<Blocking_action, mgr_data>;
+using AuxDataMgr = tsapi::c_support::TxnAuxDataMgr<Blocking_action, mgr_data>;
 
 void
 Blocking_action::init()
