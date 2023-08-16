@@ -401,9 +401,9 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
   } else {
     return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, required '{}' key not found.", this, entry.Mark(), YAML_TAG_IP_ADDRS);
   }
-
-  if (node = entry[YAML_TAG_METHODS]; node) {
-    if (auto errata = this->YAMLLoadMethod(node, *record); !errata.is_ok()) {
+  if (auto methodNode = entry[YAML_TAG_METHODS]) {
+    // methods are specified.
+    if (auto errata = this->YAMLLoadMethod(methodNode, *record); !errata.is_ok()) {
       return errata;
     }
   } else {
