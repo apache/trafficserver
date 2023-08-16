@@ -1014,8 +1014,8 @@ bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
   int res = 0, fd = -1;
-  int local_addr_len;
   IpEndpoint local_addr;
+  int local_addr_len = sizeof(local_addr.sa);
 
   // Need to do address calculations first, so we can determine the
   // address family for socket creation.
