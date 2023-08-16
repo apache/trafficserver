@@ -37,6 +37,10 @@
 
 #include "tscore/hugepages.h"
 
+#ifdef AIO_FAULT_INJECTION
+#include "AIO_fault_injection.h"
+#endif
+
 #include <atomic>
 
 constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
@@ -600,11 +604,19 @@ CacheProcessor::start_internal(int flags)
       opts |= O_RDONLY;
     }
 
-    int fd         = open(paths[gndisks], opts, 0644);
+#ifdef AIO_FAULT_INJECTION
+    int fd = aioFaultInjection.open(paths[gndisks], opts, 0644);
+#else
+    int fd = open(paths[gndisks], opts, 0644);
+#endif
     int64_t blocks = sd->blocks;
 
     if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
+#ifdef AIO_FAULT_INJECTION
+      fd = aioFaultInjection.open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+#else
       fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+#endif
     }
 
     if (fd >= 0) {

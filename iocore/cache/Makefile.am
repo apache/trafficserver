@@ -134,6 +134,34 @@ check_PROGRAMS = \
   test_Update_S_to_L \
   test_Update_header
 
+if ENABLE_DISK_FAILURE_TESTS
+check_PROGRAMS += \
+	test_Disk_Failure \
+	test_Disk_Failure_2 \
+	test_Populated_Cache_Disk_Failure
+
+test_Disk_Failure_CPPFLAGS = $(test_CPPFLAGS)
+test_Disk_Failure_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_LDADD = $(test_LDADD)
+test_Disk_Failure_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_2_CPPFLAGS = $(test_CPPFLAGS)
+test_Disk_Failure_2_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_2_LDADD = $(test_LDADD)
+test_Disk_Failure_2_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure_2.cc
+
+test_Populated_Cache_Disk_Failure_CPPFLAGS = $(test_CPPFLAGS)
+test_Populated_Cache_Disk_Failure_LDFLAGS = @AM_LDFLAGS@
+test_Populated_Cache_Disk_Failure_LDADD = $(test_LDADD)
+test_Populated_Cache_Disk_Failure_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Populated_Cache_Disk_Failure.cc
+endif
+
 test_main_SOURCES = \
   ./test/main.cc \
   ./test/stub.cc \

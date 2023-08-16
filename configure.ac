@@ -592,6 +592,19 @@ AC_ARG_ENABLE([32bit-build],
 )
 AC_MSG_RESULT([$enable_32bit])
 
+#
+# Check if disk failure handling tests should be built.
+# This means compiling disk failure simulation code into ATS.
+#
+AC_MSG_CHECKING([whether to build disk failure handling tests])
+AC_ARG_ENABLE([disk-failure-tests],
+  [AS_HELP_STRING([--enable-disk-failure-tests],[Build disk failure tests])],
+  [],
+  [enable_disk_failure_tests=no]
+)
+AC_MSG_RESULT([$enable_disk_failure_tests])
+AM_CONDITIONAL([ENABLE_DISK_FAILURE_TESTS], [ test "x${enable_disk_failure_tests}" = "xyes" ])
+
 
 #
 # Installation directories
@@ -1101,6 +1114,12 @@ elif test "x${enable_tsan}" = "xstatic"; then
   CXXFLAGS="$tsan_CXXFLAGS"
   TS_ADDTO(AM_CFLAGS, [-fsanitize=thread -static-libtsan])
   TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread -static-libtsan])
+fi
+
+# Build for disk failure simulation
+if test "x${enable_disk_failure_tests}" = "xyes"; then
+  TS_ADDTO(AM_CFLAGS, [-DAIO_FAULT_INJECTION])
+  TS_ADDTO(AM_CXXFLAGS, [-DAIO_FAULT_INJECTION])
 fi
 
 # Checks for pointer size.

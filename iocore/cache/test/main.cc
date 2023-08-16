@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "tscore/ink_config.h"
+#include <string_view>
 #define CATCH_CONFIG_MAIN
 #include "main.h"
 
@@ -55,8 +57,23 @@ temp_prefix()
     Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
   }
   ink_assert(result);
+  result = swoc::file::create_directories(prefix / "var" / "trafficserver2", err, 0755);
+  if (!result) {
+    Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+  }
+  ink_assert(result);
 
   return prefix.string();
+}
+
+// Populate the temporary directory with pre-made cache files
+static void
+populate_cache(const swoc::file::path &prefix)
+{
+  swoc::file::path src_path{TS_ABS_TOP_SRCDIR};
+  std::error_code ec;
+  swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver/cache.db", prefix / "var/trafficserver/", ec);
+  swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver2/cache.db", prefix / "var/trafficserver2/", ec);
 }
 
 void
@@ -106,7 +123,11 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags()->show_location = SHOW_LOCATION_DEBUG;
 
     mime_init();
-    Layout::create(temp_prefix());
+    swoc::file::path prefix = temp_prefix();
+    Layout::create(prefix.view());
+    if (reuse_existing_cache) {
+      populate_cache(prefix);
+    }
     RecProcessInit();
     LibRecordsConfigInit();
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));

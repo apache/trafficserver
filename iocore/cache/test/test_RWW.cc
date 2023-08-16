@@ -28,6 +28,8 @@
 
 #include "main.h"
 
+bool reuse_existing_cache = false;
+
 namespace
 {
 

@@ -26,7 +26,13 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
+#ifndef AIO_FAULT_INJECTION
+#error Must define AIO_FAULT_INJECTION!
+#endif
+#include "AIO_fault_injection.h"
+
 bool reuse_existing_cache = false;
+extern int gndisks;
 
 class CacheCommInit : public CacheInit
 {
@@ -35,6 +41,9 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
+    // We initialize two disks and inject failure in one.  Ensure that one disk
+    // remains.
+    REQUIRE(gndisks == 1);
     CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
     CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
     TerminalTest *tt     = new TerminalTest;
@@ -46,8 +55,9 @@ public:
   }
 };
 
-TEST_CASE("cache write -> read", "cache")
+TEST_CASE("Disk fail on first operation", "cache")
 {
+  aioFaultInjection.inject_fault(".*/var/trafficserver2/cache.db", 0, {.err_no = EIO, .skip_io = false});
   init_cache(256 * 1024 * 1024);
   // large write test
   CacheCommInit *init = new CacheCommInit;

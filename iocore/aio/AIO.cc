@@ -32,6 +32,10 @@
 
 #include "P_AIO.h"
 
+#ifdef AIO_FAULT_INJECTION
+#include "AIO_fault_injection.h"
+#endif
+
 #define MAX_DISKS_POSSIBLE 100
 
 // globals
@@ -442,9 +446,19 @@ cache_op(AIOCallbackInternal *op)
     while (a->aio_nbytes - res > 0) {
       do {
         if (read) {
+#ifdef AIO_FAULT_INJECTION
+          err = aioFaultInjection.pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
+                                        a->aio_offset + res);
+#else
           err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+#endif
         } else {
+#ifdef AIO_FAULT_INJECTION
+          err = aioFaultInjection.pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
+                                         a->aio_offset + res);
+#else
           err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+#endif
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
