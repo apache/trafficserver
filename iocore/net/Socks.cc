@@ -164,7 +164,7 @@ SocksEntry::free()
   if (!action_.cancelled) {
     if (lerrno || !netVConnection) {
       Dbg(dbg_ctl_Socks, "retryevent: Sent errno %d to HTTP", lerrno);
-      NET_INCREMENT_DYN_STAT(socks_connections_unsuccessful_stat);
+      Metrics::increment(net_rsb.socks_connections_unsuccessful);
       action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(-lerrno));
     } else {
       netVConnection->do_io_read(this, 0, nullptr);
@@ -172,7 +172,7 @@ SocksEntry::free()
       netVConnection->action_ = action_; // assign the original continuation
       netVConnection->con.setRemote(&server_addr.sa);
       Dbg(dbg_ctl_Socks, "Sent success to HTTP");
-      NET_INCREMENT_DYN_STAT(socks_connections_successful_stat);
+      Metrics::increment(net_rsb.socks_connections_successful);
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
     }
   }

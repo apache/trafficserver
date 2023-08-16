@@ -228,7 +228,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   if (accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
   }
-  NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
+  Metrics::increment(net_rsb.accepts_currently_open);
 
   if (opt.localhost_only) {
     accept_ip.setToLoopback(opt.ip_family);

@@ -419,7 +419,7 @@ SSLNetVConnection::read_raw_data()
     b       = b->next.get();
 
     r = SocketManager::read(this->con.fd, buffer, buf_len);
-    NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
+    Metrics::increment(net_rsb.calls_to_read);
     total_read += rattempted;
 
     Dbg(dbg_ctl_ssl, "read_raw_data r=%" PRId64 " rattempted=%" PRId64 " total_read=%" PRId64 " fd=%d", r, rattempted, total_read,
@@ -441,7 +441,8 @@ SSLNetVConnection::read_raw_data()
       r = total_read - rattempted + r;
     }
   }
-  NET_SUM_DYN_STAT(net_read_bytes_stat, r);
+  Metrics::increment(net_rsb.read_bytes, r);
+  Metrics::increment(net_rsb.read_bytes_count);
 
   swoc::IPRangeSet *pp_ipmap;
   pp_ipmap = SSLConfigParams::proxy_protocol_ip_addrs;
@@ -511,7 +512,7 @@ proxy_protocol_bypass:
   // check for errors
   if (r <= 0) {
     if (r == -EAGAIN || r == -ENOTCONN) {
-      NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
+      Metrics::increment(net_rsb.calls_to_read_nodata);
     }
   }
 
@@ -857,7 +858,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
     Dbg(dbg_ctl_ssl, "try_to_write=%" PRId64 " written=%" PRId64 " total_written=%" PRId64, try_to_write, num_really_written,
         total_written);
-    NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
+    Metrics::increment(net_rsb.calls_to_write);
   } while (num_really_written == try_to_write && total_written < towrite);
 
   if (total_written > 0) {
@@ -1021,7 +1022,7 @@ SSLNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
+    Metrics::decrement(net_rsb.connections_currently_open);
   }
   con.close();
 

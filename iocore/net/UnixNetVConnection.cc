@@ -187,9 +187,8 @@ write_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
 static void
 read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  NetState *s       = &vc->read;
-  ProxyMutex *mutex = thread->mutex.get();
-  int64_t r         = 0;
+  NetState *s = &vc->read;
+  int64_t r   = 0;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
@@ -263,7 +262,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       msg.msg_iovlen  = niov;
       r               = SocketManager::recvmsg(vc->con.fd, &msg, 0);
 
-      NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
+      Metrics::increment(net_rsb.calls_to_read);
 
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
@@ -279,7 +278,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     // check for errors
     if (r <= 0) {
       if (r == -EAGAIN || r == -ENOTCONN) {
-        NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
+        Metrics::increment(net_rsb.calls_to_read_nodata);
         vc->read.triggered = 0;
         nh->read_ready_list.remove(vc);
         return;
@@ -295,7 +294,8 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       read_signal_error(nh, vc, static_cast<int>(-r));
       return;
     }
-    NET_SUM_DYN_STAT(net_read_bytes_stat, r);
+    Metrics::increment(net_rsb.read_bytes, r);
+    Metrics::increment(net_rsb.read_bytes_count);
 
     // Add data to buffer and signal continuation.
     buf.writer()->fill(r);
@@ -347,19 +347,15 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 void
 write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  ProxyMutex *mutex = thread->mutex.get();
-
-  NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_stat);
-
+  Metrics::increment(net_rsb.calls_to_writetonet);
   write_to_net_io(nh, vc, thread);
 }
 
 void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  NetState *s       = &vc->write;
-  ProxyMutex *mutex = thread->mutex.get();
-  Continuation *c   = vc->write.vio.cont;
+  NetState *s     = &vc->write;
+  Continuation *c = vc->write.vio.cont;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
@@ -476,7 +472,8 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   int64_t r             = vc->load_buffer_and_write(towrite, buf, total_written, needs);
 
   if (total_written > 0) {
-    NET_SUM_DYN_STAT(net_write_bytes_stat, total_written);
+    Metrics::increment(net_rsb.write_bytes, total_written);
+    Metrics::increment(net_rsb.write_bytes_count);
     s->vio.ndone += total_written;
     net_activity(vc, thread);
   }
@@ -487,7 +484,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // check for errors
   if (r < 0) { // if the socket was not ready, add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
-      NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
+      Metrics::increment(net_rsb.calls_to_write_nodata);
       if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
         vc->write.triggered = 0;
         nh->write_ready_list.remove(vc);
@@ -919,7 +916,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     int flags       = 0;
 
     if (!this->con.is_connected && this->options.f_tcp_fastopen) {
-      NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
+      Metrics::increment(net_rsb.fastopen_attempts);
       flags = MSG_FASTOPEN;
     }
     r = SocketManager::sendmsg(con.fd, &msg, flags);
@@ -929,7 +926,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
           this->con.is_connected = true;
         }
       } else {
-        NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
+        Metrics::increment(net_rsb.fastopen_successes);
         this->con.is_connected = true;
       }
     }
@@ -939,8 +936,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       total_written += r;
     }
 
-    ProxyMutex *mutex = thread->mutex.get();
-    NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
+    Metrics::increment(net_rsb.calls_to_write);
   } while (r == try_to_write && total_written < towrite);
 
   tmp_reader->dealloc();
@@ -1163,7 +1159,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   if (check_net_throttle(CONNECT)) {
     check_throttle_warning(CONNECT);
     res = -ENET_THROTTLING;
-    NET_INCREMENT_DYN_STAT(net_connections_throttled_out_stat);
+    Metrics::increment(net_rsb.connections_throttled_out);
     goto fail;
   }
 
@@ -1216,7 +1212,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   // Did not fail, increment connection count
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+  Metrics::increment(net_rsb.connections_currently_open);
   ink_release_assert(con.fd != NO_FD);
 
   // Setup a timeout callback handler.
@@ -1292,7 +1288,7 @@ UnixNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
+    Metrics::decrement(net_rsb.connections_currently_open);
   }
   con.close();
 

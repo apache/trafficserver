@@ -29,67 +29,49 @@
 **************************************************************************/
 #pragma once
 
+#include "api/Metrics.h"
+
+using ts::Metrics;
+
 // Net Stats
 
-enum Net_Stats {
-  net_handler_run_stat,
-  net_read_bytes_stat,
-  net_write_bytes_stat,
-  net_connections_currently_open_stat,
-  net_accepts_currently_open_stat,
-  net_calls_to_readfromnet_stat,
-  net_calls_to_read_stat,
-  net_calls_to_read_nodata_stat,
-  net_calls_to_writetonet_stat,
-  net_calls_to_write_stat,
-  net_calls_to_write_nodata_stat,
-  socks_connections_successful_stat,
-  socks_connections_unsuccessful_stat,
-  socks_connections_currently_open_stat,
-  inactivity_cop_lock_acquire_failure_stat,
-  keep_alive_queue_timeout_total_stat,
-  keep_alive_queue_timeout_count_stat,
-  default_inactivity_timeout_applied_stat,
-  default_inactivity_timeout_count_stat,
-  net_fastopen_attempts_stat,
-  net_fastopen_successes_stat,
-  net_tcp_accept_stat,
-  net_connections_throttled_in_stat,
-  net_connections_throttled_out_stat,
-  net_requests_max_throttled_in_stat,
-  Net_Stat_Count
+struct NetStatsBlock {
+  Metrics::IntType *accepts_currently_open;
+  Metrics::IntType *calls_to_read_nodata;
+  Metrics::IntType *calls_to_read;
+  Metrics::IntType *calls_to_readfromnet;
+  Metrics::IntType *calls_to_write_nodata;
+  Metrics::IntType *calls_to_write;
+  Metrics::IntType *calls_to_writetonet;
+  Metrics::IntType *connections_currently_open;
+  Metrics::IntType *connections_throttled_in;
+  Metrics::IntType *connections_throttled_out;
+  Metrics::IntType *default_inactivity_timeout_applied;
+  Metrics::IntType *default_inactivity_timeout_count;
+  Metrics::IntType *fastopen_attempts;
+  Metrics::IntType *fastopen_successes;
+  Metrics::IntType *handler_run;
+  Metrics::IntType *handler_run_count;
+  Metrics::IntType *inactivity_cop_lock_acquire_failure;
+  Metrics::IntType *keep_alive_queue_timeout_count;
+  Metrics::IntType *keep_alive_queue_timeout_total;
+  Metrics::IntType *read_bytes;
+  Metrics::IntType *read_bytes_count;
+  Metrics::IntType *requests_max_throttled_in;
+  Metrics::IntType *socks_connections_currently_open;
+  Metrics::IntType *socks_connections_successful;
+  Metrics::IntType *socks_connections_unsuccessful;
+  Metrics::IntType *tcp_accept;
+  Metrics::IntType *write_bytes;
+  Metrics::IntType *write_bytes_count;
 };
 
-struct RecRawStatBlock;
-extern RecRawStatBlock *net_rsb;
+extern NetStatsBlock net_rsb;
+
 #define SSL_HANDSHAKE_WANT_READ    6
 #define SSL_HANDSHAKE_WANT_WRITE   7
 #define SSL_HANDSHAKE_WANT_ACCEPT  8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
-
-#define NET_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, 1)
-
-#define NET_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, -1)
-
-#define NET_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, _r)
-
-#define NET_READ_DYN_SUM(_x, _sum) RecGetRawStatSum(net_rsb, (int)_x, &_sum)
-
-#define NET_READ_DYN_STAT(_x, _count, _sum)        \
-  do {                                             \
-    RecGetRawStatSum(net_rsb, (int)_x, &_sum);     \
-    RecGetRawStatCount(net_rsb, (int)_x, &_count); \
-  } while (0)
-
-#define NET_CLEAR_DYN_STAT(x)          \
-  do {                                 \
-    RecSetRawStatSum(net_rsb, x, 0);   \
-    RecSetRawStatCount(net_rsb, x, 0); \
-  } while (0);
-
-// For global access
-#define NET_SUM_GLOBAL_DYN_STAT(_x, _r)   RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
-#define NET_READ_GLOBAL_DYN_SUM(_x, _sum) RecGetGlobalRawStatSum(net_rsb, _x, &_sum)
 
 #include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
