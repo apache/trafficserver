@@ -43,9 +43,10 @@ charset = utf-8
 [*.sh]
 indent_size = 4
 # Makefile's
-[*.am]
+[{*.am,*.mk,Makefile.inc}]
 trim_trailing_whitespace = false
 indent_style = tab
+indent_size = 8
 [*.rst]
 max_line_length = 80
 indent_size = 3
