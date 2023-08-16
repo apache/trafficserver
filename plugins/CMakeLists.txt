@@ -15,19 +15,7 @@
 #
 #######################
 
-set(CMAKE_SHARED_LIBRARY_PREFIX "")
-
-function(add_atsplugin name)
-  add_library(${name} MODULE ${ARGN})
-  target_link_libraries(${name} PRIVATE traffic_server)
-  set_target_properties(${name} PROPERTIES PREFIX "")
-  set_target_properties(${name} PROPERTIES SUFFIX ".so")
-  install(TARGETS ${name} DESTINATION libexec/trafficserver)
-endfunction()
-
-if(APPLE)
-  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
-endif()
+include(add_atsplugin)
 
 add_subdirectory(authproxy)
 add_subdirectory(background_fetch)

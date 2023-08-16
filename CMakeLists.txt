@@ -79,6 +79,7 @@ set(ENABLE_TPROXY
 option(ENABLE_QUICHE   "Use quiche (default OFF)")
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
+option(ENABLE_EXAMPLE  "Build example directory (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(MAX_EVENT_THREADS
     4096
@@ -387,6 +388,9 @@ add_subdirectory(src/tests)
 add_subdirectory(tests)
 add_subdirectory(plugins)
 add_subdirectory(configs)
+if(ENABLE_EXAMPLE)
+    add_subdirectory(example)
+endif()
 
 add_custom_target(clang-format-install
         COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
