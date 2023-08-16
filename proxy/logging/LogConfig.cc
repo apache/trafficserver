@@ -507,62 +507,32 @@ LogConfig::register_stat_callbacks()
   //
   // events
   //
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_error_ok", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_error_ok_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_error_skip", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_error_skip_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_error_aggr", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_error_aggr_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_error_full", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_error_full_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_error_fail", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_error_fail_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_access_ok", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_access_ok_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_access_skip", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_access_skip_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_access_aggr", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_access_aggr_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_access_full", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_access_full_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.event_log_access_fail", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_event_log_access_fail_stat, RecRawStatSyncCount);
-  //
-  // number vs bytes of logs
-  //
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.num_sent_to_network", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_num_sent_to_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.num_lost_before_sent_to_network", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_num_lost_before_sent_to_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.num_received_from_network", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_num_received_from_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.num_flush_to_disk", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_num_flush_to_disk_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.num_lost_before_flush_to_disk", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)log_stat_num_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_lost_before_preproc", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_lost_before_preproc_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_sent_to_network", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_sent_to_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_lost_before_sent_to_network", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_lost_before_sent_to_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_received_from_network", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_received_from_network_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_flush_to_disk", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_flush_to_disk_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_lost_before_flush_to_disk", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_written_to_disk", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.bytes_lost_before_written_to_disk", RECD_INT, RECP_PERSISTENT,
-                     (int)log_stat_bytes_lost_before_written_to_disk_stat, RecRawStatSyncSum);
-  //
-  // I/O
-  //
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.log_files_open", RECD_COUNTER, RECP_NON_PERSISTENT,
-                     (int)log_stat_log_files_open_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS, "proxy.process.log.log_files_space_used", RECD_INT, RECP_NON_PERSISTENT,
-                     (int)log_stat_log_files_space_used_stat, RecRawStatSyncSum);
+  ts::Metrics &intm                         = ts::Metrics::getInstance();
+  log_rsb.event_log_error_skip              = intm.newMetricPtr("proxy.process.log.event_log_error_skip");
+  log_rsb.event_log_error_ok                = intm.newMetricPtr("proxy.process.log.event_log_error_ok");
+  log_rsb.event_log_error_aggr              = intm.newMetricPtr("proxy.process.log.event_log_error_aggr");
+  log_rsb.event_log_error_full              = intm.newMetricPtr("proxy.process.log.event_log_error_full");
+  log_rsb.event_log_error_fail              = intm.newMetricPtr("proxy.process.log.event_log_error_fail");
+  log_rsb.event_log_access_ok               = intm.newMetricPtr("proxy.process.log.event_log_access_ok");
+  log_rsb.event_log_access_skip             = intm.newMetricPtr("proxy.process.log.event_log_access_skip");
+  log_rsb.event_log_access_aggr             = intm.newMetricPtr("proxy.process.log.event_log_access_aggr");
+  log_rsb.event_log_access_full             = intm.newMetricPtr("proxy.process.log.event_log_access_full");
+  log_rsb.event_log_access_fail             = intm.newMetricPtr("proxy.process.log.event_log_access_fail");
+  log_rsb.num_sent_to_network               = intm.newMetricPtr("proxy.process.log.num_sent_to_network");
+  log_rsb.num_lost_before_sent_to_network   = intm.newMetricPtr("proxy.process.log.num_lost_before_sent_to_network");
+  log_rsb.num_received_from_network         = intm.newMetricPtr("proxy.process.log.num_received_from_network");
+  log_rsb.num_flush_to_disk                 = intm.newMetricPtr("proxy.process.log.num_flush_to_disk");
+  log_rsb.num_lost_before_flush_to_disk     = intm.newMetricPtr("proxy.process.log.num_lost_before_flush");
+  log_rsb.bytes_lost_before_preproc         = intm.newMetricPtr("proxy.process.log.bytes_lost_before_preproc");
+  log_rsb.bytes_sent_to_network             = intm.newMetricPtr("proxy.process.log.bytes_sent_to_network");
+  log_rsb.bytes_lost_before_sent_to_network = intm.newMetricPtr("proxy.process.log.bytes_lost_before_sent_to_network");
+  log_rsb.bytes_received_from_network       = intm.newMetricPtr("proxy.process.log.bytes_received_from_network");
+  log_rsb.bytes_flush_to_disk               = intm.newMetricPtr("proxy.process.log.bytes_flush_to_disk");
+  log_rsb.bytes_lost_before_flush_to_disk   = intm.newMetricPtr("proxy.process.log.bytes_lost_before_flush_to_disk");
+  log_rsb.bytes_written_to_disk             = intm.newMetricPtr("proxy.process.log.bytes_written_to_disk");
+  log_rsb.bytes_lost_before_written_to_disk = intm.newMetricPtr("proxy.process.log.bytes_lost_before_written_to_disk");
+  log_rsb.log_files_open                    = intm.newMetricPtr("proxy.process.log.log_files_open");
+  log_rsb.log_files_space_used              = intm.newMetricPtr("proxy.process.log.log_files_space_used");
 }
 
 /*-------------------------------------------------------------------------
@@ -688,8 +658,7 @@ LogConfig::update_space_used()
   //
   m_space_used           = total_space_used;
   m_partition_space_left = partition_space_left;
-  RecSetRawStatSum(log_rsb, log_stat_log_files_space_used_stat, m_space_used);
-  RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
+  Metrics::write(log_rsb.log_files_space_used, m_space_used);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
   Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);

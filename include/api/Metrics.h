@@ -41,10 +41,10 @@ class Metrics
 {
 private:
   using self_type = Metrics;
-  using IdType    = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
 
 public:
   using IntType = std::atomic<int64_t>;
+  using IdType  = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
 
   static constexpr uint16_t METRICS_MAX_BLOBS = 8192;
   static constexpr uint16_t METRICS_MAX_SIZE  = 2048;                               // For a total of 16M metrics
