@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "tscore/ink_inet.h"
 #include "tscpp/util/ts_bw_format.h"
 
 #include "ts/parentselectdefs.h"
@@ -1829,8 +1830,8 @@ HttpTransact::PPDNSLookup(State *s)
     s->parent_info.dst_addr.network_order_port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, s->dns_info.active);
 
-    char addrbuf[INET6_ADDRSTRLEN];
-    TxnDebug("http_trans", "DNS lookup for successful IP: %s", ats_ip_ntop(&s->parent_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+    ip_port_text_buffer addrbuf;
+    TxnDebug("http_trans", "DNS lookup for successful IP: %s", ats_ip_nptop(&s->parent_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
   // Since this function can be called several times while retrying
@@ -1961,9 +1962,9 @@ HttpTransact::OSDNSLookup(State *s)
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, s->dns_info.active);
 
-  char addrbuf[INET6_ADDRSTRLEN];
+  ip_port_text_buffer addrbuf;
   TxnDebug("http_trans", "DNS lookup for O.S. successful IP: %s",
-           ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+           ats_ip_nptop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->redirect_info.redirect_in_process) {
     // If dns lookup was not successful, the code below will handle the error.
@@ -1989,7 +1990,7 @@ HttpTransact::OSDNSLookup(State *s)
       } else {
         // Invalid server response, since we can't copy it we are going to reject
         TxnDebug("http_trans", "Invalid server response. Rejecting.");
-        Error("Invalid server response. Rejecting. IP: %s", ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+        Error("Invalid server response. Rejecting. IP: %s", ats_ip_nptop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
       }
       build_error_response(s, HTTP_STATUS_FORBIDDEN, nullptr, "request#syntax_error");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
@@ -3628,9 +3629,9 @@ HttpTransact::handle_response_from_parent(State *s)
       s->state_machine->do_hostdb_update_if_necessary();
     }
 
-    char addrbuf[INET6_ADDRSTRLEN];
+    ip_port_text_buffer addrbuf;
     TxnDebug("http_trans", "[%d] failed to connect to parent %s", s->current.retry_attempts.get(),
-             ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+             ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
     // If the request is not retryable, just give up!
     if (!is_request_retryable(s)) {
@@ -3815,9 +3816,9 @@ HttpTransact::handle_response_from_server(State *s)
 void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
-  char addrbuf[INET6_ADDRSTRLEN];
+  ip_port_text_buffer addrbuf;
   TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.retry_attempts.get(), conn_state,
-           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+           ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->current.server->had_connect_fail()) {
     char *url_str             = s->hdr_info.client_request.url_string_get(&s->arena);

@@ -1,0 +1,34 @@
+meta:
+    version: '1.0'
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /pictures/flower.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, first-request ]
+
+    server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+          - [ Content-Type, image/jpeg ]
+          - [ Transfer-Encoding, chunked ]
+          - [ Connection, keep-alive ]
+          - [ X-Response, redirect-succeeded ]
+        content:
+          size: 45
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: redirect-succeeded, as: equal } ]
