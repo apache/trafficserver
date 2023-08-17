@@ -467,6 +467,7 @@ public:
 #if TS_HAS_TLS_EARLY_DATA
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
     if (ssl_vc) {
+      Debug("ssl_sni", "Setting server_max_early_data to %u", server_max_early_data);
       ssl_vc->hints_from_sni.server_max_early_data = server_max_early_data;
       const uint32_t EARLY_DATA_DEFAULT_SIZE       = 16384;
       const uint32_t server_recv_max_early_data =

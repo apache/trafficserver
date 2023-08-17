@@ -455,6 +455,8 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
+  static char const *get_ssl_handshake_hook_state_name(SSLHandshakeHookState state);
+
   int64_t redoWriteSize = 0;
 
   X509_STORE_CTX *verify_cert = nullptr;
