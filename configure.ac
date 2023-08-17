@@ -2355,7 +2355,6 @@ AC_CONFIG_FILES([
   example/Makefile
   example/plugins/Makefile
   example/plugins/c-api/Makefile
-  example/plugins/cpp-api/Makefile
   include/Makefile
   include/ts/Makefile
   include/tscpp/api/Makefile
