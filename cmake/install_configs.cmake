@@ -30,5 +30,11 @@ foreach(CONFIG_FILE ${CONFIG_FILES})
     set(DEST_FILE "${DEST_FILE}.default")
   endif()
   message(STATUS "Installing config: ${DEST_FILE}")
-  file(COPY_FILE ${CONFIG_FILE} ${DEST_FILE})
+  # Prefer copy_file but we need to support 3.20 which doesn't have this feature so fall back to
+  # configure_file
+  if(CMAKE_MINOR_VERSION GREATER 20)
+    file(COPY_FILE ${CONFIG_FILE} ${DEST_FILE})
+  else()
+    configure_file(${CONFIG_FILE} ${DEST_FILE} COPYONLY)
+  endif()
 endforeach()
