@@ -522,7 +522,7 @@ LogConfig::register_stat_callbacks()
   log_rsb.num_lost_before_sent_to_network   = intm.newMetricPtr("proxy.process.log.num_lost_before_sent_to_network");
   log_rsb.num_received_from_network         = intm.newMetricPtr("proxy.process.log.num_received_from_network");
   log_rsb.num_flush_to_disk                 = intm.newMetricPtr("proxy.process.log.num_flush_to_disk");
-  log_rsb.num_lost_before_flush_to_disk     = intm.newMetricPtr("proxy.process.log.num_lost_before_flush");
+  log_rsb.num_lost_before_flush_to_disk     = intm.newMetricPtr("proxy.process.log.num_lost_before_flush_to_disk");
   log_rsb.bytes_lost_before_preproc         = intm.newMetricPtr("proxy.process.log.bytes_lost_before_preproc");
   log_rsb.bytes_sent_to_network             = intm.newMetricPtr("proxy.process.log.bytes_sent_to_network");
   log_rsb.bytes_lost_before_sent_to_network = intm.newMetricPtr("proxy.process.log.bytes_lost_before_sent_to_network");

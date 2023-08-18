@@ -101,7 +101,7 @@ register_net_stats()
   net_rsb.keep_alive_queue_timeout_total      = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
   net_rsb.read_bytes                          = intm.newMetricPtr("proxy.process.net.read_bytes");
   net_rsb.read_bytes_count                    = intm.newMetricPtr("proxy.process.net.read_bytes_count");
-  net_rsb.requests_max_throttled_in           = intm.newMetricPtr("proxy.process.net.requests_max_throttled_in");
+  net_rsb.requests_max_throttled_in           = intm.newMetricPtr("proxy.process.net.max.requests_throttled_in");
   net_rsb.socks_connections_currently_open    = intm.newMetricPtr("proxy.process.socks.connections_currently_open");
   net_rsb.socks_connections_successful        = intm.newMetricPtr("proxy.process.socks.connections_successful");
   net_rsb.socks_connections_unsuccessful      = intm.newMetricPtr("proxy.process.socks.connections_unsuccessful");

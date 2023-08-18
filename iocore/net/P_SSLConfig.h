@@ -37,7 +37,6 @@
 #include "swoc/swoc_ip.h"
 
 #include "tscore/ink_inet.h"
-
 #include "ConfigProcessor.h"
 
 #include "SSLSessionCache.h"

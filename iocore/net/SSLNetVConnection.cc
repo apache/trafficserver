@@ -348,7 +348,7 @@ SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
     case SSL_ERROR_SYSCALL:
       if (nread != 0) {
         // not EOF
-        SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+        Metrics::increment(ssl_rsb.error_syscall);
         event = SSL_READ_ERROR;
         ret   = errno;
         Dbg(dbg_ctl_ssl_error, "SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
@@ -368,7 +368,8 @@ SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
       ERR_error_string_n(e, buf, sizeof(buf));
       event = SSL_READ_ERROR;
       ret   = errno;
-      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "errno=%d", errno);
+      SSLVCDebug(this, "errno=%d", errno);
+      Metrics::increment(ssl_rsb.error_ssl);
     } break;
     } // switch
   }   // while
@@ -830,10 +831,10 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       } else if (SSLConfigParams::ssl_maxrecord == -1) {
         if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
           dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
-          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);
+          Metrics::increment(ssl_rsb.total_dyn_def_tls_record_count);
         } else {
           dynamic_tls_record_size = SSL_MAX_TLS_RECORD_SIZE;
-          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_max_tls_record_count);
+          Metrics::increment(ssl_rsb.total_dyn_max_tls_record_count);
         }
         if (l > dynamic_tls_record_size) {
           l = dynamic_tls_record_size;
@@ -895,7 +896,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       // SSL_ERROR_SYSCALL is an IO error. errno is likely 0, so set EPIPE, as
       // we do with SSL_ERROR_SSL below, to indicate a connection error.
       num_really_written = -EPIPE;
-      SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+      Metrics::increment(ssl_rsb.error_syscall);
       Dbg(dbg_ctl_ssl_error, "SSL_write-SSL_ERROR_SYSCALL");
       break;
     // end of stream
@@ -907,7 +908,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     default: {
       // Treat SSL_ERROR_SSL as EPIPE error.
       num_really_written = -EPIPE;
-      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
+      SSLVCDebug(this, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
+      Metrics::increment(ssl_rsb.error_ssl);
     } break;
     }
   }
@@ -1219,7 +1221,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
           Dbg(dbg_ctl_ssl, "using SNI name '%s' for client handshake", tlsext_host_name.get());
         } else {
           Dbg(dbg_ctl_ssl_error, "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());
-          SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
+          Metrics::increment(ssl_rsb.sni_name_set_failure);
         }
       }
 
@@ -1253,7 +1255,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   // Go do the preaccept hooks
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
-    SSL_INCREMENT_DYN_STAT(ssl_total_attempts_handshake_count_in_stat);
+    Metrics::increment(ssl_rsb.total_attempts_handshake_count_in);
     if (!curHook) {
       Dbg(dbg_ctl_ssl, "Initialize preaccept curHook from NULL");
       curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_START_HOOK));
@@ -1392,7 +1394,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     if (this->get_tls_handshake_begin_time()) {
       this->_record_tls_handshake_end_time();
-      SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
+      Metrics::increment(ssl_rsb.total_success_handshake_count_in);
     }
 
     if (this->get_tunnel_type() != SNIRoutingType::NONE) {
@@ -1474,7 +1476,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
 #if TS_USE_TLS_ASYNC
   case SSL_ERROR_WANT_ASYNC:
-    SSL_INCREMENT_DYN_STAT(ssl_error_async);
+    Metrics::increment(ssl_rsb.error_async);
     return SSL_WAIT_FOR_ASYNC;
 #endif
 
@@ -1482,7 +1484,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_CONT;
 
   case SSL_ERROR_SSL: {
-    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    SSLVCDebug(this, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     return EVENT_ERROR;
   }
 
@@ -1544,7 +1546,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   // Go do the preaccept hooks
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE) {
-    SSL_INCREMENT_DYN_STAT(ssl_total_attempts_handshake_count_out_stat);
+    Metrics::increment(ssl_rsb.total_attempts_handshake_count_out);
     if (!curHook) {
       Dbg(dbg_ctl_ssl, "Initialize outbound connect curHook from NULL");
       curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_OUTBOUND_START_HOOK));
@@ -1594,7 +1596,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       writeReschedule(nh);
     }
 
-    SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
+    Metrics::increment(ssl_rsb.total_success_handshake_count_out);
 
     sslHandshakeStatus = SSL_HANDSHAKE_DONE;
     return EVENT_DONE;
@@ -1627,7 +1629,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   case SSL_ERROR_SYSCALL:
     err = errno;
-    SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+    Metrics::increment(ssl_rsb.error_syscall);
     Dbg(dbg_ctl_ssl_error, "syscall");
     return EVENT_ERROR;
     break;
@@ -1638,8 +1640,9 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    // FIXME -- This triggers a retry on cases of cert validation errors....
-    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_ERROR_SSL errno=%d", errno);
+    // FIXME -- This triggers a retry on cases of cert validation errors...
+    SSLVCDebug(this, "SSL_ERROR_SSL errno=%d", errno);
+    Metrics::increment(ssl_rsb.error_ssl);
     Dbg(dbg_ctl_ssl_error, "SSL_ERROR_SSL");
     if (e) {
       if (this->options.sni_servername) {
@@ -1942,20 +1945,20 @@ SSLNetVConnection::increment_ssl_version_metric(int version) const
 {
   switch (version) {
   case SSL3_VERSION:
-    SSL_INCREMENT_DYN_STAT(ssl_total_sslv3);
+    Metrics::increment(ssl_rsb.total_sslv3);
     break;
   case TLS1_VERSION:
-    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv1);
+    Metrics::increment(ssl_rsb.total_tlsv1);
     break;
   case TLS1_1_VERSION:
-    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv11);
+    Metrics::increment(ssl_rsb.total_tlsv11);
     break;
   case TLS1_2_VERSION:
-    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv12);
+    Metrics::increment(ssl_rsb.total_tlsv12);
     break;
 #ifdef TLS1_3_VERSION
   case TLS1_3_VERSION:
-    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv13);
+    Metrics::increment(ssl_rsb.total_tlsv13);
     break;
 #endif
   default:
@@ -2229,7 +2232,7 @@ SSLNetVConnection::_ssl_accept()
           }
           block->fill(nread);
           this->_early_data_buf->append_block(block);
-          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+          Metrics::increment(ssl_rsb.early_data_received_count);
 
           if (dbg_ctl_ssl_early_data_show_received.on()) {
             std::string early_data_str(reinterpret_cast<char *>(block->buf()), nread);
@@ -2304,7 +2307,7 @@ SSLNetVConnection::_ssl_connect()
 
   if (ret > 0) {
     if (SSL_session_reused(ssl)) {
-      SSL_INCREMENT_DYN_STAT(ssl_origin_session_reused_count);
+      Metrics::increment(ssl_rsb.origin_session_reused_count);
       Dbg(dbg_ctl_ssl_origin_session_cache, "reused session to origin server");
     } else {
       Dbg(dbg_ctl_ssl_origin_session_cache, "new session to origin server");
@@ -2456,7 +2459,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
       } else {
         if ((nread = read_bytes) > 0) {
           this->_increment_early_data_len(read_bytes);
-          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+          Metrics::increment(ssl_rsb.early_data_received_count);
           if (dbg_ctl_ssl_early_data_show_received.on()) {
             std::string early_data_str(reinterpret_cast<char *>(buf), nread);
             DbgPrint(dbg_ctl_ssl_early_data_show_received, "Early data buffer: \n%s", early_data_str.c_str());

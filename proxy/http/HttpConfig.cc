@@ -360,7 +360,7 @@ register_stat_callbacks()
   http_rsb.incoming_responses                   = intm.newMetricPtr("proxy.process.http.incoming_responses");
   http_rsb.invalid_client_requests              = intm.newMetricPtr("proxy.process.http.invalid_client_requests");
   http_rsb.misc_count                           = intm.newMetricPtr("proxy.process.http.misc_count_stat");
-  http_rsb.misc_origin_server_bytes             = intm.newMetricPtr("proxy.process.http.misc_origin_server_bytes");
+  http_rsb.misc_origin_server_bytes             = intm.newMetricPtr("proxy.process.http.http_misc_origin_server_bytes_stat");
   http_rsb.misc_user_agent_bytes                = intm.newMetricPtr("proxy.process.http.misc_user_agent_bytes_stat");
   http_rsb.missing_host_hdr                     = intm.newMetricPtr("proxy.process.http.missing_host_hdr");
   http_rsb.options_requests                     = intm.newMetricPtr("proxy.process.http.options_requests");

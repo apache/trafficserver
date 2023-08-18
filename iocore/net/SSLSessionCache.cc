@@ -91,10 +91,8 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
     Debug("ssl.session_cache.remove", "SessionCache using bucket %" PRId64 " (%p): Removing session '%s' (hash: %" PRIX64 ").",
           target_bucket, bucket, buf, hash);
   }
+  Metrics::increment(ssl_rsb.session_cache_eviction);
 
-  if (ssl_rsb) {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
-  }
   bucket->removeSession(sid);
 }
 
@@ -120,9 +118,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
 {
   std::shared_lock r_lock(mutex, std::try_to_lock);
   if (!r_lock.owns_lock()) {
-    if (ssl_rsb) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    }
+    Metrics::increment(ssl_rsb.session_cache_lock_contention);
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return;
     }
@@ -166,9 +162,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
 
   std::unique_lock w_lock(mutex, std::try_to_lock);
   if (!w_lock.owns_lock()) {
-    if (ssl_rsb) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    }
+    Metrics::increment(ssl_rsb.session_cache_lock_contention);
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return;
     }
@@ -177,9 +171,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
 
   PRINT_BUCKET("insertSession before")
   if (bucket_map.size() >= SSLConfigParams::session_cache_max_bucket_size) {
-    if (ssl_rsb) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
-    }
+    Metrics::increment(ssl_rsb.session_cache_eviction);
     removeOldestSession(w_lock);
   }
 
@@ -197,9 +189,7 @@ SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &le
   int true_len = 0;
   std::shared_lock lock(mutex, std::try_to_lock);
   if (!lock.owns_lock()) {
-    if (ssl_rsb) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    }
+    Metrics::increment(ssl_rsb.session_cache_lock_contention);
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return true_len;
     }
@@ -232,9 +222,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_ses
 
   std::shared_lock lock(mutex, std::try_to_lock);
   if (!lock.owns_lock()) {
-    if (ssl_rsb) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    }
+    Metrics::increment(ssl_rsb.session_cache_lock_contention);
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return false;
     }
