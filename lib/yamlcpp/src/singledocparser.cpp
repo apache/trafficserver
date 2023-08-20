@@ -93,8 +93,8 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
   // add non-specific tags
   if (tag.empty())
     tag = (token.type == Token::NON_PLAIN_SCALAR ? "!" : "?");
-
-  if (token.type == Token::PLAIN_SCALAR
+  
+  if (token.type == Token::PLAIN_SCALAR 
       && tag.compare("?") == 0 && IsNullString(token.value)) {
     eventHandler.OnNull(mark, anchor);
     m_scanner.pop();
@@ -424,8 +424,11 @@ anchor_t SingleDocParser::RegisterAnchor(const std::string& name) {
 anchor_t SingleDocParser::LookupAnchor(const Mark& mark,
                                        const std::string& name) const {
   auto it = m_anchors.find(name);
-  if (it == m_anchors.end())
-    throw ParserException(mark, ErrorMsg::UNKNOWN_ANCHOR);
+  if (it == m_anchors.end()) {
+    std::stringstream ss;
+    ss << ErrorMsg::UNKNOWN_ANCHOR << name;
+    throw ParserException(mark, ss.str());
+  }
 
   return it->second;
 }
