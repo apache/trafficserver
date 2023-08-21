@@ -49,6 +49,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
+#include <ts/remap_version.h>
 
 static const char PLUGIN_NAME[] = "url_sig";
 
@@ -88,17 +89,7 @@ free_cfg(struct config *cfg)
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  if (!api_info) {
-    snprintf(errbuf, errbuf_size, "[tsremap_init] - Invalid TSRemapInterface argument");
-    return TS_ERROR;
-  }
-
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-             (api_info->tsremap_version & 0xffff));
-    return TS_ERROR;
-  }
-
+  CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
   TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }

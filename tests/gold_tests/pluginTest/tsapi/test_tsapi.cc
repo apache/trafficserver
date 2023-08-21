@@ -260,13 +260,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   TSDbg(dbg_ctl, "TSRemapInit()");
 
-  TSReleaseAssert(api_info && errbuf && errbuf_size);
-
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    std::snprintf(errbuf, errbuf_size, "Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-                  (api_info->tsremap_version & 0xffff));
-    return TS_ERROR;
-  }
+  TSReleaseAssert(api_info != nullptr);
+  TSReleaseAssert(api_info->size == sizeof(TSRemapInterface));
+  TSReleaseAssert(api_info->tsremap_version == TSREMAP_VERSION);
 
   const char *fileSpec = std::getenv("OUTPUT_FILE");
 

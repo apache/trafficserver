@@ -148,8 +148,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
                                     static_cast<int>(api_info->size), static_cast<int>(sizeof(TSRemapInterface)));
     }
     if (unlikely(api_info->tsremap_version < TSREMAP_VERSION)) {
-      return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "Incorrect API version %d.%d", (api_info->tsremap_version >> 16),
-                                    (api_info->tsremap_version & 0xffff));
+      return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "Incorrect API version %d.%d",
+                                    static_cast<int>(api_info->tsremap_version >> 16),
+                                    static_cast<int>(api_info->tsremap_version & 0xffff));
     }
 
     if (pthread_mutex_init(&remap_plugin_global_mutex, nullptr) ||
