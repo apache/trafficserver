@@ -63,11 +63,11 @@ snistring = "SNI callback 0"
 preacceptstring = "Pre accept callback 0"
 certstring = "Cert callback 0"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "SNI message appears only once", reflags=re.S | re.M)
 # the preaccept may get triggered twice because the test framework creates a TCP connection before handing off to traffic_server
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(
     preacceptstring), "Pre accept message appears only once or twice", reflags=re.S | re.M)
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring),
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring),
                                                           "Cert message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15

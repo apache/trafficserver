@@ -98,5 +98,5 @@ tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Con
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate",
+ts.Disk.diags_log.Content += Testers.ContainsExpression(r"WARNING: SNI \(bar.com\) not in certificate",
                                                         "Make sure bad_bar name checked failed.")
