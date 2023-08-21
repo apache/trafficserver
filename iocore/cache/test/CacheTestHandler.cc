@@ -24,7 +24,7 @@
 
 TestContChain::TestContChain() : Continuation(new_ProxyMutex()) {}
 
-CacheTestHandler::CacheTestHandler(size_t size, const char *url)
+CacheTestHandler::CacheTestHandler(size_t size, const char *url, bool expect_fail) : _expect_open_read_failed(expect_fail)
 {
   this->_wt = new CacheWriteTest(size, this, url);
   this->_rt = new CacheReadTest(size, this, url);
@@ -59,6 +59,13 @@ CacheTestHandler::handle_cache_event(int event, CacheTestBase *base)
     base->close();
     delete this;
     break;
+  case CACHE_EVENT_OPEN_READ_FAILED:
+    if (_expect_open_read_failed) {
+      base->close();
+      delete this;
+      break;
+    }
+    [[fallthrough]];
   default:
     REQUIRE(false);
     base->close();

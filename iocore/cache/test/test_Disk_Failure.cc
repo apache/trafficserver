@@ -31,6 +31,7 @@
 #endif
 #include "AIO_fault_injection.h"
 
+int cache_vols            = 1;
 bool reuse_existing_cache = false;
 extern int gndisks;
 
@@ -44,9 +45,10 @@ public:
     // We initialize two disks and inject failure in one.  Ensure that one disk
     // remains.
     REQUIRE(gndisks == 1);
-    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
-    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
-    TerminalTest *tt     = new TerminalTest;
+    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE, DEFAULT_URL, true);
+    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com", true);
+    ;
+    TerminalTest *tt = new TerminalTest;
     h->add(h2);
     h->add(tt);
     this_ethread()->schedule_imm(h);
@@ -55,10 +57,14 @@ public:
   }
 };
 
-TEST_CASE("Disk fail on first operation", "cache")
+TEST_CASE("Disk fail after initialization", "cache")
 {
-  aioFaultInjection.inject_fault(".*/var/trafficserver2/cache.db", 0, {.err_no = EIO, .skip_io = false});
+  std::vector<int> indices = FAILURE_INDICES;
+  for (const int i : indices) {
+    aioFaultInjection.inject_fault(".*/var/trafficserver/cache.db", i, {.err_no = EIO, .skip_io = true});
+  }
   init_cache(256 * 1024 * 1024);
+  cache_config_max_disk_errors = 1;
   // large write test
   CacheCommInit *init = new CacheCommInit;
 

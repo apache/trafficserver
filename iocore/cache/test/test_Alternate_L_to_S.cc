@@ -24,6 +24,7 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
+int cache_vols            = 1;
 bool reuse_existing_cache = false;
 
 #include "main.h"

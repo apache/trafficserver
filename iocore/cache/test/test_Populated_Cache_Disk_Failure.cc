@@ -26,6 +26,7 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
+int cache_vols            = 2;
 bool reuse_existing_cache = true;
 #ifndef AIO_FAULT_INJECTION
 #error Must define AIO_FAULT_INJECTION!

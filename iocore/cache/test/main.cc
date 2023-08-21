@@ -51,15 +51,18 @@ temp_prefix()
     tmpdir = "/tmp";
   }
   snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", tmpdir);
+  ink_assert(cache_vols == 1 || cache_vols == 2);
   auto prefix = swoc::file::path(mkdtemp(buffer));
   bool result = swoc::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
   if (!result) {
     Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
   }
   ink_assert(result);
-  result = swoc::file::create_directories(prefix / "var" / "trafficserver2", err, 0755);
-  if (!result) {
-    Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+  if (cache_vols == 2) {
+    result = swoc::file::create_directories(prefix / "var" / "trafficserver2", err, 0755);
+    if (!result) {
+      Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+    }
   }
   ink_assert(result);
 
@@ -72,6 +75,7 @@ populate_cache(const swoc::file::path &prefix)
 {
   swoc::file::path src_path{TS_ABS_TOP_SRCDIR};
   std::error_code ec;
+  ink_assert(cache_vols == 2);
   swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver/cache.db", prefix / "var/trafficserver/", ec);
   swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver2/cache.db", prefix / "var/trafficserver2/", ec);
 }

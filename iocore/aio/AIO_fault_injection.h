@@ -38,7 +38,7 @@
 // We need a way to simulate failures determininstically to test disk
 // initialization
 
-constexpr auto TAG{"fault"};
+static constexpr auto TAG{"fault"};
 
 class AIOFaultInjection
 {
