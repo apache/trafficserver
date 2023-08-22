@@ -128,6 +128,6 @@ tr3.StillRunningAfter = ts
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "WARNING: SNI \(bad_bar.com\) not in certificate. Action=Terminate", "Make sure bad_bar name checked failed.")
+    r"WARNING: SNI \(bad_bar.com\) not in certificate. Action=Terminate", "Make sure bad_bar name checked failed.")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI \(random.com\) not in certificate. Action=Continue ", "Permissive failure for random")
+    r"WARNING: SNI \(random.com\) not in certificate. Action=Continue ", "Permissive failure for random")

@@ -185,6 +185,6 @@ tragain.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not
 
 # No name checking for the sig-only permissive override for bad_bar
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Core server certificate verification failed for \(random3.com\). Action=Continue", "Permissive can connect")
+    r"Core server certificate verification failed for \(random3.com\). Action=Continue", "Permissive can connect")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Core server certificate verification failed for \(random2.com\). Action=Terminate", "Enforced cannot connect")
+    r"Core server certificate verification failed for \(random2.com\). Action=Terminate", "Enforced cannot connect")

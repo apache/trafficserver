@@ -63,9 +63,9 @@ ts.Disk.traffic_out.Content = "gold/ts-cert-2.gold"
 certstring0 = "Cert callback 0"
 certstring1 = "Cert callback 1"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears only once", reflags=re.S | re.M)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

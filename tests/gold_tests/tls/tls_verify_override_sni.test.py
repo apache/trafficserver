@@ -145,6 +145,6 @@ tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 
 # Over riding the built in ERROR check since we expect some cases to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
+    r"WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    " WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")
+    r" WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")

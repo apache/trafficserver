@@ -268,4 +268,4 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "Failure on missing name for bar.com")
 # See if the explicitly set default sni_policy of remap works.
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "WARNING: SNI \(foo.com\) not in certificate. Action=Continue", "Warning on missing name for foo.com")
+    r"WARNING: SNI \(foo.com\) not in certificate. Action=Continue", "Warning on missing name for foo.com")

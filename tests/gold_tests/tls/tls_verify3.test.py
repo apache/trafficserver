@@ -144,7 +144,7 @@ tr3.StillRunningAfter = ts
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
+    r"WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: Core server certificate verification failed for \(my.foo.com\). Action=Continue",
     "Make sure default permissive action takes")

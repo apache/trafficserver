@@ -63,9 +63,9 @@ ts.Disk.traffic_out.Content = "gold/ts-sni-2.gold"
 snistring0 = "SNI callback 0"
 snistring1 = "SNI callback 1"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring0), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring0), "SNI message appears only once", reflags=re.S | re.M)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring1), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring1), "SNI message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15
