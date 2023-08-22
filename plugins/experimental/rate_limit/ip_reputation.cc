@@ -58,21 +58,24 @@ SieveLru::hasher(const std::string &ip, u_short family) // Mostly a convenience 
   case AF_INET: {
     sockaddr_in sa4;
 
-    inet_pton(AF_INET, ip.c_str(), &(sa4.sin_addr));
-    sa4.sin_family = AF_INET;
-    return hasher(reinterpret_cast<const sockaddr *>(&sa4));
+    if (inet_pton(AF_INET, ip.c_str(), &(sa4.sin_addr))) {
+      sa4.sin_family = AF_INET;
+      return hasher(reinterpret_cast<const sockaddr *>(&sa4));
+    }
   } break;
   case AF_INET6: {
     sockaddr_in6 sa6;
 
-    inet_pton(AF_INET6, ip.c_str(), &(sa6.sin6_addr));
-    sa6.sin6_family = AF_INET6;
-    return hasher(reinterpret_cast<const sockaddr *>(&sa6));
+    if (inet_pton(AF_INET6, ip.c_str(), &(sa6.sin6_addr))) {
+      sa6.sin6_family = AF_INET6;
+      return hasher(reinterpret_cast<const sockaddr *>(&sa6));
+    }
   } break;
   default:
-    // Really shouldn't happen ...
-    return 0;
+    break;
   }
+
+  return 0; // Probably can't happen, but have to return something
 }
 // Constructor, setting up the pre-sized LRU buckets etc.
 SieveLru::SieveLru(uint32_t num_buckets, uint32_t size) : _lock(TSMutexCreate())
