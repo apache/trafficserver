@@ -136,7 +136,6 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_HWLOC
 #cmakedefine01 TS_USE_KQUEUE
 #cmakedefine01 TS_USE_LINUX_IO_URING
-#cmakedefine01 TS_USE_LINUX_NATIVE_AIO
 #cmakedefine01 TS_USE_POSIX_CAP
 #cmakedefine01 TS_USE_QUIC
 #cmakedefine01 TS_USE_REMOTE_UNWINDING

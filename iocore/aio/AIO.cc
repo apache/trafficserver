@@ -32,15 +32,6 @@
 
 #include "P_AIO.h"
 
-#if AIO_MODE == AIO_MODE_NATIVE
-
-#ifdef HAVE_EVENTFD
-#include <sys/eventfd.h>
-#endif
-
-#define AIO_PERIOD -HRTIME_MSECONDS(10)
-#else
-
 #define MAX_DISKS_POSSIBLE 100
 
 // globals
@@ -51,7 +42,6 @@ namespace
 {
 void setup_prep_ops(IOUringContext *);
 }
-
 #endif
 
 /* structure to hold information about each file descriptor */
@@ -64,7 +54,6 @@ int num_filedes = 1;
 static ink_mutex insert_mutex;
 
 int thread_is_created = 0;
-#endif // AIO_MODE == AIO_MODE_NATIVE
 
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
@@ -189,17 +178,12 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.completed", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_IO_URING_COMPLETED, aio_stats_cb);
 #endif
-#if AIO_MODE == AIO_MODE_DEFAULT
+
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
-#endif
-  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
-#if TS_USE_LINUX_NATIVE_AIO
-  Warning(
-    "Running with Linux libaio is deprecated. There are known issues with this feature and it is being replaced with io_uring");
-#endif
 
-#if AIO_MODE == AIO_MODE_DEFAULT
+  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
+
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
@@ -250,10 +234,7 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
     Note("Using thread for AIO");
   }
 #endif
-#endif
 }
-
-#if AIO_MODE == AIO_MODE_DEFAULT
 
 struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
@@ -706,162 +687,3 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
 
   return 1;
 }
-#endif
-
-#if AIO_MODE == AIO_MODE_NATIVE
-int
-DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e)
-{
-  SET_HANDLER(&DiskHandler::mainAIOEvent);
-  e->schedule_every(AIO_PERIOD);
-  trigger_event = e;
-  return EVENT_CONT;
-}
-
-int
-DiskHandler::mainAIOEvent(int event, Event *e)
-{
-  AIOCallback *op = nullptr;
-Lagain:
-  int ret = io_getevents(ctx, 0, MAX_AIO_EVENTS, events, nullptr);
-  for (int i = 0; i < ret; i++) {
-    op             = (AIOCallback *)events[i].data;
-    op->aio_result = events[i].res;
-    ink_assert(op->action.continuation);
-    complete_list.enqueue(op);
-  }
-
-  if (ret == MAX_AIO_EVENTS) {
-    goto Lagain;
-  }
-
-  if (ret < 0) {
-    if (errno == EINTR)
-      goto Lagain;
-    if (errno == EFAULT || errno == ENOSYS)
-      Dbg(_dbg_ctl_aio, "io_getevents failed: %s (%d)", strerror(-ret), -ret);
-  }
-
-  ink_aiocb *cbs[MAX_AIO_EVENTS];
-  int num = 0;
-
-  for (; num < MAX_AIO_EVENTS && ((op = ready_list.dequeue()) != nullptr); ++num) {
-    cbs[num] = &op->aiocb;
-    ink_assert(op->action.continuation);
-  }
-
-  if (num > 0) {
-    int ret;
-    do {
-      ret = io_submit(ctx, num, cbs);
-    } while (ret < 0 && ret == -EAGAIN);
-
-    if (ret != num) {
-      if (ret < 0) {
-        Dbg(_dbg_ctl_aio, "io_submit failed: %s (%d)", strerror(-ret), -ret);
-      } else {
-        Fatal("could not submit IOs, io_submit(%p, %d, %p) returned %d", ctx, num, cbs, ret);
-      }
-    }
-  }
-
-  while ((op = complete_list.dequeue()) != nullptr) {
-    op->mutex = op->action.mutex;
-    MUTEX_TRY_LOCK(lock, op->mutex, trigger_event->ethread);
-    if (!lock.is_locked()) {
-      trigger_event->ethread->schedule_imm(op);
-    } else {
-      op->handleEvent(EVENT_NONE, nullptr);
-    }
-  }
-  return EVENT_CONT;
-}
-
-int
-ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
-  op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
-  op->aiocb.data           = op;
-  EThread *t               = this_ethread();
-#ifdef HAVE_EVENTFD
-  io_set_eventfd(&op->aiocb, t->evfd);
-#endif
-  t->diskHandler->ready_list.enqueue(op);
-
-  return 1;
-}
-
-int
-ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
-  op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
-  op->aiocb.data           = op;
-  EThread *t               = this_ethread();
-#ifdef HAVE_EVENTFD
-  io_set_eventfd(&op->aiocb, t->evfd);
-#endif
-  t->diskHandler->ready_list.enqueue(op);
-
-  return 1;
-}
-
-int
-ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
-  EThread *t      = this_ethread();
-  DiskHandler *dh = t->diskHandler;
-  AIOCallback *io = op;
-  int sz          = 0;
-
-  while (io) {
-    io->aiocb.aio_lio_opcode = IO_CMD_PREAD;
-    io->aiocb.data           = io;
-#ifdef HAVE_EVENTFD
-    io_set_eventfd(&op->aiocb, t->evfd);
-#endif
-    dh->ready_list.enqueue(io);
-    ++sz;
-    io = io->then;
-  }
-
-  if (sz > 1) {
-    ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op);
-    while (--sz >= 0) {
-      op->action = vec;
-      op         = op->then;
-    }
-  }
-  return 1;
-}
-
-int
-ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
-  EThread *t      = this_ethread();
-  DiskHandler *dh = t->diskHandler;
-  AIOCallback *io = op;
-  int sz          = 0;
-
-  while (io) {
-    io->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
-    io->aiocb.data           = io;
-#ifdef HAVE_EVENTFD
-    io_set_eventfd(&op->aiocb, t->evfd);
-#endif
-    dh->ready_list.enqueue(io);
-    ++sz;
-    io = io->then;
-  }
-
-  if (sz > 1) {
-    ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op);
-    while (--sz >= 0) {
-      op->action = vec;
-      op         = op->then;
-    }
-  }
-  return 1;
-}
-#endif // AIO_MODE != AIO_MODE_NATIVE

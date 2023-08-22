@@ -153,55 +153,6 @@ struct VolInitInfo {
   }
 };
 
-#if AIO_MODE == AIO_MODE_NATIVE
-struct VolInit : public Continuation {
-  Vol *vol;
-  char *path;
-  off_t blocks;
-  int64_t offset;
-  bool vol_clear;
-
-  int
-  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-  {
-    vol->init(path, blocks, offset, vol_clear);
-    mutex.clear();
-    delete this;
-    return EVENT_DONE;
-  }
-
-  VolInit(Vol *v, char *p, off_t b, int64_t o, bool c) : Continuation(v->mutex), vol(v), path(p), blocks(b), offset(o), vol_clear(c)
-  {
-    SET_HANDLER(&VolInit::mainEvent);
-  }
-};
-
-struct DiskInit : public Continuation {
-  CacheDisk *disk;
-  char *s;
-  off_t blocks;
-  off_t askip;
-  int ahw_sector_size;
-  int fildes;
-  bool clear;
-
-  int
-  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-  {
-    disk->open(s, blocks, askip, ahw_sector_size, fildes, clear);
-    ats_free(s);
-    mutex.clear();
-    delete this;
-    return EVENT_DONE;
-  }
-
-  DiskInit(CacheDisk *d, char *str, off_t b, off_t skip, int sector, int f, bool c)
-    : Continuation(d->mutex), disk(d), s(ats_strdup(str)), blocks(b), askip(skip), ahw_sector_size(sector), fildes(f), clear(c)
-  {
-    SET_HANDLER(&DiskInit::mainEvent);
-  }
-};
-#endif
 void cplist_init();
 static void cplist_update();
 int cplist_reconfigure();
@@ -596,12 +547,6 @@ CacheProcessor::start_internal(int flags)
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-#if AIO_MODE == AIO_MODE_NATIVE
-  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
-    et->diskHandler = new DiskHandler();
-    et->schedule_imm(et->diskHandler);
-  }
-#endif
   start_internal_flags = flags;
   clear                = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix                  = !!(flags & PROCESSOR_FIX);
@@ -757,11 +702,7 @@ CacheProcessor::start_internal(int flags)
     ink_release_assert(sds[j] != nullptr); // Defeat clang-analyzer
     off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
-#if AIO_MODE == AIO_MODE_NATIVE
-    eventProcessor.schedule_imm(new DiskInit(gdisks[j], paths[j], blocks, skip, sector_sizes[j], fds[j], clear));
-#else
     gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
-#endif
 
     Dbg(dbg_ctl_cache_hosting, "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
   }
@@ -1310,11 +1251,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     aio->thread           = AIO_CALLBACK_THREAD_ANY;
     aio->then             = (i < 3) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
-#if AIO_MODE == AIO_MODE_NATIVE
-  ink_assert(ink_aio_readv(init_info->vol_aio));
-#else
   ink_assert(ink_aio_read(init_info->vol_aio));
-#endif
   return 0;
 }
 
@@ -1672,11 +1609,7 @@ Ldone : {
   init_info->vol_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
   SET_HANDLER(&Vol::handle_recover_write_dir);
-#if AIO_MODE == AIO_MODE_NATIVE
-  ink_assert(ink_aio_writev(init_info->vol_aio));
-#else
   ink_assert(ink_aio_write(init_info->vol_aio));
-#endif
   return EVENT_CONT;
 }
 
@@ -2098,11 +2031,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
             blocks                      = q->b->len;
 
             bool vol_clear = clear || d->cleared || q->new_block;
-#if AIO_MODE == AIO_MODE_NATIVE
-            eventProcessor.schedule_imm(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear));
-#else
             cp->vols[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
-#endif
             vol_no++;
             cache_size += blocks;
           }

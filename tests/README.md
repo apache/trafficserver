@@ -349,20 +349,11 @@ ts.Disk.remap_config.AddLine(
  * TS_USE_TLS13
  * TS_USE_QUIC
  * TS_HAS_QUICHE
- * TS_USE_LINUX_NATIVE_AIO
  * TS_HAS_SO_PEERCRED
  * TS_USE_REMOTE_UNWINDING
  * TS_HAS_128BIT_CAS
  * TS_HAS_TESTS
  * TS_HAS_WCCP
-
-### Example
-```python
-#create the origin server process
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_LINUX_NATIVE_AIO'),
-)
-```
 
 ### Condition.HasCurlFeature(feature)
  * feature - The feature to test for
