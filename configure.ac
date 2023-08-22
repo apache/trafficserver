@@ -345,13 +345,13 @@ AC_ARG_ENABLE([docs],
       TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
     ], [
       enable_doc_build=no
-      AC_MSG_ERROR(Doc building disabled, Python 3.4 or better required)
+      AC_MSG_ERROR([Doc building disabled, Python 3.4 or better required])
     ])
 
     AS_IF([test -z "$JAVA"],
       [
         enable_doc_build=no
-        AC_MSG_ERROR(Doc building disabled, Java required but not found)
+        AC_MSG_ERROR([Doc building disabled, Java required but not found])
       ])
     AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
     AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
@@ -362,7 +362,7 @@ AC_ARG_ENABLE([docs],
       ],[
         sphinx_version_check=no
         enable_doc_build=no
-        AC_MSG_ERROR(Doc building disabled, check Sphinx installation)
+        AC_MSG_ERROR([Doc building disabled, check Sphinx installation])
       ])
 
 
@@ -704,7 +704,7 @@ AC_COMPILE_IFELSE([
     AC_MSG_RESULT(yes)
     ], [
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR([*** A compiler with support for -std=c++$CXXSTD is required.])
+    AC_MSG_ERROR([A compiler with support for -std=c++$CXXSTD is required])
 ])
 AC_LANG_POP
 CXX="$ac_save_CXX"
@@ -1011,13 +1011,13 @@ fi
 # Flags for ASAN
 if test "x${enable_asan}" = "xyes"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
 elif test "x${enable_asan}" = "xstatic"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
   fi
   asan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=address -static-libasan"
@@ -1028,7 +1028,7 @@ elif test "x${enable_asan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static ASAN library.)
+      AC_MSG_ERROR([Cannot find static ASAN library])
     ]
   )
   AC_LANG_POP
@@ -1040,23 +1040,23 @@ fi
 # Flags for LSAN stand-alone mode
 if test "x${enable_lsan}" = "xyes"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
+    AC_MSG_ERROR([ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode])
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
 elif test "x${enable_lsan}" = "xstatic"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
+    AC_MSG_ERROR([ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode])
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
   fi
   AC_CHECK_LIB(lsan, _init, [lsan_have_libs=yes], [lsan_have_libs=no])
   if test "x${lsan_have_libs}" == "xno"; then
-    AC_MSG_ERROR(Cannot find LSAN static library)
+    AC_MSG_ERROR([Cannot find LSAN static library])
   fi
   lsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=leak -static-liblsan"
@@ -1067,7 +1067,7 @@ elif test "x${enable_lsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static LSAN library.)
+      AC_MSG_ERROR([Cannot find static LSAN library])
     ]
   )
   AC_LANG_POP
@@ -1083,7 +1083,7 @@ if test "x${enable_tsan}" = "xyes"; then
 elif test "x${enable_tsan}" = "xstatic"; then
   AC_CHECK_LIB(tsan, _init, [tsan_have_libs=yes], [tsan_have_libs=no])
   if test "x${tsan_have_libs}" == "xno"; then
-    AC_MSG_ERROR(Cannot find TSAN static library)
+    AC_MSG_ERROR([Cannot find TSAN static library])
   fi
   tsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fsanitize=thread -static-libtsan"
@@ -1094,7 +1094,7 @@ elif test "x${enable_tsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static TSAN library.)
+      AC_MSG_ERROR([Cannot find static TSAN library])
     ]
   )
   AC_LANG_POP
@@ -1107,7 +1107,7 @@ fi
 # TODO: Later this is irrelevant, and we should just bail on 32-bit platforms always
 AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
-  AC_MSG_ERROR(Cannot determine size of void*)
+  AC_MSG_ERROR([Cannot determine size of void*])
 fi
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
@@ -1115,7 +1115,7 @@ if test "${ac_cv_sizeof_voidp}" = "4"; then
    AS_IF([test x"$enable_32bit_build" = "xyes"], [
      AC_MSG_NOTICE([Explicitly building on a 32-bit platform, this might be unsupported soon!])
    ], [
-     AC_MSG_ERROR(You are trying to build on a 32-bit platform, which is unsupported.)
+     AC_MSG_ERROR([You are trying to build on a 32-bit platform, which is unsupported])
    ])
 fi
 
@@ -1379,7 +1379,7 @@ AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
 if test "x${enable_zlib}" != "xyes"; then
-  AC_MSG_ERROR([Cannot find zlib library. Configure --with-zlib=DIR])
+  AC_MSG_ERROR([Cannot find zlib library, configure --with-zlib=DIR])
 fi
 
 #
@@ -1417,7 +1417,7 @@ AC_CHECK_FUNCS(malloc_usable_size)
 #
 TS_CHECK_PCRE
 if test "x${enable_pcre}" != "xyes"; then
-  AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
+  AC_MSG_ERROR([Cannot find pcre library, configure --with-pcre=DIR])
 fi
 
 # Check for optional brotli library
@@ -1433,7 +1433,7 @@ if test "${has_quiche}" = "1"; then
 if test "$openssl_is_boringssl" = "1" ; then
 enable_quic=yes
 else
-  AC_MSG_ERROR([Use of BoringSSL is required if Quiche is used.])
+  AC_MSG_ERROR([Use of BoringSSL is required if Quiche is used])
 fi
 fi
 TS_ARG_ENABLE_VAR([use], [quic])
