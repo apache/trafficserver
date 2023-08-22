@@ -30,6 +30,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #ifdef HAVE_PCRE_PCRE_H
@@ -281,38 +282,30 @@ prune_config(invalidate_t **i)
 static bool
 load_state(plugin_state_t *pstate, invalidate_t **ilist)
 {
-  FILE *fs = nullptr;
-  struct stat s;
-  char line[LINE_MAX];
-  time_t now;
-  pcre *config_re = nullptr;
-  const char *errptr;
-  int erroffset, ovector[OVECTOR_SIZE], rc;
-  int ln = 0;
-
-  if (!*ilist) {
+  if (NULL == *ilist) {
     return true;
   }
 
-  if (stat(pstate->state_path, &s) < 0) {
-    TSDebug(PLUGIN_NAME, "Could not stat state %s", pstate->state_path);
-    return false;
-  }
-
-  if (!(fs = fopen(pstate->state_path, "r"))) {
+  FILE *const fs = fopen(pstate->state_path, "r");
+  if (NULL == fs) {
     TSDebug(PLUGIN_NAME, "Could not open state %s for reading", pstate->state_path);
     return false;
   }
 
-  now = time(nullptr);
+  time_t const now = time(nullptr);
 
-  config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, nullptr);
+  const char *errptr;
+  int erroffset;
+  int ovector[OVECTOR_SIZE];
+  pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, nullptr);
   TSReleaseAssert(nullptr != config_re);
 
+  char line[LINE_MAX];
+  int ln = 0;
   while (fgets(line, LINE_MAX, fs) != nullptr) {
     TSDebug(PLUGIN_NAME, "state: processing: %d %s", ln, line);
     ++ln;
-    rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
+    int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
 
     if (5 == rc) {
       invalidate_t *const inv = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
@@ -371,17 +364,8 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
 static bool
 load_config(plugin_state_t *pstate, invalidate_t **ilist)
 {
-  FILE *fs;
-  struct stat s;
   size_t path_len;
   char *path;
-  char line[LINE_MAX];
-  time_t now;
-  pcre *config_re;
-  const char *errptr;
-  int erroffset, ovector[OVECTOR_SIZE], rc;
-  int ln = 0;
-  invalidate_t *iptr, *i;
 
   if (pstate->config_path[0] != '/') {
     path_len = strlen(TSConfigDirGet()) + strlen(pstate->config_path) + 2;
@@ -390,24 +374,46 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
   } else {
     path = pstate->config_path;
   }
-  if (stat(path, &s) < 0) {
-    TSDebug(PLUGIN_NAME, "Could not stat %s", path);
+
+  int const fd = open(path, O_RDONLY);
+  if (fd < 0) {
+    TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
     return false;
   }
+
+  struct stat s;
+  if (fstat(fd, &s) < 0) {
+    TSDebug(PLUGIN_NAME, "Could not stat %s", path);
+    close(fd);
+    return false;
+  }
+
+  // Don't load if mod time is older than our copy
   if (pstate->last_load < s.st_mtime) {
-    now = time(nullptr);
-    if (!(fs = fopen(path, "r"))) {
+    time_t const now = time(nullptr);
+
+    FILE *const fs = fdopen(fd, "r");
+    if (NULL == fs) {
       TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
+      close(fd);
       return false;
     }
+
     TSDebug(PLUGIN_NAME, "Attempting to load rules from: '%s'", path);
-    config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, nullptr);
+    const char *errptr;
+    int erroffset;
+    int ovector[OVECTOR_SIZE];
+    pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, nullptr);
     TSReleaseAssert(nullptr != config_re);
+
+    char line[LINE_MAX];
+    int ln = 0;
+    invalidate_t *iptr, *i;
 
     while (fgets(line, LINE_MAX, fs) != nullptr) {
       TSDebug(PLUGIN_NAME, "Processing: %d %s", ln, line);
       ++ln;
-      rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
+      int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
 
       if (3 <= rc) {
         i = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
@@ -485,6 +491,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     TSDebug(PLUGIN_NAME, "File mod time is not newer: ftime: %jd <= last_load: %jd", (intmax_t)s.st_mtime,
             (intmax_t)pstate->last_load);
   }
+  close(fd);
   return false;
 }
 
