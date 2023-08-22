@@ -45,6 +45,7 @@
 #define do_txn_close()       void _do_txn_close(Cript::Context *context)
 #define do_init()            void _do_init(TSRemapInterface *api_info)
 #define do_create_instance() void _do_create_instance(Cript::InstanceContext *context)
+#define do_delete_instance() void _do_delete_instance(Cript::InstanceContext *context)
 
 #include <cripts/Headers.hpp>
 #include <cripts/Urls.hpp>

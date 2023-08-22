@@ -109,7 +109,7 @@ public:
     if (debugOn()) {
       auto str = fmt::format(fmt, args...);
 
-      TSDbg(dbg_ctl_cript, "%s", str.c_str());
+      Dbg(dbg_ctl_cript, "%s", str.c_str());
     }
   }
 
@@ -122,10 +122,10 @@ public:
   std::vector<Cript::Bundle::Base *> bundles;
 
 private:
-  size_t _size                  = 0;
-  bool _failed                  = false;
-  unsigned _callbacks           = 0;
-  const TSDbgCtl *dbg_ctl_cript = nullptr;
+  size_t _size        = 0;
+  bool _failed        = false;
+  unsigned _callbacks = 0;
+  DbgCtl dbg_ctl_cript;
 }; // End class Instance
 
 // A little wrapper / hack to make the do_create_instance take what looks like a context.

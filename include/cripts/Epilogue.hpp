@@ -196,7 +196,7 @@ wrap_plugin_init(T *context, bool execute, CaseTag<0>) -> bool
   return false;
 }
 
-// do_create_instance caller (not a hook, but called when a Cript is used in a
+// create/delete instance caller (not a hook, but called when a Cript is used in a
 // remap rule). Note that the "context" here is a different context, it's the
 // instance data.
 template <typename T>
@@ -212,6 +212,23 @@ wrap_create_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_creat
 template <typename T>
 auto
 wrap_create_instance(T *context, bool execute, CaseTag<0>) -> bool
+{
+  return false;
+}
+
+template <typename T>
+auto
+wrap_delete_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_delete_instance(context), bool())
+{
+  if (execute) {
+    _do_delete_instance(context);
+  }
+  return true;
+}
+
+template <typename T>
+auto
+wrap_delete_instance(T *context, bool execute, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -427,8 +444,13 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   auto inst = static_cast<Cript::Instance *>(ih);
+  Cript::InstanceContext context(*inst);
+  bool needs_delete_instance = wrap_delete_instance(&context, false, CaseArg);
 
-  // ToDo: Should we add a do_delete_instance() callback as well ?
+  if (needs_delete_instance) {
+    wrap_delete_instance(&context, true, CaseArg);
+  }
+
   delete inst;
 }
 

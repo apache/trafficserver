@@ -46,7 +46,7 @@ Cript::Instance::initialize(int argc, char *argv[], const char *filename)
     plugin_debug_tag = plugin_debug_tag.substr(slash + 1, period - slash - 1);
   }
 
-  dbg_ctl_cript = TSDbgCtlCreate(plugin_debug_tag.c_str());
+  dbg_ctl_cript.set(plugin_debug_tag.c_str());
   TSDebug("Cript", "Switching instance debug tag to %s", plugin_debug_tag.c_str());
 }
 
