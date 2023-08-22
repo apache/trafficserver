@@ -102,15 +102,15 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("SNI=foo.com", "foo.com should not fail in any way")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("Server verify callback SNI APIs match=true", "verify SNI names match")

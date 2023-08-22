@@ -153,13 +153,13 @@ tr6.StillRunningAfter = ts
 
 # No name checking for the sig-only permissive override for bad_bar
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
+    r"WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
 ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-    "WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
+    r"WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
 # No checking for the self-signed on random.com.  No messages
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
+    r"WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
+    r"WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")
+    r"WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")
