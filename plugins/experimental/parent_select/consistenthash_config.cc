@@ -214,7 +214,6 @@ loadConfigFile(std::string const &pathnamein, std::stringstream &doc, std::unord
         while (std::getline(ifs, line)) {
           doc << line << "\n";
         }
-        ifs.close();
       } else {
         throw std::invalid_argument("Unable to open and read: '" + fpath.string() + "'");
       }
@@ -247,7 +246,6 @@ loadConfigFile(std::string const &pathnamein, std::stringstream &doc, std::unord
           doc << line << "\n";
         }
       }
-      ifs.close();
     } else {
       throw std::invalid_argument("Unable to open and read '" + pathnamein + "'");
     }
