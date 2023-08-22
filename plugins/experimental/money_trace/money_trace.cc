@@ -236,7 +236,7 @@ create_trace(TSHttpTxn const txnp)
         bwriter.write(spanid);
         bwriter.print("{}", TSHttpTxnIdGet(txnp));
 
-        header.assign(bwriter.view());
+        header = std::string{bwriter.view()};
       } else {
         LOG_ERROR("Error getting uuid string");
       }
