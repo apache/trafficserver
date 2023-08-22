@@ -55,6 +55,7 @@ option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
+option(ENABLE_DOCS "Build docs (default OFF)")
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     set(DEFAULT_POSIX_CAP ON)
@@ -296,6 +297,13 @@ check_symbol_exists(
 )
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 
+# document tools
+if(ENABLE_DOCS)
+  find_package(Python3 REQUIRED)
+  find_package(Java COMPONENTS Runtime REQUIRED)
+  find_program(PipEnv pipenv REQUIRED)
+endif()
+
 # Catch2 for tests
 set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
 
@@ -390,6 +398,10 @@ add_subdirectory(plugins)
 add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
     add_subdirectory(example)
+endif()
+
+if(ENABLE_DOCS)
+    add_subdirectory(doc)
 endif()
 
 add_custom_target(clang-format-install
