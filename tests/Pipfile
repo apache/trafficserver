@@ -36,6 +36,8 @@ requests = "*"
 gunicorn = "*"
 psutil = "*"
 
+charset-normalizer = "*"
+
 # Keep init.cli.ext updated with this required microserver version.
 microserver = ">=1.0.6"
 
