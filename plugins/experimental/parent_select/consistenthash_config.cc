@@ -224,10 +224,12 @@ loadConfigFile(std::string const &pathnamein, std::stringstream &doc, std::unord
       std::string line;
       while (std::getline(ifs, line)) {
         // include directive ??
-        if (0 == line.rfind("#include", 0)) { // starts_with
+        constexpr std::string_view include{"#include"};
+        if (0 == line.rfind(include, 0)) { // starts_with
 
           // forward view to post include token sans trailing white space
-          std::string_view sv(line.substr(line.find_first_of(sep)));
+          std::string_view sv{line};
+          sv = sv.substr(include.length());
           sv = sv.substr(sv.find_first_not_of(sep));
           std::string const pathinc(sv.substr(0, sv.find_first_of(sep)));
 
