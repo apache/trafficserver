@@ -110,6 +110,7 @@ constexpr std::string_view p_upstream_dns_san_local_certificate   = {"upstream\0
 constexpr std::string_view p_upstream_dns_san_peer_certificate    = {"upstream\0dns_san_peer_certificate", 34};
 constexpr std::string_view p_upstream_uri_san_local_certificate   = {"upstream\0uri_san_local_certificate", 35};
 constexpr std::string_view p_upstream_uri_san_peer_certificate    = {"upstream\0uri_san_peer_certificate", 34};
+constexpr std::string_view p_txn_is_internal                      = {"txn\0is_internal", 15};
 
 // constants for property values
 constexpr std::string_view pv_http2  = {"HTTP/2", 6};

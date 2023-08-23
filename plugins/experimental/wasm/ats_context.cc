@@ -1325,6 +1325,10 @@ Context::getProperty(std::string_view path, std::string *result)
     int64_t total   = h_bytes + b_bytes;
     result->assign(reinterpret_cast<const char *>(&total), sizeof(int64_t));
     return WasmResult::Ok;
+  } else if (path.substr(0, p_txn_is_internal.size()) == p_txn_is_internal) {
+    int internal = TSHttpTxnIsInternal(txnp_);
+    result->assign(reinterpret_cast<const char *>(&internal), sizeof(int));
+    return WasmResult::Ok;
   } else {
     *result = pv_empty;
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for unknown property: empty string", __FUNCTION__);
