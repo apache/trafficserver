@@ -2193,6 +2193,11 @@ CacheVC::handleReadDone(int event, Event *e)
       }
       goto Ldone;
     }
+    if (DISK_BAD(vol->disk)) {
+      io.aio_result = -1;
+      Warning("Canceling cache read: disk is bad.");
+      goto Ldone;
+    }
 
     doc = reinterpret_cast<Doc *>(buf->data());
     ink_assert(vol->mutex->nthread_holding < 1000);
