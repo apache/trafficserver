@@ -99,7 +99,9 @@ Config::setLastConfigChange()
   time_t oldLastmtime = m_lastmtime;
 
   memset(&s, 0, sizeof(s));
-  stat(m_filename.c_str(), &s);
+  if (stat(m_filename.c_str(), &s) != 0) {
+    return false;
+  }
 
   m_lastmtime = s.st_mtime;
 
