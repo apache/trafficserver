@@ -33,7 +33,9 @@ libinkaio_a_SOURCES = \
 	AIO.cc \
 	I_AIO.h \
 	Inline.cc \
-	P_AIO.h
+	P_AIO.h \
+	AIO_fault_injection.h \
+	AIO_fault_injection.cc
 
 test_AIO_LDFLAGS = \
 	@AM_LDFLAGS@ \

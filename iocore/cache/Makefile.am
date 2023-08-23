@@ -132,27 +132,156 @@ check_PROGRAMS = \
   test_Alternate_S_to_L_remove_L \
   test_Update_L_to_S \
   test_Update_S_to_L \
-  test_Update_header
+  test_Update_header \
+  test_Populated_Cache
 
 if ENABLE_DISK_FAILURE_TESTS
 check_PROGRAMS += \
-	test_Disk_Failure \
-	test_Disk_Failure_2 \
-	test_Populated_Cache_Disk_Failure
+  test_Disk_Init_Failure_0 \
+  test_Disk_Init_Failure_1 \
+  test_Disk_Failure_5 \
+	test_Disk_Failure_6 \
+  test_Disk_Failure_7 \
+  test_Disk_Failure_8 \
+  test_Disk_Failure_9 \
+  test_Disk_Failure_10 \
+  test_Disk_Failure_11 \
+  test_Disk_Failure_12 \
+  test_Disk_Failure_13 \
+  test_Disk_Failure_14 \
+  test_Disk_Failure_15 \
+  test_Disk_Failure_16 \
+  test_Disk_Failure_17 \
+  test_Disk_Failure_18 \
+  test_Disk_Failure_19 \
+  test_Disk_Failure_20 \
+  test_Populated_Cache_Disk_Failure
 
-test_Disk_Failure_CPPFLAGS = $(test_CPPFLAGS)
-test_Disk_Failure_LDFLAGS = @AM_LDFLAGS@
-test_Disk_Failure_LDADD = $(test_LDADD)
-test_Disk_Failure_SOURCES = \
+test_Disk_Init_Failure_0_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={0}
+test_Disk_Init_Failure_0_LDFLAGS = AM_LDFLAGS@
+test_Disk_Init_Failure_0_LDADD = $(test_LDADD)
+test_Disk_Init_Failure_0_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Init_Failure.cc
+
+test_Disk_Init_Failure_1_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={1}
+test_Disk_Init_Failure_1_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Init_Failure_1_LDADD = $(test_LDADD)
+test_Disk_Init_Failure_1_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Init_Failure.cc
+
+test_Disk_Failure_5_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={5}
+test_Disk_Failure_5_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_5_LDADD = $(test_LDADD)
+test_Disk_Failure_5_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_Disk_Failure.cc
 
-test_Disk_Failure_2_CPPFLAGS = $(test_CPPFLAGS)
-test_Disk_Failure_2_LDFLAGS = @AM_LDFLAGS@
-test_Disk_Failure_2_LDADD = $(test_LDADD)
-test_Disk_Failure_2_SOURCES = \
+test_Disk_Failure_6_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={6}
+test_Disk_Failure_6_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_6_LDADD = $(test_LDADD)
+test_Disk_Failure_6_SOURCES = \
   $(test_main_SOURCES) \
-  ./test/test_Disk_Failure_2.cc
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_7_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={7}
+test_Disk_Failure_7_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_7_LDADD = $(test_LDADD)
+test_Disk_Failure_7_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_8_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={8}
+test_Disk_Failure_8_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_8_LDADD = $(test_LDADD)
+test_Disk_Failure_8_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_9_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={9}
+test_Disk_Failure_9_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_9_LDADD = $(test_LDADD)
+test_Disk_Failure_9_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_10_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={10}
+test_Disk_Failure_10_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_10_LDADD = $(test_LDADD)
+test_Disk_Failure_10_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_11_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={11}
+test_Disk_Failure_11_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_11_LDADD = $(test_LDADD)
+test_Disk_Failure_11_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_12_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={12}
+test_Disk_Failure_12_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_12_LDADD = $(test_LDADD)
+test_Disk_Failure_12_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_13_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={13}
+test_Disk_Failure_13_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_13_LDADD = $(test_LDADD)
+test_Disk_Failure_13_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_14_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={14}
+test_Disk_Failure_14_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_14_LDADD = $(test_LDADD)
+test_Disk_Failure_14_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_15_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={15}
+test_Disk_Failure_15_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_15_LDADD = $(test_LDADD)
+test_Disk_Failure_15_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_16_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={16}
+test_Disk_Failure_16_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_16_LDADD = $(test_LDADD)
+test_Disk_Failure_16_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_17_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={17}
+test_Disk_Failure_17_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_17_LDADD = $(test_LDADD)
+test_Disk_Failure_17_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_18_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={18}
+test_Disk_Failure_18_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_18_LDADD = $(test_LDADD)
+test_Disk_Failure_18_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_19_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={19}
+test_Disk_Failure_19_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_19_LDADD = $(test_LDADD)
+test_Disk_Failure_19_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
+
+test_Disk_Failure_20_CPPFLAGS = $(test_CPPFLAGS) -DFAILURE_INDICES={20}
+test_Disk_Failure_20_LDFLAGS = @AM_LDFLAGS@
+test_Disk_Failure_20_LDADD = $(test_LDADD)
+test_Disk_Failure_20_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Disk_Failure.cc
 
 test_Populated_Cache_Disk_Failure_CPPFLAGS = $(test_CPPFLAGS)
 test_Populated_Cache_Disk_Failure_LDFLAGS = @AM_LDFLAGS@
@@ -243,6 +372,13 @@ test_Update_header_LDADD = $(test_LDADD)
 test_Update_header_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_Update_header.cc
+
+test_Populated_Cache_CPPFLAGS = $(test_CPPFLAGS)
+test_Populated_Cache_LDFLAGS = @AM_LDFLAGS@
+test_Populated_Cache_LDADD = $(test_LDADD)
+test_Populated_Cache_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Populated_Cache.cc
 
 include $(top_srcdir)/mk/tidy.mk
 

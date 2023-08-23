@@ -26,7 +26,7 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
-int cache_vols            = 1;
+int cache_vols            = 2;
 bool reuse_existing_cache = true;
 
 class CacheCommInit : public CacheInit

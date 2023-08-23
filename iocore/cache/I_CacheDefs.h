@@ -24,6 +24,7 @@
 #pragma once
 
 #include "I_Event.h"
+#include "I_VConnection.h"
 #include "tscore/I_Version.h"
 #include "tscore/CryptoHash.h"
 
