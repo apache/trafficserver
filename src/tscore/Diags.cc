@@ -45,10 +45,10 @@
 #include "tscore/ink_thread.h"
 #include "tscore/Regression.h"
 #include "tscore/Diags.h"
+#include "ts/ts.h"
 
-int tsapi::c::diags_on_for_plugins      = 0;
-bool tsapi::c::TSDbgCtlDetail::debug_on = false;
-int DiagsConfigState::_enabled[2]       = {0, 0};
+int tsapi::c::diags_on_for_plugins = 0;
+int DiagsConfigState::_enabled[2]  = {0, 0};
 
 using namespace swoc::literals;
 
@@ -61,8 +61,8 @@ DiagsConfigState::enabled(DiagsTagType dtt, int new_value)
   _enabled[dtt] = new_value;
 
   if (DiagsTagType_Debug == dtt) {
-    diags_on_for_plugins     = 1 == new_value;
-    TSDbgCtlDetail::debug_on = (1 & new_value) != 0;
+    DbgCtl::_config_mode.store(new_value, std::memory_order_relaxed);
+    diags_on_for_plugins = (1 & new_value) != 0;
   }
 }
 

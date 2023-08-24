@@ -33,6 +33,7 @@
 
 #include <ts/apidefs.h>
 #include <ts/parentselectdefs.h>
+#include <ts/DbgCtl.h>
 
 class DiagsConfigState;
 
@@ -2205,54 +2206,6 @@ namespace c
 #define TSDEBUG             \
   if (diags_on_for_plugins) \
   TSDebug
-
-  class TSDbgCtlDetail
-  {
-    friend bool TSIsDbgCtlSet(TSDbgCtl const *ctlp);
-
-    static bool debug_on;
-
-    friend class ::DiagsConfigState;
-  };
-
-  inline bool
-  TSIsDbgCtlSet(TSDbgCtl const *ctlp)
-  {
-    return (TSDbgCtlDetail::debug_on && ctlp->on);
-  }
-
-/**
-    Output a debug line if the debug output control is turned on.
-
-    @param ctlp pointer to TSDbgCtl, returned by TSDbgCtlCreate().
-    @param ...  Format string and (optional) arguments.
- */
-#define TSDbg(ctlp, ...)              \
-  do {                                \
-    if (TSIsDbgCtlSet(ctlp)) {        \
-      _TSDbg(ctlp->tag, __VA_ARGS__); \
-    }                                 \
-  } while (0)
-
-  /**
-      Return a pointer for use with TSDbg().  For good performance,
-      this should be called in TSPluginInit() or TSRemapInit(), or in
-      static initialization in C++ (with the result stored in a
-      static pointer).
-
-      @param tag Debug tag for the control.
-   */
-  TSDbgCtl const *TSDbgCtlCreate(char const *tag);
-
-  /**
-      Destroy (dereference) a debug control object previously created
-      with TSDbgCtlCreate().
-
-      @param dbg_ctl pointer to debug control object.
-   */
-  void TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
-
-  void _TSDbg(const char *tag, const char *format_str, ...) TS_PRINTFLIKE(2, 3); /* Not for direct use. */
 
   /* --------------------------------------------------------------------------
      logging api */

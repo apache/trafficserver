@@ -1412,7 +1412,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
     h->release_query_id(i);
   }
 
-  if (is_dbg_ctl_enabled(dbg_ctl_dns)) {
+  if (dbg_ctl_dns.on()) {
     if (is_addr_query(e->qtype)) {
       ip_text_buffer buff;
       const char *ptr    = "<none>";
@@ -1753,7 +1753,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         ink_strlcpy(reinterpret_cast<char *>(bp), reinterpret_cast<char *>(tbuf), buflen);
         bp     += n;
         buflen -= n;
-        if (is_dbg_ctl_enabled(dbg_ctl_dns)) {
+        if (dbg_ctl_dns.on()) {
           switch (type) {
           case T_CNAME:
             DbgPrint(dbg_ctl_dns, "received cname = %s", tbuf);

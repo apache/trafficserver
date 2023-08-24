@@ -216,7 +216,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 
   if (diags()->on()) {
     static DbgCtl dbg_ctl("ssl_session_cache.insert");
-    if (dbg_ctl.ptr()->on) {
+    if (dbg_ctl.tag_on()) {
       char printable_buf[(len * 2) + 1];
 
       sid.toString(printable_buf, sizeof(printable_buf));
@@ -259,7 +259,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 
   if (diags()->on()) {
     static DbgCtl dbg_ctl("ssl_session_cache.remove");
-    if (dbg_ctl.ptr()->on) {
+    if (dbg_ctl.tag_on()) {
       char printable_buf[(len * 2) + 1];
       sid.toString(printable_buf, sizeof(printable_buf));
       DbgPrint(dbg_ctl, "ssl_rm_cached_session cached session '%s'", printable_buf);

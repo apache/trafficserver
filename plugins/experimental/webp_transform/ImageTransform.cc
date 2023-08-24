@@ -49,7 +49,7 @@ namespace
 {
 GlobalPlugin *plugin;
 
-auto webp_dbg_ctl = TSDbgCtlCreate(TAG);
+DbgCtl webp_dbg_ctl{TAG};
 
 enum class ImageEncoding { webp, jpeg, png, unknown };
 
@@ -114,11 +114,11 @@ public:
       Blob output_blob;
       if (_transform_image_type == ImageEncoding::webp) {
         stat_convert_to_webp.increment(1);
-        TSDbg(webp_dbg_ctl, "Transforming jpeg or png to webp");
+        Dbg(webp_dbg_ctl, "Transforming jpeg or png to webp");
         image.magick("WEBP");
       } else {
         stat_convert_to_jpeg.increment(1);
-        TSDbg(webp_dbg_ctl, "Transforming webp to jpeg");
+        Dbg(webp_dbg_ctl, "Transforming webp to jpeg");
         image.magick("JPEG");
       }
       image.write(&output_blob);
@@ -181,23 +181,23 @@ public:
       }
     }
 
-    TSDbg(webp_dbg_ctl, "Content-Type: %s transaction_convert_to_webp: %d transaction_convert_to_jpeg: %d", ctype.c_str(),
-          transaction_convert_to_webp, transaction_convert_to_jpeg);
+    Dbg(webp_dbg_ctl, "Content-Type: %s transaction_convert_to_webp: %d transaction_convert_to_jpeg: %d", ctype.c_str(),
+        transaction_convert_to_webp, transaction_convert_to_jpeg);
 
     // If we might need to convert check to see if what the browser supports
     if (transaction_convert_to_webp == true || transaction_convert_to_jpeg == true) {
       std::string accept  = transaction.getServerRequest().getHeaders().values("Accept");
       bool webp_supported = accept.find("image/webp") != std::string::npos;
-      TSDbg(webp_dbg_ctl, "Accept: %s webp_suppported: %d", accept.c_str(), webp_supported);
+      Dbg(webp_dbg_ctl, "Accept: %s webp_suppported: %d", accept.c_str(), webp_supported);
 
       if (webp_supported == true && transaction_convert_to_webp == true) {
-        TSDbg(webp_dbg_ctl, "Content type is either jpeg or png. Converting to webp");
+        Dbg(webp_dbg_ctl, "Content type is either jpeg or png. Converting to webp");
         transaction.addPlugin(new ImageTransform(transaction, input_image_type, ImageEncoding::webp));
       } else if (webp_supported == false && transaction_convert_to_jpeg == true) {
-        TSDbg(webp_dbg_ctl, "Content type is webp. Converting to jpeg");
+        Dbg(webp_dbg_ctl, "Content type is webp. Converting to jpeg");
         transaction.addPlugin(new ImageTransform(transaction, input_image_type, ImageEncoding::jpeg));
       } else {
-        TSDbg(webp_dbg_ctl, "Nothing to convert");
+        Dbg(webp_dbg_ctl, "Nothing to convert");
       }
     }
 
@@ -215,18 +215,18 @@ TSPluginInit(int argc, const char *argv[])
   if (argc >= 2) {
     std::string option(argv[1]);
     if (option.find("convert_to_webp") != std::string::npos) {
-      TSDbg(webp_dbg_ctl, "Configured to convert to webp");
+      Dbg(webp_dbg_ctl, "Configured to convert to webp");
       config_convert_to_webp = true;
     }
     if (option.find("convert_to_jpeg") != std::string::npos) {
-      TSDbg(webp_dbg_ctl, "Configured to convert to jpeg");
+      Dbg(webp_dbg_ctl, "Configured to convert to jpeg");
       config_convert_to_jpeg = true;
     }
     if (config_convert_to_webp == false && config_convert_to_jpeg == false) {
       TSError("Unknown option: %s", option.c_str());
     }
   } else {
-    TSDbg(webp_dbg_ctl, "Default configuration is to convert both webp and jpeg");
+    Dbg(webp_dbg_ctl, "Default configuration is to convert both webp and jpeg");
     config_convert_to_webp = true;
     config_convert_to_jpeg = true;
   }
