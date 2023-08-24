@@ -251,6 +251,7 @@ RedisPublisher::runWorker()
         m_messageQueueMutex.unlock();
         std::unique_lock<std::mutex> lock(q_mutex);
         q_checker.wait(lock, [] { return q_ready; });
+        // coverity[race condition q_mutex not held:FALSE]
         q_ready = false;
         continue;
       }
