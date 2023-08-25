@@ -16,7 +16,7 @@
 #######################
 
 add_executable(traffic_via traffic_via.cc)
-target_link_libraries(traffic_via ts::tscore)
+target_link_libraries(traffic_via ts::tscore libswoc)
 install(TARGETS traffic_via)
 
 # Odd test to maintain compatibility with autotools.  This could be better.
