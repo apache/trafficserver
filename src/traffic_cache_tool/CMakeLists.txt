@@ -15,7 +15,10 @@
 #
 #######################
 
-add_executable(traffic_wccp wccp_client.cc)
-install(TARGETS traffic_wccp)
+add_executable(traffic_cache_tool
+    CacheDefs.cc
+    CacheTool.cc
+    CacheScan.cc)
 
-target_link_libraries(traffic_wccp PRIVATE tscore wccp)
+target_link_libraries(traffic_cache_tool PRIVATE ts::tscore libswoc)
+install(TARGETS traffic_cache_tool)

@@ -228,6 +228,13 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
+# ncurses is used in traffic_top
+find_package(Curses)
+set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})
+set(HAVE_NCURSES_H ${CURSES_HAVE_NCURSES_H})
+set(HAVE_NCURSES_CURSES_H ${CURSES_HAVE_NCURSES_CURSES_H})
+set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
+
 include(Check128BitCas)
 include(ConfigureTransparentProxy)
 
@@ -388,6 +395,13 @@ add_subdirectory(src/traffic_crashlog)
 add_subdirectory(src/traffic_server)
 add_subdirectory(src/traffic_ctl)
 add_subdirectory(src/traffic_layout)
+add_subdirectory(src/traffic_cache_tool)
+add_subdirectory(src/traffic_logcat)
+add_subdirectory(src/traffic_logstats)
+if(CURSES_FOUND)
+add_subdirectory(src/traffic_top)
+endif()
+add_subdirectory(src/traffic_via)
 if(ENABLE_WCCP)
     add_subdirectory(src/wccp)
     add_subdirectory(src/traffic_wccp)

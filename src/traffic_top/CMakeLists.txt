@@ -15,7 +15,7 @@
 #
 #######################
 
-add_executable(traffic_wccp wccp_client.cc)
-install(TARGETS traffic_wccp)
-
-target_link_libraries(traffic_wccp PRIVATE tscore wccp)
+add_executable(traffic_top traffic_top.cc ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc)
+target_include_directories(traffic_top PRIVATE ${CURSES_INCLUDE_DIRS})
+target_link_libraries(traffic_top PRIVATE ts::tscore ts::inkevent libswoc ${CURSES_LIBRARIES})
+install(TARGETS traffic_top)

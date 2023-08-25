@@ -15,7 +15,6 @@
 #
 #######################
 
-add_executable(traffic_wccp wccp_client.cc)
-install(TARGETS traffic_wccp)
-
-target_link_libraries(traffic_wccp PRIVATE tscore wccp)
+add_executable(traffic_logcat logcat.cc)
+target_link_libraries(traffic_logcat PRIVATE ts::tscore ts::proxy ts::logging ts::hdrs ts::tsapi ts::diagsconfig libswoc)
+install(TARGETS traffic_logcat)
