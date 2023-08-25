@@ -53,7 +53,10 @@ void
 ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx)
 {
   if (http_ctx->server_response_hdrp) {
-    TSHttpTxnServerRespGet(http_ctx->txnp, &http_ctx->server_response_bufp, &http_ctx->server_response_hdrp);
+    if (TSHttpTxnServerRespGet(http_ctx->txnp, &http_ctx->server_response_bufp, &http_ctx->server_response_hdrp) != TS_SUCCESS) {
+      TSError("[ts_lua][%s] failed to get server response", __FUNCTION__);
+      return;
+    }
   }
 }
 
