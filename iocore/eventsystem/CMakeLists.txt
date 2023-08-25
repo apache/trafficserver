@@ -49,7 +49,3 @@ target_link_libraries(inkevent
         tscpputil # transitive
         yaml-cpp::yaml-cpp # transitive
 )
-
-if(TS_USE_HWLOC)
-        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
-endif()
