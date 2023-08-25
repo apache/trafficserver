@@ -342,12 +342,12 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   int ret;
-  char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
-  char const *inline_script            = "";
-  int fn                               = 0;
-  int states                           = ts_lua_max_state_count;
-  int ljgc                             = 0;
-  static const struct option longopt[] = {
+  char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH] = "";
+  char const *inline_script                   = "";
+  int fn                                      = 0;
+  int states                                  = ts_lua_max_state_count;
+  int ljgc                                    = 0;
+  static const struct option longopt[]        = {
     {"states", required_argument, 0, 's'},
     {"inline", required_argument, 0, 'i'},
     {"ljgc",   required_argument, 0, 'g'},
