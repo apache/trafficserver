@@ -116,6 +116,7 @@ fi
 wget https://go.dev/dl/go1.21.0.${OS}-${ARCH}.tar.gz
 sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.0.${OS}-${ARCH}.tar.gz
 rm go1.21.0.${OS}-${ARCH}.tar.gz
+sudo chmod -R a+rX ${BASE}
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
@@ -134,6 +135,7 @@ cmake \
   -DBUILD_SHARED_LIBS=1
 cmake --build build -j ${num_threads}
 sudo cmake --install build
+sudo chmod -R a+rX ${BASE}
 
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
@@ -153,6 +155,7 @@ sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
 [ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
 sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
 sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 echo "Building OpenSSL with QUIC support"
@@ -161,10 +164,12 @@ cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install_sw
+sudo chmod -R a+rX ${BASE}
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
 sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # OpenSSL will install in /lib or lib64 depending upon the architecture.
@@ -192,6 +197,7 @@ autoreconf -if
   --enable-lib-only
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Now ngtcp2
@@ -208,6 +214,7 @@ autoreconf -if
   --enable-lib-only
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Then nghttp2, with support for H3
@@ -234,6 +241,7 @@ fi
   ${ENABLE_APP}
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Then curl
@@ -254,4 +262,5 @@ autoreconf -fi || autoreconf -fi
   LDFLAGS="${LDFLAGS}"
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
