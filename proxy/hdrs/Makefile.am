@@ -69,7 +69,6 @@ load_http_hdr_LDADD =
 check_PROGRAMS = \
 	test_proxy_hdrs \
 	test_hdr_heap \
-	test_Huffmancode \
 	test_XPACK
 
 TESTS = $(check_PROGRAMS)
@@ -83,6 +82,7 @@ test_proxy_hdrs_SOURCES = \
 	unit_tests/test_HdrUtils.cc \
 	unit_tests/test_URL.cc \
 	unit_tests/test_mime.cc \
+	unit_tests/test_Huffmancode.cc \
 	unit_tests/test_HeaderValidator.cc
 
 test_proxy_hdrs_LDFLAGS = @AM_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @OPENSSL_LDFLAGS@
@@ -111,15 +111,6 @@ test_hdr_heap_LDADD = \
 	$(top_builddir)/src/api/libtsapi.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
-
-test_Huffmancode_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
-
-test_Huffmancode_SOURCES = \
-	test_Huffmancode.cc \
-	HuffmanCodec.cc \
-	HuffmanCodec.h
 
 test_XPACK_CPPFLAGS = \
 	$(AM_CPPFLAGS) \

@@ -22,6 +22,7 @@
  */
 
 #include "HTTP.h"
+#include "HuffmanCodec.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
@@ -35,10 +36,12 @@ main(int argc, char *argv[])
   cmd_disable_pfreelist = true;
   // Get all of the HTTP WKS items populated.
   http_init();
+  hpack_huffman_init();
 
   int result = Catch::Session().run(argc, argv);
 
   // global clean-up...
+  hpack_huffman_fin();
 
   return result;
 }
