@@ -299,8 +299,8 @@ ts_lua_hmac_md5(lua_State *L)
   unsigned char *key_bin;
   unsigned int key_bin_len;
 
-  u_char sha_buf[TS_LUA_MD5_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(sha_buf)];
+  u_char sha_buf[TS_LUA_MD5_DIGEST_LENGTH] = {0};
+  u_char hex_buf[2 * sizeof(sha_buf)]      = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
@@ -354,8 +354,8 @@ ts_lua_hmac_sha1(lua_State *L)
   unsigned char *key_bin;
   unsigned int key_bin_len;
 
-  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(sha_buf)];
+  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH] = {0};
+  u_char hex_buf[2 * sizeof(sha_buf)]       = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
@@ -409,8 +409,8 @@ ts_lua_hmac_sha256(lua_State *L)
   unsigned char *key_bin;
   unsigned int key_bin_len;
 
-  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(sha_buf)];
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH] = {0};
+  u_char hex_buf[2 * sizeof(sha_buf)]         = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
