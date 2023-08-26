@@ -45,4 +45,6 @@ target_link_libraries(records
         ts::inkevent
         ts::tscore
         yaml-cpp::yaml-cpp
+    PRIVATE
+        ts::tsapi
 )

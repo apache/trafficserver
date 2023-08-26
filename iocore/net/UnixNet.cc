@@ -35,7 +35,6 @@ ink_hrtime last_shedding_warning;
 int net_connections_throttle;
 bool net_memory_throttle = false;
 int fds_throttle;
-int fds_limit = 8000;
 ink_hrtime last_transient_accept_error;
 
 NetHandler::Config NetHandler::global_config;
