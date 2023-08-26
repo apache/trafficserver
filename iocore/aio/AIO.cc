@@ -444,12 +444,9 @@ cache_op(AIOCallbackInternal *op)
     ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
-      static int debug_op_index = 0;
       do {
         if (read) {
 #ifdef AIO_FAULT_INJECTION
-          Debug("cache.op", "op %d: pread(%d, %p, %zu, %zu)", debug_op_index, a->aio_fildes,
-                (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
           err = aioFaultInjection.pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
                                         a->aio_offset + res);
 #else
@@ -459,8 +456,6 @@ cache_op(AIOCallbackInternal *op)
 #ifdef AIO_FAULT_INJECTION
           err = aioFaultInjection.pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
                                          a->aio_offset + res);
-          Debug("cache.op", "op %d: pwrite(%d, %p, %zu, %zu)", debug_op_index, a->aio_fildes,
-                (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
 #else
           err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
 #endif
@@ -471,7 +466,6 @@ cache_op(AIOCallbackInternal *op)
         op->aio_result = -errno;
         return (err);
       }
-      debug_op_index++;
       res += err;
     }
     op->aio_result = res;
