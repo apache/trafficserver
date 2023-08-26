@@ -78,7 +78,7 @@ AIOFaultInjection::open(const char *pathname, int flags, mode_t mode)
 }
 
 ssize_t
-AIOFaultInjection::pread(int fd, void *buf, size_t nbytes, __off_t offset)
+AIOFaultInjection::pread(int fd, void *buf, size_t nbytes, off_t offset)
 {
   std::lock_guard<std::mutex> lock{_mutex};
   IOFault result = _op_result(fd);
@@ -100,7 +100,7 @@ AIOFaultInjection::pread(int fd, void *buf, size_t nbytes, __off_t offset)
 }
 
 ssize_t
-AIOFaultInjection::pwrite(int fd, const void *buf, size_t n, __off_t offset)
+AIOFaultInjection::pwrite(int fd, const void *buf, size_t n, off_t offset)
 {
   std::lock_guard<std::mutex> lock{_mutex};
   IOFault result = _op_result(fd);

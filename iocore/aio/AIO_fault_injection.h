@@ -65,8 +65,8 @@ public:
   void inject_fault(const char *path_regex, int op_index, IOFault fault);
 
   int open(const char *pathname, int flags, mode_t mode);
-  ssize_t pread(int fd, void *buf, size_t nbytes, __off_t offset);
-  ssize_t pwrite(int fd, const void *buf, size_t n, __off_t offset);
+  ssize_t pread(int fd, void *buf, size_t nbytes, off_t offset);
+  ssize_t pwrite(int fd, const void *buf, size_t n, off_t offset);
 };
 
 extern AIOFaultInjection aioFaultInjection;
