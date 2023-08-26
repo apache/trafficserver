@@ -1736,7 +1736,7 @@ int
 UDPNetHandler::mainNetEvent(int event, Event *e)
 {
   ink_assert(trigger_event == e && event == EVENT_POLL);
-  return this->waitForActivity(net_config_poll_timeout);
+  return this->waitForActivity(EThread::default_wait_interval_ms);
 }
 
 int

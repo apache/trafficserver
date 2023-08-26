@@ -2023,14 +2023,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This has some special semantics, in that providing this configuration on
   // command line has higher priority than what is set in records.yaml.
   if (-1 != poll_timeout) {
-    net_config_poll_timeout = poll_timeout;
+    EThread::default_wait_interval_ms = poll_timeout;
   } else {
-    REC_ReadConfigInteger(net_config_poll_timeout, "proxy.config.net.poll_timeout");
+    REC_ReadConfigInteger(EThread::default_wait_interval_ms, "proxy.config.net.poll_timeout");
   }
 
   // This shouldn't happen, but lets make sure we run somewhat reasonable.
-  if (net_config_poll_timeout < 0) {
-    net_config_poll_timeout = 10; // Default value for all platform.
+  if (EThread::default_wait_interval_ms < 0) {
+    EThread::default_wait_interval_ms = 10; // Default value for all platform.
   }
 
   REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");

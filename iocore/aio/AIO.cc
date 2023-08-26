@@ -541,7 +541,7 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
       }
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (true);
-    timespec timedwait_msec = ink_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
+    timespec timedwait_msec = ink_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(EThread::default_wait_interval_ms));
     ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }
   return nullptr;

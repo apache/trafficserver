@@ -93,7 +93,6 @@ main(int argc, const char **argv)
 
   Thread *main_thread = new EThread;
   main_thread->set_specific();
-  net_config_poll_timeout = 10;
   ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
 
   SSLInitializeLibrary();

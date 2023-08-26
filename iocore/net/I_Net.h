@@ -55,7 +55,6 @@ static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::Mo
 static constexpr int NO_FD = -1;
 
 // All in milli-seconds
-extern int net_config_poll_timeout;
 extern int net_event_period;
 extern int net_accept_period;
 extern int net_retry_delay;

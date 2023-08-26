@@ -74,7 +74,7 @@ PollCont::do_poll(ink_hrtime timeout)
     } else if (timeout >= 0) {
       poll_timeout = ink_hrtime_to_msec(timeout);
     } else {
-      poll_timeout = net_config_poll_timeout;
+      poll_timeout = EThread::default_wait_interval_ms;
     }
   }
 // wait for fd's to trigger, or don't wait if timeout is 0
