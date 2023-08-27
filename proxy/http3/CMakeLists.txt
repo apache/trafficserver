@@ -38,5 +38,5 @@ add_library(http3 STATIC
 add_library(ts::http3 ALIAS http3)
 
 target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(http3 PRIVATE ts::quic ts::proxy)
+target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
 
