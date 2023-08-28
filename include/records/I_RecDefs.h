@@ -157,6 +157,7 @@ struct RecRawStatBlock;
 // The implementation of this was moved out of the records library due to a circular dependency this produced.
 // look for the implementation of RecRawStatBlockOps in iocore/eventsystem
 struct RecRawStatBlockOps {
+  virtual ~RecRawStatBlockOps()                                                   = default;
   virtual int raw_stat_clear_sum(RecRawStatBlock *rsb, int id)                    = 0;
   virtual int raw_stat_clear_count(RecRawStatBlock *rsb, int id)                  = 0;
   virtual int raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total) = 0;
