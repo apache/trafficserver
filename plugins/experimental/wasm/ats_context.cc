@@ -566,7 +566,7 @@ Context::httpCall(std::string_view target, const Pairs &request_headers, std::st
     } else if (key == ":authority") {
       authority = value;
     } else if (key == ":protocol") {
-      protocol value;
+      protocol = value;
     }
   }
 
