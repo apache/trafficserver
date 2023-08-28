@@ -38,7 +38,7 @@ noinst_PROGRAMS = jtest/jtest
 endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
-jtest_jtest_LDADD = $(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/lib/swoc/libtsswoc.la -lssl -lcrypto
+jtest_jtest_LDADD = $(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ -lssl -lcrypto
 
 if BUILD_HTTP_LOAD
 
