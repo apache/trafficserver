@@ -5765,10 +5765,10 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
           SMDebug("http", "hostdb increment IP failcount %s to %d",
                   ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), info->active->fail_count.load());
         }
-      } else { // Clear the failure
-        info->active->fail_count   = 0;
-        info->active->last_failure = time_down;
       }
+    } else { // Clear the failure
+      info->active->fail_count   = 0;
+      info->active->last_failure = time_down;
     }
   }
 #ifdef DEBUG
