@@ -43,9 +43,6 @@
 
 #define LOG_FILENAME_SIZE 255
 
-// Globals the rest of the system depends on.
-int fds_limit;
-
 static char error_tags[1024]  = "";
 static char action_tags[1024] = "";
 
@@ -67,7 +64,7 @@ logging_crash_handler(int signo, siginfo_t *info, void *ptr)
 static void
 init_system(bool notify_syslog)
 {
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE);
+  ink_set_fds_limit(ink_max_out_rlimit(RLIMIT_NOFILE));
 
   signal_register_crash_handler(logging_crash_handler);
   if (notify_syslog) {

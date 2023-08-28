@@ -25,5 +25,7 @@
 
 #include <sys/resource.h>
 
+rlim_t ink_get_fds_limit();
+void ink_set_fds_limit(rlim_t);
 rlim_t ink_max_out_rlimit(int which);
 rlim_t ink_get_max_files();

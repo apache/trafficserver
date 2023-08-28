@@ -43,6 +43,7 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixPollDescriptor.h"
 #include <limits>
+#include "tscore/ink_sys_control.h"
 
 NetHandler *get_NetHandler(EThread *t);
 PollCont *get_PollCont(EThread *t);
@@ -57,7 +58,6 @@ extern ink_hrtime emergency_throttle_time;
 extern int net_connections_throttle;
 extern bool net_memory_throttle;
 extern int fds_throttle;
-extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 
 //
@@ -145,7 +145,7 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   (void)data_type;
   (void)value;
   (void)data;
-  int throttle = fds_limit - THROTTLE_FD_HEADROOM;
+  int throttle = ink_get_fds_limit() - THROTTLE_FD_HEADROOM;
   if (fds_throttle == 0) {
     net_connections_throttle = fds_throttle;
   } else if (fds_throttle < 0) {
