@@ -1334,7 +1334,7 @@ Context::getProperty(std::string_view path, std::string *result)
   } else if (path.substr(0, p_txn_is_internal.size()) == p_txn_is_internal) {
     int internal = TSHttpTxnIsInternal(txnp_);
     TSDebug(WASM_DEBUG_TAG, "[%s] internal: %d", __FUNCTION__, internal);
-    result->assign(reinterpret_cast<const char *>(&internal), sizeof(int));
+    result->assign(std::to_string(internal));
     return WasmResult::Ok;
   } else {
     *result = pv_empty;
