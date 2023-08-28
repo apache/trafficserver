@@ -547,7 +547,7 @@ Context::httpCall(std::string_view target, const Pairs &request_headers, std::st
   Context *root_context = this->root_context();
 
   TSCont contp;
-  std::string request, method, path, authority;
+  std::string request, method, path, authority, protocol;
 
   // setup local address for API call
   struct sockaddr_in addr;
@@ -565,11 +565,17 @@ Context::httpCall(std::string_view target, const Pairs &request_headers, std::st
       path = value;
     } else if (key == ":authority") {
       authority = value;
+    } else if (key == ":protocol") {
+      protocol value;
     }
   }
 
   /* request */
-  request = method + " https://" + authority + path + " HTTP/1.1\r\n";
+  if (protocol != "") {
+    request = method + " https://" + authority + path + " HTTP/1.1\r\n";
+  } else {
+    request = method + " " + protocol + "://" + authority + path + " HTTP/1.1\r\n";
+  }
   for (const auto &p : request_headers) {
     std::string key(p.first);
     std::string value(p.second);
