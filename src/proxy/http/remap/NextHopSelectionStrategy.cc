@@ -29,6 +29,8 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 
+DbgCtl NH_DBG_CTL{"next_hop"};
+
 // ring mode strings
 constexpr std::string_view alternate_rings = "alternate_ring";
 constexpr std::string_view exhaust_rings   = "exhaust_ring";
@@ -44,8 +46,8 @@ constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_R
 NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy, ts::Yaml::Map &n)
   : strategy_name(name), policy_type(policy)
 {
-  NH_Debug(NH_DEBUG_TAG, "NextHopSelectionStrategy calling constructor");
-  NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s", policy_strings[policy]);
+  NH_Dbg(NH_DBG_CTL, "NextHopSelectionStrategy calling constructor");
+  NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[policy]);
 
   std::string self_host;
   bool self_host_used = false;
@@ -105,7 +107,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
           YAML::Node self_node = failover_node["self"];
           if (self_node) {
             self_host = self_node.Scalar();
-            NH_Debug(NH_DEBUG_TAG, "%s is self", self_host.c_str());
+            NH_Dbg(NH_DBG_CTL, "%s is self", self_host.c_str());
           }
         } else {
           ring_mode = NH_ALTERNATE_RING;
@@ -269,7 +271,7 @@ NextHopSelectionStrategy::setHostHeader(TSHttpTxn txnp, const char *hostname)
   if (host_override && nullptr != hostname) {
     HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
     sm->t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, hostname, strlen(hostname));
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] overriding host header with parent %s", sm->sm_id, hostname);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] overriding host header with parent %s", sm->sm_id, hostname);
   }
 }
 
@@ -283,10 +285,10 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
     for (auto &hh : host_groups[gg]) {
       HostRecord *p = hh.get();
       if (p->available.load()) {
-        NH_Debug(NH_DEBUG_TAG,
-                 "[%" PRIu64 "] found available next hop %s (this is NOT necessarily the parent which will be selected, just the "
-                 "first available parent found)",
-                 sm_id, p->hostname.c_str());
+        NH_Dbg(NH_DBG_CTL,
+               "[%" PRIu64 "] found available next hop %s (this is NOT necessarily the parent which will be selected, just the "
+               "first available parent found)",
+               sm_id, p->hostname.c_str());
         return true;
       }
     }
@@ -300,20 +302,20 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
   unsigned sa = current_info.simple_retry_attempts;
   unsigned ua = current_info.unavailable_server_retry_attempts;
 
-  NH_Debug(NH_DEBUG_TAG,
-           "[%" PRIu64 "] response_code %d, simple_retry_attempts: %d max_simple_retries: %d, unavailable_server_retry_attempts: "
-           "%d, max_unavailable_retries: %d",
-           sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
+  NH_Dbg(NH_DBG_CTL,
+         "[%" PRIu64 "] response_code %d, simple_retry_attempts: %d max_simple_retries: %d, unavailable_server_retry_attempts: "
+         "%d, max_unavailable_retries: %d",
+         sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
   if (this->resp_codes.contains(response_code) && sa < this->max_simple_retries && sa < this->num_parents) {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_SIMPLE", sm_id, response_code);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_SIMPLE", sm_id, response_code);
     return PARENT_RETRY_SIMPLE;
   }
   if (this->markdown_codes.contains(response_code) && ua < this->max_unavailable_retries && ua < this->num_parents) {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_UNAVAILABLE_SERVER", sm_id,
-             response_code);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_UNAVAILABLE_SERVER", sm_id,
+           response_code);
     return PARENT_RETRY_UNAVAILABLE_SERVER;
   }
-  NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is not retryable, returning PARENT_RETRY_NONE", sm_id, response_code);
+  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning PARENT_RETRY_NONE", sm_id, response_code);
   return PARENT_RETRY_NONE;
 }
 

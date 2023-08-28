@@ -23,6 +23,11 @@
 #include "proxy/HostStatus.h"
 #include "proxy/ParentRoundRobin.h"
 
+namespace
+{
+DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
+}
+
 ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _round_robin_type)
 {
   round_robin_type = _round_robin_type;
@@ -30,23 +35,23 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
   parents          = parent_record->parents;
   num_parents      = parent_record->num_parents;
 
-  if (is_debug_tag_set("parent_select")) {
+  if (dbg_ctl_parent_select.on()) {
     switch (round_robin_type) {
     case P_NO_ROUND_ROBIN:
-      Debug("parent_select", "Using a round robin parent selection strategy of type P_NO_ROUND_ROBIN.");
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_NO_ROUND_ROBIN.");
       break;
     case P_STRICT_ROUND_ROBIN:
-      Debug("parent_select", "Using a round robin parent selection strategy of type P_STRICT_ROUND_ROBIN.");
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_STRICT_ROUND_ROBIN.");
       break;
     case P_HASH_ROUND_ROBIN:
-      Debug("parent_select", "Using a round robin parent selection strategy of type P_HASH_ROUND_ROBIN.");
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_HASH_ROUND_ROBIN.");
       break;
     case P_LATCHED_ROUND_ROBIN:
-      Debug("parent_select", "Using a round robin parent selection strategy of type P_LATCHED_ROUND_ROBIN.");
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_LATCHED_ROUND_ROBIN.");
       break;
     default:
       // should never see this, there is a problem if you do.
-      Debug("parent_select", "Using a round robin parent selection strategy of type UNKNOWN TYPE.");
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type UNKNOWN TYPE.");
       break;
     }
   }
@@ -58,7 +63,7 @@ void
 ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
                                unsigned int retry_time)
 {
-  Debug("parent_select", "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
+  Dbg(dbg_ctl_parent_select, "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
   int cur_index          = 0;
   bool parentUp          = false;
   bool parentRetry       = false;
@@ -145,32 +150,32 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         host_stat = TS_HOST_STATUS_UP;
       }
     }
-    Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
+    Dbg(dbg_ctl_parent_select, "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
     if ((parents[cur_index].failedAt.load() == 0) || (parents[cur_index].failCount.load() < static_cast<int>(fail_threshold))) {
       if (host_stat == TS_HOST_STATUS_UP) {
-        Debug("parent_select", "FailThreshold = %d", fail_threshold);
-        Debug("parent_select", "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
-              (unsigned)parents[cur_index].failedAt.load(), parents[cur_index].failCount.load());
+        Dbg(dbg_ctl_parent_select, "FailThreshold = %d", fail_threshold);
+        Dbg(dbg_ctl_parent_select, "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
+            (unsigned)parents[cur_index].failedAt.load(), parents[cur_index].failCount.load());
         parentUp = true;
       }
     } else {
       if ((result->wrap_around) ||
           (((parents[cur_index].failedAt + retry_time) < request_info->xact_start) && host_stat == TS_HOST_STATUS_UP)) {
-        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u, xact_start = %" PRId64 " but wrap = %d", cur_index,
-              static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time, static_cast<int64_t>(request_info->xact_start),
-              result->wrap_around);
+        Dbg(dbg_ctl_parent_select, "Parent[%d].failedAt = %u, retry = %u, xact_start = %" PRId64 " but wrap = %d", cur_index,
+            static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time, static_cast<int64_t>(request_info->xact_start),
+            result->wrap_around);
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
-        Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
+        Dbg(dbg_ctl_parent_select, "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
       } else {
         parentUp = false;
       }
     }
 
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
-      Debug("parent_select", "status for %s: %d", parents[cur_index].hostname, host_stat);
+      Dbg(dbg_ctl_parent_select, "status for %s: %d", parents[cur_index].hostname, host_stat);
       result->result      = PARENT_SPECIFIED;
       result->hostname    = parents[cur_index].hostname;
       result->port        = parents[cur_index].port;
@@ -178,7 +183,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       result->retry       = parentRetry;
       ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
-      Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
+      Dbg(dbg_ctl_parent_select, "Chosen parent = %s.%d", result->hostname, result->port);
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % num_parents;

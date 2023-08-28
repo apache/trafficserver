@@ -24,6 +24,11 @@
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
 
+namespace
+{
+DbgCtl dbg_ctl_parent_select{"parent_select"};
+}
+
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 {
   int i;
@@ -42,7 +47,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   }
 
   if (parent_record->num_secondary_parents > 0) {
-    Debug("parent_select", "ParentConsistentHash(): initializing the secondary parents hash.");
+    Dbg(dbg_ctl_parent_select, "ParentConsistentHash(): initializing the secondary parents hash.");
     chash[SECONDARY] = new ATSConsistentHash();
 
     for (i = 0; i < parent_record->num_secondary_parents; i++) {
@@ -52,12 +57,12 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   } else {
     chash[SECONDARY] = nullptr;
   }
-  Debug("parent_select", "Using a consistent hash parent selection strategy.");
+  Dbg(dbg_ctl_parent_select, "Using a consistent hash parent selection strategy.");
 }
 
 ParentConsistentHash::~ParentConsistentHash()
 {
-  Debug("parent_select", "~ParentConsistentHash(): releasing hashes");
+  Dbg(dbg_ctl_parent_select, "~ParentConsistentHash(): releasing hashes");
   delete chash[PRIMARY];
   delete chash[SECONDARY];
 }
@@ -76,7 +81,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       url_string_ref = ps_url->string_get_ref(&len);
       if (url_string_ref && len > 0) {
         // Print the over-ride URL
-        Debug("parent_select", "Using Over-Ride String='%.*s'.", len, url_string_ref);
+        Dbg(dbg_ctl_parent_select, "Using Over-Ride String='%.*s'.", len, url_string_ref);
         h->update(url_string_ref, len);
         h->final();
         return h->get();
@@ -146,7 +151,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   HostStatus &pStatus    = HostStatus::instance();
   TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
 
-  Debug("parent_select", "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
+  Dbg(dbg_ctl_parent_select, "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
 
   // Should only get into this state if we are supposed to go direct.
@@ -208,7 +213,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     }
   } while (pRec && !firstCall && last_lookup == PRIMARY && strcmp(pRec->hostname, result->hostname) == 0);
 
-  Debug("parent_select", "Initial parent lookups: %d", lookups);
+  Dbg(dbg_ctl_parent_select, "Initial parent lookups: %d", lookups);
 
   // ----------------------------------------------------------------------------------------------------
   // Validate initial parent look-up and perform additional look-ups if required.
@@ -233,8 +238,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       // check if the host is retryable.  It's retryable if the retry window has elapsed
       // and the global host status is HOST_STATUS_UP
       if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
-        Debug("parent_select", "Parent.failedAt = %jd, retry = %u, xact_start = %jd", pRec->failedAt.load(), retry_time,
-              request_info->xact_start);
+        Dbg(dbg_ctl_parent_select, "Parent.failedAt = %jd, retry = %u, xact_start = %jd", pRec->failedAt.load(), retry_time,
+            request_info->xact_start);
         if ((pRec->failedAt.load() + retry_time) < request_info->xact_start) {
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
@@ -245,9 +250,11 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
           break;
         }
       }
-      Debug("parent_select", "wrap_around[PRIMARY]: %d, wrap_around[SECONDARY]: %d", wrap_around[PRIMARY], wrap_around[SECONDARY]);
+      Dbg(dbg_ctl_parent_select, "wrap_around[PRIMARY]: %d, wrap_around[SECONDARY]: %d", wrap_around[PRIMARY],
+          wrap_around[SECONDARY]);
       if (!wrap_around[PRIMARY] || (chash[SECONDARY] != nullptr && !wrap_around[SECONDARY])) {
-        Debug("parent_select", "Selected parent %s is not available, looking up another parent.", pRec ? pRec->hostname : "[NULL]");
+        Dbg(dbg_ctl_parent_select, "Selected parent %s is not available, looking up another parent.",
+            pRec ? pRec->hostname : "[NULL]");
         switch (secondary_mode) {
         case 2:
           if (!wrap_around[PRIMARY]) {
@@ -285,17 +292,17 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         lookups++;
         if (prtmp) {
           pRec = (parents[last_lookup] + prtmp->idx);
-          Debug("parent_select", "Selected a new parent: %s.", pRec->hostname);
+          Dbg(dbg_ctl_parent_select, "Selected a new parent: %s.", pRec->hostname);
         } else {
           pRec = nullptr;
         }
       }
       if (wrap_around[PRIMARY] && chash[SECONDARY] == nullptr) {
-        Debug("parent_select", "No available parents.");
+        Dbg(dbg_ctl_parent_select, "No available parents.");
         break;
       }
       if (wrap_around[PRIMARY] && chash[SECONDARY] != nullptr && wrap_around[SECONDARY]) {
-        Debug("parent_select", "No available parents.");
+        Dbg(dbg_ctl_parent_select, "No available parents.");
         break;
       }
       hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
@@ -310,7 +317,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     } while (!pRec || !pRec->available.load() || host_stat == TS_HOST_STATUS_DOWN);
   }
 
-  Debug("parent_select", "Additional parent lookups: %d", lookups);
+  Dbg(dbg_ctl_parent_select, "Additional parent lookups: %d", lookups);
 
   // ----------------------------------------------------------------------------------------------------
   // Validate and return the final result.
@@ -332,7 +339,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     result->retry       = parentRetry;
     ink_assert(result->hostname != nullptr);
     ink_assert(result->port != 0);
-    Debug("parent_select", "Chosen parent: %s.%d", result->hostname, result->port);
+    Dbg(dbg_ctl_parent_select, "Chosen parent: %s.%d", result->hostname, result->port);
   } else {
     if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
       result->result = PARENT_DIRECT;
@@ -386,7 +393,7 @@ ParentConsistentHash::markParentUp(ParentResult *result)
   ink_assert((result->last_parent) < numParents(result));
   pRec            = parents[result->last_lookup] + result->last_parent;
   pRec->available = true;
-  Debug("parent_select", "%s:%s(): marked %s:%d available.", __FILE__, __func__, pRec->hostname, pRec->port);
+  Dbg(dbg_ctl_parent_select, "%s:%s(): marked %s:%d available.", __FILE__, __func__, pRec->hostname, pRec->port);
 
   pRec->failedAt = static_cast<time_t>(0);
   int old_count  = pRec->failCount.exchange(0, std::memory_order_relaxed);
