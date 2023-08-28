@@ -145,7 +145,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   ink_assert(fd != NO_FD);
 
-  if (opt.etype == ET_NET && opt.defer_accept > 0) {
+  if (opt.defer_accept > 0) {
     http_accept_filter = true;
     add_http_filter(fd);
   }

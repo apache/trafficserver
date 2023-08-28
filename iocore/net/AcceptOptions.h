@@ -27,7 +27,6 @@
 #include "tscore/ink_inet.h"
 
 #include "I_Event.h"
-#include "I_Net.h"
 
 struct AcceptOptions {
   using self = AcceptOptions; ///< Self reference type.
@@ -44,13 +43,10 @@ struct AcceptOptions {
   int ip_family = AF_INET;
   /// Should we use accept threads? If so, how many?
   int accept_threads = -1;
-  /// Event type to generate on accept.
-  EventType etype = ET_NET;
   /** If @c true, the continuation is called back with
       @c NET_EVENT_ACCEPT_SUCCEED
       or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
   */
-
   bool localhost_only = false;
   /// Are frequent accepts expected?
   /// Default: @c false.
