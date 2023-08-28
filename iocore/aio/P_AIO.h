@@ -50,37 +50,6 @@ AIOCallback::ok()
 
 extern Continuation *aio_err_callbck;
 
-#if AIO_MODE == AIO_MODE_NATIVE
-
-struct AIOCallbackInternal : public AIOCallback {
-  int io_complete(int event, void *data);
-  AIOCallbackInternal()
-  {
-    memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
-    this->aiocb.aio_fildes = -1;
-    SET_HANDLER(&AIOCallbackInternal::io_complete);
-  }
-};
-
-TS_INLINE int
-AIOVec::mainEvent(int /* event */, Event *)
-{
-  ++completed;
-  if (completed < size)
-    return EVENT_CONT;
-  else if (completed == size) {
-    SCOPED_MUTEX_LOCK(lock, action.mutex, this_ethread());
-    if (!action.cancelled)
-      action.continuation->handleEvent(AIO_EVENT_DONE, first);
-    delete this;
-    return EVENT_DONE;
-  }
-  ink_assert(!"AIOVec mainEvent err");
-  return EVENT_ERROR;
-}
-
-#else /* AIO_MODE != AIO_MODE_NATIVE */
-
 struct AIO_Reqs;
 
 #if TS_USE_LINUX_IO_URING
@@ -117,8 +86,6 @@ struct AIO_Reqs {
   int filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
   int requests_queued = 0;
 };
-
-#endif // AIO_MODE == AIO_MODE_NATIVE
 
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)

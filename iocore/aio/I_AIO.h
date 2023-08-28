@@ -38,15 +38,6 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
 
-#define AIO_MODE_DEFAULT 0
-#define AIO_MODE_NATIVE  1
-
-#if TS_USE_LINUX_NATIVE_AIO
-#define AIO_MODE AIO_MODE_NATIVE
-#else
-#define AIO_MODE AIO_MODE_DEFAULT
-#endif
-
 #define LIO_READ  0x1
 #define LIO_WRITE 0x2
 
@@ -55,22 +46,6 @@ enum AIOBackend {
   AIO_BACKEND_THREAD   = 1,
   AIO_BACKEND_IO_URING = 2,
 };
-
-#if AIO_MODE == AIO_MODE_NATIVE
-
-#include <libaio.h>
-
-#define MAX_AIO_EVENTS 1024
-
-using ink_aiocb      = struct iocb;
-using ink_io_event_t = struct io_event;
-
-// XXX hokey old-school compatibility with ink_aiocb.h ...
-#define aio_nbytes u.c.nbytes
-#define aio_offset u.c.offset
-#define aio_buf    u.c.buf
-
-#else
 
 struct ink_aiocb {
   int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
@@ -83,7 +58,6 @@ struct ink_aiocb {
 };
 
 bool ink_aio_thread_num_set(int thread_num);
-#endif
 
 // AIOCallback::thread special values
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
@@ -101,49 +75,6 @@ struct AIOCallback : public Continuation {
   int ok();
   AIOCallback() {}
 };
-
-#if AIO_MODE == AIO_MODE_NATIVE
-
-struct AIOVec : public Continuation {
-  Action action;
-  int size;
-  int completed;
-  AIOCallback *first;
-
-  AIOVec(int sz, AIOCallback *c) : Continuation(new_ProxyMutex()), size(sz), completed(0), first(c)
-  {
-    action = c->action;
-    SET_HANDLER(&AIOVec::mainEvent);
-  }
-
-  int mainEvent(int event, Event *e);
-};
-
-struct DiskHandler : public Continuation {
-  Event *trigger_event;
-  io_context_t ctx;
-  ink_io_event_t events[MAX_AIO_EVENTS];
-  Que(AIOCallback, link) ready_list;
-  Que(AIOCallback, link) complete_list;
-  int startAIOEvent(int event, Event *e);
-  int mainAIOEvent(int event, Event *e);
-  DiskHandler()
-  {
-    SET_HANDLER(&DiskHandler::startAIOEvent);
-    memset(&ctx, 0, sizeof(ctx));
-    int ret = io_setup(MAX_AIO_EVENTS, &ctx);
-    if (ret < 0) {
-      Dbg(_dbg_ctl_aio, "io_setup error: %s (%d)", strerror(-ret), -ret);
-    }
-  }
-
-private:
-  inline static DbgCtl _dbg_ctl_aio{"aio"};
-};
-int ink_aio_readv(AIOCallback *op,
-                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
-int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
-#endif
 
 void ink_aio_init(ts::ModuleVersion version, AIOBackend backend = AIO_BACKEND_AUTO);
 void ink_aio_set_callback(Continuation *error_callback);

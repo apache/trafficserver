@@ -84,9 +84,6 @@ endif()
 if (TS_USE_LINUX_IO_URING)
     target_link_libraries(traffic_server PRIVATE inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
-if (TS_USE_LINUX_NATIVE_AIO)
-    target_link_libraries(traffic_server PRIVATE aio)
-endif (TS_USE_LINUX_NATIVE_AIO)
 
 set_target_properties(traffic_server PROPERTIES ENABLE_EXPORTS ON)
 

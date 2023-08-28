@@ -8147,16 +8147,11 @@ tsapi::c::TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCo
 TSReturnCode
 tsapi::c::TSAIOThreadNumSet(int thread_num)
 {
-#if AIO_MODE == AIO_MODE_NATIVE || AIO_MODE == AIO_MODE_IO_URING
-  (void)thread_num;
-  return TS_SUCCESS;
-#else
   if (ink_aio_thread_num_set(thread_num)) {
     return TS_SUCCESS;
   }
 
   return TS_ERROR;
-#endif
 }
 
 void
@@ -10054,9 +10049,9 @@ tsapi::c::TSRPCRegister(const char *provider_name, size_t provider_len, const ch
   sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(provider_name) == TS_SUCCESS);
 
-  // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
-  // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
-  // version is the same.
+  // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the
+  // TSYaml to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure
+  // the version is the same.
   if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
     return nullptr;
   }

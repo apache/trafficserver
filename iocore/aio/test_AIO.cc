@@ -496,12 +496,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   Thread *main_thread = new EThread;
   main_thread->set_specific();
 
-#if AIO_MODE == AIO_MODE_NATIVE
-  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
-    et->diskHandler = new DiskHandler();
-    et->schedule_imm(et->diskHandler);
-  }
-#endif
 #if TS_USE_LINUX_IO_URING
   if (!io_uring_force_thread) {
     for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
