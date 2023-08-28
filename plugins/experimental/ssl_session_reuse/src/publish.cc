@@ -61,7 +61,8 @@ RedisPublisher::RedisPublisher(const std::string &conf)
     m_redisConnectTries(cDefaultRedisConnectTries),
     m_redisPublishTries(cDefaultRedisPublishTries),
     m_redisRetryDelay(cDefaultRedisRetryDelay),
-    m_maxQueuedMessages(cDefaultMaxQueuedMessages)
+    m_maxQueuedMessages(cDefaultMaxQueuedMessages),
+    m_poolRedisConnectTimeout(cDefaultRedisConnectTimeout)
 {
   if (Config::getSingleton().loadConfig(conf)) {
     Config::getSingleton().getValue("pubconfig", "PubNumWorkers", m_numWorkers);
