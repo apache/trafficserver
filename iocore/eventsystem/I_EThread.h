@@ -87,6 +87,16 @@ class EThread : public Thread
 {
 public:
   static thread_local EThread *this_ethread_ptr;
+
+  /** Default wait interval for polling or delaying
+
+      This used to be known as net_config_poll_timeout, but was being used
+      (and externed) through the codebase so was causing problems with linking.
+
+      It is still configured as "proxy.config.net.poll_timeout" for now
+   */
+  static int default_wait_interval_ms;
+
   /** Handler for tail of event loop.
 
       The event loop should not spin. To avoid that a tail handler is called to block for a limited time.

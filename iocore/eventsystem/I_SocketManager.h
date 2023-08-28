@@ -50,8 +50,6 @@
 #endif
 #endif
 
-extern int net_config_poll_timeout;
-
 #define SOCKET int
 
 /** Utility namespace for socket operations.

@@ -33,9 +33,6 @@
 using std::cout;
 using std::endl;
 
-// Necessary for AIO
-int net_config_poll_timeout = 10;
-
 #include "diags.i"
 
 #define MAX_DISK_THREADS 200

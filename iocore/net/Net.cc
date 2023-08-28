@@ -34,11 +34,10 @@
 RecRawStatBlock *net_rsb = nullptr;
 
 // All in milli-seconds
-int net_config_poll_timeout = -1; // This will get set via either command line or records.yaml.
-int net_event_period        = 10;
-int net_accept_period       = 10;
-int net_retry_delay         = 10;
-int net_throttle_delay      = 50; /* milliseconds */
+int net_event_period   = 10;
+int net_accept_period  = 10;
+int net_retry_delay    = 10;
+int net_throttle_delay = 50; /* milliseconds */
 
 // For the in/out congestion control: ToDo: this probably would be better as ports: specifications
 std::string_view net_ccp_in;
