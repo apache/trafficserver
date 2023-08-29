@@ -59,7 +59,7 @@ add_executable(test_proxy_hdrs
     unit_tests/unit_test_main.cc
 )
 target_link_libraries(test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent catch2::catch2)
-add_test(NAME test_proxy_hdrs COMMAND $<TARGET_FILE:test_proxy_hdrs>)
+add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
 add_executable(test_proxy_hdrs_xpack
     XPACK.cc
@@ -68,4 +68,4 @@ add_executable(test_proxy_hdrs_xpack
 )
 target_include_directories(test_proxy_hdrs_xpack PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore libswoc catch2::catch2)
-add_test(NAME test_proxy_hdrs_xpack COMMAND $<TARGET_FILE:test_proxy_hdrs_xpack>)
+add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
