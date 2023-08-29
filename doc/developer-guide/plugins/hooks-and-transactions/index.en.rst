@@ -73,6 +73,13 @@ The two **transform hooks**, ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` and
 transform. To see where in the HTTP transaction they are called, look
 for the "set up transform" ovals in the :ref:`http-txn-state-diagram` below.
 
+The transform hooks can also be triggered on bytes passed for a tunneled connection.
+In that case the ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` and the ``TS_HTTP_RESPONSE_TRANSFORM_HOOK``
+should be set from a plugin triggered on the ``TS_HTTP_TUNNEL_START_HOOK``.  The
+``TS_HTTP_REQUEST_TRANFORM_HOOK`` will cause IO events to trigger for bytes moving from the
+user agent to the origin server. The ``TS_HTTP_RESPONSE_TRANSFORM_HOOK`` will cause IO events
+to trigger for bytes moving from the origin server to the user agent.
+
 HTTP Session
 ------------
 
