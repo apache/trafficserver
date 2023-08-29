@@ -34,6 +34,10 @@ target_link_libraries(traffic_layout
         ${OPENSSL_LIBRARY}
 )
 
+if(TS_USE_HWLOC)
+        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
+endif()
+
 if(HAVE_LZMA_H)
     target_link_libraries(traffic_layout PRIVATE LibLZMA::LibLZMA)
 endif()
