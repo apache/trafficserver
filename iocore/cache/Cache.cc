@@ -2180,6 +2180,11 @@ CacheVC::handleReadDone(int event, Event *e)
     return EVENT_CONT;
   }
   {
+    if (DISK_BAD(vol->disk)) {
+      io.aio_result = -1;
+      Warning("Canceling cache read: disk %s is bad.", vol->hash_text.get());
+      goto Ldone;
+    }
     MUTEX_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       VC_SCHED_LOCK_RETRY();
@@ -2191,11 +2196,6 @@ CacheVC::handleReadDone(int event, Event *e)
             vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
             (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
-      goto Ldone;
-    }
-    if (DISK_BAD(vol->disk)) {
-      io.aio_result = -1;
-      Warning("Canceling cache read: disk %s is bad.", vol->hash_text.get());
       goto Ldone;
     }
 
