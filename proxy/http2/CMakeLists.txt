@@ -66,7 +66,7 @@ add_test(NAME test_http2 COMMAND test_http2)
 add_executable(test_Http2DependencyTree
   unit_tests/test_Http2DependencyTree.cc
 )
-target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore)
+target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc)
 target_include_directories(test_Http2DependencyTree PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/proxy/hdrs
@@ -77,7 +77,7 @@ add_executable(test_Http2FrequencyCounter
   Http2FrequencyCounter.cc
   unit_tests/test_Http2FrequencyCounter.cc
 )
-target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent)
+target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc)
 target_include_directories(test_Http2FrequencyCounter PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/proxy/hdrs
