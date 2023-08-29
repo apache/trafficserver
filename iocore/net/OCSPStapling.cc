@@ -25,6 +25,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+#include <cstring>
 
 #include "tscore/ink_memory.h"
 #include "tscore/Encoding.h"
