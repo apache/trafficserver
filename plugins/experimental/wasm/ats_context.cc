@@ -572,9 +572,9 @@ Context::httpCall(std::string_view target, const Pairs &request_headers, std::st
 
   /* request */
   if (protocol != "") {
-    request = method + " https://" + authority + path + " HTTP/1.1\r\n";
-  } else {
     request = method + " " + protocol + "://" + authority + path + " HTTP/1.1\r\n";
+  } else {
+    request = method + " https://" + authority + path + " HTTP/1.1\r\n";
   }
   for (const auto &p : request_headers) {
     std::string key(p.first);
