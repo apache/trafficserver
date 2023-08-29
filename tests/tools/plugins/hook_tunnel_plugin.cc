@@ -67,7 +67,7 @@ transactionStart(TSCont cont, TSEvent event, void *edata)
 static int
 handleMsg(TSCont cont, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "handleMsg event=%d data=0x%x", event, edata);
+  TSDebug(PLUGIN_NAME, "handleMsg event=%d", event);
   TSStatIntIncrement(stat_test_done, 1);
   return TS_SUCCESS;
 }
