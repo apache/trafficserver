@@ -24,14 +24,6 @@ Synopsis
 
 .. code-block:: cpp
 
-    #include <ts/apidefs.h>
-    +  typedef enum {
-      +    TS_TXN_TYPE_UNKNOWN,
-        +    TS_TXN_TYPE_HTTP,
-          +    TS_TXN_TYPE_EXPLICIT_TUNNEL,
-            +    TS_TXN_TYPE_TR_PASS_TUNNEL,
-              +  } TSTxnType;
-
 .. c:enum:: TSTxnType
 
    Specify the type of a transaction argument

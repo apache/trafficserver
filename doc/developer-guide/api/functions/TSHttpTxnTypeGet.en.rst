@@ -33,5 +33,5 @@ Synopsis
 Description
 ===========
 
-Returns the type of the txnp argument. 
+Returns the type of the txnp argument.
 
