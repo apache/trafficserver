@@ -2195,7 +2195,7 @@ CacheVC::handleReadDone(int event, Event *e)
     }
     if (DISK_BAD(vol->disk)) {
       io.aio_result = -1;
-      Warning("Canceling cache read: disk is bad.");
+      Warning("Canceling cache read: disk %s is bad.", vol->hash_text.get());
       goto Ldone;
     }
 
