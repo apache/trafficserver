@@ -52,10 +52,6 @@ namespace c
     TS_FETCH_FLAGS_SKIP_REMAP           = 1 << 5, // Skip remapping and allow requesting arbitary URL
   };
 
-  /* Forward declaration of in_addr, any user of these APIs should probably
-     include net/netinet.h or whatever is appropriate on the platform. */
-  struct in_addr;
-
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
   TSReturnCode TSCacheBufferInfoGet(TSCacheTxn txnp, uint64_t *length, uint64_t *offset);
 
