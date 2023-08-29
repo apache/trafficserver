@@ -18,9 +18,13 @@
 
 set -e # exit on error
 
+if [ ! -z $1 ]; then
+  srcdir=$1
+fi
+
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/via.XXXXXX")
-if [ ! -z "$srcdir"]; then
+if [ ! -z "$srcdir" ]; then
     srcdir=$(cd $srcdir && pwd)
 else
     srcdir=$(pwd)

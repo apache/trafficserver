@@ -15,28 +15,13 @@
 #
 #######################
 
-add_library(http3 STATIC
-    Http09App.cc
-    Http3.cc
-    Http3Config.cc
-    Http3App.cc
-    Http3Types.cc
-    Http3SessionAccept.cc
-    Http3Session.cc
-    Http3Transaction.cc
-    Http3DebugNames.cc
-    Http3Frame.cc
-    Http3FrameCollector.cc
-    Http3FrameDispatcher.cc
-    Http3HeaderFramer.cc
-    Http3DataFramer.cc
-    Http3HeaderVIOAdaptor.cc
-    Http3ProtocolEnforcer.cc
-    Http3StreamDataVIOAdaptor.cc
-    QPACK.cc
+add_executable(traffic_via traffic_via.cc)
+target_link_libraries(traffic_via ts::tscore libswoc)
+install(TARGETS traffic_via)
+
+# Odd test to maintain compatibility with autotools.  This could be better.
+add_test(
+  NAME test_traffic_via
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test_traffic_via ${CMAKE_SOURCE_DIR}/src
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
-add_library(ts::http3 ALIAS http3)
-
-target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
-

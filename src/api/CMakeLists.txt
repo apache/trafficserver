@@ -17,6 +17,8 @@
 
 add_library(tsapi SHARED Metrics.cc)
 add_library(ts::tsapi ALIAS tsapi)
+target_link_libraries(tsapi PRIVATE ts::tscore)
+
 
 install(TARGETS tsapi)
 

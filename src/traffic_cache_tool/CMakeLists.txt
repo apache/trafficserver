@@ -15,28 +15,10 @@
 #
 #######################
 
-add_library(http3 STATIC
-    Http09App.cc
-    Http3.cc
-    Http3Config.cc
-    Http3App.cc
-    Http3Types.cc
-    Http3SessionAccept.cc
-    Http3Session.cc
-    Http3Transaction.cc
-    Http3DebugNames.cc
-    Http3Frame.cc
-    Http3FrameCollector.cc
-    Http3FrameDispatcher.cc
-    Http3HeaderFramer.cc
-    Http3DataFramer.cc
-    Http3HeaderVIOAdaptor.cc
-    Http3ProtocolEnforcer.cc
-    Http3StreamDataVIOAdaptor.cc
-    QPACK.cc
-)
-add_library(ts::http3 ALIAS http3)
+add_executable(traffic_cache_tool
+    CacheDefs.cc
+    CacheTool.cc
+    CacheScan.cc)
 
-target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
-
+target_link_libraries(traffic_cache_tool PRIVATE ts::tscore libswoc)
+install(TARGETS traffic_cache_tool)
