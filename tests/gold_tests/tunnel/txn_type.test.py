@@ -50,7 +50,7 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
 server.addResponse("sessionfile.log", request_header, response_header)
 server.addResponse("sessionfile.log", request_tunnel_header, response_tunnel_header)
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|test',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -164,6 +164,6 @@ tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.http.req'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "txn_type_verify.http.req 2", 'Should have a http request.')
+    "txn_type_verify.http.req 2", 'Should have two http requests.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
