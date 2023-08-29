@@ -120,6 +120,12 @@ target_link_libraries(test_net
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
+
+add_stubbed_test(HttpTransact
+  ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/main.cc
+  ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/test_HttpTransact.cc
+)
+
 # maybe move this one back to iocore/eventsystem/CMakeLists.txt
 #add_stubbed_test(MIOBufferWriter ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_MIOBufferWriter.cc)
 #add_stubbed_test(ProxyAllocator ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/benchmark_ProxyAllocator.cc)
