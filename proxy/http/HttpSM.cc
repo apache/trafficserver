@@ -526,7 +526,8 @@ HttpSM::setup_blind_tunnel_port()
     t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
     t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
   }
-  call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
+  t_state.api_next_action = HttpTransact::SM_ACTION_API_TUNNEL_START;
+  do_api_callout();
 }
 
 int
@@ -1562,6 +1563,10 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_API_OS_DNS:
   case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
     call_transact_and_set_next_state(nullptr);
+    return;
+  case HttpTransact::SM_ACTION_API_TUNNEL_START:
+    // Finished the Tunnel start callback.  Go ahead and do the HandleBlindTunnel
+    call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
     return;
   case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
     setup_server_send_request();
@@ -5666,6 +5671,9 @@ HttpSM::do_api_callout_internal()
     break;
   case HttpTransact::SM_ACTION_API_POST_REMAP:
     cur_hook_id = TS_HTTP_POST_REMAP_HOOK;
+    break;
+  case HttpTransact::SM_ACTION_API_TUNNEL_START:
+    cur_hook_id = TS_HTTP_TUNNEL_START_HOOK;
     break;
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
     cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK;

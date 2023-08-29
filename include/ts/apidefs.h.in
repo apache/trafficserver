@@ -363,6 +363,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE = 60018,
     TS_EVENT_HTTP_RESPONSE_CLIENT              = 60019,
     TS_EVENT_HTTP_REQUEST_CLIENT               = 60020,
+    TS_EVENT_HTTP_TUNNEL_START                 = 60021,
 
     TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
     TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
@@ -478,6 +479,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_BUFFER_READ_COMPLETE), // TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK
     DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_CLIENT),              // TS_HTTP_RESPONSE_CLIENT_HOOK
     DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_CLIENT),               // TS_HTTP_REQUEST_CLIENT_HOOK
+    DERIVE_HOOK_VALUE_FROM_EVENT(TUNNEL_START),                 // TS_HTTP_TUNNEL_START_HOOK
 
 // NOTE:
 // If adding any TS_HTTP hooks, be sure to understand the note above in the
@@ -1506,6 +1508,13 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     const char *record_name; ///< record name. null terminated
     TSYaml value_node;       ///< YAML::Node pointer.
   };
+
+  typedef enum {
+    TS_TXN_TYPE_UNKNOWN,
+    TS_TXN_TYPE_HTTP,
+    TS_TXN_TYPE_EXPLICIT_TUNNEL,
+    TS_TXN_TYPE_TR_PASS_TUNNEL,
+  } TSTxnType;
 
 } // end namespace c
 } // end namespace tsapi

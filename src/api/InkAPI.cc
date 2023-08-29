@@ -10110,3 +10110,21 @@ tsapi::c::TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *
 
   return err.empty() ? TS_SUCCESS : TS_ERROR;
 }
+
+TSTxnType
+tsapi::c::TSHttpTxnTypeGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm       = (HttpSM *)txnp;
+  TSTxnType retval = TS_TXN_TYPE_UNKNOWN;
+  if (sm != nullptr) {
+    if (sm->t_state.transparent_passthrough) {
+      retval = TS_TXN_TYPE_TR_PASS_TUNNEL;
+    } else if (sm->t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+      retval = TS_TXN_TYPE_EXPLICIT_TUNNEL;
+    } else {
+      retval = TS_TXN_TYPE_HTTP;
+    }
+  }
+  return retval;
+}

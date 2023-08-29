@@ -156,6 +156,12 @@ values for ``TSHttpHookID`` are:
     available on the connection, or a previous client connection that
     was left open for keep alive has new data available.
 
+``TS_HTTP_TUNNEL_START_HOOK``
+    Called when the transaction is processed as a tunnel. The tunnel can be
+    due to an API call, a sni.yaml configuration, or a parse failure allowed due
+    to tr-pass.  With this hook, a plugin can examine other information to 
+    determine whether the tunnel should be allowed or not.
+
 The function you use to add a global HTTP hook is
 :c:func:`TSHttpHookAdd`.
 

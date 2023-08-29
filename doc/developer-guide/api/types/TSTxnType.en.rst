@@ -1,0 +1,59 @@
+.. Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed
+   with this work for additional information regarding copyright
+   ownership.  The ASF licenses this file to you under the Apache
+   License, Version 2.0 (the "License"); you may not use this file
+   except in compliance with the License.  You may obtain a copy of
+   the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+   implied.  See the License for the specific language governing
+   permissions and limitations under the License.
+
+.. include:: ../../../common.defs
+
+TSTxnType
+************
+
+Synopsis
+========
+
+.. code-block:: cpp
+
+    #include <ts/apidefs.h>
+    +  typedef enum {
+      +    TS_TXN_TYPE_UNKNOWN,
+        +    TS_TXN_TYPE_HTTP,
+          +    TS_TXN_TYPE_EXPLICIT_TUNNEL,
+            +    TS_TXN_TYPE_TR_PASS_TUNNEL,
+              +  } TSTxnType;
+
+.. c:enum:: TSTxnType
+
+   Specify the type of a transaction argument
+
+   .. c:enumerator:: TS_TXN_TYPE_UNKNOWN
+
+      Invalid value. This is used to indicate a failure or for initialization.
+
+   .. c:enumerator:: TS_TXN_TYPE_HTTP
+
+      A HTTP transaction.
+
+   .. c:enumerator:: TS_TXN_TYPE_EXPLICIT_TUNNEL
+
+      A blind tunnel transaction created based on a configuration file or an API call.
+
+   .. c:enumerator:: TS_TXN_TYPE_TR_PASS_TUNNEL
+
+      A blind tunnel created based on a parse error for a server port with tr-pass set.
+
+Description
+===========
+
+Specify the type of a transaction.  Plugins can use this to determine if they are interacting with tunnels
+or parsed HTTP requests.
