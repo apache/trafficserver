@@ -14,6 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/ja3_fingerprint/ja3_fingerprint.la
+pkglib_LTLIBRARIES += ja3_fingerprint/ja3_fingerprint.la
 
-experimental_ja3_fingerprint_ja3_fingerprint_la_SOURCES = experimental/ja3_fingerprint/ja3_fingerprint.cc
+ja3_fingerprint_ja3_fingerprint_la_SOURCES = ja3_fingerprint/ja3_fingerprint.cc

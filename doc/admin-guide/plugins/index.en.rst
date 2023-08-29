@@ -61,12 +61,16 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
    HTTP Stats <http_stats.en>
+   JA3 Fingerprint <ja3_fingerprint.en>
    Lua <lua.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
+   Remap Stats <remap_stats.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
+   Traffic Dump <traffic_dump.en>
+   WebP Transform <webp_transform.en>
    XDebug <xdebug.en>
 
 :doc:`AuthProxy <authproxy.en>`
@@ -117,6 +121,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`HTTP Stats <http_stats.en>`
     A remap-based plugin that provides an HTTP interface to all |TS| statistics.
 
+:doc:`JA3 Fingerprint <ja3_fingerprint.en>`
+   Calculates JA3 Fingerprints for incoming SSL traffic.
+
 :doc:`Lua <lua.en>`
    Allows plugins to be written in Lua instead of C code.
 
@@ -126,11 +133,20 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Regex Revalidate <regex_revalidate.en>`
    Configurable rules for forcing cache object revalidations using regular expressions.
 
+:doc:`Remap Stats <remap_stats.en>`
+   This global plugin adds remap stats to the stats.
+
 :doc:`Stats over HTTP <stats_over_http.en>`
     Provide an HTTP interface to all |TS| statistics.
 
 :doc:`TCPInfo <tcpinfo.en>`
     Log TCP metrics at various points of the HTTP processing pipeline.
+
+:doc:`Traffic Dump <traffic_dump.en>`
+   Dumps traffic data into a JSON format file which can be used to replay traffic.
+
+:doc:`WebP Transform <webp_transform.en>`
+   Converts jpeg and png images to webp format.
 
 :doc:`XDebug <xdebug.en>`
    Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
@@ -159,7 +175,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Header Frequency <header_freq.en>
    Hook Trace <hook-trace.en>
    ICAP <icap.en>
-   JA3 Fingerprint <ja3_fingerprint.en>
    Maxmind ACL <maxmind_acl.en>
    Memcache <memcache.en>
    Memory Profile <memory_profile.en>
@@ -168,7 +183,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Multiplexer <multiplexer.en>
    OpenTelemetry Tracer <otel_tracer.en>
    Rate Limit <rate_limit.en>
-   Remap Stats <remap_stats.en>
    URI Signing <uri_signing.en>
    Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
@@ -176,9 +190,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    SSL Session Reuse <ssl_session_reuse.en>
    STEK Share <stek_share.en>
    System Statistics <system_stats.en>
-   Traffic Dump <traffic_dump.en>
    Wasm <wasm.en>
-   WebP Transform <webp_transform.en>
    Prefetch <prefetch.en>
 
 :doc:`Access Control <access_control.en>`
@@ -201,9 +213,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`ICAP <icap.en>`
    Pass response data to external server for further processing using the ICAP protocol.
-
-:doc:`JA3 Fingerprint <ja3_fingerprint.en>`
-   Calculates JA3 Fingerprints for incoming SSL traffic.
 
 :doc:`MaxMind ACL <maxmind_acl.en>`
    ACL based on the maxmind geo databases (GeoIP2 mmdb and libmaxminddb)
@@ -231,9 +240,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Rate Limit <rate_limit.en>`
    Simple transaction rate limiting.
-
-:doc:`Remap Stats <remap_stats.en>`
-   This global plugin adds remap stats to the stats.
 
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely
@@ -267,11 +273,5 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
 
-:doc:`Traffic Dump <traffic_dump.en>`
-   Dumps traffic data into a JSON format file which can be used to replay traffic.
-
 :doc:`Wasm <wasm.en>`
    Allows WebAssembly/Wasm (proxy-wasm) module to be used as ATS Plugin.
-
-:doc:`WebP Transform <webp_transform.en>`
-   Converts jpeg and png images to webp format.

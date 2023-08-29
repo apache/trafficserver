@@ -42,6 +42,9 @@ include header_rewrite/Makefile.inc
 if BUILD_HEALTHCHECK_PLUGIN
 include healthchecks/Makefile.inc
 endif
+if BUILD_JA3_PLUGIN
+include ja3_fingerprint/Makefile.inc
+endif
 include libloader/Makefile.inc
 if HAS_LUAJIT
 include lua/Makefile.inc
@@ -51,10 +54,16 @@ include prefetch/Makefile.inc
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
 include remap_purge/Makefile.inc
+include remap_stats/Makefile.inc
 include s3_auth/Makefile.inc
 include server_push_preload/Makefile.inc
+include statichit/Makefile.inc
 include stats_over_http/Makefile.inc
 include tcpinfo/Makefile.inc
+include traffic_dump/Makefile.inc
+if BUILD_IMAGE_MAGICK_PLUGINS
+include webp_transform/Makefile.inc
+endif
 include xdebug/Makefile.inc
 
 if BUILD_EXPERIMENTAL_PLUGINS
@@ -90,19 +99,12 @@ include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
 include experimental/rate_limit/Makefile.inc
 include experimental/redo_cache_lookup/Makefile.inc
-include experimental/remap_stats/Makefile.inc
 include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
-include experimental/statichit/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
-include experimental/traffic_dump/Makefile.inc
 include experimental/tls_bridge/Makefile.inc
 include experimental/url_sig/Makefile.inc
-
-if BUILD_JA3_PLUGIN
-include experimental/ja3_fingerprint/Makefile.inc
-endif
 
 if BUILD_URI_SIGNING_PLUGIN
 include experimental/uri_signing/Makefile.inc
@@ -121,7 +123,6 @@ include experimental/cache_key_genid/Makefile.inc
 endif
 
 if BUILD_IMAGE_MAGICK_PLUGINS
-include experimental/webp_transform/Makefile.inc
 include experimental/magick/Makefile.inc
 endif
 

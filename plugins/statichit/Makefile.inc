@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/statichit/statichit.la
+pkglib_LTLIBRARIES += statichit/statichit.la
 
-experimental_statichit_statichit_la_SOURCES = \
-    experimental/statichit/statichit.cc
+statichit_statichit_la_SOURCES = \
+    statichit/statichit.cc

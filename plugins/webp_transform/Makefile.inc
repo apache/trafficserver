@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,7 +15,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/remap_stats/remap_stats.la
+webp_transform_webp_transform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
+webp_transform_webp_transform_la_CXXFLAGS = $(AM_CXXFLAGS)
 
-experimental_remap_stats_remap_stats_la_SOURCES = \
-    experimental/remap_stats/remap_stats.cc
+pkglib_LTLIBRARIES += webp_transform/webp_transform.la
+
+webp_transform_webp_transform_la_SOURCES = \
+    webp_transform/ImageTransform.cc
+
+webp_transform_webp_transform_la_LDFLAGS = \
+    $(AM_LDFLAGS) \
+    -L$(top_builddir)/src/tscpp/api
+
+webp_transform_webp_transform_la_LIBADD = \
+    -ltscppapi \
+    $(LIBMAGICKCPP_LIBS)
