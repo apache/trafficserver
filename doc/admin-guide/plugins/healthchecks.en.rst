@@ -22,6 +22,9 @@
 Health Checks Plugin
 ********************
 
+**Note:** As of ATS v10.0.0, this plugin is deprecated. Please migrate over
+to the new `statichit` plugin instead.
+
 This is a simple plugin, to provide basic (but configurable) health checks.
 This is a server intercept plugin, and it takes one single configuration
 option in plugin.config, the configuration file name.
@@ -62,6 +65,3 @@ type of ``text/plain`` and a status code of ``200``.  If the file does not
 exist, a ``403`` response is sent::
 
    /__hc  /var/run/ts-alive  text/plain 200  403
-
-
-
