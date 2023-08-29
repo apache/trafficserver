@@ -20,6 +20,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include "ts/remap_version.h"
 
 #include "policy_manager.h"
 #include "configs.h"
@@ -115,16 +116,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  if (api_info->size < sizeof(TSRemapInterface)) {
-    strncpy(errbuf, "[tsremap_init] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
-    return TS_ERROR;
-  }
-
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size, "[tsremap_init] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-             (api_info->tsremap_version & 0xffff));
-    return TS_ERROR;
-  }
+  CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
 
   // Reserve a TXN slot for storing the calculated URL hash key
   if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "cache_promote URL hash key", &TXN_ARG_IDX)) {

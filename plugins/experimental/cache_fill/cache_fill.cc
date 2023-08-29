@@ -37,6 +37,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include "ts/remap_version.h"
 #include "background_fetch.h"
 
 static const char *
@@ -135,18 +136,7 @@ cont_handle_cache(TSCont contp, TSEvent event, void *edata)
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  TSDebug(PLUGIN_NAME, "cache fill remap init");
-  if (!api_info) {
-    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
-    return TS_ERROR;
-  }
-
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-             (api_info->tsremap_version & 0xffff));
-    return TS_ERROR;
-  }
-
+  CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
   TSDebug(PLUGIN_NAME, "cache fill remap is successfully initialized");
   return TS_SUCCESS;
 }

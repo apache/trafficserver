@@ -26,4 +26,5 @@ library_include_HEADERS = \
 	parentselectdefs.h
 
 noinst_HEADERS = \
-	InkAPIPrivateIOCore.h
+	InkAPIPrivateIOCore.h \
+	remap_version.h
