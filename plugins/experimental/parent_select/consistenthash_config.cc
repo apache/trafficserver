@@ -28,6 +28,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <filesystem>
 #include <fstream>
 #include <cstring>
 
@@ -176,75 +177,70 @@ createStrategiesFromFile(const char *file)
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
  */
 void
-loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once)
+loadConfigFile(std::string const &pathnamein, std::stringstream &doc, std::unordered_set<std::string> &include_once)
 {
-  const char *sep = " \t";
-  char *tok, *last;
-  struct stat buf;
-  std::string line;
+  constexpr std::string_view sep = " \t";
 
-  if (stat(fileName.c_str(), &buf) == -1) {
-    std::string err_msg = strerror(errno);
-    throw std::invalid_argument("Unable to stat '" + fileName + "': " + err_msg);
-  }
+  namespace fs = std::filesystem;
+  fs::path const pathin(pathnamein);
+  std::error_code ec;
 
   // if fileName is a directory, concatenate all '.yaml' files alphanumerically
   // into a single document stream.  No #include is supported.
-  if (S_ISDIR(buf.st_mode)) {
-    DIR *dir               = nullptr;
-    struct dirent *dir_ent = nullptr;
-    std::vector<std::string_view> files;
+  if (fs::is_directory(pathin, ec)) {
+    TSDebug(PLUGIN_NAME, "loading strategy YAML files from the directory %s", pathnamein.c_str());
 
-    TSDebug(PLUGIN_NAME, "loading strategy YAML files from the directory %s", fileName.c_str());
-    if ((dir = opendir(fileName.c_str())) == nullptr) {
-      std::string err_msg = strerror(errno);
-      throw std::invalid_argument("Unable to open the directory '" + fileName + "': " + err_msg);
-    } else {
-      while ((dir_ent = readdir(dir)) != nullptr) {
-        // filename should be greater that 6 characters to have a '.yaml' suffix.
-        if (strlen(dir_ent->d_name) < 6) {
-          continue;
-        }
-        std::string_view sv = dir_ent->d_name;
-        if (sv.find(".yaml", sv.size() - 5) == sv.size() - 5) {
-          files.push_back(sv);
-        }
-      }
-      // sort the files alphanumerically
-      std::sort(files.begin(), files.end(),
-                [](const std::string_view lhs, const std::string_view rhs) { return lhs.compare(rhs) < 0; });
-
-      for (auto &f : files) {
-        std::ifstream file(fileName + "/" + f.data());
-        if (file.is_open()) {
-          while (std::getline(file, line)) {
-            if (line[0] == '#') {
-              // continue;
-            }
-            doc << line << "\n";
-          }
-          file.close();
+    std::vector<fs::path> subpaths;
+    for (auto const &dirent : fs::directory_iterator(pathin)) {
+      fs::path const subpath = dirent.path();
+      if (fs::is_regular_file(subpath, ec) && !fs::is_empty(subpath, ec)) {
+        if (".yaml" == subpath.extension()) {
+          subpaths.push_back(subpath);
         } else {
-          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + f.data() + "'");
+          TSDebug(PLUGIN_NAME, "Skipping dirent (not yaml): '%s'", subpath.c_str());
         }
+      } else {
+        TSDebug(PLUGIN_NAME, "Skipping dirent (not file/empty): '%s'", subpath.c_str());
       }
     }
-    closedir(dir);
-  } else {
-    std::ifstream file(fileName);
-    if (file.is_open()) {
-      while (std::getline(file, line)) {
-        if (line[0] == '#') {
-          tok = strtok_r(const_cast<char *>(line.c_str()), sep, &last);
-          if (tok != nullptr && strcmp(tok, "#include") == 0) {
-            std::string f = strtok_r(nullptr, sep, &last);
-            if (include_once.find(f) == include_once.end()) {
-              include_once.insert(f);
-              // try to load included file.
+
+    // sort the files alphanumerically
+    std::sort(subpaths.begin(), subpaths.end());
+
+    for (fs::path const &fpath : subpaths) {
+      std::ifstream ifs(fpath);
+      if (ifs.is_open()) {
+        std::string line;
+        while (std::getline(ifs, line)) {
+          doc << line << "\n";
+        }
+      } else {
+        throw std::invalid_argument("Unable to open and read: '" + fpath.string() + "'");
+      }
+    }
+  } else if (fs::is_regular_file(pathin, ec) && !fs::is_empty(pathin, ec)) {
+    std::ifstream ifs(pathin);
+    if (ifs.is_open()) {
+      std::string line;
+      while (std::getline(ifs, line)) {
+        // include directive ??
+        constexpr std::string_view include{"#include"};
+        if (0 == line.rfind(include, 0)) { // starts_with
+
+          // forward view to post include token sans trailing white space
+          std::string_view sv{line};
+          sv = sv.substr(include.length());
+          sv = sv.substr(sv.find_first_not_of(sep));
+          std::string const pathinc(sv.substr(0, sv.find_first_of(sep)));
+
+          if (!pathinc.empty()) {
+            if (include_once.end() == include_once.find(pathinc)) {
+              TSDebug(PLUGIN_NAME, "Include directive: '%s'", pathinc.c_str());
+              include_once.insert(pathinc);
               try {
-                loadConfigFile(f, doc, include_once);
+                loadConfigFile(pathinc, doc, include_once);
               } catch (std::exception &ex) {
-                throw std::invalid_argument("Unable to open included file '" + f + "' from '" + fileName + "'");
+                throw std::invalid_argument("Unable to open included file '" + pathinc + "' from '" + pathnamein + "'");
               }
             }
           }
@@ -252,9 +248,8 @@ loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unorder
           doc << line << "\n";
         }
       }
-      file.close();
     } else {
-      throw std::invalid_argument("Unable to open and read '" + fileName + "'");
+      throw std::invalid_argument("Unable to open and read '" + pathnamein + "'");
     }
   }
 }
