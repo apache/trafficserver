@@ -302,12 +302,6 @@ if(ENABLE_DOCS)
   find_program(PipEnv pipenv REQUIRED)
 endif()
 
-# Catch2 for tests
-set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
-
-add_library(catch::catch INTERFACE IMPORTED)
-target_include_directories(catch::catch INTERFACE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
-
 include(CTest)
 set(TS_HAS_TESTS ${BUILD_REGRESSION_TESTING})
 
