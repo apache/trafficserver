@@ -788,7 +788,7 @@ CacheProcessor::diskInitialized()
   gnvol = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
+    if (dbg_ctl_cache_hosting.on()) {
       int j;
       DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
                d->free_space);
@@ -1548,7 +1548,7 @@ Ldone : {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
     SET_HANDLER(&Vol::handle_recover_write_dir);
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
+    if (dbg_ctl_cache_init.on()) {
       Note("recovery wrapped around. nothing to clear\n");
     }
     return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
@@ -1665,7 +1665,7 @@ Vol::handle_header_read(int event, void *data)
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Vol::handle_dir_read);
-      if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
+      if (dbg_ctl_cache_init.on()) {
         Note("using directory A for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip;
@@ -1674,7 +1674,7 @@ Vol::handle_header_read(int event, void *data)
     // try B
     else if (hf[2]->sync_serial == hf[3]->sync_serial) {
       SET_HANDLER(&Vol::handle_dir_read);
-      if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
+      if (dbg_ctl_cache_init.on()) {
         Note("using directory B for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip + this->dirlen();
@@ -2147,7 +2147,7 @@ CacheVC::handleReadDone(int event, Event *e)
     }
 #endif
 
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_read)) {
+    if (dbg_ctl_cache_read.on()) {
       char xt[CRYPTO_HEX_SIZE];
       Dbg(dbg_ctl_cache_read,
           "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64 " prefix=%d",
@@ -2968,7 +2968,7 @@ Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
     if (res.record) {
       unsigned short *host_hash_table = res.record->vol_hash_table;
       if (host_hash_table) {
-        if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
+        if (dbg_ctl_cache_hosting.on()) {
           char format_str[50];
           snprintf(format_str, sizeof(format_str), "Volume: %%xd for host: %%.%ds", host_len);
           Dbg(dbg_ctl_cache_hosting, format_str, res.record, hostname);
@@ -2978,7 +2978,7 @@ Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
     }
   }
   if (hash_table) {
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
+    if (dbg_ctl_cache_hosting.on()) {
       char format_str[50];
       snprintf(format_str, sizeof(format_str), "Generic volume: %%xd for host: %%.%ds", host_len);
       Dbg(dbg_ctl_cache_hosting, format_str, host_rec, hostname);

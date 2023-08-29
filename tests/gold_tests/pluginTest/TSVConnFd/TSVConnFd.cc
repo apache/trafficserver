@@ -32,7 +32,6 @@
 #include <tscpp/api/Cleanup.h>
 
 using atscppapi::TSContUniqPtr;
-using atscppapi::TSDbgCtlUniqPtr;
 
 /*
 Plugin for testing TSVConnFdCreate().
@@ -446,8 +445,7 @@ Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
   return 0;
 }
 
-TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
-TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+DbgCtl dbg_ctl{PIName};
 
 // Delete file whose path is specified in the constructor when the instance is destroyed.
 //
@@ -490,8 +488,8 @@ private:
                int n_bytes_recv)
       : Send_to_vconn{vconn_, n_groups_send * n_group_bytes}, Recv_from_vconn(vconn_), _f_del{f_del}
     {
-      TSDbg(dbg_ctl, "n_groups_send=%d n_group_bytes=%d allow_send_error=%c, n_bytes_recv=%d inst=%p", n_groups_send, n_group_bytes,
-            allow_send_error ? 'T' : 'F', n_bytes_recv, this);
+      Dbg(dbg_ctl, "n_groups_send=%d n_group_bytes=%d allow_send_error=%c, n_bytes_recv=%d inst=%p", n_groups_send, n_group_bytes,
+          allow_send_error ? 'T' : 'F', n_bytes_recv, this);
 
       TSReleaseAssert(n_groups_send >= 0);
       TSReleaseAssert(n_group_bytes >= 0);
@@ -582,8 +580,8 @@ void
 Ramp_test::_Send_recv::_notify_send_to_vconn()
 {
   auto st = status();
-  if (TSIsDbgCtlSet(dbg_ctl) && (st != Send_to_vconn::IN_PROGRESS)) {
-    TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: status=%d inst=%p", int(st), this);
+  if (dbg_ctl.on() && (st != Send_to_vconn::IN_PROGRESS)) {
+    DbgPrint(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: status=%d inst=%p", int(st), this);
   }
   switch (st) {
   case Send_to_vconn::IN_PROGRESS: {
@@ -596,7 +594,7 @@ Ramp_test::_Send_recv::_notify_send_to_vconn()
       _send(_s.buf.data(), _s.n_group_bytes);
 
     } else {
-      TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: done inst=%p", this);
+      Dbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: done inst=%p", this);
       _done(mtx());
     }
   } break;
@@ -607,8 +605,8 @@ Ramp_test::_Send_recv::_notify_send_to_vconn()
 
   case Send_to_vconn::ERROR:
     if (_s.allow_error) {
-      TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p (error expected)", int(error_event()),
-            this);
+      Dbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p (error expected)", int(error_event()),
+          this);
 
     } else {
       TSFatal(PINAME ": Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p", int(error_event()), this);
@@ -624,8 +622,8 @@ void
 Ramp_test::_Send_recv::_notify_recv_from_vconn()
 {
   auto st = Recv_from_vconn::_status();
-  if (TSIsDbgCtlSet(dbg_ctl) && (st != Recv_from_vconn::IN_PROGRESS)) {
-    TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: status=%d inst=%p", int(st), this);
+  if (dbg_ctl.on() && (st != Recv_from_vconn::IN_PROGRESS)) {
+    DbgPrint(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: status=%d inst=%p", int(st), this);
   }
   switch (st) {
   case Recv_from_vconn::IN_PROGRESS: {
@@ -649,7 +647,7 @@ Ramp_test::_Send_recv::_notify_recv_from_vconn()
       }
     }
     if (!_r.n_bytes_remaining) {
-      TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: done inst=%p", this);
+      Dbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: done inst=%p", this);
       _done(mtx());
     }
   } break;
@@ -811,7 +809,7 @@ TSContUniqPtr global_cont;
 void
 TSPluginInit(int n_arg, char const *arg[])
 {
-  TSDbg(dbg_ctl, "initializing plugin");
+  Dbg(dbg_ctl, "initializing plugin");
 
   TSPluginRegistrationInfo info;
 
@@ -823,7 +821,7 @@ TSPluginInit(int n_arg, char const *arg[])
     TSError(PINAME ": failure calling TSPluginRegister.");
     return;
   } else {
-    TSDbg(dbg_ctl, "Plugin registration succeeded.");
+    Dbg(dbg_ctl, "Plugin registration succeeded.");
   }
 
   global_cont.reset(nonNullPtrRel(TSContCreate(global_cont_func, nullptr)));
@@ -847,12 +845,12 @@ TSPluginInit(int n_arg, char const *arg[])
   listen_addr.sin_family      = AF_INET;
 
   for (int i{0};; ++i) {
-    TSDbg(dbg_ctl, "bind() with TCP port %d", loopback_port);
+    Dbg(dbg_ctl, "bind() with TCP port %d", loopback_port);
     int ret = bind(listen_fd, reinterpret_cast<sockaddr *>(&listen_addr), sizeof(listen_addr));
     if (ret >= 0) {
       break;
     }
-    TSDbg(dbg_ctl, "bind() failed: errno=%d", errno);
+    Dbg(dbg_ctl, "bind() failed: errno=%d", errno);
     TSReleaseAssert(i < 100);
     ++loopback_port;
     listen_addr.sin_port = htons(loopback_port);

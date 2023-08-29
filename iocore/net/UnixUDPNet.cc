@@ -1672,6 +1672,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   if (res > 0) {
 #ifdef SOL_UDP
     if (use_udp_gso) {
+      ink_assert(res <= n);
       Debug("udp-send", "Sent %d messages by processing %d UDPPackets (GSO)", res, n);
     } else {
 #endif

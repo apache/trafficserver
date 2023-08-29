@@ -160,7 +160,7 @@ SplitDNSConfig::reconfigure()
 
   m_id = configProcessor.set(m_id, params);
 
-  if (is_dbg_ctl_enabled(dbg_ctl_splitdns_config)) {
+  if (dbg_ctl_splitdns_config.on()) {
     SplitDNSConfig::print();
   }
 
@@ -274,7 +274,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
     result->r = DNS_SRVR_SPECIFIED;
   }
 
-  if (is_dbg_ctl_enabled(dbg_ctl_splitdns_config)) {
+  if (dbg_ctl_splitdns_config.on()) {
     const char *host = rdata->get_host();
 
     switch (result->r) {

@@ -206,7 +206,7 @@ struct DNSHandler : public Continuation {
   bool
   failover_now(int i)
   {
-    if (is_dbg_ctl_enabled(_dbg_ctl_dns)) {
+    if (_dbg_ctl_dns.on()) {
       DbgPrint(_dbg_ctl_dns, "failover_now: Considering immediate failover, target time is %" PRId64 "",
                (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
       DbgPrint(_dbg_ctl_dns, "\tdelta time is %" PRId64 "", (ink_get_hrtime() - crossed_failover_number[i]));

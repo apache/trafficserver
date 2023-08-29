@@ -143,7 +143,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
   *copy = 0;
   if (diags()->on()) {
     static DbgCtl dbg_ctl("ssl.session_cache.get");
-    if (dbg_ctl.ptr()->on) {
+    if (dbg_ctl.tag_on()) {
       char printable_buf[(len * 2) + 1];
       sid.toString(printable_buf, sizeof(printable_buf));
       DbgPrint(dbg_ctl, "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));

@@ -40,8 +40,7 @@ namespace
 {
 char PIName[] = PINAME;
 
-atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
-TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+DbgCtl dbg_ctl{PINAME};
 
 enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT_READ_HDRS, END };
 
@@ -94,7 +93,7 @@ next_step(int curr)
     curr = BEGIN;
   }
 
-  TSDbg(dbg_ctl, "Entering test step %s", step_cstr(curr));
+  Dbg(dbg_ctl, "Entering test step %s", step_cstr(curr));
 
   test_step.store(curr, std::memory_order_relaxed);
 }
@@ -113,7 +112,7 @@ private:
     //
     TSThreadWait(_checker.get());
 
-    TSDbg(dbg_ctl, "In ~Blocking_action()");
+    Dbg(dbg_ctl, "In ~Blocking_action()");
   }
 
   Blocking_action() = default;
@@ -146,7 +145,7 @@ Blocking_action::init()
 int
 Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
 {
-  TSDbg(dbg_ctl, "entering _global_cont_func()");
+  Dbg(dbg_ctl, "entering _global_cont_func()");
 
   TSReleaseAssert(eventData != nullptr);
 
@@ -245,7 +244,7 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 void
 TSPluginInit(int n_arg, char const *arg[])
 {
-  TSDbg(dbg_ctl, "initializing plugin");
+  Dbg(dbg_ctl, "initializing plugin");
 
   TSPluginRegistrationInfo info;
 
@@ -257,7 +256,7 @@ TSPluginInit(int n_arg, char const *arg[])
     TSError(PINAME ": failure calling TSPluginRegister.");
     return;
   } else {
-    TSDbg(dbg_ctl, "Plugin registration succeeded.");
+    Dbg(dbg_ctl, "Plugin registration succeeded.");
   }
 
   AuxDataMgr::init(PIName);

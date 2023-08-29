@@ -1114,11 +1114,6 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TSIOBufferWaterMark buffer_water_mark;
   };
 
-  struct TSDbgCtl {
-    char volatile on; // Flag
-    char const *tag;
-  };
-
   /* --------------------------------------------------------------------------
      URL schemes */
   extern const char *TS_URL_SCHEME_FILE;

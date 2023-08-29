@@ -1175,7 +1175,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
       dir_delete(&earliest_key, vol, &earliest_dir);
     }
   }
-  if (is_dbg_ctl_enabled(dbg_ctl_cache_update)) {
+  if (dbg_ctl_cache_update.on()) {
     if (f.update && closed > 0) {
       if (!total_len && !f.allow_empty_doc && alternate_index != CACHE_ALT_REMOVED) {
         Dbg(dbg_ctl_cache_update, "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],

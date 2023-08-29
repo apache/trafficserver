@@ -22,11 +22,10 @@
  */
 
 #include <mutex>
-#include <set>
+#include <map>
 #include <cstring>
 #include <atomic>
-
-#include "swoc/bwf_ip.h"
+#include <cstdarg>
 
 #include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
@@ -39,19 +38,19 @@ class DbgCtl::_RegistryAccessor
 private:
   struct TagCmp {
     bool
-    operator()(TSDbgCtl const &a, TSDbgCtl const &b) const
+    operator()(char const *a, char const *b) const
     {
-      return std::strcmp(a.tag, b.tag) < 0;
+      return std::strcmp(a, b) < 0;
     }
   };
 
 public:
-  using Set = std::set<TSDbgCtl, TagCmp>;
+  using Map = std::map<char const *, bool, TagCmp>;
 
   class Registry
   {
   public:
-    Set set;
+    Map map;
 
   private:
     Registry() = default;
@@ -60,8 +59,8 @@ public:
     //
     ~Registry()
     {
-      for (auto &ctl : set) {
-        delete[] ctl.tag;
+      for (auto &elem : map) {
+        delete[] elem.first;
       }
       _mtx.unlock();
     }
@@ -121,14 +120,10 @@ private:
   inline static std::atomic<Registry *> _registry_instance{nullptr};
 };
 
-TSDbgCtl const *
+DbgCtl::_TagData const *
 DbgCtl::_new_reference(char const *tag)
 {
   ink_assert(tag != nullptr);
-
-  TSDbgCtl ctl;
-
-  ctl.tag = tag;
 
   // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
@@ -142,7 +137,7 @@ DbgCtl::_new_reference(char const *tag)
 
   auto &d{ra.data()};
 
-  if (auto it = d.set.find(ctl); it != d.set.end()) {
+  if (auto it = d.map.find(tag); it != d.map.end()) {
     return &*it;
   }
 
@@ -150,14 +145,11 @@ DbgCtl::_new_reference(char const *tag)
 
   ink_assert(sz > 0);
 
-  {
-    char *t = new char[sz + 1]; // Deleted by ~Registry().
-    std::memcpy(t, tag, sz + 1);
-    ctl.tag = t;
-  }
-  ctl.on = diags() && diags()->tag_activated(tag, DiagsTagType_Debug);
+  char *t = new char[sz + 1]; // Deleted by ~Registry().
+  std::memcpy(t, tag, sz + 1);
+  _TagData new_elem{t, diags() && diags()->tag_activated(tag, DiagsTagType_Debug)};
 
-  auto res = d.set.insert(ctl);
+  auto res = d.map.insert(new_elem);
 
   ink_assert(res.second);
 
@@ -191,7 +183,25 @@ DbgCtl::update()
 
   auto &d{ra.data()};
 
-  for (auto &i : d.set) {
-    const_cast<char volatile &>(i.on) = diags()->tag_activated(i.tag, DiagsTagType_Debug);
+  for (auto &i : d.map) {
+    i.second = diags()->tag_activated(i.first, DiagsTagType_Debug);
   }
+}
+
+void
+DbgCtl::print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
+{
+  SourceLocation src_loc{file, function, line};
+  va_list args;
+  va_start(args, fmt_str);
+  diags()->print_va(tag, DL_Diag, &src_loc, fmt_str, args);
+  va_end(args);
+}
+
+std::atomic<int> DbgCtl::_config_mode{0};
+
+bool
+DbgCtl::_override_global_on()
+{
+  return diags()->get_override();
 }

@@ -670,7 +670,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return calluser(VC_EVENT_EOS);
     }
     HTTPInfo::FragOffset *frags = alternate.get_frag_table();
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+    if (dbg_ctl_cache_seek.on()) {
       char b[CRYPTO_HEX_SIZE], c[CRYPTO_HEX_SIZE];
       Dbg(dbg_ctl_cache_seek, "Seek @ %" PRId64 " in %s from #%d @ %" PRId64 "/%d:%s", seek_to, first_key.toHexStr(b), fragment,
           doc_pos, doc->len, doc->key.toHexStr(c));
@@ -716,7 +716,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           --fragment;
         }
 
-        if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+        if (dbg_ctl_cache_seek.on()) {
           char target_key_str[CRYPTO_HEX_SIZE];
           key.toHexStr(target_key_str);
           DbgPrint(dbg_ctl_cache_seek, "Seek #%d @ %" PRId64 " -> #%d @ %" PRId64 ":%s", cfi, doc_pos, target, seek_to,
@@ -733,7 +733,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     seek_to   = 0;
     ntodo     = vio.ntodo();
     bytes     = doc->len - doc_pos;
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+    if (dbg_ctl_cache_seek.on()) {
       char target_key_str[CRYPTO_HEX_SIZE];
       DbgPrint(dbg_ctl_cache_seek, "Read # %d @ %" PRId64 "/%d for %" PRId64 " %s", fragment, doc_pos, doc->len, bytes,
                key.toHexStr(target_key_str));
@@ -1216,7 +1216,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       doc_len           = doc->total_len;
     }
 
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_read)) { // amc debug
+    if (dbg_ctl_cache_read.on()) { // amc debug
       char xt[CRYPTO_HEX_SIZE], yt[CRYPTO_HEX_SIZE];
       DbgPrint(dbg_ctl_cache_read, "CacheReadStartHead - read %s target %s - %s %d of %" PRId64 " bytes, %d fragments",
                doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", doc->len, doc->total_len,
