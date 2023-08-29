@@ -154,7 +154,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
-   Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
@@ -164,12 +163,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Maxmind ACL <maxmind_acl.en>
    Memcache <memcache.en>
    Memory Profile <memory_profile.en>
-   Metalink <metalink.en>
    Money Trace <money_trace.en>
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
    OpenTelemetry Tracer <otel_tracer.en>
-   Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
    Remap Stats <remap_stats.en>
    URI Signing <uri_signing.en>
@@ -193,10 +190,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Cert Reporting Tool <cert_reporting_tool.en>`
    Examines and logs information on loaded certificates.
 
-:doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
-   Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
-   all clients in parallel.
-
 :doc:`FQ Pacing <fq_pacing.en>`
    FQ Pacing: Rate Limit TCP connections using Linux's Fair Queuing queue discipline
 
@@ -218,9 +211,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Memcache <memcache.en>`
    Implements the memcache protocol for cache contents.
 
-:doc:`Metalink <metalink.en>`
-   Implements the Metalink download description format in order to try not to download the same file twice.
-
 :doc:`Money Trace <money_trace.en>`
    Allows Trafficserver to participate in a distributed tracing system based upon the Comcast Money library.
 
@@ -238,10 +228,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Prefetch <prefetch.en>`
    Pre-fetch objects based on the requested URL path pattern.
-
-:doc:`Parent Select <parent_select.en>`
-   This remap plugin allows selection of parent proxies or origins during requests. This
-   provides the same functionality as the core :file:`parent.config` and :file:`strategies.yaml` config files.
 
 :doc:`Rate Limit <rate_limit.en>`
    Simple transaction rate limiting.
