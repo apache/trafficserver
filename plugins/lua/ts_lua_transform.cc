@@ -59,7 +59,7 @@ static int
 ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TSEvent event, int n)
 {
   TSVIO input_vio;
-  TSIOBufferReader input_reader;
+  TSIOBufferReader input_reader = nullptr;
   TSIOBufferBlock blk;
   int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes;
   const char *start;
@@ -286,7 +286,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
 {
   TSVConn output_conn;
   TSVIO input_vio;
-  TSIOBufferReader input_reader;
+  TSIOBufferReader input_reader = nullptr;
   TSIOBufferBlock blk;
   int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes, l;
   const char *start;
