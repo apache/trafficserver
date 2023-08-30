@@ -2975,7 +2975,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
   // Check to see if the client is still around
   HttpTunnelProducer *ua = (_ua.get_txn()) ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HT_HTTP_CLIENT);
 
-  if (ua && !ua->read_success) {
+  if (ua == nullptr || (ua && !ua->read_success)) {
     // Client failed to send the body, it's gone.  Kill the
     // state machine
     terminate_sm = true;
