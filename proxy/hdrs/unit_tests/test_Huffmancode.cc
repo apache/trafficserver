@@ -26,6 +26,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include "catch.hpp"
 
 using namespace std;
 
@@ -88,13 +89,20 @@ random_test()
   free(dst_start);
 }
 
+TEST_CASE("Huffmancode Random", "[proxy][huffman]")
+{
+  // This doesn't check anything ...
+  for (int i = 0; i < 100; i++) {
+    random_test();
+  }
+}
+
 union Value {
   uint32_t x;
   uint8_t y[4];
 };
 
-void
-values_test()
+TEST_CASE("values_test", "[proxy][huffman]")
 {
   char dst_start[4];
   int size = sizeof(test_values) / 4;
@@ -139,11 +147,11 @@ values_test()
 
     // EOS is treated as invalid so check for an error
     if (value == 0x3fffffff) {
-      assert(bytes == -1);
+      REQUIRE(bytes == -1);
       continue;
     }
-    assert(dst_start[0] == ascii_value);
-    assert(bytes == 1);
+    REQUIRE(dst_start[0] == ascii_value);
+    REQUIRE(bytes == 1);
   }
 }
 
@@ -164,22 +172,20 @@ const static struct {
    17                                                                                                                                   }
 };
 
-void
-encode_test()
+TEST_CASE("encode_test", "[proxy][huffman]")
 {
   for (const auto &i : huffman_encode_test_data) {
     uint8_t *dst        = static_cast<uint8_t *>(malloc(i.expect_len));
     int64_t encoded_len = huffman_encode(dst, i.src, i.src_len);
 
-    assert(encoded_len == i.expect_len);
-    assert(memcmp(i.expect, dst, encoded_len) == 0);
+    REQUIRE(encoded_len == i.expect_len);
+    REQUIRE(memcmp(i.expect, dst, encoded_len) == 0);
 
     free(dst);
   }
 }
 
-void
-decode_errors_test()
+TEST_CASE("decode_errors", "[proxy][huffman]")
 {
   const static struct {
     char *input;
@@ -196,24 +202,7 @@ decode_errors_test()
     int dst_len = 2 * test_cases[i].input_len;
     char *dst   = (char *)malloc(dst_len);
     int len     = huffman_decode(dst, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
-    assert(len == -1);
+    REQUIRE(len == -1);
     free(dst);
   }
-}
-
-int
-main()
-{
-  hpack_huffman_init();
-
-  for (int i = 0; i < 100; i++) {
-    random_test();
-  }
-  values_test();
-  decode_errors_test();
-
-  hpack_huffman_fin();
-
-  encode_test();
-  return 0;
 }

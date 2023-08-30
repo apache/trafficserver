@@ -15,31 +15,30 @@
 #
 #######################
 
-
-add_library(tscpputil SHARED
-        ts_bwf.cc
-        ts_ip.cc
-        ts_diags.cc
-        YamlCfg.cc
-        ts_unit_parser.cc)
-add_library(ts::tscpputil ALIAS tscpputil)
-target_link_libraries(tscpputil
-	PUBLIC
-		libswoc
-		yaml-cpp::yaml-cpp
-                ts::tscore
+add_executable(benchmark_FreeList benchmark_FreeList.cc)
+target_link_libraries(benchmark_FreeList
+    PRIVATE
+        catch2::catch2
+        ts::tscore
+        libswoc
 )
-install(TARGETS tscpputil)
+if(TS_USE_HWLOC)
+    target_link_libraries(benchmark_FreeList PRIVATE hwloc)
+endif()
 
-add_executable(test_tscpputil
-        unit_tests/test_LocalBuffer.cc
-        unit_tests/test_PostScript.cc
-        unit_tests/test_Strerror.cc
-        unit_tests/test_ts_meta.cc
-        unit_tests/test_time_parser.cc
-        unit_tests/unit_test_main.cc
+add_executable(benchmark_ProxyAllocator benchmark_ProxyAllocator.cc)
+target_link_libraries(benchmark_ProxyAllocator
+    PRIVATE
+        catch2::catch2
+        ts::tscore
+        ts::inkevent
+        libswoc
 )
-target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc catch2::catch2)
-target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-add_test(NAME test_tscpputil COMMAND $<TARGET_FILE:test_tscpputil>)
+add_executable(benchmark_SharedMutex benchmark_SharedMutex.cc)
+target_link_libraries(benchmark_SharedMutex
+    PRIVATE
+        catch2::catch2
+        ts::tscore
+        libswoc
+)

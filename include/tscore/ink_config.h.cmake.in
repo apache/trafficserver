@@ -91,9 +91,8 @@
 
 #define SIZEOF_VOIDP @CMAKE_SIZEOF_VOID_P@
 
-/* TODO(cmcfarlen): make this configurable */
-#define TS_PKGSYSUSER "@pkgsysuser@"
-#define TS_PKGSYSGROUP "@pkgsysgroup@"
+#define TS_PKGSYSUSER "@TS_PKGSYSUSER@"
+#define TS_PKGSYSGROUP "@TS_PKGSYSGROUP@"
 
 #define TS_BUILD_PREFIX "@CMAKE_INSTALL_PREFIX@"
 #define TS_BUILD_EXEC_PREFIX ""
