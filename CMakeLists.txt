@@ -57,6 +57,24 @@ option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
 
+# Setup user
+# NOTE: this is the user trafficserver runs as
+set(WITH_USER nobody CACHE STRING "The system user (default nobody)")
+# NOTE: I can't tell that this is used at all besides being printed
+set(WITH_GROUP nobody CACHE STRING "The system group (default nobody, or specified user's group)")
+
+if(WITH_GROUP STREQUAL nobody)
+  execute_process(COMMAND id -ng ${WITH_USER} OUTPUT_VARIABLE TS_PKGSYSGROUP OUTPUT_STRIP_TRAILING_WHITESPACE)
+else()
+  set(TS_PKGSYSGROUP ${WITH_GROUP})
+endif()
+set(TS_PKGSYSUSER ${WITH_USER})
+
+# Setup default install directory
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX /usr/local/trafficserver CACHE PATH "Default install path" FORCE)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     set(DEFAULT_POSIX_CAP ON)
 endif()
@@ -479,6 +497,8 @@ cmake_print_variables(CMAKE_CXX_FLAGS)
 cmake_print_variables(CMAKE_C_FLAGS)
 cmake_print_variables(BUILD_PERSON)
 cmake_print_variables(BUILD_GROUP)
+cmake_print_variables(TS_PKGSYSUSER)
+cmake_print_variables(TS_PKGSYSGROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
