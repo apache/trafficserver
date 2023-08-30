@@ -27,7 +27,6 @@
 #include <catch.hpp>
 
 #include "EsiParser.h"
-#include "print_funcs.h"
 #include "Utils.h"
 
 using std::string;
@@ -148,11 +147,9 @@ checkNodeList2(const DocNodeList &node_list)
 
 TEST_CASE("esi docnode test")
 {
-  Utils::init(&Debug, &Error);
-
   SECTION("Test 1")
   {
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test");
     string input_data = "foo <esi:include src=blah /> bar";
 
     DocNodeList node_list;
@@ -183,7 +180,7 @@ TEST_CASE("esi docnode test")
 
   SECTION("Test 2")
   {
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test");
     string input_data("<esi:choose>"
                       "<esi:when test=c1>"
                       "<esi:try>"

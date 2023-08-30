@@ -27,7 +27,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include "print_funcs.h"
 #include "Utils.h"
 #include "gzip.h"
 
@@ -36,8 +35,6 @@ using namespace EsiLib;
 
 TEST_CASE("test esi plugin - gzip")
 {
-  Utils::init(&Debug, &Error);
-
   SECTION("===================== Test 1")
   {
     const char expected_cdata[] = "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03\xf3\x48\xcd\xc9\xc9\x57\x08\xcf\x2f\xca\x49\x51\x04\x00"

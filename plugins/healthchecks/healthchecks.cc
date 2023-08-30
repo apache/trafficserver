@@ -40,6 +40,8 @@ limitations under the License.
 static const char PLUGIN_NAME[] = "healthchecks";
 static const char SEPARATORS[]  = " \t\n";
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 #define MAX_PATH_LEN     4096
 #define MAX_BODY_LEN     16384
 #define FREELIST_TIMEOUT 300
@@ -136,13 +138,13 @@ setup_watchers(int fd)
 
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
-    TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
+    Dbg(dbg_ctl, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_PATH_LEN);
 
     char *dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
-      TSDebug(PLUGIN_NAME, "Setting up a watcher for directory %s", dname);
+      Dbg(dbg_ctl, "Setting up a watcher for directory %s", dname);
       dir = tsapi::malloc<HCDirEntry>();
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_PATH_LEN - 1);
@@ -200,7 +202,7 @@ hc_thread(void *data ATS_UNUSED)
         do {
           HCFileData *next = fdata->_next;
 
-          TSDebug(PLUGIN_NAME, "Cleaning up entry from freelist");
+          Dbg(dbg_ctl, "Cleaning up entry from freelist");
           TSfree(fdata);
           fdata = next;
         } while (fdata);
@@ -227,18 +229,18 @@ hc_thread(void *data ATS_UNUSED)
           HCFileData *old_data;
 
           if (event->mask & (IN_CLOSE_WRITE | IN_ATTRIB)) {
-            TSDebug(PLUGIN_NAME, "Modify file event (%d) on %s", event->mask, finfo->fname);
+            Dbg(dbg_ctl, "Modify file event (%d) on %s", event->mask, finfo->fname);
           } else if (event->mask & (IN_CREATE | IN_MOVED_TO)) {
-            TSDebug(PLUGIN_NAME, "Create file event (%d) on %s", event->mask, finfo->fname);
+            Dbg(dbg_ctl, "Create file event (%d) on %s", event->mask, finfo->fname);
             finfo->wd = inotify_add_watch(fd, finfo->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
           } else if (event->mask & (IN_DELETE_SELF | IN_MOVED_FROM)) {
-            TSDebug(PLUGIN_NAME, "Delete file event (%d) on %s", event->mask, finfo->fname);
+            Dbg(dbg_ctl, "Delete file event (%d) on %s", event->mask, finfo->fname);
             finfo->wd = inotify_rm_watch(fd, finfo->wd);
           }
           /* Load the new data and then swap this atomically */
           memset(new_data, 0, sizeof(HCFileData));
           reload_status_file(finfo, new_data);
-          TSDebug(PLUGIN_NAME, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
+          Dbg(dbg_ctl, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
           old_data = finfo->data.exchange(new_data);
 
           /* Add the old data to the head of the freelist */
@@ -353,7 +355,7 @@ parse_configs(const char *fname)
 
       /* Fill in the info if everything was ok */
       if (state > 4) {
-        TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+        Dbg(dbg_ctl, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
         finfo->ok   = gen_header(ok, mime, &finfo->o_len);
         finfo->miss = gen_header(miss, mime, &finfo->m_len);
         finfo->data = tsapi::malloc<HCFileData>();
@@ -361,7 +363,7 @@ parse_configs(const char *fname)
         reload_status_file(finfo, finfo->data);
 
         /* Add it the linked list */
-        TSDebug(PLUGIN_NAME, "Adding path=%s to linked list", finfo->path);
+        Dbg(dbg_ctl, "Adding path=%s to linked list", finfo->path);
         if (nullptr == head_finfo) {
           head_finfo = finfo;
         } else {
@@ -411,10 +413,10 @@ hc_process_read(TSCont contp, TSEvent event, HCState *my_state)
 {
   if (event == TS_EVENT_VCONN_READ_READY) {
     if (my_state->data->exists) {
-      TSDebug(PLUGIN_NAME, "Setting OK response header");
+      Dbg(dbg_ctl, "Setting OK response header");
       my_state->output_bytes = add_data_to_resp(my_state->info->ok, my_state->info->o_len, my_state);
     } else {
-      TSDebug(PLUGIN_NAME, "Setting MISS response header");
+      Dbg(dbg_ctl, "Setting MISS response header");
       my_state->output_bytes = add_data_to_resp(my_state->info->miss, my_state->info->m_len, my_state);
     }
     TSVConnShutdown(my_state->net_vc, 1, 0);
@@ -509,7 +511,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
 
     while (info) {
       if (info->p_len == path_len && !memcmp(info->path, path, path_len)) {
-        TSDebug(PLUGIN_NAME, "Found match for /%.*s", path_len, path);
+        Dbg(dbg_ctl, "Found match for /%.*s", path_len, path);
         break;
       }
       info = info->_next;
@@ -579,6 +581,6 @@ TSPluginInit(int argc, const char *argv[])
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  TSDebug(PLUGIN_NAME, "Started %s plugin", PLUGIN_NAME);
+  Dbg(dbg_ctl, "Started %s plugin", PLUGIN_NAME);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(health_check_origin, nullptr));
 }

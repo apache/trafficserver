@@ -27,18 +27,11 @@
 
 using namespace EsiLib;
 
-ComponentBase::Debug Utils::DEBUG_LOG(nullptr);
-ComponentBase::Error Utils::ERROR_LOG(nullptr);
-
-#define DEBUG_TAG "EsiUtils"
-
 using std::string;
 
-void
-Utils::init(ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+namespace
 {
-  DEBUG_LOG = debug_func;
-  ERROR_LOG = error_func;
+DbgCtl dbg_ctl{"EsiUtils"};
 }
 
 bool
@@ -47,7 +40,7 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
 {
   size_t attr_start = data.find(attr, curr_pos);
   if (attr_start >= end_pos) {
-    ERROR_LOG("[%s] Tag has no [%.*s] attribute", __FUNCTION__, attr.size(), attr.data());
+    TSError("[%s] Tag has no [%.*s] attribute", __FUNCTION__, int(attr.size()), attr.data());
     return false;
   }
   curr_pos          = attr_start + attr.size();
@@ -63,12 +56,12 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
     }
   }
   if (!equals_found) {
-    ERROR_LOG("[%s] Attribute [%.*s] has no value", __FUNCTION__, attr.size(), attr.data());
+    TSError("[%s] Attribute [%.*s] has no value", __FUNCTION__, int(attr.size()), attr.data());
     return false;
   }
   ++curr_pos;
   if (curr_pos == end_pos) {
-    ERROR_LOG("[%s] No space for value after [%.*s] attribute", __FUNCTION__, attr.size(), attr.data());
+    TSError("[%s] No space for value after [%.*s] attribute", __FUNCTION__, int(attr.size()), attr.data());
     return false;
   }
   bool in_quoted_part = false;
@@ -88,14 +81,14 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
   }
   const char *data_start_ptr = data.data();
   if (in_quoted_part) {
-    ERROR_LOG("[%s] Unterminated quote in value for attribute [%.*s] starting at [%.10s]", __FUNCTION__, attr.size(), attr.data(),
-              data_start_ptr + curr_pos);
+    TSError("[%s] Unterminated quote in value for attribute [%.*s] starting at [%.10s]", __FUNCTION__, int(attr.size()),
+            attr.data(), data_start_ptr + curr_pos);
     return false;
   }
   if (terminator && term_pos) {
     *term_pos = data.find(terminator, i);
     if (*term_pos >= end_pos) {
-      ERROR_LOG("[%s] Unterminated attribute [%.*s]", __FUNCTION__, attr.size(), attr.data());
+      TSError("[%s] Unterminated attribute [%.*s]", __FUNCTION__, int(attr.size()), attr.data());
       return false;
     }
   }
@@ -131,7 +124,7 @@ Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, H
       }
       if (key.size() && value.size()) {
         kvMap.insert(KeyValueMap::value_type(key, value));
-        DEBUG_LOG(DEBUG_TAG, "[%s] Read value [%s] for key [%s]", __FUNCTION__, value.c_str(), key.c_str());
+        Dbg(dbg_ctl, "[%s] Read value [%s] for key [%s]", __FUNCTION__, value.c_str(), key.c_str());
       }
     }
     key.clear();
@@ -177,8 +170,8 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
             attr.value_len -= 2;
           }
           if (attr.name_len && attr.value_len) {
-            DEBUG_LOG(DEBUG_TAG, "[%s] Added attribute with name [%.*s] and value [%.*s]", __FUNCTION__, attr.name_len, attr.name,
-                      attr.value_len, attr.value);
+            Dbg(dbg_ctl, "[%s] Added attribute with name [%.*s] and value [%.*s]", __FUNCTION__, attr.name_len, attr.name,
+                attr.value_len, attr.value);
             attr_list.push_back(attr);
           } // else ignore empty name/value
         }   // else ignore attribute with no value

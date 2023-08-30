@@ -82,12 +82,12 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len)
   const char *packed_data_start = packed_data;
 
   if (!packed_data || (packed_data_len < static_cast<int>((sizeof(char) + sizeof(int32_t))))) {
-    Utils::ERROR_LOG("[%s] Invalid arguments (%p, %d)", __FUNCTION__, packed_data, packed_data_len);
+    TSError("[%s] Invalid arguments (%p, %d)", __FUNCTION__, packed_data, packed_data_len);
     return false;
   }
   if (*packed_data != DOCNODE_VERSION) {
-    Utils::ERROR_LOG("[%s] Version %d not in supported set (%d)", __FUNCTION__, static_cast<int>(*packed_data),
-                     static_cast<int>(DOCNODE_VERSION));
+    TSError("[%s] Version %d not in supported set (%d)", __FUNCTION__, static_cast<int>(*packed_data),
+            static_cast<int>(DOCNODE_VERSION));
     return false;
   }
   ++packed_data;
@@ -95,7 +95,7 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len)
   int32_t node_size;
   unpackItem(packed_data, node_size);
   if (node_size > packed_data_len) {
-    Utils::ERROR_LOG("[%s] Data size (%d) not sufficient to hold node of size %d", __FUNCTION__, packed_data_len, node_size);
+    TSError("[%s] Data size (%d) not sufficient to hold node of size %d", __FUNCTION__, packed_data_len, node_size);
     return false;
   }
   node_len = node_size;
@@ -115,7 +115,7 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len)
   }
 
   if (!child_nodes.unpack(packed_data, packed_data_len - (packed_data - packed_data_start))) {
-    Utils::ERROR_LOG("[%s] Could not unpack child nodes", __FUNCTION__);
+    TSError("[%s] Could not unpack child nodes", __FUNCTION__);
     return false;
   }
   return true;
@@ -135,7 +135,7 @@ bool
 DocNodeList::unpack(const char *data, int data_len)
 {
   if (!data || (data_len < static_cast<int>(sizeof(int32_t)))) {
-    Utils::ERROR_LOG("[%s] Invalid arguments", __FUNCTION__);
+    TSError("[%s] Invalid arguments", __FUNCTION__);
     return false;
   }
   const char *data_start = data;
@@ -146,7 +146,7 @@ DocNodeList::unpack(const char *data, int data_len)
   DocNode node;
   for (int i = 0; i < n_elements; ++i) {
     if (!node.unpack(data_start + data_offset, data_len - data_offset, node_size)) {
-      Utils::ERROR_LOG("[%s] Could not unpack node", __FUNCTION__);
+      TSError("[%s] Could not unpack node", __FUNCTION__);
       return false;
     }
     data_offset += node_size;

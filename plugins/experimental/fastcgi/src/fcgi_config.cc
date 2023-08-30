@@ -566,7 +566,7 @@ FcgiPluginConfig::initConfig(const char *fn)
   InterceptPluginData *plugin_data = new InterceptPluginData();
   FcgiPluginConfig *config         = new FcgiPluginConfig(); // static_cast<FcgiPluginConfig *>(TSmalloc(sizeof(FcgiPluginConfig)));
                                                              // Default config
-  TSDebug(PLUGIN_NAME, "Setting config...");
+  Dbg(dbg_ctl, "Setting config...");
   if (plugin_data || nullptr == plugin_data->getGlobalConfigObj()) {
     config->enabled            = true;
     config->hostname           = DEFAULT_HOSTNAME;
@@ -725,13 +725,13 @@ FcgiPluginConfig::initConfig(const char *fn)
           case fcgiInclude:
             if (4 == strlen(tok) && 0 == strcmp(tok, "NULL")) {
               config->include = nullptr;
-              TSDebug(PLUGIN_NAME, "Failed to load FCGIParams config file.");
+              Dbg(dbg_ctl, "Failed to load FCGIParams config file.");
             } else {
               config->include = TSstrdup(tok);
               // This will read fcgiparams from config file and stored in config->params map
               FCGIParams *params = config->params;
               initFcgiParam(config->include, params);
-              TSDebug(PLUGIN_NAME, "Reading fcgiParams config from %s file complete.", config->include);
+              Dbg(dbg_ctl, "Reading fcgiParams config from %s file complete.", config->include);
               // FCGIParams::iterator it = params->begin();
               // std::cout << "mymap contains:\n";
               // for (it = params->begin(); it != params->end(); ++it)
@@ -756,20 +756,20 @@ FcgiPluginConfig::initConfig(const char *fn)
 
           case fcgiMinConnections: {
             config->min_connections = strtoll(tok, nullptr, 10);
-            TSDebug(PLUGIN_NAME, "min_connections = %ld", config->min_connections);
+            Dbg(dbg_ctl, "min_connections = %ld", config->min_connections);
           } break;
 
           case fcgiMaxConnections: {
             config->max_connections = strtoll(tok, nullptr, 10);
-            TSDebug(PLUGIN_NAME, "max_connections = %ld", config->max_connections);
+            Dbg(dbg_ctl, "max_connections = %ld", config->max_connections);
           } break;
           case fcgiMaxRequests: {
             config->max_requests = strtoll(tok, nullptr, 10);
-            TSDebug(PLUGIN_NAME, "max_requests = %ld", config->max_requests);
+            Dbg(dbg_ctl, "max_requests = %ld", config->max_requests);
           } break;
           case fcgiRequestQueueSize: {
             config->request_queue_size = strtoll(tok, nullptr, 10);
-            TSDebug(PLUGIN_NAME, "request_queue_size = %ld", config->request_queue_size);
+            Dbg(dbg_ctl, "request_queue_size = %ld", config->request_queue_size);
           } break;
           default:
             break;
@@ -781,13 +781,13 @@ FcgiPluginConfig::initConfig(const char *fn)
     }
   }
 
-  TSDebug(PLUGIN_NAME, "enabled = %d", static_cast<int>(config->enabled));
-  TSDebug(PLUGIN_NAME, "hostname = %s", config->hostname);
-  TSDebug(PLUGIN_NAME, "server_ip = %s", config->server_ip);
-  TSDebug(PLUGIN_NAME, "server_port = %s", config->server_port);
-  TSDebug(PLUGIN_NAME, "include = %s", config->include);
-  TSDebug(PLUGIN_NAME, "document_root = %s", config->document_root);
-  TSDebug(PLUGIN_NAME, "html = %s", config->html);
+  Dbg(dbg_ctl, "enabled = %d", static_cast<int>(config->enabled));
+  Dbg(dbg_ctl, "hostname = %s", config->hostname);
+  Dbg(dbg_ctl, "server_ip = %s", config->server_ip);
+  Dbg(dbg_ctl, "server_port = %s", config->server_port);
+  Dbg(dbg_ctl, "include = %s", config->include);
+  Dbg(dbg_ctl, "document_root = %s", config->document_root);
+  Dbg(dbg_ctl, "html = %s", config->html);
   return config;
 }
 

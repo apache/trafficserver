@@ -208,7 +208,7 @@ ts_lua_script_registered(lua_State *L, char *script)
   TSMgmtInt curr_time;
   ts_lua_instance_conf *conf = nullptr;
 
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] checking if script [%s] is registered", __FUNCTION__, script);
+  Dbg(dbg_ctl, "[%s] checking if script [%s] is registered", __FUNCTION__, script);
 
   // first check the reconfigure_time for the script. if it is not found, then it is new
   // if it matches the current reconfigure_time, then it is loaded already
@@ -219,7 +219,7 @@ ts_lua_script_registered(lua_State *L, char *script)
     lua_concat(L, 2);
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_isnil(L, -1)) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] failed to get script time for [%s]", __FUNCTION__, script);
+      Dbg(dbg_ctl, "[%s] failed to get script time for [%s]", __FUNCTION__, script);
       lua_pop(L, -1);
       return nullptr;
     } else {
@@ -232,7 +232,7 @@ ts_lua_script_registered(lua_State *L, char *script)
         lua_concat(L, 2);
         lua_rawget(L, LUA_REGISTRYINDEX);
         if (lua_isnil(L, -1)) {
-          TSDebug(TS_LUA_DEBUG_TAG, "[%s] failed to get script ptr for [%s]", __FUNCTION__, script);
+          Dbg(dbg_ctl, "[%s] failed to get script ptr for [%s]", __FUNCTION__, script);
           lua_pop(L, -1);
           return nullptr;
         } else {
@@ -241,7 +241,7 @@ ts_lua_script_registered(lua_State *L, char *script)
           return conf;
         }
       } else {
-        TSDebug(TS_LUA_DEBUG_TAG, "[%s] script time not matching for [%s]", __FUNCTION__, script);
+        Dbg(dbg_ctl, "[%s] script time not matching for [%s]", __FUNCTION__, script);
         return nullptr;
       }
     }
@@ -257,7 +257,7 @@ ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *conf)
 {
   TSMgmtInt time;
 
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] registering script [%s]", __FUNCTION__, script);
+  Dbg(dbg_ctl, "[%s] registering script [%s]", __FUNCTION__, script);
 
   // we recorded the script reconfigure_time and its conf pointer in registry
   if (TS_SUCCESS == TSMgmtIntGet("proxy.node.config.reconfigure_time", &time)) {
@@ -369,10 +369,10 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
 
     if (conf->ljgc > 0) {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
       lua_gc(L, LUA_GCCOLLECT, 0);
     } else {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
     }
 
     TSMutexUnlock(arr[i].mutexp);
@@ -411,11 +411,11 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
     lua_pushlightuserdata(L, conf);
 
     if (conf->ref_count > 1) {
-      TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , NOT clearing registry...", conf->ref_count);
+      Dbg(dbg_ctl, "Reference Count = %d , NOT clearing registry...", conf->ref_count);
       lua_pushvalue(L, LUA_GLOBALSINDEX);
       lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = L[GLOBAL] */
     } else {
-      TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , clearing registry...", conf->ref_count);
+      Dbg(dbg_ctl, "Reference Count = %d , clearing registry...", conf->ref_count);
       lua_pushnil(L);
       lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = nil */
     }
@@ -424,10 +424,10 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY  */
 
     if (conf->ljgc > 0) {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
       lua_gc(L, LUA_GCCOLLECT, 0);
     } else {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
     }
 
     TSMutexUnlock(arr[i].mutexp);
@@ -492,10 +492,10 @@ ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
 
     if (conf->ljgc > 0) {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
       lua_gc(L, LUA_GCCOLLECT, 0);
     } else {
-      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+      Dbg(dbg_ctl, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
     }
 
     TSMutexUnlock(arr[i].mutexp);
@@ -1184,4 +1184,9 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
   }
 
   return 0;
+}
+
+namespace ts_lua_ns
+{
+DbgCtl dbg_ctl{TS_LUA_DEBUG_TAG};
 }

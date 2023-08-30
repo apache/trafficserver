@@ -117,6 +117,8 @@ constexpr std::string_view pv_http10 = {"HTTP/1.0", 8};
 constexpr std::string_view pv_http11 = {"HTTP/1.1", 8};
 constexpr std::string_view pv_empty  = {"", 0};
 
+extern DbgCtl dbg_ctl;
+
 // local struct representing the transaction header
 struct HeaderMap {
   TSMBuffer bufp{nullptr};

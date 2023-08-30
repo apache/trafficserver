@@ -539,6 +539,11 @@ global_request_header_hook(TSCont const contp, TSEvent const event, void *const 
 
 } // namespace
 
+namespace money_trace_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 /**
  * Remap initialization.
  */

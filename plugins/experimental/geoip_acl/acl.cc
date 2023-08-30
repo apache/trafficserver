@@ -24,6 +24,11 @@
 #include "acl.h"
 #include "lulu.h"
 
+namespace geoip_acl_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 // Implementation of the ACL base class. This wraps the underlying Geo library
 // that we've found and used.
 GeoDBHandle Acl::_geoip;
@@ -34,13 +39,13 @@ GeoDBHandle Acl::_geoip6;
 bool
 Acl::init()
 {
-  TSDebug(PLUGIN_NAME, "initialized IPv4 GeoIP DB");
+  Dbg(dbg_ctl, "initialized IPv4 GeoIP DB");
   _geoip = GeoIP_new(GEOIP_MMAP_CACHE); // GEOIP_STANDARD seems to break threaded apps...
 
   // Setup IPv6 if possible
   if (GeoIP_db_avail(GEOIP_COUNTRY_EDITION_V6)) {
     _geoip6 = GeoIP_open_type(GEOIP_COUNTRY_EDITION_V6, GEOIP_MMAP_CACHE | GEOIP_MEMORY_CACHE);
-    TSDebug(PLUGIN_NAME, "initialized IPv6 GeoIP DB");
+    Dbg(dbg_ctl, "initialized IPv6 GeoIP DB");
   }
 
   return true;
@@ -74,7 +79,7 @@ Acl::country_id_by_addr(const sockaddr *addr) const
     break;
   }
 
-  TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ISO=%d", v, iso);
+  Dbg(dbg_ctl, "eval(): Client IPv%d seems to come from ISO=%d", v, iso);
   return iso;
 }
 #else  /* !HAVE_GEOIP_H */
@@ -83,7 +88,7 @@ Acl::country_id_by_addr(const sockaddr *addr) const
 bool
 Acl::init()
 {
-  TSDebug(PLUGIN_NAME, "No Geo library available!");
+  Dbg(dbg_ctl, "No Geo library available!");
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
 
   return false;
@@ -112,7 +117,7 @@ Acl::read_html(const char *fn)
   if (f.is_open()) {
     _html.append(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
     f.close();
-    TSDebug(PLUGIN_NAME, "Loaded HTML from %s", fn);
+    Dbg(dbg_ctl, "Loaded HTML from %s", fn);
   } else {
     TSError("[%s] Unable to open HTML file %s", PLUGIN_NAME, fn);
   }
@@ -158,7 +163,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, 
           ++tokens;
         }
         compile(regex, filename, lineno);
-        TSDebug(PLUGIN_NAME, "Added regex rule for /%s/", regex.c_str());
+        Dbg(dbg_ctl, "Added regex rule for /%s/", regex.c_str());
         return true;
       }
     }
@@ -215,7 +220,7 @@ CountryAcl::add_token(const std::string &str)
   iso = country_id_by_code(str.c_str());
   if (iso > 0 && iso < NUM_ISO_CODES) {
     _iso_country_codes[iso] = true;
-    TSDebug(PLUGIN_NAME, "Added %s(%d) to remap rule, ACL=%s", str.c_str(), iso, _allow ? "allow" : "deny");
+    Dbg(dbg_ctl, "Added %s(%d) to remap rule, ACL=%s", str.c_str(), iso, _allow ? "allow" : "deny");
   } else {
     TSError("[%s] Tried setting an ISO code (%d) outside the supported range", PLUGIN_NAME, iso);
   }
@@ -248,7 +253,7 @@ CountryAcl::read_regex(const char *fn, int &tokens)
     }
 
     f.close();
-    TSDebug(PLUGIN_NAME, "Loaded regex rules from %s", fn);
+    Dbg(dbg_ctl, "Loaded regex rules from %s", fn);
   } else {
     TSError("[%s] Unable to open regex file %s", PLUGIN_NAME, fn);
   }
@@ -259,7 +264,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 {
   bool ret = _allow;
 
-  TSDebug(PLUGIN_NAME, "CountryAcl::eval() called, default ACL is %s", ret ? "allow" : "deny");
+  Dbg(dbg_ctl, "CountryAcl::eval() called, default ACL is %s", ret ? "allow" : "deny");
   // If there are regex rules, they take priority first. If a regex matches, we will
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
@@ -270,7 +275,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 
     do {
       if (acl->match(path, path_len)) {
-        TSDebug(PLUGIN_NAME, "Path = %.*s matched /%s/", path_len, path, acl->get_regex().c_str());
+        Dbg(dbg_ctl, "Path = %.*s matched /%s/", path_len, path, acl->get_regex().c_str());
         return acl->eval(rri, txnp);
       }
     } while ((acl = acl->next()));
@@ -281,11 +286,11 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
   int iso = country_id_by_addr(TSHttpTxnClientAddrGet(txnp));
 
   if ((iso <= 0) || !_iso_country_codes[iso]) {
-    TSDebug(PLUGIN_NAME, "ISO not found in table, returning %d", !ret);
+    Dbg(dbg_ctl, "ISO not found in table, returning %d", !ret);
     return !ret;
   }
 
-  TSDebug(PLUGIN_NAME, "ISO was found in table, or -1, returning %d", ret);
+  Dbg(dbg_ctl, "ISO was found in table, or -1, returning %d", ret);
   return ret;
 }
 

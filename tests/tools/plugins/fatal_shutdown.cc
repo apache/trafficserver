@@ -25,6 +25,7 @@
 
 // debug messages during one-time initialization
 static const char DEBUG_TAG[] = "TSFatal_test";
+static DbgCtl dbg_ctl{DEBUG_TAG};
 
 // plugin registration info
 static char plugin_name[]   = "TSFatal_test";
@@ -34,7 +35,7 @@ static char support_email[] = "duke8253@apache.org";
 static int
 test_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(DEBUG_TAG, "failed to shutdown");
+  Dbg(dbg_ctl, "failed to shutdown");
   return 0;
 }
 

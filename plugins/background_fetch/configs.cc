@@ -50,18 +50,18 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
 
     switch (opt) {
     case 'l':
-      TSDebug(PLUGIN_NAME, "option: log file specified: %s", optarg);
+      Dbg(Bg_dbg_ctl, "option: log file specified: %s", optarg);
       _log_file = optarg;
       break;
     case 'c':
-      TSDebug(PLUGIN_NAME, "option: config file '%s'", optarg);
+      Dbg(Bg_dbg_ctl, "option: config file '%s'", optarg);
       if (!readConfig(optarg)) {
         // Error messages are written in the parser
         return false;
       }
       break;
     case 'a':
-      TSDebug(PLUGIN_NAME, "option: --allow-304 set");
+      Dbg(Bg_dbg_ctl, "option: --allow-304 set");
       _allow_304 = true;
       break;
     default:
@@ -86,19 +86,19 @@ BgFetchConfig::readConfig(const char *config_file)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", config_file);
+  Dbg(Bg_dbg_ctl, "trying to open config file in this path: %s", config_file);
 
   if (*config_file == '/') {
     snprintf(file_path, sizeof(file_path), "%s", config_file);
   } else {
     snprintf(file_path, sizeof(file_path), "%s/%s", TSConfigDirGet(), config_file);
   }
-  TSDebug(PLUGIN_NAME, "chosen config file is at: %s", file_path);
+  Dbg(Bg_dbg_ctl, "chosen config file is at: %s", file_path);
 
   file = TSfopen(file_path, "r");
   if (nullptr == file) {
     TSError("[%s] invalid config file:  %s", PLUGIN_NAME, file_path);
-    TSDebug(PLUGIN_NAME, "invalid config file: %s", file_path);
+    Dbg(Bg_dbg_ctl, "invalid config file: %s", file_path);
     return false;
   }
 
@@ -125,7 +125,7 @@ BgFetchConfig::readConfig(const char *config_file)
     char *cfg     = strtok_r(buffer, "\n\r\n", &savePtr);
 
     if (nullptr != cfg) {
-      TSDebug(PLUGIN_NAME, "setting background_fetch exclusion criterion based on string: %s", cfg);
+      Dbg(Bg_dbg_ctl, "setting background_fetch exclusion criterion based on string: %s", cfg);
       char *cfg_type  = strtok_r(buffer, " ", &savePtr);
       char *cfg_name  = nullptr;
       char *cfg_value = nullptr;
@@ -159,7 +159,7 @@ BgFetchConfig::readConfig(const char *config_file)
             }
             cur = r;
 
-            TSDebug(PLUGIN_NAME, "adding background_fetch exclusion rule %d for %s: %s", exclude, cfg_name, cfg_value);
+            Dbg(Bg_dbg_ctl, "adding background_fetch exclusion rule %d for %s: %s", exclude, cfg_name, cfg_value);
           } else {
             TSError("[%s] invalid value %s, skipping config line", PLUGIN_NAME, cfg_name);
           }
@@ -170,7 +170,7 @@ BgFetchConfig::readConfig(const char *config_file)
   }
 
   TSfclose(file);
-  TSDebug(PLUGIN_NAME, "Done parsing config");
+  Dbg(Bg_dbg_ctl, "Done parsing config");
 
   return true;
 }
@@ -182,7 +182,7 @@ BgFetchConfig::readConfig(const char *config_file)
 bool
 BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
 {
-  TSDebug(PLUGIN_NAME, "Testing: request is internal?");
+  Dbg(Bg_dbg_ctl, "Testing: request is internal?");
   if (TSHttpTxnIsInternal(txnp)) {
     return false;
   }
@@ -192,7 +192,7 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
   // We could do this recursively, but following the linked list is probably more efficient.
   for (const BgFetchRule *r = _rules; nullptr != r; r = r->_next) {
     if (r->check_field_configured(txnp)) {
-      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
+      Dbg(Bg_dbg_ctl, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
       allow_bg_fetch = !r->_exclude;
       break;
     }

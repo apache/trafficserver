@@ -28,6 +28,8 @@
 
 #include "configs.h"
 
+DbgCtl Bg_dbg_ctl{PLUGIN_NAME};
+
 template <typename ContainerType>
 static void
 commaSeparateString(ContainerType &c, const String &input)

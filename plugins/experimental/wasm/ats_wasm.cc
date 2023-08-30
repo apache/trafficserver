@@ -26,7 +26,7 @@ namespace ats_wasm
 proxy_wasm::LogLevel
 ATSWasmVmIntegration::getLogLevel()
 {
-  if (TSIsDebugTagSet(WASM_DEBUG_TAG)) {
+  if (dbg_ctl.on()) {
     return proxy_wasm::LogLevel::debug;
   } else {
     return proxy_wasm::LogLevel::error;
@@ -42,7 +42,7 @@ ATSWasmVmIntegration::error(std::string_view message)
 void
 ATSWasmVmIntegration::trace(std::string_view message)
 {
-  TSDebug(WASM_DEBUG_TAG, "%.*s", static_cast<int>(message.size()), message.data());
+  Dbg(dbg_ctl, "%.*s", static_cast<int>(message.size()), message.data());
 }
 
 bool
@@ -83,7 +83,7 @@ Wasm::createVmContext()
 ContextBase *
 Wasm::createRootContext(const std::shared_ptr<PluginBase> &plugin)
 {
-  TSDebug(WASM_DEBUG_TAG, "Create root context for ats plugin");
+  Dbg(dbg_ctl, "Create root context for ats plugin");
   return new Context(this, plugin);
 }
 

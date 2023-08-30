@@ -25,6 +25,11 @@
 
 #define PLUGIN_TAG "test"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_TAG};
+}
+
 // Number of seconds to reschedule to a task thread and delay
 int DelayStart = 0;
 
@@ -40,11 +45,11 @@ transactionHandler(TSCont continuation, TSEvent event, void *d)
 
   switch (event) {
   case TS_EVENT_HTTP_PRE_REMAP: {
-    TSDebug(PLUGIN_TAG, " -- transactionHandler :: TS_EVENT_HTTP_PRE_REMAP");
+    Dbg(dbg_ctl, " -- transactionHandler :: TS_EVENT_HTTP_PRE_REMAP");
   } break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
-    TSDebug(PLUGIN_TAG, " -- transactionHandler :: TS_EVENT_HTTP_TXN_CLOSE");
+    Dbg(dbg_ctl, " -- transactionHandler :: TS_EVENT_HTTP_TXN_CLOSE");
     TSContDataSet(continuation, nullptr);
     TSContDestroy(continuation);
     break;
@@ -66,7 +71,7 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
 
   switch (event) {
   case TS_EVENT_HTTP_PRE_REMAP: {
-    TSDebug(PLUGIN_TAG, " -- sessionHandler :: TS_EVENT_HTTP_PRE_REMAP");
+    Dbg(dbg_ctl, " -- sessionHandler :: TS_EVENT_HTTP_PRE_REMAP");
     txn_contp = TSContCreate(transactionHandler, nullptr);
 
     /* Registers locally to hook PRE_REMAP_HOOK and TXN_CLOSE */
@@ -75,7 +80,7 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
   } break;
 
   case TS_EVENT_HTTP_SSN_CLOSE: {
-    TSDebug(PLUGIN_TAG, " -- sessionHandler :: TS_EVENT_HTTP_SSN_CLOSE");
+    Dbg(dbg_ctl, " -- sessionHandler :: TS_EVENT_HTTP_SSN_CLOSE");
     const TSHttpSsn session = static_cast<TSHttpSsn>(d);
 
     TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
@@ -84,7 +89,7 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
   } break;
 
   case TS_EVENT_TIMEOUT: { // The schedule case, reenable the session continuation
-    TSDebug(PLUGIN_TAG, " -- sessionHandler :: TS_EVENT_TIMEOUT");
+    Dbg(dbg_ctl, " -- sessionHandler :: TS_EVENT_TIMEOUT");
     TSHttpSsn session = static_cast<TSHttpSsn>(TSContDataGet(continuation));
     TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -103,13 +108,13 @@ globalHandler(TSCont continuation, TSEvent event, void *data)
 {
   if (event == TS_EVENT_HTTP_SSN_START) {
     TSHttpSsn session = static_cast<TSHttpSsn>(data);
-    TSDebug(PLUGIN_TAG, " -- globalHandler :: TS_EVENT_HTTP_SSN_START");
+    Dbg(dbg_ctl, " -- globalHandler :: TS_EVENT_HTTP_SSN_START");
     TSCont cont = TSContCreate(sessionHandler, TSMutexCreate());
 
     TSHttpSsnHookAdd(session, TS_HTTP_PRE_REMAP_HOOK, cont);
     TSHttpSsnHookAdd(session, TS_HTTP_SSN_CLOSE_HOOK, cont);
 
-    TSDebug(PLUGIN_TAG, "New session, cont is %p", cont);
+    Dbg(dbg_ctl, "New session, cont is %p", cont);
 
     if (DelayStart == 0) {
       TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
@@ -137,7 +142,7 @@ TSPluginInit(int argc, const char **argv)
   }
 
   if (argc >= 2) {
-    TSDebug(PLUGIN_TAG, "Argument %s", argv[1]);
+    Dbg(dbg_ctl, "Argument %s", argv[1]);
     if (strcmp(argv[1], "-delay") == 0) {
       DelayStart = 1;
     }

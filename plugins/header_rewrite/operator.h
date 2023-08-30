@@ -43,7 +43,7 @@ enum OperModifiers {
 class Operator : public Statement
 {
 public:
-  Operator() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
+  Operator() { Dbg(dbg_ctl, "Calling CTOR for Operator"); }
 
   // noncopyable
   Operator(const Operator &)       = delete;
@@ -75,7 +75,7 @@ private:
 class OperatorHeaders : public Operator
 {
 public:
-  OperatorHeaders() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
+  OperatorHeaders() { Dbg(dbg_ctl, "Calling CTOR for OperatorHeaders"); }
 
   // noncopyable
   OperatorHeaders(const OperatorHeaders &) = delete;
@@ -95,7 +95,7 @@ protected:
 class OperatorCookies : public Operator
 {
 public:
-  OperatorCookies() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
+  OperatorCookies() { Dbg(dbg_ctl, "Calling CTOR for OperatorCookies"); }
 
   // noncopyable
   OperatorCookies(const OperatorCookies &) = delete;

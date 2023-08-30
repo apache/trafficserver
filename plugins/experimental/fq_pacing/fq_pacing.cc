@@ -29,6 +29,8 @@
 
 static const char *PLUGIN_NAME = "fq_pacing";
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 // Sanity check max rate at 100Gbps
 #define MAX_PACING_RATE 100000000000
 
@@ -105,7 +107,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  Dbg(dbg_ctl, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -115,7 +117,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   fq_pacing_cfg_t *cfg      = nullptr;
   unsigned long pacing_rate = 0;
 
-  TSDebug(PLUGIN_NAME, "Instantiating a new remap.config plugin rule");
+  Dbg(dbg_ctl, "Instantiating a new remap.config plugin rule");
 
   if (argc > 1) {
     int c;
@@ -151,7 +153,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   memset(cfg, 0, sizeof(*cfg));
   cfg->pacing_rate = pacing_rate;
   *ih              = cfg;
-  TSDebug(PLUGIN_NAME, "Setting pacing rate to %lu", pacing_rate);
+  Dbg(dbg_ctl, "Setting pacing rate to %lu", pacing_rate);
 
   return TS_SUCCESS;
 }
@@ -175,7 +177,7 @@ reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
 #ifdef SO_MAX_PACING_RATE
   unsigned int pacing_off = ~0U;
   if (txn_data->client_fd > 0) {
-    TSDebug(PLUGIN_NAME, "Disabling SO_MAX_PACING_RATE for client_fd=%d", txn_data->client_fd);
+    Dbg(dbg_ctl, "Disabling SO_MAX_PACING_RATE for client_fd=%d", txn_data->client_fd);
     int res = 0;
     res     = safe_setsockopt(txn_data->client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&pacing_off, sizeof(pacing_off));
     // EBADF indicates possible client abort
@@ -195,7 +197,7 @@ TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   if (TSHttpTxnClientProtocolStackContains(txnp, TS_PROTO_TAG_HTTP_2_0) != nullptr) {
-    TSDebug(PLUGIN_NAME, "Skipping plugin execution for HTTP/2 requests");
+    Dbg(dbg_ctl, "Skipping plugin execution for HTTP/2 requests");
     return TSREMAP_NO_REMAP;
   }
 
@@ -212,7 +214,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if ((res < 0)) {
     TSError("[fq_pacing] Error setting SO_MAX_PACING_RATE, errno=%d", errno);
   }
-  TSDebug(PLUGIN_NAME, "Setting SO_MAX_PACING_RATE for client_fd=%d to %lu Bps", client_fd, cfg->pacing_rate);
+  Dbg(dbg_ctl, "Setting SO_MAX_PACING_RATE for client_fd=%d to %lu Bps", client_fd, cfg->pacing_rate);
 #endif
 
   // Reset pacing at end of transaction in case session is

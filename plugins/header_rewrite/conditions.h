@@ -41,7 +41,7 @@
 class ConditionTrue : public Condition
 {
 public:
-  ConditionTrue() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue"); }
+  ConditionTrue() { Dbg(dbg_ctl, "Calling CTOR for ConditionTrue"); }
 
   // noncopyable
   ConditionTrue(const ConditionTrue &)  = delete;
@@ -57,7 +57,7 @@ protected:
   bool
   eval(const Resources & /* res ATS_UNUSED */) override
   {
-    TSDebug(PLUGIN_NAME, "Evaluating TRUE()");
+    Dbg(pi_dbg_ctl, "Evaluating TRUE()");
     return true;
   }
 };
@@ -66,7 +66,7 @@ protected:
 class ConditionFalse : public Condition
 {
 public:
-  ConditionFalse() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse"); }
+  ConditionFalse() { Dbg(dbg_ctl, "Calling CTOR for ConditionFalse"); }
 
   // noncopyable
   ConditionFalse(const ConditionFalse &) = delete;
@@ -82,7 +82,7 @@ protected:
   bool
   eval(const Resources & /* res ATS_UNUSED */) override
   {
-    TSDebug(PLUGIN_NAME, "Evaluating FALSE()");
+    Dbg(pi_dbg_ctl, "Evaluating FALSE()");
     return false;
   }
 };
@@ -93,7 +93,7 @@ class ConditionStatus : public Condition
   using MatcherType = Matchers<TSHttpStatus>;
 
 public:
-  ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
+  ConditionStatus() { Dbg(dbg_ctl, "Calling CTOR for ConditionStatus"); }
 
   // noncopyable
   ConditionStatus(const ConditionStatus &) = delete;
@@ -113,7 +113,7 @@ class ConditionMethod : public Condition
   using MatcherType = Matchers<std::string>;
 
 public:
-  ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
+  ConditionMethod() { Dbg(dbg_ctl, "Calling CTOR for ConditionMethod"); }
 
   // noncopyable
   ConditionMethod(const ConditionMethod &) = delete;
@@ -132,7 +132,7 @@ class ConditionRandom : public Condition
   using MatcherType = Matchers<unsigned int>;
 
 public:
-  ConditionRandom() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
+  ConditionRandom() { Dbg(dbg_ctl, "Calling CTOR for ConditionRandom"); }
 
   // noncopyable
   ConditionRandom(const ConditionRandom &) = delete;
@@ -153,7 +153,7 @@ private:
 class ConditionAccess : public Condition
 {
 public:
-  ConditionAccess() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess"); }
+  ConditionAccess() { Dbg(dbg_ctl, "Calling CTOR for ConditionAccess"); }
 
   // noncopyable
   ConditionAccess(const ConditionAccess &) = delete;
@@ -176,7 +176,7 @@ class ConditionCookie : public Condition
   using MatcherType = Matchers<std::string>;
 
 public:
-  ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
+  ConditionCookie() { Dbg(dbg_ctl, "Calling CTOR for ConditionCookie"); }
 
   // noncopyable
   ConditionCookie(const ConditionCookie &) = delete;
@@ -249,7 +249,7 @@ class ConditionHeader : public Condition
 public:
   explicit ConditionHeader(bool client = false) : _client(client)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
+    Dbg(dbg_ctl, "Calling CTOR for ConditionHeader, client %d", client);
   }
 
   // noncopyable
@@ -274,7 +274,7 @@ class ConditionUrl : public Condition
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
 
-  explicit ConditionUrl(const UrlType type) : _type(type) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl"); }
+  explicit ConditionUrl(const UrlType type) : _type(type) { Dbg(dbg_ctl, "Calling CTOR for ConditionUrl"); }
 
   // noncopyable
   ConditionUrl(const ConditionUrl &)   = delete;
@@ -303,7 +303,7 @@ public:
       _file(""),
       _mutex(TSMutexCreate())
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionDBM");
+    Dbg(dbg_ctl, "Calling CTOR for ConditionDBM");
   }
 
   ~ConditionDBM() override
@@ -351,7 +351,7 @@ class ConditionIp : public Condition
   using MatcherTypeIp = Matchers<const sockaddr *>;
 
 public:
-  explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
+  explicit ConditionIp() { Dbg(dbg_ctl, "Calling CTOR for ConditionIp"); };
 
   // noncopyable
   ConditionIp(const ConditionIp &)    = delete;
@@ -374,7 +374,7 @@ class ConditionTransactCount : public Condition
   using MatcherType = Matchers<int>;
 
 public:
-  ConditionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount"); }
+  ConditionTransactCount() { Dbg(dbg_ctl, "Calling CTOR for ConditionTransactCount"); }
 
   // noncopyable
   ConditionTransactCount(const ConditionTransactCount &) = delete;
@@ -393,7 +393,7 @@ class ConditionNow : public Condition
   using MatcherType = Matchers<int64_t>;
 
 public:
-  explicit ConditionNow() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
+  explicit ConditionNow() { Dbg(dbg_ctl, "Calling CTOR for ConditionNow"); }
 
   // noncopyable
   ConditionNow(const ConditionNow &)   = delete;
@@ -415,7 +415,7 @@ private:
 class ConditionGeo : public Condition
 {
 public:
-  explicit ConditionGeo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo"); }
+  explicit ConditionGeo() { Dbg(dbg_ctl, "Calling CTOR for ConditionGeo"); }
 
   // noncopyable
   ConditionGeo(const ConditionGeo &)   = delete;
@@ -452,7 +452,7 @@ protected:
 class ConditionId : public Condition
 {
 public:
-  explicit ConditionId() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
+  explicit ConditionId() { Dbg(dbg_ctl, "Calling CTOR for ConditionId"); };
 
   // noncopyable
   ConditionId(const ConditionId &)    = delete;
@@ -479,7 +479,7 @@ public:
   explicit ConditionCidr()
   {
     _create_masks(); // This must be called here, because we might not have parameters specified
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCidr");
+    Dbg(dbg_ctl, "Calling CTOR for ConditionCidr");
   };
 
   ConditionCidr(self &)   = delete;
@@ -509,7 +509,7 @@ class ConditionInbound : public Condition
   using self          = ConditionInbound;
 
 public:
-  explicit ConditionInbound() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionInbound"); };
+  explicit ConditionInbound() { Dbg(dbg_ctl, "Calling CTOR for ConditionInbound"); };
   ConditionInbound(self &) = delete;
   self &operator=(self &)  = delete;
 
@@ -553,7 +553,7 @@ class ConditionSessionTransactCount : public Condition
   using MatcherType = Matchers<int>;
 
 public:
-  ConditionSessionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "ConditionSessionTransactCount()"); }
+  ConditionSessionTransactCount() { Dbg(dbg_ctl, "ConditionSessionTransactCount()"); }
 
   // noncopyable
   ConditionSessionTransactCount(const ConditionSessionTransactCount &) = delete;
@@ -572,7 +572,7 @@ class ConditionTcpInfo : public Condition
   using MatcherType = Matchers<int>;
 
 public:
-  ConditionTcpInfo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTcpInfo"); }
+  ConditionTcpInfo() { Dbg(dbg_ctl, "Calling CTOR for ConditionTcpInfo"); }
 
   // noncopyable
   ConditionTcpInfo(const ConditionTcpInfo &) = delete;
@@ -592,7 +592,7 @@ class ConditionCache : public Condition
   using MatcherType = Matchers<std::string>;
 
 public:
-  ConditionCache() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCache"); }
+  ConditionCache() { Dbg(dbg_ctl, "Calling CTOR for ConditionCache"); }
 
   // noncopyable
   ConditionCache(const ConditionCache &) = delete;
@@ -613,7 +613,7 @@ class ConditionNextHop : public Condition
 public:
   enum HostType { NAME, PORT };
 
-  explicit ConditionNextHop() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNextHop"); }
+  explicit ConditionNextHop() { Dbg(dbg_ctl, "Calling CTOR for ConditionNextHop"); }
 
   // noncopyable
   ConditionNextHop(const ConditionNextHop &) = delete;

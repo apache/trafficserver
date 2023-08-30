@@ -34,6 +34,12 @@ PrintToStdErr(const char *fmt, ...)
   vfprintf(stderr, fmt, args);
   va_end(args);
 }
+#else
+
+namespace access_control_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 #endif /* ACCESS_CONTROL_UNIT_TEST */
 

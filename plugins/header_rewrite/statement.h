@@ -102,11 +102,11 @@ enum NetworkSessionQualifiers {
 class Statement
 {
 public:
-  Statement() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Statement"); }
+  Statement() { Dbg(dbg_ctl, "Calling CTOR for Statement"); }
 
   virtual ~Statement()
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Statement");
+    Dbg(dbg_ctl, "Calling DTOR for Statement");
     delete _next;
   }
 

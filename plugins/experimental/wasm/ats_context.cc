@@ -34,6 +34,8 @@
 namespace ats_wasm
 {
 
+DbgCtl dbg_ctl{WASM_DEBUG_TAG};
+
 static int
 async_handler(TSCont cont, TSEvent event, void *edata)
 {
@@ -68,8 +70,7 @@ async_handler(TSCont cont, TSEvent event, void *edata)
         header_size         = TSMimeHdrFieldsCount(hdr_buf, hdr_loc);
         body                = data_start; // data_start will now be pointing to body
         body_size           = data_end - data_start;
-        TSDebug(WASM_DEBUG_TAG, "[%s] Fetch result had a status code of %d with a body length of %ld", __FUNCTION__, status,
-                body_size);
+        Dbg(dbg_ctl, "[%s] Fetch result had a status code of %d with a body length of %ld", __FUNCTION__, status, body_size);
       } else {
         TSError("[wasm][%s] Unable to parse call response", __FUNCTION__);
         event = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
@@ -83,11 +84,11 @@ async_handler(TSCont cont, TSEvent event, void *edata)
   }
 
   // callback function
-  TSDebug(WASM_DEBUG_TAG, "[%s] setting root context call result", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] setting root context call result", __FUNCTION__);
   root_context->setHttpCallResult(hdr_buf, hdr_loc, body, body_size, result);
-  TSDebug(WASM_DEBUG_TAG, "[%s] trigger root context function, token:  %d", __FUNCTION__, token);
+  Dbg(dbg_ctl, "[%s] trigger root context function, token:  %d", __FUNCTION__, token);
   root_context->onHttpCallResponse(token, header_size, body_size, 0);
-  TSDebug(WASM_DEBUG_TAG, "[%s] resetting root context call result", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] resetting root context call result", __FUNCTION__);
   root_context->resetHttpCallResult();
 
   // cleaning up
@@ -101,7 +102,7 @@ async_handler(TSCont cont, TSEvent event, void *edata)
 
   TSMutexUnlock(wasm->mutex());
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] delete async info and continuation", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] delete async info and continuation", __FUNCTION__);
   // delete the Async Info
   delete ai;
   // delete continuation
@@ -126,7 +127,7 @@ print_address(struct sockaddr const *ip, std::string *result)
       inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, cip, sizeof(cip));
       port = s_sockaddr_in6->sin6_port;
     }
-    TSDebug(WASM_DEBUG_TAG, "[%s] property retrieval - address: %.*s", __FUNCTION__, static_cast<int>(sizeof(cip)), cip);
+    Dbg(dbg_ctl, "[%s] property retrieval - address: %.*s", __FUNCTION__, static_cast<int>(sizeof(cip)), cip);
     std::string cip_str(cip);
     result->assign(cip_str + ":" + std::to_string(port));
   } else {
@@ -146,7 +147,7 @@ print_port(struct sockaddr const *ip, std::string *result)
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       port                       = s_sockaddr_in6->sin6_port;
     }
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
+    Dbg(dbg_ctl, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
   } else {
     *result = pv_empty;
@@ -172,7 +173,7 @@ print_certificate(std::string *result, X509_NAME *name)
     char *ptr   = nullptr;
     len         = BIO_get_mem_data(bio, &ptr);
     result->assign(ptr, len);
-    TSDebug(WASM_DEBUG_TAG, "print SSL certificate %.*s", static_cast<int>(len), ptr);
+    Dbg(dbg_ctl, "print SSL certificate %.*s", static_cast<int>(len), ptr);
   }
 
   BIO_free(bio);
@@ -443,28 +444,22 @@ Context::log(uint32_t level, std::string_view message)
   auto l = static_cast<LogLevel>(level);
   switch (l) {
   case LogLevel::trace:
-    TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::debug:
-    TSDebug(WASM_DEBUG_TAG, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::info:
-    TSDebug(WASM_DEBUG_TAG, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::warn:
-    TSDebug(WASM_DEBUG_TAG, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::error:
-    TSDebug(WASM_DEBUG_TAG, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::critical:
-    TSDebug(WASM_DEBUG_TAG, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
-            message.data());
+    Dbg(dbg_ctl, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   default: // e.g. off
     return unimplemented();
@@ -497,10 +492,10 @@ Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_
   Context *root_context = this->root_context();
   TSMutexLock(wasm->mutex());
   if (!wasm->existsTimerPeriod(root_context->id())) {
-    TSDebug(WASM_DEBUG_TAG, "[%s] no previous timer period set", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] no previous timer period set", __FUNCTION__);
     TSCont contp = root_context->scheduler_cont();
     if (contp != nullptr) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] scheduling continuation for timer", __FUNCTION__);
+      Dbg(dbg_ctl, "[%s] scheduling continuation for timer", __FUNCTION__);
       TSContDataSet(contp, root_context);
       TSContScheduleOnPool(contp, static_cast<TSHRTime>(period.count()), TS_THREAD_POOL_NET);
     }
@@ -620,7 +615,7 @@ Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *met
 
   if (TSStatFindName(name.data(), &idp) == TS_ERROR) {
     idp = TSStatCreate(name.data(), TS_RECORDDATATYPE_INT, TS_STAT_PERSISTENT, ats_metric_type);
-    TSDebug(WASM_DEBUG_TAG, "[%s] creating stat: %.*s", __FUNCTION__, static_cast<int>(name.size()), name.data());
+    Dbg(dbg_ctl, "[%s] creating stat: %.*s", __FUNCTION__, static_cast<int>(name.size()), name.data());
     *metric_id_ptr = idp;
   } else {
     TSError("[wasm][%s] Metric already exists", __FUNCTION__);
@@ -657,22 +652,19 @@ Context::getProperty(std::string_view path, std::string *result)
 {
   if (path.substr(0, p_plugin_root_id.size()) == p_plugin_root_id) {
     *result = this->plugin_->root_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
-            (*result).data());
+    Dbg(dbg_ctl, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path.substr(0, p_plugin_name.size()) == p_plugin_name) {
     *result = this->plugin_->name_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
-            (*result).data());
+    Dbg(dbg_ctl, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path.substr(0, p_plugin_vm_id.size()) == p_plugin_vm_id) {
     *result = this->plugin_->vm_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
-            (*result).data());
+    Dbg(dbg_ctl, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path.substr(0, p_node.size()) == p_node) {
     *result = pv_empty;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for node property: empty string for now", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] looking for node property: empty string for now", __FUNCTION__);
     return WasmResult::Ok;
   } else if (path.substr(0, p_source_address.size()) == p_source_address) {
     if (txnp_ == nullptr) {
@@ -1122,7 +1114,7 @@ Context::getProperty(std::string_view path, std::string *result)
             }
           }
         }
-        TSDebug(WASM_DEBUG_TAG, "[%s] request host value(%d): %.*s", __FUNCTION__, host_len, host_len, host);
+        Dbg(dbg_ctl, "[%s] request host value(%d): %.*s", __FUNCTION__, host_len, host_len, host);
         result->assign(host, host_len);
         TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       } else {
@@ -1327,7 +1319,7 @@ Context::getProperty(std::string_view path, std::string *result)
     return WasmResult::Ok;
   } else {
     *result = pv_empty;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for unknown property: empty string", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] looking for unknown property: empty string", __FUNCTION__);
     return WasmResult::Ok;
   }
 }
@@ -1460,7 +1452,7 @@ Context::continueStream(WasmStreamType /* stream_type */)
     TSError("[wasm][%s] Can't continue stream without a transaction", __FUNCTION__);
     return WasmResult::InternalFailure;
   } else {
-    TSDebug(WASM_DEBUG_TAG, "[%s] continuing txn for context %d", __FUNCTION__, id());
+    Dbg(dbg_ctl, "[%s] continuing txn for context %d", __FUNCTION__, id());
     reenable_txn_ = true;
     TSHttpTxnReenable(txnp_, TS_EVENT_HTTP_CONTINUE);
     return WasmResult::Ok;
@@ -1479,7 +1471,7 @@ Context::closeStream(WasmStreamType /* stream_type */)
     TSError("[wasm][%s] Can't continue stream without a transaction", __FUNCTION__);
     return WasmResult::InternalFailure;
   } else {
-    TSDebug(WASM_DEBUG_TAG, "[%s] continue txn for context %d with error", __FUNCTION__, id());
+    Dbg(dbg_ctl, "[%s] continue txn for context %d with error", __FUNCTION__, id());
     reenable_txn_ = true;
     TSHttpTxnReenable(txnp_, TS_EVENT_HTTP_ERROR);
     return WasmResult::Ok;

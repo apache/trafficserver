@@ -144,3 +144,14 @@ private:
       DbgPrint((CTL), __VA_ARGS__); \
     }                               \
   } while (false)
+
+// Same as Dbg above, but this allows a positive override of the DbgCtl, if FLAG is true.
+//
+#define SpecificDbg(FLAG, CTL, ...)   \
+  do {                                \
+    if (DbgCtl::global_on()) {        \
+      if ((FLAG) || ((CTL).on())) {   \
+        DbgPrint((CTL), __VA_ARGS__); \
+      }                               \
+    }                                 \
+  } while (false)

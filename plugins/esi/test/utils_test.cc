@@ -27,7 +27,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include "print_funcs.h"
 #include "Utils.h"
 
 using std::cout;
@@ -51,8 +50,6 @@ checkAttributes(const char *check_id, const AttributeList &attr_list, const char
 
 TEST_CASE("esi utils test")
 {
-  Utils::init(&Debug, &Error);
-
   AttributeList attr_list;
 
   string str1("pos=SKY spaceid=12123");

@@ -45,12 +45,12 @@ class Resources
 public:
   explicit Resources(TSHttpTxn txnptr, TSCont contptr) : txnp(txnptr), contp(contptr)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (InkAPI)");
+    Dbg(dbg_ctl, "Calling CTOR for Resources (InkAPI)");
   }
 
   Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri) : txnp(txnptr), _rri(rri)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
+    Dbg(dbg_ctl, "Calling CTOR for Resources (RemapAPI)");
   }
 
   ~Resources() { destroy(); }

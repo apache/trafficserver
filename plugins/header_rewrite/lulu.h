@@ -35,3 +35,10 @@ uint16_t getPort(sockaddr const *s_sockaddr);
 
 extern const char PLUGIN_NAME[];
 extern const char PLUGIN_NAME_DBG[];
+
+namespace header_rewrite_ns
+{
+extern DbgCtl dbg_ctl;
+extern DbgCtl pi_dbg_ctl;
+} // namespace header_rewrite_ns
+using namespace header_rewrite_ns;

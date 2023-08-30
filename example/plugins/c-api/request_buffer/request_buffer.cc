@@ -33,6 +33,11 @@
 
 #define TS_NULL_MUTEX nullptr
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 static char *
 request_body_get(TSHttpTxn txnp, int *len)
 {
@@ -65,12 +70,12 @@ request_body_get(TSHttpTxn txnp, int *len)
 static int
 request_buffer_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "request_buffer_plugin starting, event[%d]", event);
+  Dbg(dbg_ctl, "request_buffer_plugin starting, event[%d]", event);
   TSHttpTxn txnp = (TSHttpTxn)(edata);
   if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE) {
     int len    = 0;
     char *body = request_body_get(txnp, &len);
-    TSDebug(PLUGIN_NAME, "request_buffer_plugin gets the request body with length[%d]", len);
+    Dbg(dbg_ctl, "request_buffer_plugin gets the request body with length[%d]", len);
     TSfree(body);
     TSContDestroy(contp);
   } else {
@@ -102,7 +107,7 @@ is_post_request(TSHttpTxn txnp)
 static int
 global_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "transform_plugin starting");
+  Dbg(dbg_ctl, "transform_plugin starting");
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
@@ -130,7 +135,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "[%s] Plugin registration failed, plugin disabled", PLUGIN_NAME);
+    Dbg(dbg_ctl, "[%s] Plugin registration failed, plugin disabled", PLUGIN_NAME);
 
     return;
   }
@@ -140,5 +145,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 
   TSMutex mutex = TS_NULL_MUTEX;
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(global_plugin, mutex));
-  TSDebug(PLUGIN_NAME, "[%s] Plugin registration succeeded", PLUGIN_NAME);
+  Dbg(dbg_ctl, "[%s] Plugin registration succeeded", PLUGIN_NAME);
 }

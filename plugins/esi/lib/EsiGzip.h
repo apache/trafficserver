@@ -31,7 +31,7 @@
 class EsiGzip : private EsiLib::ComponentBase
 {
 public:
-  EsiGzip(const char *debug_tag, EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func);
+  EsiGzip(const char *debug_tag);
 
   ~EsiGzip() override;
 

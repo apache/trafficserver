@@ -26,6 +26,12 @@
 
 #include "ts.h"
 
+namespace inliner_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace inliner_ns;
+
 namespace ats
 {
 namespace io
@@ -82,7 +88,7 @@ namespace io
   {
     assert(mutex_ != nullptr);
     const Lock lock(mutex_);
-    TSDebug(PLUGIN_TAG, "~WriteOperation");
+    Dbg(dbg_ctl, "~WriteOperation");
 
     vio_ = nullptr;
 
@@ -151,7 +157,7 @@ namespace io
     WriteOperationPointer *const p = static_cast<WriteOperationPointer *>(TSContDataGet(c));
 
     if (TS_EVENT_VCONN_WRITE_COMPLETE == e) {
-      TSDebug(PLUGIN_TAG, "TS_EVENT_VCONN_WRITE_COMPLETE");
+      Dbg(dbg_ctl, "TS_EVENT_VCONN_WRITE_COMPLETE");
       if (p != nullptr) {
         TSContDataSet(c, nullptr);
         delete p;
@@ -278,7 +284,6 @@ namespace io
 
   IOSink::~IOSink()
   {
-    // TSDebug(PLUGIN_TAG, "~IOSink %p", this);
     const WriteOperationPointer operation = operation_.lock();
     if (operation) {
       operation_.reset();
@@ -380,7 +385,6 @@ namespace io
     const size_t copied    = TSIOBufferCopy(b, reader_, available, 0);
     assert(copied == available);
     TSIOBufferReaderConsume(reader_, copied);
-    // TSDebug(PLUGIN_TAG, "BufferNode::process %lu", copied);
     return Node::Result(copied, TSIOBufferReaderAvail(reader_) == 0);
   }
 
@@ -401,7 +405,6 @@ namespace io
       data_->first_ = true;
     }
     SinkPointer pointer(new Sink(data_));
-    // TSDebug(PLUGIN_TAG, "IOSink branch %p", pointer.get());
     return pointer;
   }
 
@@ -418,13 +421,11 @@ namespace io
       data->first_ = first;
     }
     SinkPointer pointer(new Sink(data));
-    // TSDebug(PLUGIN_TAG, "Sink branch %p", pointer.get());
     return pointer;
   }
 
   Sink::~Sink()
   {
-    // TSDebug(PLUGIN_TAG, "~Sink %p", this);
     assert(data_);
     assert(data_.use_count() >= 1);
     assert(data_->root_);
@@ -452,15 +453,11 @@ namespace io
       }
     }
 
-    // TSDebug(PLUGIN_TAG, "Data::process %li", length);
-
     if (begin != it) {
-      // TSDebug(PLUGIN_TAG, "Data::process::erase");
       nodes_.erase(begin, it);
       if (it != end) {
         Data *data = dynamic_cast<Data *>(it->get());
         while (data != nullptr) {
-          // TSDebug(PLUGIN_TAG, "new first");
           data->first_ = true;
           if (data->nodes_.empty()) {
             break;

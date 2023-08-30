@@ -36,6 +36,11 @@
 
 #define PLUGIN_NAME "secure_link"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 typedef struct {
   char *secret;
   uint8_t strict;
@@ -58,7 +63,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
   ip = inet_ntoa(in->sin_addr);
   s  = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &len);
-  TSDebug(PLUGIN_NAME, "request [%.*s] from [%s]", len, s, ip);
+  Dbg(dbg_ctl, "request [%.*s] from [%s]", len, s, ip);
   TSfree(s);
 
   qh = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &len);
@@ -133,22 +138,22 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   status = TSREMAP_DID_REMAP;
   if (e < t || (nullptr == token || 0 != strcmp(hash, token))) {
     if (e < t) {
-      TSDebug(PLUGIN_NAME, "link expired: [%lu] vs [%lu]", t, e);
+      Dbg(dbg_ctl, "link expired: [%lu] vs [%lu]", t, e);
     } else {
-      TSDebug(PLUGIN_NAME, "tokens mismatch: [%s] vs [%s]", hash, token);
+      Dbg(dbg_ctl, "tokens mismatch: [%s] vs [%s]", hash, token);
     }
     if (sli->strict) {
-      TSDebug(PLUGIN_NAME, "request is DENY");
+      Dbg(dbg_ctl, "request is DENY");
       TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN);
       status = TSREMAP_NO_REMAP;
     } else {
-      TSDebug(PLUGIN_NAME, "request is PASS");
+      Dbg(dbg_ctl, "request is PASS");
     }
   }
   if (status == TSREMAP_DID_REMAP) {
     if (TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, "", -1) == TS_SUCCESS) {
       s = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &len);
-      TSDebug(PLUGIN_NAME, "new request string is [%.*s]", len, s);
+      Dbg(dbg_ctl, "new request string is [%.*s]", len, s);
       TSfree(s);
     } else {
       status = TSREMAP_NO_REMAP;
@@ -186,7 +191,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
       } else if (strcmp(argv[i], "policy") == 0) {
         sli->strict = !strcasecmp(ptr, "strict");
       } else {
-        TSDebug(PLUGIN_NAME, "Unknown parameter [%s]", argv[i]);
+        Dbg(dbg_ctl, "Unknown parameter [%s]", argv[i]);
       }
     } else {
       TSError("[%s] Invalid parameter [%s]", PLUGIN_NAME, argv[i]);

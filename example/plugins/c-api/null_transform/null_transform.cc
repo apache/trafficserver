@@ -29,6 +29,11 @@
 
 #define PLUGIN_NAME "null_transform"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 typedef struct {
   TSVIO output_vio;
   TSIOBuffer output_buffer;
@@ -68,7 +73,7 @@ handle_transform(TSCont contp)
   MyData *data;
   int64_t towrite;
 
-  TSDebug(PLUGIN_NAME, "Entering handle_transform()");
+  Dbg(dbg_ctl, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
 
   output_conn = TSTransformOutputVConnGet(contp);
@@ -91,7 +96,7 @@ handle_transform(TSCont contp)
     data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-    TSDebug(PLUGIN_NAME, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
+    Dbg(dbg_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
     TSContDataSet(contp, data);
   }
@@ -117,14 +122,14 @@ handle_transform(TSCont contp)
    * to write to the output connection.
    */
   towrite = TSVIONTodoGet(input_vio);
-  TSDebug(PLUGIN_NAME, "\ttoWrite is %" PRId64 "", towrite);
+  Dbg(dbg_ctl, "\ttoWrite is %" PRId64 "", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
-    TSDebug(PLUGIN_NAME, "\tavail is %" PRId64 "", avail);
+    Dbg(dbg_ctl, "\tavail is %" PRId64 "", avail);
     if (towrite > avail) {
       towrite = avail;
     }
@@ -185,10 +190,10 @@ null_transform(TSCont contp, TSEvent event, void *edata)
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
    */
-  TSDebug(PLUGIN_NAME, "Entering null_transform()");
+  Dbg(dbg_ctl, "Entering null_transform()");
 
   if (TSVConnClosedGet(contp)) {
-    TSDebug(PLUGIN_NAME, "\tVConn is closed");
+    Dbg(dbg_ctl, "\tVConn is closed");
     my_data_destroy(static_cast<MyData *>(TSContDataGet(contp)));
     TSContDestroy(contp);
     return 0;
@@ -197,7 +202,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
     case TS_EVENT_ERROR: {
       TSVIO input_vio;
 
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_ERROR");
+      Dbg(dbg_ctl, "\tEvent is TS_EVENT_ERROR");
       /* Get the write VIO for the write operation that was
        * performed on ourself. This VIO contains the continuation of
        * our parent transformation. This is the input VIO.
@@ -210,7 +215,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
       TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
+      Dbg(dbg_ctl, "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
@@ -224,11 +229,11 @@ null_transform(TSCont contp, TSEvent event, void *edata)
      * we'll attempt to transform more data.
      */
     case TS_EVENT_VCONN_WRITE_READY:
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
+      Dbg(dbg_ctl, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
       handle_transform(contp);
       break;
     default:
-      TSDebug(PLUGIN_NAME, "\t(event is %d)", event);
+      Dbg(dbg_ctl, "\t(event is %d)", event);
       handle_transform(contp);
       break;
     }
@@ -249,7 +254,7 @@ transformable(TSHttpTxn txnp)
   TSHttpStatus resp_status;
   int retv = 0;
 
-  TSDebug(PLUGIN_NAME, "Entering transformable()");
+  Dbg(dbg_ctl, "Entering transformable()");
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
     resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
@@ -257,7 +262,7 @@ transformable(TSHttpTxn txnp)
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
-  TSDebug(PLUGIN_NAME, "Exiting transformable with return %d", retv);
+  Dbg(dbg_ctl, "Exiting transformable with return %d", retv);
   return retv;
 }
 
@@ -266,7 +271,7 @@ transform_add(TSHttpTxn txnp)
 {
   TSVConn connp;
 
-  TSDebug(PLUGIN_NAME, "Entering transform_add()");
+  Dbg(dbg_ctl, "Entering transform_add()");
   connp = TSTransformCreate(null_transform, txnp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
@@ -276,10 +281,10 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
-  TSDebug(PLUGIN_NAME, "Entering transform_plugin()");
+  Dbg(dbg_ctl, "Entering transform_plugin()");
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_HTTP_READ_RESPONSE_HDR");
+    Dbg(dbg_ctl, "\tEvent is TS_EVENT_HTTP_READ_RESPONSE_HDR");
     if (transformable(txnp)) {
       transform_add(txnp);
     }

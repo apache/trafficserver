@@ -111,6 +111,7 @@ static int icap_conn_failed;
 static int total_icap_invalid;
 static int icap_response_err;
 static int icap_write_failed;
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 static int transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent event, void *edata);
@@ -220,7 +221,7 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
     data->icap_vio = nullptr;
   }
   TSStatIntIncrement(total_icap_invalid, 1);
-  TSDebug(PLUGIN_NAME, "\n%s\n", data->icap_header.c_str());
+  Dbg(dbg_ctl, "\n%s\n", data->icap_header.c_str());
   data->err_msg = std::string(msg);
   /* Signal the upstream vconn if still exists to stop sending data */
   TSVIO write_vio = TSVConnWriteVIOGet(contp);
@@ -271,7 +272,7 @@ handle_icap_headers(TSCont contp, TransformData *data)
   if (debug_enabled) {
     if (icap_status_line.find("506") != std::string::npos) {
       setup_icap_status_header(data, "@ICAP-Status", "ICAP server is too busy");
-      TSDebug(PLUGIN_NAME, "Sending OS response body.");
+      Dbg(dbg_ctl, "Sending OS response body.");
       return 1;
     }
   }
@@ -287,7 +288,7 @@ handle_icap_headers(TSCont contp, TransformData *data)
 static void
 handle_icap_http_header(TransformData *data)
 {
-  // TSDebug(PLUGIN_NAME, "Handling http header");
+  // Dbg(dbg_ctl, "Handling http header");
   int64_t pos = data->http_header.find("\r\n");
   std::string http_status_line =
     pos != static_cast<int64_t>(std::string::npos) ? data->http_header.substr(0, pos) : data->http_header;
@@ -415,7 +416,7 @@ transform_create(TSHttpTxn txnp)
   data  = new TransformData(txnp);
 
   TSContDataSet(contp, data);
-  // TSDebug(PLUGIN_NAME, "Initialization complete.");
+  // Dbg(dbg_ctl, "Initialization complete.");
   return contp;
 }
 
@@ -709,7 +710,7 @@ static int
 transform_buffer_os_resp(TSCont contp, TransformData *data)
 {
   data->state = State::BUFFER_OS_RESP;
-  TSDebug(PLUGIN_NAME, "Buffer os response.");
+  Dbg(dbg_ctl, "Buffer os response.");
   if (!data->os_resp_buf) {
     data->os_resp_buf = TSIOBufferCreate();
   }
@@ -833,7 +834,7 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
 
       /* Read in the icap header */
       data->icap_header += chunk;
-      // TSDebug(PLUGIN_NAME, "Headers: \n%s", icap_header.c_str());
+      // Dbg(dbg_ctl, "Headers: \n%s", icap_header.c_str());
       int64_t pos          = data->icap_header.find("\r\n\r\n");
       int64_t token_length = std::string("\r\n\r\n").size();
 
@@ -889,7 +890,7 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
       std::string chunk   = std::string(buf, read_ndone);
 
       data->http_header += chunk;
-      // TSDebug(PLUGIN_NAME, "Headers: \n%s", icap_header.c_str());
+      // Dbg(dbg_ctl, "Headers: \n%s", icap_header.c_str());
       int64_t pos          = data->http_header.find("\r\n\r\n");
       int64_t token_length = std::string("\r\n").size();
 
@@ -1063,7 +1064,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a call to TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
-    TSDebug(PLUGIN_NAME, "transformation closed");
+    Dbg(dbg_ctl, "transformation closed");
     transform_destroy(contp);
     return 0;
   } else {
@@ -1074,7 +1075,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
       TSError("[%s] Didn't get Continuation's Data, ignoring event", PLUGIN_NAME);
       return 0;
     }
-    TSDebug(PLUGIN_NAME, "transform handler event [%d], data->state = [%d]", event, static_cast<int>(data->state));
+    Dbg(dbg_ctl, "transform handler event [%d], data->state = [%d]", event, static_cast<int>(data->state));
 
     switch (data->state) {
     case State::BEGIN:

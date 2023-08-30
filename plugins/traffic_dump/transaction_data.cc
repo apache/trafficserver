@@ -65,7 +65,7 @@ TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edat
 
   switch (event) {
   case TS_EVENT_ERROR:
-    TSDebug(debug_tag, "Received an error event reading body data");
+    Dbg(dbg_ctl, "Received an error event reading body data");
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
@@ -84,7 +84,7 @@ TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edat
 
         TSIOBufferReaderConsume(reader, read_avail);
         TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + read_avail);
-        TSDebug(debug_tag, "Consumed %" PRId64 " bytes of response body data", read_avail);
+        Dbg(dbg_ctl, "Consumed %" PRId64 " bytes of response body data", read_avail);
       }
       if (TSVIONTodoGet(input_vio) > 0) {
         // signal that we can accept more data.
@@ -97,7 +97,7 @@ TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edat
     }
     break;
   default:
-    TSDebug(debug_tag, "unhandled event %d", event);
+    Dbg(dbg_ctl, "unhandled event %d", event);
     break;
   }
 
@@ -212,12 +212,12 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     TSAssert(TS_SUCCESS == TSHttpHdrUrlGet(buffer, hdr_loc, &url_loc));
     // 2. "scheme":
     cp = TSUrlSchemeGet(buffer, url_loc, &len);
-    TSDebug(debug_tag, "write_message_node(): found scheme %.*s ", len, cp);
+    Dbg(dbg_ctl, "write_message_node(): found scheme %.*s ", len, cp);
     result += traffic_dump::json_entry("scheme", cp, len);
 
     // 3. "method":(string)
     cp = TSHttpHdrMethodGet(buffer, hdr_loc, &len);
-    TSDebug(debug_tag, "write_message_node(): found method %.*s ", len, cp);
+    Dbg(dbg_ctl, "write_message_node(): found method %.*s ", len, cp);
     result += "," + traffic_dump::json_entry("method", cp, len);
 
     // 4. "url"
@@ -236,7 +236,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
       url_string = remove_scheme_prefix(url_string);
     }
 
-    TSDebug(debug_tag, "write_message_node(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
+    Dbg(dbg_ctl, "write_message_node(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
     result += ',' + traffic_dump::json_entry("url", url_string);
     TSfree(url);
     TSHandleMLocRelease(buffer, hdr_loc, url_loc);
@@ -305,10 +305,10 @@ bool
 TransactionData::init_helper(bool dump_body)
 {
   _dump_body = dump_body;
-  TSDebug(debug_tag, "Dumping body bytes: %s", _dump_body ? "true" : "false");
+  Dbg(dbg_ctl, "Dumping body bytes: %s", _dump_body ? "true" : "false");
   initialize_default_sensitive_field();
   const std::string sensitive_fields_string = get_sensitive_field_description();
-  TSDebug(debug_tag, "Sensitive fields for which generic values will be dumped: %s", sensitive_fields_string.c_str());
+  Dbg(dbg_ctl, "Sensitive fields for which generic values will be dumped: %s", sensitive_fields_string.c_str());
 
   if (TS_SUCCESS !=
       TSUserArgIndexReserve(TS_USER_ARGS_TXN, traffic_dump::debug_tag, "Track transaction related data", &transaction_arg_index)) {
@@ -407,7 +407,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
   // If no valid ssnData, continue transaction as if nothing happened. This transaction
   // must be filtered out by our filter criteria.
   if (!ssnData) {
-    TSDebug(debug_tag, "session_txn_handler(): No ssnData found. Abort.");
+    Dbg(dbg_ctl, "session_txn_handler(): No ssnData found. Abort.");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
@@ -458,7 +458,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     TSMBuffer buffer;
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
-      TSDebug(debug_tag, "Found client request");
+      Dbg(dbg_ctl, "Found client request");
       // We don't have an accurate view of the body size until TXN_CLOSE so we hold
       // off on writing the content:size node until then.
       txnData->write_client_request_node_no_content(buffer, hdr_loc);
@@ -500,19 +500,19 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
-      TSDebug(debug_tag, "Found proxy request");
+      Dbg(dbg_ctl, "Found proxy request");
       txnData->write_proxy_request_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &buffer, &hdr_loc)) {
-      TSDebug(debug_tag, "Found server response");
+      Dbg(dbg_ctl, "Found server response");
       txnData->write_server_response_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &buffer, &hdr_loc)) {
-      TSDebug(debug_tag, "Found proxy response");
+      Dbg(dbg_ctl, "Found proxy response");
       txnData->write_proxy_response_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
@@ -524,7 +524,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     break;
   }
   default:
-    TSDebug(debug_tag, "session_txn_handler(): Unhandled events %d", event);
+    Dbg(dbg_ctl, "session_txn_handler(): Unhandled events %d", event);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     return TS_ERROR;
   }

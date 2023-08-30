@@ -28,19 +28,24 @@
 
 #define PLUGIN_NAME "protocol_stack"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 static int
 proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   const char *results[10];
   int count = 0;
-  TSDebug(PLUGIN_NAME, "Protocols:");
+  Dbg(dbg_ctl, "Protocols:");
   TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);
   for (int i = 0; i < count; i++) {
-    TSDebug(PLUGIN_NAME, "\t%d: %s", i, results[i]);
+    Dbg(dbg_ctl, "\t%d: %s", i, results[i]);
   }
   const char *ret_tag = TSHttpTxnClientProtocolStackContains(txnp, "h2");
-  TSDebug(PLUGIN_NAME, "Stack %s HTTP/2", ret_tag != nullptr ? "contains" : "does not contain");
+  Dbg(dbg_ctl, "Stack %s HTTP/2", ret_tag != nullptr ? "contains" : "does not contain");
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }

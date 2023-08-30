@@ -37,6 +37,8 @@ namespace
 {
 constexpr char const *PLUGIN_NAME = "txn_data_sink";
 
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 /** The flag for activating response body data sink for a transaction. */
 std::string_view FLAG_DUMP_RESPONSE_BODY = "X-Dump-Response";
 
@@ -103,15 +105,15 @@ body_reader_helper(TSCont contp, TSEvent event, bool sync_response_body)
 
   switch (event) {
   case TS_EVENT_ERROR:
-    TSDebug(PLUGIN_NAME, "Error event");
+    Dbg(dbg_ctl, "Error event");
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
-    TSDebug(PLUGIN_NAME, "READ_COMPLETE");
+    Dbg(dbg_ctl, "READ_COMPLETE");
     break;
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_IMMEDIATE:
-    TSDebug(PLUGIN_NAME, "Data event - %s", event == TS_EVENT_IMMEDIATE ? "IMMEDIATE" : "READ_READY");
+    Dbg(dbg_ctl, "Data event - %s", event == TS_EVENT_IMMEDIATE ? "IMMEDIATE" : "READ_READY");
     // Look for data and if we find any, consume it.
     if (TSVIOBufferGet(input_vio)) {
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
@@ -123,21 +125,21 @@ body_reader_helper(TSCont contp, TSEvent event, bool sync_response_body)
 
         TSIOBufferReaderConsume(reader, n);
         TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
-        TSDebug(PLUGIN_NAME, "Consumed %zd bytes", n);
+        Dbg(dbg_ctl, "Consumed %zd bytes", n);
       }
       if (TSVIONTodoGet(input_vio) > 0) {
         // Signal that we can accept more data.
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
       } else {
-        TSDebug(PLUGIN_NAME, "Consumed the following body: \"%.*s\"", static_cast<int>(body_bytes.size()), body_bytes.data());
+        Dbg(dbg_ctl, "Consumed the following body: \"%.*s\"", static_cast<int>(body_bytes.size()), body_bytes.data());
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
       }
     } else { // The buffer is gone so we're done.
-      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %zd bytes", body_bytes.size());
+      Dbg(dbg_ctl, "upstream buffer disappeared - %zd bytes", body_bytes.size());
     }
     break;
   default:
-    TSDebug(PLUGIN_NAME, "unhandled event %d", event);
+    Dbg(dbg_ctl, "unhandled event %d", event);
     break;
   }
 
@@ -213,7 +215,7 @@ main_hook(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-  TSDebug(PLUGIN_NAME, "Checking transaction for any flags to enable transaction data sink.");
+  Dbg(dbg_ctl, "Checking transaction for any flags to enable transaction data sink.");
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     /// We use @c TSTransformCreate because ATS sees this the same as a
@@ -223,11 +225,11 @@ main_hook(TSCont contp, TSEvent event, void *edata)
     /// is with a transform.
     if (response_sink_requested(txnp)) {
       TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, TSTransformCreate(response_body_reader, txnp));
-      TSDebug(PLUGIN_NAME, "Adding response data sink to transaction");
+      Dbg(dbg_ctl, "Adding response data sink to transaction");
     }
     if (request_sink_requested(txnp)) {
       TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_CLIENT_HOOK, TSTransformCreate(request_body_reader, txnp));
-      TSDebug(PLUGIN_NAME, "Adding request data sink to transaction");
+      Dbg(dbg_ctl, "Adding request data sink to transaction");
     }
     break;
   default:

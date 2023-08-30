@@ -36,12 +36,12 @@ void
 MMConditionGeo::initLibrary(const std::string &path)
 {
   if (path.empty()) {
-    TSDebug(PLUGIN_NAME, "Empty MaxMind db path specified. Not initializing!");
+    Dbg(pi_dbg_ctl, "Empty MaxMind db path specified. Not initializing!");
     return;
   }
 
   if (gMaxMindDB != nullptr) {
-    TSDebug(PLUGIN_NAME, "Maxmind library already initialized");
+    Dbg(pi_dbg_ctl, "Maxmind library already initialized");
     return;
   }
 
@@ -49,11 +49,11 @@ MMConditionGeo::initLibrary(const std::string &path)
 
   int status = MMDB_open(path.c_str(), MMDB_MODE_MMAP, gMaxMindDB);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
     return;
   }
-  TSDebug(PLUGIN_NAME, "Loaded %s", path.c_str());
+  Dbg(pi_dbg_ctl, "Loaded %s", path.c_str());
 }
 
 std::string
@@ -63,31 +63,31 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
   int mmdb_error;
 
   if (gMaxMindDB == nullptr) {
-    TSDebug(PLUGIN_NAME, "MaxMind not initialized; using default value");
+    Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");
     return ret;
   }
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
-    TSDebug(PLUGIN_NAME, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
+    Dbg(pi_dbg_ctl, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
     return ret;
   }
 
   MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
-    TSDebug(PLUGIN_NAME, "No entry for this IP was found");
+    Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
   int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "Error looking up entry data: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
     return ret;
   }
 
   if (entry_data_list == nullptr) {
-    TSDebug(PLUGIN_NAME, "No data found");
+    Dbg(pi_dbg_ctl, "No data found");
     return ret;
   }
 
@@ -100,7 +100,7 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
     field_name = "autonomous_system_organization";
     break;
   default:
-    TSDebug(PLUGIN_NAME, "Unsupported field %d", _geo_qual);
+    Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
     return ret;
     break;
   }
@@ -109,7 +109,7 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
 
   status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "ERROR on get value asn value: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
     return ret;
   }
   ret = std::string(entry_data.utf8_string, entry_data.data_size);
@@ -128,31 +128,31 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
   int mmdb_error;
 
   if (gMaxMindDB == nullptr) {
-    TSDebug(PLUGIN_NAME, "MaxMind not initialized; using default value");
+    Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");
     return ret;
   }
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
-    TSDebug(PLUGIN_NAME, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
+    Dbg(pi_dbg_ctl, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
     return ret;
   }
 
   MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
-    TSDebug(PLUGIN_NAME, "No entry for this IP was found");
+    Dbg(pi_dbg_ctl, "No entry for this IP was found");
     return ret;
   }
 
   int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "Error looking up entry data: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
     return ret;
   }
 
   if (entry_data_list == nullptr) {
-    TSDebug(PLUGIN_NAME, "No data found");
+    Dbg(pi_dbg_ctl, "No data found");
     return ret;
   }
 
@@ -162,7 +162,7 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
     field_name = "autonomous_system_number";
     break;
   default:
-    TSDebug(PLUGIN_NAME, "Unsupported field %d", _geo_qual);
+    Dbg(pi_dbg_ctl, "Unsupported field %d", _geo_qual);
     return ret;
     break;
   }
@@ -171,7 +171,7 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
 
   status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "ERROR on get value asn value: %s", MMDB_strerror(status));
+    Dbg(pi_dbg_ctl, "ERROR on get value asn value: %s", MMDB_strerror(status));
     return ret;
   }
   ret = entry_data.uint32;

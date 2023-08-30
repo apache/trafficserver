@@ -29,8 +29,7 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0), _crc(0)
+EsiGzip::EsiGzip(const char *debug_tag) : ComponentBase(debug_tag), _downstream_length(0), _total_data_length(0), _crc(0)
 {
   // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
   // coverity[uninit_member]
@@ -86,7 +85,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
   _zstrm.zfree  = Z_NULL;
   _zstrm.opaque = Z_NULL;
   if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
+    TSError("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
   }
 
@@ -96,7 +95,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
     _zstrm.avail_in = data_len;
     deflate_result  = runDeflateLoop(_zstrm, Z_FULL_FLUSH, cdata);
     if (deflate_result != Z_OK) {
-      _errorLog("[%s] runDeflateLoop failed!", __FUNCTION__);
+      TSError("[%s] runDeflateLoop failed!", __FUNCTION__);
 
       deflateEnd(&_zstrm);
 
@@ -131,7 +130,7 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   _zstrm.zfree  = Z_NULL;
   _zstrm.opaque = Z_NULL;
   if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
+    TSError("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
   }
 
@@ -141,7 +140,7 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   int deflate_result = runDeflateLoop(_zstrm, Z_FINISH, cdata);
   deflateEnd(&_zstrm);
   if (deflate_result != Z_STREAM_END) {
-    _errorLog("[%s] deflateEnd failed!", __FUNCTION__);
+    TSError("[%s] deflateEnd failed!", __FUNCTION__);
     downstream_length = 0;
     return false;
   }

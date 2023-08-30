@@ -50,7 +50,7 @@ public:
     size_t len = 0;
     nuraft::buffer_serializer bs_data(data);
     void *byte_array = bs_data.get_bytes(len);
-    // TSDebug(PLUGIN_NAME, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
+    // Dbg(dbg_ctl, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
     assert(len == SSL_TICKET_KEY_SIZE);
 
@@ -105,7 +105,7 @@ public:
   read_logical_snp_obj(nuraft::snapshot &s, void *&user_snp_ctx, uint64_t obj_id, nuraft::ptr<nuraft::buffer> &data_out,
                        bool &is_last_obj) override
   {
-    // TSDebug(PLUGIN_NAME, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
+    // Dbg(dbg_ctl, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
     is_last_obj = true;
 
@@ -126,7 +126,7 @@ public:
   void
   save_logical_snp_obj(nuraft::snapshot &s, uint64_t &obj_id, nuraft::buffer &data, bool is_first_obj, bool is_last_obj) override
   {
-    // TSDebug(PLUGIN_NAME, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
+    // Dbg(dbg_ctl, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
     size_t len = 0;
     nuraft::buffer_serializer bs_data(data);
@@ -152,7 +152,7 @@ public:
   bool
   apply_snapshot(nuraft::snapshot &s) override
   {
-    // TSDebug(PLUGIN_NAME, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
+    // Dbg(dbg_ctl, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
@@ -192,7 +192,7 @@ public:
   void
   create_snapshot(nuraft::snapshot &s, nuraft::async_result<bool>::handler_type &when_done) override
   {
-    // TSDebug(PLUGIN_NAME, "create snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
+    // Dbg(dbg_ctl, "create snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
     ssl_ticket_key_t local_stek;
     {

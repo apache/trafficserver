@@ -18,6 +18,11 @@
 
 #include "mmdb.h"
 
+namespace maxmind_acl_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Load the config file from param
 // check for basics
@@ -42,7 +47,7 @@ Acl::init(char const *filename)
   }
 
   if (stat(configloc.c_str(), &s) < 0) {
-    TSDebug(PLUGIN_NAME, "Could not stat %s", configloc.c_str());
+    Dbg(dbg_ctl, "Could not stat %s", configloc.c_str());
     return status;
   }
 
@@ -50,11 +55,11 @@ Acl::init(char const *filename)
     _config = YAML::LoadFile(configloc.c_str());
 
     if (_config.IsNull()) {
-      TSDebug(PLUGIN_NAME, "Config file not found or unreadable");
+      Dbg(dbg_ctl, "Config file not found or unreadable");
       return status;
     }
     if (!_config["maxmind"]) {
-      TSDebug(PLUGIN_NAME, "Config file not in maxmind namespace");
+      Dbg(dbg_ctl, "Config file not in maxmind namespace");
       return status;
     }
 
@@ -65,7 +70,7 @@ Acl::init(char const *filename)
     for (YAML::const_iterator it = maxmind.begin(); it != maxmind.end(); ++it) {
       const std::string &name    = it->first.as<std::string>();
       YAML::NodeType::value type = it->second.Type();
-      TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+      Dbg(dbg_ctl, "name: %s, value: %d", name.c_str(), type);
     }
 #endif
   } catch (const YAML::Exception &e) {
@@ -83,7 +88,7 @@ Acl::init(char const *filename)
   status = loaddb(maxmind["database"]);
 
   if (!status) {
-    TSDebug(PLUGIN_NAME, "Failed to load MaxMind Database");
+    Dbg(dbg_ctl, "Failed to load MaxMind Database");
     return status;
   }
 
@@ -105,7 +110,7 @@ Acl::init(char const *filename)
   _public_proxy       = false;
 
   if (loadallow(maxmind["allow"])) {
-    TSDebug(PLUGIN_NAME, "Loaded Allow ruleset");
+    Dbg(dbg_ctl, "Loaded Allow ruleset");
     status = true;
   } else {
     // We have no proper allow ruleset
@@ -114,7 +119,7 @@ Acl::init(char const *filename)
   }
 
   if (loaddeny(maxmind["deny"])) {
-    TSDebug(PLUGIN_NAME, "Loaded Deny ruleset");
+    Dbg(dbg_ctl, "Loaded Deny ruleset");
     status = true;
   }
 
@@ -123,7 +128,7 @@ Acl::init(char const *filename)
   _anonymous_blocking = loadanonymous(maxmind["anonymous"]);
 
   if (!status) {
-    TSDebug(PLUGIN_NAME, "Failed to load any rulesets, none specified");
+    Dbg(dbg_ctl, "Failed to load any rulesets, none specified");
     status = false;
   }
 
@@ -136,11 +141,11 @@ bool
 Acl::loadanonymous(const YAML::Node &anonNode)
 {
   if (!anonNode) {
-    TSDebug(PLUGIN_NAME, "No anonymous rules set");
+    Dbg(dbg_ctl, "No anonymous rules set");
     return false;
   }
   if (anonNode.IsNull()) {
-    TSDebug(PLUGIN_NAME, "Anonymous rules are NULL");
+    Dbg(dbg_ctl, "Anonymous rules are NULL");
     return false;
   }
 
@@ -149,43 +154,43 @@ Acl::loadanonymous(const YAML::Node &anonNode)
   for (YAML::const_iterator it = anonNode.begin(); it != anonNode.end(); ++it) {
     const std::string &name    = it->first.as<std::string>();
     YAML::NodeType::value type = it->second.Type();
-    TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+    Dbg(dbg_ctl, "name: %s, value: %d", name.c_str(), type);
   }
 #endif
 
   try {
     if (anonNode["ip"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw ip true");
+      Dbg(dbg_ctl, "saw ip true");
       _anonymous_ip = true;
     }
 
     if (anonNode["vpn"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw vpn true");
+      Dbg(dbg_ctl, "saw vpn true");
       _anonymous_vpn = true;
     }
 
     if (anonNode["hosting"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw hosting true");
+      Dbg(dbg_ctl, "saw hosting true");
       _hosting_provider = true;
     }
 
     if (anonNode["public"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw public proxy true");
+      Dbg(dbg_ctl, "saw public proxy true");
       _public_proxy = true;
     }
 
     if (anonNode["tor"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw tor exit node true");
+      Dbg(dbg_ctl, "saw tor exit node true");
       _tor_exit_node = true;
     }
 
     if (anonNode["residential"].as<bool>(false)) {
-      TSDebug(PLUGIN_NAME, "saw residential proxy true");
+      Dbg(dbg_ctl, "saw residential proxy true");
       _residential_proxy = true;
     }
 
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file anonymous list", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file anonymous list", e.what());
     return false;
   }
 
@@ -198,11 +203,11 @@ bool
 Acl::loaddeny(const YAML::Node &denyNode)
 {
   if (!denyNode) {
-    TSDebug(PLUGIN_NAME, "No Deny rules set");
+    Dbg(dbg_ctl, "No Deny rules set");
     return false;
   }
   if (denyNode.IsNull()) {
-    TSDebug(PLUGIN_NAME, "Deny rules are NULL");
+    Dbg(dbg_ctl, "Deny rules are NULL");
     return false;
   }
 
@@ -211,7 +216,7 @@ Acl::loaddeny(const YAML::Node &denyNode)
   for (YAML::const_iterator it = denyNode.begin(); it != denyNode.end(); ++it) {
     const std::string &name    = it->first.as<std::string>();
     YAML::NodeType::value type = it->second.Type();
-    TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+    Dbg(dbg_ctl, "name: %s, value: %d", name.c_str(), type);
   }
 #endif
 
@@ -225,12 +230,12 @@ Acl::loaddeny(const YAML::Node &denyNode)
             allow_country.insert_or_assign(i.as<std::string>(), false);
           }
         } else {
-          TSDebug(PLUGIN_NAME, "Invalid country code allow list yaml");
+          Dbg(dbg_ctl, "Invalid country code allow list yaml");
         }
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file country code deny list for maxmind", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file country code deny list for maxmind", e.what());
     return false;
   }
 
@@ -244,16 +249,16 @@ Acl::loaddeny(const YAML::Node &denyNode)
           for (auto &&i : ip) {
             if (swoc::IPRange r; r.load(i.Scalar())) {
               deny_ip_map.fill(r);
-              TSDebug(PLUGIN_NAME, "Denying ip fam %d ", r.family());
+              Dbg(dbg_ctl, "Denying ip fam %d ", r.family());
             }
           }
         } else {
-          TSDebug(PLUGIN_NAME, "Invalid IP deny list yaml");
+          Dbg(dbg_ctl, "Invalid IP deny list yaml");
         }
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file ip deny list for maxmind", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file ip deny list for maxmind", e.what());
     return false;
   }
 
@@ -264,9 +269,9 @@ Acl::loaddeny(const YAML::Node &denyNode)
 
 #if 0
   std::unordered_map<std::string, bool>::iterator cursor;
-  TSDebug(PLUGIN_NAME, "Deny Country List:");
+  Dbg(dbg_ctl, "Deny Country List:");
   for (cursor = allow_country.begin(); cursor != allow_country.end(); cursor++) {
-    TSDebug(PLUGIN_NAME, "%s:%d", cursor->first.c_str(), cursor->second);
+    Dbg(dbg_ctl, "%s:%d", cursor->first.c_str(), cursor->second);
   }
 #endif
 
@@ -278,11 +283,11 @@ bool
 Acl::loadallow(const YAML::Node &allowNode)
 {
   if (!allowNode) {
-    TSDebug(PLUGIN_NAME, "No Allow rules set");
+    Dbg(dbg_ctl, "No Allow rules set");
     return false;
   }
   if (allowNode.IsNull()) {
-    TSDebug(PLUGIN_NAME, "Allow rules are NULL");
+    Dbg(dbg_ctl, "Allow rules are NULL");
     return false;
   }
 
@@ -291,7 +296,7 @@ Acl::loadallow(const YAML::Node &allowNode)
   for (YAML::const_iterator it = allowNode.begin(); it != allowNode.end(); ++it) {
     const std::string &name    = it->first.as<std::string>();
     YAML::NodeType::value type = it->second.Type();
-    TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+    Dbg(dbg_ctl, "name: %s, value: %d", name.c_str(), type);
   }
 #endif
 
@@ -306,12 +311,12 @@ Acl::loadallow(const YAML::Node &allowNode)
           }
 
         } else {
-          TSDebug(PLUGIN_NAME, "Invalid country code allow list yaml");
+          Dbg(dbg_ctl, "Invalid country code allow list yaml");
         }
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file country code allow list for maxmind", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file country code allow list for maxmind", e.what());
     return false;
   }
 
@@ -325,16 +330,16 @@ Acl::loadallow(const YAML::Node &allowNode)
           for (auto &&i : ip) {
             if (swoc::IPRange r; r.load(i.Scalar())) {
               allow_ip_map.fill(r);
-              TSDebug(PLUGIN_NAME, "loading ip: valid: fam %d ", r.family());
+              Dbg(dbg_ctl, "loading ip: valid: fam %d ", r.family());
             }
           }
         } else {
-          TSDebug(PLUGIN_NAME, "Invalid IP allow list yaml");
+          Dbg(dbg_ctl, "Invalid IP allow list yaml");
         }
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file ip allow list for maxmind", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file ip allow list for maxmind", e.what());
     return false;
   }
 
@@ -345,9 +350,9 @@ Acl::loadallow(const YAML::Node &allowNode)
 
 #if 0
   std::unordered_map<std::string, bool>::iterator cursor;
-  TSDebug(PLUGIN_NAME, "Allow Country List:");
+  Dbg(dbg_ctl, "Allow Country List:");
   for (cursor = allow_country.begin(); cursor != allow_country.end(); cursor++) {
-    TSDebug(PLUGIN_NAME, "%s:%d", cursor->first.c_str(), cursor->second);
+    Dbg(dbg_ctl, "%s:%d", cursor->first.c_str(), cursor->second);
   }
 #endif
 
@@ -382,7 +387,7 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           }
 
           for (std::size_t y = 0; y < temprule.size() - 1; y++) {
-            TSDebug(PLUGIN_NAME, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
+            Dbg(dbg_ctl, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
             if (allow) {
               allow_regex[i[y].as<std::string>()].push_back(temp);
             } else {
@@ -393,7 +398,7 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file regex allow list for maxmind", e.what());
+    Dbg(dbg_ctl, "YAML::Exception %s when parsing YAML config file regex allow list for maxmind", e.what());
     return;
   }
 }
@@ -405,12 +410,12 @@ Acl::loadhtml(const YAML::Node &htmlNode)
   std::ifstream f;
 
   if (!htmlNode) {
-    TSDebug(PLUGIN_NAME, "No html field set");
+    Dbg(dbg_ctl, "No html field set");
     return;
   }
 
   if (htmlNode.IsNull()) {
-    TSDebug(PLUGIN_NAME, "Html field not set");
+    Dbg(dbg_ctl, "Html field not set");
     return;
   }
 
@@ -427,7 +432,7 @@ Acl::loadhtml(const YAML::Node &htmlNode)
   if (f.is_open()) {
     _html.append(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
     f.close();
-    TSDebug(PLUGIN_NAME, "Loaded HTML from %s", htmlloc.c_str());
+    Dbg(dbg_ctl, "Loaded HTML from %s", htmlloc.c_str());
   } else {
     TSError("[%s] Unable to open HTML file %s", PLUGIN_NAME, htmlloc.c_str());
   }
@@ -440,11 +445,11 @@ Acl::loaddb(const YAML::Node &dbNode)
   std::string dbloc, dbname;
 
   if (!dbNode) {
-    TSDebug(PLUGIN_NAME, "No Database field set");
+    Dbg(dbg_ctl, "No Database field set");
     return false;
   }
   if (dbNode.IsNull()) {
-    TSDebug(PLUGIN_NAME, "Database file not set");
+    Dbg(dbg_ctl, "Database file not set");
     return false;
   }
   dbname = dbNode.as<std::string>();
@@ -463,12 +468,12 @@ Acl::loaddb(const YAML::Node &dbNode)
 
   int status = MMDB_open(dbloc.c_str(), MMDB_MODE_MMAP, &_mmdb);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "Can't open DB %s - %s", dbloc.c_str(), MMDB_strerror(status));
+    Dbg(dbg_ctl, "Can't open DB %s - %s", dbloc.c_str(), MMDB_strerror(status));
     return false;
   }
 
   db_loaded = true;
-  TSDebug(PLUGIN_NAME, "Initialized MMDB with %s", dbloc.c_str());
+  Dbg(dbg_ctl, "Initialized MMDB with %s", dbloc.c_str());
   return true;
 }
 
@@ -481,7 +486,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
   auto sockaddr = TSHttpTxnClientAddrGet(txnp);
 
   if (sockaddr == nullptr) {
-    TSDebug(PLUGIN_NAME, "Err during TsHttpClientAddrGet, nullptr returned");
+    Dbg(dbg_ctl, "Err during TsHttpClientAddrGet, nullptr returned");
     ret = false;
     return ret;
   }
@@ -489,7 +494,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&_mmdb, sockaddr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
-    TSDebug(PLUGIN_NAME, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
+    Dbg(dbg_ctl, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
     ret = false;
     return ret;
   }
@@ -498,7 +503,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
   if (result.found_entry) {
     int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
     if (MMDB_SUCCESS != status) {
-      TSDebug(PLUGIN_NAME, "Error looking up entry data: %s", MMDB_strerror(status));
+      Dbg(dbg_ctl, "Error looking up entry data: %s", MMDB_strerror(status));
       ret = false;
       return ret;
     }
@@ -513,7 +518,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
       FILE *temp = fmemopen(&buffer[0], 4096, "wb+");
       int status = MMDB_dump_entry_data_list(temp, entry_data_list, 0);
       fflush(temp);
-      TSDebug(PLUGIN_NAME, "Entry: %s, status: %s, type: %d", buffer, MMDB_strerror(status), entry_data_list->entry_data.type);
+      Dbg(dbg_ctl, "Entry: %s, status: %s, type: %d", buffer, MMDB_strerror(status), entry_data_list->entry_data.type);
 #endif
 
       MMDB_entry_data_s entry_data;
@@ -523,7 +528,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
         TSMLoc ul;
         TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
         if (rc != TS_SUCCESS) {
-          TSDebug(PLUGIN_NAME, "Failed call to TSHttpTxnPristineUrlGet()");
+          Dbg(dbg_ctl, "Failed call to TSHttpTxnPristineUrlGet()");
           return false;
         }
         int host_len = 0, path_len = 0;
@@ -538,7 +543,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
       if (!allow_country.empty() || !allow_regex.empty() || !deny_regex.empty()) {
         status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
         if (MMDB_SUCCESS != status) {
-          TSDebug(PLUGIN_NAME, "err on get country code value: %s", MMDB_strerror(status));
+          Dbg(dbg_ctl, "err on get country code value: %s", MMDB_strerror(status));
           return false;
         }
         if (entry_data.has_data) {
@@ -553,31 +558,31 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
       // If blocked here, then block as well
       if (_anonymous_blocking) {
         if (!eval_anonymous(&result.entry)) {
-          TSDebug(PLUGIN_NAME, "Blocking Anonymous IP");
+          Dbg(dbg_ctl, "Blocking Anonymous IP");
           ret = false;
         }
       }
     }
   } else {
-    TSDebug(PLUGIN_NAME, "No Country Code entry for this IP was found");
+    Dbg(dbg_ctl, "No Country Code entry for this IP was found");
     ret = false;
   }
 
   // Test for allowable IPs based on our lists
   switch (eval_ip(TSHttpTxnClientAddrGet(txnp))) {
   case ALLOW_IP:
-    TSDebug(PLUGIN_NAME, "Saw explicit allow of this IP");
+    Dbg(dbg_ctl, "Saw explicit allow of this IP");
     ret = true;
     break;
   case DENY_IP:
-    TSDebug(PLUGIN_NAME, "Saw explicit deny of this IP");
+    Dbg(dbg_ctl, "Saw explicit deny of this IP");
     ret = false;
     break;
   case UNKNOWN_IP:
-    TSDebug(PLUGIN_NAME, "Unknown IP, following default from ruleset: %d", ret);
+    Dbg(dbg_ctl, "Unknown IP, following default from ruleset: %d", ret);
     break;
   default:
-    TSDebug(PLUGIN_NAME, "Unknown client addr ip state, should not get here");
+    Dbg(dbg_ctl, "Unknown client addr ip state, should not get here");
     ret = false;
     break;
   }
@@ -607,7 +612,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw is_anonymous set to true bool");
+          Dbg(dbg_ctl, "saw is_anonymous set to true bool");
           return false;
         }
       }
@@ -619,7 +624,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw is_anonymous vpn set to true bool");
+          Dbg(dbg_ctl, "saw is_anonymous vpn set to true bool");
           return false;
         }
       }
@@ -631,7 +636,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw is_hosting set to true bool");
+          Dbg(dbg_ctl, "saw is_hosting set to true bool");
           return false;
         }
       }
@@ -643,7 +648,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw public_proxy set to true bool");
+          Dbg(dbg_ctl, "saw public_proxy set to true bool");
           return false;
         }
       }
@@ -655,7 +660,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw is_tor_exit_node set to true bool");
+          Dbg(dbg_ctl, "saw is_tor_exit_node set to true bool");
           return false;
         }
       }
@@ -667,7 +672,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
     if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
-          TSDebug(PLUGIN_NAME, "saw is_residential set to true bool");
+          Dbg(dbg_ctl, "saw is_residential set to true bool");
           return false;
         }
       }
@@ -692,7 +697,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
   output = static_cast<char *>(malloc((sizeof(char) * (entry_data->data_size + 1))));
   strncpy(output, entry_data->utf8_string, entry_data->data_size);
   output[entry_data->data_size] = '\0';
-  TSDebug(PLUGIN_NAME, "This IP Country Code: %s", output);
+  Dbg(dbg_ctl, "This IP Country Code: %s", output);
   auto exists = allow_country.count(output);
 
   // If the country exists in our map then set its allow value here
@@ -702,16 +707,16 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
   }
 
   if (allow) {
-    TSDebug(PLUGIN_NAME, "Found country code of IP in allow list or allow by default");
+    Dbg(dbg_ctl, "Found country code of IP in allow list or allow by default");
     ret = true;
   }
 
   if (!url.empty()) {
-    TSDebug(PLUGIN_NAME, "saw url not empty: %s, %ld", url.c_str(), url.length());
+    Dbg(dbg_ctl, "saw url not empty: %s, %ld", url.c_str(), url.length());
     if (!allow_regex[output].empty()) {
       for (auto &i : allow_regex[output]) {
         if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
-          TSDebug(PLUGIN_NAME, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
+          Dbg(dbg_ctl, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
       }
@@ -719,7 +724,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
     if (!deny_regex[output].empty()) {
       for (auto &i : deny_regex[output]) {
         if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
-          TSDebug(PLUGIN_NAME, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
+          Dbg(dbg_ctl, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }
       }
@@ -742,9 +747,9 @@ Acl::eval_ip(const sockaddr *sock) const
 #if 0
   for (auto &spot : allow_ip_map) {
     char text[INET6_ADDRSTRLEN];
-    TSDebug(PLUGIN_NAME, "IP: %s", ats_ip_ntop(spot.min(), text, sizeof text));
+    Dbg(dbg_ctl, "IP: %s", ats_ip_ntop(spot.min(), text, sizeof text));
     if (0 != ats_ip_addr_cmp(spot.min(), spot.max())) {
-      TSDebug(PLUGIN_NAME, "stuff: %s", ats_ip_ntop(spot.max(), text, sizeof text));
+      Dbg(dbg_ctl, "stuff: %s", ats_ip_ntop(spot.max(), text, sizeof text));
     }
   }
 #endif

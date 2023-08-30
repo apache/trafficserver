@@ -23,8 +23,11 @@
 
 #pragma once
 
+#include <ts/ts.h>
+
 namespace traffic_dump
 {
 constexpr char debug_tag[] = "traffic_dump";
 
+extern DbgCtl dbg_ctl;
 } // namespace traffic_dump

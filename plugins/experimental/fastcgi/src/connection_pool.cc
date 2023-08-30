@@ -33,7 +33,7 @@ ConnectionPool::ConnectionPool(Server *server, TSEventFunc funcp)
 
 ConnectionPool::~ConnectionPool()
 {
-  TSDebug(PLUGIN_NAME, "Destroying connectionPool Obj...");
+  Dbg(dbg_ctl, "Destroying connectionPool Obj...");
   TSMutexDestroy(_availableConn_mutex);
   TSMutexDestroy(_conn_mutex);
 }
@@ -49,16 +49,16 @@ ConnectionPool::getAvailableConnection()
 {
   ServerConnection *conn = nullptr;
   if (!_available_connections.empty() && _connections.size() >= _maxConn) {
-    TSDebug(PLUGIN_NAME, "%s: available connections %ld", __FUNCTION__, _available_connections.size());
+    Dbg(dbg_ctl, "%s: available connections %ld", __FUNCTION__, _available_connections.size());
     conn = _available_connections.front();
     _available_connections.pop_front();
     conn->setState(ServerConnection::READY);
-    TSDebug(PLUGIN_NAME, "%s: available connections %ld. Connection from available pool, %p", __FUNCTION__,
-            _available_connections.size(), conn);
+    Dbg(dbg_ctl, "%s: available connections %ld. Connection from available pool, %p", __FUNCTION__, _available_connections.size(),
+        conn);
   }
 
   if (_connections.size() < _maxConn) {
-    TSDebug(PLUGIN_NAME, "%s: Setting up new connection, maxConn: %d", __FUNCTION__, _maxConn);
+    Dbg(dbg_ctl, "%s: Setting up new connection, maxConn: %d", __FUNCTION__, _maxConn);
     conn = new ServerConnection(_server, _funcp);
     addConnection(conn);
   }
@@ -79,7 +79,7 @@ ConnectionPool::reuseConnection(ServerConnection *connection)
 
   connection->setState(ServerConnection::READY);
   _available_connections.push_back(connection);
-  TSDebug(PLUGIN_NAME, "%s: Connection added, available connections %ld", __FUNCTION__, _available_connections.size());
+  Dbg(dbg_ctl, "%s: Connection added, available connections %ld", __FUNCTION__, _available_connections.size());
 }
 
 void

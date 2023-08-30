@@ -105,6 +105,12 @@ struct edit_t;
 using editset_t = std::set<edit_t>;
 using edit_p    = editset_t::const_iterator;
 
+namespace
+{
+DbgCtl dbg_ctl{"[stream-editor]"};
+DbgCtl dbg_ctl_no_brackets{"stream-editor"};
+} // namespace
+
 struct edit_t {
   const size_t start;
   const size_t bytes;
@@ -142,8 +148,8 @@ struct edit_t {
         edits.insert(*this);
         return true;
       } catch (const edit_t &conflicted) {
-        TSDebug("stream-editor", "Conflicting edits [%ld-%ld] vs [%ld-%ld]", start, start + bytes, conflicted.start,
-                conflicted.start + conflicted.bytes);
+        Dbg(dbg_ctl_no_brackets, "Conflicting edits [%ld-%ld] vs [%ld-%ld]", start, start + bytes, conflicted.start,
+            conflicted.start + conflicted.bytes);
         if (priority < conflicted.priority) {
           /* we win conflict and oust our enemy */
           edits.erase(conflicted);
@@ -850,7 +856,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (rewrites_in != nullptr) {
-    TSDebug("[stream-editor]", "initializing input filtering");
+    Dbg(dbg_ctl, "initializing input filtering");
     inputcont = TSContCreate(streamedit_setup, nullptr);
     if (inputcont == nullptr) {
       TSError("[stream-editor] failed to initialize input filtering!");
@@ -859,11 +865,11 @@ TSPluginInit(int argc, const char *argv[])
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, inputcont);
     }
   } else {
-    TSDebug("[stream-editor]", "no input filter rules, skipping filter");
+    Dbg(dbg_ctl, "no input filter rules, skipping filter");
   }
 
   if (rewrites_out != nullptr) {
-    TSDebug("[stream-editor]", "initializing output filtering");
+    Dbg(dbg_ctl, "initializing output filtering");
     outputcont = TSContCreate(streamedit_setup, nullptr);
     if (outputcont == nullptr) {
       TSError("[stream-editor] failed to initialize output filtering!");
@@ -872,6 +878,6 @@ TSPluginInit(int argc, const char *argv[])
       TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, outputcont);
     }
   } else {
-    TSDebug("[stream-editor]", "no output filter rules, skipping filter");
+    Dbg(dbg_ctl, "no output filter rules, skipping filter");
   }
 }

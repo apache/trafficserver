@@ -36,6 +36,8 @@
 
 namespace
 {
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 int
 CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
@@ -58,7 +60,7 @@ CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
     }
   }
   if (do_blind_tunnel) {
-    TSDebug(PLUGIN_NAME, "SNI callback: do blind tunnel for %s", servername);
+    Dbg(dbg_ctl, "SNI callback: do blind tunnel for %s", servername);
     TSVConnTunnel(ssl_vc);
     return TS_SUCCESS; // Don't re-enable so we interrupt processing
   }
@@ -94,7 +96,7 @@ TSPluginInit(int argc, const char *argv[])
   if (!success) {
     TSError(PCP "not initialized");
   }
-  TSDebug(PLUGIN_NAME, "Plugin %s", success ? "online" : "offline");
+  Dbg(dbg_ctl, "Plugin %s", success ? "online" : "offline");
 
   return;
 }

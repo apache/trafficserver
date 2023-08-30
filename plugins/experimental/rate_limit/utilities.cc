@@ -21,6 +21,11 @@
 #include "ts/remap.h"
 #include "utilities.h"
 
+namespace rate_limit_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Add a header with the delay imposed on this transaction. This can be used
 // for logging, and other types of metrics.
@@ -36,7 +41,7 @@ delayHeader(TSHttpTxn txnp, std::string &header, std::chrono::milliseconds delay
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, static_cast<int>(delay.count()))) {
-          TSDebug(PLUGIN_NAME, "Added client request header; %s: %d", header.c_str(), static_cast<int>(delay.count()));
+          Dbg(dbg_ctl, "Added client request header; %s: %d", header.c_str(), static_cast<int>(delay.count()));
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -61,7 +66,7 @@ retryAfter(TSHttpTxn txnp, unsigned retry)
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 11, &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, retry)) {
-          TSDebug(PLUGIN_NAME, "Added a Retry-After: %u", retry);
+          Dbg(dbg_ctl, "Added a Retry-After: %u", retry);
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -95,7 +100,7 @@ getDescriptionFromUrl(const char *url)
     const std::string hostname = std::string(h, host_len);
     const std::string scheme   = std::string(s, scheme_len);
 
-    TSDebug(PLUGIN_NAME, "scheme = %s, host = %s, port = %d", scheme.c_str(), hostname.c_str(), port);
+    Dbg(dbg_ctl, "scheme = %s, host = %s, port = %d", scheme.c_str(), hostname.c_str(), port);
 
     description = scheme;
     description.append(".");

@@ -47,8 +47,8 @@ enum MatcherOps {
 class Matcher
 {
 public:
-  explicit Matcher(const MatcherOps op) : _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
-  virtual ~Matcher() { TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher"); }
+  explicit Matcher(const MatcherOps op) : _op(op) { Dbg(dbg_ctl, "Calling CTOR for Matcher"); }
+  virtual ~Matcher() { Dbg(dbg_ctl, "Calling DTOR for Matcher"); }
 
   // noncopyable
   Matcher(const Matcher &)        = delete;
@@ -83,10 +83,10 @@ public:
       std::stringstream ss;
       ss << _data;
       TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-      TSDebug(PLUGIN_NAME, "Invalid regex: failed to precompile: %s", ss.str().c_str());
+      Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
       throw std::runtime_error("Malformed regex");
     } else {
-      TSDebug(PLUGIN_NAME, "Regex precompiled successfully");
+      Dbg(pi_dbg_ctl, "Regex precompiled successfully");
     }
   }
 
@@ -146,7 +146,7 @@ private:
     std::stringstream ss;
 
     ss << '"' << t << '"' << op << '"' << _data << '"' << " -> " << r;
-    TSDebug(PLUGIN_NAME, "\ttesting: %s", ss.str().c_str());
+    Dbg(pi_dbg_ctl, "\ttesting: %s", ss.str().c_str());
   }
 
   // For basic types
@@ -155,7 +155,7 @@ private:
   {
     bool r = (t == _data);
 
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (pi_dbg_ctl.on()) {
       debug_helper(t, " == ", r);
     }
     return r;
@@ -166,7 +166,7 @@ private:
   {
     bool r = (t < _data);
 
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (pi_dbg_ctl.on()) {
       debug_helper(t, " < ", r);
     }
     return r;
@@ -177,7 +177,7 @@ private:
   {
     bool r = t > _data;
 
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (pi_dbg_ctl.on()) {
       debug_helper(t, " > ", r);
     }
     return r;
@@ -202,9 +202,9 @@ private:
   {
     int ovector[OVECCOUNT];
 
-    TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
+    Dbg(pi_dbg_ctl, "Test regular expression %s : %s", _data.c_str(), t.c_str());
     if (reHelper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
-      TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
+      Dbg(pi_dbg_ctl, "Successfully found regular expression match");
       return true;
     }
     return false;
@@ -226,10 +226,10 @@ public:
   {
     if (!extract_ranges(data)) {
       TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
-      TSDebug(PLUGIN_NAME, "Invalid IP-range: failed to parse: %s", data.c_str());
+      Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", data.c_str());
       throw std::runtime_error("Malformed IP-range");
     } else {
-      TSDebug(PLUGIN_NAME, "IP-range precompiled successfully");
+      Dbg(pi_dbg_ctl, "IP-range precompiled successfully");
     }
   }
 
@@ -237,10 +237,10 @@ public:
   test(const sockaddr *addr) const
   {
     if (ipHelper.contains(swoc::IPAddr(addr))) {
-      if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      if (pi_dbg_ctl.on()) {
         char text[INET6_ADDRSTRLEN];
 
-        TSDebug(PLUGIN_NAME, "Successfully found IP-range match on %s", getIP(addr, text));
+        Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
       }
       return true;
     } else {
@@ -259,10 +259,10 @@ private:
     }
 
     if (ipHelper.count() > 0) {
-      TSDebug(PLUGIN_NAME, "    Added %zu IP ranges while parsing", ipHelper.count());
+      Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", ipHelper.count());
       return true;
     } else {
-      TSDebug(PLUGIN_NAME, "    No IP ranges added, possibly bad input");
+      Dbg(pi_dbg_ctl, "    No IP ranges added, possibly bad input");
       return false;
     }
   }

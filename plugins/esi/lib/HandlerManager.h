@@ -38,7 +38,7 @@ namespace EsiLib
 class HandlerManager : protected ComponentBase
 {
 public:
-  HandlerManager(const char *debug_tag, Debug debug_func, Error error_func) : ComponentBase(debug_tag, debug_func, error_func){};
+  HandlerManager(const char *debug_tag) : ComponentBase(debug_tag){};
 
   void loadObjects(const Utils::KeyValueMap &handlers);
 

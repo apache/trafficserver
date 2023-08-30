@@ -60,6 +60,8 @@
 #define SYSTEM_RECORD_TYPE   (0x100)
 #define DEFAULT_RECORD_TYPES (SYSTEM_RECORD_TYPE | TS_RECORDTYPE_PROCESS | TS_RECORDTYPE_PLUGIN)
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 static const swoc::IP4Range DEFAULT_IP{swoc::IP4Addr::MIN, swoc::IP4Addr::MAX};
 static const swoc::IP6Range DEFAULT_IP6{swoc::IP6Addr::MIN, swoc::IP6Addr::MAX};
 
@@ -165,7 +167,7 @@ init_br(stats_state *my_state)
 
   my_state->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
   if (!my_state->bstrm.br) {
-    TSDebug(PLUGIN_NAME, "Brotli Encoder Instance Failed");
+    Dbg(dbg_ctl, "Brotli Encoder Instance Failed");
     return NONE;
   }
   BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
@@ -204,10 +206,10 @@ init_gzip(stats_state *my_state, int mode)
   my_state->zstrm.data_type = Z_ASCII;
   int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
   if (err != Z_OK) {
-    TSDebug(PLUGIN_NAME, "gzip initialization failed");
+    Dbg(dbg_ctl, "gzip initialization failed");
     return NONE;
   } else {
-    TSDebug(PLUGIN_NAME, "gzip initialized successfully");
+    Dbg(dbg_ctl, "gzip initialized successfully");
     if (mode == GZIP_MODE) {
       return GZIP;
     } else if (mode == DEFLATE_MODE) {
@@ -305,7 +307,7 @@ stats_add_resp_header(stats_state *my_state)
 static void
 stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 {
-  TSDebug(PLUGIN_NAME, "stats_process_read(%d)", event);
+  Dbg(dbg_ctl, "stats_process_read(%d)", event);
   if (event == TS_EVENT_VCONN_READ_READY) {
     my_state->output_bytes = stats_add_resp_header(my_state);
     TSVConnShutdown(my_state->net_vc, 1, 0);
@@ -389,7 +391,7 @@ json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *na
     APPEND_STAT_JSON(name, "%s", datum->rec_string);
     break;
   default:
-    TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
+    Dbg(dbg_ctl, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
@@ -412,7 +414,7 @@ csv_out_stat(TSRecordType rec_type, void *edata, int registered, const char *nam
     APPEND_STAT_CSV(name, "%s", datum->rec_string);
     break;
   default:
-    TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
+    Dbg(dbg_ctl, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
@@ -456,7 +458,7 @@ br_out_stats(stats_state *my_state)
                                           &outputsize, outputbuf);
 
   if (err == BROTLI_FALSE) {
-    TSDebug(PLUGIN_NAME, "brotli compress error");
+    Dbg(dbg_ctl, "brotli compress error");
   }
   my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
   BrotliEncoderDestroyInstance(my_state->bstrm.br);
@@ -487,12 +489,12 @@ gzip_out_stats(stats_state *my_state)
   my_state->zstrm.next_out   = (Bytef *)outputbuf;
   int err                    = deflate(&my_state->zstrm, Z_FINISH);
   if (err != Z_STREAM_END) {
-    TSDebug(PLUGIN_NAME, "deflate error: %d", err);
+    Dbg(dbg_ctl, "deflate error: %d", err);
   }
 
   err = deflateEnd(&my_state->zstrm);
   if (err != Z_OK) {
-    TSDebug(PLUGIN_NAME, "deflate end err: %d", err);
+    Dbg(dbg_ctl, "deflate end err: %d", err);
   }
 
   my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, my_state->zstrm.total_out);
@@ -575,7 +577,7 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
   int path_len     = 0;
   const char *path = nullptr;
 
-  TSDebug(PLUGIN_NAME, "in the read stuff");
+  Dbg(dbg_ctl, "in the read stuff");
   config = get_config(contp);
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
@@ -587,16 +589,16 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
   }
 
   path = TSUrlPathGet(reqp, url_loc, &path_len);
-  TSDebug(PLUGIN_NAME, "Path: %.*s", path_len, path);
+  Dbg(dbg_ctl, "Path: %.*s", path_len, path);
 
   if (!(path_len != 0 && path_len == int(config->stats_path.length()) &&
         !memcmp(path, config->stats_path.c_str(), config->stats_path.length()))) {
-    TSDebug(PLUGIN_NAME, "not this plugins path, saw: %.*s, looking for: %s", path_len, path, config->stats_path.c_str());
+    Dbg(dbg_ctl, "not this plugins path, saw: %.*s, looking for: %s", path_len, path, config->stats_path.c_str());
     goto notforme;
   }
 
   if (auto addr = TSHttpTxnClientAddrGet(txnp); !is_ipmap_allowed(config, addr)) {
-    TSDebug(PLUGIN_NAME, "not right ip");
+    Dbg(dbg_ctl, "not right ip");
     TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
     reenable = TS_EVENT_HTTP_ERROR;
     goto notforme;
@@ -605,7 +607,7 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
   TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true); // not strictly necessary, but speed is everything these days
 
   /* This is us -- register our intercept */
-  TSDebug(PLUGIN_NAME, "Intercepting request");
+  Dbg(dbg_ctl, "Intercepting request");
 
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
@@ -633,15 +635,15 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
     int len         = -1;
     const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
     if (len >= TS_HTTP_LEN_DEFLATE && strstr(str, TS_HTTP_VALUE_DEFLATE) != nullptr) {
-      TSDebug(PLUGIN_NAME, "Saw deflate in accept encoding");
+      Dbg(dbg_ctl, "Saw deflate in accept encoding");
       my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
     } else if (len >= TS_HTTP_LEN_GZIP && strstr(str, TS_HTTP_VALUE_GZIP) != nullptr) {
-      TSDebug(PLUGIN_NAME, "Saw gzip in accept encoding");
+      Dbg(dbg_ctl, "Saw gzip in accept encoding");
       my_state->encoding = init_gzip(my_state, GZIP_MODE);
     }
 #if HAVE_BROTLI_ENCODE_H
     else if (len >= TS_HTTP_LEN_BROTLI && strstr(str, TS_HTTP_VALUE_BROTLI) != nullptr) {
-      TSDebug(PLUGIN_NAME, "Saw br in accept encoding");
+      Dbg(dbg_ctl, "Saw br in accept encoding");
       my_state->encoding = init_br(my_state);
     }
 #endif
@@ -649,7 +651,7 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
       my_state->encoding = NONE;
     }
   }
-  TSDebug(PLUGIN_NAME, "Finished AE check");
+  Dbg(dbg_ctl, "Finished AE check");
 
   TSContDataSet(icontp, my_state);
   TSHttpTxnIntercept(icontp, txnp);
@@ -738,7 +740,7 @@ init:
   config_cont = TSContCreate(config_handler, TSMutexCreate());
   TSContDataSet(config_cont, (void *)config_holder);
   TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
-  TSDebug(PLUGIN_NAME, "stats module registered with path %s", config_holder->config->stats_path.c_str());
+  Dbg(dbg_ctl, "stats module registered with path %s", config_holder->config->stats_path.c_str());
 
 done:
   return;
@@ -764,7 +766,7 @@ parseIpMap(config_t *config, swoc::TextView txt)
   if (txt.empty()) {
     config->addrs.fill(DEFAULT_IP6);
     config->addrs.fill(DEFAULT_IP);
-    TSDebug(PLUGIN_NAME, "Empty allow settings, setting all IPs in allow list");
+    Dbg(dbg_ctl, "Empty allow settings, setting all IPs in allow list");
     return;
   }
 
@@ -772,7 +774,7 @@ parseIpMap(config_t *config, swoc::TextView txt)
     auto token{txt.take_prefix_at(',')};
     if (swoc::IPRange r; r.load(token)) {
       config->addrs.fill(r);
-      TSDebug(PLUGIN_NAME, "Added %.*s to allow ip list", int(token.length()), token.data());
+      Dbg(dbg_ctl, "Added %.*s to allow ip list", int(token.length()), token.data());
     }
   }
 }
@@ -787,7 +789,7 @@ new_config(std::fstream &fh)
   std::string cur_line;
 
   if (!fh) {
-    TSDebug(PLUGIN_NAME, "No config file, using defaults");
+    Dbg(dbg_ctl, "No config file, using defaults");
     return config;
   }
 
@@ -806,10 +808,10 @@ new_config(std::fstream &fh)
 
     if ((p = line.find(PATH_TAG)) != std::string::npos) {
       line.remove_prefix(p + PATH_TAG.size()).ltrim('/');
-      TSDebug(PLUGIN_NAME, "parsing path");
+      Dbg(dbg_ctl, "parsing path");
       config->stats_path = line;
     } else if ((p = line.find(RECORD_TAG)) != std::string::npos) {
-      TSDebug(PLUGIN_NAME, "parsing record types");
+      Dbg(dbg_ctl, "parsing record types");
       line.remove_prefix(p).remove_prefix(RECORD_TAG.size());
       config->recordTypes = swoc::svtou(line, nullptr, 16);
     } else if ((p = line.find(ADDR_TAG)) != std::string::npos) {
@@ -820,11 +822,11 @@ new_config(std::fstream &fh)
   }
 
   if (config->addrs.count() == 0) {
-    TSDebug(PLUGIN_NAME, "empty ip map found, setting defaults");
+    Dbg(dbg_ctl, "empty ip map found, setting defaults");
     parseIpMap(config, nullptr);
   }
 
-  TSDebug(PLUGIN_NAME, "config path=%s", config->stats_path.c_str());
+  Dbg(dbg_ctl, "config path=%s", config->stats_path.c_str());
 
   return config;
 }
@@ -832,7 +834,7 @@ new_config(std::fstream &fh)
 static void
 delete_config(config_t *config)
 {
-  TSDebug(PLUGIN_NAME, "Freeing config");
+  Dbg(dbg_ctl, "Freeing config");
   TSfree(config);
 }
 
@@ -861,20 +863,20 @@ load_config_file(config_holder_t *config_holder)
 
   // check date
   if ((config_holder->config_path == nullptr) || (stat(config_holder->config_path, &s) < 0)) {
-    TSDebug(PLUGIN_NAME, "Could not stat %s", config_holder->config_path);
+    Dbg(dbg_ctl, "Could not stat %s", config_holder->config_path);
     config_holder->config_path = nullptr;
     if (config_holder->config) {
       return;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "s.st_mtime=%lu, last_load=%lu", s.st_mtime, config_holder->last_load);
+    Dbg(dbg_ctl, "s.st_mtime=%lu, last_load=%lu", s.st_mtime, config_holder->last_load);
     if (s.st_mtime < config_holder->last_load) {
       return;
     }
   }
 
   if (config_holder->config_path != nullptr) {
-    TSDebug(PLUGIN_NAME, "Opening config file: %s", config_holder->config_path);
+    Dbg(dbg_ctl, "Opening config file: %s", config_holder->config_path);
     fh.open(config_holder->config_path, std::ios::in);
   }
 
@@ -895,7 +897,7 @@ load_config_file(config_holder_t *config_holder)
     config_t **confp         = &(config_holder->config);
     oldconfig                = __sync_lock_test_and_set(confp, newconfig);
     if (oldconfig) {
-      TSDebug(PLUGIN_NAME, "scheduling free: %p (%p)", oldconfig, newconfig);
+      Dbg(dbg_ctl, "scheduling free: %p (%p)", oldconfig, newconfig);
       free_cont = TSContCreate(free_handler, TSMutexCreate());
       TSContDataSet(free_cont, (void *)oldconfig);
       TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);

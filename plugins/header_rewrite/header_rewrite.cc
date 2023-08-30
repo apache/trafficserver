@@ -36,12 +36,18 @@
 const char PLUGIN_NAME[]     = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 
+namespace header_rewrite_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
+DbgCtl pi_dbg_ctl{PLUGIN_NAME};
+} // namespace header_rewrite_ns
+
 static std::once_flag initGeoLibs;
 
 static void
 initGeoLib(const std::string &dbPath)
 {
-  TSDebug(PLUGIN_NAME, "Loading geo db %s", dbPath.c_str());
+  Dbg(pi_dbg_ctl, "Loading geo db %s", dbPath.c_str());
 #if TS_USE_HRW_GEOIP
   GeoIPConditionGeo::initLibrary(dbPath);
 #elif TS_USE_HRW_MAXMINDDB
@@ -59,7 +65,7 @@ class RulesConfig
 public:
   RulesConfig()
   {
-    TSDebug(PLUGIN_NAME_DBG, "RulesConfig CTOR");
+    Dbg(dbg_ctl, "RulesConfig CTOR");
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
@@ -69,7 +75,7 @@ public:
 
   ~RulesConfig()
   {
-    TSDebug(PLUGIN_NAME_DBG, "RulesConfig DTOR");
+    Dbg(dbg_ctl, "RulesConfig DTOR");
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) { // lgtm[cpp/constant-comparison]
       delete _rules[i];
     }
@@ -108,7 +114,7 @@ bool
 RulesConfig::add_rule(RuleSet *rule)
 {
   if (rule && rule->has_operator()) {
-    TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s", TSHttpHookNameLookup(rule->get_hook()));
+    Dbg(dbg_ctl, "   Adding rule to hook=%s", TSHttpHookNameLookup(rule->get_hook()));
     if (nullptr == _rules[rule->get_hook()]) {
       _rules[rule->get_hook()] = rule;
     } else {
@@ -157,7 +163,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
 
     getline(f, line);
     ++lineno; // ToDo: we should probably use this for error messages ...
-    TSDebug(PLUGIN_NAME_DBG, "Reading line: %d: %s", lineno, line.c_str());
+    Dbg(dbg_ctl, "Reading line: %d: %s", lineno, line.c_str());
 
     while (std::isspace(line[0])) {
       line.erase(0, 1);
@@ -275,7 +281,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     break;
   default:
     TSError("[%s] unknown event for this plugin", PLUGIN_NAME);
-    TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+    Dbg(pi_dbg_ctl, "unknown event for this plugin");
     break;
   }
 
@@ -343,7 +349,7 @@ TSPluginInit(int argc, const char *argv[])
     geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
   }
 
-  TSDebug(PLUGIN_NAME, "Global geo db %s", geoDBpath.c_str());
+  Dbg(pi_dbg_ctl, "Global geo db %s", geoDBpath.c_str());
 
   std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
 
@@ -355,9 +361,9 @@ TSPluginInit(int argc, const char *argv[])
   for (int i = optind; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
     // just appended to the configurations.
-    TSDebug(PLUGIN_NAME, "Loading global configuration file %s", argv[i]);
+    Dbg(pi_dbg_ctl, "Loading global configuration file %s", argv[i]);
     if (conf->parse_config(argv[i], TS_HTTP_READ_RESPONSE_HDR_HOOK)) {
-      TSDebug(PLUGIN_NAME, "Successfully loaded global config file %s", argv[i]);
+      Dbg(pi_dbg_ctl, "Successfully loaded global config file %s", argv[i]);
       got_config = true;
     } else {
       TSError("[%s] failed to parse configuration file %s", PLUGIN_NAME, argv[i]);
@@ -370,7 +376,7 @@ TSPluginInit(int argc, const char *argv[])
 
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding global ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
+        Dbg(pi_dbg_ctl, "Adding global ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
         TSHttpHookAdd(static_cast<TSHttpHookID>(i), contp);
       }
     }
@@ -388,7 +394,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "Remap plugin is successfully initialized");
+  Dbg(pi_dbg_ctl, "Remap plugin is successfully initialized");
 
   return TS_SUCCESS;
 }
@@ -396,7 +402,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  TSDebug(PLUGIN_NAME, "Instantiating a new remap.config plugin rule");
+  Dbg(pi_dbg_ctl, "Instantiating a new remap.config plugin rule");
 
   if (argc < 3) {
     TSError("[%s] Unable to create remap instance, need config file", PLUGIN_NAME);
@@ -427,7 +433,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
     }
 
-    TSDebug(PLUGIN_NAME, "Remap geo db %s", geoDBpath.c_str());
+    Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
 
     std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
   }
@@ -435,21 +441,21 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   RulesConfig *conf = new RulesConfig;
 
   for (int i = optind; i < argc; ++i) {
-    TSDebug(PLUGIN_NAME, "Loading remap configuration file %s", argv[i]);
+    Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
     if (!conf->parse_config(argv[i], TS_REMAP_PSEUDO_HOOK)) {
       TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
       delete conf;
       return TS_ERROR;
     } else {
-      TSDebug(PLUGIN_NAME, "Successfully loaded remap config file %s", argv[i]);
+      Dbg(pi_dbg_ctl, "Successfully loaded remap config file %s", argv[i]);
     }
   }
 
   // For debugging only
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (pi_dbg_ctl.on()) {
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
+        Dbg(pi_dbg_ctl, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
       }
     }
   }
@@ -473,7 +479,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   // Make sure things are properly setup (this should never happen)
   if (nullptr == ih) {
-    TSDebug(PLUGIN_NAME, "No Rules configured, falling back to default");
+    Dbg(pi_dbg_ctl, "No Rules configured, falling back to default");
     return TSREMAP_NO_REMAP;
   }
 
@@ -484,7 +490,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (conf->rule(i)) {
       TSHttpTxnHookAdd(rh, static_cast<TSHttpHookID>(i), conf->continuation());
-      TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
+      Dbg(pi_dbg_ctl, "Added remapped TXN hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
     }
   }
 
@@ -510,6 +516,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     rule = rule->next;
   }
 
-  TSDebug(PLUGIN_NAME_DBG, "Returning from TSRemapDoRemap with status: %d", rval);
+  Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);
   return rval;
 }

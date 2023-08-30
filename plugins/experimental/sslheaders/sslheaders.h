@@ -29,7 +29,12 @@ using BIO  = struct bio_st;
 
 #define PLUGIN_NAME "sslheaders"
 
-#define SslHdrDebug(fmt, ...) TSDebug(PLUGIN_NAME, "%s: " fmt, __func__, ##__VA_ARGS__)
+namespace sslheaders_ns
+{
+extern DbgCtl dbg_ctl;
+}
+
+#define SslHdrDebug(fmt, ...) Dbg(sslheaders_ns::dbg_ctl, "%s: " fmt, __func__, ##__VA_ARGS__)
 #define SslHdrError(fmt, ...)  \
   TSError("[" PLUGIN_NAME "] " \
           ": %s: " fmt,        \

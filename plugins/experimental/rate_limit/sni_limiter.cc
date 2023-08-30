@@ -51,16 +51,16 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
         const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);
         int pressure         = limiter->pressure();
 
-        TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s, pressure=%d", static_cast<int>(sni_name.length()), sni_name.data(), pressure);
+        Dbg(dbg_ctl, "CLIENT_HELLO on %.*s, pressure=%d", static_cast<int>(sni_name.length()), sni_name.data(), pressure);
 
-        // TSDebug(PLUGIN_NAME, "IP Reputation: pressure is currently %d", pressure);
+        // Dbg(dbg_ctl, "IP Reputation: pressure is currently %d", pressure);
 
         if (pressure >= 0) { // When pressure is < 0, we're not yet at a level of pressure to be concerned about
           char client_ip[INET6_ADDRSTRLEN] = "[unknown]";
           auto [bucket, cur_cnt]           = limiter->iprep.increment(sock);
 
           // Get the client IP string if debug is enabled
-          if (TSIsDebugTagSet(PLUGIN_NAME)) {
+          if (dbg_ctl.on()) {
             if (sock->sa_family == AF_INET) {
               inet_ntop(AF_INET, &(((struct sockaddr_in *)sock)->sin_addr), client_ip, INET_ADDRSTRLEN);
             } else if (sock->sa_family == AF_INET6) {
@@ -70,13 +70,13 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
           if (cur_cnt > limiter->iprep_permablock_count &&
               bucket <= limiter->iprep_permablock_threshold) { // Mark for long-term blocking
-            TSDebug(PLUGIN_NAME, "Marking IP=%s for perma-blocking", client_ip);
+            Dbg(dbg_ctl, "Marking IP=%s for perma-blocking", client_ip);
             bucket = limiter->iprep.block(sock);
           }
 
           if (static_cast<uint32_t>(pressure) > bucket) { // Remember the perma-block bucket is always 0, and we are >=0 already
             // Block this IP from finishing the handshake
-            TSDebug(PLUGIN_NAME, "Rejecting connection from IP=%s, we're at pressure and IP was chosen to be blocked", client_ip);
+            Dbg(dbg_ctl, "Rejecting connection from IP=%s, we're at pressure and IP was chosen to be blocked", client_ip);
             TSUserArgSet(vc, gVCIdx, nullptr);
             TSVConnReenableEx(vc, TS_EVENT_ERROR);
 
@@ -84,14 +84,14 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
           }
         }
       } else {
-        TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s, no IP reputation", static_cast<int>(sni_name.length()), sni_name.data());
+        Dbg(dbg_ctl, "CLIENT_HELLO on %.*s, no IP reputation", static_cast<int>(sni_name.length()), sni_name.data());
       }
 
       // If we passed the IP reputation filter, continue rate limiting these connections
       if (!limiter->reserve()) {
         if (!limiter->max_queue || limiter->full()) {
           // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-          TSDebug(PLUGIN_NAME, "Rejecting connection, we're at capacity and queue is full");
+          Dbg(dbg_ctl, "Rejecting connection, we're at capacity and queue is full");
           TSUserArgSet(vc, gVCIdx, nullptr);
           limiter->incrementMetric(RATE_LIMITER_METRIC_REJECTED);
           TSVConnReenableEx(vc, TS_EVENT_ERROR);
@@ -100,7 +100,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
         } else {
           TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
           limiter->push(vc, contp);
-          TSDebug(PLUGIN_NAME, "Queueing the VC, we are at capacity");
+          Dbg(dbg_ctl, "Queueing the VC, we are at capacity");
           limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
         }
       } else {
@@ -127,7 +127,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
   }
 
   default:
-    TSDebug(PLUGIN_NAME, "Unknown event %d", static_cast<int>(event));
+    Dbg(dbg_ctl, "Unknown event %d", static_cast<int>(event));
     TSError("Unknown event in %s", PLUGIN_NAME);
     break;
   }
@@ -159,7 +159,7 @@ SniRateLimiter::initialize(int argc, const char *argv[])
     {nullptr,                                         no_argument,       nullptr, '\0'},
   };
 
-  TSDebug(PLUGIN_NAME, "Initializing an SNI Rate Limiter");
+  Dbg(dbg_ctl, "Initializing an SNI Rate Limiter");
 
   while (true) {
     int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
@@ -213,11 +213,11 @@ SniRateLimiter::initialize(int argc, const char *argv[])
 
   // Enable and initialize the IP reputation if asked for
   if (this->_iprep_num_buckets > 0 && this->_iprep_size > 0) {
-    TSDebug(PLUGIN_NAME, "Calling and _initialized is %d\n", this->iprep.initialized());
+    Dbg(dbg_ctl, "Calling and _initialized is %d\n", this->iprep.initialized());
     this->iprep.initialize(this->_iprep_num_buckets, this->_iprep_size);
-    TSDebug(PLUGIN_NAME, "IP-reputation enabled with %u buckets, max size is 2^%u", this->_iprep_num_buckets, this->_iprep_size);
+    Dbg(dbg_ctl, "IP-reputation enabled with %u buckets, max size is 2^%u", this->_iprep_num_buckets, this->_iprep_size);
 
-    TSDebug(PLUGIN_NAME, "Called and _initialized is %d\n", this->iprep.initialized());
+    Dbg(dbg_ctl, "Called and _initialized is %d\n", this->iprep.initialized());
 
     // These settings are optional
     if (this->_iprep_max_age != std::chrono::seconds::zero()) {

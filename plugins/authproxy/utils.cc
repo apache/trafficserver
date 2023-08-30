@@ -28,6 +28,8 @@
 #include <arpa/inet.h>
 #include <string_view>
 
+DbgCtl Auth_dbg_ctl{"authproxy"};
+
 void
 HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
 {

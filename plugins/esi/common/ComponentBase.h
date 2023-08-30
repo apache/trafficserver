@@ -26,6 +26,8 @@
 #include <cstdio>
 #include <string>
 
+#include <ts/ts.h>
+
 namespace EsiLib
 {
 #define DEBUG_TAG_MAX_SIZE 64
@@ -33,19 +35,10 @@ namespace EsiLib
 /** class that has common private characteristics */
 class ComponentBase
 {
-public:
-  using Debug = void (*)(const char *, const char *, ...);
-  using Error = void (*)(const char *, ...);
-
 protected:
-  ComponentBase(const char *debug_tag, Debug debug_func, Error error_func) : _debugLog(debug_func), _errorLog(error_func)
-  {
-    snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
-  };
+  ComponentBase(char const *debug_tag) : _dbg_ctl{debug_tag} {};
 
-  char _debug_tag[DEBUG_TAG_MAX_SIZE];
-  Debug _debugLog;
-  Error _errorLog;
+  DbgCtl _dbg_ctl;
 
   virtual ~ComponentBase(){};
 };

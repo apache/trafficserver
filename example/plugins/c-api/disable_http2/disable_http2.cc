@@ -34,6 +34,11 @@
 
 #define PLUGIN_NAME "disable_http2"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 // Map of domains to tweak.
 using DomainSet = std::unordered_set<std::string>;
 DomainSet Domains;
@@ -47,7 +52,7 @@ CB_SNI(TSCont contp, TSEvent, void *cb_data)
   char const *sni          = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni) {
     if (Domains.find(sni) != Domains.end()) {
-      TSDebug(PLUGIN_NAME, "Disable H2 for SNI=%s", sni);
+      Dbg(dbg_ctl, "Disable H2 for SNI=%s", sni);
       TSVConnProtocolDisable(vc, TS_ALPN_PROTOCOL_HTTP_2_0);
     }
   }
@@ -74,11 +79,11 @@ TSPluginInit(int argc, char const *argv[])
     TSError("[%s] Usage %s.so servername1 servername2 ... ", PLUGIN_NAME, PLUGIN_NAME);
     return;
   } else {
-    TSDebug(PLUGIN_NAME, "registration succeeded");
+    Dbg(dbg_ctl, "registration succeeded");
   }
 
   for (int i = 1; i < argc; i++) {
-    TSDebug(PLUGIN_NAME, "%s added to the No-H2 list", argv[i]);
+    Dbg(dbg_ctl, "%s added to the No-H2 list", argv[i]);
     Domains.emplace(std::string(argv[i], strlen(argv[i])));
   }
   // These callbacks do not modify any state so no lock is needed.

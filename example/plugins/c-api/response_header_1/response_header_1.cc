@@ -46,6 +46,11 @@
 
 #define PLUGIN_NAME "response_header_1"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 static int init_buffer_status;
 
 static char *mimehdr1_name;
@@ -87,9 +92,9 @@ modify_header(TSHttpTxn txnp)
   resp_status = TSHttpHdrStatusGet(resp_bufp, resp_loc);
 
   if (TS_HTTP_STATUS_OK == resp_status) {
-    TSDebug(PLUGIN_NAME, "Processing 200 OK");
+    Dbg(dbg_ctl, "Processing 200 OK");
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
+    Dbg(dbg_ctl, "Created new resp field with loc %p", new_field_loc);
 
     /* copy name/values created at init
      * ( "x-num-served-from-cache" ) : ( "0"  )
@@ -101,7 +106,7 @@ modify_header(TSHttpTxn txnp)
 
     /* Cache-Control: Public */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
+    Dbg(dbg_ctl, "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
     TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc, -1, TS_HTTP_VALUE_PUBLIC, TS_HTTP_LEN_PUBLIC);
@@ -110,7 +115,7 @@ modify_header(TSHttpTxn txnp)
      * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
+    Dbg(dbg_ctl, "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
 
@@ -121,7 +126,7 @@ modify_header(TSHttpTxn txnp)
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else if (TS_HTTP_STATUS_NOT_MODIFIED == resp_status) {
-    TSDebug(PLUGIN_NAME, "Processing 304 Not Modified");
+    Dbg(dbg_ctl, "Processing 304 Not Modified");
 
     /* N.B.: Protect writes to data (hash on URL + mutex: (ies)) */
 
@@ -151,12 +156,12 @@ modify_header(TSHttpTxn txnp)
       TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
       return; /* Caller reenables */
     }
-    TSDebug(PLUGIN_NAME, "Header field value is %s, with length %d", chkptr, chklength);
+    Dbg(dbg_ctl, "Header field value is %s, with length %d", chkptr, chklength);
 
     /* Get the cached MIME value for this name in this HTTP header */
     /*
        TSMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
-       TSDebug(PLUGIN_NAME,
+       Dbg(dbg_ctl,
        "Cached header shows %d refreshes so far", num_refreshes );
 
        num_refreshes++ ;
@@ -188,7 +193,7 @@ modify_header(TSHttpTxn txnp)
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else {
-    TSDebug(PLUGIN_NAME, "other response code %d", resp_status);
+    Dbg(dbg_ctl, "other response code %d", resp_status);
   }
 
   /*
@@ -205,7 +210,7 @@ modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edat
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSDebug(PLUGIN_NAME, "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
+    Dbg(dbg_ctl, "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
     modify_header(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     /*  fall through  */
@@ -256,13 +261,13 @@ TSPluginInit(int argc, const char *argv[])
    */
   mimehdr2_name = TSstrdup("x-date-200-recvd");
 
-  TSDebug(PLUGIN_NAME, "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
+  Dbg(dbg_ctl, "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
 
   TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc); /* Probably should check for errors */
   TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
   TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
   TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
-  TSDebug(PLUGIN_NAME, "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
+  Dbg(dbg_ctl, "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(modify_response_header_plugin, nullptr));

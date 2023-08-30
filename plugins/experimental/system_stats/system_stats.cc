@@ -93,6 +93,11 @@
 // port information we may want such as the up/down streams port state
 #define BONDING_SLAVE_DIR "bonding_slave"
 
+namespace
+{
+DbgCtl dbg_ctl{DEBUG_TAG};
+}
+
 static int
 statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 {
@@ -103,9 +108,9 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
   if (TS_ERROR == TSStatFindName(name, &stat_id)) {
     stat_id = TSStatCreate(name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (stat_id == TS_ERROR) {
-      TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
+      Dbg(dbg_ctl, "Error creating stat_name: %s", name);
     } else {
-      TSDebug(DEBUG_TAG, "Created stat_name: %s stat_id: %d", name, stat_id);
+      Dbg(dbg_ctl, "Created stat_name: %s stat_id: %d", name, stat_id);
     }
   }
 
@@ -176,7 +181,7 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   }
 
   if (getFile(&sysfs_name[0], &data[0], sizeof(data)) < 0) {
-    TSDebug(DEBUG_TAG, "Error reading file %s", sysfs_name);
+    Dbg(dbg_ctl, "Error reading file %s", sysfs_name);
   } else {
     statSet(stat_name, atol(data), stat_creation_mutex);
   }
@@ -295,13 +300,13 @@ systemStatsContCB(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
   TSMutex stat_creation_mutex;
 
-  TSDebug(DEBUG_TAG, "entered %s", __FUNCTION__);
+  Dbg(dbg_ctl, "entered %s", __FUNCTION__);
 
   stat_creation_mutex = TSContMutexGet(cont);
   getStats(stat_creation_mutex);
 
   TSContScheduleOnPool(cont, SYSTEM_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
-  TSDebug(DEBUG_TAG, "finished %s", __FUNCTION__);
+  Dbg(dbg_ctl, "finished %s", __FUNCTION__);
 
   return 0;
 }
@@ -320,7 +325,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed", DEBUG_TAG);
     return;
   } else {
-    TSDebug(DEBUG_TAG, "Plugin registration succeeded");
+    Dbg(dbg_ctl, "Plugin registration succeeded");
   }
 
   stats_cont = TSContCreate(systemStatsContCB, TSMutexCreate());
@@ -331,5 +336,5 @@ TSPluginInit(int argc, const char *argv[])
   // 5 seconds.
   TSContScheduleOnPool(stats_cont, 0, TS_THREAD_POOL_TASK);
 
-  TSDebug(DEBUG_TAG, "Init complete");
+  Dbg(dbg_ctl, "Init complete");
 }

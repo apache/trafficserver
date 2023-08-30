@@ -18,8 +18,8 @@
 
 .. default-domain:: c
 
-TSDbg
-*****
+Dbg
+***
 
 Traffic Server Debugging APIs.
 
@@ -37,14 +37,11 @@ Synopsis
 .. function:: void TSFatal(const char * format, ...)
 .. function:: void TSAlert(const char * format, ...)
 .. function:: void TSEmergency(const char * format, ...)
-.. type:: TSDbgCtl
-.. function:: void TSDbg(const TSDbgCtl * ctlptr, const char * format, ...)
-.. function:: const TSDbgCtl * TSDbgCtlCreate(const char * tag)
-.. function:: void TSDbgCtlDestroy(const TSDbgCtl * dbg_ctl)
-.. function:: void TSDebug(const char * tag, const char * format, ...)
-.. function:: int TSIsDbgCtlSet(const TSDbgCtl * ctlptr)
-.. function:: int TSIsDebugTagSet(const char * tag)
-.. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
+.. cpp:type:: DbgCtl
+.. cpp:function:: void Dbg(DbgCtl &ctl, const char * format, ...)
+.. cpp:function:: bool DbgCtl::on()
+.. cpp:function:: void SpecificDbg(bool debug_flag, DbgCtl &ctl, const char * format, ...)
+.. cpp:function:: void DbgPrint(DbgCtl &ctl, const char * format, ...)
 .. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
 .. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
 .. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
@@ -81,22 +78,14 @@ Traffic Server, AuTest, CI, and your log monitoring service/dashboard (e.g. Splu
 trafficserver.out
 =================
 
-:func:`TSDbg` logs the debug message only if the given debug control pointed to by
-:arg:`ctlptr` is enabled.  It writes output to the Traffic Server debug log through stderr.
-
-:func:`TSDbgCtlCreate` creates a debug control, associated with the
-debug :arg:`tag`, and returns a const pointer to it.
-
-:func:`TSDbgCtlDestroy` destroys a debug control, pointed to by :arg:`dbg_ctl`.
-
-:func:`TSIsDbgCtlSet` returns non-zero if the given debug control, pointed to by :arg:`ctlptr`, is
+cpp:type:`DbgCtl` is a C++ class. Its constructor is ``DbgCtl::DbgCtl(const char *tag)``.  ``tag`` is
+the debug tag for the control, as a null-terminated string.  The control is enabled/on when the tag is
 enabled.
 
-:func:`TSDebug` (deprecated) logs the debug message only if the given debug :arg:`tag` is enabled.
-It writes output to the Traffic Server debug log through stderr.
+cpp:func:`Dbg` logs the debug message only if the given debug control referred to by
+:arg:`ctl` is enabled.  It writes output to the Traffic Server debug log through stderr.
 
-:func:`TSIsDebugTagSet` (deprecated) returns non-zero if the given debug :arg:`tag` is
-enabled.
+``ctl.on()`` (where ``ctl`` is an instance of ``DbgCtl``) returns true if ``ctl`` is on.
 
 In debug mode, :macro:`TSAssert` Traffic Server to prints the file
 name, line number and expression, and then aborts. In release mode,
@@ -104,33 +93,44 @@ the expression is not removed but the effects of printing an error
 message and aborting are. :macro:`TSReleaseAssert` prints an error
 message and aborts in both release and debug mode.
 
-:func:`TSDebugSpecific` emits a debug line even if the debug :arg:`tag`
+cpp:func:`SpecificDbg` emits a debug line even if the debug :arg:`tag`
 is turned off, as long as debug flag is enabled. This can be used
 in conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
 :func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable
 debugging on specific session and transaction objects.
 
+cpp:func:`DbgPrint` emits a debug line even if the debug :arg:`tag`
+is turned off.
+
 :func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and
 :func:`TSHttpEventNameLookup` converts the respective internal state to a
-string representation. This can be useful in debugging (:func:`TSDebug`),
+string representation. This can be useful in debugging (cpp:func:`Dbg`),
 logging and other types notifications.
+
+(Note that cpp:type:`DbgCtl`, cpp:func:`Dbg`, cpp:func:`SpecificDbg` and cpp:func:`DbgPrint`
+are not in the ``tsapi::c`` namespace.)
+
+(For an example of how to write a plugin with debug tracing, that can be
+compiled with both |TS| Version 10 and older versions of ATS, see ``redirect_1``.)
 
 Examples
 ========
 
-This example uses :func:`TSDebugSpecific` to log a message when a specific
+This example uses cpp:func:`SpecificDbg` to log a message when a specific
 debugging flag is enabled::
 
     #include <ts/ts.h>
 
-    // Produce information about a hook receiving an event
-    TSDebug(PLUGIN_NAME, "Entering hook=%s, event=%s",
-            TSHttpHookNameLookup(hook), TSHttpEventNameLookup(event));
+    DbgCtl dbg_ctl{PLUGIN_NAME};
 
-    // Emit debug message if "tag" is enabled or the txn debug
+    // Produce information about a hook receiving an event
+    Dbg(dbg_ctl, "Entering hook=%s, event=%s",
+        TSHttpHookNameLookup(hook), TSHttpEventNameLookup(event));
+
+    // Emit debug message if "dbg_ctl" is enabled or the txn debug
     // flag is set.
-    TSDebugSpecifc(TSHttpTxnDebugGet(txn), "tag" ,
-            "Hello World from transaction %p", txn);
+    SpecificDbg(TSHttpTxnDebugGet(txn), dbg_ctl ,
+                "Hello World from transaction %p", txn);
 
 See Also
 ========

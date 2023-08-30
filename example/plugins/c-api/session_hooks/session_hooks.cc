@@ -27,6 +27,11 @@
 
 #define PLUGIN_NAME "session_hooks"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 static int transaction_count_stat;
 static int session_count_stat;
 
@@ -37,7 +42,7 @@ txn_handler(TSHttpTxn txnp, TSCont contp)
 
   TSStatIntIncrement(transaction_count_stat, 1);
   num_txns = TSStatIntGet(transaction_count_stat);
-  TSDebug(PLUGIN_NAME, "The number of transactions is %" PRId64, num_txns);
+  Dbg(dbg_ctl, "The number of transactions is %" PRId64, num_txns);
 }
 
 static void
@@ -47,7 +52,7 @@ handle_session(TSHttpSsn ssnp, TSCont contp)
 
   TSStatIntIncrement(session_count_stat, 1);
   num_ssn = TSStatIntGet(session_count_stat);
-  TSDebug(PLUGIN_NAME, "The number of sessions is %" PRId64, num_ssn);
+  Dbg(dbg_ctl, "The number of sessions is %" PRId64, num_ssn);
   TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
 }
 
@@ -72,7 +77,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     return 0;
 
   default:
-    TSDebug(PLUGIN_NAME, "In the default case: event = %d", event);
+    Dbg(dbg_ctl, "In the default case: event = %d", event);
     break;
   }
   return 0;

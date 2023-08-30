@@ -61,7 +61,6 @@ namespace inliner
   {
     assert(s > 0);
     assert(sink2_);
-    // TSDebug(PLUGIN_TAG, "size: %lu, offset: %lu, sum: %lu", s, o, (s + o));
     *sink2_ << ats::io::ReaderSize(reader_, s, o);
     return s;
   }

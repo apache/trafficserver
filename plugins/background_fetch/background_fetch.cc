@@ -79,7 +79,7 @@ public:
   createLog(const std::string &log_name)
   {
     if (!_log) {
-      TSDebug(PLUGIN_NAME, "Creating log name %s", log_name.c_str());
+      Dbg(Bg_dbg_ctl, "Creating log name %s", log_name.c_str());
       TSAssert(TS_SUCCESS == TSTextLogObjectCreate(log_name.c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &_log));
     } else {
       TSError("[%s] A log file was already create, ignoring creation of %s", PLUGIN_NAME, log_name.c_str());
@@ -106,7 +106,7 @@ public:
     }
     TSMutexUnlock(_lock);
 
-    TSDebug(PLUGIN_NAME, "BgFetchState.acquire(): ret = %d, url = %s", ret, url.c_str());
+    Dbg(Bg_dbg_ctl, "BgFetchState.acquire(): ret = %d, url = %s", ret, url.c_str());
 
     return ret;
   }
@@ -263,7 +263,7 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
           if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
             url = TSUrlStringGet(request, c_url, &len);
             TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
-            TSDebug(PLUGIN_NAME, "Cache URL is %.*s", len, url);
+            Dbg(Bg_dbg_ctl, "Cache URL is %.*s", len, url);
           }
         }
 
@@ -276,13 +276,13 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
             const char *hostp = TSUrlHostGet(mbuf, url_loc, &len);
 
             if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
-              TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
+              Dbg(Bg_dbg_ctl, "Set header Host: %.*s", len, hostp);
             }
 
             // Next, remove the Range headers and IMS (conditional) headers from the request
             for (auto const &header : FILTER_HEADERS) {
               if (remove_header(mbuf, hdr_loc, header.data(), header.size()) > 0) {
-                TSDebug(PLUGIN_NAME, "Removed the %s header from request", header.data());
+                Dbg(Bg_dbg_ctl, "Removed the %s header from request", header.data());
               }
             }
 
@@ -327,7 +327,7 @@ BgFetchData::log(TSEvent event) const
 {
   TSTextLogObject log = BgFetchState::getInstance().getLog();
 
-  if (log || TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (log || Bg_dbg_ctl.on()) {
     const char *status;
 
     switch (event) {
@@ -349,7 +349,7 @@ BgFetchData::log(TSEvent event) const
     }
 
     // ToDo: Also deal with per-remap tagging
-    TSDebug(PLUGIN_NAME, "%s %" PRId64 " %s %s", "-", _bytes, status, _url.c_str());
+    Dbg(Bg_dbg_ctl, "%s %" PRId64 " %s %s", "-", _bytes, status, _url.c_str());
     if (log) {
       TSTextLogObjectWrite(log, "%s %" PRId64 " %s %s", "-", _bytes, status, _url.c_str());
     }
@@ -370,24 +370,24 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (Bg_dbg_ctl.on()) {
       char buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
         inet_ntop(AF_INET, &(((struct sockaddr_in *)sockaddress)->sin_addr), buf, INET_ADDRSTRLEN);
-        TSDebug(PLUGIN_NAME, "Client IPv4 = %s", buf);
+        Dbg(Bg_dbg_ctl, "Client IPv4 = %s", buf);
         break;
       case AF_INET6:
         inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
-        TSDebug(PLUGIN_NAME, "Client IPv6 = %s", buf);
+        Dbg(Bg_dbg_ctl, "Client IPv6 = %s", buf);
         break;
       default:
         TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
         break;
       }
-      TSDebug(PLUGIN_NAME, "Starting background fetch, replaying:");
+      Dbg(Bg_dbg_ctl, "Starting background fetch, replaying:");
       dump_headers(data->mbuf, data->hdr_loc);
     }
 
@@ -409,7 +409,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     // TSVConnShutdown(data->vc, 0, 1);
     // TSVIOReenable(data->w_vio);
-    TSDebug(PLUGIN_NAME, "Write Complete");
+    Dbg(Bg_dbg_ctl, "Write Complete");
     break;
 
   case TS_EVENT_VCONN_READ_READY:
@@ -425,13 +425,13 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
   case TS_EVENT_ERROR:
     if (event == TS_EVENT_VCONN_INACTIVITY_TIMEOUT) {
-      TSDebug(PLUGIN_NAME, "Encountered Inactivity Timeout");
+      Dbg(Bg_dbg_ctl, "Encountered Inactivity Timeout");
       TSVConnAbort(data->vc, TS_VC_CLOSE_ABORT);
     } else {
       TSVConnClose(data->vc);
     }
 
-    TSDebug(PLUGIN_NAME, "Closing down background transaction, event= %s(%d)", TSHttpEventNameLookup(event), event);
+    Dbg(Bg_dbg_ctl, "Closing down background transaction, event= %s(%d)", TSHttpEventNameLookup(event), event);
     avail = TSIOBufferReaderAvail(data->resp_io_buf_reader);
     data->addBytes(avail);
     TSIOBufferReaderConsume(data->resp_io_buf_reader, avail);
@@ -444,7 +444,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Unhandled event: %s (%d)", TSHttpEventNameLookup(event), event);
+    Dbg(Bg_dbg_ctl, "Unhandled event: %s (%d)", TSHttpEventNameLookup(event), event);
     break;
   }
 
@@ -471,7 +471,7 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       bool cacheable = TSHttpTxnIsCacheable(txnp, nullptr, response);
       TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
 
-      TSDebug(PLUGIN_NAME, "Testing: request / response is cacheable?");
+      Dbg(Bg_dbg_ctl, "Testing: request / response is cacheable?");
       if (cacheable) {
         BgFetchData *data = new BgFetchData();
 
@@ -530,7 +530,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
 
           // Only deal with 206 and possibly 304 responses from Origin
           TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
-          TSDebug(PLUGIN_NAME, "Testing: response status code: %d?", status);
+          Dbg(Bg_dbg_ctl, "Testing: response status code: %d?", status);
           if (TS_HTTP_STATUS_PARTIAL_CONTENT == status || (config->allow304() && TS_HTTP_STATUS_NOT_MODIFIED == status)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
             TSCont localcontp = TSContCreate(cont_check_cacheable, nullptr);
@@ -544,7 +544,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
       break;
     default:
       TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
-      TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+      Dbg(Bg_dbg_ctl, "unknown event for this plugin");
       break;
     }
   }
@@ -579,11 +579,11 @@ TSPluginInit(int argc, const char *argv[])
     if (!gConfig->logFile().empty()) {
       BgFetchState::getInstance().createLog(gConfig->logFile());
     }
-    TSDebug(PLUGIN_NAME, "Initialized");
+    Dbg(Bg_dbg_ctl, "Initialized");
     TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
   } else {
     // ToDo: Hmmm, no way to fail a global plugin here?
-    TSDebug(PLUGIN_NAME, "Failed to initialize as global plugin");
+    Dbg(Bg_dbg_ctl, "Failed to initialize as global plugin");
   }
 }
 
@@ -596,7 +596,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "background fetch remap is successfully initialized");
+  Dbg(Bg_dbg_ctl, "background fetch remap is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -618,7 +618,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 
   // This is for backwards compatibility, ugly! ToDo: Remove for ATS v9.0.0 IMO.
   if (argc > 1 && *argv[1] != '-') {
-    TSDebug(PLUGIN_NAME, "config file %s", argv[1]);
+    Dbg(Bg_dbg_ctl, "config file %s", argv[1]);
     if (!config->readConfig(argv[1])) {
       success = false;
     }
@@ -675,7 +675,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
       BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
 
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
-      TSDebug(PLUGIN_NAME, "TSRemapDoRemap() added hook, request was Range / If-Range");
+      Dbg(Bg_dbg_ctl, "TSRemapDoRemap() added hook, request was Range / If-Range");
       TSHandleMLocRelease(bufp, req_hdrs, field_loc);
     }
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, req_hdrs);

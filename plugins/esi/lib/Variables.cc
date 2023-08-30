@@ -116,7 +116,7 @@ Variables::populate(const HttpHeader &header)
 inline void
 Variables::_parseSimpleHeader(SimpleHeader hdr, const string &value)
 {
-  _debugLog(_debug_tag, "[%s] Inserting value for simple header [%s]", __FUNCTION__, SIMPLE_HEADERS[hdr].c_str());
+  Dbg(_dbg_ctl, "[%s] Inserting value for simple header [%s]", __FUNCTION__, SIMPLE_HEADERS[hdr].c_str());
   _simple_data[NORM_SIMPLE_HEADERS[hdr]] = value;
 }
 
@@ -140,7 +140,7 @@ Variables::_parseSpecialHeader(SpecialHeader hdr, const char *value, int value_l
     _parseUserAgentString(value, value_len);
     break;
   default:
-    _debugLog(_debug_tag, "[%s] Skipping unrecognized header", __FUNCTION__);
+    Dbg(_dbg_ctl, "[%s] Skipping unrecognized header", __FUNCTION__);
     break;
   }
 }
@@ -156,7 +156,7 @@ Variables::_parseHeader(const char *name, int name_len, const char *value, int v
     if (match_index != -1) {
       _parseSpecialHeader(static_cast<SpecialHeader>(match_index), value, value_len);
     } else {
-      _debugLog(_debug_tag, "[%s] Unrecognized header [%.*s]", __FUNCTION__, value_len, value);
+      Dbg(_dbg_ctl, "[%s] Unrecognized header [%.*s]", __FUNCTION__, value_len, value);
     }
   }
 }
@@ -168,8 +168,8 @@ Variables::_parseQueryString(const char *query_string, int query_string_len)
   AttributeList attr_list;
   Utils::parseAttributes(query_string, query_string_len, attr_list, "&");
   for (auto &iter : attr_list) {
-    _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
-              iter.value_len, iter.value);
+    Dbg(_dbg_ctl, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+        iter.value_len, iter.value);
     _insert(_dict_data[QUERY_STRING], string(iter.name, iter.name_len), string(iter.value, iter.value_len));
   }
 }
@@ -177,7 +177,7 @@ Variables::_parseQueryString(const char *query_string, int query_string_len)
 void
 Variables::_parseCachedHeaders()
 {
-  _debugLog(_debug_tag, "[%s] Parsing headers", __FUNCTION__);
+  Dbg(_dbg_ctl, "[%s] Parsing headers", __FUNCTION__);
   for (int i = 0; i < N_SIMPLE_HEADERS; ++i) {
     for (Utils::HeaderValueList::iterator value_iter = _cached_simple_headers[i].begin();
          value_iter != _cached_simple_headers[i].end(); ++value_iter) {
@@ -216,8 +216,8 @@ Variables::getValue(const string &name) const
   _toUpperCase(search_key);
   StringHash::const_iterator iter = _simple_data.find(search_key);
   if (iter != _simple_data.end()) {
-    _debugLog(_debug_tag, "[%s] Found value [%.*s] for variable [%.*s] in simple data", __FUNCTION__, iter->second.size(),
-              iter->second.data(), name.size(), name.data());
+    Dbg(_dbg_ctl, "[%s] Found value [%.*s] for variable [%.*s] in simple data", __FUNCTION__, int(iter->second.size()),
+        iter->second.data(), int(name.size()), name.data());
     return iter->second;
   }
   const char *header;
@@ -225,19 +225,18 @@ Variables::getValue(const string &name) const
   const char *attr;
   int attr_len;
   if (!_parseDictVariable(name, header, header_len, attr, attr_len)) {
-    _debugLog(_debug_tag, "[%s] Unmatched simple variable [%.*s] not in dict variable form", __FUNCTION__, name.size(),
-              name.data());
+    Dbg(_dbg_ctl, "[%s] Unmatched simple variable [%.*s] not in dict variable form", __FUNCTION__, int(name.size()), name.data());
     return EMPTY_STRING;
   }
   int dict_index = _searchHeaders(NORM_SPECIAL_HEADERS, header, header_len); // ignore the HTTP_ prefix
   if (dict_index == -1) {
-    _debugLog(_debug_tag, "[%s] Dict variable [%.*s] refers to unknown dictionary", __FUNCTION__, name.size(), name.data());
+    Dbg(_dbg_ctl, "[%s] Dict variable [%.*s] refers to unknown dictionary", __FUNCTION__, int(name.size()), name.data());
     return EMPTY_STRING;
   }
 
   // Disallow Cookie retrieval though HTTP_HEADER
   if (dict_index == HTTP_HEADER && ((attr_len == 6) && (strncasecmp(attr, "Cookie", 6) == 0))) {
-    _errorLog("[%s] Cannot use HTTP_HEADER to retrieve Cookie", __FUNCTION__);
+    TSError("[%s] Cannot use HTTP_HEADER to retrieve Cookie", __FUNCTION__);
     return EMPTY_STRING;
   }
 
@@ -247,24 +246,24 @@ Variables::getValue(const string &name) const
   iter = _dict_data[dict_index].find(search_key);
 
   if (dict_index == HTTP_ACCEPT_LANGUAGE) {
-    _debugLog(_debug_tag, "[%s] Returning boolean literal for lang variable [%.*s]", __FUNCTION__, search_key.size(),
-              search_key.data());
+    Dbg(_dbg_ctl, "[%s] Returning boolean literal for lang variable [%.*s]", __FUNCTION__, int(search_key.size()),
+        search_key.data());
     return (iter == _dict_data[dict_index].end()) ? EMPTY_STRING : TRUE_STRING;
   }
 
   if (iter != _dict_data[dict_index].end()) {
-    _debugLog(_debug_tag, "[%s] Found variable [%.*s] in %s dictionary with value [%.*s]", __FUNCTION__, search_key.size(),
-              search_key.data(), NORM_SPECIAL_HEADERS[dict_index].c_str(), iter->second.size(), iter->second.data());
+    Dbg(_dbg_ctl, "[%s] Found variable [%.*s] in %s dictionary with value [%.*s]", __FUNCTION__, int(search_key.size()),
+        search_key.data(), NORM_SPECIAL_HEADERS[dict_index].c_str(), int(iter->second.size()), iter->second.data());
     return iter->second;
   }
 
   size_t cookie_part_divider = (dict_index == HTTP_COOKIE) ? search_key.find(';') : search_key.size();
   if (cookie_part_divider && (cookie_part_divider < (search_key.size() - 1))) {
-    _debugLog(_debug_tag, "[%s] Cookie variable [%s] refers to sub cookie", __FUNCTION__, search_key.c_str());
+    Dbg(_dbg_ctl, "[%s] Cookie variable [%s] refers to sub cookie", __FUNCTION__, search_key.c_str());
     return _getSubCookieValue(search_key, cookie_part_divider);
   }
 
-  _debugLog(_debug_tag, "[%s] Found no value for dict variable [%s]", __FUNCTION__, name.c_str());
+  Dbg(_dbg_ctl, "[%s] Found no value for dict variable [%s]", __FUNCTION__, name.c_str());
   return EMPTY_STRING;
 }
 
@@ -283,8 +282,8 @@ Variables::_parseSubCookies()
     AttributeList attr_list;
     Utils::parseAttributes(value.c_str(), value.length(), attr_list, "&");
     for (auto &iter : attr_list) {
-      _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
-                iter.value_len, iter.value);
+      Dbg(_dbg_ctl, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+          iter.value_len, iter.value);
       _insert(subcookies, string(iter.name, iter.name_len), string(iter.value, iter.value_len));
     }
   }
@@ -295,7 +294,7 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
 {
   if (!_cookie_jar_created) {
     if (_cookie_str.size() == 0) {
-      _debugLog(_debug_tag, "[%s] Cookie string empty; nothing to construct jar from", __FUNCTION__);
+      Dbg(_dbg_ctl, "[%s] Cookie string empty; nothing to construct jar from", __FUNCTION__);
       return EMPTY_STRING;
     }
 
@@ -316,19 +315,19 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
 
   StringKeyHash<StringHash>::const_iterator it_cookie = _sub_cookies.find(cookie_name);
   if (it_cookie == _sub_cookies.end()) {
-    _debugLog(_debug_tag, "[%s] Could not find value for cookie [%s]", __FUNCTION__, cookie_name);
+    Dbg(_dbg_ctl, "[%s] Could not find value for cookie [%s]", __FUNCTION__, cookie_name);
     goto fail;
   }
 
   it_part = it_cookie->second.find(part_name);
   if (it_part == it_cookie->second.end()) {
-    _debugLog(_debug_tag, "[%s] Could not find value for part [%s] of cookie [%.*s]", __FUNCTION__, part_name, cookie_part_divider,
-              cookie_name);
+    Dbg(_dbg_ctl, "[%s] Could not find value for part [%s] of?cookie [%.*s]", __FUNCTION__, part_name, int(cookie_part_divider),
+        cookie_name);
     goto fail;
   }
 
-  _debugLog(_debug_tag, "[%s] Got value [%s] for cookie name [%.*s] and part [%s]", __FUNCTION__, it_part->second.c_str(),
-            cookie_part_divider, cookie_name, part_name);
+  Dbg(_dbg_ctl, "[%s] Got value [%s] for cookie name [%.*s] and part [%s]", __FUNCTION__, it_part->second.c_str(),
+      int(cookie_part_divider), cookie_name, part_name);
 
   non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
 
@@ -379,8 +378,8 @@ Variables::_parseCookieString(const char *str, int str_len)
 
     if (found == true) {
       _insert(_dict_data[HTTP_COOKIE], string(iter.name, iter.name_len), string(iter.value, iter.value_len));
-      _debugLog(_debug_tag, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
-                iter.value_len, iter.value);
+      Dbg(_dbg_ctl, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+          iter.value_len, iter.value);
     }
   }
 }
@@ -407,7 +406,7 @@ Variables::_parseAcceptLangString(const char *str, int str_len)
       }
       if (lang_len) {
         _insert(_dict_data[HTTP_ACCEPT_LANGUAGE], string(lang, lang_len), EMPTY_STRING);
-        _debugLog(_debug_tag, "[%s] Added language [%.*s]", __FUNCTION__, lang_len, lang);
+        Dbg(_dbg_ctl, "[%s] Added language [%.*s]", __FUNCTION__, lang_len, lang);
       }
       for (; (i < str_len) && ((isspace(str[i]) || str[i] == ',')); ++i) {
         ;
@@ -430,26 +429,26 @@ Variables::_parseDictVariable(const std::string &variable, const char *&header, 
   for (int i = 0; i < (var_size - 1); ++i) {
     if (variable[i] == '{') {
       if (paranth_index != -1) {
-        _debugLog(_debug_tag, "[%s] Cannot have multiple parenthesis in dict variable [%.*s]", __FUNCTION__, var_size, var_ptr);
+        Dbg(_dbg_ctl, "[%s] Cannot have multiple parenthesis in dict variable [%.*s]", __FUNCTION__, var_size, var_ptr);
         return false;
       }
       paranth_index = i;
     }
     if (variable[i] == '}') {
-      _debugLog(_debug_tag, "[%s] Cannot have multiple parenthesis in dict variable [%.*s]", __FUNCTION__, var_size, var_ptr);
+      Dbg(_dbg_ctl, "[%s] Cannot have multiple parenthesis in dict variable [%.*s]", __FUNCTION__, var_size, var_ptr);
       return false;
     }
   }
   if (paranth_index == -1) {
-    _debugLog(_debug_tag, "[%s] Could not find opening parenthesis in variable [%.*s]", __FUNCTION__, var_size, var_ptr);
+    Dbg(_dbg_ctl, "[%s] Could not find opening parenthesis in variable [%.*s]", __FUNCTION__, var_size, var_ptr);
     return false;
   }
   if (paranth_index == 0) {
-    _debugLog(_debug_tag, "[%s] Dict variable has no dict name [%.*s]", __FUNCTION__, var_size, var_ptr);
+    Dbg(_dbg_ctl, "[%s] Dict variable has no dict name [%.*s]", __FUNCTION__, var_size, var_ptr);
     return false;
   }
   if (paranth_index == (var_size - 2)) {
-    _debugLog(_debug_tag, "[%s] Dict variable has no attribute name [%.*s]", __FUNCTION__, var_size, var_ptr);
+    Dbg(_dbg_ctl, "[%s] Dict variable has no attribute name [%.*s]", __FUNCTION__, var_size, var_ptr);
     return false;
   }
   header     = var_ptr;

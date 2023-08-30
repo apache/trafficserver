@@ -71,6 +71,8 @@ enum ExtraSubstitutions {
   SUB_LOWER_PATH = 20,
 };
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one request URL's component, to simplify the code and
 // length calculations (we need all of them).
@@ -115,7 +117,7 @@ class RemapRegex
 public:
   ~RemapRegex()
   {
-    TSDebug(PLUGIN_NAME, "Calling destructor");
+    Dbg(dbg_ctl, "Calling destructor");
     TSfree(_rex_string);
     TSfree(_subst);
 
@@ -348,7 +350,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           TSError("[%s] configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
           return false;
         }
-        TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
+        Dbg(dbg_ctl, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
         cur->key  = key;
         cur->type = type;
         cur->next = nullptr;
@@ -646,7 +648,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "Plugin is successfully initialized");
+  Dbg(dbg_ctl, "Plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -724,7 +726,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     TSError("[%s] unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
     return TS_ERROR;
   }
-  TSDebug(PLUGIN_NAME, "Loading regular expressions from %s", (ri->filename).c_str());
+  Dbg(dbg_ctl, "Loading regular expressions from %s", (ri->filename).c_str());
 
   while (!f.eof()) {
     std::string line, regex, subst, options;
@@ -799,7 +801,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       }
       TSError("%s", oss.str().c_str());
     } else {
-      TSDebug(PLUGIN_NAME, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
+      Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
       auto tmp = cur.get();
       if (ri->first == nullptr) {
@@ -882,7 +884,7 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   if (nullptr == ih) {
-    TSDebug(PLUGIN_NAME, "Falling back to default URL on regex remap without rules");
+    Dbg(dbg_ctl, "Falling back to default URL on regex remap without rules");
     return TSREMAP_NO_REMAP;
   }
   RemapInstance *ri = static_cast<RemapInstance *>(ih);
@@ -967,7 +969,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     match_len += (req_url.query_len + 1);
   }
   match_buf[match_len] = '\0'; // NULL terminate the match string
-  TSDebug(PLUGIN_NAME, "Target match string is `%s'", match_buf);
+  Dbg(dbg_ctl, "Target match string is `%s'", match_buf);
 
   // Apply the regular expressions, in order. First one wins.
   while (re) {
@@ -978,24 +980,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       // Set timeouts
       if (re->active_timeout_option() > (-1)) {
-        TSDebug(PLUGIN_NAME, "Setting active timeout to %d", re->active_timeout_option());
+        Dbg(dbg_ctl, "Setting active timeout to %d", re->active_timeout_option());
         TSHttpTxnActiveTimeoutSet(txnp, re->active_timeout_option());
       }
       if (re->no_activity_timeout_option() > (-1)) {
-        TSDebug(PLUGIN_NAME, "Setting no activity timeout to %d", re->no_activity_timeout_option());
+        Dbg(dbg_ctl, "Setting no activity timeout to %d", re->no_activity_timeout_option());
         TSHttpTxnNoActivityTimeoutSet(txnp, re->no_activity_timeout_option());
       }
       if (re->connect_timeout_option() > (-1)) {
-        TSDebug(PLUGIN_NAME, "Setting connect timeout to %d", re->connect_timeout_option());
+        Dbg(dbg_ctl, "Setting connect timeout to %d", re->connect_timeout_option());
         TSHttpTxnConnectTimeoutSet(txnp, re->connect_timeout_option());
       }
       if (re->dns_timeout_option() > (-1)) {
-        TSDebug(PLUGIN_NAME, "Setting DNS timeout to %d", re->dns_timeout_option());
+        Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {
-        TSDebug(PLUGIN_NAME, "Setting lowercasing substitutions on");
+        Dbg(dbg_ctl, "Setting lowercasing substitutions on");
         lowercase_substitutions = true;
       }
 
@@ -1005,15 +1007,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         switch (override->type) {
         case TS_RECORDDATATYPE_INT:
           TSHttpTxnConfigIntSet(txnp, override->key, override->data.rec_int);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%" PRId64 "'", override->key, override->data.rec_int);
+          Dbg(dbg_ctl, "Setting config id %d to `%" PRId64 "'", override->key, override->data.rec_int);
           break;
         case TS_RECORDDATATYPE_FLOAT:
           TSHttpTxnConfigFloatSet(txnp, override->key, override->data.rec_float);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%f'", override->key, override->data.rec_float);
+          Dbg(dbg_ctl, "Setting config id %d to `%f'", override->key, override->data.rec_float);
           break;
         case TS_RECORDDATATYPE_STRING:
           TSHttpTxnConfigStringSet(txnp, override->key, override->data.rec_string, override->data_len);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%s'", override->key, override->data.rec_string);
+          Dbg(dbg_ctl, "Setting config id %d to `%s'", override->key, override->data.rec_string);
           break;
         default:
           break; // Error ?
@@ -1033,9 +1035,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         dest     = static_cast<char *>(alloca(new_len + 8));
         dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
-        TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
-        TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
-        TSDebug(PLUGIN_NAME, "    matched rule %d [%s]", re->order(), re->regex());
+        Dbg(dbg_ctl, "New URL is estimated to be %d bytes long, or less", new_len);
+        Dbg(dbg_ctl, "New URL is %s (length %d)", dest, dest_len);
+        Dbg(dbg_ctl, "    matched rule %d [%s]", re->order(), re->regex());
 
         // Check for a quick response, if the status option is set
         if (re->status_option() > 0) {
@@ -1047,7 +1049,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             break;
           }
 
-          TSDebug(PLUGIN_NAME, "Redirecting URL, status=%d", re->status_option());
+          Dbg(dbg_ctl, "Redirecting URL, status=%d", re->status_option());
           TSHttpTxnStatusSet(txnp, re->status_option());
           rri->redirect = 1;
         }

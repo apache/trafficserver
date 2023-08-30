@@ -34,7 +34,7 @@ namespace EsiLib
 class Expression : private ComponentBase
 {
 public:
-  Expression(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func, Variables &variables);
+  Expression(const char *debug_tag, Variables &variables);
 
   /** substitutes variables (if any) in given expression */
   const std::string &expand(const char *expr, int expr_len = -1);

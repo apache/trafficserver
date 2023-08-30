@@ -40,6 +40,8 @@
 
 namespace
 {
+DbgCtl dbg_ctl{"xdebug"};
+
 struct BodyBuilder {
   atscppapi::TSContUniqPtr transform_connp;
   atscppapi::TSIOBufferUniqPtr output_buffer;
@@ -182,7 +184,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     int len;
   } strval = {nullptr, 0};
 
-  TSDebug("xdebug", "attempting to inject X-Cache-Key header");
+  Dbg(dbg_ctl, "attempting to inject X-Cache-Key header");
 
   if (TSUrlCreate(buffer, &url) != TS_SUCCESS) {
     goto done;
@@ -225,7 +227,7 @@ InjectCacheInfoHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMgmtInt volume;
   const char *path;
 
-  TSDebug("xdebug", "attempting to inject X-Cache-Info header");
+  Dbg(dbg_ctl, "attempting to inject X-Cache-Info header");
 
   if ((path = TSHttpTxnCacheDiskPathGet(txn, nullptr)) == nullptr) {
     goto done;
@@ -266,7 +268,7 @@ InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     "skipped"    // TS_CACHE_LOOKUP_SKIPPED
   };
 
-  TSDebug("xdebug", "attempting to inject X-Cache header");
+  Dbg(dbg_ctl, "attempting to inject X-Cache header");
 
   // Create a new response header field.
   dst = FindOrMakeHdrField(buffer, hdr, "X-Cache", lengthof("X-Cache"));
@@ -426,7 +428,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     int len;
   } strval = {nullptr, 0};
 
-  TSDebug("xdebug", "attempting to inject X-Effective-URL header");
+  Dbg(dbg_ctl, "attempting to inject X-Effective-URL header");
 
   strval.ptr = TSHttpTxnEffectiveUrlStringGet(txn, &strval.len);
 
@@ -494,7 +496,7 @@ InjectParentSelectionKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     int len;
   } strval = {nullptr, 0};
 
-  TSDebug("xdebug", "attempting to inject X-ParentSelection-Key header");
+  Dbg(dbg_ctl, "attempting to inject X-ParentSelection-Key header");
 
   if (TSUrlCreate(buffer, &url) != TS_SUCCESS) {
     goto done;
@@ -589,7 +591,7 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
   if (xheaders & XHEADER_X_PROBE_HEADERS) {
     InjectOriginalContentTypeHeader(txn, buffer, hdr);
     BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
-    TSDebug("xdebug_transform", "XInjectResponseHeaders(): client resp header ready");
+    Dbg(dbg_ctl_xform, "XInjectResponseHeaders(): client resp header ready");
     if (data == nullptr) {
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_ERROR);
       return TS_ERROR;
@@ -676,7 +678,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
     return TS_EVENT_NONE;
   }
 
-  TSDebug("xdebug", "scanning for %s header values", xDebugHeader.str);
+  Dbg(dbg_ctl, "scanning for %s header values", xDebugHeader.str);
 
   // Walk the X-Debug header values and determine what to inject into the response.
   field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
@@ -691,7 +693,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       if (value == nullptr || vsize == 0) {
         continue;
       }
-      TSDebug("xdebug", "Validating value: '%.*s'", vsize, value);
+      Dbg(dbg_ctl, "Validating value: '%.*s'", vsize, value);
 
 #define header_field_eq(name, vptr, vlen) (((int)name.size() == vlen) && (strncasecmp(name.data(), vptr, vlen) == 0))
 
@@ -750,7 +752,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq(HEADER_NAME_X_EFFECTIVE_URL, value, vsize)) {
         xheaders |= XHEADER_X_EFFECTIVE_URL & allowedHeaders;
       } else {
-        TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
+        Dbg(dbg_ctl, "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
     }
 
@@ -767,8 +769,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
   }
 
   if (xheaders) {
-    TSDebug("xdebug", "adding response hook for header mask %p and forward count %" PRIiMAX, reinterpret_cast<void *>(xheaders),
-            fwdCnt);
+    Dbg(dbg_ctl, "adding response hook for header mask %p and forward count %" PRIiMAX, reinterpret_cast<void *>(xheaders), fwdCnt);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, XInjectHeadersCont);
     AuxDataMgr::data(txn).xheaders = xheaders;
 
@@ -827,10 +828,10 @@ updateAllowedHeaders(const char *optarg)
     const auto ite = std::find_if(std::begin(header_flags), std::end(header_flags),
                                   [token](const struct XHeader &x) { return x.name.compare(token) == 0; });
     if (ite != std::end(header_flags)) {
-      TSDebug("xdebug", "Enabled allowed header name: %s", token);
+      Dbg(dbg_ctl, "Enabled allowed header name: %s", token);
       allowedHeaders |= ite->flag;
     } else {
-      TSDebug("xdebug", "Unknown header name: %s", token);
+      Dbg(dbg_ctl, "Unknown header name: %s", token);
       TSError("[xdebug] Unknown header name: %s", token);
     }
   }
@@ -840,7 +841,7 @@ updateAllowedHeaders(const char *optarg)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug("xdebug", "initializing plugin");
+  Dbg(dbg_ctl, "initializing plugin");
 
   static const struct option longopt[] = {
     {const_cast<char *>("header"), required_argument, nullptr, 'h' },
@@ -863,7 +864,7 @@ TSPluginInit(int argc, const char *argv[])
 
     switch (opt) {
     case 'h':
-      TSDebug("xdebug", "Setting header: %s", optarg);
+      Dbg(dbg_ctl, "Setting header: %s", optarg);
       xDebugHeader.str = TSstrdup(optarg);
       break;
     case 'e':

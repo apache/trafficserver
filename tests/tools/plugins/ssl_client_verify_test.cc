@@ -38,6 +38,11 @@
 #define PN  "ssl_client_verify_test"
 #define PCP "[" PN " Plugin] "
 
+namespace
+{
+DbgCtl dbg_ctl{PN};
+}
+
 std::map<std::string, int> good_names;
 
 bool
@@ -125,8 +130,8 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
     reenable_event = TS_EVENT_ERROR;
   }
 
-  TSDebug(PN, "Client verify callback %d %p - event is %s %s", count, ssl_vc, event == TS_EVENT_SSL_VERIFY_CLIENT ? "good" : "bad",
-          reenable_event == TS_EVENT_ERROR ? "error HS" : "good HS");
+  Dbg(dbg_ctl, "Client verify callback %d %p - event is %s %s", count, ssl_vc, event == TS_EVENT_SSL_VERIFY_CLIENT ? "good" : "bad",
+      reenable_event == TS_EVENT_ERROR ? "error HS" : "good HS");
 
   // All done, reactivate things
   TSVConnReenableEx(ssl_vc, reenable_event);
@@ -164,7 +169,7 @@ setup_callbacks(int count)
   TSCont cb = nullptr;
   int i;
 
-  TSDebug(PN, "Setup callbacks count=%d", count);
+  Dbg(dbg_ctl, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {
     cb = TSContCreate(&CB_client_verify, TSMutexCreate());
     TSContDataSet(cb, (void *)static_cast<intptr_t>(i));

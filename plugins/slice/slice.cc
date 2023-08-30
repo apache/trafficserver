@@ -166,7 +166,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       data->m_buffer_index      = TSPluginVCIOBufferIndexGet(data->m_txnp);     // default of m_buffer_index = 32KB
       data->m_buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(data->m_txnp); // default of m_buffer_water_mark = 0
 
-      if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      if (dbg_ctl.on()) {
         int len            = 0;
         char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &len);
         DEBUG_LOG("slice url: %.*s", len, urlstr);
@@ -207,6 +207,11 @@ global_read_request_hook(TSCont // contp
 }
 
 } // namespace
+
+namespace slice_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 ///// remap plugin engine
 

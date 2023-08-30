@@ -169,12 +169,12 @@ public:
   void
   header(const TSMBuffer b, const TSMLoc l)
   {
-    if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
+    if (dbg_ctl.on()) {
       const TSIOBuffer buffer = TSIOBufferCreate();
       TSHttpHdrPrint(b, l, buffer);
       std::string buf;
       read(buffer, buf);
-      TSDebug(PLUGIN_TAG, "Response header for \"%s\" was:\n%s", url.c_str(), buf.c_str());
+      Dbg(dbg_ctl, "Response header for \"%s\" was:\n%s", url.c_str(), buf.c_str());
       TSIOBufferDestroy(buffer);
     }
   }
@@ -183,11 +183,11 @@ public:
   data(const TSIOBufferReader r, const int64_t l)
   {
     length += l;
-    if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
+    if (dbg_ctl.on()) {
       std::string buffer;
       const uint64_t length  = read(r, buffer, l);
       response              += buffer;
-      TSDebug(PLUGIN_TAG, "Receiving response chunk \"%s\" of %" PRIu64 " bytes", buffer.c_str(), length);
+      Dbg(dbg_ctl, "Receiving response chunk \"%s\" of %" PRIu64 " bytes", buffer.c_str(), length);
     }
   }
 
@@ -198,8 +198,8 @@ public:
 
     gettimeofday(&end, nullptr);
 
-    if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
-      TSDebug(PLUGIN_TAG, "Response for \"%s\" was:\n%s", url.c_str(), response.c_str());
+    if (dbg_ctl.on()) {
+      Dbg(dbg_ctl, "Response for \"%s\" was:\n%s", url.c_str(), response.c_str());
     }
 
     const long diff = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
@@ -259,12 +259,12 @@ dispatch(Requests &r, const int t)
   const Requests::iterator end = r.end();
   for (; iterator != end; ++iterator) {
     assert(iterator->io.get() != nullptr);
-    if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
-      TSDebug(PLUGIN_TAG, "Dispatching %i bytes to \"%s\"", iterator->length, iterator->host.c_str());
+    if (dbg_ctl.on()) {
+      Dbg(dbg_ctl, "Dispatching %i bytes to \"%s\"", iterator->length, iterator->host.c_str());
       std::string b;
       read(iterator->io->reader, b);
       assert(b.size() == static_cast<uint64_t>(iterator->length));
-      TSDebug(PLUGIN_TAG, "%s", b.c_str());
+      Dbg(dbg_ctl, "%s", b.c_str());
     }
     // forwarding iterator->io pointer ownership
     ats::get(iterator->io.release(), iterator->length, Handler(iterator->host), t);

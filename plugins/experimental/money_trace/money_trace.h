@@ -24,9 +24,15 @@
 
 #define PLUGIN_NAME "money_trace"
 
-#define LOG_DEBUG(fmt, ...)                                                                  \
-  do {                                                                                       \
-    TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+namespace money_trace_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace money_trace_ns;
+
+#define LOG_DEBUG(fmt, ...)                                                          \
+  do {                                                                               \
+    Dbg(dbg_ctl, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 
 #define LOG_ERROR(fmt, ...)                                                     \

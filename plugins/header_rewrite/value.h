@@ -39,7 +39,7 @@
 class Value : Statement
 {
 public:
-  Value() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value"); }
+  Value() { Dbg(dbg_ctl, "Calling CTOR for Value"); }
 
   ~Value() override;
 

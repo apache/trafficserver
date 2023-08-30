@@ -57,20 +57,22 @@ static char const *const stat_name_stale = "plugin.regex_revalidate.stale";
 static int stat_id_miss                  = TS_ERROR;
 static char const *const stat_name_miss  = "plugin.regex_revalidate.miss";
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 static void
 create_stats()
 {
   if (TS_ERROR == stat_id_stale && TS_ERROR == TSStatFindName(stat_name_stale, &stat_id_stale)) {
     stat_id_stale = TSStatCreate(stat_name_stale, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (TS_ERROR != stat_id_stale) {
-      TSDebug(PLUGIN_NAME, "Created stat '%s'", stat_name_stale);
+      Dbg(dbg_ctl, "Created stat '%s'", stat_name_stale);
     }
   }
 
   if (TS_ERROR == stat_id_miss && TS_ERROR == TSStatFindName(stat_name_miss, &stat_id_miss)) {
     stat_id_miss = TSStatCreate(stat_name_miss, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (TS_ERROR != stat_id_miss) {
-      TSDebug(PLUGIN_NAME, "Created stat '%s'", stat_name_miss);
+      Dbg(dbg_ctl, "Created stat '%s'", stat_name_miss);
     }
   }
 }
@@ -82,13 +84,13 @@ increment_stat(TSCacheLookupResult const result)
   case TS_CACHE_LOOKUP_MISS:
     if (TS_ERROR != stat_id_miss) {
       TSStatIntIncrement(stat_id_miss, 1);
-      TSDebug(PLUGIN_NAME, "Incrementing stat '%s'", stat_name_miss);
+      Dbg(dbg_ctl, "Incrementing stat '%s'", stat_name_miss);
     }
     break;
   case TS_CACHE_LOOKUP_HIT_STALE:
     if (TS_ERROR != stat_id_stale) {
       TSStatIntIncrement(stat_id_stale, 1);
-      TSDebug(PLUGIN_NAME, "Incrementing stat '%s'", stat_name_stale);
+      Dbg(dbg_ctl, "Incrementing stat '%s'", stat_name_stale);
     }
     break;
   default:
@@ -258,8 +260,8 @@ prune_config(invalidate_t **i)
     ilast = nullptr;
     while (iptr) {
       if (iptr->expiry <= now) {
-        TSDebug(PLUGIN_NAME, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, (intmax_t)iptr->expiry,
-                strForResult(iptr->new_result), (intmax_t)now);
+        Dbg(dbg_ctl, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, (intmax_t)iptr->expiry,
+            strForResult(iptr->new_result), (intmax_t)now);
         if (ilast) {
           ilast->next = iptr->next;
           free_invalidate_t(iptr);
@@ -288,7 +290,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
 
   FILE *const fs = fopen(pstate->state_path, "r");
   if (NULL == fs) {
-    TSDebug(PLUGIN_NAME, "Could not open state %s for reading", pstate->state_path);
+    Dbg(dbg_ctl, "Could not open state %s for reading", pstate->state_path);
     return false;
   }
 
@@ -303,7 +305,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
   char line[LINE_MAX];
   int ln = 0;
   while (fgets(line, LINE_MAX, fs) != nullptr) {
-    TSDebug(PLUGIN_NAME, "state: processing: %d %s", ln, line);
+    Dbg(dbg_ctl, "state: processing: %d %s", ln, line);
     ++ln;
     int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
 
@@ -316,7 +318,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       inv->expiry = atoi(line + ovector[6]);
 
       if (inv->expiry < now) {
-        TSDebug(PLUGIN_NAME, "state: skipping expired : '%s'", inv->regex_text);
+        Dbg(dbg_ctl, "state: skipping expired : '%s'", inv->regex_text);
         free_invalidate_t(inv);
         continue;
       }
@@ -325,12 +327,12 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       char const *const type = line + ovector[8];
 
       if (0 == strncasecmp(type, RESULT_STALE, len)) {
-        TSDebug(PLUGIN_NAME, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
+        Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
       } else if (0 == strncasecmp(type, RESULT_MISS, len)) {
-        TSDebug(PLUGIN_NAME, "state: regex line set to result type %s: '%s'", RESULT_MISS, inv->regex_text);
+        Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_MISS, inv->regex_text);
         inv->new_result = TS_CACHE_LOOKUP_MISS;
       } else {
-        TSDebug(PLUGIN_NAME, "state: unknown regex line result type '%.*s', skipping '%s'", len, type, inv->regex_text);
+        Dbg(dbg_ctl, "state: unknown regex line result type '%.*s', skipping '%s'", len, type, inv->regex_text);
       }
 
       // iterate through the loaded config and try to merge
@@ -338,7 +340,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       do {
         if (0 == strcmp(inv->regex_text, iptr->regex_text)) {
           if (iptr->expiry == inv->expiry && iptr->new_result == inv->new_result) {
-            TSDebug(PLUGIN_NAME, "state: restoring epoch for %s", iptr->regex_text);
+            Dbg(dbg_ctl, "state: restoring epoch for %s", iptr->regex_text);
             iptr->epoch = inv->epoch;
           }
           break;
@@ -352,7 +354,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
 
       free_invalidate_t(inv);
     } else {
-      TSDebug(PLUGIN_NAME, "state: invalid line '%s'", line);
+      Dbg(dbg_ctl, "state: invalid line '%s'", line);
     }
   }
 
@@ -377,13 +379,13 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
   int const fd = open(path, O_RDONLY);
   if (fd < 0) {
-    TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
+    Dbg(dbg_ctl, "Could not open %s for reading", path);
     return false;
   }
 
   struct stat s;
   if (fstat(fd, &s) < 0) {
-    TSDebug(PLUGIN_NAME, "Could not stat %s", path);
+    Dbg(dbg_ctl, "Could not stat %s", path);
     close(fd);
     return false;
   }
@@ -394,12 +396,12 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
     FILE *const fs = fdopen(fd, "r");
     if (NULL == fs) {
-      TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
+      Dbg(dbg_ctl, "Could not open %s for reading", path);
       close(fd);
       return false;
     }
 
-    TSDebug(PLUGIN_NAME, "Attempting to load rules from: '%s'", path);
+    Dbg(dbg_ctl, "Attempting to load rules from: '%s'", path);
     const char *errptr;
     int erroffset;
     int ovector[OVECTOR_SIZE];
@@ -411,7 +413,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     invalidate_t *iptr, *i;
 
     while (fgets(line, LINE_MAX, fs) != nullptr) {
-      TSDebug(PLUGIN_NAME, "Processing: %d %s", ln, line);
+      Dbg(dbg_ctl, "Processing: %d %s", ln, line);
       ++ln;
       int const rc = pcre_exec(config_re, nullptr, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
 
@@ -428,38 +430,38 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           int const len          = ovector[9] - ovector[8];
           char const *const type = line + ovector[8];
           if (0 == strncasecmp(type, RESULT_MISS, len)) {
-            TSDebug(PLUGIN_NAME, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
+            Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
             i->new_result = TS_CACHE_LOOKUP_MISS;
           } else if (0 != strncasecmp(type, RESULT_STALE, len)) {
-            TSDebug(PLUGIN_NAME, "Unknown regex line result type '%s', using default '%s' '%s'", type, RESULT_STALE, i->regex_text);
+            Dbg(dbg_ctl, "Unknown regex line result type '%s', using default '%s' '%s'", type, RESULT_STALE, i->regex_text);
           }
         }
 
         if (i->expiry <= i->epoch) {
-          TSDebug(PLUGIN_NAME, "Rule is already expired!");
+          Dbg(dbg_ctl, "Rule is already expired!");
           free_invalidate_t(i);
           i = nullptr;
         } else if (i->regex == nullptr) {
-          TSDebug(PLUGIN_NAME, "%s did not compile", i->regex_text);
+          Dbg(dbg_ctl, "%s did not compile", i->regex_text);
           free_invalidate_t(i);
           i = nullptr;
         } else {
           i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
-            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch,
-                    (intmax_t)i->expiry, strForResult(i->new_result));
+            Dbg(dbg_ctl, "Created new list and Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
+                strForResult(i->new_result));
           } else {
             iptr = *ilist;
             while (1) {
               if (strcmp(i->regex_text, iptr->regex_text) == 0) {
                 if (iptr->expiry != i->expiry) {
-                  TSDebug(PLUGIN_NAME, "Updating duplicate %s", i->regex_text);
+                  Dbg(dbg_ctl, "Updating duplicate %s", i->regex_text);
                   iptr->epoch  = i->epoch;
                   iptr->expiry = i->expiry;
                 }
                 if (iptr->new_result != i->new_result) {
-                  TSDebug(PLUGIN_NAME, "Resetting duplicate due to type change %s", i->regex_text);
+                  Dbg(dbg_ctl, "Resetting duplicate due to type change %s", i->regex_text);
                   iptr->new_result = i->new_result;
                   iptr->epoch      = now;
                 }
@@ -474,13 +476,13 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
             if (i) {
               iptr->next = i;
-              TSDebug(PLUGIN_NAME, "Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
-                      strForResult(i->new_result));
+              Dbg(dbg_ctl, "Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
+                  strForResult(i->new_result));
             }
           }
         }
       } else {
-        TSDebug(PLUGIN_NAME, "Skipping line %d, too few fields", ln);
+        Dbg(dbg_ctl, "Skipping line %d, too few fields", ln);
       }
     }
     pcre_free(config_re);
@@ -488,8 +490,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     pstate->last_load = s.st_mtime;
     return true;
   } else {
-    TSDebug(PLUGIN_NAME, "File mod time is not newer: ftime: %jd <= last_load: %jd", (intmax_t)s.st_mtime,
-            (intmax_t)pstate->last_load);
+    Dbg(dbg_ctl, "File mod time is not newer: ftime: %jd <= last_load: %jd", (intmax_t)s.st_mtime, (intmax_t)pstate->last_load);
   }
   close(fd);
   return false;
@@ -500,7 +501,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
 {
   invalidate_t *iptr;
 
-  TSDebug(PLUGIN_NAME, "Current config:");
+  Dbg(dbg_ctl, "Current config:");
   if (pstate->log) {
     TSTextLogObjectWrite(pstate->log, "Current config:");
   }
@@ -509,7 +510,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
   if (pstate->state_path) {
     state_file = fopen(pstate->state_path, "w");
     if (nullptr == state_file) {
-      TSDebug(PLUGIN_NAME, "Unable to open state file %s\n", pstate->state_path);
+      Dbg(dbg_ctl, "Unable to open state file %s\n", pstate->state_path);
     }
   }
 
@@ -517,8 +518,8 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
     iptr = i;
     while (iptr) {
       char const *const typestr = strForResult(iptr->new_result);
-      TSDebug(PLUGIN_NAME, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry,
-              typestr);
+      Dbg(dbg_ctl, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry,
+          typestr);
       if (pstate->log) {
         TSTextLogObjectWrite(pstate->log, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch,
                              (intmax_t)iptr->expiry, typestr);
@@ -530,7 +531,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
     }
 
   } else {
-    TSDebug(PLUGIN_NAME, "EMPTY");
+    Dbg(dbg_ctl, "EMPTY");
     if (pstate->log) {
       TSTextLogObjectWrite(pstate->log, "EMPTY");
     }
@@ -546,7 +547,7 @@ free_handler(TSCont cont, TSEvent event, void *edata)
 {
   invalidate_t *iptr;
 
-  TSDebug(PLUGIN_NAME, "Freeing old config");
+  Dbg(dbg_ctl, "Freeing old config");
   iptr = (invalidate_t *)TSContDataGet(cont);
   free_invalidate_t_list(iptr);
   TSContDestroy(cont);
@@ -562,7 +563,7 @@ config_handler(TSCont cont, TSEvent event, void *edata)
   bool updated;
   TSMutex mutex;
 
-  TSDebug(PLUGIN_NAME, "In config_handler");
+  Dbg(dbg_ctl, "In config_handler");
 
   mutex = TSContMutexGet(cont);
   TSMutexLock(mutex);
@@ -583,7 +584,7 @@ config_handler(TSCont cont, TSEvent event, void *edata)
       TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
   } else {
-    TSDebug(PLUGIN_NAME, "No Changes");
+    Dbg(dbg_ctl, "No Changes");
     if (i) {
       free_invalidate_t_list(i);
     }
@@ -631,14 +632,14 @@ add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
   TSReleaseAssert(header && rule);
 
   if (TS_SUCCESS != TSHttpTxnClientReqGet(txn, &bufp, &lochdr)) {
-    TSDebug(PLUGIN_NAME, "Unable to get client request from transaction");
+    Dbg(dbg_ctl, "Unable to get client request from transaction");
   }
 
   rulelen =
     snprintf(rulestr, sizeof(rulestr), "%s %jd %s", rule->regex_text, (intmax_t)rule->expiry, strForResult(rule->new_result));
 
   if (TS_SUCCESS != TSStringPercentEncode(rulestr, rulelen, encstr, sizeof(encstr), &enclen, NULL)) {
-    TSDebug(PLUGIN_NAME, "Unable to get encode matching rule '%s'", rulestr);
+    Dbg(dbg_ctl, "Unable to get encode matching rule '%s'", rulestr);
     return;
   }
 
@@ -648,7 +649,7 @@ add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, lochdr, header, strlen(header), &locfield)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen)) {
         TSMimeHdrFieldAppend(bufp, lochdr, locfield);
-        TSDebug(PLUGIN_NAME, "Added header %s: '%.*s'", header, (int)enclen, encstr);
+        Dbg(dbg_ctl, "Added header %s: '%.*s'", header, (int)enclen, encstr);
       }
     }
     TSHandleMLocRelease(bufp, lochdr, locfield);
@@ -659,7 +660,7 @@ add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
       if (first) {
         first = false;
         TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen);
-        TSDebug(PLUGIN_NAME, "Added header '%s': '%.*s'", header, (int)enclen, encstr);
+        Dbg(dbg_ctl, "Added header '%s': '%.*s'", header, (int)enclen, encstr);
       } else {
         TSMimeHdrFieldDestroy(bufp, lochdr, locfield);
       }
@@ -690,17 +691,17 @@ main_handler(TSCont cont, TSEvent event, void *edata)
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);
-            TSDebug(PLUGIN_NAME, "Cached Date header is: %jd", intmax_t(date));
+            Dbg(dbg_ctl, "Cached Date header is: %jd", intmax_t(date));
             now = time(nullptr);
           }
           if (date <= iptr->epoch && now < iptr->expiry) {
             if (!url) {
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
-              TSDebug(PLUGIN_NAME, "Effective url is is '%.*s'", url_len, url);
+              Dbg(dbg_ctl, "Effective url is is '%.*s'", url_len, url);
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, nullptr, 0) >= 0) {
-              TSDebug(PLUGIN_NAME, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'",
-                      iptr->regex_text, intmax_t(iptr->epoch), intmax_t(iptr->expiry), strForResult(iptr->new_result));
+              Dbg(dbg_ctl, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'", iptr->regex_text,
+                  intmax_t(iptr->epoch), intmax_t(iptr->expiry), strForResult(iptr->new_result));
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
               increment_stat(iptr->new_result);
 
@@ -752,7 +753,7 @@ TSPluginInit(int argc, const char *argv[])
   invalidate_t *iptr        = nullptr;
   bool disable_timed_reload = false;
 
-  TSDebug(PLUGIN_NAME, "Starting plugin init");
+  Dbg(dbg_ctl, "Starting plugin init");
 
   pstate = (plugin_state_t *)TSmalloc(sizeof(plugin_state_t));
   init_plugin_state_t(pstate);
@@ -799,16 +800,16 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!load_config(pstate, &iptr)) {
-    TSDebug(PLUGIN_NAME, "Problem loading config from file %s", pstate->config_path);
+    Dbg(dbg_ctl, "Problem loading config from file %s", pstate->config_path);
   } else {
     pstate->invalidate_list = iptr;
 
     /* Load and merge previous state if provided */
     if (nullptr != pstate->state_path) {
       if (!load_state(pstate, &iptr)) {
-        TSDebug(PLUGIN_NAME, "Problem loading state from file %s", pstate->state_path);
+        Dbg(dbg_ctl, "Problem loading state from file %s", pstate->state_path);
       } else {
-        TSDebug(PLUGIN_NAME, "Loaded state from file %s", pstate->state_path);
+        Dbg(dbg_ctl, "Loaded state from file %s", pstate->state_path);
       }
     }
 
@@ -825,7 +826,7 @@ TSPluginInit(int argc, const char *argv[])
     free_plugin_state_t(pstate);
     return;
   } else {
-    TSDebug(PLUGIN_NAME, "Plugin registration succeeded");
+    Dbg(dbg_ctl, "Plugin registration succeeded");
   }
 
   create_stats();
@@ -843,5 +844,5 @@ TSPluginInit(int argc, const char *argv[])
     TSContScheduleOnPool(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
   }
 
-  TSDebug(PLUGIN_NAME, "Plugin Init Complete");
+  Dbg(dbg_ctl, "Plugin Init Complete");
 }

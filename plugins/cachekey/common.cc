@@ -35,4 +35,8 @@ PrintToStdErr(const char *fmt, ...)
   va_end(args);
 }
 
+#else
+
+DbgCtl CacheKey_dbg_ctl{PLUGIN_NAME};
+
 #endif /* CACHEKEY_UNIT_TEST */

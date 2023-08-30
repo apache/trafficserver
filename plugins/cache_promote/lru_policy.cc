@@ -55,7 +55,7 @@ LRUHash::initFromUrl(TSHttpTxn txnp)
 #else
         EVP_Digest(url, url_len, _hash, nullptr, EVP_sha1(), nullptr);
 #endif
-        TSDebug(PLUGIN_NAME, "LRUHash::initFromUrl(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
+        DBG("LRUHash::initFromUrl(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
         TSfree(url);
         ret = true;
       }
@@ -69,7 +69,7 @@ LRUHash::initFromUrl(TSHttpTxn txnp)
 
 LRUPolicy::~LRUPolicy()
 {
-  TSDebug(PLUGIN_NAME, "LRUPolicy DTOR");
+  DBG("LRUPolicy DTOR");
   TSMutexLock(_lock);
 
   _map.clear();
@@ -90,7 +90,7 @@ LRUPolicy::parseOption(int opt, char *optarg)
     _buckets = static_cast<unsigned>(strtol(optarg, nullptr, 10));
     if (_buckets < MINIMUM_BUCKET_SIZE) {
       TSError("%s: Enforcing minimum LRU bucket size of %d", PLUGIN_NAME, MINIMUM_BUCKET_SIZE);
-      TSDebug(PLUGIN_NAME, "enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
+      DBG("enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
       _buckets = MINIMUM_BUCKET_SIZE;
     }
     break;
@@ -155,7 +155,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
           cacheable = true;
         }
       }
-      TSDebug(PLUGIN_NAME, "The request is %s", cacheable ? "cacheable" : "not cacheable");
+      DBG("The request is %s", cacheable ? "cacheable" : "not cacheable");
       TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
     }
 
@@ -165,7 +165,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
     ++val_hits; // Increment hits, bytes are incremented elsewhere
     if (cacheable && (val_hits >= _hits || (_bytes > 0 && val_bytes > _bytes))) {
       // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
-      TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
+      DBG("saving the LRUEntry to the freelist");
       _freelist.splice(_freelist.begin(), _list, map_val);
       ++_freelist_size;
       --_list_size;
@@ -176,26 +176,26 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       ret = true;
     } else {
       // It's still not promoted, make sure it's moved to the front of the list
-      TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far and %" PRId64 " bytes", val_hits, val_bytes);
+      DBG("still not promoted, got %d hits so far and %" PRId64 " bytes", val_hits, val_bytes);
       _list.splice(_list.begin(), _list, map_val);
     }
   } else {
     // New LRU entry for the URL, try to repurpose the list entry as much as possible
     incrementStat(_lru_miss_id, 1);
     if (_list_size >= _buckets) {
-      TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
+      DBG("repurposing last LRUHash entry");
       _list.splice(_list.begin(), _list, --_list.end());
       _map.erase(&(std::get<0>(*_list.begin()))); // Get the hash from the first list element
       incrementStat(_lru_vacated_id, 1);
     } else if (_freelist_size > 0) {
-      TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
+      DBG("reusing LRUEntry from freelist");
       _list.splice(_list.begin(), _freelist, _freelist.begin());
       --_freelist_size;
       ++_list_size;
       incrementStat(_lru_size_id, 1);
       decrementStat(_freelist_size_id, 1);
     } else {
-      TSDebug(PLUGIN_NAME, "creating new LRUEntry");
+      DBG("creating new LRUEntry");
       _list.push_front(NULL_LRU_ENTRY);
       ++_list_size;
       incrementStat(_lru_size_id, 1);
@@ -243,7 +243,7 @@ LRUPolicy::addBytes(TSHttpTxn txnp)
           (void)val_key, (void)val_hits;
 
           val_bytes += cl;
-          TSDebug(PLUGIN_NAME, "Added %" PRId64 " bytes for LRU entry", cl);
+          DBG("Added %" PRId64 " bytes for LRU entry", cl);
           TSHandleMLocRelease(resp, resp_hdr, field_loc);
         }
         TSHandleMLocRelease(resp, TS_NULL_MLOC, resp_hdr);

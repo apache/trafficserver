@@ -463,7 +463,7 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
     if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
         TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
         TSHttpTxnCacheLookupUrlSet(http_ctx->txnp, http_ctx->client_request_bufp, new_url_loc) == TS_SUCCESS) {
-      TSDebug(TS_LUA_DEBUG_TAG, "Set cache lookup URL");
+      Dbg(dbg_ctl, "Set cache lookup URL");
     } else {
       TSError("[ts_lua][%s] Failed to set cache lookup URL", __FUNCTION__);
     }
@@ -596,7 +596,7 @@ ts_lua_http_set_parent_selection_url(lua_State *L)
     if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
         TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
         TSHttpTxnParentSelectionUrlSet(http_ctx->txnp, http_ctx->client_request_bufp, new_url_loc) == TS_SUCCESS) {
-      TSDebug(TS_LUA_DEBUG_TAG, "Set parent selection URL");
+      Dbg(dbg_ctl, "Set parent selection URL");
     } else {
       TSError("[ts_lua][%s] Failed to set parent selection URL", __FUNCTION__);
     }

@@ -33,6 +33,12 @@
 
 #define PLUGIN "ssl_session_reuse"
 
+namespace ssl_session_reuse_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace ssl_session_reuse_ns;
+
 // Base 64 encoding takes 4*(ceil(n/3)) bytes
 #define ENCODED_LEN(len) (((int)ceil(1.34 * (len) + 5)) + 1)
 #define DECODED_LEN(len) (((int)ceil(0.75 * (len))) + 1)

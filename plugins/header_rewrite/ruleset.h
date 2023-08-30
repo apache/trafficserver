@@ -35,11 +35,11 @@
 class RuleSet
 {
 public:
-  RuleSet() { TSDebug(PLUGIN_NAME_DBG, "RuleSet CTOR"); }
+  RuleSet() { Dbg(dbg_ctl, "RuleSet CTOR"); }
 
   ~RuleSet()
   {
-    TSDebug(PLUGIN_NAME_DBG, "RulesSet DTOR");
+    Dbg(dbg_ctl, "RulesSet DTOR");
     delete next;
     delete _cond;
     delete _oper;

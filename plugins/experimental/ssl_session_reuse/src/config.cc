@@ -76,7 +76,7 @@ Config::loadConfig(const std::string &filename)
       }
       line.ltrim_if(&isspace);
       swoc::TextView field = line.take_prefix_at('=');
-      TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field.size()), field.data(), static_cast<int>(line.size()), line.data());
+      Dbg(dbg_ctl, "%.*s=%.*s", static_cast<int>(field.size()), field.data(), static_cast<int>(line.size()), line.data());
       if (field.size() > 0) {
         m_config[std::string(field.data(), field.size())] = std::string(line.data(), line.size());
       }

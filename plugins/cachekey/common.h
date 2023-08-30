@@ -48,14 +48,16 @@ void PrintToStdErr(const char *fmt, ...);
 #else /* CACHEKEY_UNIT_TEST */
 #include "ts/ts.h"
 
-#define CacheKeyDebug(fmt, ...)                                                           \
-  do {                                                                                    \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+extern DbgCtl CacheKey_dbg_ctl;
+
+#define CacheKeyDebug(fmt, ...)                                                            \
+  do {                                                                                     \
+    Dbg(CacheKey_dbg_ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 
-#define CacheKeyError(fmt, ...)                                                           \
-  do {                                                                                    \
-    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                                     \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+#define CacheKeyError(fmt, ...)                                                            \
+  do {                                                                                     \
+    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                                      \
+    Dbg(CacheKey_dbg_ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 #endif /* CACHEKEY_UNIT_TEST */

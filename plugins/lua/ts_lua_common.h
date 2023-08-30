@@ -185,3 +185,9 @@ typedef struct {
 #ifndef ATS_UNUSED
 #define ATS_UNUSED __attribute__((unused))
 #endif
+
+namespace ts_lua_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace ts_lua_ns;

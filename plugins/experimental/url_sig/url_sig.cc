@@ -53,6 +53,8 @@
 
 static const char PLUGIN_NAME[] = "url_sig";
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 struct config {
   TSHttpStatus err_status;
   char *err_url;
@@ -67,7 +69,7 @@ struct config {
 static void
 free_cfg(struct config *cfg)
 {
-  TSDebug(PLUGIN_NAME, "Cleaning up");
+  Dbg(dbg_ctl, "Cleaning up");
   TSfree(cfg->err_url);
   TSfree(cfg->sig_anchor);
 
@@ -90,7 +92,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  Dbg(dbg_ctl, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -108,7 +110,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
              argc);
     return TS_ERROR;
   }
-  TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
+  Dbg(dbg_ctl, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
 
   if (argv[2][0] == '/') {
     config_file = argv[2];
@@ -116,7 +118,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     snprintf(config_filepath_buf, sizeof(config_filepath_buf), "%s/%s", TSConfigDirGet(), argv[2]);
     config_file = config_filepath_buf;
   }
-  TSDebug(PLUGIN_NAME, "config file name: %s", config_file);
+  Dbg(dbg_ctl, "config file name: %s", config_file);
   FILE *file = fopen(config_file, "r");
   if (file == nullptr) {
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Error opening file %s", config_file);
@@ -132,7 +134,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   memset(cfg, 0, sizeof(struct config));
 
   while (fgets(line, sizeof(line), file) != nullptr) {
-    TSDebug(PLUGIN_NAME, "LINE: %s (%d)", line, (int)strlen(line));
+    Dbg(dbg_ctl, "LINE: %s (%d)", line, (int)strlen(line));
     line_no++;
 
     if (eat_comment) {
@@ -173,13 +175,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       if (strncmp(line + 3, "0", 1) == 0) {
         keynum = 0;
       } else {
-        TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
+        Dbg(dbg_ctl, ">>> %s <<<", line + 3);
         keynum = atoi(line + 3);
         if (keynum == 0) {
           keynum = -1; // Not a Number
         }
       }
-      TSDebug(PLUGIN_NAME, "key number %d == %s", keynum, value);
+      Dbg(dbg_ctl, "key number %d == %s", keynum, value);
       if (keynum >= MAX_KEY_NUM || keynum < 0) {
         snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Key number (%d) >= MAX_KEY_NUM (%d) or NaN", keynum, MAX_KEY_NUM);
         fclose(file);
@@ -208,13 +210,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       int erroffset, options = 0;
 
       if (cfg->regex) {
-        TSDebug(PLUGIN_NAME, "Skipping duplicate excl_regex");
+        Dbg(dbg_ctl, "Skipping duplicate excl_regex");
         continue;
       }
 
       cfg->regex = pcre_compile(value, options, &errptr, &erroffset, nullptr);
       if (cfg->regex == nullptr) {
-        TSDebug(PLUGIN_NAME, "Regex compilation failed with error (%s) at character %d", errptr, erroffset);
+        Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", errptr, erroffset);
       } else {
 #ifdef PCRE_STUDY_JIT_COMPILE
         options = PCRE_STUDY_JIT_COMPILE;
@@ -230,7 +232,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     } else if (strncmp(line, "url_type", 8) == 0) {
       if (strncmp(value, "pristine", 8) == 0) {
         cfg->pristine_url_flag = 1;
-        TSDebug(PLUGIN_NAME, "Pristine URLs (from config) will be used");
+        Dbg(dbg_ctl, "Pristine URLs (from config) will be used");
       }
     } else {
       TSError("[url_sig] Error parsing line %d of file %s (%s)", line_no, config_file, line);
@@ -242,7 +244,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   if (argc > 3) {
     if (strcasecmp(argv[3], "pristineurl") == 0) {
       cfg->pristine_url_flag = 1;
-      TSDebug(PLUGIN_NAME, "Pristine URLs (from args) will be used");
+      Dbg(dbg_ctl, "Pristine URLs (from args) will be used");
 
     } else {
       snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - second pparam (if present) must be pristineurl");
@@ -286,7 +288,7 @@ static void
 err_log(const char *url, const char *msg)
 {
   if (msg && url) {
-    TSDebug(PLUGIN_NAME, "[URL=%s]: %s", url, msg);
+    Dbg(dbg_ctl, "[URL=%s]: %s", url, msg);
     TSError("[url_sig] [URL=%s]: %s", url, msg); // This goes to error.log
   } else {
     TSError("[url_sig] Invalid err_log request");
@@ -303,14 +305,14 @@ getAppQueryString(const char *query_string, int query_length)
   char buf[MAX_QUERY_LEN + 1];
 
   if (query_length > MAX_QUERY_LEN) {
-    TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes", MAX_QUERY_LEN);
+    Dbg(dbg_ctl, "Cannot process the query string as the length exceeds %d bytes", MAX_QUERY_LEN);
     return nullptr;
   }
   memset(buf, 0, sizeof(buf));
   memcpy(buf, query_string, query_length);
   p = buf;
 
-  TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
+  Dbg(dbg_ctl, "query_string: %s, query_length: %d", query_string, query_length);
 
   do {
     switch (*p) {
@@ -394,7 +396,7 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
     TSError("insufficient space to copy schema into new_path_seg buffer.");
     return nullptr;
   }
-  TSDebug(PLUGIN_NAME, "%s:%d - new_url: %.*s\n", __FILE__, __LINE__, (int)(new_url_end - new_url), new_url);
+  Dbg(dbg_ctl, "%s:%d - new_url: %.*s\n", __FILE__, __LINE__, (int)(new_url_end - new_url), new_url);
 
   // parse the url.
   if ((p = strtok_r(skip, "/", &saveptr)) != nullptr) {
@@ -447,7 +449,7 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
     }
   }
   *new_path_seg_end = '\0';
-  TSDebug(PLUGIN_NAME, "new_path_seg: %s", new_path_seg);
+  Dbg(dbg_ctl, "new_path_seg: %s", new_path_seg);
 
   // save the encoded signing parameter data
   if (sig_anchor != nullptr) { // a signature anchor string was found.
@@ -464,21 +466,21 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
       return nullptr;
     }
   }
-  TSDebug(PLUGIN_NAME, "signed_seg: %s", signed_seg);
+  Dbg(dbg_ctl, "signed_seg: %s", signed_seg);
 
   // no signature anchor was found so decode and save the signing parameters assumed
   // to be in the last path segment.
   if (sig_anchor == nullptr) {
     if (TSBase64Decode(segment[numtoks - 2], strlen(segment[numtoks - 2]), decoded_string, sizeof(decoded_string), &decoded_len) !=
         TS_SUCCESS) {
-      TSDebug(PLUGIN_NAME, "Unable to decode the  path parameter string.");
+      Dbg(dbg_ctl, "Unable to decode the  path parameter string.");
     }
   } else {
     if (TSBase64Decode(sig_anchor, strlen(sig_anchor), decoded_string, sizeof(decoded_string), &decoded_len) != TS_SUCCESS) {
-      TSDebug(PLUGIN_NAME, "Unable to decode the  path parameter string.");
+      Dbg(dbg_ctl, "Unable to decode the  path parameter string.");
     }
   }
-  TSDebug(PLUGIN_NAME, "decoded_string: %s", decoded_string);
+  Dbg(dbg_ctl, "decoded_string: %s", decoded_string);
 
   {
     int oob = 0; /* Out Of Buffer */
@@ -579,7 +581,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     url_len = current_url_len;
   }
 
-  TSDebug(PLUGIN_NAME, "%s", url);
+  Dbg(dbg_ctl, "%s", url);
 
   if (cfg->regex) {
     const int offset = 0, options = 0;
@@ -629,7 +631,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (!has_path_params) {
       query++; /* get rid of the ? */
     }
-    TSDebug(PLUGIN_NAME, "Query string is:%s", query);
+    Dbg(dbg_ctl, "Query string is:%s", query);
 
     // Block needed due to goto.
     {
@@ -645,7 +647,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         } else {
           switch (ip->sa_family) {
           case AF_INET:
-            TSDebug(PLUGIN_NAME, "ip->sa_family: AF_INET");
+            Dbg(dbg_ctl, "ip->sa_family: AF_INET");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
             if ((pp - cp) > INET_ADDRSTRLEN - 1 || (pp - cp) < 4) {
               err_log(url, "IP address string too long or short.");
@@ -653,16 +655,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             }
             strncpy(client_ip, cp, (pp - cp));
             client_ip[pp - cp] = '\0';
-            TSDebug(PLUGIN_NAME, "CIP: -%s-", client_ip);
+            Dbg(dbg_ctl, "CIP: -%s-", client_ip);
             inet_ntop(AF_INET, &(((struct sockaddr_in *)ip)->sin_addr), ipstr, sizeof ipstr);
-            TSDebug(PLUGIN_NAME, "Peer address: -%s-", ipstr);
+            Dbg(dbg_ctl, "Peer address: -%s-", ipstr);
             if (strcmp(ipstr, client_ip) != 0) {
               err_log(url, "Client IP doesn't match signature.");
               goto deny;
             }
             break;
           case AF_INET6:
-            TSDebug(PLUGIN_NAME, "ip->sa_family: AF_INET6");
+            Dbg(dbg_ctl, "ip->sa_family: AF_INET6");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
             if ((pp - cp) > INET6_ADDRSTRLEN - 1 || (pp - cp) < 4) {
               err_log(url, "IP address string too long or short.");
@@ -670,9 +672,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             }
             strncpy(client_ip, cp, (pp - cp));
             client_ip[pp - cp] = '\0';
-            TSDebug(PLUGIN_NAME, "CIP: -%s-", client_ip);
+            Dbg(dbg_ctl, "CIP: -%s-", client_ip);
             inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)ip)->sin6_addr), ipstr, sizeof ipstr);
-            TSDebug(PLUGIN_NAME, "Peer address: -%s-", ipstr);
+            Dbg(dbg_ctl, "Peer address: -%s-", ipstr);
             if (strcmp(ipstr, client_ip) != 0) {
               err_log(url, "Client IP doesn't match signature.");
               goto deny;
@@ -695,7 +697,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             err_log(url, "Invalid expiration, or expired");
             goto deny;
           }
-          TSDebug(PLUGIN_NAME, "Exp: %" PRIu64, expiration);
+          Dbg(dbg_ctl, "Exp: %" PRIu64, expiration);
         } else {
           err_log(url, "Expiration query string not found");
           goto deny;
@@ -707,7 +709,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         cp        += strlen(ALG_QSTRING) + 1;
         algorithm  = atoi(cp);
         // The check for a valid algorithm is later.
-        TSDebug(PLUGIN_NAME, "Algorithm: %d", algorithm);
+        Dbg(dbg_ctl, "Algorithm: %d", algorithm);
       } else {
         err_log(url, "Algorithm query string not found");
         goto deny;
@@ -721,7 +723,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           err_log(url, "Invalid key index");
           goto deny;
         }
-        TSDebug(PLUGIN_NAME, "Key Index: %d", keyindex);
+        Dbg(dbg_ctl, "Key Index: %d", keyindex);
       } else {
         err_log(url, "KeyIndex query string not found");
         goto deny;
@@ -736,9 +738,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           parts  = cp; // NOTE parts is not null terminated it is terminated by "&" of next param
           has_path_params == false ? (cp = strstr(parts, "&")) : (cp = strstr(parts, ";"));
           if (cp) {
-            TSDebug(PLUGIN_NAME, "Parts: %.*s", (int)(cp - parts), parts);
+            Dbg(dbg_ctl, "Parts: %.*s", (int)(cp - parts), parts);
           } else {
-            TSDebug(PLUGIN_NAME, "Parts: %s", parts);
+            Dbg(dbg_ctl, "Parts: %s", parts);
           }
         } else {
           err_log(url, "PartsSigned query string not found");
@@ -764,8 +766,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           }
 
           /* have the query string, and parameters passed initial checks */
-          TSDebug(PLUGIN_NAME, "Found all needed parameters: C=%s E=%" PRIu64 " A=%d K=%d P=%s S=%s", client_ip, expiration,
-                  algorithm, keyindex, parts, signature);
+          Dbg(dbg_ctl, "Found all needed parameters: C=%s E=%" PRIu64 " A=%d K=%d P=%s S=%s", client_ip, expiration, algorithm,
+              keyindex, parts, signature);
 
           /* find the string that was signed - cycle through the parts letters, adding the part of the fqdn/path if it is 1 */
           has_path_params == false ? (cp = strchr(url, '?')) : (cp = strchr(url, ';'));
@@ -796,10 +798,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             // chop off the last /, replace with '?' or ';' as appropriate.
             has_path_params == false ? (signed_part[strlen(signed_part) - 1] = '?') : (signed_part[strlen(signed_part) - 1] = '\0');
             cp = strstr(query, SIG_QSTRING "=");
-            TSDebug(PLUGIN_NAME, "cp: %s, query: %s, signed_part: %s", cp, query, signed_part);
+            Dbg(dbg_ctl, "cp: %s, query: %s, signed_part: %s", cp, query, signed_part);
             strncat(signed_part, query, (cp - query) + strlen(SIG_QSTRING) + 1);
 
-            TSDebug(PLUGIN_NAME, "Signed string=\"%s\"", signed_part);
+            Dbg(dbg_ctl, "Signed string=\"%s\"", signed_part);
 
             /* calculate the expected the signature with the right algorithm */
             switch (algorithm) {
@@ -807,7 +809,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
               HMAC(EVP_sha1(), (const unsigned char *)cfg->keys[keyindex], strlen(cfg->keys[keyindex]),
                    (const unsigned char *)signed_part, strlen(signed_part), sig, &sig_len);
               if (sig_len != SHA1_SIG_SIZE) {
-                TSDebug(PLUGIN_NAME, "sig_len: %d", sig_len);
+                Dbg(dbg_ctl, "sig_len: %d", sig_len);
                 err_log(url, "Calculated sig len !=  SHA1_SIG_SIZE !");
                 goto deny;
               }
@@ -817,7 +819,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
               HMAC(EVP_md5(), (const unsigned char *)cfg->keys[keyindex], strlen(cfg->keys[keyindex]),
                    (const unsigned char *)signed_part, strlen(signed_part), sig, &sig_len);
               if (sig_len != MD5_SIG_SIZE) {
-                TSDebug(PLUGIN_NAME, "sig_len: %d", sig_len);
+                Dbg(dbg_ctl, "sig_len: %d", sig_len);
                 err_log(url, "Calculated sig len !=  MD5_SIG_SIZE !");
                 goto deny;
               }
@@ -831,7 +833,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
               snprintf(&(sig_string[i * 2]), sizeof(sig_string) - (i * 2), "%02x", sig[i]);
             }
 
-            TSDebug(PLUGIN_NAME, "Expected signature: %s", sig_string);
+            Dbg(dbg_ctl, "Expected signature: %s", sig_string);
 
             /* and compare to signature that was sent */
             cmp_res = strncmp(sig_string, signature, sig_len * 2);
@@ -839,7 +841,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
               err_log(url, "Signature check failed");
               goto deny;
             } else {
-              TSDebug(PLUGIN_NAME, "Signature check passed");
+              Dbg(dbg_ctl, "Signature check passed");
               goto allow;
             }
           }
@@ -857,7 +859,7 @@ deny:
 
   switch (cfg->err_status) {
   case TS_HTTP_STATUS_MOVED_TEMPORARILY:
-    TSDebug(PLUGIN_NAME, "Redirecting to %s", cfg->err_url);
+    Dbg(dbg_ctl, "Redirecting to %s", cfg->err_url);
     char *start, *end;
     start = cfg->err_url;
     end   = start + strlen(cfg->err_url);
@@ -887,7 +889,7 @@ allow:
     current_query++;
     app_qry = getAppQueryString(current_query, strlen(current_query));
   }
-  TSDebug(PLUGIN_NAME, "has_path_params: %d", has_path_params);
+  Dbg(dbg_ctl, "has_path_params: %d", has_path_params);
   if (has_path_params) {
     if (*new_path) {
       TSUrlPathSet(rri->requestBufp, rri->requestUrl, new_path, strlen(new_path));
