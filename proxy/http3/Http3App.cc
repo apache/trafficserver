@@ -38,6 +38,7 @@
 #include "Http3Session.h"
 #include "Http3Transaction.h"
 #include "Http3ProtocolEnforcer.h"
+#include "Http3SettingsHandler.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
@@ -218,28 +219,43 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     if (this->_control_stream_id == 0) {
       this->_control_stream_id = adapter->stream().id();
     } else if (this->_control_stream_id != adapter->stream().id()) {
-      error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR,
-                                                     "Only one control stream per peer is permitted");
-      Debug("http3", "Only one control stream per peer is permitted");
+      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR,
+                                           "Only one control stream per peer is permitted");
+      Debug("http3", "CONTROL stream [%lu] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
       break;
     }
     uint64_t nread = 0;
-    this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
+    error          = this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
+    if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+      Debug("http3", "CONTROL stream [%lu] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
+    }
+    // The sender MUST NOT close the control stream, and the receiver MUST NOT request that the sender close the control stream.
+    // If either control stream is closed at any point, this MUST be treated as a connection error of type
+    // H3_CLOSED_CRITICAL_STREAM.
     break;
   }
   case Http3StreamType::PUSH: {
-    error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
-    Debug("http3", "Only servers can push");
-    // TODO: when PUSH comes from client, send stream error with HTTP_WRONG_STREAM_DIRECTION
+    error =
+      std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
+    Debug("http3", "PUSH stream [%lu] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    // if a server receives a client-initiated push stream, this MUST be treated as a connection error of type
+    // H3_STREAM_CREATION_ERROR
     break;
   }
   case Http3StreamType::QPACK_ENCODER:
   case Http3StreamType::QPACK_DECODER: {
     this->_set_qpack_stream(type, adapter);
+    break;
   }
-  case Http3StreamType::UNKNOWN:
+  case Http3StreamType::UNKNOWN: {
+    // Recipients of unknown stream types MUST either abort reading of the stream or discard incoming data without further
+    // processing. If reading is aborted, the recipient SHOULD use the H3_STREAM_CREATION_ERROR error code or a reserved error code
+    // (Section 8.1). The recipient MUST NOT consider unknown stream types to be a connection error of any kind.
+    error = std::make_unique<Http3Error>(Http3ErrorClass::STREAM, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Stream type unkown");
+    Debug("http3", "UNKNOWN stream [%lu] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    break;
+  }
   default:
-    // TODO: just ignore or trigger QUIC STOP_SENDING frame with HTTP_UNKNOWN_STREAM_TYPE
     break;
   }
 }
@@ -370,63 +386,6 @@ Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
   // FIXME There may be data to read
   this->_qc->stream_manager()->delete_stream(stream_id);
   this->_streams.erase(stream_id);
-}
-
-//
-// SETTINGS frame handler
-//
-std::vector<Http3FrameType>
-Http3SettingsHandler::interests()
-{
-  return {Http3FrameType::SETTINGS};
-}
-
-Http3ErrorUPtr
-Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */)
-{
-  ink_assert(frame->type() == Http3FrameType::SETTINGS);
-
-  const Http3SettingsFrame *settings_frame = dynamic_cast<const Http3SettingsFrame *>(frame.get());
-
-  if (!settings_frame) {
-    // make error
-    return Http3ErrorUPtr(nullptr);
-  }
-
-  if (settings_frame->is_valid()) {
-    return settings_frame->get_error();
-  }
-
-  // TODO: Add length check: the maximum number of values are 2^62 - 1, but some fields have shorter maximum than it.
-  if (settings_frame->contains(Http3SettingsId::HEADER_TABLE_SIZE)) {
-    uint64_t header_table_size = settings_frame->get(Http3SettingsId::HEADER_TABLE_SIZE);
-    this->_session->remote_qpack()->update_max_table_size(header_table_size);
-
-    Debug("http3", "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
-  }
-
-  if (settings_frame->contains(Http3SettingsId::MAX_FIELD_SECTION_SIZE)) {
-    uint64_t max_field_section_size = settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE);
-    this->_session->remote_qpack()->update_max_field_section_size(max_field_section_size);
-
-    Debug("http3", "SETTINGS_MAX_FIELD_SECTION_SIZE: %" PRId64, max_field_section_size);
-  }
-
-  if (settings_frame->contains(Http3SettingsId::QPACK_BLOCKED_STREAMS)) {
-    uint64_t qpack_blocked_streams = settings_frame->get(Http3SettingsId::QPACK_BLOCKED_STREAMS);
-    this->_session->remote_qpack()->update_max_blocking_streams(qpack_blocked_streams);
-
-    Debug("http3", "SETTINGS_QPACK_BLOCKED_STREAMS: %" PRId64, qpack_blocked_streams);
-  }
-
-  if (settings_frame->contains(Http3SettingsId::NUM_PLACEHOLDERS)) {
-    uint64_t num_placeholders = settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS);
-    // TODO: update settings for priority tree
-
-    Debug("http3", "SETTINGS_NUM_PLACEHOLDERS: %" PRId64, num_placeholders);
-  }
-
-  return Http3ErrorUPtr(nullptr);
 }
 
 //

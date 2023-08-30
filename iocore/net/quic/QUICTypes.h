@@ -148,6 +148,7 @@ enum class QUICErrorClass {
   APPLICATION,
 };
 
+// https://www.rfc-editor.org/rfc/rfc9000#error-codes
 enum class QUICTransErrorCode : uint64_t {
   NO_ERROR = 0x00,
   INTERNAL_ERROR,
@@ -163,6 +164,9 @@ enum class QUICTransErrorCode : uint64_t {
   INVALID_TOKEN,
   APPLICATION_ERROR,
   CRYPTO_BUFFER_EXCEEDED,
+  KEY_UPDATE_ERROR,
+  AEAD_LIMIT_REACHED,
+  NO_VIABLE_PATH,
   CRYPTO_ERROR = 0x0100, // 0x100 - 0x1FF
 };
 

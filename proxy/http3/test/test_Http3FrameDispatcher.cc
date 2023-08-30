@@ -105,7 +105,7 @@ TEST_CASE("control stream tests", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -146,7 +146,7 @@ TEST_CASE("control stream tests", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_MISSING_SETTINGS);
+    CHECK(error->code == Http3ErrorCode::H3_MISSING_SETTINGS);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 3);
   }
@@ -185,7 +185,7 @@ TEST_CASE("control stream tests", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -224,7 +224,7 @@ TEST_CASE("control stream tests", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -263,7 +263,7 @@ TEST_CASE("control stream tests", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -323,7 +323,7 @@ TEST_CASE("Reserved frame type not allowed", "[http3]")
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
     REQUIRE(error);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 12);
   }

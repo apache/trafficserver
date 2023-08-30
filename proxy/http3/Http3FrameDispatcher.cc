@@ -108,7 +108,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
       std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
       for (auto h : handlers) {
         error = h->handle_frame(frame, frame_count - 1, stream_type);
-        if (error && error->cls != Http3ErrorClass::NONE) {
+        if (error && error->cls != Http3ErrorClass::UNDEFINED) {
           return error;
         }
       }

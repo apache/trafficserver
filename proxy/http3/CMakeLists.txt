@@ -32,6 +32,7 @@ add_library(http3 STATIC
     Http3DataFramer.cc
     Http3HeaderVIOAdaptor.cc
     Http3ProtocolEnforcer.cc
+    Http3SettingsHandler.cc
     Http3StreamDataVIOAdaptor.cc
     QPACK.cc
 )
@@ -42,6 +43,7 @@ target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
 
 add_executable(test_http3
     test/main.cc
+    test/stub.cc
     test/test_Http3Frame.cc
     test/test_Http3FrameDispatcher.cc
     Http3ProtocolEnforcer.cc
@@ -49,6 +51,7 @@ add_executable(test_http3
     Http3DebugNames.cc
     Http3Config.cc
     Http3Frame.cc
+    Http3SettingsHandler.cc
 )
 target_link_libraries(test_http3
     PRIVATE
