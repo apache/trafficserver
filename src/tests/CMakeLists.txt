@@ -20,7 +20,6 @@
 include_directories(
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CATCH_INCLUDE_DIR}
 )
 
 link_libraries(
@@ -55,6 +54,7 @@ link_libraries(
         inkevent
         yaml-cpp
         libswoc
+        catch2::catch2
 )
 if (TS_USE_LINUX_IO_URING)
     link_libraries(inkuring uring)

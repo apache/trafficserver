@@ -124,6 +124,9 @@ target_link_libraries(tscore
 if(TS_USE_POSIX_CAP)
     target_link_libraries(tscore PUBLIC cap::cap)
 endif()
+if(TS_USE_HWLOC)
+    target_link_libraries(tscore PUBLIC hwloc::hwloc)
+endif()
 
 add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE
@@ -171,10 +174,11 @@ target_link_libraries(test_tscore
         ts::tscpputil
         OpenSSL::Crypto
         OpenSSL::SSL
+        catch2::catch2
 )
 if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
 endif()
-target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)

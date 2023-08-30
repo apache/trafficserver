@@ -30,7 +30,7 @@ add_executable(test_Metrics
         test_Metrics.cc
         )
 
-target_link_libraries(test_Metrics PRIVATE tsapi tscore)
-target_include_directories(test_Metrics PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+target_link_libraries(test_Metrics PRIVATE tsapi tscore catch2::catch2)
+target_include_directories(test_Metrics PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_test(NAME test_Metrics COMMAND $<TARGET_FILE:test_Metrics>)
