@@ -49,6 +49,7 @@ public:
   static constexpr uint16_t METRICS_MAX_BLOBS = 8192;
   static constexpr uint16_t METRICS_MAX_SIZE  = 2048;                               // For a total of 16M metrics
   static constexpr IdType NOT_FOUND           = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
+  static const auto MEMORY_ORDER              = std::memory_order_relaxed;
 
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
@@ -111,7 +112,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_add(val) : NOT_FOUND);
+    return (metric ? metric->fetch_add(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   // ToDo: Do we even need these inc/dec functions?
@@ -120,7 +121,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_sub(val) : NOT_FOUND);
+    return (metric ? metric->fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   std::string_view name(IdType id) const;
@@ -138,14 +139,14 @@ public:
   increment(IntType *metric, uint64_t val = 1)
   {
     ink_assert(metric);
-    metric->fetch_add(val);
+    metric->fetch_add(val, MEMORY_ORDER);
   }
 
   static void
   decrement(IntType *metric, uint64_t val = 1)
   {
     ink_assert(metric);
-    metric->fetch_sub(val);
+    metric->fetch_sub(val, MEMORY_ORDER);
   }
 
   static int64_t
@@ -274,6 +275,7 @@ private:
   MetricBlobs _blobs;
   uint16_t _cur_blob = 0;
   uint16_t _cur_off  = 0;
+
 }; // class Metrics
 
 } // namespace ts

@@ -7408,14 +7408,14 @@ void
 tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_add(amount);
+  global_api_metrics[id].fetch_add(amount, ts::Metrics::MEMORY_ORDER);
 }
 
 void
 tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_sub(amount);
+  global_api_metrics[id].fetch_sub(amount, ts::Metrics::MEMORY_ORDER);
 }
 
 tsapi::c::TSMgmtInt
