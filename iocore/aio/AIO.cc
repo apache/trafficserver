@@ -62,8 +62,8 @@ int thread_is_created = 0;
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
-RecRawStatBlock *aio_rsb       = nullptr;
-Continuation *aio_err_callback = nullptr;
+RecRawStatBlock *aio_rsb      = nullptr;
+Continuation *aio_err_callbck = nullptr;
 // AIO Stats
 std::atomic<uint64_t> aio_num_read      = 0;
 std::atomic<uint64_t> aio_bytes_read    = 0;
@@ -157,9 +157,9 @@ new_AIOCallback()
 }
 
 void
-ink_aio_set_err_callback(Continuation *callback)
+ink_aio_set_callback(Continuation *callback)
 {
-  aio_err_callback = callback;
+  aio_err_callbck = callback;
 }
 
 void
@@ -469,7 +469,7 @@ cache_op(AIOCallbackInternal *op)
       res += err;
     }
     op->aio_result = res;
-    ink_assert(op->ok());
+    ink_assert(op->aio_result == (int64_t)a->aio_nbytes);
   }
   return 1;
 }

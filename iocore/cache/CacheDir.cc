@@ -1103,7 +1103,7 @@ Lrestart:
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
-    if (!io.ok()) {
+    if (io.aio_result != static_cast<int64_t>(io.aiocb.aio_nbytes)) {
       Warning("vol write error during directory sync '%s'", gvol[vol_idx]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
