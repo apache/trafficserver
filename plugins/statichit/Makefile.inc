@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/remap_stats/remap_stats.la
+pkglib_LTLIBRARIES += statichit/statichit.la
 
-experimental_remap_stats_remap_stats_la_SOURCES = \
-    experimental/remap_stats/remap_stats.cc
+statichit_statichit_la_SOURCES = \
+    statichit/statichit.cc

@@ -22,6 +22,8 @@ ICAP Plugin
   under the License.
 
 
+**Note:** As of ATS v10.0.0, this plugin is deprecated and unsupported.
+
 The ICAP plugin enables passing along the response header and body to
 an external server for additional processing (generally scanning) using
 the ICAP protocol.  The scanner, depending on whether the file contains

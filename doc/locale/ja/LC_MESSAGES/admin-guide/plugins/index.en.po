@@ -262,16 +262,6 @@ msgstr ""
 msgid "Implements the memcache protocol for cache contents."
 msgstr ""
 
-#: ../../../admin-guide/plugins/index.en.rst:171
-msgid ":doc:`Metalink <metalink.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:171
-msgid ""
-"Implements the Metalink download description format in order to try not to "
-"download the same file twice."
-msgstr ""
-
 #: ../../../admin-guide/plugins/index.en.rst:174
 msgid ":doc:`MP4 <mp4.en>`"
 msgstr ""
@@ -336,14 +326,4 @@ msgstr ""
 msgid ""
 "Allows HTTP clients to debug the operation of the Traffic Server cache "
 "using the X-Debug header."
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:202
-msgid ":doc:`Collapsed-Forwarding <collapsed_forwarding.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:201
-msgid ""
-"Allows to Collapse multiple Concurrent requests by downloading once from "
-"the Origin and serving all clients in parallel."
 msgstr ""

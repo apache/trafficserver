@@ -14,7 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/metalink/metalink.la
+pkglib_LTLIBRARIES += ja3_fingerprint/ja3_fingerprint.la
 
-experimental_metalink_metalink_la_SOURCES = \
-    experimental/metalink/metalink.cc
+ja3_fingerprint_ja3_fingerprint_la_SOURCES = ja3_fingerprint/ja3_fingerprint.cc

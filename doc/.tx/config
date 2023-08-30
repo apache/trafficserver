@@ -417,11 +417,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/memcache.en.po
 source_file = _build/locale/pot/admin-guide/plugins/memcache.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--metalink_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/metalink.en.po
-source_file = _build/locale/pot/admin-guide/plugins/metalink.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--mp4_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/mp4.en.po
 source_file = _build/locale/pot/admin-guide/plugins/mp4.en.pot
@@ -2201,4 +2196,3 @@ source_lang = en
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/plugins.en.po
 source_file = _build/locale/pot/developer-guide/documentation/plugins.en.pot
 source_lang = en
-

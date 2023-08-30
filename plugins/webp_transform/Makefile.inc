@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,16 +15,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/parent_select/parent_select.la
+webp_transform_webp_transform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
+webp_transform_webp_transform_la_CXXFLAGS = $(AM_CXXFLAGS)
 
-experimental_parent_select_parent_select_la_SOURCES = \
-   experimental/parent_select/strategy.cc \
-   experimental/parent_select/healthstatus.cc \
-   experimental/parent_select/consistenthash.cc \
-   experimental/parent_select/consistenthash_config.cc \
-   experimental/parent_select/parent_select.cc
+pkglib_LTLIBRARIES += webp_transform/webp_transform.la
 
-experimental_parent_select_parent_select_la_LDFLAGS = \
-    $(AM_LDFLAGS)
+webp_transform_webp_transform_la_SOURCES = \
+    webp_transform/ImageTransform.cc
 
-AM_CPPFLAGS += @YAMLCPP_INCLUDES@ $(TS_INCLUDES)
+webp_transform_webp_transform_la_LDFLAGS = \
+    $(AM_LDFLAGS) \
+    -L$(top_builddir)/src/tscpp/api
+
+webp_transform_webp_transform_la_LIBADD = \
+    -ltscppapi \
+    $(LIBMAGICKCPP_LIBS)
