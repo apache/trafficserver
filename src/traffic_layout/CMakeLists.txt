@@ -35,7 +35,7 @@ target_link_libraries(traffic_layout
 )
 
 if(TS_USE_HWLOC)
-        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
+    target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
 endif()
 
 if(HAVE_LZMA_H)
