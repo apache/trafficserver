@@ -25,11 +25,11 @@
 #include <openssl/x509v3.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
-#include <cstring>
 
 #include "tscore/ink_memory.h"
 #include "tscore/Encoding.h"
 #include "tscore/ink_base64.h"
+#include "tscore/ink_string.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
@@ -1163,7 +1163,7 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
   url = new_IOBufferBlock();
   url->alloc(buffer_idx);
 
-  int written = strlcpy(url->end(), base_url, url->write_avail());
+  int written = ink_strlcpy(url->end(), base_url, url->write_avail());
   url->fill(written);
 
   // Append '/' if base_url does not end with it
@@ -1172,7 +1172,7 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
     url->fill(1);
   }
 
-  written = strlcat(url->end(), ocsp_escaped, url->write_avail());
+  written = ink_strlcat(url->end(), ocsp_escaped, url->write_avail());
   url->fill(written);
   Debug("ssl_ocsp", "appended encoded data to path: %s", url->buf());
 
