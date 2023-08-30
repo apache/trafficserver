@@ -56,6 +56,7 @@ option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
+option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -280,7 +281,7 @@ check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
 if (HAVE_IOURING AND USE_IOURING)
-    message(Using io_uring)
+    message(STATUS "Using io_uring")
     set(TS_USE_LINUX_IO_URING 1)
 endif(HAVE_IOURING AND USE_IOURING)
 
@@ -323,7 +324,7 @@ endif()
 include(CTest)
 set(TS_HAS_TESTS ${BUILD_REGRESSION_TESTING})
 
-message("Configuring for ${HOST_OS}")
+message(STATUS "Configuring for ${HOST_OS}")
 
 if(HOST_OS STREQUAL "linux")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
@@ -424,6 +425,11 @@ if(ENABLE_DOCS)
     add_subdirectory(doc)
 endif()
 
+if(ENABLE_BENCHMARKS)
+    message(STATUS "Building benchmarks in tools/benchmark")
+    add_subdirectory(tools/benchmark)
+endif()
+
 add_custom_target(clang-format-install
         COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -474,7 +480,7 @@ add_custom_target(format
         )
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
-    message("Installing github hook")
+    message(STATUS "Installing github hook")
     configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
 endif()
 
@@ -484,7 +490,7 @@ install(DIRECTORY DESTINATION var/trafficserver)
 
 # Display build summary
 include(CMakePrintHelpers)
-message("Build Summary:")
+message(STATUS "Build Summary:")
 cmake_print_variables(CMAKE_SYSTEM_NAME)
 cmake_print_variables(CMAKE_SYSTEM_VERSION)
 cmake_print_variables(CMAKE_SYSTEM_PROCESSOR)
