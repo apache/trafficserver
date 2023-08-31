@@ -59,6 +59,7 @@ option(ENABLE_DOCS "Build docs (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
     add_compile_definitions("AIO_FAULT_INJECTION")
+endif()
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 
 # Setup user
