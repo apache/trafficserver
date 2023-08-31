@@ -1142,8 +1142,8 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 
   size_t total_url_len =
     sizeof(char) * (strlen(base_url) + 1 + ocsp_escaped_len + 1); // <base URL> + / + <encoded OCSP request> + \0
-  static uint buffer_idx  = DEFAULT_SMALL_BUFFER_SIZE;            // idx 2, aka BUFFER_SIZE_INDEX_512 should be enough in most cases
-  static uint buffer_size = BUFFER_SIZE_FOR_INDEX(buffer_idx);
+  unsigned int buffer_idx  = DEFAULT_SMALL_BUFFER_SIZE;           // idx 2, aka BUFFER_SIZE_INDEX_512 should be enough in most cases
+  unsigned int buffer_size = BUFFER_SIZE_FOR_INDEX(buffer_idx);
 
   // increase buffer index as necessary to fit the largest observed encoded_path_len
   while (buffer_size < total_url_len && buffer_idx < MAX_BUFFER_SIZE_INDEX) {
