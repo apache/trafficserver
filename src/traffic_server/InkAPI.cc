@@ -9132,6 +9132,20 @@ tsapi::c::TSVConnSslConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+int
+tsapi::c::TSVConnSslFdGet(TSVConn sslp)
+{
+  TSSslConnection sslvc = TSVConnSslConnectionGet(sslp);
+  int fd                = -1;
+  if (sslvc != nullptr) {
+    SSL *sslObj = reinterpret_cast<SSL *>(sslvc);
+    if (sslObj != nullptr) {
+      fd = SSL_get_wfd(sslObj);
+    }
+  }
+  return fd;
+}
+
 const char *
 tsapi::c::TSVConnSslSniGet(TSVConn sslp, int *length)
 {
