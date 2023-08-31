@@ -18,7 +18,7 @@
 
 #include "ts_lua_util.h"
 
-static TSTextLogObject log;
+static TSTextLogObject ts_log;
 
 static int ts_lua_log_object_creat(lua_State *L);
 static int ts_lua_log_object_write(lua_State *L);
@@ -64,9 +64,9 @@ ts_lua_log_object_creat(lua_State *L)
     log_mode = luaL_checknumber(L, 3);
   }
 
-  error = TSTextLogObjectCreate(log_name, log_mode, &log);
+  error = TSTextLogObjectCreate(log_name, log_mode, &ts_log);
 
-  if (!log || error == TS_ERROR) {
+  if (!ts_log || error == TS_ERROR) {
     TSError("[ts_lua][%s] Unable to create log <%s>", __FUNCTION__, log_name);
     return -1;
   }
@@ -87,8 +87,8 @@ ts_lua_log_object_write(lua_State *L)
   size_t text_len;
 
   text = luaL_checklstring(L, 1, &text_len);
-  if (log) {
-    TSTextLogObjectWrite(log, (char *)text, nullptr);
+  if (ts_log) {
+    TSTextLogObjectWrite(ts_log, (char *)text, nullptr);
   } else {
     TSError("[ts_lua][%s] log object does not exist for write", __FUNCTION__);
   }
@@ -106,7 +106,7 @@ ts_lua_inject_log_object_destroy_api(lua_State *L)
 static int
 ts_lua_log_object_destroy(lua_State *L ATS_UNUSED)
 {
-  if (TSTextLogObjectDestroy(log) != TS_SUCCESS) {
+  if (TSTextLogObjectDestroy(ts_log) != TS_SUCCESS) {
     TSError("[ts_lua][%s] TSTextLogObjectDestroy error!", __FUNCTION__);
   }
 
