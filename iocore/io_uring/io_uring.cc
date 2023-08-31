@@ -33,8 +33,6 @@ Linux io_uring helper library
 #include "tscore/Diags.h"
 
 std::atomic<int> main_wq_fd;
-std::atomic<uint64_t> io_uring_submissions = 0;
-std::atomic<uint64_t> io_uring_completions = 0;
 
 IOUringConfig IOUringContext::config;
 
@@ -130,7 +128,7 @@ IOUringContext::get_wq_max_workers()
 void
 IOUringContext::submit()
 {
-  io_uring_submissions.fetch_add(io_uring_submit(&ring));
+  Metrics::increment(aio_rsb.io_uring_submitted, io_uring_submit(&ring));
 }
 
 void
@@ -148,7 +146,7 @@ IOUringContext::service()
   io_uring_peek_cqe(&ring, &cqe);
   while (cqe) {
     handle_cqe(cqe);
-    io_uring_completions++;
+    Metrics::increment(aio_rsb.io_uring_completed);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;
@@ -169,10 +167,11 @@ IOUringContext::submit_and_wait(ink_hrtime t)
   io_uring_cqe *cqe         = nullptr;
 
   int count = io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
-  io_uring_submissions.fetch_add(count);
+
+  Metrics::increment(aio_rsb.io_uring_submitted, count);
   while (cqe) {
     handle_cqe(cqe);
-    io_uring_completions++;
+    Metrics::increment(aio_rsb.io_uring_completed);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;

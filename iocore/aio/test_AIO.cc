@@ -220,8 +220,8 @@ dump_summary()
   printf("-----------------\n");
   printf("IO_URING results\n");
   printf("-----------------\n");
-  printf("submissions: %lu\n", io_uring_submissions.load());
-  printf("completions: %lu\n", io_uring_completions.load());
+  printf("submissions: %lu\n", Metrics::read(aio_rsb.io_uring_submitted);
+  printf("completions: %lu\n", Metrics::read(aio_rsb.io_uring_completed);
 #endif
 
   if (delete_disks) {
