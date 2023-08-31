@@ -65,11 +65,21 @@ public:
   int populate_protocol(std::string_view *result, int size) const override;
   const char *protocol_contains(std::string_view prefix) const override;
   HTTPVersion get_version(HTTPHdr &hdr) const override;
-  void increment_current_active_connections_stat() override;
-  void decrement_current_active_connections_stat() override;
   IOBufferReader *get_remote_reader() override;
 
   ProxySession *get_proxy_session() override;
+
+  void
+  increment_current_active_connections_stat() override
+  {
+    Metrics::increment(http2_rsb.current_active_server_connection_count);
+  }
+
+  void
+  decrement_current_active_connections_stat() override
+  {
+    Metrics::decrement(http2_rsb.current_active_server_connection_count);
+  }
 
   // noncopyable
   Http2ServerSession(Http2ServerSession &)                  = delete;

@@ -61,7 +61,7 @@ Http2ServerSession::free()
 {
   auto mutex_thread = this->mutex->thread_holding;
   if (Http2CommonSession::common_free(this)) {
-    HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT, mutex_thread);
+    Metrics::decrement(http2_rsb.current_server_session_count);
     THREAD_FREE(this, http2ServerSessionAllocator, mutex_thread);
   }
 }
@@ -95,8 +95,9 @@ void
 Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
-  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT, new_vc->mutex->thread_holding);
-  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT, new_vc->mutex->thread_holding);
+
+  Metrics::increment(http2_rsb.current_server_session_count);
+  Metrics::increment(http2_rsb.total_server_connection_count);
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.
@@ -243,18 +244,6 @@ Http2ServerSession::main_event_handler(int event, void *edata)
     this->free();
   }
   return retval;
-}
-
-void
-Http2ServerSession::increment_current_active_connections_stat()
-{
-  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT, this_ethread());
-}
-
-void
-Http2ServerSession::decrement_current_active_connections_stat()
-{
-  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT, this_ethread());
 }
 
 sockaddr const *

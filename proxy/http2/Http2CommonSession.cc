@@ -98,32 +98,32 @@ Http2CommonSession::common_free(ProxySession *ssn)
   if (cause_of_death != Http2SessionCod::NOT_PROVIDED) {
     switch (cause_of_death) {
     case Http2SessionCod::HIGH_ERROR_RATE:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_high_error_rate);
       break;
     case Http2SessionCod::NOT_PROVIDED:
       // Can't happen but this case is here to not have default case.
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      Metrics::increment(http2_rsb.session_die_other);
       break;
     }
   } else {
     switch (dying_event) {
     case VC_EVENT_NONE:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
+      Metrics::increment(http2_rsb.session_die_default);
       break;
     case VC_EVENT_ACTIVE_TIMEOUT:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_active);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_inactive);
       break;
     case VC_EVENT_ERROR:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
+      Metrics::increment(http2_rsb.session_die_error);
       break;
     case VC_EVENT_EOS:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
+      Metrics::increment(http2_rsb.session_die_eos);
       break;
     default:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      Metrics::increment(http2_rsb.session_die_other);
       break;
     }
   }
