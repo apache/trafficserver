@@ -36,10 +36,12 @@ add_subdirectory(gold_tests/pluginTest/TSVConnFd)
 add_subdirectory(gold_tests/timeout)
 add_subdirectory(gold_tests/tls)
 
+set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
+
 configure_file(Pipfile Pipfile COPYONLY)
+configure_file(autest.sh.in autest.sh)
 
 #set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True PIPENV_PIPFILE=${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${PipEnv})
-set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 add_custom_target(
         autest
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
