@@ -50,6 +50,7 @@ add_custom_target(
       --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
       --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
       --build-root ${CMAKE_BINARY_DIR}
+      --sandbox ${AUTEST_SANDBOX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     USES_TERMINAL
 )

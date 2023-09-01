@@ -325,6 +325,8 @@ if(ENABLE_DOCS)
 endif()
 
 if(ENABLE_AUTEST)
+  set(AUTEST_SANDBOX ${CMAKE_BINARY_DIR}/_sandbox CACHE STRING "Location for autest output (default
+  CMAKE_BINARY_DIR/_sandbox)")
   set(PROXY_VERIFIER_VERSION "v2.10.1")
   set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
   include(proxy-verifier)
