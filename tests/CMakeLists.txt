@@ -15,6 +15,16 @@
 #
 #######################
 
+function(ADD_AUTEST_PLUGIN _NAME _SOURCES)
+    add_library(${_NAME} MODULE ${_SOURCES})
+    set_target_properties(${_NAME} PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
+        PREFIX ""
+        SUFFIX ".so"
+    )
+    target_link_libraries(${_NAME} PRIVATE traffic_server)
+endfunction()
+
 add_subdirectory(tools/plugins)
 add_subdirectory(gold_tests/bigobj)
 add_subdirectory(gold_tests/chunked_encoding)
@@ -25,3 +35,20 @@ add_subdirectory(gold_tests/pluginTest/tsapi)
 add_subdirectory(gold_tests/pluginTest/TSVConnFd)
 add_subdirectory(gold_tests/timeout)
 add_subdirectory(gold_tests/tls)
+
+configure_file(Pipfile Pipfile COPYONLY)
+
+#set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True PIPENV_PIPFILE=${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${PipEnv})
+set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
+add_custom_target(
+        autest
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+        COMMAND ${RUNPIPENV} install
+        COMMAND ${RUNPIPENV} run env autest
+          --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
+          --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
+          --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
+          --build-root ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        USES_TERMINAL
+)
