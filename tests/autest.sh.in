@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# conveinience script for running autest after building the target
+#
+#
+
+export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
+
+${RUNPIPENV} run env autest \
+  --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests \
+  --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
+  --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
+  --build-root ${CMAKE_BINARY_DIR} "$@"

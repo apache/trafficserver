@@ -41,16 +41,15 @@ set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 configure_file(Pipfile Pipfile COPYONLY)
 configure_file(autest.sh.in autest.sh)
 
-#set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True PIPENV_PIPFILE=${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${PipEnv})
 add_custom_target(
-        autest
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-        COMMAND ${RUNPIPENV} install
-        COMMAND ${RUNPIPENV} run env autest
-          --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
-          --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
-          --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
-          --build-root ${CMAKE_BINARY_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        USES_TERMINAL
+    autest
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+    COMMAND ${RUNPIPENV} install
+    COMMAND ${RUNPIPENV} run env autest
+      --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
+      --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
+      --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
+      --build-root ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    USES_TERMINAL
 )
