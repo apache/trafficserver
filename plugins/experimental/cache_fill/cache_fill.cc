@@ -60,7 +60,6 @@ getCacheLookupResultName(TSCacheLookupResult result)
     return "UNKNOWN_CACHE_LOOKUP_EVENT";
     break;
   }
-  return "UNKNOWN_CACHE_LOOKUP_EVENT";
 }
 
 ///////////////////////////////////////////////////////////////////////////
