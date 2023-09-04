@@ -64,6 +64,7 @@ typedef struct HCFileData_t {
 typedef struct HCFileInfo_t {
   char fname[MAX_PATH_LEN];       /* Filename */
   char *basename;                 /* The "basename" of the file */
+  unsigned basename_len;          /* The length of the basename */
   char path[PATH_NAME_MAX];       /* URL path for this HC */
   int p_len;                      /* Length of path */
   const char *ok;                 /* Header for an OK result */
@@ -216,7 +217,7 @@ hc_thread(void *data ATS_UNUSED)
         HCFileInfo *finfo           = g_config;
 
         while (finfo && !((event->wd == finfo->wd) ||
-                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
+                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, finfo->basename_len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
@@ -329,6 +330,7 @@ parse_configs(const char *fname)
             if (finfo->basename) {
               ++(finfo->basename);
             }
+            finfo->basename_len = strlen(finfo->basename);
             break;
           case 2:
             mime = str;
