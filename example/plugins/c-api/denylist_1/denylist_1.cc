@@ -35,7 +35,7 @@
 static char *sites[MAX_NSITES];
 static int nsites;
 static TSMutex sites_mutex;
-static TSTextLogObject log;
+static TSTextLogObject ts_log;
 static TSCont global_contp;
 
 static void handle_txn_start(TSCont contp, TSHttpTxn txnp);
@@ -108,8 +108,8 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   for (i = 0; i < nsites; i++) {
     if (strncmp(host, sites[i], host_length) == 0) {
-      if (log) {
-        TSTextLogObjectWrite(log, "denylisting site: %s", sites[i]);
+      if (ts_log) {
+        TSTextLogObjectWrite(ts_log, "denylisting site: %s", sites[i]);
       } else {
         TSDebug(PLUGIN_NAME, "denylisting site: %s", sites[i]);
       }
@@ -322,8 +322,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   }
 
   /* create an TSTextLogObject to log denied requests to */
-  error = TSTextLogObjectCreate("denylist", TS_LOG_MODE_ADD_TIMESTAMP, &log);
-  if (!log || error == TS_ERROR) {
+  error = TSTextLogObjectCreate("denylist", TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
+  if (!ts_log || error == TS_ERROR) {
     TSDebug(PLUGIN_NAME, "error while creating log");
   }
 

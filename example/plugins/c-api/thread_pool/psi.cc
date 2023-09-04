@@ -100,7 +100,7 @@ typedef enum {
 
 extern Queue job_queue;
 
-static TSTextLogObject log;
+static TSTextLogObject ts_log;
 static char psi_directory[PSI_PATH_MAX_SIZE];
 
 static int trylock_handler(TSCont contp, TSEvent event, void *edata);
@@ -499,13 +499,13 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
     }
     TSfclose(filep);
     data->psi_success = 1;
-    if (log) {
-      TSTextLogObjectWrite(log, "Successfully included file: %s", inc_file);
+    if (ts_log) {
+      TSTextLogObjectWrite(ts_log, "Successfully included file: %s", inc_file);
     }
   } else {
     data->psi_success = 0;
-    if (log) {
-      TSTextLogObjectWrite(log, "Failed to include file: %s", inc_file);
+    if (ts_log) {
+      TSTextLogObjectWrite(ts_log, "Failed to include file: %s", inc_file);
     }
   }
 
@@ -972,10 +972,10 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   snprintf(psi_directory, sizeof(psi_directory), "%s/%s", TSPluginDirGet(), PSI_PATH);
 
   /* create an TSTextLogObject to log any psi include */
-  retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &log);
+  retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
   if (retval == TS_ERROR) {
     TSError("[%s] Failed creating log for psi plugin", PLUGIN_NAME);
-    log = nullptr;
+    ts_log = nullptr;
   }
 
   /* Create working threads */
