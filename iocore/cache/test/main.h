@@ -233,3 +233,7 @@ private:
   IOBufferReader *_reader = nullptr;
   OverridableHttpConfigParams params;
 };
+
+// Does the test use stored cache files, or initialize new files?
+extern int cache_vols;
+extern bool reuse_existing_cache;

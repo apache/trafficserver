@@ -67,7 +67,7 @@ class CacheTestHandler : public TestContChain
 {
 public:
   CacheTestHandler() = default;
-  CacheTestHandler(size_t size, const char *url = DEFAULT_URL);
+  CacheTestHandler(size_t size, const char *url = DEFAULT_URL, bool expect_fail = false);
 
   int start_test(int event, void *e);
 
@@ -76,6 +76,7 @@ public:
 protected:
   CacheTestBase *_rt = nullptr;
   CacheTestBase *_wt = nullptr;
+  bool _expect_fail  = false;
 };
 
 class TerminalTest : public CacheTestHandler

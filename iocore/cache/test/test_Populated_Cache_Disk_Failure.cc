@@ -26,8 +26,12 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
-int cache_vols            = 1;
-bool reuse_existing_cache = false;
+int cache_vols            = 2;
+bool reuse_existing_cache = true;
+#ifndef AIO_FAULT_INJECTION
+#error Must define AIO_FAULT_INJECTION!
+#endif
+#include "AIO_fault_injection.h"
 
 class CacheCommInit : public CacheInit
 {
@@ -36,8 +40,8 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
-    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
+    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE, "http://www.example.com");
+    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw12.com");
     TerminalTest *tt     = new TerminalTest;
     h->add(h2);
     h->add(tt);
@@ -49,6 +53,7 @@ public:
 
 TEST_CASE("cache write -> read", "cache")
 {
+  aioFaultInjection.inject_fault(".*/var/trafficserver2/cache.db", 0, {.err_no = EIO, .skip_io = false});
   init_cache(256 * 1024 * 1024);
   // large write test
   CacheCommInit *init = new CacheCommInit;

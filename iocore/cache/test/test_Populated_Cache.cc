@@ -26,8 +26,8 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
-int cache_vols            = 1;
-bool reuse_existing_cache = false;
+int cache_vols            = 2;
+bool reuse_existing_cache = true;
 
 class CacheCommInit : public CacheInit
 {
@@ -36,8 +36,8 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
-    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
+    CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE, "http://www.example.com");
+    CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw12.com");
     TerminalTest *tt     = new TerminalTest;
     h->add(h2);
     h->add(tt);
