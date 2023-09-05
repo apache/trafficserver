@@ -47,12 +47,6 @@ traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \
 	traffic_server/EventName.cc \
 	traffic_server/EventName.h \
-	traffic_server/FetchSM.cc \
-	traffic_server/FetchSM.h \
-	traffic_server/HostStatus.cc \
-	traffic_server/InkAPI.cc \
-	traffic_server/InkContInternal.cc \
-	traffic_server/InkIOCoreAPI.cc \
 	traffic_server/SocksProxy.cc \
 	traffic_server/RpcAdminPubHandlers.cc \
 	traffic_server/RpcAdminPubHandlers.h \
@@ -80,6 +74,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \

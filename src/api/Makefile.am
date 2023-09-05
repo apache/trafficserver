@@ -22,21 +22,45 @@ check_PROGRAMS = test_Metrics
 
 TESTS = $(check_PROGRAMS)
 
+noinst_LIBRARIES = libtsapicore.a
+
 lib_LTLIBRARIES = libtsapi.la
 
+
 AM_CPPFLAGS += \
+	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/http2 \
+	-I$(abs_top_srcdir)/proxy/http/remap \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/src/traffic_server \
+    -I$(abs_top_srcdir)/mgmt/rpc \
+    -I$(abs_top_srcdir)/mgmt/ \
 	@SWOC_INCLUDES@ \
+	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
 
+# libtsapi.la
 libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
 
 libtsapi_la_LIBADD = \
 	@SWOC_LIBS@
 
-
 libtsapi_la_SOURCES = \
-	Metrics.cc
+	InkAPI.cc \
+	InkContInternal.cc \
+	InkIOCoreAPI.cc
+
+# libtsapicore.a
+libtsapicore_a_LIBADD = \
+	@SWOC_LIBS@
+
+libtsapicore_a_SOURCES = \
+	Metrics.cc \
+	FetchSM.cc
 
 test_Metrics_SOURCES = test_Metrics.cc
 

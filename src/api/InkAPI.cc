@@ -78,6 +78,7 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
+#include "config/FileManager.h"
 
 #include "rpc/jsonrpc/JsonRPC.h"
 #include <swoc/bwf_base.h>
@@ -7740,7 +7741,13 @@ tsapi::c::TSMatcherLineValue(TSMatcherLine ml, int element)
   return (((matcher_line *)ml)->line)[1][element];
 }
 
-extern void load_config_file_callback(const char *parent, const char *remap_file);
+void load_config_file_callback(const char *parent, const char *remap_file);
+
+void
+load_config_file_callback(const char *parent_file, const char *remap_file)
+{
+  FileManager::instance().configFileChild(parent_file, remap_file);
+}
 
 /* Config file name setting */
 TSReturnCode

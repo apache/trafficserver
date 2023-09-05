@@ -31,6 +31,7 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_srcdir)/http \
 	-I$(abs_srcdir)/http2 \
 	-I$(abs_srcdir)/http3 \
@@ -52,6 +53,8 @@ libproxy_a_SOURCES = \
 	ControlBase.h \
 	ControlMatcher.cc \
 	ControlMatcher.h \
+	HostStatus.cc \
+	HostStatus.h \
 	IPAllow.cc \
 	IPAllow.h \
 	ParentConsistentHash.cc \
