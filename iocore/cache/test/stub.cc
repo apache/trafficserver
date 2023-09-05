@@ -105,8 +105,6 @@ SslAPIHooks *ssl_hooks                 = nullptr;
 LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
 
-HttpBodyFactory *body_factory = nullptr;
-
 void
 HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
                           const unsigned int reason)
@@ -215,7 +213,7 @@ INKVConnInternal::INKVConnInternal() : INKContInternal() {}
 
 INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
 
-#include "../src/traffic_server/FetchSM.h"
+#include "../src/api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()

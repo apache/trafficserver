@@ -69,7 +69,7 @@ test_Metrics_CPPFLAGS = $(AM_CPPFLAGS)\
 
 test_Metrics_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
-	libtsapi.la
+	libtsapicore.a
 
 
 clang-tidy-local: $(DIST_SOURCES)
