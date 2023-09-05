@@ -901,25 +901,22 @@ void inline rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)
   next_key->b[1] = mutex->thread_holding->generator.random();
 }
 
-extern uint8_t CacheKey_next_table[];
-void inline next_CacheKey(CacheKey *next_key, CacheKey *key)
+extern const uint8_t CacheKey_next_table[256];
+void inline next_CacheKey(CacheKey *next, const CacheKey *key)
 {
-  uint8_t *b = (uint8_t *)next_key;
-  uint8_t *k = (uint8_t *)key;
-  b[0]       = CacheKey_next_table[k[0]];
+  next->u8[0] = CacheKey_next_table[key->u8[0]];
   for (int i = 1; i < 16; i++) {
-    b[i] = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
+    next->u8[i] = CacheKey_next_table[(next->u8[i - 1] + key->u8[i]) & 0xFF];
   }
 }
-extern uint8_t CacheKey_prev_table[];
-void inline prev_CacheKey(CacheKey *prev_key, CacheKey *key)
+
+extern const uint8_t CacheKey_prev_table[256];
+void inline prev_CacheKey(CacheKey *prev, const CacheKey *key)
 {
-  uint8_t *b = (uint8_t *)prev_key;
-  uint8_t *k = (uint8_t *)key;
   for (int i = 15; i > 0; i--) {
-    b[i] = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
+    prev->u8[i] = 256 + CacheKey_prev_table[key->u8[i]] - key->u8[i - 1];
   }
-  b[0] = CacheKey_prev_table[k[0]];
+  prev->u8[0] = CacheKey_prev_table[key->u8[0]];
 }
 
 inline unsigned int

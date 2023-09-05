@@ -65,14 +65,14 @@ The steps below show how the logging API is used in the
 
    .. code-block:: c
 
-         static TSTextLogObject log;
+         static TSTextLogObject ts_log;
 
 #. In ``TSPluginInit``, a new log object is allocated:
 
    .. code-block:: c
 
            TSReturnCode error = TSTextLogObjectCreate("denylist",
-                                TS_LOG_MODE_ADD_TIMESTAMP, &log);
+                                TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
 
    The new log is named ``denylist.log``. Each entry written to the log
    will have a timestamp. The ``nullptr`` argument specifies that the new

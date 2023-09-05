@@ -90,6 +90,10 @@ public:
   static void print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
     TS_PRINTFLIKE(5, 6);
 
+  // No copying/moving.
+  DbgCtl(DbgCtl const &)            = delete;
+  DbgCtl &operator=(DbgCtl const &) = delete;
+
 private:
   using _TagData = std::pair<char const *const, bool>;
 

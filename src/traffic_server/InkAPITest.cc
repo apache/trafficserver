@@ -6462,7 +6462,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  TSTextLogObject log;
+  TSTextLogObject ts_log;
   TSReturnCode retVal;
 
   char logname[PATH_NAME_MAX];
@@ -6475,7 +6475,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", (const char *)tmp, logname);
 
   unlink(fullpath_logname);
-  retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);
+  retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
   if (retVal != TS_SUCCESS) {
     SDK_RPRINT(test, "TSTextLogObjectCreate", "TestCase1", TC_FAIL, "can not create log object");
     *pstatus = REGRESSION_TEST_FAILED;
@@ -6484,7 +6484,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
     SDK_RPRINT(test, "TSTextLogObjectCreate", "TestCase1", TC_PASS, "ok");
   }
 
-  retVal = TSTextLogObjectWrite(log, (char *)LOG_TEST_PATTERN);
+  retVal = TSTextLogObjectWrite(ts_log, (char *)LOG_TEST_PATTERN);
   if (retVal != TS_SUCCESS) {
     SDK_RPRINT(test, "TSTextLogObjectWrite", "TestCase1", TC_FAIL, "can not write to log object");
     *pstatus = REGRESSION_TEST_FAILED;
@@ -6493,7 +6493,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
     SDK_RPRINT(test, "TSTextLogObjectWrite", "TestCase1", TC_PASS, "ok");
   }
 
-  TSTextLogObjectFlush(log);
+  TSTextLogObjectFlush(ts_log);
   SDK_RPRINT(test, "TSTextLogObjectFlush", "TestCase1", TC_PASS, "ok");
 
   TSCont log_test_cont   = TSContCreate(log_test_handler, TSMutexCreate());
@@ -6502,7 +6502,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   data->pstatus          = pstatus;
   data->fullpath_logname = TSstrdup(fullpath_logname);
   data->magic            = MAGIC_ALIVE;
-  data->log              = log;
+  data->log              = ts_log;
   TSContDataSet(log_test_cont, data);
 
   TSContScheduleOnPool(log_test_cont, 6000, TS_THREAD_POOL_NET);

@@ -57,9 +57,6 @@ is the path to `bin` directory of your TrafficServer installation prefix:
     pipenv detected!
     Using the pre-existing virtual environment.
     Environment config finished. Running AuTest...
-    Running Test CppDelayTransformation: Skipped
-    Warning: Skipping test CppDelayTransformation because:
-     /opt/ats/libexec/trafficserver/DelayTransformationPlugin.so not found.
     Running Test TSVConnFd:F Failed
     Running Test accept_timeout: Skipped
     Warning: Skipping test accept_timeout because:

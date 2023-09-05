@@ -60,6 +60,7 @@ option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault in
 if(ENABLE_DISK_FAILURE_TESTS)
     add_compile_definitions("AIO_FAULT_INJECTION")
 endif()
+option(ENABLE_AUTEST "Setup autest (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 
 # Setup user
@@ -318,11 +319,21 @@ check_symbol_exists(
 )
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 
-# document tools
+if(ENABLE_DOCS OR ENABLE_AUTEST)
+    find_package(Python3 REQUIRED)
+    find_program(PipEnv pipenv REQUIRED)
+endif()
+
 if(ENABLE_DOCS)
-  find_package(Python3 REQUIRED)
-  find_package(Java COMPONENTS Runtime REQUIRED)
-  find_program(PipEnv pipenv REQUIRED)
+    find_package(Java COMPONENTS Runtime REQUIRED)
+endif()
+
+if(ENABLE_AUTEST)
+  set(AUTEST_SANDBOX ${CMAKE_BINARY_DIR}/_sandbox CACHE STRING "Location for autest output (default
+  CMAKE_BINARY_DIR/_sandbox)")
+  set(PROXY_VERIFIER_VERSION "v2.10.1")
+  set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
+  include(proxy-verifier)
 endif()
 
 include(CTest)
@@ -418,7 +429,9 @@ if(ENABLE_WCCP)
     add_subdirectory(src/traffic_wccp)
 endif()
 add_subdirectory(src/tests)
-add_subdirectory(tests)
+if(ENABLE_AUTEST)
+    add_subdirectory(tests)
+endif()
 add_subdirectory(plugins)
 add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
@@ -483,7 +496,7 @@ add_custom_target(format
         COMMENT "formatting all files"
         )
 
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
+if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git AND NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Installing github hook")
     configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
 endif()
@@ -512,4 +525,3 @@ cmake_print_variables(TS_PKGSYSGROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
-cmake_print_variables(OPENSSL_VERSION)
