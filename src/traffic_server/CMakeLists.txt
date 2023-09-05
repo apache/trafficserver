@@ -15,23 +15,9 @@
 #
 #######################
 
-add_library(inkcont STATIC InkContInternal.cc)
-add_library(ts::inkcont ALIAS inkcont)
-
-target_link_libraries(inkcont
-  PRIVATE
-    ts::http_remap
-    ts::inkevent
-    ts::tscore
-)
-
 add_executable(traffic_server
         Crash.cc
         EventName.cc
-        FetchSM.cc
-        HostStatus.cc
-        InkAPI.cc
-        InkIOCoreAPI.cc
         SocksProxy.cc
         traffic_server.cc
         RpcAdminPubHandlers.cc
@@ -46,7 +32,7 @@ target_link_libraries(traffic_server
     PRIVATE
         ts::tscore
         ts::tsapi
-        ts::inkcont
+        ts::tsapicore
         ts::http
         ts::http_remap
         ts::http2

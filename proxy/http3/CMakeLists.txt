@@ -59,7 +59,7 @@ target_link_libraries(test_http3
         ts::quic
         ts::inkevent
         ts::records
-        ts::tsapi
+        ts::tsapicore
         ts::hdrs
         ts::tscore
 )
@@ -77,7 +77,7 @@ target_link_libraries(test_qpack
         ts::quic
         ts::inkevent
         ts::records
-        ts::tsapi
+        ts::tsapicore
         ts::hdrs
         ts::tscore
 )
