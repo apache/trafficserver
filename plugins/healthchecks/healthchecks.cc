@@ -211,6 +211,7 @@ hc_thread(void *data ATS_UNUSED)
     if (len >= 0) {
       int i = 0;
 
+      /* coverity[ -tainted_data] */
       while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         HCFileInfo *finfo           = g_config;
