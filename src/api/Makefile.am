@@ -54,6 +54,11 @@ libtsapi_la_SOURCES = \
 	InkContInternal.cc \
 	InkIOCoreAPI.cc
 
+if BUILD_TESTS
+libtsapi_la_SOURCES += \
+	InkAPITest.cc
+endif
+
 # libtsapicore.a
 libtsapicore_a_LIBADD = \
 	@SWOC_LIBS@

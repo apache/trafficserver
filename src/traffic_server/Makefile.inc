@@ -53,12 +53,6 @@ traffic_server_traffic_server_SOURCES = \
 	shared/overridable_txn_vars.cc \
 	traffic_server/traffic_server.cc
 
-
-if BUILD_TESTS
-traffic_server_traffic_server_SOURCES += \
-	traffic_server/InkAPITest.cc
-endif
-
 traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
