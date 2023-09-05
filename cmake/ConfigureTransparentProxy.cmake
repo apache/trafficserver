@@ -58,7 +58,7 @@ endif()
 
 # If the read fails, it will print out a confusing error. This
 # is to make it clear why the error is happening in that case.
-message("ENABLE_TPROXY enabled, looking for value in /usr/include/linux/in.h")
+message(STATUS "ENABLE_TPROXY enabled, looking for value in /usr/include/linux/in.h")
 file(READ "/usr/include/linux/in.h" HEADER_CONTENTS)
 if(HEADER_CONTENTS MATCHES "#define[ \t]+IP_TRANSPARENT[ \t]+([0-9]+)")
     set(TS_USE_TPROXY TRUE)

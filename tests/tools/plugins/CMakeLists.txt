@@ -15,16 +15,6 @@
 #
 #######################
 
-function(ADD_AUTEST_PLUGIN _NAME _SOURCES)
-    add_library(${_NAME} MODULE ${_SOURCES})
-    set_target_properties(${_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.libs"
-        PREFIX ""
-        SUFFIX ".so"
-    )
-    target_link_libraries(${_NAME} PRIVATE traffic_server)
-endfunction()
-
 add_autest_plugin(cert_update cert_update.cc)
 add_autest_plugin(conf_remap_stripped conf_remap_stripped.cc)
 add_autest_plugin(continuations_verify continuations_verify.cc)
