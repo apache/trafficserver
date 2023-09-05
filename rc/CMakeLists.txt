@@ -15,6 +15,17 @@
 #
 #######################
 
+set(PACKAGE_NAME "trafficserver")
+set(PACKAGE_VERSION ${TS_VERSION_STRING})
+set(PACKAGE_BUGREPORT "dev@trafficserver.apache.org")
+
+# TODO: Use layouts
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(exp_bindir ${CMAKE_INSTALL_PREFIX}/bin)
+set(exp_runtimedir ${CMAKE_INSTALL_PREFIX}/var)
+set(exp_logdir ${CMAKE_INSTALL_PREFIX}/log)
+set(pkgsysuser ${TS_PKGSYSUSER})
+set(pkgsysgroupe ${TS_PKGSYSGROUP})
 
 configure_file(trafficserver.in trafficserver @ONLY)
 configure_file(trafficserver.conf.in trafficserver.conf @ONLY)
