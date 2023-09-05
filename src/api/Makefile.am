@@ -60,8 +60,6 @@ libtsapi_la_SOURCES += \
 endif
 
 # libtsapicore.a
-libtsapicore_a_LIBADD = \
-	@SWOC_LIBS@
 
 libtsapicore_a_SOURCES = \
 	Metrics.cc \
