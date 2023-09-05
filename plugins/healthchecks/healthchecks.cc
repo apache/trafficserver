@@ -64,6 +64,7 @@ typedef struct HCFileData_t {
 typedef struct HCFileInfo_t {
   char fname[MAX_PATH_LEN];       /* Filename */
   char *basename;                 /* The "basename" of the file */
+  unsigned basename_len = 0;      /* The length of the basename */
   char path[PATH_NAME_MAX];       /* URL path for this HC */
   int p_len;                      /* Length of path */
   const char *ok;                 /* Header for an OK result */
@@ -137,6 +138,7 @@ setup_watchers(int fd)
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_PATH_LEN);
+
     char *dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
@@ -217,7 +219,7 @@ hc_thread(void *data ATS_UNUSED)
         HCFileInfo *finfo           = g_config;
 
         while (finfo && !((event->wd == finfo->wd) ||
-                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
+                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, finfo->basename_len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
@@ -322,13 +324,16 @@ parse_configs(const char *fname)
               ++str;
             }
             strncpy(finfo->path, str, PATH_NAME_MAX - 1);
-            finfo->p_len = strlen(finfo->path);
+            finfo->path[PATH_NAME_MAX - 1] = '\0';
+            finfo->p_len                   = strlen(finfo->path);
             break;
           case 1:
             strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
-            finfo->basename = strrchr(finfo->fname, '/');
+            finfo->fname[MAX_PATH_LEN - 1] = '\0';
+            finfo->basename                = strrchr(finfo->fname, '/');
             if (finfo->basename) {
               ++(finfo->basename);
+              finfo->basename_len = strlen(finfo->basename);
             }
             break;
           case 2:
