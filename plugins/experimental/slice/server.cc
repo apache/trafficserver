@@ -671,7 +671,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // continue processing blocks if more requests need to be made
     // HEAD requests only has one slice block
     if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum) &&
-        !(data->m_config->m_method_type == TS_HTTP_METHOD_HEAD)) {
+        data->m_config->m_method_type != TS_HTTP_METHOD_HEAD) {
       // Don't immediately request the next slice if the client
       // isn't keeping up
 
