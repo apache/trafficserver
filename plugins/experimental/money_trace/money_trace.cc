@@ -209,7 +209,7 @@ next_trace(std::string_view const request_hdr, TSHttpTxn const txnp)
   bwriter.write(spanid);
   bwriter.print("{}", TSHttpTxnIdGet(txnp));
 
-  nexttrace.assign(bwriter.view());
+  nexttrace = std::string(bwriter.data(), bwriter.size());
 
   return nexttrace;
 }
@@ -237,7 +237,7 @@ create_trace(TSHttpTxn const txnp)
         bwriter.write(spanid);
         bwriter.print("{}", TSHttpTxnIdGet(txnp));
 
-        header = std::string{bwriter.view()};
+        header = std::string(bwriter.data(), bwriter.size());
       } else {
         LOG_ERROR("Error getting uuid string");
       }
