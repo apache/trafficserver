@@ -20,6 +20,7 @@ add_library(configmanager STATIC
         AddConfigFilesHere.cc
 )
 add_library(ts::configmanager ALIAS configmanager)
+set_target_properties(configmanager PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/mgmt

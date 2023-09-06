@@ -30,6 +30,7 @@ add_library(http2 STATIC
         Http2ServerSession.cc
 )
 add_library(ts::http2 ALIAS http2)
+set_target_properties(http2 PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(http2 PRIVATE
         ${IOCORE_INCLUDE_DIRS}

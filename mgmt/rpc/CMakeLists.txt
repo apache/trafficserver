@@ -31,6 +31,7 @@ add_library(jsonrpc_protocol STATIC
         jsonrpc/Context.cc
 )
 add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
+set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(jsonrpc_protocol
     PUBLIC
@@ -44,6 +45,7 @@ add_library(jsonrpc_server STATIC
         config/JsonRPCConfig.cc
 )
 add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
+set_target_properties(jsonrpc_server PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(jsonrpc_server
     PUBLIC
@@ -58,6 +60,7 @@ add_library(rpcpublichandlers STATIC
         handlers/plugins/Plugins.cc
 )
 add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
+set_target_properties(rpcpublichandlers PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(rpcpublichandlers
     PUBLIC
