@@ -670,8 +670,10 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       data->m_blocknum = firstblock;
     }
 
-    // continue processing blocks?
-    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum)) {
+    // continue processing blocks if more requests need to be made
+    // HEAD requests only has one slice block
+    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum) &&
+        data->m_config->m_method_type != TS_HTTP_METHOD_HEAD) {
       // Don't immediately request the next slice if the client
       // isn't keeping up
 
@@ -684,13 +686,11 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         int64_t const threshout   = data->m_config->m_blockbytes;
         int64_t const buffered    = output_sent - output_done;
 
+        // for PURGE requests, clients won't request more data (no body content)
         if (threshout < buffered && !data->m_config->onlyHeader()) {
           start_next_block = false;
           DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, buffered);
         }
-      } else if (!data->m_config->onlyHeader()) {
-        // client doesn't need to accept server response for PURGE requests
-        start_next_block = false;
       }
       if (start_next_block) {
         if (!request_block(contp, data)) {
