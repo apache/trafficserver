@@ -4419,15 +4419,42 @@ tsapi::c::TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
 TSReturnCode
 tsapi::c::TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
-  return RecGetRecordInt((char *)var_name, (RecInt *)result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
+  auto res = RecGetRecordInt((char *)var_name, (RecInt *)result);
+
+  // Try the old librecords first
+  if (res == REC_ERR_FAIL) {
+    int id = global_api_metrics.lookup(var_name);
+
+    if (id == ts::Metrics::NOT_FOUND) {
+      return TS_ERROR;
+    } else {
+      *result = global_api_metrics[id].load();
+    }
+  }
+
+  return TS_SUCCESS;
 }
 
 TSReturnCode
 tsapi::c::TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
-  return RecGetRecordCounter((char *)var_name, (RecCounter *)result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
+  auto res = RecGetRecordCounter((char *)var_name, (RecCounter *)result);
+
+  // Try the old librecords first
+  if (res == REC_ERR_FAIL) {
+    int id = global_api_metrics.lookup(var_name);
+
+    if (id == ts::Metrics::NOT_FOUND) {
+      return TS_ERROR;
+    } else {
+      *result = global_api_metrics[id].load();
+    }
+  }
+
+  return TS_SUCCESS;
 }
 
+// ToDo: These don't have the new metrics, only librecords.
 TSReturnCode
 tsapi::c::TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
