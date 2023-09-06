@@ -38,7 +38,31 @@ public:
   //
   DbgCtl(char const *tag) : _ptr{_new_reference(tag)} {}
 
-  ~DbgCtl() { _rm_reference(); }
+  // As instance with no tag will always be off.
+  //
+  DbgCtl() : _ptr{&_No_tag_dummy} {}
+
+  ~DbgCtl()
+  {
+    if (_ptr != &_No_tag_dummy) {
+      _rm_reference();
+    }
+  }
+
+  // No copying. Only moving from a tagged to a tagless instance allowed.
+  //
+  DbgCtl(DbgCtl const &)            = delete;
+  DbgCtl &operator=(DbgCtl const &) = delete;
+  DbgCtl(DbgCtl &&);
+  DbgCtl &operator=(DbgCtl &&);
+
+  // A shorthand.
+  //
+  void
+  set(char const *tag)
+  {
+    *this = DbgCtl{tag};
+  }
 
   bool
   tag_on() const
@@ -90,14 +114,12 @@ public:
   static void print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
     TS_PRINTFLIKE(5, 6);
 
-  // No copying/moving.
-  DbgCtl(DbgCtl const &)            = delete;
-  DbgCtl &operator=(DbgCtl const &) = delete;
-
 private:
   using _TagData = std::pair<char const *const, bool>;
 
-  _TagData const *const _ptr;
+  _TagData const *_ptr;
+
+  static const _TagData _No_tag_dummy;
 
   static const _TagData *_new_reference(char const *tag);
 

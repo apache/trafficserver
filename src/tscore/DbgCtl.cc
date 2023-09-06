@@ -30,6 +30,24 @@
 #include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
 
+DbgCtl::DbgCtl(DbgCtl &&src)
+{
+  ink_release_assert(src._ptr != &_No_tag_dummy);
+
+  _ptr     = src._ptr;
+  src._ptr = &_No_tag_dummy;
+}
+
+DbgCtl &
+DbgCtl::operator=(DbgCtl &&src)
+{
+  ink_release_assert(&_No_tag_dummy == _ptr);
+
+  new (this) DbgCtl{std::move(src)};
+
+  return *this;
+}
+
 // The resistry of fast debug controllers has a ugly implementation to handle the whole-program initialization
 // and destruction order problem with C++.
 //
@@ -205,3 +223,5 @@ DbgCtl::_override_global_on()
 {
   return diags()->get_override();
 }
+
+DbgCtl::_TagData const DbgCtl::_No_tag_dummy{nullptr, false};
