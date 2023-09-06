@@ -137,12 +137,6 @@ Unable_To_Create_Service_Group(int line)
   return Errata(ec_for(EINVAL), ERRATA_FATAL, "Unable to create service group at line {} of configuration.", line);
 }
 
-inline Errata &
-Note_Services_Not_Found(Errata &errata)
-{
-  return errata.note(ERRATA_NOTE, "No services found in configuration.");
-}
-
 inline Errata
 Services_Not_Found()
 {
@@ -163,27 +157,10 @@ Note_Service_Type_Defaulted(Errata &errata, wccp::ServiceGroup::Type type, int l
   return errata.note(ERRATA_NOTE, "'type' keyword not found in {} at line {} -- defaulting to {}", SVC_NAME, line, type);
 }
 
-inline Errata
-Service_Type_Defaulted(wccp::ServiceGroup::Type type, int line)
-{
-  Errata errata;
-  Note_Service_Type_Defaulted(errata.assign(ec_for(ENOENT)), type, line);
-  return errata;
-}
-
 inline Errata &
 Note_Service_Type_Invalid(Errata &errata, TextView text, int line)
 {
   return errata.note(ERRATA_WARN, R"(Service type "{}" at line {} is invalid. Must be "STANDARD" or "DYNAMIC".)");
-}
-
-inline Errata
-Service_Type_Invalid(TextView text, int line)
-{
-  Errata errata;
-  Note_Service_Type_Invalid(errata, text, line);
-  errata.assign(ec_for(EINVAL));
-  return errata;
 }
 
 inline Errata &
@@ -296,14 +273,6 @@ Note_Port_Type_Invalid(Errata &errata, TextView text, int line)
 {
   return errata.note(ERRATA_WARN, R"(Value "{}" at line {} for property "{}" is invalid. It must be 'src' or 'dst'.)", text, line,
                      SVC_PROP_PORT_TYPE);
-}
-
-inline Errata
-Port_Type_Invalid(TextView text, int line)
-{
-  Errata errata;
-  Note_Port_Type_Invalid(errata, text, line);
-  return errata;
 }
 
 } // namespace
