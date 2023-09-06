@@ -9,6 +9,7 @@ sessions:
   - name: tcp
   - name: ip
     version: 4
+  keep-connection-open: 2s
   transactions:
   - client-request:
       frames:
@@ -52,21 +53,3 @@ sessions:
         encoding: plain
         data: server_test
         verify: {as: equal}
-
-  # Unrelated request just to keep the connection open
-  - client-request:
-      delay: 1s
-      frames:
-      - HEADERS:
-          headers:
-            fields:
-            - [:method, GET]
-            - [:scheme, https]
-            - [:authority, example.data.com]
-            - [:path, /a/path]
-            - [uuid, 2]
-
-    server-response:
-      headers:
-        fields:
-        - [:status, 200]
