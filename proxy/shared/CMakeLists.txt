@@ -18,7 +18,6 @@
 
 add_library(diagsconfig STATIC DiagsConfig.cc)
 add_library(ts::diagsconfig ALIAS diagsconfig)
-set_target_properties(diagsconfig PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(diagsconfig PRIVATE
         ${IOCORE_INCLUDE_DIRS}

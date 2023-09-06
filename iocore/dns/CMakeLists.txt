@@ -24,7 +24,6 @@ add_library(inkdns STATIC
     SplitDNS.cc
 )
 add_library(ts::inkdns ALIAS inkdns)
-set_target_properties(inkdns PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(inkdns PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/dns

@@ -41,7 +41,6 @@ add_library(http STATIC
         PreWarmConfig.cc
 )
 add_library(ts::http ALIAS http)
-set_target_properties(http PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_REGRESSION_TESTING)
     target_sources(http PRIVATE RegressionHttpTransact.cc)
