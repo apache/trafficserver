@@ -23,7 +23,7 @@ parent.config
 
 .. configfile:: parent.config
 
-The :file:`parent.config` file identifies the parent proxies used in an
+The :file:`parent.config` file identifies the parent proxies used in a
 cache hierarchy. Use this file to perform the following configuration:
 
 -  Set up parent cache hierarchies, with multiple parents and parent
