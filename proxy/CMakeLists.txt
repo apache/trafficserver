@@ -37,7 +37,6 @@ add_library(proxy STATIC
         Transform.cc
 )
 add_library(ts::proxy ALIAS proxy)
-set_target_properties(proxy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_REGRESSION_TESTING)
     target_sources(proxy PRIVATE RegressionSM.cc)

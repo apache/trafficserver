@@ -26,7 +26,6 @@ target_link_libraries(tsapi PRIVATE ts::tscore)
 add_library(tsapicore STATIC Metrics.cc FetchSM.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
-set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 include_directories(
   ${IOCORE_INCLUDE_DIRS}

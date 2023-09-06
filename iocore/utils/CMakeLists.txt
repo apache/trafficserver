@@ -18,7 +18,6 @@
 
 add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
 add_library(ts::inkutils ALIAS inkutils)
-set_target_properties(inkutils PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 target_include_directories(inkutils PRIVATE
