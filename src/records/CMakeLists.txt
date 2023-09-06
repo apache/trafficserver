@@ -31,6 +31,7 @@ add_library(records STATIC
         RecRawStats.cc
         )
 add_library(ts::records ALIAS records)
+set_target_properties(records PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(records
     PUBLIC

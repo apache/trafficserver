@@ -18,6 +18,7 @@
 
 add_library(aio STATIC)
 add_library(ts::aio ALIAS aio)
+set_target_properties(aio PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_sources(aio PRIVATE AIO.cc Inline.cc AIO_fault_injection.cc)
 
