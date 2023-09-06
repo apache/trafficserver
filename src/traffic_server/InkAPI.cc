@@ -9133,17 +9133,13 @@ tsapi::c::TSVConnSslConnectionGet(TSVConn sslp)
 }
 
 int
-tsapi::c::TSVConnSslFdGet(TSVConn sslp)
+tsapi::c::TSVConnFdGet(TSVConn vconnp)
 {
-  TSSslConnection sslvc = TSVConnSslConnectionGet(sslp);
-  int fd                = -1;
-  if (sslvc != nullptr) {
-    SSL *sslObj = reinterpret_cast<SSL *>(sslvc);
-    if (sslObj != nullptr) {
-      fd = SSL_get_wfd(sslObj);
-    }
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconnp);
+  if (vc != nullptr) {
+    return vc->get_socket();
   }
-  return fd;
+  return -1;
 }
 
 const char *

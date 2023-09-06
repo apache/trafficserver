@@ -15,8 +15,8 @@
    permissions and limitations under the License.
 
 
-TSVConnSslFdGet
-===============
+TSVConnFdGet
+============
 
 Synopsis
 --------
@@ -25,10 +25,10 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: int TSVConnSslFdGet(TSVConn sslp)
+.. c:function:: int TSVConnFdGet(TSVConn vconnp)
 
 
 Description
 -----------
-Returns the file descriptor associated with the SSL connection :arg:`sslp`.
+Returns the file descriptor associated with the network connection :arg:`sslp`.
 It returns -1 on error.
