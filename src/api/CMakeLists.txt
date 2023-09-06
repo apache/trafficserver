@@ -21,7 +21,7 @@ add_library(tsapi SHARED
 	InkIOCoreAPI.cc
 )
 add_library(ts::tsapi ALIAS tsapi)
-target_link_libraries(tsapi PRIVATE ts::inknet)
+target_link_libraries(tsapi PRIVATE ts::tscore)
 
 add_library(tsapicore STATIC Metrics.cc FetchSM.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
