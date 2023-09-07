@@ -124,6 +124,12 @@ public:
     return retval;
   }
 
+  int
+  getSSLHandshakeStatus() const
+  {
+    return sslHandshakeStatus;
+  }
+
   bool
   getSSLHandShakeComplete() const override
   {
