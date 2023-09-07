@@ -140,7 +140,6 @@ test_libinknet_LDADD += \
 endif
 
 libinknet_a_SOURCES = \
-	AcceptOptions.cc \
 	AcceptOptions.h \
 	ALPNSupport.cc \
 	AsyncSignalEventIO.cc \

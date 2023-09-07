@@ -103,7 +103,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
     EThread *t;
     NetHandler *h;
-    if (e->ethread->is_event_type(na->opt.etype)) {
+    if (e->ethread->is_event_type(ET_NET)) {
       t = e->ethread;
       h = get_NetHandler(t);
       // Assign NetHandler->mutex to NetVC
@@ -115,7 +115,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
         vc->handleEvent(EVENT_NONE, e);
       }
     } else {
-      t = eventProcessor.assign_thread(na->opt.etype);
+      t = eventProcessor.assign_thread(ET_NET);
       h = get_NetHandler(t);
       // Assign NetHandler->mutex to NetVC
       vc->mutex = h->mutex;
@@ -178,7 +178,7 @@ void
 NetAccept::init_accept(EThread *t)
 {
   if (!t) {
-    t = eventProcessor.assign_thread(opt.etype);
+    t = eventProcessor.assign_thread(ET_NET);
   }
 
   if (!action_->continuation->mutex) {
@@ -227,7 +227,6 @@ NetAccept::init_accept_per_thread()
   int i, n;
   int listen_per_thread = 0;
 
-  ink_assert(opt.etype >= 0);
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
   if (listen_per_thread == 0) {
@@ -238,11 +237,11 @@ NetAccept::init_accept_per_thread()
   }
 
   SET_HANDLER(&NetAccept::accept_per_thread);
-  n = eventProcessor.thread_group[opt.etype]._count;
+  n = eventProcessor.thread_group[ET_NET]._count;
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
-    EThread *t   = eventProcessor.thread_group[opt.etype]._thread[i];
+    EThread *t   = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
     t->schedule_imm(a);
   }
@@ -364,7 +363,7 @@ NetAccept::do_blocking_accept(EThread *t)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread *localt = eventProcessor.assign_thread(opt.etype);
+    EThread *localt = eventProcessor.assign_thread(ET_NET);
     NetHandler *h   = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
