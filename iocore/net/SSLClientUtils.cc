@@ -127,7 +127,19 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
   netvc->set_verify_cert(nullptr);
-
+  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+    unsigned char *sni_name;
+    char buff[INET6_ADDRSTRLEN];
+    if (netvc->options.sni_servername) {
+      sni_name = reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get());
+    } else {
+      sni_name = reinterpret_cast<unsigned char *>(buff);
+      ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+    }
+    Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for %s.  Action=%s SNI=%s",
+            netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue", sni_name);
+    return !enforce_mode;
+  }
   // Made it this far.  All is good
   return true;
 }
