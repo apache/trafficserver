@@ -189,7 +189,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   char *w, *out_end;      /* where we write to, write limit */
 
   /* validate params */
-  if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len < 0 || (out == nullptr && *out_len > 0) ||
+  if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len <= 0 || (out == nullptr && *out_len > 0) ||
       (flags & (~allowed_flags))) {
     if (out != nullptr && out_len != nullptr && *out_len > 0) {
       *out     = '\0';
