@@ -89,7 +89,7 @@ typedef enum {
   SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
 } SslVConnOp;
 
-enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
+enum class SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
 
 //////////////////////////////////////////////////////////////////
 //
@@ -124,7 +124,7 @@ public:
     return retval;
   }
 
-  int
+  SSLHandshakeStatus
   getSSLHandshakeStatus() const
   {
     return sslHandshakeStatus;
@@ -133,11 +133,11 @@ public:
   bool
   getSSLHandShakeComplete() const override
   {
-    return sslHandshakeStatus != SSL_HANDSHAKE_ONGOING;
+    return sslHandshakeStatus != SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   }
 
   virtual void
-  setSSLHandShakeComplete(enum SSLHandshakeStatus state)
+  setSSLHandShakeComplete(SSLHandshakeStatus state)
   {
     sslHandshakeStatus = state;
   }
@@ -429,7 +429,7 @@ private:
   NetProcessor *_getNetProcessor() override;
   void *_prepareForMigration() override;
 
-  enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+  enum SSLHandshakeStatus sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
   bool first_ssl_connect                     = true;
   MIOBuffer *handShakeBuffer                 = nullptr;
