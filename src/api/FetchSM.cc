@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_config.h"
-#include "FetchSM.h"
+#include "api/FetchSM.h"
 #include <cstdio>
 #include "HTTP.h"
 #include "PluginVC.h"

@@ -29,7 +29,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http/remap \
-	-I$(abs_top_srcdir)/src/api \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@YAMLCPP_INCLUDES@ \

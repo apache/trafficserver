@@ -98,7 +98,7 @@ extern "C" int plock(int);
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"

@@ -36,7 +36,7 @@
 #include "tscore/Diags.h"
 #include "api/Metrics.h"
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "Log.h"
 #include "URL.h"
 #include "MIME.h"
@@ -65,7 +65,7 @@
 #include "PluginVC.h"
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
-#include "FetchSM.h"
+#include "api/FetchSM.h"
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 #include "I_Tasks.h"

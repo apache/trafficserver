@@ -21,7 +21,7 @@
 #include "Plugins.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 
 namespace
 {

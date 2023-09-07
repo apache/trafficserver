@@ -35,7 +35,7 @@
 #include "records/I_RecHttp.h"
 
 #include "P_Net.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 
 #include "P_OCSPStapling.h"
 #include "P_SSLConfig.h"

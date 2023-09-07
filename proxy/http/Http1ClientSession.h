@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "IPAllow.h"

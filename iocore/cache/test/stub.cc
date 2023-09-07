@@ -38,7 +38,7 @@ initialize_thread_for_http_sessions(EThread *, int)
   ink_assert(false);
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 void
 APIHooks::append(INKContInternal *cont)
 {
@@ -213,7 +213,7 @@ INKVConnInternal::INKVConnInternal() : INKContInternal() {}
 
 INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
 
-#include "../src/api/FetchSM.h"
+#include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()
