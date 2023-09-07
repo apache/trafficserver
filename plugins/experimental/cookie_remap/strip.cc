@@ -228,7 +228,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   retval = stripped_core(r, in_end, &w, out_end, flags);
 
   /* null terminate */
-  out_end += out_end ? 1 : 0;            /* undo decrement at start */
+  out_end++;                             /* undo decrement at start */
   write_char_if_room(&w, out_end, '\0'); /* try to term at end of output */
 
   /* report the required/used length */
