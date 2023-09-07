@@ -406,8 +406,18 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 bool
 Http2CommonSession::_should_do_something_else()
 {
+  if (this->_interrupt_reading_frames) {
+    this->_interrupt_reading_frames = false;
+    return true;
+  }
   // Do something else every 128 incoming frames if connection state isn't closed
   return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
+}
+
+void
+Http2CommonSession::interrupt_reading_frames()
+{
+  this->_interrupt_reading_frames = true;
 }
 
 int64_t

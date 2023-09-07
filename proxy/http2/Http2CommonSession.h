@@ -114,6 +114,8 @@ public:
 
   virtual void set_no_activity_timeout() = 0;
 
+  void interrupt_reading_frames();
+
   ///////////////////
   // Variables
   Http2ConnectionState connection_state;
@@ -166,6 +168,9 @@ protected:
 
   int64_t read_from_early_data   = 0;
   bool cur_frame_from_early_data = false;
+
+private:
+  bool _interrupt_reading_frames = false;
 };
 
 ///////////////////////////////////////////////

@@ -9,6 +9,7 @@ sessions:
   - name: tcp
   - name: ip
     version: 4
+  keep-connection-open: 2s
   transactions:
   - client-request:
       frames:
