@@ -4376,7 +4376,40 @@ HttpSM::do_remap_request(bool run_inline)
       int host_len;
       const char *host_name = host_field->value_get(&host_len);
       if (host_name && host_len) {
+        int port = -1;
+        // Host header can contain port number, and if it does we need to set host and port separately to unmapped_url.
+        // If header value starts with '[', the value must contain an IPv6 address, and it may contain a port number as well.
+        if (host_name[0] == '[') {   // IPv6
+          host_name = host_name + 1; // Skip '['
+          host_len--;
+          // If header value ends with ']', the value must only contain an IPv6 address (no port number).
+          if (host_name[host_len - 1] == ']') { // Without port number
+            host_len = host_len--;              // Exclude ']'
+          } else {                              // With port number
+            for (int idx = host_len - 1; idx > 0; idx--) {
+              if (host_name[idx] == ':') {
+                port     = ink_atoi(host_name + idx + 1, host_len - (idx + 1));
+                host_len = idx;
+                break;
+              }
+            }
+          }
+        } else { // Anything else (Hostname or IPv4 address)
+          // If the value contains ':' where it does not have IPv6 address, there must be port number
+          if (const char *colon = static_cast<const char *>(memchr(host_name, ':', host_len));
+              colon == nullptr) { // Without port number
+            // Nothing to adjust. Entire value should be used as hostname.
+          } else { // With port number
+            port     = ink_atoi(colon + 1, host_len - ((colon + 1) - host_name));
+            host_len = colon - host_name;
+          }
+        }
+
+        // Set values
         t_state.unmapped_url.host_set(host_name, host_len);
+        if (port >= 0) {
+          t_state.unmapped_url.port_set(port);
+        }
       }
     }
   }
