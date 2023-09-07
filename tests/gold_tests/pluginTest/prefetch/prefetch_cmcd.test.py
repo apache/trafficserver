@@ -191,7 +191,7 @@ ts1.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquup> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
  logs:
   - filename: transaction
     format: custom
@@ -222,7 +222,7 @@ ts0.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquup> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
  logs:
   - filename: transaction
     format: custom
