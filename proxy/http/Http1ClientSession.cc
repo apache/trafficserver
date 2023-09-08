@@ -263,7 +263,6 @@ Http1ClientSession::do_io_close(int alerrno)
     _reader->consume(_reader->read_avail());
   } else {
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
-    Metrics::increment(http_rsb.transactions_per_client_con, transact_count);
     read_state = HCS_CLOSED;
 
     if (_vc) {

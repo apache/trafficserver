@@ -76,8 +76,6 @@ Cache
 .. ts:stat:: global proxy.process.cache.hdr_marshals integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.cache.KB_read_per_sec float
-.. ts:stat:: global proxy.process.cache.KB_write_per_sec float
 .. ts:stat:: global proxy.process.cache.lookup.active integer
    :ungathered:
 
@@ -103,7 +101,6 @@ Cache
    :ungathered:
 
 .. ts:stat:: global proxy.process.cache.read.failure integer
-.. ts:stat:: global proxy.process.cache.read_per_sec float
 .. ts:stat:: global proxy.process.cache.read.success integer
 .. ts:stat:: global proxy.process.cache.remove.active integer
    :ungathered:
@@ -131,7 +128,6 @@ Cache
 .. ts:stat:: global proxy.process.cache.write.backlog.failure integer
 .. ts:stat:: global proxy.process.cache.write_bytes_stat integer
 .. ts:stat:: global proxy.process.cache.write.failure integer
-.. ts:stat:: global proxy.process.cache.write_per_sec float
 .. ts:stat:: global proxy.process.cache.write.success integer
 
 .. ts:stat:: global proxy.process.cache.span.errors.read integer

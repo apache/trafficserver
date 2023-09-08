@@ -38,39 +38,3 @@ Bandwidth and Transfer
 .. ts:stat:: global proxy.process.http.user_agent_response_header_total_size integer
    :type: counter
    :units: bytes
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100 integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100K integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100M integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10K integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10M integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1K integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1M integer
-   :type: derivative
-   :units: bytes
-   :ungathered:
-

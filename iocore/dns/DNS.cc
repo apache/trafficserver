@@ -1397,11 +1397,11 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
 
     // These are rolling averages, this requires that the lookup_fail/success counters are incremented later
     if (!ent || !ent->good) {
-      Metrics::write(dns_rsb.fail_time, (*dns_rsb.fail_time * (*dns_rsb.lookup_fail) + diff) / (*dns_rsb.lookup_fail + 1));
+      Metrics::increment(dns_rsb.fail_time, diff);
       Metrics::increment(dns_rsb.lookup_fail);
     } else {
-      Metrics::write(dns_rsb.success_time,
-                     (*dns_rsb.success_time * (*dns_rsb.lookup_success) + diff) / (*dns_rsb.lookup_success + 1));
+      Metrics::increment(dns_rsb.success_time, diff);
+
       Metrics::increment(dns_rsb.lookup_success);
     }
   }
@@ -1563,7 +1563,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // These are rolling averages
   ink_hrtime diff = (ink_get_hrtime() - e->send_time) / HRTIME_MSECOND;
 
-  Metrics::write(dns_rsb.response_time, (*dns_rsb.response_time * (*dns_rsb.total_lookups) + diff) / (*dns_rsb.total_lookups + 1));
+  Metrics::increment(dns_rsb.response_time, diff);
 
   // retrying over TCP when truncated is set
   if (dns_conn_mode == DNS_CONN_MODE::TCP_RETRY && h->tc == 1) {
@@ -1909,14 +1909,14 @@ ink_dns_init(ts::ModuleVersion v)
   //
   ts::Metrics &intm = ts::Metrics::getInstance();
 
-  dns_rsb.fail_time            = intm.newMetricPtr("proxy.process.dns.fail_avg_time");
+  dns_rsb.fail_time            = intm.newMetricPtr("proxy.process.dns.fail_time");
   dns_rsb.in_flight            = intm.newMetricPtr("proxy.process.dns.in_flight");
   dns_rsb.lookup_fail          = intm.newMetricPtr("proxy.process.dns.lookup_failures");
   dns_rsb.lookup_success       = intm.newMetricPtr("proxy.process.dns.lookup_successes");
   dns_rsb.max_retries_exceeded = intm.newMetricPtr("proxy.process.dns.max_retries_exceeded");
-  dns_rsb.response_time        = intm.newMetricPtr("proxy.process.dns.lookup_avg_time");
+  dns_rsb.response_time        = intm.newMetricPtr("proxy.process.dns.lookup_time");
   dns_rsb.retries              = intm.newMetricPtr("proxy.process.dns.retries");
-  dns_rsb.success_time         = intm.newMetricPtr("proxy.process.dns.success_avg_time");
+  dns_rsb.success_time         = intm.newMetricPtr("proxy.process.dns.success_time");
   dns_rsb.tcp_reset            = intm.newMetricPtr("proxy.process.dns.tcp_reset");
   dns_rsb.tcp_retries          = intm.newMetricPtr("proxy.process.dns.tcp_retries");
   dns_rsb.total_lookups        = intm.newMetricPtr("proxy.process.dns.total_dns_lookups");

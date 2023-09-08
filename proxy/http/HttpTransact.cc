@@ -8304,74 +8304,6 @@ HttpTransact::milestone_update_api_time(State *s)
   s->state_machine->milestone_update_api_time();
 }
 
-void
-HttpTransact::histogram_response_document_size(State *s, int64_t doc_size)
-{
-  if (doc_size >= 0 && doc_size <= 100) {
-    Metrics::increment(http_rsb.response_document_size_100);
-  } else if (doc_size <= 1024) {
-    Metrics::increment(http_rsb.response_document_size_1K);
-  } else if (doc_size <= 3072) {
-    Metrics::increment(http_rsb.response_document_size_3K);
-  } else if (doc_size <= 5120) {
-    Metrics::increment(http_rsb.response_document_size_5K);
-  } else if (doc_size <= 10240) {
-    Metrics::increment(http_rsb.response_document_size_10K);
-  } else if (doc_size <= 1048576) {
-    Metrics::increment(http_rsb.response_document_size_1M);
-  } else {
-    Metrics::increment(http_rsb.response_document_size_inf);
-  }
-  return;
-}
-
-void
-HttpTransact::histogram_request_document_size(State *s, int64_t doc_size)
-{
-  if (doc_size >= 0 && doc_size <= 100) {
-    Metrics::increment(http_rsb.request_document_size_100);
-  } else if (doc_size <= 1024) {
-    Metrics::increment(http_rsb.request_document_size_1K);
-  } else if (doc_size <= 3072) {
-    Metrics::increment(http_rsb.request_document_size_3K);
-  } else if (doc_size <= 5120) {
-    Metrics::increment(http_rsb.request_document_size_5K);
-  } else if (doc_size <= 10240) {
-    Metrics::increment(http_rsb.request_document_size_10K);
-  } else if (doc_size <= 1048576) {
-    Metrics::increment(http_rsb.request_document_size_1M);
-  } else {
-    Metrics::increment(http_rsb.request_document_size_inf);
-  }
-  return;
-}
-
-void
-HttpTransact::user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
-{
-  float bytes_per_hrtime =
-    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
-  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
-
-  if (bytes_per_sec <= 100) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_100);
-  } else if (bytes_per_sec <= 1024) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_1K);
-  } else if (bytes_per_sec <= 10240) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_10K);
-  } else if (bytes_per_sec <= 102400) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_100K);
-  } else if (bytes_per_sec <= 1048576) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_1M);
-  } else if (bytes_per_sec <= 10485760) {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_10M);
-  } else {
-    Metrics::increment(http_rsb.user_agent_speed_bytes_per_sec_100M);
-  }
-
-  return;
-}
-
 /*
  * added request_process_time stat for loadshedding foo
  */
@@ -8690,32 +8622,6 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 }
 
 void
-HttpTransact::origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
-{
-  float bytes_per_hrtime =
-    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
-  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
-
-  if (bytes_per_sec <= 100) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_100);
-  } else if (bytes_per_sec <= 1024) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_1K);
-  } else if (bytes_per_sec <= 10240) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_10K);
-  } else if (bytes_per_sec <= 102400) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_100K);
-  } else if (bytes_per_sec <= 1048576) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_1M);
-  } else if (bytes_per_sec <= 10485760) {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_10M);
-  } else {
-    Metrics::increment(http_rsb.origin_server_speed_bytes_per_sec_100M);
-  }
-
-  return;
-}
-
-void
 HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
@@ -8852,17 +8758,6 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   if (s->method == HTTP_WKSIDX_PUSH) {
     Metrics::increment(http_rsb.pushed_response_header_total_size, pushed_response_header_size);
     Metrics::increment(http_rsb.pushed_document_total_size, pushed_response_body_size);
-  }
-
-  histogram_request_document_size(s, user_agent_request_body_size);
-  histogram_response_document_size(s, user_agent_response_body_size);
-
-  if (user_agent_write_time >= 0) {
-    user_agent_connection_speed(s, user_agent_write_time, user_agent_response_size);
-  }
-
-  if (origin_server_request_header_size > 0 && origin_server_read_time > 0) {
-    origin_server_connection_speed(s, origin_server_read_time, origin_server_response_size);
   }
 
   // update milestones stats

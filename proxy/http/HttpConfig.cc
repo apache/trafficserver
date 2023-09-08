@@ -383,16 +383,9 @@ register_stat_callbacks()
     intm.newMetricPtr("proxy.process.http.origin_server_response_document_total_size");
   http_rsb.origin_server_response_header_total_size =
     intm.newMetricPtr("proxy.process.http.origin_server_response_header_total_size");
-  http_rsb.origin_server_speed_bytes_per_sec_100  = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100");
-  http_rsb.origin_server_speed_bytes_per_sec_100K = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100K");
-  http_rsb.origin_server_speed_bytes_per_sec_100M = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100M");
-  http_rsb.origin_server_speed_bytes_per_sec_10K  = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10K");
-  http_rsb.origin_server_speed_bytes_per_sec_10M  = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10M");
-  http_rsb.origin_server_speed_bytes_per_sec_1K   = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1K");
-  http_rsb.origin_server_speed_bytes_per_sec_1M   = intm.newMetricPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1M");
-  http_rsb.origin_shutdown_cleanup_entry          = intm.newMetricPtr("proxy.process.http.origin_shutdown.cleanup_entry");
-  http_rsb.origin_shutdown_migration_failure      = intm.newMetricPtr("proxy.process.http.origin_shutdown.migration_failure");
-  http_rsb.origin_shutdown_pool_lock_contention   = intm.newMetricPtr("proxy.process.http.origin_shutdown.pool_lock_contention");
+  http_rsb.origin_shutdown_cleanup_entry        = intm.newMetricPtr("proxy.process.http.origin_shutdown.cleanup_entry");
+  http_rsb.origin_shutdown_migration_failure    = intm.newMetricPtr("proxy.process.http.origin_shutdown.migration_failure");
+  http_rsb.origin_shutdown_pool_lock_contention = intm.newMetricPtr("proxy.process.http.origin_shutdown.pool_lock_contention");
   http_rsb.origin_shutdown_release_invalid_request =
     intm.newMetricPtr("proxy.process.http.origin_shutdown.release_invalid_request");
   http_rsb.origin_shutdown_release_invalid_response =
@@ -427,20 +420,6 @@ register_stat_callbacks()
   http_rsb.pushed_document_total_size            = intm.newMetricPtr("proxy.process.http.pushed_document_total_size");
   http_rsb.pushed_response_header_total_size     = intm.newMetricPtr("proxy.process.http.pushed_response_header_total_size");
   http_rsb.put_requests                          = intm.newMetricPtr("proxy.process.http.put_requests");
-  http_rsb.request_document_size_100             = intm.newMetricPtr("proxy.process.http.request_document_size_100");
-  http_rsb.request_document_size_10K             = intm.newMetricPtr("proxy.process.http.request_document_size_10K");
-  http_rsb.request_document_size_1K              = intm.newMetricPtr("proxy.process.http.request_document_size_1K");
-  http_rsb.request_document_size_1M              = intm.newMetricPtr("proxy.process.http.request_document_size_1M");
-  http_rsb.request_document_size_3K              = intm.newMetricPtr("proxy.process.http.request_document_size_3K");
-  http_rsb.request_document_size_5K              = intm.newMetricPtr("proxy.process.http.request_document_size_5K");
-  http_rsb.request_document_size_inf             = intm.newMetricPtr("proxy.process.http.request_document_size_inf");
-  http_rsb.response_document_size_100            = intm.newMetricPtr("proxy.process.http.response_document_size_100");
-  http_rsb.response_document_size_10K            = intm.newMetricPtr("proxy.process.http.response_document_size_10K");
-  http_rsb.response_document_size_1K             = intm.newMetricPtr("proxy.process.http.response_document_size_1K");
-  http_rsb.response_document_size_1M             = intm.newMetricPtr("proxy.process.http.response_document_size_1M");
-  http_rsb.response_document_size_3K             = intm.newMetricPtr("proxy.process.http.response_document_size_3K");
-  http_rsb.response_document_size_5K             = intm.newMetricPtr("proxy.process.http.response_document_size_5K");
-  http_rsb.response_document_size_inf            = intm.newMetricPtr("proxy.process.http.response_document_size_inf");
   http_rsb.response_status_100_count             = intm.newMetricPtr("proxy.process.http.100_responses");
   http_rsb.response_status_101_count             = intm.newMetricPtr("proxy.process.http.101_responses");
   http_rsb.response_status_1xx_count             = intm.newMetricPtr("proxy.process.http.1xx_responses");
@@ -533,8 +512,6 @@ register_stat_callbacks()
   http_rsb.total_transactions_time              = intm.newMetricPtr("proxy.process.http.total_transactions_time");
   http_rsb.total_x_redirect                     = intm.newMetricPtr("proxy.process.http.total_x_redirect_count");
   http_rsb.trace_requests                       = intm.newMetricPtr("proxy.process.http.trace_requests");
-  http_rsb.transactions_per_client_con          = intm.newMetricPtr("proxy.process.http.avg_transactions_per_client_connection");
-  http_rsb.transactions_per_server_con          = intm.newMetricPtr("proxy.process.http.avg_transactions_per_server_connection");
   http_rsb.tunnel_current_active_connections    = intm.newMetricPtr("proxy.process.tunnel.current_active_connections");
   http_rsb.tunnels                              = intm.newMetricPtr("proxy.process.http.tunnels");
   http_rsb.ua_begin_time                        = intm.newMetricPtr("proxy.process.http.milestone.ua_begin");
@@ -575,13 +552,6 @@ register_stat_callbacks()
   http_rsb.user_agent_response_document_total_size =
     intm.newMetricPtr("proxy.process.http.user_agent_response_document_total_size");
   http_rsb.user_agent_response_header_total_size = intm.newMetricPtr("proxy.process.http.user_agent_response_header_total_size");
-  http_rsb.user_agent_speed_bytes_per_sec_100    = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100");
-  http_rsb.user_agent_speed_bytes_per_sec_100K   = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100K");
-  http_rsb.user_agent_speed_bytes_per_sec_100M   = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100M");
-  http_rsb.user_agent_speed_bytes_per_sec_10K    = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10K");
-  http_rsb.user_agent_speed_bytes_per_sec_10M    = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10M");
-  http_rsb.user_agent_speed_bytes_per_sec_1K     = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1K");
-  http_rsb.user_agent_speed_bytes_per_sec_1M     = intm.newMetricPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1M");
   http_rsb.websocket_current_active_client_connections =
     intm.newMetricPtr("proxy.process.http.websocket.current_active_client_connections");
 }

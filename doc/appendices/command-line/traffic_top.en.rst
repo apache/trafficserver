@@ -487,24 +487,6 @@ Statistics:
    |TS| also provides statistics for every other response code. The keen observer
    will have hopefully already recognized the pattern in statistic names.
 
-100 B, 1 KB, 3 KB, 5 KB, 10 KB, 1 MB, > 1 MB
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Each of these fields indicates the percentage of responses from |TS| which fell
-within a particular size (document body size, excluding response headers). The
-individual fields are the upper bounds of exclusive *buckets*, meaning that a
-response with a document body of 4,500 bytes will be counted in the ``5 KB``
-field, but not in any of the smaller sizes.
-
-Statistics:
-:ts:stat:`proxy.process.http.response_document_size_100`,
-:ts:stat:`proxy.process.http.response_document_size_1K`,
-:ts:stat:`proxy.process.http.response_document_size_3K`,
-:ts:stat:`proxy.process.http.response_document_size_5K`,
-:ts:stat:`proxy.process.http.response_document_size_10K`,
-:ts:stat:`proxy.process.http.response_document_size_1M`,
-:ts:stat:`proxy.process.http.response_document_size_inf`.
-
 Client
 ------
 

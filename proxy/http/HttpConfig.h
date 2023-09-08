@@ -144,13 +144,6 @@ struct HttpStatsBlock {
   ts::Metrics::IntType *origin_server_request_header_total_size;
   ts::Metrics::IntType *origin_server_response_document_total_size;
   ts::Metrics::IntType *origin_server_response_header_total_size;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100K;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100M;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_10K;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_10M;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_1K;
-  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_1M;
   ts::Metrics::IntType *origin_shutdown_cleanup_entry;
   ts::Metrics::IntType *origin_shutdown_migration_failure;
   ts::Metrics::IntType *origin_shutdown_pool_lock_contention;
@@ -184,20 +177,6 @@ struct HttpStatsBlock {
   ts::Metrics::IntType *pushed_document_total_size;
   ts::Metrics::IntType *pushed_response_header_total_size;
   ts::Metrics::IntType *put_requests;
-  ts::Metrics::IntType *request_document_size_100;
-  ts::Metrics::IntType *request_document_size_10K;
-  ts::Metrics::IntType *request_document_size_1K;
-  ts::Metrics::IntType *request_document_size_1M;
-  ts::Metrics::IntType *request_document_size_3K;
-  ts::Metrics::IntType *request_document_size_5K;
-  ts::Metrics::IntType *request_document_size_inf;
-  ts::Metrics::IntType *response_document_size_100;
-  ts::Metrics::IntType *response_document_size_10K;
-  ts::Metrics::IntType *response_document_size_1K;
-  ts::Metrics::IntType *response_document_size_1M;
-  ts::Metrics::IntType *response_document_size_3K;
-  ts::Metrics::IntType *response_document_size_5K;
-  ts::Metrics::IntType *response_document_size_inf;
   ts::Metrics::IntType *response_status_100_count;
   ts::Metrics::IntType *response_status_101_count;
   ts::Metrics::IntType *response_status_1xx_count;
@@ -289,8 +268,6 @@ struct HttpStatsBlock {
   ts::Metrics::IntType *total_transactions_time;
   ts::Metrics::IntType *total_x_redirect;
   ts::Metrics::IntType *trace_requests;
-  ts::Metrics::IntType *transactions_per_client_con;
-  ts::Metrics::IntType *transactions_per_server_con;
   ts::Metrics::IntType *tunnel_current_active_connections;
   ts::Metrics::IntType *tunnels;
   ts::Metrics::IntType *ua_begin_time;
@@ -328,13 +305,6 @@ struct HttpStatsBlock {
   ts::Metrics::IntType *user_agent_request_header_total_size;
   ts::Metrics::IntType *user_agent_response_document_total_size;
   ts::Metrics::IntType *user_agent_response_header_total_size;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100K;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100M;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_10K;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_10M;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_1K;
-  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_1M;
   ts::Metrics::IntType *websocket_current_active_client_connections;
 };
 

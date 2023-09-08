@@ -111,7 +111,6 @@ Http1ServerSession::do_io_close(int alerrno)
     }
 
     Metrics::decrement(http_rsb.current_server_connections);
-    Metrics::increment(http_rsb.transactions_per_server_con, transact_count);
 
     // Update upstream connection tracking data if present.
     this->release_outbound_connection_tracking();
