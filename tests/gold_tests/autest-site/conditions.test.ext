@@ -67,7 +67,8 @@ def HasCurlVersion(self, version):
 
 
 def HasProxyVerifierVersion(self, version):
-    return self.EnsureVersion(["verifier-client", "--version"], min_version=version)
+    verifier_path = os.path.join(self.Variables.VerifierBinPath, 'verifier-client')
+    return self.EnsureVersion([verifier_path, "--version"], min_version=version)
 
 
 def HasCurlFeature(self, feature):
@@ -130,6 +131,7 @@ def PluginExists(self, pluginname):
 
 
 ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(HasProxyVerifierVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
 ExtendCondition(HasATSFeature)
