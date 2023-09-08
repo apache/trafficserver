@@ -315,11 +315,8 @@ public:
     sin.sin_port        = 65535;
 
     this->_fsm = FetchSMAllocator.alloc();
-    if (use_get) {
-      this->_fsm->ext_init(this, "GET", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), TS_FETCH_FLAGS_SKIP_REMAP);
-    } else {
-      this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), TS_FETCH_FLAGS_SKIP_REMAP);
-    }
+    this->_fsm->ext_init(this, use_get ? "GET" : "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin),
+                         TS_FETCH_FLAGS_SKIP_REMAP);
   }
 
   int
