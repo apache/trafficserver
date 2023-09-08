@@ -25,7 +25,6 @@
 #include "tscpp/util/ts_bw_format.h"
 
 #include "P_HostDB.h"
-#include "P_RefCountCacheSerializer.h"
 #include "tscore/I_Layout.h"
 #include "Show.h"
 #include "tscore/ink_apidefs.h"
@@ -68,10 +67,8 @@ std::atomic<ts_time> hostdb_current_timestamp{TS_TIME_ZERO};
 static ts_time hostdb_last_timestamp{TS_TIME_ZERO};
 // Epoch timestamp when we updated the hosts file last.
 static ts_time hostdb_hostfile_update_timestamp{TS_TIME_ZERO};
-static char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
-int hostdb_max_count                       = DEFAULT_HOST_DB_SIZE;
+int hostdb_max_count = DEFAULT_HOST_DB_SIZE;
 static swoc::file::path hostdb_hostfile_path;
-ts_seconds hostdb_sync_frequency{0};
 int hostdb_disable_reverse_lookup = 0;
 int hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
 
@@ -195,14 +192,10 @@ ConfigDuration HostDBDownServerCacheTimeVar{HttpConfig::m_master.oride.down_serv
 extern MgmtConverter const &HostDBDownServerCacheTimeConv;
 MgmtConverter const &HostDBDownServerCacheTimeConv = HostDBDownServerCacheTimeVar.Conversions;
 
-// Not run time configurable, therefore no support beyond this class needed.
-ConfigDuration HostDBSyncFrequencyVar{hostdb_sync_frequency};
-
 void
 HostDB_Config_Init()
 {
   HostDBDownServerCacheTimeVar.Enable("proxy.config.http.down_server.cache_time");
-  HostDBSyncFrequencyVar.Enable("proxy.config.cache.hostdb.sync_frequency");
 }
 
 // Static configuration information
@@ -383,52 +376,16 @@ HostDBBackgroundTask::HostDBBackgroundTask(ts_seconds frequency) : Continuation(
 }
 
 int
-HostDBBackgroundTask::wait_event(int, void *)
-{
-  auto next_sync = this->frequency - (ts_hr_clock::now() - start_time);
-
-  SET_HANDLER(&HostDBBackgroundTask::sync_event);
-  if (next_sync > ts_milliseconds{100}) {
-    eventProcessor.schedule_in(this, duration_cast<ts_nanoseconds>(next_sync).count(), ET_TASK);
-  } else {
-    eventProcessor.schedule_imm(this, ET_TASK);
-  }
-  return EVENT_DONE;
-}
-
-struct HostDBSync : public HostDBBackgroundTask {
-  std::string storage_path;
-  std::string full_path;
-  HostDBSync(ts_seconds frequency, const std::string &storage_path, const std::string &full_path)
-    : HostDBBackgroundTask(frequency), storage_path(std::move(storage_path)), full_path(std::move(full_path)){};
-  int
-  sync_event(int, void *) override
-  {
-    SET_HANDLER(&HostDBSync::wait_event);
-    start_time = ts_hr_clock::now();
-
-    new RefCountCacheSerializer<HostDBRecord>(this, hostDBProcessor.cache()->refcountcache, this->frequency.count(),
-                                              this->storage_path, this->full_path);
-    return EVENT_DONE;
-  }
-};
-
-int
 HostDBCache::start(int flags)
 {
   (void)flags; // unused
-  char storage_path[PATH_NAME_MAX];
   MgmtInt hostdb_max_size = 0;
   int hostdb_partitions   = 64;
-
-  storage_path[0] = '\0';
 
   // Read configuration
   // Command line overrides manager configuration.
   //
   REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb.enabled");
-  REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", sizeof(storage_path));
-  REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", sizeof(hostdb_filename));
 
   // Max number of items
   REC_ReadConfigInt32(hostdb_max_count, "proxy.config.hostdb.max_count");
@@ -446,42 +403,7 @@ HostDBCache::start(int flags)
   // Setup the ref-counted cache (this must be done regardless of syncing or not).
   this->refcountcache = new RefCountCache<HostDBRecord>(hostdb_partitions, hostdb_max_size, hostdb_max_count, HostDBRecord::Version,
                                                         "proxy.process.hostdb.cache.");
-
-  //
-  // Load and sync HostDB, if we've asked for it.
-  //
-  if (hostdb_sync_frequency.count() > 0) {
-    // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
-    // a relative path, make it relative to the prefix.
-    if (storage_path[0] == '\0') {
-      ats_scoped_str rundir(RecConfigReadRuntimeDir());
-      ink_strlcpy(storage_path, rundir, sizeof(storage_path));
-    } else if (storage_path[0] != '/') {
-      Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
-    }
-
-    Dbg(dbg_ctl_hostdb, "Storage path is %s", storage_path);
-
-    if (access(storage_path, W_OK | R_OK) == -1) {
-      Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
-      Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
-    }
-
-    // Combine the path and name
-    char full_path[2 * PATH_NAME_MAX];
-    ink_filepath_make(full_path, 2 * PATH_NAME_MAX, storage_path, hostdb_filename);
-
-    Dbg(dbg_ctl_hostdb, "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions,
-        hostdb_max_size, hostdb_max_count);
-    int load_ret = LoadRefCountCacheFromPath<HostDBRecord>(*this->refcountcache, full_path, HostDBRecord::unmarshall);
-    if (load_ret != 0) {
-      Warning("Error loading cache from %s: %d", full_path, load_ret);
-    }
-
-    eventProcessor.schedule_imm(new HostDBSync(hostdb_sync_frequency, storage_path, full_path), ET_TASK);
-  }
-
-  this->pending_dns       = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
+  this->pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   this->remoteHostDBQueue = new Queue<HostDBContinuation, Continuation::Link_link>[hostdb_partitions];
   return 0;
 }

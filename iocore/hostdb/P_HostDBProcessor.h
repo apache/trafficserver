@@ -55,9 +55,6 @@ enum {
 
 extern int hostdb_ttl_mode;
 extern int hostdb_srv_enabled;
-
-// extern int hostdb_timestamp;
-extern ts_seconds hostdb_sync_frequency;
 extern int hostdb_disable_reverse_lookup;
 
 // Static configuration information
@@ -94,8 +91,7 @@ extern const char *string_for(HostDBMark mark);
 #define HOST_DB_CACHE_MINOR_VERSION 0
 // 2.2: IP family split 2.1 : IPv6
 
-#define DEFAULT_HOST_DB_FILENAME "host.db"
-#define DEFAULT_HOST_DB_SIZE     (1 << 14)
+#define DEFAULT_HOST_DB_SIZE (1 << 14)
 // Timeout DNS every 24 hours by default if ttl_mode is enabled
 #define HOST_DB_IP_TIMEOUT (24 * 60 * 60)
 // DNS entries should be revalidated every 12 hours

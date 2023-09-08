@@ -654,7 +654,6 @@ struct ResolveInfo {
 
 /** The Host Database access interface. */
 struct HostDBProcessor : public Processor {
-  friend struct HostDBSync;
   // Public Interface
 
   // Lookup Hostinfo by name

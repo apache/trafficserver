@@ -23,7 +23,6 @@ ts:
     hit_evacuate_size_limit: 0
     hostdb:
       disable_reverse_lookup: 0
-      sync_frequency: 0
     limits:
       http:
         max_alts: 5
@@ -110,7 +109,6 @@ ts:
     enabled: 1
     fail:
       timeout: 0
-    filename: host.db
     host_file:
       interval: 86400
       path: null
