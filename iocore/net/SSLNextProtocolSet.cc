@@ -54,8 +54,10 @@ SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, 
   *len = 0;
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
-    ink_release_assert((strlen(ep->protocol) > 0));
-    *len += (strlen(ep->protocol) + 1);
+    if (enabled.contains(globalSessionProtocolNameRegistry.toIndex(swoc::TextView{ep->protocol, strlen(ep->protocol)}))) {
+      ink_release_assert((strlen(ep->protocol) > 0));
+      *len += (strlen(ep->protocol) + 1);
+    }
   }
 
   *npn = advertised = static_cast<unsigned char *>(ats_malloc(*len));
