@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
+#include <regex>
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_sprintf.h"
@@ -3804,6 +3805,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   int type = 'a';
   int type_get;
   int tmp_len;
+  char const *const hostipv6 = "2345:0425:2CA1::0567:5673:23b5";
 
   bool test_passed_create   = false;
   bool test_passed_scheme   = false;
@@ -3823,6 +3825,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   bool test_passed_length1  = false;
   bool test_passed_length2  = false;
   bool test_passed_type     = false;
+  bool test_passed_ipv6     = false;
 
   int length;
 
@@ -4071,6 +4074,30 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     }
   }
 
+  // test url_print correctly add surrounding [] for ipv6 address
+  if (TSUrlHostSet(bufp2, url_loc2, hostipv6, -1) != TS_SUCCESS) {
+    SDK_RPRINT(test, "TSUrlHostSet", hostipv6, TC_FAIL, "Returned TS_ERROR");
+  } else {
+    int len          = 0;
+    char *const temp = TSUrlStringGet(bufp2, url_loc2, &len);
+    if (nullptr == temp) {
+      SDK_RPRINT(test, "TSUrlStringGet", hostipv6, TC_FAIL, "Returned nullptr");
+    } else {
+      std::string const got(temp, len);
+      std::string const hipv6 = std::string("[") + hostipv6 + "]";
+      std::string const exp   = std::regex_replace(url_expected_string, std::regex(host), hipv6);
+
+      if (got != exp) {
+        SDK_RPRINT(test, "TSUrlStringGet", got.c_str(), TC_FAIL, "Returned unexpected result");
+      } else {
+        SDK_RPRINT(test, "TSUrlStringGet_ipv6", exp.c_str(), TC_PASS, "ok");
+        test_passed_ipv6 = true;
+      }
+
+      TSfree(temp);
+    }
+  }
+
   SDK_RPRINT(test, "TSUrlCreate", "TestCase1&2", TC_PASS, "ok");
   TSHandleMLocRelease(bufp1, TS_NULL_MLOC, url_loc1);
   TSHandleMLocRelease(bufp2, TS_NULL_MLOC, url_loc2);
@@ -4102,7 +4129,8 @@ print_results:
       (test_passed_path == false) || (test_passed_params == false) || (test_passed_query == false) ||
       (test_passed_fragment == false) || (test_passed_copy == false) || (test_passed_clone == false) ||
       (test_passed_string1 == false) || (test_passed_string2 == false) || (test_passed_print == false) ||
-      (test_passed_length1 == false) || (test_passed_length2 == false) || (test_passed_type == false)) {
+      (test_passed_length1 == false) || (test_passed_length2 == false) || (test_passed_type == false) ||
+      (test_passed_ipv6 == false)) {
     /*** Debugging the test itself....
     (test_passed_create == false)?printf("test_passed_create is false\n"):printf("");
     (test_passed_destroy == false)?printf("test_passed_destroy is false\n"):printf("");
