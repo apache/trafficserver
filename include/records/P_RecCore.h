@@ -37,7 +37,7 @@
 #include <swoc/Errata.h>
 
 // records, record hash-table, and hash-table rwlock
-extern RecRecord g_records[REC_MAX_RECORDS];
+extern RecRecord *g_records;
 extern std::unordered_map<std::string, RecRecord *> g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
