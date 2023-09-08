@@ -4373,7 +4373,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
-      int host_len;
+      int host_len          = 0;
       const char *host_name = host_field->value_get(&host_len);
       if (host_name && host_len) {
         int port = -1;
@@ -4384,7 +4384,7 @@ HttpSM::do_remap_request(bool run_inline)
           host_len--;
           // If header value ends with ']', the value must only contain an IPv6 address (no port number).
           if (host_name[host_len - 1] == ']') { // Without port number
-            host_len = host_len--;              // Exclude ']'
+            host_len--;                         // Exclude ']'
           } else {                              // With port number
             for (int idx = host_len - 1; idx > 0; idx--) {
               if (host_name[idx] == ':') {
