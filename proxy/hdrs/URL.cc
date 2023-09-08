@@ -856,6 +856,14 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
   }
 
   if (url->m_ptr_host) {
+    // Force brackets for IPv6. Note colon must occur in first 5 characters.
+    // But it can be less (e.g. "::1").
+    int const n          = url->m_len_host;
+    bool const bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
+    if (bracket_p) {
+      length += 2;
+    }
+
     length += url->m_len_host;
     if (url->m_ptr_port && url->m_port) {
       length += url->m_len_port + 1; // +1 for ":"
