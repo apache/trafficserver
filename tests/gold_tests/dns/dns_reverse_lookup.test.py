@@ -57,7 +57,7 @@ class DNSReverseLookupTest:
         )
         self._ts.Disk.parent_config.AddLine(
             # this doesn't need to match, just exist so ats will do the reverse lookup
-            f'dest_host=other_host scheme=http parent="parent_host"'
+            f'dest_host=other_host scheme=http parent="parent_host:8080"'
         )
 
         self._ts.Disk.records_config.update({
