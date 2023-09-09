@@ -14,5 +14,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-0.0.0.1 resolve.this.com
-127.0.0.1 localhost
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      # Delay to allow hostdb to sync external host file
+      delay: 1s
+      method: "GET"
+      version: "1.1"
+      url: /test1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ X-Request, request ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ X-Request, request ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+
+    proxy-response:
+      status: 200
+

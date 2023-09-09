@@ -1383,7 +1383,7 @@ HostDBContinuation::do_dns()
   if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
     if (auto r = static_hosts->lookup(hash); r && action.continuation) {
       // Set the TTL based on how often we stat() the host file
-      r = lookup_done(hash.host_name, static_hosts->ttl, nullptr, r);
+      r = lookup_done(r->name_view(), static_hosts->ttl, nullptr, r);
       reply_to_cont(action.continuation, r.get());
       hostdb_cont_free(this);
       return;
