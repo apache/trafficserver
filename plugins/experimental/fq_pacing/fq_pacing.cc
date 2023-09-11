@@ -64,7 +64,7 @@ fq_is_default_qdisc()
     return 0;
   }
 
-  s = TSfread(f, buffer, sizeof(buffer));
+  s = TSfread(f, buffer, sizeof(buffer) - 1);
   if (s > 0) {
     buffer[s] = 0;
   } else {
