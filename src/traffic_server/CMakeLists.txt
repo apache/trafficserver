@@ -54,6 +54,7 @@ target_link_libraries(traffic_server
         ts::jsonrpc_server
         ts::rpcpublichandlers
 )
+target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
 
 if(TS_USE_QUIC)
     target_link_libraries(traffic_server

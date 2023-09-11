@@ -41,7 +41,8 @@ traffic_server_traffic_server_CPPFLAGS = \
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	@SWOC_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ \
+	-Wl,--no-undefined,--no-allow-shlib-undefined
 
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \
