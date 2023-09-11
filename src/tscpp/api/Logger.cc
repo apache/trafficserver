@@ -35,10 +35,7 @@
 using std::vector;
 using std::string;
 
-namespace
-{
-DbgCtl dbg_ctl{"atscppapi"};
-}
+DbgCtl atscppapi::dbg_ctl{"atscppapi"};
 
 using atscppapi::Logger;
 

@@ -106,8 +106,6 @@ DbgCtl::_override_global_on()
   return false;
 }
 
-DbgCtl::_TagData const DbgCtl::_No_tag_dummy{nullptr, false};
-
 void
 tsapi::c::TSError(const char *fmt, ...)
 {

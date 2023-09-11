@@ -34,6 +34,7 @@ ts = Test.MakeATSProcess("ts")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'test',
+    'proxy.config.diags.show_location': 0,
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.http.cache.http': 0,
     'proxy.config.url_remap.remap_required': 0,

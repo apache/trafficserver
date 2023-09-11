@@ -40,11 +40,11 @@ public:
 
   // As instance with no tag will always be off.
   //
-  DbgCtl() : _ptr{&_No_tag_dummy} {}
+  DbgCtl() : _ptr{&_No_tag_dummy()} {}
 
   ~DbgCtl()
   {
-    if (_ptr != &_No_tag_dummy) {
+    if (_ptr != &_No_tag_dummy()) {
       _rm_reference();
     }
   }
@@ -119,7 +119,12 @@ private:
 
   _TagData const *_ptr;
 
-  static const _TagData _No_tag_dummy;
+  static const _TagData &
+  _No_tag_dummy()
+  {
+    static DbgCtl::_TagData const ntd{nullptr, false};
+    return ntd;
+  }
 
   static const _TagData *_new_reference(char const *tag);
 

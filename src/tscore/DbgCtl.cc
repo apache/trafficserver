@@ -32,16 +32,16 @@
 
 DbgCtl::DbgCtl(DbgCtl &&src)
 {
-  ink_release_assert(src._ptr != &_No_tag_dummy);
+  ink_release_assert(src._ptr != &_No_tag_dummy());
 
   _ptr     = src._ptr;
-  src._ptr = &_No_tag_dummy;
+  src._ptr = &_No_tag_dummy();
 }
 
 DbgCtl &
 DbgCtl::operator=(DbgCtl &&src)
 {
-  ink_release_assert(&_No_tag_dummy == _ptr);
+  ink_release_assert(&_No_tag_dummy() == _ptr);
 
   new (this) DbgCtl{std::move(src)};
 
@@ -223,5 +223,3 @@ DbgCtl::_override_global_on()
 {
   return diags()->get_override();
 }
-
-DbgCtl::_TagData const DbgCtl::_No_tag_dummy{nullptr, false};

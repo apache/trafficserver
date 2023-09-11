@@ -64,7 +64,7 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
 
     // check if grabbing the lock is successful
     if (TSMutexLockTry(pmutex) != TS_SUCCESS) {
-      TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
+      Dbg(dbg_ctl, "Unable to get lock. Will retry after some time");
       TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
       break;
     }
