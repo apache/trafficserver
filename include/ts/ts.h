@@ -1219,6 +1219,8 @@ tsapi void TSVConnReenable(TSVConn sslvcp);
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */
 tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
+/* Return the file descriptoer associated with the connection */
+tsapi int TSVConnFdGet(TSVConn sslp);
 /*  Fetch a SSL context from the global lookup table */
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
