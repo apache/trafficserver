@@ -9159,6 +9159,14 @@ tsapi::c::TSVConnSslConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+int
+tsapi::c::TSVConnFdGet(TSVConn vconnp)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(vconnp) == TS_SUCCESS);
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconnp);
+  return vc->get_socket();
+}
+
 const char *
 tsapi::c::TSVConnSslSniGet(TSVConn sslp, int *length)
 {
