@@ -63,9 +63,9 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
       TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
       break;
     }
-
     TSContCall(txn_sm, TS_EVENT_NONE, nullptr);
     TSMutexUnlock(pmutex);
+    break;
 
   default:
     /* Something wrong with the network, if there are any
