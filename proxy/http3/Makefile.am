@@ -51,6 +51,7 @@ libhttp3_a_SOURCES = \
   Http3HeaderVIOAdaptor.cc \
   Http3StreamDataVIOAdaptor.cc \
   Http3ProtocolEnforcer.cc \
+  Http3SettingsHandler.cc \
   QPACK.cc
 
 #
@@ -86,13 +87,15 @@ test_libhttp3_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@
 test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
+  ./test/stub.cc \
   ./test/test_Http3Frame.cc \
   ./test/test_Http3FrameDispatcher.cc \
   ./Http3ProtocolEnforcer.cc \
   ./Http3FrameDispatcher.cc \
   ./Http3DebugNames.cc \
   ./Http3Config.cc \
-  ./Http3Frame.cc
+  ./Http3Frame.cc \
+  ./Http3SettingsHandler.cc
 
 test_qpack_CPPFLAGS = $(test_CPPFLAGS)
 test_qpack_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@

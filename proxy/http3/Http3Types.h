@@ -67,8 +67,9 @@ enum class Http3FrameType : uint64_t {
 };
 
 enum class Http3ErrorClass {
-  NONE,
-  APPLICATION,
+  UNDEFINED,
+  CONNECTION,
+  STREAM,
 };
 
 // Actual error code of QPACK is not decided yet on qpack-05. It will be changed.
@@ -99,41 +100,26 @@ class Http3Error
 {
 public:
   virtual ~Http3Error() {}
-  uint16_t code();
 
-  Http3ErrorClass cls = Http3ErrorClass::NONE;
-  union {
-    Http3ErrorCode app_error_code;
-  };
-  const char *msg = nullptr;
+  Http3ErrorClass cls = Http3ErrorClass::UNDEFINED;
+  Http3ErrorCode code = Http3ErrorCode::H3_NO_ERROR;
+  const char *msg     = nullptr;
 
-protected:
-  Http3Error() : app_error_code(Http3ErrorCode::H3_NO_ERROR){};
-  Http3Error(const Http3ErrorCode error_code, const char *error_msg = nullptr)
-    : cls(Http3ErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
-};
+  uint16_t
+  get_code()
+  {
+    return static_cast<uint16_t>(code);
+  }
 
-class Http3ConnectionError : public Http3Error
-{
-public:
-  Http3ConnectionError() : Http3Error() {}
-  Http3ConnectionError(const Http3ErrorCode error_code, const char *error_msg = nullptr) : Http3Error(error_code, error_msg){};
+  Http3Error() : code(Http3ErrorCode::H3_NO_ERROR){};
+  Http3Error(const Http3ErrorClass error_cls, const Http3ErrorCode error_code, const char *error_msg = nullptr)
+    : cls(error_cls), code(error_code), msg(error_msg){};
 };
 
 class Http3Stream
 {
 public:
   static Http3StreamType type(const uint8_t *buf);
-};
-
-class Http3StreamError : public Http3Error
-{
-public:
-  Http3StreamError() : Http3Error() {}
-  Http3StreamError(Http3Stream *s, const Http3ErrorCode error_code, const char *error_msg = nullptr)
-    : Http3Error(error_code, error_msg), stream(s){};
-
-  Http3Stream *stream;
 };
 
 using Http3ErrorUPtr = std::unique_ptr<Http3Error>;

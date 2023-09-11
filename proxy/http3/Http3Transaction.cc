@@ -563,8 +563,12 @@ Http3Transaction::_process_read_vio()
   SCOPED_MUTEX_LOCK(lock, this->_info.read_vio->mutex, this_ethread());
 
   uint64_t nread = 0;
-  this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
-                                        *this->_info.read_vio->get_reader(), nread);
+  auto error     = this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
+                                                         *this->_info.read_vio->get_reader(), nread);
+  if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+    Http3TransDebug("Error occured while processing read vio: %hu, %s", error->get_code(), error->msg);
+    return 0;
+  }
   this->_info.read_vio->ndone += nread;
   return nread;
 }
@@ -581,8 +585,12 @@ Http3Transaction::_process_write_vio()
 
   size_t nwritten = 0;
   bool all_done   = false;
-  this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(), nwritten,
-                                        all_done);
+  auto error      = this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(),
+                                                          nwritten, all_done);
+  if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+    Http3TransDebug("Error occured while processing write vio: %hu, %s", error->get_code(), error->msg);
+    return 0;
+  }
   this->_sent_bytes += nwritten;
   if (all_done) {
     this->_info.write_vio->nbytes = this->_sent_bytes;

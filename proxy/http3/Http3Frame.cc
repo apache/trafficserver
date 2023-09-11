@@ -361,7 +361,7 @@ Http3SettingsFrame::is_valid() const
 Http3ErrorUPtr
 Http3SettingsFrame::get_error() const
 {
-  return std::make_unique<Http3ConnectionError>(this->_error_code, this->_error_reason);
+  return std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, this->_error_code, this->_error_reason);
 }
 
 bool
