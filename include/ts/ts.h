@@ -1315,7 +1315,7 @@ namespace c
   TSReturnCode TSVConnTunnel(TSVConn sslp);
   /*  Return the SSL object associated with the connection */
   TSSslConnection TSVConnSslConnectionGet(TSVConn sslp);
-  /* Return the file descriptoer associated with the ssl connection */
+  /* Return the file descriptoer associated with the connection */
   int TSVConnFdGet(TSVConn sslp);
   /* Return the intermediate X509StoreCTX object that references the certificate being validated */
   TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
