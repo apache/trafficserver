@@ -360,6 +360,7 @@ in :file:`records.yaml` file:
 
 * :ts:cv:`proxy.config.ssl.ocsp.enabled`
 * :ts:cv:`proxy.config.ssl.ocsp.cache_timeout`
+* :ts:cv:`proxy.config.ssl.ocsp.request_mode`
 * :ts:cv:`proxy.config.ssl.ocsp.request_timeout`
 * :ts:cv:`proxy.config.ssl.ocsp.update_period`
 * :ts:cv:`proxy.config.ssl.ocsp.response.path`

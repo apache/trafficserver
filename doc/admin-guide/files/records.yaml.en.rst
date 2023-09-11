@@ -4242,6 +4242,14 @@ OCSP Stapling Configuration
 
    Number of seconds before an OCSP response expires in the stapling cache.
 
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_mode INT 0
+
+   Set the request method to prefer when querying OCSP responders. The default
+   is zero, or POST, and a value of 1 will cause ATS to attempt a GET request.
+   Because the length of the encoded request must be less than 255 bytes per RFC
+   6960, Appendix A, ATS will fall back to the POST request method when the
+   encoded size exceeds this limit.
+
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
    :units: seconds
 

@@ -1199,6 +1199,9 @@ static const RecordElement RecordsConfig[] =
   //        # Number of seconds before an OCSP response expires in the stapling cache. 3600s (1 hour) by default.
   {RECT_CONFIG, "proxy.config.ssl.ocsp.cache_timeout", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
+  //        # Request method "mode" for queries to OCSP responders; 0 is POST, 1 is "prefer GET."
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.request_mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   //        # Timeout for queries to OCSP responders. 10s by default.
   {RECT_CONFIG, "proxy.config.ssl.ocsp.request_timeout", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
