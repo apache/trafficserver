@@ -603,10 +603,19 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (!getSSLHandShakeComplete()) {
     int err = 0;
 
+    // May get into logic that will clean up the current VC
+    // Increment the recursion to delay do_io_close cleaup.
+    this->recursion++;
+
     if (get_context() == NET_VCONNECTION_OUT) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
+    }
+    if (ret == EVENT_RESTART) {
+      // VC migrated into a new object
+      // Just give up and go home. Events should trigger on the new vc
+      return;
     }
     // If we have flipped to blind tunnel, don't read ahead
     if (this->handShakeReader) {
@@ -642,6 +651,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
             this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
           }
         }
+        test_inline_close();
         return; // Leave if we are tunneling
       }
     }
@@ -658,6 +668,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           read.triggered = 0;
           nh->read_ready_list.remove(this);
           readSignalError(nh, ETIMEDOUT);
+          test_inline_close();
           return;
         }
       }
@@ -693,6 +704,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     } else {
       readReschedule(nh);
     }
+    test_inline_close();
     return;
   }
 
@@ -1367,12 +1379,12 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         // If this doesn't look like a ClientHello, convert this connection to a UnixNetVC and send the
         // packet for Http Processing
         this->_migrateFromSSL();
-        return EVENT_CONT;
+        return EVENT_RESTART;
       } else if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
         // start a blind tunnel if tr-pass is set and data does not look like ClientHello
         SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
         this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-        sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+        sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
         return EVENT_CONT;
       } else {
         SSLVCDebug(this, "Give up");
@@ -2156,7 +2168,7 @@ SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread
 {
   Debug("ssl", "allow-plain, handshake buffer ready to read=%" PRId64, this->handShakeHolder->read_avail());
   // Take ownership of the handShake buffer
-  this->sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+  this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
   NetState *s              = &target->read;
   s->vio.buffer.writer_for(this->handShakeBuffer);
   s->vio.set_reader(this->handShakeHolder);

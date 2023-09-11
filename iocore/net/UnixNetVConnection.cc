@@ -98,10 +98,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
       break;
     }
   }
-  if (!--vc->recursion && vc->closed) {
-    /* BZ  31932 */
-    ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netevent(vc);
+  if (vc->test_inline_close()) {
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -132,10 +129,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
       break;
     }
   }
-  if (!--vc->recursion && vc->closed) {
-    /* BZ  31932 */
-    ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netevent(vc);
+  if (vc->test_inline_close()) {
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -1494,4 +1488,15 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
   Debug("socket", "Setting TCP congestion control is not supported on this platform.");
   return -1;
 #endif
+}
+
+bool
+UnixNetVConnection::test_inline_close()
+{
+  if (!--this->recursion && this->closed) {
+    ink_assert(this->thread == this_ethread());
+    this->nh->free_netevent(this);
+    return true;
+  }
+  return false;
 }
