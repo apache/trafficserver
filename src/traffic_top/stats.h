@@ -332,7 +332,7 @@ public:
         function = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
         buffer   = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
 
-        if (url | function | buffer != CURLE_OK) {
+        if ((url | function | buffer) != CURLE_OK) {
           fprintf(stderr, "error setting curl 1 or more options. url: %d, function: %d, buffer: %d", url, function, buffer);
           exit(1);
         }
