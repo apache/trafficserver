@@ -41,8 +41,14 @@ traffic_server_traffic_server_CPPFLAGS = \
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	@SWOC_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@ \
-	-Wl,--no-undefined,--no-allow-shlib-undefined
+	@YAMLCPP_LDFLAGS@
+
+if OS_NON_MACOS
+    # Skipping apple because macOS doesn't seem to provide an equivalent option
+    # for disallowing undefined symbols in shared libraries the executable
+    # depends on.
+    traffic_server_traffic_server_LDFLAGS += -Wl,--no-undefined,--no-allow-shlib-undefined
+endif
 
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \

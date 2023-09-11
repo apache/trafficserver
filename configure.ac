@@ -771,6 +771,7 @@ esac
 
 TS_ADDTO(AM_CPPFLAGS, [-D$host_os_def])
 AM_CONDITIONAL([OS_LINUX], [test "x$host_os_def" = "xlinux"])
+AM_CONDITIONAL([OS_NON_MACOS], [test "x$host_os_def" != "xdarwin"])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],

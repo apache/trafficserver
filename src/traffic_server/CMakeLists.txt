@@ -54,7 +54,12 @@ target_link_libraries(traffic_server
         ts::jsonrpc_server
         ts::rpcpublichandlers
 )
-target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
+if(NOT APPLE)
+    # Skipping apple because macOS doesn't seem to provide an equivalent option
+    # for disallowing undefined symbols in shared libraries the executable
+    # depends on.
+    target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
+endif()
 
 if(TS_USE_QUIC)
     target_link_libraries(traffic_server
