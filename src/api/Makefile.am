@@ -26,7 +26,6 @@ noinst_LIBRARIES = libtsapicore.a
 
 lib_LTLIBRARIES = libtsapi.la
 
-
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
@@ -36,7 +35,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http2 \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/src/traffic_server \
     -I$(abs_top_srcdir)/mgmt/rpc \
     -I$(abs_top_srcdir)/mgmt/ \
 	@SWOC_INCLUDES@ \

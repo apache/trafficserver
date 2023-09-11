@@ -7741,8 +7741,6 @@ tsapi::c::TSMatcherLineValue(TSMatcherLine ml, int element)
   return (((matcher_line *)ml)->line)[1][element];
 }
 
-void load_config_file_callback(const char *parent, const char *remap_file);
-
 void
 load_config_file_callback(const char *parent_file, const char *remap_file)
 {
