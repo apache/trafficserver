@@ -326,9 +326,16 @@ public:
 
       curl = curl_easy_init();
       if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
+        CURLcode url, function, buffer;
+
+        url      = curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
+        function = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        buffer   = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
+
+        if (url | function | buffer != CURLE_OK) {
+          fprintf(stderr, "error setting curl 1 or more options. url: %d, function: %d, buffer: %d", url, function, buffer);
+          exit(1);
+        }
 
         // update time
         gettimeofday(&_time, nullptr);
