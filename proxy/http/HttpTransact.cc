@@ -951,6 +951,10 @@ HttpTransact::HandleBlindTunnel(State *s)
 void
 HttpTransact::StartRemapRequest(State *s)
 {
+  // Preserve effective url before remap, regardless of actual need for remap
+  s->unmapped_url.create(s->hdr_info.client_request.url_get()->m_heap);
+  s->unmapped_url.copy(s->hdr_info.client_request.url_get());
+
   if (s->api_skip_all_remapping) {
     TxnDebug("http_trans", "API request to skip remapping");
 

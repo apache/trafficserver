@@ -4224,9 +4224,6 @@ HttpSM::do_remap_request(bool run_inline)
 
   check_sni_host();
 
-  // Preserve effective url before remap
-  t_state.unmapped_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
-  t_state.unmapped_url.copy(t_state.hdr_info.client_request.url_get());
   // Depending on a variety of factors the HOST field may or may not have been promoted to the
   // client request URL. The unmapped URL should always have that promotion done. If the HOST field
   // is not already there, promote it only in the unmapped_url. This avoids breaking any logic that
