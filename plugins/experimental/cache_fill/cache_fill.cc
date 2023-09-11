@@ -72,7 +72,10 @@ cont_check_cacheable(TSHttpTxn txnp)
     return false;
   }
   int lookupStatus;
-  TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus);
+  if (TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus) == TS_ERROR) {
+    TSError("[esi][%s] Couldn't get cache status of object", __FUNCTION__);
+    return false;
+  }
   TSDebug(PLUGIN_NAME, "lookup status: %s", getCacheLookupResultName(static_cast<TSCacheLookupResult>(lookupStatus)));
   bool ret = false;
   if (TS_CACHE_LOOKUP_MISS == lookupStatus || TS_CACHE_LOOKUP_HIT_STALE == lookupStatus) {
