@@ -9570,6 +9570,14 @@ TSVConnSslConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+int
+TSVConnFdGet(TSVConn vconnp)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(vconnp) == TS_SUCCESS);
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconnp);
+  return vc->get_socket();
+}
+
 const char *
 TSVConnSslSniGet(TSVConn sslp, int *length)
 {
