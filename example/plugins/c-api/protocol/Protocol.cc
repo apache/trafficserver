@@ -26,6 +26,8 @@
 #include "tscore/ink_defs.h"
 #include <math.h>
 
+#define RETRY_TIME 10
+
 /* global variable */
 TSTextLogObject protocol_plugin_log;
 
@@ -54,7 +56,13 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
 
     /* This is no reason for not grabbing the lock.
        So skip the routine which handle LockTry failure case. */
-    TSMutexLockTry(pmutex); // TODO: why should it not check if we got the lock??
+
+    // check if grabbing the lock is successful
+    if (TSMutexLockTry(pmutex) != TS_SUCCESS) {
+      TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
+      TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
+      break;
+    }
     TSContCall(txn_sm, TS_EVENT_NONE, nullptr);
     TSMutexUnlock(pmutex);
     break;
