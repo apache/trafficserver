@@ -267,7 +267,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_HTTP_STATUS_INSUFFICIENT_STORAGE            = 507,
     TS_HTTP_STATUS_LOOP_DETECTED                   = 508,
     TS_HTTP_STATUS_NOT_EXTENDED                    = 510,
-    TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
+    TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511,
   };
 
   /**
@@ -383,7 +383,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_EVENT_SSL_CLIENT_HELLO  = 60207,
     TS_EVENT_SSL_SECRET        = 60208,
 
-    TS_EVENT_MGMT_UPDATE = 60300
+    TS_EVENT_MGMT_UPDATE = 60300,
   };
   TSEvent const TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP = TS_EVENT_HTTP_PRE_REMAP; /* backwards compat */
 
@@ -502,7 +502,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_VCONN_OUTBOUND_START_HOOK,
     TS_VCONN_OUTBOUND_CLOSE_HOOK,
     TS_SSL_LAST_HOOK = TS_VCONN_OUTBOUND_CLOSE_HOOK,
-    TS_HTTP_LAST_HOOK
+    TS_HTTP_LAST_HOOK,
   };
 
   /** Plugin lifecycle hooks.
@@ -588,7 +588,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
     TS_LIFECYCLE_SHUTDOWN_HOOK,
     TS_LIFECYCLE_SSL_SECRET_HOOK,
-    TS_LIFECYCLE_LAST_HOOK
+    TS_LIFECYCLE_LAST_HOOK,
   };
 
   enum TSServerState {
@@ -603,7 +603,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_SRVSTATE_PARSE_ERROR,
     TS_SRVSTATE_TRANSACTION_COMPLETE,
     TS_SRVSTATE_PARENT_RETRY,
-    TS_SRVSTATE_OUTBOUND_CONGESTION
+    TS_SRVSTATE_OUTBOUND_CONGESTION,
   };
 
   enum TSLookingUpType {
@@ -611,10 +611,15 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_LOOKUP_PARENT_PROXY,
     TS_LOOKUP_ORIGIN_SERVER,
     TS_LOOKUP_INCOMING_ROUTER,
-    TS_LOOKUP_HOST_NONE
+    TS_LOOKUP_HOST_NONE,
   };
 
-  enum TSCacheLookupResult { TS_CACHE_LOOKUP_MISS, TS_CACHE_LOOKUP_HIT_STALE, TS_CACHE_LOOKUP_HIT_FRESH, TS_CACHE_LOOKUP_SKIPPED };
+  enum TSCacheLookupResult {
+    TS_CACHE_LOOKUP_MISS,
+    TS_CACHE_LOOKUP_HIT_STALE,
+    TS_CACHE_LOOKUP_HIT_FRESH,
+    TS_CACHE_LOOKUP_SKIPPED,
+  };
 
   enum TSCacheDataType {
     TS_CACHE_DATA_TYPE_NONE,
@@ -634,7 +639,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_CACHE_SCAN_RESULT_DELETE   = 10,
     TS_CACHE_SCAN_RESULT_DELETE_ALL_ALTERNATES,
     TS_CACHE_SCAN_RESULT_UPDATE,
-    TS_CACHE_SCAN_RESULT_RETRY
+    TS_CACHE_SCAN_RESULT_RETRY,
   };
 
   enum TSHttpTxnInfoKey {
@@ -645,7 +650,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_TXN_INFO_CACHE_OPEN_READ_TRIES,
     TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES,
     TS_TXN_INFO_CACHE_VOLUME,
-    TS_TXN_INFO_LAST_ENTRY
+    TS_TXN_INFO_LAST_ENTRY,
   };
 
   enum TSVConnCloseFlags {
@@ -668,7 +673,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_IOBUFFER_SIZE_INDEX_256K = 11,
     TS_IOBUFFER_SIZE_INDEX_512K = 12,
     TS_IOBUFFER_SIZE_INDEX_1M   = 13,
-    TS_IOBUFFER_SIZE_INDEX_2M   = 14
+    TS_IOBUFFER_SIZE_INDEX_2M   = 14,
   };
 
   enum TSIOBufferWaterMark {
@@ -694,7 +699,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_SERVER_OUTBOUND_MATCH_IP,
     TS_SERVER_OUTBOUND_MATCH_PORT,
     TS_SERVER_OUTBOUND_MATCH_HOST,
-    TS_SERVER_OUTBOUND_MATCH_BOTH
+    TS_SERVER_OUTBOUND_MATCH_BOTH,
   };
 
   /* librecords types */
@@ -706,7 +711,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_RECORDTYPE_PROCESS = 0x02,
     TS_RECORDTYPE_NODE    = 0x04,
     TS_RECORDTYPE_PLUGIN  = 0x20,
-    TS_RECORDTYPE_ALL     = 0x3F
+    TS_RECORDTYPE_ALL     = 0x3F,
   };
 
   /* The values of this enum must match enum RecDataT in I_RecDefs.h */
@@ -718,7 +723,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_RECORDDATATYPE_COUNTER,
     TS_RECORDDATATYPE_STAT_CONST,
     TS_RECORDDATATYPE_STAT_FX,
-    TS_RECORDDATATYPE_MAX
+    TS_RECORDDATATYPE_MAX,
   };
 
   union TSRecordData {
@@ -889,7 +894,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT,
     TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT,
     TS_CONFIG_HTTP_CACHE_IGNORE_QUERY,
-    TS_CONFIG_LAST_ENTRY
+    TS_CONFIG_LAST_ENTRY,
   };
 
   /* The TASK pool of threads is the primary method of off-loading continuations from the
@@ -899,7 +904,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_THREAD_POOL_TASK,
     /* unlikely you should use these */
     TS_THREAD_POOL_DNS,
-    TS_THREAD_POOL_UDP
+    TS_THREAD_POOL_UDP,
   };
 
   /* TSHRTime stuff, this is a candidate for deprecation in v10.0.0 */
@@ -959,7 +964,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_MILESTONE_PLUGIN_TOTAL,
     TS_MILESTONE_TLS_HANDSHAKE_START,
     TS_MILESTONE_TLS_HANDSHAKE_END,
-    TS_MILESTONE_LAST_ENTRY
+    TS_MILESTONE_LAST_ENTRY,
   };
 
   /* These type aliases are used with the corresponding TSMgmt*Get functions
@@ -976,7 +981,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_MGMT_SOURCE_DEFAULT,  ///< Built in core default.
     TS_MGMT_SOURCE_PLUGIN,   ///< Plugin supplied default.
     TS_MGMT_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
-    TS_MGMT_SOURCE_ENV       ///< Process environment variable.
+    TS_MGMT_SOURCE_ENV,      ///< Process environment variable.
   };
 
   /// The User Arg type, used for Txn/Ssn/VConn user argument slots
@@ -985,7 +990,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_USER_ARGS_SSN,   ///< Session based
     TS_USER_ARGS_VCONN, ///< VConnection based
     TS_USER_ARGS_GLB,   ///< Global based
-    TS_USER_ARGS_COUNT  ///< Fake enum, # of valid entries.
+    TS_USER_ARGS_COUNT, ///< Fake enum, # of valid entries.
   };
 
   /** An enumeration of HTTP version types for the priority functions that behave
@@ -1103,7 +1108,11 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     size_t key_name_len;
   };
 
-  enum TSConnectType { TS_CONNECT_UNDEFINED, TS_CONNECT_PLUGIN, TS_CONNECT_LAST_ENTRY };
+  enum TSConnectType {
+    TS_CONNECT_UNDEFINED,
+    TS_CONNECT_PLUGIN,
+    TS_CONNECT_LAST_ENTRY,
+  };
 
   struct TSHttpConnectOptions {
     TSConnectType connect_type;
@@ -1468,7 +1477,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_HTTP_CNTL_REQUEST_CACHEABLE,
     TS_HTTP_CNTL_SERVER_NO_STORE,
     TS_HTTP_CNTL_TXN_DEBUG,
-    TS_HTTP_CNTL_SKIP_REMAPPING
+    TS_HTTP_CNTL_SKIP_REMAPPING,
   };
 
   // JSONRPC 2.0 related interface.

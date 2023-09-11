@@ -40,7 +40,7 @@ namespace c
     TS_FETCH_EVENT_EXT_HEAD_READY = -1,
     TS_FETCH_EVENT_EXT_HEAD_DONE  = -2,
     TS_FETCH_EVENT_EXT_BODY_READY = -3,
-    TS_FETCH_EVENT_EXT_BODY_DONE  = -4
+    TS_FETCH_EVENT_EXT_BODY_DONE  = -4,
   };
 
   enum TSFetchFlags {

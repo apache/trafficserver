@@ -70,7 +70,7 @@ namespace c
        ....
        This would allow a plugin to generate an error page. Right now,
        setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
-    TSREMAP_ERROR = -1 /* Some error, that should generate an error page */
+    TSREMAP_ERROR = -1, /* Some error, that should generate an error page */
   };
 
   /* Status code passed to the plugin by TSRemapPostConfigReload() signaling
@@ -81,7 +81,7 @@ namespace c
     TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED =
       1, /* configuration parsing succeeded and plugin was used by the new configuration */
     TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED =
-      2 /* configuration parsing succeeded but plugin was NOT used by the new configuration */
+      2, /* configuration parsing succeeded but plugin was NOT used by the new configuration */
   };
 
 } // end namespace c
