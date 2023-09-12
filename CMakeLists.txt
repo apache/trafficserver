@@ -441,6 +441,7 @@ endif()
 if(ENABLE_DOCS)
     add_subdirectory(doc)
 endif()
+add_subdirectory(rc)
 
 if(ENABLE_BENCHMARKS)
     message(STATUS "Building benchmarks in tools/benchmark")
