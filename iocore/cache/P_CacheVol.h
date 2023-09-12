@@ -27,6 +27,8 @@
 
 #include "tscore/CryptoHash.h"
 
+#include "P_Cache.h"
+
 #define CACHE_BLOCK_SHIFT        9
 #define CACHE_BLOCK_SIZE         (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
 #define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), STORE_BLOCK_SIZE)
@@ -272,7 +274,7 @@ struct CacheVol {
   DiskVol **disk_vols   = nullptr;
   LINK(CacheVol, link);
   // per volume stats
-  RecRawStatBlock *vol_rsb = nullptr;
+  CacheStatsBlock vol_rsb;
 
   CacheVol() {}
 };

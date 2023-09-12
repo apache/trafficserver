@@ -29,6 +29,9 @@
 #include "HTTP.h"
 #include "P_CacheHttp.h"
 #include "P_CacheHosting.h"
+#include "api/Metrics.h"
+
+using ts::Metrics;
 
 struct EvacuationBlock;
 
@@ -96,117 +99,7 @@ struct EvacuationBlock;
     return EVENT_CONT;                                                    \
   } while (0)
 
-// cache stats definitions
-enum {
-  cache_bytes_used_stat,
-  cache_bytes_total_stat,
-  cache_stripes_stat,
-  cache_ram_cache_bytes_stat,
-  cache_ram_cache_bytes_total_stat,
-  cache_direntries_total_stat,
-  cache_direntries_used_stat,
-  cache_ram_cache_hits_stat,
-  cache_ram_cache_misses_stat,
-  cache_pread_count_stat,
-  cache_percent_full_stat,
-  cache_lookup_active_stat,
-  cache_lookup_success_stat,
-  cache_lookup_failure_stat,
-  cache_read_active_stat,
-  cache_read_success_stat,
-  cache_read_failure_stat,
-  cache_read_seek_fail_stat,
-  cache_read_invalid_stat,
-  cache_write_active_stat,
-  cache_write_success_stat,
-  cache_write_failure_stat,
-  cache_write_backlog_failure_stat,
-  cache_update_active_stat,
-  cache_update_success_stat,
-  cache_update_failure_stat,
-  cache_remove_active_stat,
-  cache_remove_success_stat,
-  cache_remove_failure_stat,
-  cache_evacuate_active_stat,
-  cache_evacuate_success_stat,
-  cache_evacuate_failure_stat,
-  cache_scan_active_stat,
-  cache_scan_success_stat,
-  cache_scan_failure_stat,
-  cache_directory_collision_count_stat,
-  cache_single_fragment_document_count_stat,
-  cache_two_fragment_document_count_stat,
-  cache_three_plus_plus_fragment_document_count_stat,
-  cache_read_busy_success_stat,
-  cache_read_busy_failure_stat,
-  cache_gc_bytes_evacuated_stat,
-  cache_gc_frags_evacuated_stat,
-  cache_write_bytes_stat,
-  cache_hdr_vector_marshal_stat,
-  cache_hdr_marshal_stat,
-  cache_hdr_marshal_bytes_stat,
-  cache_directory_wrap_stat,
-  cache_directory_sync_count_stat,
-  cache_directory_sync_time_stat,
-  cache_directory_sync_bytes_stat,
-  /* AIO read/write error counters */
-  cache_span_errors_read_stat,
-  cache_span_errors_write_stat,
-  /* Span related gauges. A span "moves" from "online" (errors==0)
-   * to "failing" (errors > 0 && errors < proxy.config.cache.max_disk_errors)
-   * to "offline"(errors >= proxy.config.cache.max_disk_errors.
-   * "failing" + "offline" + "online" = total number of spans */
-  cache_span_offline_stat,
-  cache_span_online_stat,
-  cache_span_failing_stat,
-  cache_stat_count
-};
-
-extern RecRawStatBlock *cache_rsb;
-
-#define GLOBAL_CACHE_SET_DYN_STAT(x, y) RecSetGlobalRawStatSum(cache_rsb, (x), (y))
-
-#define CACHE_SET_DYN_STAT(x, y) \
-  RecSetGlobalRawStatSum(cache_rsb, (x), (y)) RecSetGlobalRawStatSum(vol->cache_vol->vol_rsb, (x), (y))
-
-#define CACHE_INCREMENT_DYN_STAT(x)                                              \
-  do {                                                                           \
-    RecIncrRawStat(cache_rsb, mutex->thread_holding, (int)(x), 1);               \
-    RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int)(x), 1); \
-  } while (0);
-
-#define CACHE_DECREMENT_DYN_STAT(x)                                               \
-  do {                                                                            \
-    RecIncrRawStat(cache_rsb, mutex->thread_holding, (int)(x), -1);               \
-    RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int)(x), -1); \
-  } while (0);
-
-#define CACHE_VOL_SUM_DYN_STAT(x, y) RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int)(x), (int64_t)y);
-
-#define CACHE_SUM_DYN_STAT(x, y)                                                            \
-  do {                                                                                      \
-    RecIncrRawStat(cache_rsb, mutex->thread_holding, (int)(x), (int64_t)(y));               \
-    RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int)(x), (int64_t)(y)); \
-  } while (0);
-
-#define CACHE_SUM_DYN_STAT_THREAD(x, y)                                              \
-  do {                                                                               \
-    RecIncrRawStat(cache_rsb, this_ethread(), (int)(x), (int64_t)(y));               \
-    RecIncrRawStat(vol->cache_vol->vol_rsb, this_ethread(), (int)(x), (int64_t)(y)); \
-  } while (0);
-
-#define GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(cache_rsb, (x), (y))
-
-#define CACHE_SUM_GLOBAL_DYN_STAT(x, y) \
-  RecIncrGlobalRawStatSum(cache_rsb, (x), (y)) RecIncrGlobalRawStatSum(vol->cache_vol->vol_rsb, (x), (y))
-
-#define CACHE_CLEAR_DYN_STAT(x)                          \
-  do {                                                   \
-    RecSetRawStatSum(cache_rsb, (x), 0);                 \
-    RecSetRawStatCount(cache_rsb, (x), 0);               \
-    RecSetRawStatSum(vol->cache_vol->vol_rsb, (x), 0);   \
-    RecSetRawStatCount(vol->cache_vol->vol_rsb, (x), 0); \
-  } while (0);
+extern CacheStatsBlock cache_rsb;
 
 // Configuration
 extern int cache_config_dir_sync_frequency;
@@ -402,11 +295,6 @@ struct CacheVC : public CacheVConnection {
   bool set_pin_in_cache(time_t time_pin) override;
   time_t get_pin_in_cache() override;
 
-// offsets from the base stat
-#define CACHE_STAT_ACTIVE  0
-#define CACHE_STAT_SUCCESS 1
-#define CACHE_STAT_FAILURE 2
-
   // number of bytes to memset to 0 in the CacheVC when we free
   // it. All member variables starting from vio are memset to 0.
   // This variable is initialized in CacheVC constructor.
@@ -467,7 +355,7 @@ struct CacheVC : public CacheVConnection {
   ContinuationHandler save_handler;
   time_t pin_in_cache;
   ink_hrtime start_time;
-  int base_stat;
+  int op_type; // Index into the metrics array for this operation, rather than a CacheOpType (fewer casts)
   int recursive;
   int closed;
   uint64_t seek_to;      // pread offset
@@ -579,10 +467,13 @@ free_CacheVC(CacheVC *cont)
   Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex = cont->mutex.get();
   Vol *vol          = cont->vol;
+
   if (vol) {
-    CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);
+    Metrics::decrement(cache_rsb.status[cont->op_type].active);
+    Metrics::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
     if (cont->closed > 0) {
-      CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
+      Metrics::increment(cache_rsb.status[cont->op_type].success);
+      Metrics::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);
     } // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());
@@ -786,10 +677,14 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
   }
+
   if (agg_error) {
-    CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
+    Metrics::increment(cache_rsb.write_backlog_failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+
     return ECACHE_WRITE_FAIL;
   }
+
   if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
 #ifdef CACHE_STAT_PAGES
     ink_assert(cont->mutex->thread_holding == this_ethread());
@@ -955,17 +850,6 @@ CacheRemoveCont::event_handler(int event, void *data)
   free_CacheRemoveCont(this);
   return EVENT_DONE;
 }
-
-int64_t cache_bytes_used();
-int64_t cache_bytes_total();
-
-#ifdef DEBUG
-#define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)
-#define CACHE_DEBUG_SUM_DYN_STAT(_x, _y)   CACHE_SUM_DYN_STAT(_x, _y)
-#else
-#define CACHE_DEBUG_INCREMENT_DYN_STAT(_x)
-#define CACHE_DEBUG_SUM_DYN_STAT(_x, _y)
-#endif
 
 struct CacheHostRecord;
 struct Vol;

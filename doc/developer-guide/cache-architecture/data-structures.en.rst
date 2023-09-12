@@ -419,10 +419,6 @@ Data Structures
 
    .. member:: LINK<CacheVol> link
 
-   .. member:: RecRawStatBlock vol_rsb
-
-      per volume stat
-
 .. class:: ConfigVol
 
    This class represents an individual volume.
