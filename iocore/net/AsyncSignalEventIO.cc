@@ -40,6 +40,7 @@ AsyncSignalEventIO::process_event(int flags)
   static_cast<void>(read(_fd, &counter, sizeof(uint64_t)));
 #else
   char dummy[1024];
-  static_cast<void>(read(_fd, &dummy[0], 1024));
+  [[maybe_unused]] ssize_t ret = read(_fd, &dummy[0], 1024);
+  ink_assert(ret >= 0);
 #endif
 }
