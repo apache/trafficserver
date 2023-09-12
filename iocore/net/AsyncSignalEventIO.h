@@ -35,5 +35,5 @@ public:
   void process_event(int flags) override;
 
 private:
-  int _fd;
+  int _fd = -1;
 };
