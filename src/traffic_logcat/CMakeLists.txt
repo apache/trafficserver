@@ -16,5 +16,5 @@
 #######################
 
 add_executable(traffic_logcat logcat.cc)
-target_link_libraries(traffic_logcat PRIVATE ts::tscore ts::proxy ts::logging ts::hdrs ts::tsapi ts::diagsconfig libswoc)
+target_link_libraries(traffic_logcat PRIVATE ts::tscore ts::proxy ts::logging ts::hdrs ts::tsapicore ts::diagsconfig libswoc)
 install(TARGETS traffic_logcat)

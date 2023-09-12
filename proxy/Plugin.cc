@@ -27,7 +27,7 @@
 #include "tscore/ParseRules.h"
 #include "records/I_RecCore.h"
 #include "tscore/I_Layout.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "Plugin.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"

@@ -86,7 +86,7 @@
 
 extern int cache_config_read_while_writer;
 
-extern HttpBodyFactory *body_factory;
+HttpBodyFactory *body_factory = nullptr;
 
 // We have a debugging list that can use to find stuck
 //  state machines

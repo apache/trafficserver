@@ -19,7 +19,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 function(add_atsplugin name)
   add_library(${name} MODULE ${ARGN})
-  target_link_libraries(${name} PRIVATE traffic_server)
+  target_link_libraries(${name} PRIVATE ts::tsapi)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
   install(TARGETS ${name} DESTINATION libexec/trafficserver)

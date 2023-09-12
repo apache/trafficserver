@@ -98,7 +98,7 @@ extern "C" int plock(int);
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"
@@ -135,8 +135,7 @@ static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 static const long MAX_LOGIN = ink_login_name_max();
 
 static void init_ssl_ctx_callback(void *ctx, bool server);
-// This isn't static as its also called from InkAPI.cc
-void load_config_file_callback(const char *parent_file, const char *remap_file);
+extern void load_config_file_callback(const char *parent_file, const char *remap_file);
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
 
@@ -169,7 +168,7 @@ static char error_tags[1024]    = "";
 static char action_tags[1024]   = "";
 static int show_statistics      = 0;
 static DiagsConfig *diagsConfig = nullptr;
-HttpBodyFactory *body_factory   = nullptr;
+extern HttpBodyFactory *body_factory;
 
 static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.
@@ -2315,12 +2314,6 @@ static void
 load_ssl_file_callback(const char *ssl_file)
 {
   FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT, ssl_file);
-}
-
-void
-load_config_file_callback(const char *parent_file, const char *remap_file)
-{
-  FileManager::instance().configFileChild(parent_file, remap_file);
 }
 
 static void

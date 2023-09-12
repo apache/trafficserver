@@ -22,7 +22,7 @@ function(ADD_AUTEST_PLUGIN _NAME _SOURCES)
         PREFIX ""
         SUFFIX ".so"
     )
-    target_link_libraries(${_NAME} PRIVATE traffic_server)
+    target_link_libraries(${_NAME} PRIVATE ts::tsapi)
 endfunction()
 
 add_subdirectory(tools/plugins)

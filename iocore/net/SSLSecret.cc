@@ -21,7 +21,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
+#include "api/InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
 #include "P_SSLConfig.h"
 
 #include <utility>

@@ -30,7 +30,7 @@
 #include "P_QUICNetVConnection.h"
 #include "P_QUICPacketHandler.h"
 #include "P_Net.h"
-#include "InkAPIInternal.h" // Added to include the quic_hook definitions
+#include "api/InkAPIInternal.h" // Added to include the quic_hook definitions
 
 #include "P_SSLNextProtocolSet.h"
 #include "QUICMultiCertConfigLoader.h"

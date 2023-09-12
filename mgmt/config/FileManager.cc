@@ -25,7 +25,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "InkAPIInternal.h" // TODO: this brings a lot of dependencies, double check this.
+#include "api/InkAPIInternal.h" // TODO: this brings a lot of dependencies, double check this.
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"

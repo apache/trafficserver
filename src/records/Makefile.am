@@ -72,7 +72,7 @@ test_librecords_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -87,7 +87,7 @@ test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	@HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))

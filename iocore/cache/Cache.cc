@@ -33,7 +33,7 @@
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
 #include "HttpCacheSM.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 
 #include "tscore/hugepages.h"
 

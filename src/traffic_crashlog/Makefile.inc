@@ -40,5 +40,5 @@ traffic_crashlog_traffic_crashlog_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@

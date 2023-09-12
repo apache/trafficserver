@@ -47,7 +47,7 @@ link_libraries(
         aio
         records
         tscore
-        tsapi
+        tsapicore
         tscpputil
         proxy
         inknet

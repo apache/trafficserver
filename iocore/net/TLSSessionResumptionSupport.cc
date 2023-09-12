@@ -33,7 +33,7 @@
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 #include <openssl/core_names.h>
 #endif
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "tscore/ink_config.h"
 
 // Remove this when drop OpenSSL 1.0.2 support

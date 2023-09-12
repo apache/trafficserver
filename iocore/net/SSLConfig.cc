@@ -37,7 +37,7 @@
 #include "tscore/ink_config.h"
 #include <openssl/pem.h>
 
-#include "InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
+#include "api/InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
 
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"

@@ -29,7 +29,7 @@ target_link_libraries(traffic_layout
         OpenSSL::Crypto
         yaml-cpp::yaml-cpp
         ts::tscore
-        ts::tsapi
+        ts::tsapicore
         PCRE::PCRE
         ${OPENSSL_LIBRARY}
 )

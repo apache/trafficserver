@@ -43,27 +43,22 @@ traffic_server_traffic_server_LDFLAGS = \
 	@SWOC_LDFLAGS@ \
 	@YAMLCPP_LDFLAGS@
 
+if OS_NON_MACOS
+    # Skipping apple because macOS doesn't seem to provide an equivalent option
+    # for disallowing undefined symbols in shared libraries the executable
+    # depends on.
+    traffic_server_traffic_server_LDFLAGS += -Wl,--no-undefined,--no-allow-shlib-undefined
+endif
+
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \
 	traffic_server/EventName.cc \
 	traffic_server/EventName.h \
-	traffic_server/FetchSM.cc \
-	traffic_server/FetchSM.h \
-	traffic_server/HostStatus.cc \
-	traffic_server/InkAPI.cc \
-	traffic_server/InkContInternal.cc \
-	traffic_server/InkIOCoreAPI.cc \
 	traffic_server/SocksProxy.cc \
 	traffic_server/RpcAdminPubHandlers.cc \
 	traffic_server/RpcAdminPubHandlers.h \
 	shared/overridable_txn_vars.cc \
 	traffic_server/traffic_server.cc
-
-
-if BUILD_TESTS
-traffic_server_traffic_server_SOURCES += \
-	traffic_server/InkAPITest.cc
-endif
 
 traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
@@ -80,6 +75,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \
