@@ -42,6 +42,7 @@ benchmark_CPP_FLAGS = \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
     -I$(abs_top_srcdir)/lib/catch2 \
+    @HWLOC_INCLUDES@ \
     @OPENSSL_INCLUDES@ \
     @SWOC_INCLUDES@
 

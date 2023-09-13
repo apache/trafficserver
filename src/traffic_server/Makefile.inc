@@ -35,6 +35,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
+	@HWLOC_INCLUDES@ \
 	@OPENSSL_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 

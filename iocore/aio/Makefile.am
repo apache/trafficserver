@@ -21,7 +21,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/io_uring \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	@SWOC_INCLUDES@
+	@HWLOC_INCLUDES@ \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 TESTS = test_AIO.sample
