@@ -49,7 +49,11 @@
 #endif
 
 #if TS_HAS_JEMALLOC
+#if __has_include(<jemalloc/jemalloc.h>)
 #include <jemalloc/jemalloc.h>
+#else
+#include <jemalloc.h>
+#endif
 #elif TS_HAS_MIMALLOC
 #include <mimalloc.h>
 #elif HAVE_MALLOC_H

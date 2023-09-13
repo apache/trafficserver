@@ -67,6 +67,7 @@ option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
+option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist allocator (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
@@ -258,6 +259,7 @@ if(ENABLE_ASAN)
     add_link_options(-fsanitize=address)
 endif()
 
+set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 find_package(ZLIB REQUIRED)
 
 # ncurses is used in traffic_top
