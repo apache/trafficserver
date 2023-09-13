@@ -76,7 +76,11 @@ struct NetAcceptAction : public Action, public RefCountObj {
     return Action::operator=(acont);
   }
 
-  ~NetAcceptAction() override { Debug("net_accept", "NetAcceptAction dying"); }
+  ~NetAcceptAction() override
+  {
+    static DbgCtl dbg_ctl{"net_accept"};
+    Dbg(dbg_ctl, "NetAcceptAction dying");
+  }
 };
 
 //

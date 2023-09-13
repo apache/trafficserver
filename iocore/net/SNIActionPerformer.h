@@ -34,6 +34,7 @@
 #include <optional>
 #include "TLSSNISupport.h"
 #include "tscore/ink_inet.h"
+#include "ts/DbgCtl.h"
 
 class ActionItem
 {
@@ -66,4 +67,7 @@ public:
     return false;
   }
   virtual ~ActionItem(){};
+
+protected:
+  inline static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 };

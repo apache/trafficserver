@@ -49,11 +49,21 @@ net_next_connection_number()
 
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
+namespace
+{
+
+DbgCtl dbg_ctl_iocore_net_processor{"iocore_net_processor"};
+DbgCtl dbg_ctl_iocore_net_accept{"iocore_net_accept"};
+DbgCtl dbg_ctl_http_tproxy{"http_tproxy"};
+DbgCtl dbg_ctl_Socks{"Socks"};
+
+} // end anonymous namespace
+
 Action *
 UnixNetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
 {
-  Debug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x", opt.local_port,
-        opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  Dbg(dbg_ctl_iocore_net_processor, "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
+      opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
   return accept_internal(cont, NO_FD, opt);
 }
@@ -61,8 +71,8 @@ UnixNetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
 Action *
 UnixNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
 {
-  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
-        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  Dbg(dbg_ctl_iocore_net_processor, "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
+      opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return accept_internal(cont, fd, opt);
 }
 
@@ -78,7 +88,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   NetAccept *na = createNetAccept(opt);
   na->id        = ink_atomic_increment(&net_accept_number, 1);
-  Debug("iocore_net_accept", "creating new net accept number %d", na->id);
+  Dbg(dbg_ctl_iocore_net_accept, "creating new net accept number %d", na->id);
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
@@ -108,11 +118,11 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 
   if (opt.f_inbound_transparent) {
-    Debug("http_tproxy", "Marked accept server %p on port %d as inbound transparent", na, opt.local_port);
+    Dbg(dbg_ctl_http_tproxy, "Marked accept server %p on port %d as inbound transparent", na, opt.local_port);
   }
 
   if (opt.f_proxy_protocol) {
-    Debug("http_tproxy", "Marked accept server %p on port %d for proxy protocol", na, opt.local_port);
+    Dbg(dbg_ctl_http_tproxy, "Marked accept server %p on port %d for proxy protocol", na, opt.local_port);
   }
 
   SessionAccept *sa = dynamic_cast<SessionAccept *>(cont);
@@ -194,7 +204,7 @@ UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOp
 
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
-    Debug("Socks", "Using Socks ip: %s", ats_ip_nptop(target, buff, sizeof(buff)));
+    Dbg(dbg_ctl_Socks, "Using Socks ip: %s", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
     // The socksEntry->init() will get the origin server addr by vc->get_remote_addr(),
     //   and save it to socksEntry->req_data.dest_ip.
@@ -212,7 +222,7 @@ UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOp
     result      = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
-    Debug("Socks", "Not Using Socks %d ", socks_conf_stuff->socks_needed);
+    Dbg(dbg_ctl_Socks, "Not Using Socks %d ", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
   }
 

@@ -223,6 +223,9 @@ public:
 
   NetHandler();
 
+  inline static DbgCtl dbg_ctl_socket{"socket"};
+  inline static DbgCtl dbg_ctl_iocore_net{"iocore_net"};
+
 private:
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
 

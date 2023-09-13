@@ -39,6 +39,15 @@
 
 QUICNetProcessor quic_NetProcessor;
 
+namespace
+{
+
+DbgCtl dbg_ctl_quic_ps{"quic_ps"};
+DbgCtl dbg_ctl_udpnet{"udpnet"};
+DbgCtl dbg_ctl_iocore_net_processor{"iocore_net_processor"};
+
+} // end anonymous namespace
+
 QUICNetProcessor::QUICNetProcessor() {}
 
 QUICNetProcessor::~QUICNetProcessor()
@@ -68,7 +77,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
   // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
-  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
+  Dbg(dbg_ctl_quick_ps, "%s", TLS1_3_VERSION_DRAFT_TXT);
 #endif
 
   return 0;
@@ -107,7 +116,7 @@ QUICNetProcessor::allocate_vc(EThread *t)
 Action *
 QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions const &opt)
 {
-  Debug("quic_ps", "connect to server");
+  Dbg(dbg_ctl_quick_ps, "connect to server");
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
@@ -124,7 +133,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
 
   // Setup UDPConnection
   UnixUDPConnection *con = new UnixUDPConnection(fd);
-  Debug("quic_ps", "con=%p fd=%d", con, fd);
+  Dbg(dbg_ctl_quick_ps, "con=%p fd=%d", con, fd);
 
   this->_rtable                        = new QUICResetTokenTable();
   QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut(*this->_rtable);
@@ -139,7 +148,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   errno   = 0;
   int res = con->ep.start(pd, con, EVENTIO_READ);
   if (res < 0) {
-    Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
+    Dbg(dbg_ctl_udpnet, "Error: %s (%d)", strerror(errno), errno);
   }
 
   // Setup QUICNetVConnection
@@ -182,8 +191,8 @@ Action *
 QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
 {
   // UnixNetProcessor *this_unp = static_cast<UnixNetProcessor *>(this);
-  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
-        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  Dbg(dbg_ctl_iocore_net_processor, "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
+      opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
   ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
