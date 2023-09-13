@@ -623,7 +623,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // the client hello message back into the standard read.vio
         // so it will get forwarded onto the origin server
         if (!this->getSSLHandShakeComplete()) {
-          this->sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+          this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
 
           // Copy over all data already read in during the SSL_accept
           // (the client hello message)
@@ -1003,7 +1003,7 @@ SSLNetVConnection::clear()
   TLSTunnelSupport::_clear();
   TLSCertSwitchSupport::_clear();
 
-  sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
+  sslHandshakeStatus          = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
@@ -1096,7 +1096,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       if (cc && SSLCertContextOption::OPT_TUNNEL == cc->opt) {
         if (this->is_transparent) {
           this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-          sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+          sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
           SSL_free(this->ssl);
           this->ssl = nullptr;
           return EVENT_DONE;
@@ -1285,7 +1285,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
   } else if (SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
     return EVENT_DONE;
   }
 
@@ -1365,7 +1365,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+      sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
       return EVENT_CONT;
     }
   }
@@ -1387,7 +1387,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       }
     }
 
-    sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
 
     if (this->get_tls_handshake_begin_time()) {
       this->_record_tls_handshake_end_time();
@@ -1463,7 +1463,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP)
     if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+      sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
       return EVENT_CONT;
     } else {
       //  Stopping for some other reason, perhaps loading certificate
@@ -1595,7 +1595,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
     SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
 
-    sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
@@ -1662,7 +1662,7 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
 
   // Mark as error to stop the Handshake
   if (event == TS_EVENT_ERROR) {
-    sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
+    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ERROR;
   }
 
   switch (sslHandshakeHookState) {
@@ -1931,7 +1931,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   this->ssl = static_cast<SSL *>(arg);
   // Maybe bring over the stats?
 
-  sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+  sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
   this->_bindSSLObject();
   return EVENT_DONE;
 }
@@ -2058,7 +2058,7 @@ SSLNetVConnection::_lookupContextByName(const std::string &servername, SSLCertCo
 
   if (cc && ctx && SSLCertContextOption::OPT_TUNNEL == cc->opt && this->get_is_transparent()) {
     this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-    this->setSSLHandShakeComplete(SSL_HANDSHAKE_DONE);
+    this->setSSLHandShakeComplete(SSLHandshakeStatus::SSL_HANDSHAKE_DONE);
     return nullptr;
   } else {
     return ctx;
