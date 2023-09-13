@@ -891,7 +891,6 @@ HttpTransact::SelfLoop(State *s)
 {
   TxnDebug("http_trans", "Request will selfloop.");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Direct self loop detected", "request#cycle_detected");
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -5736,39 +5735,16 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->cache_info.action = CACHE_DO_NO_ACTION;
   }
 
-  // This function, HttpTransact::initialize_state_variables_from_request(), may be called multiple times for the same
-  // HTTP request.  But we only want to increment the per-method request count the first time this function is called
-  // for each request.  0 is the value that the State class constructor initializes 'method' to, it means unset, so
-  // method should only be 0 if it's the first call to this function.
-  //
-  bool do_increment_stat = (0 == s->method);
-
   s->method = incoming_request->method_get_wksidx();
+  // This function may be called multiple times for the same HTTP request. But
+  // we only want to increment the per-method request count once for each
+  // request.
+  if (!s->is_method_stats_incremented) {
+    update_method_stat(s->method);
+    s->is_method_stats_incremented = true;
+  }
 
-  if (!do_increment_stat) {
-    ;
-  } else if (s->method == HTTP_WKSIDX_GET) {
-    Metrics::increment(http_rsb.get_requests);
-  } else if (s->method == HTTP_WKSIDX_HEAD) {
-    Metrics::increment(http_rsb.head_requests);
-  } else if (s->method == HTTP_WKSIDX_POST) {
-    Metrics::increment(http_rsb.post_requests);
-  } else if (s->method == HTTP_WKSIDX_PUT) {
-    Metrics::increment(http_rsb.put_requests);
-  } else if (s->method == HTTP_WKSIDX_CONNECT) {
-    Metrics::increment(http_rsb.connect_requests);
-  } else if (s->method == HTTP_WKSIDX_DELETE) {
-    Metrics::increment(http_rsb.delete_requests);
-  } else if (s->method == HTTP_WKSIDX_PURGE) {
-    Metrics::increment(http_rsb.purge_requests);
-  } else if (s->method == HTTP_WKSIDX_TRACE) {
-    Metrics::increment(http_rsb.trace_requests);
-  } else if (s->method == HTTP_WKSIDX_PUSH) {
-    Metrics::increment(http_rsb.push_requests);
-  } else if (s->method == HTTP_WKSIDX_OPTIONS) {
-    Metrics::increment(http_rsb.options_requests);
-  } else {
-    Metrics::increment(http_rsb.extension_method_requests);
+  if (s->method == 0 || s->method == HTTP_WKSIDX_METHODS_CNT) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
     s->squid_codes.log_code      = SQUID_LOG_TCP_MISS;
     s->hdr_info.extension_method = true;
@@ -5803,6 +5779,34 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   /////////////////////////////////////////////
   s->dns_info.looking_up  = ResolveInfo::ORIGIN_SERVER;
   s->dns_info.lookup_name = s->server_info.name;
+}
+
+void
+HttpTransact::update_method_stat(int method)
+{
+  if (method == HTTP_WKSIDX_GET) {
+    Metrics::increment(http_rsb.get_requests);
+  } else if (method == HTTP_WKSIDX_HEAD) {
+    Metrics::increment(http_rsb.head_requests);
+  } else if (method == HTTP_WKSIDX_POST) {
+    Metrics::increment(http_rsb.post_requests);
+  } else if (method == HTTP_WKSIDX_PUT) {
+    Metrics::increment(http_rsb.put_requests);
+  } else if (method == HTTP_WKSIDX_CONNECT) {
+    Metrics::increment(http_rsb.connect_requests);
+  } else if (method == HTTP_WKSIDX_DELETE) {
+    Metrics::increment(http_rsb.delete_requests);
+  } else if (method == HTTP_WKSIDX_PURGE) {
+    Metrics::increment(http_rsb.purge_requests);
+  } else if (method == HTTP_WKSIDX_TRACE) {
+    Metrics::increment(http_rsb.trace_requests);
+  } else if (method == HTTP_WKSIDX_PUSH) {
+    Metrics::increment(http_rsb.push_requests);
+  } else if (method == HTTP_WKSIDX_OPTIONS) {
+    Metrics::increment(http_rsb.options_requests);
+  } else {
+    Metrics::increment(http_rsb.extension_method_requests);
+  }
 }
 
 void

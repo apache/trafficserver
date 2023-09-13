@@ -203,7 +203,7 @@ tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"CONNECT tunnel://backend.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
     "Verify a CONNECT request is handled")
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Direct self loop detected", "The loop should be detected")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
 
 tr = Test.AddTestRun("test {proxy_protocol_port}")
 tr.Setup.Copy('proxy_protocol_client.py')
@@ -257,7 +257,7 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"CONNECT tunnel://backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
     "Verify a CONNECT request is handled")
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Direct self loop detected", "The loop should be detected")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
 
 tr = Test.AddTestRun("test wildcard with proxy_protocol_port")
 tr.Setup.Copy('proxy_protocol_client.py')

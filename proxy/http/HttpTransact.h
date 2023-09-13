@@ -697,6 +697,7 @@ public:
     bool already_downgraded           = false;
     bool transparent_passthrough      = false;
     bool range_in_cache               = false;
+    bool is_method_stats_incremented  = false;
 
     /// True if the response is cacheable because of negative caching configuration.
     ///
@@ -1111,6 +1112,7 @@ public:
   static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
+  static void update_method_stat(int method);
 };
 
 using TransactEntryFunc_t = void (*)(HttpTransact::State *);
