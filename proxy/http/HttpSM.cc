@@ -7346,7 +7346,11 @@ HttpSM::kill_this()
       server_txn->transaction_done();
       server_txn = nullptr;
     }
+
     if (ua_txn) {
+      if (ua_txn->get_server_session() != nullptr) {
+        ua_txn->attach_server_session(nullptr);
+      }
       ua_txn->transaction_done();
     }
 
