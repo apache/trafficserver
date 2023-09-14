@@ -7480,6 +7480,9 @@ HttpSM::kill_this()
       server_txn = nullptr;
     }
     if (_ua.get_txn()) {
+      if (_ua.get_txn()->get_server_session() != nullptr) {
+        _ua.get_txn()->attach_server_session(nullptr);
+      }
       _ua.get_txn()->transaction_done();
     }
 
