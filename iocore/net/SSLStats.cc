@@ -96,8 +96,8 @@ SSLInitializeStatistics()
   ssl_rsb.error_syscall                      = intm.newMetricPtr("proxy.process.ssl.ssl_error_syscall");
   ssl_rsb.ocsp_refresh_cert_failure          = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_refresh_cert_failure");
   ssl_rsb.ocsp_refreshed_cert                = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_refreshed_cert");
-  ssl_rsb.ocsp_revoked_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_revoked_cert_stat");
-  ssl_rsb.ocsp_unknown_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_unknown_cert_stat");
+  ssl_rsb.ocsp_revoked_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_revoked_cert");
+  ssl_rsb.ocsp_unknown_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_unknown_cert");
   ssl_rsb.origin_server_bad_cert             = intm.newMetricPtr("proxy.process.ssl.origin_server_bad_cert");
   ssl_rsb.origin_server_cert_verify_failed   = intm.newMetricPtr("proxy.process.ssl.origin_server_cert_verify_failed");
   ssl_rsb.origin_server_decryption_failed    = intm.newMetricPtr("proxy.process.ssl.origin_server_decryption_failed");

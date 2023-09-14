@@ -126,7 +126,7 @@ Cache
 .. ts:stat:: global proxy.process.cache.vector_marshals integer
 .. ts:stat:: global proxy.process.cache.write.active integer
 .. ts:stat:: global proxy.process.cache.write.backlog.failure integer
-.. ts:stat:: global proxy.process.cache.write_bytes_stat integer
+.. ts:stat:: global proxy.process.cache.write_bytes integer
 .. ts:stat:: global proxy.process.cache.write.failure integer
 .. ts:stat:: global proxy.process.cache.write.success integer
 
@@ -157,10 +157,10 @@ Cache
    `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
 
 
-.. ts:stat:: global proxy.process.http.background_fill_bytes_aborted_stat integer
+.. ts:stat:: global proxy.process.http.background_fill_bytes_aborted integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.background_fill_bytes_completed_stat integer
+.. ts:stat:: global proxy.process.http.background_fill_bytes_completed integer
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.background_fill_current_count integer
@@ -193,39 +193,39 @@ Cache
 .. ts:stat:: global proxy.process.http.cache_updates integer
 .. ts:stat:: global proxy.process.http.cache_write_errors integer
 .. ts:stat:: global proxy.process.http.cache_writes integer
-.. ts:stat:: global proxy.process.http.tcp_client_refresh_count_stat integer
+.. ts:stat:: global proxy.process.http.tcp_client_refresh_count integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_client_refresh_origin_server_bytes_stat integer
+.. ts:stat:: global proxy.process.http.tcp_client_refresh_origin_server_bytes integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_client_refresh_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.tcp_client_refresh_user_agent_bytes integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_expired_miss_count_stat integer
+.. ts:stat:: global proxy.process.http.tcp_expired_miss_count integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_expired_miss_origin_server_bytes_stat integer
+.. ts:stat:: global proxy.process.http.tcp_expired_miss_origin_server_bytes integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_expired_miss_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.tcp_expired_miss_user_agent_bytes integer
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.tcp_hit_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_hit_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_hit_user_agent_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_hit_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_hit_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_hit_user_agent_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_miss_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_miss_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_ims_miss_user_agent_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_miss_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_miss_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_miss_user_agent_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_hit_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_hit_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_hit_user_agent_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_miss_count_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_miss_origin_server_bytes_stat integer
-.. ts:stat:: global proxy.process.http.tcp_refresh_miss_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.tcp_hit_count integer
+.. ts:stat:: global proxy.process.http.tcp_hit_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_hit_user_agent_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_ims_hit_count integer
+.. ts:stat:: global proxy.process.http.tcp_ims_hit_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_ims_hit_user_agent_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_ims_miss_count integer
+.. ts:stat:: global proxy.process.http.tcp_ims_miss_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_ims_miss_user_agent_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_miss_count integer
+.. ts:stat:: global proxy.process.http.tcp_miss_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_miss_user_agent_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_hit_count integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_hit_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_hit_user_agent_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_miss_count integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_miss_origin_server_bytes integer
+.. ts:stat:: global proxy.process.http.tcp_refresh_miss_user_agent_bytes integer
