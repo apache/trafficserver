@@ -50,6 +50,8 @@
 #include <netinet/in.h>
 
 #include <cinttypes>
+#include <memory>
+#include <utility>
 
 #include "chunk-decoder.h"
 #include "ts.h"
@@ -98,7 +100,7 @@ template <class T> struct HttpTransaction {
   bool abort_;
   bool timeout_;
   io::IO *in_;
-  io::IO *out_;
+  std::unique_ptr<io::IO> out_;
   TSVConn vconnection_;
   TSCont continuation_;
   T t_;
@@ -110,10 +112,6 @@ template <class T> struct HttpTransaction {
     if (in_ != nullptr) {
       delete in_;
       in_ = nullptr;
-    }
-    if (out_ != nullptr) {
-      delete out_;
-      out_ = nullptr;
     }
     timeout(0);
     assert(vconnection_ != nullptr);
@@ -129,12 +127,12 @@ template <class T> struct HttpTransaction {
     }
   }
 
-  HttpTransaction(TSVConn v, TSCont c, io::IO *const i, const uint64_t l, const T &t)
+  HttpTransaction(TSVConn v, TSCont c, std::unique_ptr<io::IO> i, const uint64_t l, const T &t)
     : parsingHeaders_(false),
       abort_(false),
       timeout_(false),
       in_(nullptr),
-      out_(i),
+      out_(std::move(i)),
       vconnection_(v),
       continuation_(c),
       t_(t),
@@ -142,7 +140,7 @@ template <class T> struct HttpTransaction {
   {
     assert(vconnection_ != nullptr);
     assert(continuation_ != nullptr);
-    assert(out_ != nullptr);
+    assert(out_.get() != nullptr);
     assert(l > 0);
     out_->vio = TSVConnWrite(vconnection_, continuation_, out_->reader, l);
   }
@@ -271,8 +269,7 @@ template <class T> struct HttpTransaction {
       assert(self->vconnection_);
       TSVConnShutdown(self->vconnection_, 0, 1);
       assert(self->out_ != nullptr);
-      delete self->out_;
-      self->out_ = nullptr;
+      self->out_.reset();
       break;
     case TS_EVENT_VCONN_WRITE_READY:
       TSDebug(PLUGIN_TAG, "HttpTransaction: Write Ready (Done: %" PRId64 " Todo: %" PRId64 ")", TSVIONDoneGet(self->out_->vio),
@@ -299,7 +296,7 @@ template <class T> struct HttpTransaction {
 
 template <class T>
 bool
-get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
+get(const std::string &a, std::unique_ptr<io::IO> i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   using Transaction = HttpTransaction<T>;
   struct sockaddr_in socket;
@@ -313,7 +310,7 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   assert(vconn != nullptr);
   TSCont contp = TSContCreate(Transaction::handle, nullptr);
   assert(contp != nullptr);
-  Transaction *transaction = new Transaction(vconn, contp, i, l, t);
+  Transaction *transaction = new Transaction(vconn, contp, std::move(i), l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
     TSDebug(PLUGIN_TAG, "ats::get Setting active timeout to: %" PRId64, ti);
@@ -324,8 +321,8 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
 
 template <class T>
 bool
-get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
+get(std::unique_ptr<io::IO> i, const int64_t l, const T &t, const int64_t ti = 0)
 {
-  return get("127.0.0.1", i, l, t, ti);
+  return get("127.0.0.1", std::move(i), l, t, ti);
 }
 } // namespace ats
