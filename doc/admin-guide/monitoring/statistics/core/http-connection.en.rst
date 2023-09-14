@@ -66,43 +66,43 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.current_server_transactions integer
    :type: gauge
 
-.. ts:stat:: global proxy.process.http.err_client_abort_count_stat integer
+.. ts:stat:: global proxy.process.http.err_client_abort_count integer
    :type: counter
 
-.. ts:stat:: global proxy.process.http.err_client_abort_origin_server_bytes_stat integer
-   :type: counter
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.err_client_abort_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.err_client_abort_origin_server_bytes integer
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.process.http.err_client_read_error_count_stat integer
-   :type: counter
-
-.. ts:stat:: global proxy.process.http.err_client_read_error_origin_server_bytes_stat integer
+.. ts:stat:: global proxy.process.http.err_client_abort_user_agent_bytes integer
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.process.http.err_client_read_error_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.err_client_read_error_count integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.http.err_client_read_error_origin_server_bytes integer
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.process.http.err_connect_fail_count_stat integer
+.. ts:stat:: global proxy.process.http.err_client_read_error_user_agent_bytes integer
+   :type: counter
+   :units: bytes
+
+.. ts:stat:: global proxy.process.http.err_connect_fail_count integer
    :type: counter
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.err_connect_fail_origin_server_bytes_stat integer
-   :type: counter
-   :units: bytes
-   :ungathered:
-
-.. ts:stat:: global proxy.process.http.err_connect_fail_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.err_connect_fail_origin_server_bytes integer
    :type: counter
    :units: bytes
    :ungathered:
 
-.. ts:stat:: global proxy.process.http.http_misc_origin_server_bytes_stat integer
+.. ts:stat:: global proxy.process.http.err_connect_fail_user_agent_bytes integer
+   :type: counter
+   :units: bytes
+   :ungathered:
+
+.. ts:stat:: global proxy.process.http.http_misc_origin_server_bytes integer
    :type: counter
    :units: bytes
 

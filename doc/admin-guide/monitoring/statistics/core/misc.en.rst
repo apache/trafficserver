@@ -22,5 +22,5 @@
 Miscellaneous
 *************
 
-.. ts:stat:: global proxy.process.http.misc_count_stat integer
-.. ts:stat:: global proxy.process.http.misc_user_agent_bytes_stat integer
+.. ts:stat:: global proxy.process.http.misc_count integer
+.. ts:stat:: global proxy.process.http.misc_user_agent_bytes integer
