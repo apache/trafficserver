@@ -32,12 +32,6 @@
 
 AppVersionInfo appVersionInfo;
 
-void
-initialize_thread_for_http_sessions(EThread *, int)
-{
-  ink_assert(false);
-}
-
 #include "api/InkAPIInternal.h"
 void
 APIHooks::append(INKContInternal *cont)
