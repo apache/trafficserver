@@ -119,7 +119,7 @@ private:
 
   struct _UrlHandle {
     TSMBuffer bufp = nullptr;
-    TSMLoc urlp;
+    TSMLoc urlp    = nullptr; // Doesn't really need initialization, this is only to shut up Coverity.
   };
 
   // Buffer any data that's likely to be used more than once.
