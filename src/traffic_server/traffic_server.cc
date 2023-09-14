@@ -1393,34 +1393,26 @@ struct ShowStats : public Continuation {
     if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     }
-    int64_t sval, cval;
-
-    NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
-    int64_t d_rb  = sval - last_rb;
+    int64_t d_rb  = Metrics::read(net_rsb.calls_to_readfromnet) - last_rb;
     last_rb      += d_rb;
 
-    NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
-    int64_t d_wb  = sval - last_wb;
+    int64_t d_wb  = Metrics::read(net_rsb.calls_to_writetonet) - last_wb;
     last_wb      += d_wb;
 
-    NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
-    int64_t d_nrb  = sval - last_nrb;
+    int64_t d_nrb  = Metrics::read(net_rsb.read_bytes) - last_nrb;
     last_nrb      += d_nrb;
-    int64_t d_nr   = cval - last_nr;
+    int64_t d_nr   = Metrics::read(net_rsb.read_bytes_count) - last_nr;
     last_nr       += d_nr;
 
-    NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
-    int64_t d_nwb  = sval - last_nwb;
+    int64_t d_nwb  = Metrics::read(net_rsb.write_bytes) - last_nwb;
     last_nwb      += d_nwb;
-    int64_t d_nw   = cval - last_nw;
+    int64_t d_nw   = Metrics::read(net_rsb.write_bytes_count) - last_nw;
     last_nw       += d_nw;
 
-    NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
-    int64_t d_o = sval;
+    int64_t d_o = Metrics::read(net_rsb.connections_currently_open);
+    int64_t d_p = Metrics::read(net_rsb.handler_run) - last_p;
 
-    NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
-    int64_t d_p  = cval - last_p;
-    last_p      += d_p;
+    last_p += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
            d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE

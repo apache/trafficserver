@@ -218,7 +218,6 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
         opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
-  ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
   // char thr_name[MAX_THREAD_NAME_LENGTH];
@@ -228,7 +227,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   if (accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
   }
-  NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
+  Metrics::increment(net_rsb.accepts_currently_open);
 
   if (opt.localhost_only) {
     accept_ip.setToLoopback(opt.ip_family);

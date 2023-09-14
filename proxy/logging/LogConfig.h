@@ -32,49 +32,39 @@
 #include "LogObject.h"
 #include "RolledLogDeleter.h"
 #include "swoc/MemSpan.h"
+#include "api/Metrics.h"
 
-/* Instead of enumerating the stats in DynamicStats.h, each module needs
-   to enumerate its stats separately and register them with librecords
-   */
-enum {
-  // Logging Events
-  log_stat_event_log_error_ok_stat,
-  log_stat_event_log_error_skip_stat,
-  log_stat_event_log_error_aggr_stat,
-  log_stat_event_log_error_full_stat,
-  log_stat_event_log_error_fail_stat,
+using ts::Metrics;
 
-  log_stat_event_log_access_ok_stat,
-  log_stat_event_log_access_skip_stat,
-  log_stat_event_log_access_aggr_stat,
-  log_stat_event_log_access_full_stat,
-  log_stat_event_log_access_fail_stat,
-
-  // Logging Data
-  log_stat_num_sent_to_network_stat,
-  log_stat_num_lost_before_sent_to_network_stat,
-  log_stat_num_received_from_network_stat,
-  log_stat_num_flush_to_disk_stat,
-  log_stat_num_lost_before_flush_to_disk_stat,
-
-  log_stat_bytes_lost_before_preproc_stat,
-  log_stat_bytes_sent_to_network_stat,
-  log_stat_bytes_lost_before_sent_to_network_stat,
-  log_stat_bytes_received_from_network_stat,
-
-  log_stat_bytes_flush_to_disk_stat,
-  log_stat_bytes_lost_before_flush_to_disk_stat,
-  log_stat_bytes_written_to_disk_stat,
-  log_stat_bytes_lost_before_written_to_disk_stat,
-
-  // Logging I/O
-  log_stat_log_files_open_stat,
-  log_stat_log_files_space_used_stat,
-
-  log_stat_count
+struct LogsStatsBlock {
+  Metrics::IntType *event_log_error_ok;
+  Metrics::IntType *event_log_error_skip;
+  Metrics::IntType *event_log_error_aggr;
+  Metrics::IntType *event_log_error_full;
+  Metrics::IntType *event_log_error_fail;
+  Metrics::IntType *event_log_access_ok;
+  Metrics::IntType *event_log_access_skip;
+  Metrics::IntType *event_log_access_aggr;
+  Metrics::IntType *event_log_access_full;
+  Metrics::IntType *event_log_access_fail;
+  Metrics::IntType *num_sent_to_network;
+  Metrics::IntType *num_lost_before_sent_to_network;
+  Metrics::IntType *num_received_from_network;
+  Metrics::IntType *num_flush_to_disk;
+  Metrics::IntType *num_lost_before_flush_to_disk;
+  Metrics::IntType *bytes_lost_before_preproc;
+  Metrics::IntType *bytes_sent_to_network;
+  Metrics::IntType *bytes_lost_before_sent_to_network;
+  Metrics::IntType *bytes_received_from_network;
+  Metrics::IntType *bytes_flush_to_disk;
+  Metrics::IntType *bytes_lost_before_flush_to_disk;
+  Metrics::IntType *bytes_written_to_disk;
+  Metrics::IntType *bytes_lost_before_written_to_disk;
+  Metrics::IntType *log_files_open;
+  Metrics::IntType *log_files_space_used;
 };
 
-extern RecRawStatBlock *log_rsb;
+extern LogsStatsBlock log_rsb;
 
 struct dirent;
 

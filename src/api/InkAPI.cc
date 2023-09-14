@@ -6561,29 +6561,20 @@ tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 int
 tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
-  int64_t S;
-
-  HTTP_READ_DYN_SUM(http_current_client_connections_stat, S);
-  return static_cast<int>(S);
+  return Metrics::read(http_rsb.current_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentActiveClientConnectionsGet()
 {
-  int64_t S;
-
-  HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, S);
-  return static_cast<int>(S);
+  return Metrics::read(http_rsb.current_active_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 {
-  int64_t total  = 0;
-  int64_t active = 0;
-
-  HTTP_READ_DYN_SUM(http_current_client_connections_stat, total);
-  HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
+  int64_t total  = Metrics::read(http_rsb.current_client_connections);
+  int64_t active = Metrics::read(http_rsb.current_active_client_connections);
 
   if (total >= active) {
     return static_cast<int>(total - active);
@@ -6595,19 +6586,13 @@ tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 int
 tsapi::c::TSHttpCurrentCacheConnectionsGet()
 {
-  int64_t S;
-
-  HTTP_READ_DYN_SUM(http_current_cache_connections_stat, S);
-  return static_cast<int>(S);
+  return Metrics::read(http_rsb.current_cache_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentServerConnectionsGet()
 {
-  int64_t S;
-
-  HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, S);
-  return static_cast<int>(S);
+  return Metrics::read(http_rsb.current_server_connections);
 }
 
 /* HTTP alternate selection */
@@ -7007,7 +6992,7 @@ tsapi::c::TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   CacheVC *vc = (CacheVC *)connp;
-  if (vc->base_stat == cache_scan_active_stat) {
+  if (static_cast<CacheOpType>(vc->op_type) == CacheOpType::Scan) {
     vc->set_http_info((CacheHTTPInfo *)infop);
   }
 }
@@ -7423,14 +7408,14 @@ void
 tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_add(amount);
+  global_api_metrics[id].fetch_add(amount, ts::Metrics::MEMORY_ORDER);
 }
 
 void
 tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_sub(amount);
+  global_api_metrics[id].fetch_sub(amount, ts::Metrics::MEMORY_ORDER);
 }
 
 tsapi::c::TSMgmtInt

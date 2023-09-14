@@ -341,13 +341,6 @@ main_stats_page(Stats &stats)
   response2.push_back("304");
   response2.push_back("404");
   response2.push_back("502");
-  response2.push_back("s_100");
-  response2.push_back("s_1k");
-  response2.push_back("s_3k");
-  response2.push_back("s_5k");
-  response2.push_back("s_10k");
-  response2.push_back("s_1m");
-  response2.push_back("s_>1m");
   makeTable(62, 1, response2, stats);
 
   list<string> client1;

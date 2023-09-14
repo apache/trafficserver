@@ -90,6 +90,3 @@ private:
   void handle_cqe(io_uring_cqe *);
   static IOUringConfig config;
 };
-
-extern std::atomic<uint64_t> io_uring_submissions;
-extern std::atomic<uint64_t> io_uring_completions;

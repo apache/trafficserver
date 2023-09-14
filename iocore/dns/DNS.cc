@@ -470,7 +470,7 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
 bool
 DNSHandler::reset_tcp_conn(int ndx)
 {
-  DNS_INCREMENT_DYN_STAT(dns_tcp_reset_stat);
+  Metrics::increment(dns_rsb.tcp_reset);
   tcpcon[ndx].close();
   return open_con(&m_res->nsaddr_list[ndx].sa, true, ndx, true);
 }
@@ -824,7 +824,7 @@ DNSHandler::rr_failure(int ndx)
         ++(e->retries); // give them another chance
       }
       --in_flight;
-      DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
+      Metrics::decrement(dns_rsb.in_flight);
     }
   } else {
     // move outstanding requests that were sent to this nameserver to another
@@ -835,7 +835,7 @@ DNSHandler::rr_failure(int ndx)
           ++(e->retries); // give them another chance
         }
         --in_flight;
-        DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
+        Metrics::decrement(dns_rsb.in_flight);
       }
     }
   }
@@ -1079,8 +1079,7 @@ get_entry(DNSHandler *h, char *qname, int qtype)
 static void
 write_dns(DNSHandler *h, bool tcp_retry)
 {
-  ProxyMutex *mutex = h->mutex.get();
-  DNS_INCREMENT_DYN_STAT(dns_total_lookups_stat);
+  Metrics::increment(dns_rsb.total_lookups);
   int max_nscount = h->m_res->nscount;
   if (max_nscount > MAX_NAMED) {
     max_nscount = MAX_NAMED;
@@ -1164,7 +1163,6 @@ DNSHandler::get_query_id()
 static bool
 write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
 {
-  ProxyMutex *mutex = h->mutex.get();
   unsigned char buffer[MAX_DNS_REQUEST_LEN];
   int offset     = over_tcp ? tcp_data_length_offset : 0;
   HEADER *header = reinterpret_cast<HEADER *>(buffer + offset);
@@ -1219,7 +1217,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   e->which_ns          = h->name_server;
   e->once_written_flag = true;
   ++h->in_flight;
-  DNS_INCREMENT_DYN_STAT(dns_in_flight_stat);
+  Metrics::increment(dns_rsb.in_flight);
 
   e->send_time = ink_get_hrtime();
 
@@ -1304,7 +1302,7 @@ DNSEntry::mainEvent(int event, Event *e)
       Dbg(dbg_ctl_dns, "marking %s as not-written", qname);
       written_flag = false;
       --(dnsH->in_flight);
-      DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
+      Metrics::decrement(dns_rsb.in_flight);
     }
     timeout = nullptr;
     dns_result(dnsH, this, result_ent.get(), true);
@@ -1343,16 +1341,15 @@ DNSProcessor::getby(DNSQueryData x, int type, Continuation *cont, Options const 
 static void
 dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
 {
-  ProxyMutex *mutex = h->mutex.get();
-  bool cancelled    = (e->action.cancelled ? true : false);
-  retry             = retry || tcp_retry;
+  bool cancelled = (e->action.cancelled ? true : false);
+  retry          = retry || tcp_retry;
 
   if ((!ent || !ent->good) && !cancelled) {
     // try to retry operation
     if (retry && e->retries) {
       Dbg(dbg_ctl_dns, "doing retry for %s", e->qname);
 
-      DNS_INCREMENT_DYN_STAT(dns_retries_stat);
+      Metrics::increment(dns_rsb.tcp_retries);
 
       --(e->retries);
       write_dns(h, tcp_retry);
@@ -1388,17 +1385,24 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
       }
     }
     if (retry) {
-      DNS_INCREMENT_DYN_STAT(dns_max_retries_exceeded_stat);
+      Metrics::increment(dns_rsb.max_retries_exceeded);
     }
   }
   if (ent == BAD_DNS_RESULT) {
     ent = nullptr;
   }
   if (!cancelled) {
+    // ToDo: Should this possibly be send_time() ??
+    ink_hrtime diff = (ink_get_hrtime() - e->submit_time) / HRTIME_MSECOND;
+
+    // These are rolling averages, this requires that the lookup_fail/success counters are incremented later
     if (!ent || !ent->good) {
-      DNS_SUM_DYN_STAT(dns_fail_time_stat, ink_get_hrtime() - e->submit_time);
+      Metrics::increment(dns_rsb.fail_time, diff);
+      Metrics::increment(dns_rsb.lookup_fail);
     } else {
-      DNS_SUM_DYN_STAT(dns_success_time_stat, ink_get_hrtime() - e->submit_time);
+      Metrics::increment(dns_rsb.success_time, diff);
+
+      Metrics::increment(dns_rsb.lookup_success);
     }
   }
 
@@ -1429,12 +1433,6 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
         DbgPrint(dbg_ctl_dns, "FAIL result for %s = <not found> retry %d", e->qname, retry);
       }
     }
-  }
-
-  if (ent && ent->good) {
-    DNS_INCREMENT_DYN_STAT(dns_lookup_success_stat);
-  } else {
-    DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
   }
 
   // Save HostEnt to the head node
@@ -1524,7 +1522,6 @@ DNSEntry::postOneEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 static bool
 dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
-  ProxyMutex *mutex = handler->mutex.get();
   HEADER *h         = reinterpret_cast<HEADER *>(buf->buf);
   DNSEntry *e       = get_dns(handler, static_cast<uint16_t>(ntohs(h->id)));
   bool retry        = false;
@@ -1562,15 +1559,17 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   //
   e->written_flag = false;
   --(handler->in_flight);
-  DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
+  Metrics::decrement(dns_rsb.in_flight);
+  // These are rolling averages
+  ink_hrtime diff = (ink_get_hrtime() - e->send_time) / HRTIME_MSECOND;
 
-  DNS_SUM_DYN_STAT(dns_response_time_stat, ink_get_hrtime() - e->send_time);
+  Metrics::increment(dns_rsb.response_time, diff);
 
   // retrying over TCP when truncated is set
   if (dns_conn_mode == DNS_CONN_MODE::TCP_RETRY && h->tc == 1) {
     Dbg(dbg_ctl_dns, "Retrying DNS query over TCP for [%s]", e->qname);
     tcp_retry = true;
-    DNS_INCREMENT_DYN_STAT(dns_tcp_retries_stat);
+    Metrics::increment(dns_rsb.tcp_retries);
     goto Lerror;
   }
 
@@ -1883,13 +1882,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     }
   }
 Lerror:;
-  DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
+  Metrics::increment(dns_rsb.lookup_fail);
   buf->good = false;
   dns_result(handler, e, buf, retry, tcp_retry);
   return server_ok;
 }
 
-RecRawStatBlock *dns_rsb;
+DNSStatsBlock dns_rsb;
 
 void
 ink_dns_init(ts::ModuleVersion v)
@@ -1904,45 +1903,23 @@ ink_dns_init(ts::ModuleVersion v)
   }
 
   init_called = 1;
-  // do one time stuff
-  // create a stat block for HostDBStats
-  dns_rsb = RecAllocateRawStatBlock(static_cast<int>(DNS_Stat_Count));
 
   //
   // Register statistics callbacks
   //
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.total_dns_lookups", RECD_INT, RECP_PERSISTENT,
-                     (int)dns_total_lookups_stat, RecRawStatSyncSum);
+  ts::Metrics &intm = ts::Metrics::getInstance();
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_avg_time", RECD_INT, RECP_PERSISTENT,
-                     (int)dns_response_time_stat, RecRawStatSyncHrTimeAvg);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.success_avg_time", RECD_INT, RECP_NON_PERSISTENT,
-                     (int)dns_success_time_stat, RecRawStatSyncHrTimeAvg);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_successes", RECD_INT, RECP_PERSISTENT,
-                     (int)dns_lookup_success_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.fail_avg_time", RECD_INT, RECP_PERSISTENT, (int)dns_fail_time_stat,
-                     RecRawStatSyncHrTimeAvg);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_failures", RECD_INT, RECP_PERSISTENT,
-                     (int)dns_lookup_fail_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.retries", RECD_INT, RECP_PERSISTENT, (int)dns_retries_stat,
-                     RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.max_retries_exceeded", RECD_INT, RECP_PERSISTENT,
-                     (int)dns_max_retries_exceeded_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.in_flight", RECD_INT, RECP_NON_PERSISTENT, (int)dns_in_flight_stat,
-                     RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.tcp_retries", RECD_INT, RECP_PERSISTENT, (int)dns_tcp_retries_stat,
-                     RecRawStatSyncSum);
-
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.tcp_reset", RECD_INT, RECP_PERSISTENT, (int)dns_tcp_reset_stat,
-                     RecRawStatSyncSum);
+  dns_rsb.fail_time            = intm.newMetricPtr("proxy.process.dns.fail_time");
+  dns_rsb.in_flight            = intm.newMetricPtr("proxy.process.dns.in_flight");
+  dns_rsb.lookup_fail          = intm.newMetricPtr("proxy.process.dns.lookup_failures");
+  dns_rsb.lookup_success       = intm.newMetricPtr("proxy.process.dns.lookup_successes");
+  dns_rsb.max_retries_exceeded = intm.newMetricPtr("proxy.process.dns.max_retries_exceeded");
+  dns_rsb.response_time        = intm.newMetricPtr("proxy.process.dns.lookup_time");
+  dns_rsb.retries              = intm.newMetricPtr("proxy.process.dns.retries");
+  dns_rsb.success_time         = intm.newMetricPtr("proxy.process.dns.success_time");
+  dns_rsb.tcp_reset            = intm.newMetricPtr("proxy.process.dns.tcp_reset");
+  dns_rsb.tcp_retries          = intm.newMetricPtr("proxy.process.dns.tcp_retries");
+  dns_rsb.total_lookups        = intm.newMetricPtr("proxy.process.dns.total_dns_lookups");
 }
 
 #if TS_HAS_TESTS

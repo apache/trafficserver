@@ -29,6 +29,10 @@
 #include "MIME.h"
 #include "records/I_RecDefs.h"
 
+#include "api/Metrics.h"
+
+using ts::Metrics;
+
 class HTTPHdr;
 
 // [RFC 9113] 5.1.1 Stream identifiers.
@@ -72,43 +76,38 @@ const uint32_t HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY = 0;
 const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT             = 15;
 
 // Statistics
-enum {
-  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,           // Current # of inbound HTTP2 connections
-  HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT,           // Current # of outbound HTTP2 connections
-  HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, // Current # of active inbound HTTP2 connections
-  HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT, // Current # of active outbound HTTP2 connections
-  HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,            // Current # of active inbound HTTP2 streams
-  HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT,            // Current # of active outboundHTTP2 streams
-  HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT,
-  HTTP2_STAT_TOTAL_SERVER_STREAM_COUNT,
-  HTTP2_STAT_TOTAL_TRANSACTIONS_TIME,       // Total stream time and streams
-  HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total inbound connections running http2
-  HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT, // Total outbound connections running http2
-  HTTP2_STAT_STREAM_ERRORS_COUNT,
-  HTTP2_STAT_CONNECTION_ERRORS_COUNT,
-  HTTP2_STAT_SESSION_DIE_DEFAULT,
-  HTTP2_STAT_SESSION_DIE_OTHER,
-  HTTP2_STAT_SESSION_DIE_ACTIVE,
-  HTTP2_STAT_SESSION_DIE_INACTIVE,
-  HTTP2_STAT_SESSION_DIE_EOS,
-  HTTP2_STAT_SESSION_DIE_ERROR,
-  HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE,
-  HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED,
-  HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED,
-  HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED,
-  HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED,
-  HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED,
-  HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE,
-  HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN,
-  HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT,
-
-  HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
+struct Http2StatsBlock {
+  Metrics::IntType *current_client_session_count;
+  Metrics::IntType *current_server_session_count;
+  Metrics::IntType *current_active_client_connection_count;
+  Metrics::IntType *current_active_server_connection_count;
+  Metrics::IntType *current_client_stream_count;
+  Metrics::IntType *current_server_stream_count;
+  Metrics::IntType *total_client_stream_count;
+  Metrics::IntType *total_server_stream_count;
+  Metrics::IntType *total_transactions_time;
+  Metrics::IntType *total_client_connection_count;
+  Metrics::IntType *total_server_connection_count;
+  Metrics::IntType *stream_errors_count;
+  Metrics::IntType *connection_errors_count;
+  Metrics::IntType *session_die_default;
+  Metrics::IntType *session_die_other;
+  Metrics::IntType *session_die_active;
+  Metrics::IntType *session_die_inactive;
+  Metrics::IntType *session_die_eos;
+  Metrics::IntType *session_die_error;
+  Metrics::IntType *session_die_high_error_rate;
+  Metrics::IntType *max_settings_per_frame_exceeded;
+  Metrics::IntType *max_settings_per_minute_exceeded;
+  Metrics::IntType *max_settings_frames_per_minute_exceeded;
+  Metrics::IntType *max_ping_frames_per_minute_exceeded;
+  Metrics::IntType *max_priority_frames_per_minute_exceeded;
+  Metrics::IntType *insufficient_avg_window_update;
+  Metrics::IntType *max_concurrent_streams_exceeded_in;
+  Metrics::IntType *max_concurrent_streams_exceeded_out;
 };
 
-#define HTTP2_INCREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, 1);
-#define HTTP2_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, -1);
-#define HTTP2_SUM_THREAD_DYN_STAT(_s, _t, _v)   RecIncrRawStat(http2_rsb, _t, (int)_s, _v);
-extern RecRawStatBlock *http2_rsb; // Container for statistics.
+extern Http2StatsBlock http2_rsb;
 
 // [RFC 7540] 6.9.1. The Flow Control Window
 static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;

@@ -80,11 +80,9 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   static int net_accept_number = 0;
-
-  ProxyMutex *mutex  = this_ethread()->mutex.get();
-  int accept_threads = opt.accept_threads; // might be changed.
-  IpEndpoint accept_ip;                    // local binding address.
-  int listen_per_thread = 0;
+  int accept_threads           = opt.accept_threads; // might be changed.
+  int listen_per_thread        = 0;
+  IpEndpoint accept_ip; // local binding address.
 
   NetAccept *na = createNetAccept(opt);
   na->id        = ink_atomic_increment(&net_accept_number, 1);
@@ -99,7 +97,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Fatal("Please disable accept_threads or exec_thread.listen");
   }
 
-  NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
+  Metrics::increment(net_rsb.accepts_currently_open);
 
   // We've handled the config stuff at start up, but there are a few cases
   // we must handle at this point.

@@ -34,8 +34,12 @@
 
 #include "tscore/I_Version.h"
 #include "tscpp/util/TsSharedMutex.h"
+
+#include "api/Metrics.h"
 #include <cstdint>
 #include <unistd.h>
+
+using ts::Metrics;
 
 #define REFCOUNT_CACHE_EVENT_SYNC REFCOUNT_CACHE_EVENT_EVENTS_START
 
@@ -46,20 +50,16 @@ static constexpr unsigned char REFCOUNTCACHE_MINOR_VERSION = 0;
 static constexpr ts::VersionNumber REFCOUNTCACHE_VERSION(1, 0);
 
 // Stats
-enum RefCountCache_Stats {
-  refcountcache_current_items_stat,        // current number of items
-  refcountcache_current_size_stat,         // current size of cache
-  refcountcache_total_inserts_stat,        // total items inserted
-  refcountcache_total_failed_inserts_stat, // total items unable to insert
-  refcountcache_total_lookups_stat,        // total get() calls
-  refcountcache_total_hits_stat,           // total hits
-
-  // Persistence metrics
-  refcountcache_last_sync_time,   // seconds since epoch of last successful sync
-  refcountcache_last_total_items, // number of items sync last time
-  refcountcache_last_total_size,  // total size at last sync
-
-  RefCountCache_Stat_Count
+struct RefCountCacheBlock {
+  Metrics::IntType *refcountcache_current_items;
+  Metrics::IntType *refcountcache_current_size;
+  Metrics::IntType *refcountcache_total_inserts;
+  Metrics::IntType *refcountcache_total_failed_inserts;
+  Metrics::IntType *refcountcache_total_lookups;
+  Metrics::IntType *refcountcache_total_hits;
+  Metrics::IntType *refcountcache_last_sync_time;
+  Metrics::IntType *refcountcache_last_total_items;
+  Metrics::IntType *refcountcache_last_total_size;
 };
 
 struct RefCountCacheItemMeta {
@@ -163,7 +163,7 @@ template <class C> class RefCountCachePartition : private RefCountCacheBase
 public:
   using hash_type = swoc::IntrusiveHashMap<RefCountCacheLinkage>;
 
-  RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RecRawStatBlock *rsb = nullptr);
+  RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RefCountCacheBlock *rsb = nullptr);
   Ptr<C> get(uint64_t key);
   void put(uint64_t key, C *item, int size = 0, int expire_time = 0);
   void erase(uint64_t key, ink_time_t expiry_time = -1);
@@ -181,8 +181,6 @@ public:
   ts::shared_mutex lock;
 
 private:
-  void metric_inc(RefCountCache_Stats metric_enum, int64_t data);
-
   unsigned int part_num;
   uint64_t max_size;
   unsigned int max_items;
@@ -192,12 +190,12 @@ private:
   hash_type item_map;
 
   PriorityQueue<RefCountCacheHashEntry *> expiry_queue;
-  RecRawStatBlock *rsb;
+  RefCountCacheBlock *rsb;
 };
 
 template <class C>
 RefCountCachePartition<C>::RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items,
-                                                  RecRawStatBlock *rsb)
+                                                  RefCountCacheBlock *rsb)
   : part_num(part_num), max_size(max_size), max_items(max_items), size(0), items(0), rsb(rsb)
 {
 }
@@ -206,10 +204,10 @@ template <class C>
 Ptr<C>
 RefCountCachePartition<C>::get(uint64_t key)
 {
-  this->metric_inc(refcountcache_total_lookups_stat, 1);
+  Metrics::increment(this->rsb->refcountcache_total_lookups);
   if (auto it = this->item_map.find(key); it != this->item_map.end()) {
     // found
-    this->metric_inc(refcountcache_total_hits_stat, 1);
+    Metrics::increment(this->rsb->refcountcache_total_hits);
     return make_ptr(static_cast<C *>(it->item.get()));
   } else {
     return Ptr<C>();
@@ -220,7 +218,7 @@ template <class C>
 void
 RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
 {
-  this->metric_inc(refcountcache_total_inserts_stat, 1);
+  Metrics::increment(this->rsb->refcountcache_total_inserts);
   size += sizeof(C);
   // Remove any colliding entries
   this->erase(key);
@@ -228,7 +226,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   // if we are full, and can't make space-- then don't store the item
   if (this->is_full() && !this->make_space_for(size)) {
     Dbg(dbg_ctl, "partition %d is full-- not storing item key=%" PRIu64, this->part_num, key);
-    this->metric_inc(refcountcache_total_failed_inserts_stat, 1);
+    Metrics::increment(this->rsb->refcountcache_total_failed_inserts);
     return;
   }
 
@@ -249,8 +247,8 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   this->item_map.insert(val);
   this->size += val->meta.size;
   this->items++;
-  this->metric_inc(refcountcache_current_size_stat, (int64_t)val->meta.size);
-  this->metric_inc(refcountcache_current_items_stat, 1);
+  Metrics::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
+  Metrics::increment(this->rsb->refcountcache_current_items);
 }
 
 template <class C>
@@ -275,8 +273,8 @@ RefCountCachePartition<C>::dealloc_entry(hash_type::iterator ptr)
   this->size -= ptr->meta.size;
   this->items--;
 
-  this->metric_inc(refcountcache_current_size_stat, -((int64_t)ptr->meta.size));
-  this->metric_inc(refcountcache_current_items_stat, -1);
+  Metrics::decrement(this->rsb->refcountcache_current_size, ptr->meta.size);
+  Metrics::decrement(this->rsb->refcountcache_current_items);
 
   // remove from expiry queue
   if (ptr->expiry_entry != nullptr) {
@@ -358,15 +356,6 @@ RefCountCachePartition<C>::copy(std::vector<RefCountCacheHashEntry *> &items)
 }
 
 template <class C>
-void
-RefCountCachePartition<C>::metric_inc(RefCountCache_Stats metric_enum, int64_t data)
-{
-  if (this->rsb) {
-    RecIncrGlobalRawStatCount(this->rsb, metric_enum, data);
-  }
-}
-
-template <class C>
 swoc::IntrusiveHashMap<RefCountCacheLinkage> &
 RefCountCachePartition<C>::get_map()
 {
@@ -405,7 +394,7 @@ template <class C> class RefCountCache
 public:
   // Constructor
   RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, ts::VersionNumber object_version = ts::VersionNumber(),
-                const std::string &metrics_prefix = "");
+                const std::string metrics_prefix = ".refcountcache");
   // Destructor
   ~RefCountCache();
 
@@ -422,7 +411,7 @@ public:
   RefCountCachePartition<C> &get_partition(int pnum);
   size_t count() const;
   RefCountCacheHeader &get_header();
-  RecRawStatBlock *get_rsb();
+  RefCountCacheBlock *get_rsb();
 
 private:
   int max_size;  // Total size
@@ -431,52 +420,34 @@ private:
   std::vector<RefCountCachePartition<C> *> partitions;
   // Header
   RefCountCacheHeader header; // Our header
-  RecRawStatBlock *rsb;
+  RefCountCacheBlock rsb;
 };
 
 template <class C>
 RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, ts::VersionNumber object_version,
-                                const std::string &metrics_prefix)
-  : header(RefCountCacheHeader(object_version)), rsb(nullptr)
+                                const std::string metrics_prefix)
+  : header(RefCountCacheHeader(object_version))
 {
+  ts::Metrics &intm = ts::Metrics::getInstance();
+
   this->max_size       = size;
   this->max_items      = items;
   this->num_partitions = num_partitions;
 
-  if (metrics_prefix.length() > 0) {
-    this->rsb = RecAllocateRawStatBlock((int)RefCountCache_Stat_Count);
+  this->rsb.refcountcache_current_items        = intm.newMetricPtr((metrics_prefix + "current_items").c_str());
+  this->rsb.refcountcache_current_size         = intm.newMetricPtr((metrics_prefix + "current_size").c_str());
+  this->rsb.refcountcache_total_inserts        = intm.newMetricPtr((metrics_prefix + "total_inserts").c_str());
+  this->rsb.refcountcache_total_failed_inserts = intm.newMetricPtr((metrics_prefix + "total_failed_inserts").c_str());
+  this->rsb.refcountcache_total_lookups        = intm.newMetricPtr((metrics_prefix + "total_lookups").c_str());
+  this->rsb.refcountcache_total_hits           = intm.newMetricPtr((metrics_prefix + "total_hits").c_str());
+  this->rsb.refcountcache_last_sync_time       = intm.newMetricPtr((metrics_prefix + "last_sync.time").c_str());
+  this->rsb.refcountcache_last_total_items     = intm.newMetricPtr((metrics_prefix + "last_sync.total_items").c_str());
+  this->rsb.refcountcache_last_total_size      = intm.newMetricPtr((metrics_prefix + "last_sync.total_size").c_str());
 
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "current_items").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_current_items_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "current_size").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_current_size_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "total_inserts").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_total_inserts_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "total_failed_inserts").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_total_failed_inserts_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "total_lookups").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_total_lookups_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "total_hits").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_total_hits_stat, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "last_sync.time").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_last_sync_time, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "last_sync.total_items").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_last_total_items, RecRawStatSyncCount);
-
-    RecRegisterRawStat(this->rsb, RECT_PROCESS, (metrics_prefix + "last_sync.total_size").c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)refcountcache_last_total_size, RecRawStatSyncCount);
-  }
   // Now lets create all the partitions
   this->partitions.reserve(num_partitions);
   for (unsigned int i = 0; i < num_partitions; i++) {
-    this->partitions.push_back(new RefCountCachePartition<C>(i, size / num_partitions, items / num_partitions, this->rsb));
+    this->partitions.push_back(new RefCountCachePartition<C>(i, size / num_partitions, items / num_partitions, &this->rsb));
   }
 }
 
@@ -551,10 +522,10 @@ RefCountCache<C>::partition_count() const
 }
 
 template <class C>
-RecRawStatBlock *
+RefCountCacheBlock *
 RefCountCache<C>::get_rsb()
 {
-  return this->rsb;
+  return &this->rsb;
 }
 
 template <class C>

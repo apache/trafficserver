@@ -191,9 +191,10 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
     count++;
   }
 
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_vector_marshal_stat, 1);
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_marshal_stat, count);
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_marshal_bytes_stat, buf - start);
+  Metrics::increment(cache_rsb.hdr_vector_marshal);
+  Metrics::increment(cache_rsb.hdr_marshal, count);
+  Metrics::increment(cache_rsb.hdr_marshal_bytes, buf - start);
+
   return buf - start;
 }
 

@@ -29,8 +29,8 @@ CacheDisk::incrErrors(const AIOCallback *io)
   if (0 == this->num_errors) {
     /* This it the first read/write error on this span since ATS started.
      * Move the newly failing span from "online" to "failing" bucket. */
-    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_online_stat), -1);
-    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_failing_stat), 1);
+    Metrics::decrement(cache_rsb.span_online);
+    Metrics::increment(cache_rsb.span_failing);
   }
   this->num_errors++;
 
@@ -40,11 +40,11 @@ CacheDisk::incrErrors(const AIOCallback *io)
   switch (io->aiocb.aio_lio_opcode) {
   case LIO_READ:
     opname = "READ";
-    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_errors_read_stat), 1);
+    Metrics::increment(cache_rsb.span_errors_read);
     break;
   case LIO_WRITE:
     opname = "WRITE";
-    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_errors_write_stat), 1);
+    Metrics::increment(cache_rsb.span_errors_write);
     break;
   default:
     break;

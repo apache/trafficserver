@@ -50,34 +50,6 @@ Origin Server
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100 integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100K integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100M integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_10K integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_10M integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_1K integer
-   :type: derivative
-   :units: bytes
-
-.. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_1M integer
-   :type: derivative
-   :units: bytes
-
 .. ts:stat:: global proxy.process.http.origin_shutdown.pool_lock_contention integer
    :type counter
    :units bytes
@@ -137,4 +109,3 @@ Origin Server
 .. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_abort integer
    :type counter
    :units bytes
-

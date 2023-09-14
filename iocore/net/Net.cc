@@ -31,7 +31,7 @@
 #include "P_Net.h"
 #include <utility>
 
-RecRawStatBlock *net_rsb = nullptr;
+NetStatsBlock net_rsb;
 
 // All in milli-seconds
 int net_event_period   = 10;
@@ -79,66 +79,35 @@ configure_net()
 static inline void
 register_net_stats()
 {
-  const std::pair<const char *, Net_Stats> persistent[] = {
-    {"proxy.process.net.calls_to_read",                       net_calls_to_read_stat                  },
-    {"proxy.process.net.calls_to_read_nodata",                net_calls_to_read_nodata_stat           },
-    {"proxy.process.net.calls_to_readfromnet",                net_calls_to_readfromnet_stat           },
-    {"proxy.process.net.calls_to_write",                      net_calls_to_write_stat                 },
-    {"proxy.process.net.calls_to_write_nodata",               net_calls_to_write_nodata_stat          },
-    {"proxy.process.net.calls_to_writetonet",                 net_calls_to_writetonet_stat            },
-    {"proxy.process.net.inactivity_cop_lock_acquire_failure", inactivity_cop_lock_acquire_failure_stat},
-    {"proxy.process.net.net_handler_run",                     net_handler_run_stat                    },
-    {"proxy.process.net.read_bytes",                          net_read_bytes_stat                     },
-    {"proxy.process.net.write_bytes",                         net_write_bytes_stat                    },
-    {"proxy.process.net.fastopen_out.attempts",               net_fastopen_attempts_stat              },
-    {"proxy.process.net.fastopen_out.successes",              net_fastopen_successes_stat             },
-    {"proxy.process.socks.connections_successful",            socks_connections_successful_stat       },
-    {"proxy.process.socks.connections_unsuccessful",          socks_connections_unsuccessful_stat     },
-  };
+  ts::Metrics &intm = ts::Metrics::getInstance();
 
-  const std::pair<const char *, Net_Stats> non_persistent[] = {
-    {"proxy.process.net.accepts_currently_open",              net_accepts_currently_open_stat        },
-    {"proxy.process.net.connections_currently_open",          net_connections_currently_open_stat    },
-    {"proxy.process.net.default_inactivity_timeout_applied",  default_inactivity_timeout_applied_stat},
-    {"proxy.process.net.default_inactivity_timeout_count",    default_inactivity_timeout_count_stat  },
-    {"proxy.process.net.dynamic_keep_alive_timeout_in_count", keep_alive_queue_timeout_count_stat    },
-    {"proxy.process.net.dynamic_keep_alive_timeout_in_total", keep_alive_queue_timeout_total_stat    },
-    {"proxy.process.socks.connections_currently_open",        socks_connections_currently_open_stat  },
-  };
-
-  for (auto &p : persistent) {
-    RecRegisterRawStat(net_rsb, RECT_PROCESS, p.first, RECD_INT, RECP_PERSISTENT, p.second, RecRawStatSyncSum);
-  }
-
-  for (auto &p : non_persistent) {
-    RecRegisterRawStat(net_rsb, RECT_PROCESS, p.first, RECD_INT, RECP_NON_PERSISTENT, p.second, RecRawStatSyncSum);
-  }
-
-  NET_CLEAR_DYN_STAT(net_handler_run_stat);
-  NET_CLEAR_DYN_STAT(net_connections_currently_open_stat);
-  NET_CLEAR_DYN_STAT(net_accepts_currently_open_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_read_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_read_nodata_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_writetonet_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_write_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_write_nodata_stat);
-  NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);
-  NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_total_stat);
-  NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_count_stat);
-  NET_CLEAR_DYN_STAT(default_inactivity_timeout_count_stat);
-  NET_CLEAR_DYN_STAT(default_inactivity_timeout_applied_stat);
-
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.tcp.total_accepts", RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(net_tcp_accept_stat), RecRawStatSyncSum);
-  NET_CLEAR_DYN_STAT(net_tcp_accept_stat);
-
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_in", RECD_INT, RECP_PERSISTENT,
-                     (int)net_connections_throttled_in_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_out", RECD_INT, RECP_PERSISTENT,
-                     (int)net_connections_throttled_out_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.max.requests_throttled_in", RECD_INT, RECP_PERSISTENT,
-                     (int)net_requests_max_throttled_in_stat, RecRawStatSyncSum);
+  net_rsb.accepts_currently_open              = intm.newMetricPtr("proxy.process.net.accepts_currently_open");
+  net_rsb.calls_to_read                       = intm.newMetricPtr("proxy.process.net.calls_to_read");
+  net_rsb.calls_to_read_nodata                = intm.newMetricPtr("proxy.process.net.calls_to_read_nodata");
+  net_rsb.calls_to_readfromnet                = intm.newMetricPtr("proxy.process.net.calls_to_readfromnet");
+  net_rsb.calls_to_write                      = intm.newMetricPtr("proxy.process.net.calls_to_write");
+  net_rsb.calls_to_write_nodata               = intm.newMetricPtr("proxy.process.net.calls_to_write_nodata");
+  net_rsb.calls_to_writetonet                 = intm.newMetricPtr("proxy.process.net.calls_to_writetonet");
+  net_rsb.connections_currently_open          = intm.newMetricPtr("proxy.process.net.connections_currently_open");
+  net_rsb.connections_throttled_in            = intm.newMetricPtr("proxy.process.net.connections_throttled_in");
+  net_rsb.connections_throttled_out           = intm.newMetricPtr("proxy.process.net.connections_throttled_out");
+  net_rsb.default_inactivity_timeout_applied  = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_applied");
+  net_rsb.default_inactivity_timeout_count    = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_count");
+  net_rsb.fastopen_attempts                   = intm.newMetricPtr("proxy.process.net.fastopen_out.attempts");
+  net_rsb.fastopen_successes                  = intm.newMetricPtr("proxy.process.net.fastopen_out.successes");
+  net_rsb.handler_run                         = intm.newMetricPtr("proxy.process.net.net_handler_run");
+  net_rsb.inactivity_cop_lock_acquire_failure = intm.newMetricPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.keep_alive_queue_timeout_count      = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
+  net_rsb.keep_alive_queue_timeout_total      = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
+  net_rsb.read_bytes                          = intm.newMetricPtr("proxy.process.net.read_bytes");
+  net_rsb.read_bytes_count                    = intm.newMetricPtr("proxy.process.net.read_bytes_count");
+  net_rsb.requests_max_throttled_in           = intm.newMetricPtr("proxy.process.net.max.requests_throttled_in");
+  net_rsb.socks_connections_currently_open    = intm.newMetricPtr("proxy.process.socks.connections_currently_open");
+  net_rsb.socks_connections_successful        = intm.newMetricPtr("proxy.process.socks.connections_successful");
+  net_rsb.socks_connections_unsuccessful      = intm.newMetricPtr("proxy.process.socks.connections_unsuccessful");
+  net_rsb.tcp_accept                          = intm.newMetricPtr("proxy.process.tcp.total_accepts");
+  net_rsb.write_bytes                         = intm.newMetricPtr("proxy.process.net.write_bytes");
+  net_rsb.write_bytes_count                   = intm.newMetricPtr("proxy.process.net.write_bytes_count");
 }
 
 void
@@ -149,9 +118,6 @@ ink_net_init(ts::ModuleVersion version)
   ink_release_assert(version.check(NET_SYSTEM_MODULE_INTERNAL_VERSION));
 
   if (!init_called) {
-    // do one time stuff
-    // create a stat block for NetStats
-    net_rsb = RecAllocateRawStatBlock(static_cast<int>(Net_Stat_Count));
     configure_net();
     register_net_stats();
   }

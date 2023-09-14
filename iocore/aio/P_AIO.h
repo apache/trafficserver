@@ -37,6 +37,10 @@
 #include "I_IO_URING.h"
 #endif
 
+#include "api/Metrics.h"
+
+using ts::Metrics;
+
 // for debugging
 // #define AIO_STATS 1
 
@@ -128,15 +132,16 @@ public:
 };
 #endif
 
-enum aio_stat_enum {
-  AIO_STAT_READ_PER_SEC,
-  AIO_STAT_KB_READ_PER_SEC,
-  AIO_STAT_WRITE_PER_SEC,
-  AIO_STAT_KB_WRITE_PER_SEC,
+struct AIOStatsBlock {
+  Metrics::IntType *read_count;
+  Metrics::IntType *kb_read;
+  Metrics::IntType *write_count;
+  Metrics::IntType *kb_write;
+
 #if TS_USE_LINUX_IO_URING
-  AIO_STAT_IO_URING_SUBMITTED,
-  AIO_STAT_IO_URING_COMPLETED,
+  Metrics::IntType *io_uring_submitted;
+  Metrics::IntType *io_uring_completed;
 #endif
-  AIO_STAT_COUNT
 };
-extern RecRawStatBlock *aio_rsb;
+
+extern AIOStatsBlock aio_rsb;

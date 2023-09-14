@@ -32,8 +32,13 @@
 #include "I_RecProcess.h"
 #include "P_RecDefs.h"
 
+#include <functional>
+
 //-------------------------------------------------------------------------
 // Protected Interface
 //-------------------------------------------------------------------------
 
 int RecExecRawStatSyncCbs();
+
+using RecCallbackFunction = std::function<void()>;
+void RecRegNewSyncStatSync(RecCallbackFunction callback);

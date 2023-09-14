@@ -23,12 +23,6 @@ HTTP Transaction
 ****************
 
 
-.. ts:stat:: global proxy.process.http.avg_transactions_per_client_connection float
-   :type: derivative
-
-.. ts:stat:: global proxy.process.http.avg_transactions_per_server_connection float
-   :type: derivative
-
 .. ts:stat:: global proxy.process.http.total_transactions_time integer
    :type: counter
    :units: seconds

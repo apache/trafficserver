@@ -262,9 +262,10 @@ TEST_CASE("net_io", "[io_uring]")
     connected = true;
   });
 
-  uint64_t completions_before = io_uring_completions;
+  uint64_t completions_before = Metrics::read(aio_rsb.io_uring_completed);
   uint64_t needed             = 2;
-  while ((io_uring_completions - completions_before) < needed) {
+
+  while ((Metrics::read(aio_rsb.io_uring_completed) - completions_before) < needed) {
     ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 

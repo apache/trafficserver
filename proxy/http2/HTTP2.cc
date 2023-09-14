@@ -48,40 +48,7 @@ static VersionConverter hvc;
 } // namespace
 
 // Statistics
-RecRawStatBlock *http2_rsb;
-static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME        = "proxy.process.http2.current_client_connections";
-static const char *const HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME        = "proxy.process.http2.current_server_connections";
-static const char *const HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_active_client_connections";
-static const char *const HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME = "proxy.process.http2.current_active_server_connections";
-static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME            = "proxy.process.http2.current_client_streams";
-static const char *const HTTP2_STAT_CURRENT_SERVER_STREAM_NAME            = "proxy.process.http2.current_server_streams";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME              = "proxy.process.http2.total_client_streams";
-static const char *const HTTP2_STAT_TOTAL_SERVER_STREAM_NAME              = "proxy.process.http2.total_server_streams";
-static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME          = "proxy.process.http2.total_transactions_time";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME          = "proxy.process.http2.total_client_connections";
-static const char *const HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME          = "proxy.process.http2.total_server_connections";
-static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME                = "proxy.process.http2.connection_errors";
-static const char *const HTTP2_STAT_STREAM_ERRORS_NAME                    = "proxy.process.http2.stream_errors";
-static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME              = "proxy.process.http2.session_die_default";
-static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME                = "proxy.process.http2.session_die_other";
-static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME               = "proxy.process.http2.session_die_active";
-static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "proxy.process.http2.session_die_inactive";
-static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
-static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
-static const char *const HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME      = "proxy.process.http2.session_die_high_error_rate";
-static const char *const HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME  = "proxy.process.http2.max_settings_per_frame_exceeded";
-static const char *const HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME = "proxy.process.http2.max_settings_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_settings_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_ping_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_priority_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
-static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
-  "proxy.process.http2.max_concurrent_streams_exceeded_in";
-static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME =
-  "proxy.process.http2.max_concurrent_streams_exceeded_out";
+Http2StatsBlock http2_rsb;
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -600,69 +567,38 @@ Http2::init()
   } while (0);
 
   // Setup statistics
-  http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_STREAM_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CONNECTION_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CONNECTION_ERRORS_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_STREAM_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_STREAM_ERRORS_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_DEFAULT_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_DEFAULT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_OTHER_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_OTHER), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_EOS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_EOS), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_ACTIVE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_ACTIVE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_INACTIVE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_INACTIVE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_ERROR_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_ERROR), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT), RecRawStatSyncSum);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+
+  http2_rsb.current_client_session_count           = intm.newMetricPtr("proxy.process.http2.current_client_connections");
+  http2_rsb.current_server_session_count           = intm.newMetricPtr("proxy.process.http2.current_server_connections");
+  http2_rsb.current_active_client_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_client_connections");
+  http2_rsb.current_active_server_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_server_connections");
+  http2_rsb.current_client_stream_count            = intm.newMetricPtr("proxy.process.http2.current_client_streams");
+  http2_rsb.current_server_stream_count            = intm.newMetricPtr("proxy.process.http2.current_server_streams");
+  http2_rsb.total_client_stream_count              = intm.newMetricPtr("proxy.process.http2.total_client_streams");
+  http2_rsb.total_server_stream_count              = intm.newMetricPtr("proxy.process.http2.total_server_streams");
+  http2_rsb.total_transactions_time                = intm.newMetricPtr("proxy.process.http2.total_transactions_time");
+  http2_rsb.total_client_connection_count          = intm.newMetricPtr("proxy.process.http2.total_client_connections");
+  http2_rsb.total_server_connection_count          = intm.newMetricPtr("proxy.process.http2.total_server_connections");
+  http2_rsb.stream_errors_count                    = intm.newMetricPtr("proxy.process.http2.stream_errors");
+  http2_rsb.connection_errors_count                = intm.newMetricPtr("proxy.process.http2.connection_errors");
+  http2_rsb.session_die_default                    = intm.newMetricPtr("proxy.process.http2.session_die_default");
+  http2_rsb.session_die_other                      = intm.newMetricPtr("proxy.process.http2.session_die_other");
+  http2_rsb.session_die_active                     = intm.newMetricPtr("proxy.process.http2.session_die_active");
+  http2_rsb.session_die_inactive                   = intm.newMetricPtr("proxy.process.http2.session_die_inactive");
+  http2_rsb.session_die_eos                        = intm.newMetricPtr("proxy.process.http2.session_die_eos");
+  http2_rsb.session_die_error                      = intm.newMetricPtr("proxy.process.http2.session_die_error");
+  http2_rsb.session_die_high_error_rate            = intm.newMetricPtr("proxy.process.http2.session_die_high_error_rate");
+  http2_rsb.max_settings_per_frame_exceeded        = intm.newMetricPtr("proxy.process.http2.max_settings_per_frame_exceeded");
+  http2_rsb.max_settings_per_minute_exceeded       = intm.newMetricPtr("proxy.process.http2.max_settings_per_minute_exceeded");
+  http2_rsb.max_settings_frames_per_minute_exceeded =
+    intm.newMetricPtr("proxy.process.http2.max_settings_frames_per_minute_exceeded");
+  http2_rsb.max_ping_frames_per_minute_exceeded = intm.newMetricPtr("proxy.process.http2.max_ping_frames_per_minute_exceeded");
+  http2_rsb.max_priority_frames_per_minute_exceeded =
+    intm.newMetricPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
+  http2_rsb.insufficient_avg_window_update      = intm.newMetricPtr("proxy.process.http2.insufficient_avg_window_update");
+  http2_rsb.max_concurrent_streams_exceeded_in  = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
+  http2_rsb.max_concurrent_streams_exceeded_out = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
 
   http2_init();
 }

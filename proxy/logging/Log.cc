@@ -78,7 +78,7 @@ uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 // Hash table for LogField symbols
 std::unordered_map<std::string, LogField *> Log::field_symbol_hash;
 
-RecRawStatBlock *log_rsb;
+LogsStatsBlock log_rsb;
 
 /*-------------------------------------------------------------------------
   Log::change_configuration
@@ -1042,7 +1042,6 @@ Log::init(int flags)
   if (config_flags & LOGCAT) {
     logging_mode = LOG_MODE_NONE;
   } else {
-    log_rsb = RecAllocateRawStatBlock(static_cast<int>(log_stat_count));
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
@@ -1075,11 +1074,6 @@ Log::init(int flags)
   //
   if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
     REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-
-    // Clear any stat values that need to be reset on startup
-    //
-    RecSetRawStatSum(log_rsb, log_stat_log_files_open_stat, 0);
-    RecSetRawStatCount(log_rsb, log_stat_log_files_open_stat, 0);
   }
 
   init_fields();
@@ -1169,7 +1163,6 @@ Log::access(LogAccess *lad)
   int ret;
   static long sample = 1;
   long this_sample;
-  ProxyMutex *mutex = this_ethread()->mutex.get();
 
   // See if we're sampling and it is not time for another sample
   //
@@ -1177,7 +1170,7 @@ Log::access(LogAccess *lad)
     this_sample = sample++;
     if (this_sample && this_sample % Log::config->sampling_frequency) {
       Debug("log", "sampling, skipping this entry ...");
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_skip_stat, 1);
+      Metrics::increment(log_rsb.event_log_access_skip);
       ret = Log::SKIP;
       goto done;
     } else {
@@ -1188,7 +1181,7 @@ Log::access(LogAccess *lad)
 
   if (Log::config->log_object_manager.get_num_objects() == 0) {
     Debug("log", "no log objects, skipping this entry ...");
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_skip_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_skip);
     ret = Log::SKIP;
     goto done;
   }
@@ -1224,8 +1217,7 @@ Log::error(const char *format, ...)
 int
 Log::va_error(const char *format, va_list ap)
 {
-  int ret_val       = Log::SKIP;
-  ProxyMutex *mutex = this_ethread()->mutex.get();
+  int ret_val = Log::SKIP;
 
   if (error_log) {
     ink_assert(format != nullptr);
@@ -1233,19 +1225,19 @@ Log::va_error(const char *format, va_list ap)
 
     switch (ret_val) {
     case Log::LOG_OK:
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_ok_stat, 1);
+      Metrics::increment(log_rsb.event_log_error_ok);
       break;
     case Log::SKIP:
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_skip_stat, 1);
+      Metrics::increment(log_rsb.event_log_error_skip);
       break;
     case Log::AGGR:
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_aggr_stat, 1);
+      Metrics::increment(log_rsb.event_log_error_aggr);
       break;
     case Log::FULL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_full_stat, 1);
+      Metrics::increment(log_rsb.event_log_error_full);
       break;
     case Log::FAIL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_fail_stat, 1);
+      Metrics::increment(log_rsb.event_log_error_fail);
       break;
     default:
       ink_release_assert(!"Unexpected result");
@@ -1254,7 +1246,7 @@ Log::va_error(const char *format, va_list ap)
     return ret_val;
   }
 
-  RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_error_skip_stat, 1);
+  Metrics::increment(log_rsb.event_log_error_skip);
 
   return ret_val;
 }
@@ -1314,7 +1306,6 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   ink_hrtime now, last_time = 0;
   int len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
-  ProxyMutex *mutex = this_thread()->mutex.get();
 
   Log::flush_notify->lock();
 
@@ -1358,7 +1349,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       if (!logfile->is_open()) {
         SiteThrottledWarning("File:%s was closed, have dropped (%d) bytes.", logfile->get_name(), total_bytes);
 
-        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_written_to_disk_stat, total_bytes);
+        Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes);
         delete fdata;
         continue;
       }
@@ -1374,8 +1365,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.", logfile->get_name(),
                 (total_bytes - bytes_written));
 
-          RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_written_to_disk_stat,
-                         total_bytes - bytes_written);
+          Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
         }
 
@@ -1385,15 +1375,14 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           SiteThrottledError("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(),
                              total_bytes - bytes_written, bytes_written, strerror(errno));
 
-          RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_written_to_disk_stat,
-                         total_bytes - bytes_written);
+          Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
         }
         Debug("log", "Successfully wrote some stuff to %s", logfile->get_name());
         bytes_written += len;
       }
 
-      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_written_to_disk_stat, bytes_written);
+      Metrics::increment(log_rsb.bytes_written_to_disk, bytes_written);
 
       if (logfile->m_log) {
         ink_atomic_increment(&logfile->m_log->m_bytes_written, bytes_written);

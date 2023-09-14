@@ -36,6 +36,7 @@
 #include "api/InkAPIInternal.h"
 
 #include "tscore/hugepages.h"
+#include "records/P_RecProcess.h"
 
 #ifdef AIO_FAULT_INJECTION
 #include "AIO_fault_injection.h"
@@ -53,12 +54,6 @@ static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk
 
 // This is the oldest version number that is still usable.
 static short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
-
-#define DOCACHE_CLEAR_DYN_STAT(x)  \
-  do {                             \
-    RecSetRawStatSum(rsb, x, 0);   \
-    RecSetRawStatCount(rsb, x, 0); \
-  } while (0);
 
 // Configuration
 
@@ -90,7 +85,7 @@ int cache_config_read_while_writer_max_retries = 10;
 
 // Globals
 
-RecRawStatBlock *cache_rsb              = nullptr;
+CacheStatsBlock cache_rsb;
 Cache *theCache                         = nullptr;
 CacheDisk **gdisks                      = nullptr;
 int gndisks                             = 0;
@@ -162,7 +157,6 @@ static void cplist_update();
 int cplist_reconfigure();
 static int create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp);
 static void rebuild_host_table(Cache *cache);
-void register_cache_stats(RecRawStatBlock *rsb, const char *prefix);
 
 // Global list of the volumes created
 Queue<CacheVol> cp_list;
@@ -177,51 +171,117 @@ force_link_CacheTestCaller()
 }
 #endif
 
-int64_t
-cache_bytes_used(int volume)
+// Register Stats, this handles both the global cache metrics, as well as the per volume metrics.
+static void
+register_cache_stats(CacheStatsBlock *rsb, const std::string prefix)
 {
-  uint64_t used = 0;
+  ts::Metrics &intm = ts::Metrics::getInstance();
 
-  for (int i = 0; i < gnvol; i++) {
-    if (!DISK_BAD(gvol[i]->disk) && (volume == -1 || gvol[i]->cache_vol->vol_number == volume)) {
-      if (!gvol[i]->header->cycle) {
-        used += gvol[i]->header->write_pos - gvol[i]->start;
-      } else {
-        used += gvol[i]->len - gvol[i]->dirlen() - EVACUATION_SIZE;
-      }
+  // These are special, in that we have 7 x 3 metrics here in a structure based on cache operation done
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].active    = intm.newMetricPtr(prefix + ".lookup.active");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].success   = intm.newMetricPtr(prefix + ".lookup.success");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].failure   = intm.newMetricPtr(prefix + ".lookup.failure");
+  rsb->status[static_cast<int>(CacheOpType::Read)].active      = intm.newMetricPtr(prefix + ".read.active");
+  rsb->status[static_cast<int>(CacheOpType::Read)].success     = intm.newMetricPtr(prefix + ".read.success");
+  rsb->status[static_cast<int>(CacheOpType::Read)].failure     = intm.newMetricPtr(prefix + ".read.failure");
+  rsb->status[static_cast<int>(CacheOpType::Write)].active     = intm.newMetricPtr(prefix + ".write.active");
+  rsb->status[static_cast<int>(CacheOpType::Write)].success    = intm.newMetricPtr(prefix + ".write.success");
+  rsb->status[static_cast<int>(CacheOpType::Write)].failure    = intm.newMetricPtr(prefix + ".write.failure");
+  rsb->status[static_cast<int>(CacheOpType::Update)].active    = intm.newMetricPtr(prefix + ".update.active");
+  rsb->status[static_cast<int>(CacheOpType::Update)].success   = intm.newMetricPtr(prefix + ".update.success");
+  rsb->status[static_cast<int>(CacheOpType::Update)].failure   = intm.newMetricPtr(prefix + ".update.failure");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].active    = intm.newMetricPtr(prefix + ".remove.active");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].success   = intm.newMetricPtr(prefix + ".remove.success");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].failure   = intm.newMetricPtr(prefix + ".remove.failure");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].active  = intm.newMetricPtr(prefix + ".evacuate.active");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].success = intm.newMetricPtr(prefix + ".evacuate.success");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].failure = intm.newMetricPtr(prefix + ".evacuate.failure");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].active      = intm.newMetricPtr(prefix + ".scan.active");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].success     = intm.newMetricPtr(prefix + ".scan.success");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].failure     = intm.newMetricPtr(prefix + ".scan.failure");
+
+  // These are in an array of 1, 2 and 3+ fragment documents
+  rsb->fragment_document_count[0] = intm.newMetricPtr(prefix + ".frags_per_doc.1");
+  rsb->fragment_document_count[1] = intm.newMetricPtr(prefix + ".frags_per_doc.2");
+  rsb->fragment_document_count[2] = intm.newMetricPtr(prefix + ".frags_per_doc.3+");
+
+  // And then everything else
+  rsb->bytes_used                = intm.newMetricPtr(prefix + ".bytes_used");
+  rsb->bytes_total               = intm.newMetricPtr(prefix + ".bytes_total");
+  rsb->stripes                   = intm.newMetricPtr(prefix + ".stripes");
+  rsb->ram_cache_bytes_total     = intm.newMetricPtr(prefix + ".ram_cache.total_bytes");
+  rsb->ram_cache_bytes           = intm.newMetricPtr(prefix + ".ram_cache.bytes_used");
+  rsb->ram_cache_hits            = intm.newMetricPtr(prefix + ".ram_cache.hits");
+  rsb->ram_cache_misses          = intm.newMetricPtr(prefix + ".ram_cache.misses");
+  rsb->pread_count               = intm.newMetricPtr(prefix + ".pread_count");
+  rsb->percent_full              = intm.newMetricPtr(prefix + ".percent_full");
+  rsb->read_seek_fail            = intm.newMetricPtr(prefix + ".read.seek.failure");
+  rsb->read_invalid              = intm.newMetricPtr(prefix + ".read.invalid");
+  rsb->write_backlog_failure     = intm.newMetricPtr(prefix + ".write.backlog.failure");
+  rsb->direntries_total          = intm.newMetricPtr(prefix + ".direntries.total");
+  rsb->direntries_used           = intm.newMetricPtr(prefix + ".direntries.used");
+  rsb->directory_collision_count = intm.newMetricPtr(prefix + ".directory_collision");
+  rsb->read_busy_success         = intm.newMetricPtr(prefix + ".read_busy.success");
+  rsb->read_busy_failure         = intm.newMetricPtr(prefix + ".read_busy.failure");
+  rsb->write_bytes               = intm.newMetricPtr(prefix + ".write_bytes");
+  rsb->hdr_vector_marshal        = intm.newMetricPtr(prefix + ".vector_marshals");
+  rsb->hdr_marshal               = intm.newMetricPtr(prefix + ".hdr_marshals");
+  rsb->hdr_marshal_bytes         = intm.newMetricPtr(prefix + ".hdr_marshal_bytes");
+  rsb->gc_bytes_evacuated        = intm.newMetricPtr(prefix + ".gc.bytes_evacuated");
+  rsb->gc_frags_evacuated        = intm.newMetricPtr(prefix + ".gc.frags_evacuated");
+  rsb->directory_wrap            = intm.newMetricPtr(prefix + ".directory.wrap.around");
+  rsb->directory_sync_count      = intm.newMetricPtr(prefix + ".directory.sync.count");
+  rsb->directory_sync_bytes      = intm.newMetricPtr(prefix + ".directory.sync.bytes");
+  rsb->directory_sync_time       = intm.newMetricPtr(prefix + ".directory.sync.time");
+  rsb->span_errors_read          = intm.newMetricPtr(prefix + ".span.errors.read");
+  rsb->span_errors_write         = intm.newMetricPtr(prefix + ".span.errors.write");
+  rsb->span_failing              = intm.newMetricPtr(prefix + ".span.failing");
+  rsb->span_offline              = intm.newMetricPtr(prefix + ".span.offline");
+  rsb->span_online               = intm.newMetricPtr(prefix + ".span.online");
+}
+
+// ToDo: This gets called as part of librecords collection continuation, probably change this later.
+inline int64_t
+cache_bytes_used(int vol_ix)
+{
+  if (!DISK_BAD(gvol[vol_ix]->disk)) {
+    if (!gvol[vol_ix]->header->cycle) {
+      return gvol[vol_ix]->header->write_pos - gvol[vol_ix]->start;
+    } else {
+      return gvol[vol_ix]->len - gvol[vol_ix]->dirlen() - EVACUATION_SIZE;
     }
   }
 
-  return used;
+  return 0;
 }
 
-int
-cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+void
+CachePeriodicMetricsUpdate()
 {
-  int volume = -1;
-  char *p;
+  int64_t total_sum = 0;
 
-  // Well, there's no way to pass along the volume ID, so extracting it from the stat name.
-  p = strstr(const_cast<char *>(name), "volume_");
-  if (p != nullptr) {
-    // I'm counting on the compiler to optimize out strlen("volume_").
-    volume = strtol(p + strlen("volume_"), nullptr, 10);
+  // Make sure the bytes_used per volume is always reset to zero, this can update the
+  // volume metric more than once (once per disk). This happens once every sync
+  // period (5s), and nothing else modifies these metrics.
+  for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
+    Metrics::write(gvol[vol_ix]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
-    int64_t used, total = 0;
-    float percent_full;
+    for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
+      Vol *v       = gvol[vol_ix];
+      int64_t used = cache_bytes_used(vol_ix);
 
-    used = cache_bytes_used(volume);
-    RecSetGlobalRawStatSum(rsb, id, used);
-    RecRawStatSyncSum(name, data_type, data, rsb, id);
-    RecGetGlobalRawStatSum(rsb, static_cast<int>(cache_bytes_total_stat), &total);
-    percent_full = static_cast<float>(used) / static_cast<float>(total) * 100;
-    // The percent_full float below gets rounded down
-    RecSetGlobalRawStatSum(rsb, static_cast<int>(cache_percent_full_stat), static_cast<int64_t>(percent_full));
+      Metrics::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
+      total_sum += used;
+    }
+
+    // Also update the global (not per volume) metrics
+    int64_t total = Metrics::read(cache_rsb.bytes_total);
+
+    Metrics::write(cache_rsb.bytes_used, total_sum);
+    Metrics::write(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
   }
-
-  return 1;
 }
 
 static int
@@ -531,6 +591,8 @@ Vol::close_read(CacheVC *cont) const
 int
 CacheProcessor::start(int, size_t)
 {
+  RecRegNewSyncStatSync(CachePeriodicMetricsUpdate);
+
   return start_internal(0);
 }
 
@@ -656,8 +718,8 @@ CacheProcessor::start_internal(int flags)
         }
 
         // It's actually common that the hardware I/O size is larger than the store block size as
-        // storage systems increasingly want larger I/Os. For example, on macOS, the filesystem block
-        // size is always reported as 1MB.
+        // storage systems increasingly want larger I/Os. For example, on macOS, the filesystem
+        // block size is always reported as 1MB.
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
           Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
@@ -751,8 +813,8 @@ CacheProcessor::diskInitialized()
     gndisks -= bad_disks;
     // Check if this is a fatal error
     if (this->waitForCache() == 3 || (0 == gndisks && this->waitForCache() == 2)) {
-      // This could be passed off to @c cacheInitialized (as with volume config problems) but I think
-      // the more specific error message here is worth the extra code.
+      // This could be passed off to @c cacheInitialized (as with volume config problems) but I
+      // think the more specific error message here is worth the extra code.
       CacheProcessor::initialized = CACHE_INIT_FAILED;
       if (cb_after_init) {
         cb_after_init();
@@ -764,9 +826,10 @@ CacheProcessor::diskInitialized()
   }
 
   /* Practically just took all bad_disks offline so update the stats. */
-  RecSetGlobalRawStatSum(cache_rsb, cache_span_offline_stat, bad_disks);
-  RecIncrGlobalRawStat(cache_rsb, cache_span_failing_stat, -bad_disks);
-  RecSetGlobalRawStatSum(cache_rsb, cache_span_online_stat, gndisks);
+  // ToDo: These don't get update on the per-volume metrics :-/
+  Metrics::write(cache_rsb.span_offline, bad_disks);
+  Metrics::decrement(cache_rsb.span_failing, bad_disks);
+  Metrics::write(cache_rsb.span_online, gndisks);
 
   /* create the cachevol list only if num volumes are greater than 0. */
   if (config_volumes.num_volumes == 0) {
@@ -788,10 +851,10 @@ CacheProcessor::diskInitialized()
   } else {
     CacheVol *cp = cp_list.head;
     for (; cp; cp = cp->link.next) {
-      cp->vol_rsb = RecAllocateRawStatBlock(static_cast<int>(cache_stat_count));
       char vol_stat_str_prefix[256];
+
       snprintf(vol_stat_str_prefix, sizeof(vol_stat_str_prefix), "proxy.process.cache.volume_%d", cp->vol_number);
-      register_cache_stats(cp->vol_rsb, vol_stat_str_prefix);
+      register_cache_stats(&cp->vol_rsb, vol_stat_str_prefix);
     }
   }
 
@@ -851,14 +914,13 @@ CacheProcessor::cacheInitialized()
   uint64_t vol_used_direntries   = 0;
   Vol *vol;
 
-  ProxyMutex *mutex = this_ethread()->mutex.get();
-
   if (theCache) {
     total_size += theCache->cache_size;
     Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
         total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
     if (theCache->ready == CACHE_INIT_FAILED) {
-      Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - failed to initialize the cache for http: cache disabled");
+      Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - failed to initialize the cache "
+                              "for http: cache disabled");
       Warning("failed to initialize the cache for http: cache disabled\n");
     } else {
       caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
@@ -913,21 +975,21 @@ CacheProcessor::cacheInitialized()
             ram_cache_bytes += gvol[i]->dirlen();
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-            CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)gvol[i]->dirlen());
+            Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total, gvol[i]->dirlen());
           }
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
-          CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
+          Metrics::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
-          CACHE_VOL_SUM_DYN_STAT(cache_direntries_total_stat, vol_total_direntries);
+          Metrics::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
-          CACHE_VOL_SUM_DYN_STAT(cache_direntries_used_stat, vol_used_direntries);
+          Metrics::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
 
@@ -960,7 +1022,7 @@ CacheProcessor::cacheInitialized()
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - factor = %f", factor);
             gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), vol);
             ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
-            CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)(http_ram_cache_size * factor));
+            Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total, static_cast<int64_t>(http_ram_cache_size * factor));
           } else if (gvol[i]->cache_vol->ramcache_enabled) {
             ink_release_assert(!"Unexpected non-HTTP cache volume");
           }
@@ -968,17 +1030,17 @@ CacheProcessor::cacheInitialized()
               ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
-          CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
-          CACHE_VOL_SUM_DYN_STAT(cache_stripes_stat, 1); // Count the cache stripes
+          Metrics::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
+          Metrics::increment(vol->cache_vol->vol_rsb.stripes);
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
-          CACHE_VOL_SUM_DYN_STAT(cache_direntries_total_stat, vol_total_direntries);
+          Metrics::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
-          CACHE_VOL_SUM_DYN_STAT(cache_direntries_used_stat, vol_used_direntries);
+          Metrics::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
       }
@@ -997,10 +1059,11 @@ CacheProcessor::cacheInitialized()
         break;
       }
 
-      GLOBAL_CACHE_SET_DYN_STAT(cache_ram_cache_bytes_total_stat, ram_cache_bytes);
-      GLOBAL_CACHE_SET_DYN_STAT(cache_bytes_total_stat, total_cache_bytes);
-      GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_total_stat, total_direntries);
-      GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_used_stat, used_direntries);
+      Metrics::write(cache_rsb.ram_cache_bytes_total, ram_cache_bytes);
+      Metrics::write(cache_rsb.bytes_total, total_cache_bytes);
+      Metrics::write(cache_rsb.direntries_total, total_direntries);
+      Metrics::write(cache_rsb.direntries_used, used_direntries);
+
       if (!check) {
         dir_sync_init();
       }
@@ -1894,14 +1957,14 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
     }
   }
 
-  RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
-  RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
-  RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
+  Metrics::decrement(cache_rsb.bytes_total, total_bytes_delete);
+  Metrics::decrement(cache_rsb.direntries_total, total_dir_delete);
+  Metrics::decrement(cache_rsb.direntries_used, used_dir_delete);
 
   /* Update the span metrics, if failing then move the span from "failing" to "offline" bucket
    * if operator took it offline, move it from "online" to "offline" bucket */
-  RecIncrGlobalRawStat(cache_rsb, admin ? cache_span_online_stat : cache_span_failing_stat, -1);
-  RecIncrGlobalRawStat(cache_rsb, cache_span_offline_stat, 1);
+  Metrics::decrement(admin ? cache_rsb.span_online : cache_rsb.span_failing);
+  Metrics::increment(cache_rsb.span_offline);
 
   if (theCache) {
     rebuild_host_table(theCache);
@@ -2277,7 +2340,13 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io.thread        = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
   SET_HANDLER(&CacheVC::handleReadDone);
   ink_assert(ink_aio_read(&io) >= 0);
-  CACHE_DEBUG_INCREMENT_DYN_STAT(cache_pread_count_stat);
+
+// ToDo: Why are these for debug only ??
+#if DEBUG
+  Metrics::increment(cache_rsb.pread_count);
+  Metrics::increment(vol->cache_vol->vol_rsb.pread_count);
+#endif
+
   return EVENT_CONT;
 
 LramHit : {
@@ -2304,13 +2373,13 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  Vol *vol          = key_to_vol(key, hostname, host_len);
-  ProxyMutex *mutex = cont->mutex.get();
-  CacheVC *c        = new_CacheVC(cont);
+  Vol *vol   = key_to_vol(key, hostname, host_len);
+  CacheVC *c = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
-  c->vio.op    = VIO::READ;
-  c->base_stat = cache_lookup_active_stat;
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+  c->vio.op  = VIO::READ;
+  c->op_type = static_cast<int>(CacheOpType::Lookup);
+  Metrics::increment(cache_rsb.status[c->op_type].active);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = type;
   c->f.lookup           = 1;
@@ -2392,7 +2461,8 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return ret;
     }
   Ldone:
-    CACHE_INCREMENT_DYN_STAT(cache_remove_failure_stat);
+    Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
     if (od) {
       vol->close_write(this);
     }
@@ -2432,8 +2502,9 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
   CacheVC *c   = new_CacheVC(cont);
   c->vio.op    = VIO::NONE;
   c->frag_type = type;
-  c->base_stat = cache_remove_active_stat;
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+  c->op_type   = static_cast<int>(CacheOpType::Remove);
+  Metrics::increment(cache_rsb.status[c->op_type].active);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->vol                = vol;
   c->dir                = result;
@@ -2553,8 +2624,9 @@ cplist_update()
   // before any other new volumes to assure proper span free space calculation and proper volume block distribution.
   for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
     if (nullptr == config_vol->cachep) {
-      // Find out if this is a forced volume assigned exclusively to a span which was cleared (hence not referenced in cp_list).
-      // Note: non-exclusive cleared spans are not handled here, only the "exclusive"
+      // Find out if this is a forced volume assigned exclusively to a span which was cleared (hence
+      // not referenced in cp_list). Note: non-exclusive cleared spans are not handled here, only
+      // the "exclusive"
       bool forced_volume = false;
       for (int d_no = 0; d_no < gndisks; d_no++) {
         if (gdisks[d_no]->forced_volume_num == config_vol->number) {
@@ -2610,7 +2682,8 @@ fillExclusiveDisks(CacheVol *cp)
     }
 
     if (found_nonforced_volumes) {
-      /* The user had created several volumes before - clear the disk and create one volume for http */
+      /* The user had created several volumes before - clear the disk and create one volume for http
+       */
       Note("Clearing Disk: %s", gdisks[i]->path);
       gdisks[i]->delete_all_volumes();
     } else if (1 == gdisks[i]->header->num_volumes) {
@@ -2722,7 +2795,8 @@ cplist_reconfigure()
         }
 
         // Find if the volume is forced and if it is then calculate the total forced volume size.
-        // Forced volumes take the whole span (disk) also sum all disk space this volume is forced to.
+        // Forced volumes take the whole span (disk) also sum all disk space this volume is forced
+        // to.
         int64_t tot_forced_space_in_blks = 0;
         for (int i = 0; i < gndisks; i++) {
           if (config_vol->number == gdisks[i]->forced_volume_num) {
@@ -2877,7 +2951,7 @@ cplist_reconfigure()
     }
   }
 
-  GLOBAL_CACHE_SET_DYN_STAT(cache_stripes_stat, gnvol + assignedVol);
+  Metrics::write(cache_rsb.stripes, gnvol + assignedVol);
 
   return 0;
 }
@@ -3001,80 +3075,6 @@ Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
   }
 }
 
-static void
-reg_int(const char *str, int stat, RecRawStatBlock *rsb, const char *prefix, RecRawStatSyncCb sync_cb = RecRawStatSyncSum)
-{
-  char stat_str[256];
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, str);
-  RecRegisterRawStat(rsb, RECT_PROCESS, stat_str, RECD_INT, RECP_NON_PERSISTENT, stat, sync_cb);
-  DOCACHE_CLEAR_DYN_STAT(stat)
-}
-#define REG_INT(_str, _stat) reg_int(_str, (int)_stat, rsb, prefix)
-
-// Register Stats
-void
-register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
-{
-  // Special case for this sucker, since it uses its own aggregator.
-  reg_int("bytes_used", cache_bytes_used_stat, rsb, prefix, cache_stats_bytes_used_cb);
-
-  REG_INT("bytes_total", cache_bytes_total_stat);
-  REG_INT("stripes", cache_stripes_stat);
-  REG_INT("ram_cache.total_bytes", cache_ram_cache_bytes_total_stat);
-  REG_INT("ram_cache.bytes_used", cache_ram_cache_bytes_stat);
-  REG_INT("ram_cache.hits", cache_ram_cache_hits_stat);
-  REG_INT("ram_cache.misses", cache_ram_cache_misses_stat);
-  REG_INT("pread_count", cache_pread_count_stat);
-  REG_INT("percent_full", cache_percent_full_stat);
-  REG_INT("lookup.active", cache_lookup_active_stat);
-  REG_INT("lookup.success", cache_lookup_success_stat);
-  REG_INT("lookup.failure", cache_lookup_failure_stat);
-  REG_INT("read.active", cache_read_active_stat);
-  REG_INT("read.success", cache_read_success_stat);
-  REG_INT("read.failure", cache_read_failure_stat);
-  REG_INT("read.seek.failure", cache_read_seek_fail_stat);
-  REG_INT("read.invalid", cache_read_invalid_stat);
-  REG_INT("write.active", cache_write_active_stat);
-  REG_INT("write.success", cache_write_success_stat);
-  REG_INT("write.failure", cache_write_failure_stat);
-  REG_INT("write.backlog.failure", cache_write_backlog_failure_stat);
-  REG_INT("update.active", cache_update_active_stat);
-  REG_INT("update.success", cache_update_success_stat);
-  REG_INT("update.failure", cache_update_failure_stat);
-  REG_INT("remove.active", cache_remove_active_stat);
-  REG_INT("remove.success", cache_remove_success_stat);
-  REG_INT("remove.failure", cache_remove_failure_stat);
-  REG_INT("evacuate.active", cache_evacuate_active_stat);
-  REG_INT("evacuate.success", cache_evacuate_success_stat);
-  REG_INT("evacuate.failure", cache_evacuate_failure_stat);
-  REG_INT("scan.active", cache_scan_active_stat);
-  REG_INT("scan.success", cache_scan_success_stat);
-  REG_INT("scan.failure", cache_scan_failure_stat);
-  REG_INT("direntries.total", cache_direntries_total_stat);
-  REG_INT("direntries.used", cache_direntries_used_stat);
-  REG_INT("directory_collision", cache_directory_collision_count_stat);
-  REG_INT("frags_per_doc.1", cache_single_fragment_document_count_stat);
-  REG_INT("frags_per_doc.2", cache_two_fragment_document_count_stat);
-  REG_INT("frags_per_doc.3+", cache_three_plus_plus_fragment_document_count_stat);
-  REG_INT("read_busy.success", cache_read_busy_success_stat);
-  REG_INT("read_busy.failure", cache_read_busy_failure_stat);
-  REG_INT("write_bytes_stat", cache_write_bytes_stat);
-  REG_INT("vector_marshals", cache_hdr_vector_marshal_stat);
-  REG_INT("hdr_marshals", cache_hdr_marshal_stat);
-  REG_INT("hdr_marshal_bytes", cache_hdr_marshal_bytes_stat);
-  REG_INT("gc_bytes_evacuated", cache_gc_bytes_evacuated_stat);
-  REG_INT("gc_frags_evacuated", cache_gc_frags_evacuated_stat);
-  REG_INT("wrap_count", cache_directory_wrap_stat);
-  REG_INT("sync.count", cache_directory_sync_count_stat);
-  REG_INT("sync.bytes", cache_directory_sync_bytes_stat);
-  REG_INT("sync.time", cache_directory_sync_time_stat);
-  REG_INT("span.errors.read", cache_span_errors_read_stat);
-  REG_INT("span.errors.write", cache_span_errors_write_stat);
-  REG_INT("span.failing", cache_span_failing_stat);
-  REG_INT("span.offline", cache_span_offline_stat);
-  REG_INT("span.online", cache_span_online_stat);
-}
-
 int
 FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
@@ -3091,8 +3091,6 @@ void
 ink_cache_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(CACHE_MODULE_VERSION));
-
-  cache_rsb = RecAllocateRawStatBlock(static_cast<int>(cache_stat_count));
 
   REC_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
@@ -3168,7 +3166,7 @@ ink_cache_init(ts::ModuleVersion v)
   REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
-  register_cache_stats(cache_rsb, "proxy.process.cache");
+  register_cache_stats(&cache_rsb, "proxy.process.cache");
 
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 

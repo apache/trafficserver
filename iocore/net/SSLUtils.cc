@@ -224,7 +224,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
     }
   }
 
-  SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
+  Metrics::increment(ssl_rsb.session_cache_new_session);
   session_cache->insertSession(sid, sess, ssl);
 
   // Call hook after new session is created
@@ -645,14 +645,14 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 
   keyblock = ssl_create_ticket_keyblock(ticket_key_path);
 
-  // Increase the stats.
-  if (ssl_rsb != nullptr) { // ssl_rsb is not initialized during the first run.
-    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+  // On the "first run" the metrics have not been initialized, so this has to check it.
+  if (ssl_rsb.total_ticket_keys_renewed) {
+    Metrics::increment(ssl_rsb.total_ticket_keys_renewed);
   }
 
-  // Setting the callback can only fail if OpenSSL does not recognize the
-  // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
-  // so that we don't leave a ticket_key pointer attached if it fails.
+// Setting the callback can only fail if OpenSSL does not recognize the
+// SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
+// so that we don't leave a ticket_key pointer attached if it fails.
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
 #else
@@ -1129,7 +1129,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
         it = cipher_map.find(SSL_CIPHER_STAT_OTHER);
         ink_assert(it != cipher_map.end());
       }
-      SSL_INCREMENT_DYN_STAT((intptr_t)it->second);
+      Metrics::increment(it->second);
     }
   }
 }

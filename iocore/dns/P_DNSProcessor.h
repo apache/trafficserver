@@ -25,6 +25,9 @@
 
 #include "I_EventSystem.h"
 #include "tscore/PendingAction.h"
+#include "api/Metrics.h"
+
+using ts::Metrics;
 
 #define MAX_NAMED                       32
 #define DEFAULT_DNS_RETRIES             5
@@ -75,33 +78,24 @@ extern unsigned int dns_sequence_number;
 #endif
 
 // Stats
-enum DNS_Stats {
-  dns_total_lookups_stat,
-  dns_response_time_stat,
-  dns_success_time_stat,
-  dns_lookup_success_stat,
-  dns_lookup_fail_stat,
-  dns_fail_time_stat,
-  dns_retries_stat,
-  dns_max_retries_exceeded_stat,
-  dns_in_flight_stat,
-  dns_tcp_retries_stat,
-  dns_tcp_reset_stat,
-  DNS_Stat_Count
+struct DNSStatsBlock {
+  ts::Metrics::IntType *fail_time;
+  ts::Metrics::IntType *in_flight;
+  ts::Metrics::IntType *lookup_fail;
+  ts::Metrics::IntType *lookup_success;
+  ts::Metrics::IntType *max_retries_exceeded;
+  ts::Metrics::IntType *response_time;
+  ts::Metrics::IntType *retries;
+  ts::Metrics::IntType *success_time;
+  ts::Metrics::IntType *tcp_reset;
+  ts::Metrics::IntType *tcp_retries;
+  ts::Metrics::IntType *total_lookups;
 };
 
 struct HostEnt;
 struct DNSHandler;
 
-struct RecRawStatBlock;
-extern RecRawStatBlock *dns_rsb;
-
-// Stat Macros
-#define DNS_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, 1)
-
-#define DNS_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, -1)
-
-#define DNS_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, _r)
+extern DNSStatsBlock dns_rsb;
 
 /**
   One DNSEntry is allocated per outstanding request. This continuation

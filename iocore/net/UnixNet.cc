@@ -90,7 +90,7 @@ public:
       // If we cannot get the lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, ne->get_mutex(), this_ethread());
       if (!lock.is_locked()) {
-        NET_INCREMENT_DYN_STAT(inactivity_cop_lock_acquire_failure_stat);
+        Metrics::increment(net_rsb.inactivity_cop_lock_acquire_failure);
         continue;
       }
 
@@ -117,20 +117,20 @@ public:
         ne->use_default_inactivity_timeout = true;
         ne->next_inactivity_timeout_at     = ink_get_hrtime() + ne->default_inactivity_timeout_in;
         ne->inactivity_timeout_in          = 0;
-        NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
+        Metrics::increment(net_rsb.default_inactivity_timeout_applied);
       }
 
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
         if (ne->is_default_inactivity_timeout()) {
           // track the connections that timed out due to default inactivity
           Dbg(dbg_ctl_inactivity_cop, "vc: %p timed out due to default inactivity timeout", ne);
-          NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
+          Metrics::increment(net_rsb.default_inactivity_timeout_count);
         }
         if (nh.keep_alive_queue.in(ne)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
           ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
-          NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
-          NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
+          Metrics::increment(net_rsb.keep_alive_queue_timeout_total, diff);
+          Metrics::increment(net_rsb.keep_alive_queue_timeout_count);
         }
         Dbg(dbg_ctl_inactivity_cop_verbose, "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
             ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
