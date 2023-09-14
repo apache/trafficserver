@@ -496,7 +496,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   TSDebug(PLUGIN_NAME, "New instance for client matching %s to %s", argv[0], argv[1]);
-  ja3_remap_info *pri = new ja3_remap_info;
+  std::unique_ptr<ja3_remap_info> pri{new ja3_remap_info};
 
   // Parse parameters
   if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), pri->raw, pri->log)) {
@@ -511,10 +511,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Create continuation
   pri->handler = TSContCreate(req_hdr_ja3_handler, nullptr);
-  TSContDataSet(pri->handler, pri);
+  TSContDataSet(pri->handler, pri.get());
 
   // Pass to other remap plugin functions
-  *ih = static_cast<void *>(pri);
+  *ih = static_cast<void *>(pri.release());
   return TS_SUCCESS;
 }
 
