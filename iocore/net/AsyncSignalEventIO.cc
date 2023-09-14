@@ -35,12 +35,13 @@ AsyncSignalEventIO::start(EventLoop l, int fd, int events)
 void
 AsyncSignalEventIO::process_event(int flags)
 {
+  [[maybe_unused]] ssize_t ret;
 #if HAVE_EVENTFD
   uint64_t counter;
-  static_cast<void>(read(_fd, &counter, sizeof(uint64_t)));
+  ret = read(_fd, &counter, sizeof(uint64_t));
+  ink_assert(ret >= 0);
 #else
   char dummy[1024];
-  [[maybe_unused]] ssize_t ret = read(_fd, &dummy[0], 1024);
-  ink_assert(ret >= 0);
+  ret = read(_fd, &dummy[0], 1024);
 #endif
 }
