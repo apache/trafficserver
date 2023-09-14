@@ -43,5 +43,6 @@ AsyncSignalEventIO::process_event(int flags)
 #else
   char dummy[1024];
   ret = read(_fd, &dummy[0], 1024);
+  ink_assert(ret >= 0);
 #endif
 }
