@@ -106,22 +106,6 @@ LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
 
 void
-HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
-                          const unsigned int reason)
-{
-}
-
-HostStatRec *
-HostStatus::getHostStatus(const std::string_view name)
-{
-  return nullptr;
-}
-
-HostStatus::HostStatus() {}
-
-HostStatus::~HostStatus() {}
-
-void
 INKVConnInternal::do_io_close(int error)
 {
 }
