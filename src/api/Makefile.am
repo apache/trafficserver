@@ -60,6 +60,7 @@ endif
 
 libtsapicore_a_SOURCES = \
 	Metrics.cc \
+	ConfigUpdateCbTable.cc \
 	InkContInternal.cc \
 	InkVConnInternal.cc \
 	FetchSM.cc

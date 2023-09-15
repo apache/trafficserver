@@ -1198,52 +1198,6 @@ HttpHookState::Scope::clear()
 
 ////////////////////////////////////////////////////////////////////
 //
-// ConfigUpdateCbTable
-//
-////////////////////////////////////////////////////////////////////
-
-ConfigUpdateCbTable::ConfigUpdateCbTable() {}
-
-ConfigUpdateCbTable::~ConfigUpdateCbTable() {}
-
-void
-ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name)
-{
-  if (contp && name) {
-    cb_table.emplace(name, contp);
-  }
-}
-
-void
-ConfigUpdateCbTable::invoke(const char *name)
-{
-  INKContInternal *contp;
-
-  if (name != nullptr) {
-    if (strcmp(name, "*") == 0) {
-      for (auto &&it : cb_table) {
-        contp = it.second;
-        ink_assert(contp != nullptr);
-        invoke(contp);
-      }
-    } else {
-      if (auto it = cb_table.find(name); it != cb_table.end()) {
-        contp = it->second;
-        ink_assert(contp != nullptr);
-        invoke(contp);
-      }
-    }
-  }
-}
-
-void
-ConfigUpdateCbTable::invoke(INKContInternal *contp)
-{
-  eventProcessor.schedule_imm(new ConfigUpdateCallback(contp), ET_TASK);
-}
-
-////////////////////////////////////////////////////////////////////
-//
 // api_init
 //
 ////////////////////////////////////////////////////////////////////
