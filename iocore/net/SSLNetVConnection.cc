@@ -71,6 +71,7 @@ using namespace std::literals;
 #define SSL_WRITE_WOULD_BLOCK      10
 #define SSL_WAIT_FOR_HOOK          11
 #define SSL_WAIT_FOR_ASYNC         12
+#define SSL_RESTART                13
 
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
@@ -608,9 +609,10 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     } else {
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
     }
-    if (ret == EVENT_RESTART) {
+    if (ret == SSL_RESTART) {
       // VC migrated into a new object
       // Just give up and go home. Events should trigger on the new vc
+      Dbg(dbg_ctl_ssl, "Restart for allow plain");
       return;
     }
     // If we have flipped to blind tunnel, don't read ahead
@@ -1367,13 +1369,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     char *buf = handShakeBuffer ? handShakeBuffer->buf() : nullptr;
     if (buf && *buf != SSL_OP_HANDSHAKE) {
+      SSLVCDebug(this, "SSL hanshake error with bad HS buffer");
       if (getAllowPlain()) {
         SSLVCDebug(this, "Try plain");
         // If this doesn't look like a ClientHello, convert this connection to a UnixNetVC and send the
         // packet for Http Processing
         this->_migrateFromSSL();
-        return EVENT_RESTART;
-      } else if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
+        return SSL_RESTART;
+      } else if (getTransparentPassThrough()) {
         // start a blind tunnel if tr-pass is set and data does not look like ClientHello
         SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
         this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;

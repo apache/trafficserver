@@ -25,7 +25,7 @@ Test.Summary = '''
 Test allow-plain attributed
 '''
 
-Test.ContinueOnFail = True
+Test.ContinueOnFail = False
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
