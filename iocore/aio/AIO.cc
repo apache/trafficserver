@@ -423,9 +423,8 @@ ink_aio_thread_num_set(int thread_num)
 void *
 AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 {
-  AIO_Reqs *my_aio_req  = thr_info->req;
-  AIO_Reqs *current_req = nullptr;
-  AIOCallback *op       = nullptr;
+  AIO_Reqs *my_aio_req = thr_info->req;
+  AIOCallback *op      = nullptr;
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
@@ -433,7 +432,6 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
         ink_mutex_release(&my_aio_req->aio_mutex);
         return nullptr;
       }
-      current_req = my_aio_req;
       /* check if any pending requests on the atomic list */
       aio_move(my_aio_req);
       if (!(op = my_aio_req->aio_todo.pop())) {
@@ -442,8 +440,10 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 #ifdef AIO_STATS
       num_requests--;
       current_req->queued--;
-      ink_atomic_increment((int *)&current_req->pending, 1);
+      ink_atomic_increment((int *)&my_aio_req->pending, 1);
 #endif
+      ink_mutex_release(&my_aio_req->aio_mutex);
+
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
         Metrics::increment(aio_rsb.write_count);
@@ -452,9 +452,8 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
         Metrics::increment(aio_rsb.read_count);
         Metrics::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
       }
-      ink_mutex_release(&current_req->aio_mutex);
       cache_op((AIOCallbackInternal *)op);
-      ink_atomic_increment(&current_req->requests_queued, -1);
+      ink_atomic_increment(&my_aio_req->requests_queued, -1);
 #ifdef AIO_STATS
       ink_atomic_increment((int *)&current_req->pending, -1);
 #endif
