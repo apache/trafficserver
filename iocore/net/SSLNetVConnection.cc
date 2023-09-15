@@ -603,10 +603,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (!getSSLHandShakeComplete()) {
     int err = 0;
 
-    // May get into logic that will clean up the current VC
-    // Increment the recursion to delay do_io_close cleaup.
-    this->recursion++;
-
     if (get_context() == NET_VCONNECTION_OUT) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
@@ -651,7 +647,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
             this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
           }
         }
-        test_inline_close();
         return; // Leave if we are tunneling
       }
     }
@@ -668,7 +663,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           read.triggered = 0;
           nh->read_ready_list.remove(this);
           readSignalError(nh, ETIMEDOUT);
-          test_inline_close();
           return;
         }
       }
@@ -704,7 +698,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     } else {
       readReschedule(nh);
     }
-    test_inline_close();
     return;
   }
 

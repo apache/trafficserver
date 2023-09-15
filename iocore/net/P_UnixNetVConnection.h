@@ -115,9 +115,6 @@ public:
 
   void get_local_sa();
 
-  // decrement recursion and see if vc should be freed
-  bool test_inline_close();
-
   // these are not part of the pure virtual interface.  They were
   // added to reduce the amount of duplicate code in classes inherited
   // from NetVConnection (SSL).
