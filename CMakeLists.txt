@@ -121,6 +121,7 @@ set(MAX_THREADS_PER_TYPE
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(TS_USE_HWLOC "Use hwloc (default OFF)")
+option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
@@ -427,6 +428,9 @@ add_subdirectory(src/traffic_via)
 if(ENABLE_WCCP)
     add_subdirectory(src/wccp)
     add_subdirectory(src/traffic_wccp)
+endif()
+if (ENABLE_CRIPTS)
+    add_subdirectory(src/cripts)
 endif()
 add_subdirectory(src/tests)
 if(ENABLE_AUTEST)
