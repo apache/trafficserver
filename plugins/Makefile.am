@@ -57,6 +57,7 @@ include remap_purge/Makefile.inc
 include remap_stats/Makefile.inc
 include s3_auth/Makefile.inc
 include server_push_preload/Makefile.inc
+include slice/Makefile.inc
 include statichit/Makefile.inc
 include stats_over_http/Makefile.inc
 include tcpinfo/Makefile.inc
@@ -99,7 +100,6 @@ include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
 include experimental/rate_limit/Makefile.inc
 include experimental/redo_cache_lookup/Makefile.inc
-include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
