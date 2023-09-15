@@ -49,7 +49,6 @@ libtsapi_la_LIBADD = \
 
 libtsapi_la_SOURCES = \
 	InkAPI.cc \
-	InkContInternal.cc \
 	InkIOCoreAPI.cc
 
 if BUILD_TESTS
@@ -61,6 +60,8 @@ endif
 
 libtsapicore_a_SOURCES = \
 	Metrics.cc \
+	InkContInternal.cc \
+	InkVConnInternal.cc \
 	FetchSM.cc
 
 test_Metrics_SOURCES = test_Metrics.cc
