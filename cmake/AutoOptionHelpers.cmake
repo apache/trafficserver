@@ -17,14 +17,14 @@
 
 set(GLOBAL_AUTO_OPTION_VARS "")
 
-function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION)
+function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION _DEFAULT)
   add_custom_target(${_NAME}_target)
   set_target_properties(${_NAME}_target
     PROPERTIES
       AUTO_OPTION_FEATURE_VAR ${_FEATURE_VAR}
   )
 
-  set(${_NAME} AUTO CACHE STRING ${_DESCRIPTION})
+  set(${_NAME} ${_DEFAULT} CACHE STRING "${_DESCRIPTION}")
   set_property(CACHE ${_NAME} PROPERTY STRINGS AUTO ON OFF)
 
   set(LOCAL_AUTO_OPTION_VARS ${GLOBAL_AUTO_OPTION_VARS})
@@ -32,34 +32,107 @@ function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION)
   set(GLOBAL_AUTO_OPTION_VARS ${LOCAL_AUTO_OPTION_VARS} PARENT_SCOPE)
 endfunction()
 
-# Add a new auto feature that uses find_package.
-# Creates an option ENABLE_<PACKAGE_NAME>.
-macro(AUTO_FEATURE_PACKAGE _PACKAGE_NAME _FEATURE_VAR _DESCRIPTION)
-  set(OPTION_VAR ENABLE_${_PACKAGE_NAME})
-
-  _register_auto_option(${OPTION_VAR} ${_FEATURE_VAR} ${_DESCRIPTION})
-
-  if(${OPTION_VAR} STREQUAL AUTO)
-    find_package(${_PACKAGE_NAME} QUIET)
-  elseif(${OPTION_VAR})
-    find_package(${_PACKAGE_NAME} REQUIRED)
-  endif()
-
-  # This is for consistency so all feature vars are TRUE or FALSE.
-  if(${_PACKAGE_NAME}_FOUND)
-    set(${_FEATURE_VAR} TRUE)
+macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
+  if(${${_OPTION_VAR}} STREQUAL AUTO)
+    set(STRICTNESS QUIET)
   else()
-    set(${_FEATURE_VAR} FALSE)
+    set(STRICTNESS REQUIRED)
   endif()
 
-  unset(OPTION_VAR)
-  unset(FEATURE_VAR)
+  foreach(PACKAGE_NAME ${_PACKAGE_DEPENDS})
+    find_package(${PACKAGE_NAME} ${STRICTNESS})
+    if(NOT ${PACKAGE_NAME}_FOUND)
+      set(_FEATURE_VAR FALSE)
+    endif()
+  endforeach()
+endmacro()
+
+# auto_option(<feature_name>
+#   [DESCRIPTION <description>]
+#   [DEFAULT <default>]
+#   [FEATURE_VAR <feature_var>]
+#   [PACKAGE_DEPENDS <package_one> <package_two> ...]
+# )
+#
+# This macro registers a new auto option and sets its corresponding feature
+# variable based on the requirements. The option it creates will be named
+# ENABLE_<feature_name>, and the default feature variable will be
+# USE_<feature_name>.
+#
+# It is necessary to have separate variables for the option and the feature
+# because the option may be AUTO, but the feature must be enabled or not.
+# It is expected that the option will have one of the values ON, OFF, or AUTO,
+# and the feature will have one of the values TRUE, or FALSE.
+#
+# Behavior of the option is as follows:
+#  - The option is falsey: the feature variable will be FALSE.
+#  - The option is AUTO: if all requirements are satisfied, the
+#      feature variable will be TRUE, otherwise FALSE.
+#  - The option is truthy: if all requirements are satisfied, the
+#      feature variable will be TRUE, otherwise a fatal error is produced.
+#
+# DESCRIPTION is the description that will go with the cache entry for the
+# option. If not provided, it will be empty.
+#
+# DEFAULT is the default value of the option. Permitted values are OFF, FALSE, 0
+# ON, TRUE, 1, AUTO. If no default is provided, AUTO is the default.
+#
+# FEATURE_VAR is the variable that will represent whether the feature should be
+# used, given the value of the option and whether the requirements for the
+# feature are satisfied. By default, it is USE_<feature_name>.
+#
+# PACKAGE_DEPENDS is a list of packages that are required for the feature.
+macro(auto_option _FEATURE_NAME)
+  cmake_parse_arguments(ARG
+    ""
+    "DESCRIPTION;DEFAULT;FEATURE_VAR"
+    "PACKAGE_DEPENDS"
+    ${ARGN}
+  )
+
+  set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
+  if(ARG_FEATURE_VAR)
+    set(FEATURE_VAR ${ARG_FEATURE_VAR})
+  else()
+    set(FEATURE_VAR "USE_${_FEATURE_NAME}")
+  endif()
+
+  if(NOT ARG_DEFAULT)
+    set(DEFAULT AUTO)
+  elseif(ARG_DEFAULT MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
+    set(DEFAULT ${ARG_DEFAULT})
+  else()
+    message(FATAL_ERROR "Invalid auto_option default ${ARG_DEFAULT}")
+  endif()
+
+  _register_auto_option(${OPTION_VAR} ${FEATURE_VAR} "${ARG_DESCRIPTION}" "${DEFAULT}")
+
+  if(${${OPTION_VAR}})
+    set(${FEATURE_VAR} TRUE)
+    _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
+  else()
+    set(${FEATURE_VAR} FALSE)
+  endif()
+endmacro()
+
+macro(AUTO_FEATURE_PACKAGE _PACKAGE_NAME _FEATURE_VAR _DESCRIPTION)
+  string(TOUPPER ${_PACKAGE_NAME} UP)
+  auto_option(${UP}
+    DESCRIPTION ${_DESCRIPTION}
+    FEATURE_VAR ${_FEATURE_VAR}
+    PACKAGE_DEPENDS ${_PACKAGE_NAME}
+  )
 endmacro()
 
 macro(AUTO_OFF_FEATURE_PACKAGE _PACKAGE_NAME _FEATURE_VAR _DESCRIPTION)
   # Need to set our cache string before the default one gets set.
-  set(ENABLE_${_PACKAGE_NAME} OFF CACHE STRING ${_DESCRIPTION})
-  auto_feature_package(${_PACKAGE_NAME} ${_FEATURE_VAR} ${_DESCRIPTION})
+  string(TOUPPER ${_PACKAGE_NAME} UP)
+  auto_feature_package(${UP}
+    DESCRIPTION ${_DESCRIPTION}
+    FEATURE_VAR ${_FEATURE_VAR}
+    PACKAGE_DEPENDS ${_PACKAGE_NAME}
+    DEFAULT OFF
+  )
 endmacro()
 
 # Prints a colorized summary of one auto option.
@@ -96,7 +169,7 @@ endfunction()
 # Prints out a colorized summary of all auto options.
 function(PRINT_AUTO_OPTIONS_SUMMARY)
   message(STATUS "")
-  message(STATUS "-------- AUTO OPTIONS SUMMARY")
+  message(STATUS "-------- AUTO OPTIONS SUMMARY --------")
   foreach(OPTION_NAME ${GLOBAL_AUTO_OPTION_VARS})
     print_auto_option(${OPTION_NAME})
   endforeach()
