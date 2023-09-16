@@ -444,8 +444,8 @@ msgid "The date and time of the client request, enclosed in brackets."
 msgstr "クライアントリクエストの角括弧で囲まれた日時"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:167
-msgid "cqtx"
-msgstr "cqtx"
+msgid "cqhm pqu cqpv"
+msgstr "cqhm pqu cqpv"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:167
 msgid "The request line, enclosed in quotes."
@@ -977,15 +977,14 @@ msgstr "``cqhl``"
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:398
 #, fuzzy
 msgid "``cqhm``"
-msgstr "``cqhl``"
+msgstr "``cqhm``"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:397
 msgid ""
-"The HTTP method in the client request to |TS|: ``GET``, ``POST``, and so on "
-"(subset of ``cqtx``)."
+"The HTTP method in the client request to |TS|: ``GET``, ``POST``, and so on. "
 msgstr ""
 "|TS| へのクライアントリクエストの HTTP メソッド。``GET`` や ``POST`` やその"
-"他のものです。( ``cqtx`` のサブセット )"
+"他のものです。"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:403
 msgid "The client request HTTP version."
@@ -1126,11 +1125,6 @@ msgstr "``sssc``"
 msgid "The cipher used by |TS| to communicate with the client over SSL."
 msgstr "SSL 上でクライアントと通信するのに |TS| が使用した暗号。"
 
-#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:479
-#, fuzzy
-msgid "``cqtx``"
-msgstr "``\"cqtx\"``"
-
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:473
 msgid "The full HTTP client request text, minus headers; for example, ::"
 msgstr "ヘッダーを除く HTTP クライアントリクエストテキストの全て。例えば"
@@ -1152,11 +1146,9 @@ msgstr "``cqhl``"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:484
 msgid ""
-"The universal resource identifier (URI) of the request from client to |TS| "
-"(subset of ``cqtx`` )."
+"The universal resource identifier (URI) of the request from client to |TS| ."
 msgstr ""
 "|TS| へのクライアントからのリクエストの universal resource identifier (URI) "
-"(``cqtx`` のサブセット)"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:500
 #, fuzzy
@@ -1961,11 +1953,6 @@ msgstr "[`cqtn`_]"
 msgid "\"req\""
 msgstr "\"req\""
 
-#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:873
-#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:899
-msgid "\"`cqtx`_\""
-msgstr "\"`cqtx`_\""
-
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:874
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:900
 msgid "s1"
@@ -2098,10 +2085,6 @@ msgstr "``[cqtn]``"
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:935
 msgid "``\"req\"``"
 msgstr "``\"req\"``"
-
-#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:935
-msgid "``\"cqtx\"``"
-msgstr "``\"cqtx\"``"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:936
 msgid "``s1``"

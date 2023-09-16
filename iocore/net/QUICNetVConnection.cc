@@ -30,7 +30,7 @@
 #include "P_QUICNetVConnection.h"
 #include "P_QUICPacketHandler.h"
 #include "P_Net.h"
-#include "InkAPIInternal.h" // Added to include the quic_hook definitions
+#include "api/InkAPIInternal.h" // Added to include the quic_hook definitions
 
 #include "P_SSLNextProtocolSet.h"
 #include "QUICMultiCertConfigLoader.h"
@@ -1515,7 +1515,7 @@ QUICNetVConnection::_state_common_send_packet()
         this->_context->trigger(QUICContext::CallbackEvent::PACKET_SEND, packet.get());
 
         packet_info->packet_number = packet->packet_number();
-        packet_info->time_sent     = Thread::get_hrtime();
+        packet_info->time_sent     = ink_get_hrtime();
         packet_info->ack_eliciting = packet->is_ack_eliciting();
         packet_info->in_flight     = true;
         if (packet_info->ack_eliciting) {

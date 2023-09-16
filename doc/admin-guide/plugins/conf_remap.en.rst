@@ -89,8 +89,8 @@ sync across all the remapping rules over time.
 
 Instead of specifying the directives and their values in :file:`remap.config`
 as you do with the in-line method, you place all the affected directives in a
-separate text file. The location and name is entirely up to you, but we'll use
-`/etc/trafficserver/cdn_conf_remap.config` here. The contents of this file
+separate YAML file. The location and name is entirely up to you, but we'll use
+`/etc/trafficserver/cdn_conf_remap.yaml` here. The contents of this file
 should mirror how configuration directives are written in :file:`records.yaml`:
 
 .. code-block:: yaml
@@ -103,7 +103,7 @@ Your :file:`remap.config` will then contain remapping rules that point to this
 external file::
 
     map http://cdn.example.com/ http://some-server.example.com \
-        @plugin=conf_remap.so @pparam=/etc/trafficserver/cdn_conf_remap.config
+        @plugin=conf_remap.so @pparam=/etc/trafficserver/cdn_conf_remap.yaml
 
 Your external configuration may contain as many directives as you wish.
 
@@ -122,3 +122,4 @@ For more information about the implementation of overridable configuration
 directives, you may consult the developer's documentation for
 :ref:`ts-overridable-config`.
 
+Also if moving from a legacy config format, please have a look at :ref:`rec-config-to-yaml`.

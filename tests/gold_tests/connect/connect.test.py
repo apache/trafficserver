@@ -60,7 +60,7 @@ class ConnectTest:
 logging:
   formats:
     - name: common
-      format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
+      format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>'
   logs:
     - filename: access
       format: common

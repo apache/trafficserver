@@ -28,6 +28,9 @@
 
 #include "main.h"
 
+int cache_vols            = 1;
+bool reuse_existing_cache = false;
+
 namespace
 {
 

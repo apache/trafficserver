@@ -112,7 +112,7 @@ Data Structures
 
    This class is a wrapper for :class:`HTTPCacheAlt`. It provides the
    external API for accessing data in the wrapped class. It contains only a
-   pointer (possibly ``NULL``) to an instance of the wrapped class.
+   pointer (possibly ``nullptr``) to an instance of the wrapped class.
 
 .. class:: CacheHTTPInfo
 
@@ -418,10 +418,6 @@ Data Structures
       disk_vols contain references to the disks of all the stripes in this volume
 
    .. member:: LINK<CacheVol> link
-
-   .. member:: RecRawStatBlock vol_rsb
-
-      per volume stat
 
 .. class:: ConfigVol
 

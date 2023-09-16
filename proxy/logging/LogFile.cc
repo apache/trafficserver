@@ -223,7 +223,7 @@ LogFile::open_file()
     }
   }
 
-  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, 1);
+  Metrics::increment(log_rsb.log_files_open);
 
   Debug("log", "exiting LogFile::open_file(), file=%s presumably open", m_name);
   return LOG_FILE_NO_ERROR;
@@ -244,7 +244,7 @@ LogFile::close_file()
         Error("Error closing LogFile %s: %s.", m_name, strerror(errno));
       } else {
         Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
-        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+        Metrics::decrement(log_rsb.log_files_open);
       }
       m_fd = -1;
     } else if (m_log) {
@@ -252,7 +252,7 @@ LogFile::close_file()
         Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
       } else {
         Debug("log-file", "LogFile %s is closed", m_log->get_name());
-        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+        Metrics::decrement(log_rsb.log_files_open);
       }
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
@@ -454,11 +454,8 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
     //
     LogFlushData *flush_data = new LogFlushData(this, lb);
 
-    ProxyMutex *mutex = this_thread()->mutex.get();
-
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, lb->header()->entry_count);
-
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat, lb->header()->byte_count);
+    Metrics::increment(log_rsb.num_flush_to_disk, lb->header()->entry_count);
+    Metrics::increment(log_rsb.bytes_flush_to_disk, lb->header()->byte_count);
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
@@ -563,7 +560,6 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
         m_name, this);
   ink_assert(buffer_header != nullptr);
 
-  ProxyMutex *mutex = this_thread()->mutex.get();
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;
@@ -617,9 +613,8 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
       } else {
         Note("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
 
-        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_lost_before_flush_to_disk_stat, fmt_entry_count);
-
-        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_flush_to_disk_stat, fmt_buf_bytes);
+        Metrics::increment(log_rsb.num_lost_before_flush_to_disk, fmt_entry_count);
+        Metrics::increment(log_rsb.bytes_lost_before_flush_to_disk, fmt_buf_bytes);
       }
       // if writing to a pipe, fill the buffer with a single
       // record to avoid as much as possible overflowing the
@@ -638,9 +633,8 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     //
     LogFlushData *flush_data = new LogFlushData(this, ascii_buffer, fmt_buf_bytes);
 
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, fmt_entry_count);
-
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat, fmt_buf_bytes);
+    Metrics::increment(log_rsb.num_flush_to_disk, fmt_entry_count);
+    Metrics::increment(log_rsb.bytes_flush_to_disk, fmt_buf_bytes);
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 

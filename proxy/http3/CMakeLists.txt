@@ -32,23 +32,54 @@ add_library(http3 STATIC
     Http3DataFramer.cc
     Http3HeaderVIOAdaptor.cc
     Http3ProtocolEnforcer.cc
+    Http3SettingsHandler.cc
     Http3StreamDataVIOAdaptor.cc
     QPACK.cc
 )
 add_library(ts::http3 ALIAS http3)
 
 target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
 
-target_link_libraries(http3
-    PUBLIC
-        ts::hdrs
-        ts::http
-        ts::inknet
-        ts::inkutils
-        ts::inkevent
-        ts::proxy
+add_executable(test_http3
+    test/main.cc
+    test/stub.cc
+    test/test_Http3Frame.cc
+    test/test_Http3FrameDispatcher.cc
+    Http3ProtocolEnforcer.cc
+    Http3FrameDispatcher.cc
+    Http3DebugNames.cc
+    Http3Config.cc
+    Http3Frame.cc
+    Http3SettingsHandler.cc
+)
+target_link_libraries(test_http3
+    PRIVATE
+        catch2::catch2
         ts::quic
+        ts::inkevent
         ts::records
-        ts::tscpputil
+        ts::tsapicore
+        ts::hdrs
         ts::tscore
 )
+target_include_directories(test_http3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_http3 COMMAND test_http3)
+
+add_executable(test_qpack
+    test/main_qpack.cc
+    test/test_QPACK.cc
+    QPACK.cc
+)
+target_link_libraries(test_qpack
+        PRIVATE
+        catch2::catch2
+        ts::quic
+        ts::inkevent
+        ts::records
+        ts::tsapicore
+        ts::hdrs
+        ts::tscore
+)
+target_include_directories(test_qpack PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_qpack COMMAND test_qpack)

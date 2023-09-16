@@ -21,6 +21,7 @@ add_library(proxy STATIC
         CacheControl.cc
         ControlBase.cc
         ControlMatcher.cc
+	    HostStatus.cc
         IPAllow.cc
         ParentConsistentHash.cc
         ParentRoundRobin.cc
@@ -55,6 +56,7 @@ set(PROXY_INCLUDE_DIRS ${PROXY_INCLUDE_DIRS} PARENT_SCOPE)
 target_include_directories(proxy PUBLIC
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include
         )
 

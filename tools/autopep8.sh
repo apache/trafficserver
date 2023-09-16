@@ -94,20 +94,6 @@ function main() {
       $(cat ${files_filtered})
   find $(cat ${files_filtered}) -newer ${start_time_file}
 
-  # The above will not catch the Python files in the metalink tests because
-  # they do not have extensions.
-  metalink_dir=${DIR}/plugins/experimental/metalink/test
-  autopep8 \
-      --ignore-local-config \
-      -i \
-      -j 0 \
-      --exclude "${DIR}/lib/yamlcpp" \
-      --max-line-length 132 \
-      --aggressive \
-      --aggressive \
-      --recursive \
-      ${metalink_dir}
-  find ${metalink_dir} -newer ${start_time_file}
   rm -rf ${tmp_dir}
   deactivate
 }

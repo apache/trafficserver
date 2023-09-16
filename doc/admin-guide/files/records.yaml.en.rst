@@ -659,22 +659,6 @@ Management
    This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
    out about the new admin API mechanism.
 
-Alarm Configuration
-===================
-
-.. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
-   :reloadable:
-
-   The absolute path to the directory containing the alarm script.
-   If this is not set, the script will be located relative to
-   :ts:cv:`proxy.config.bin_path`.
-
-.. ts:cv:: CONFIG proxy.config.alarm.script_runtime INT 5
-   :reloadable:
-
-   The number of seconds that |TS| allows the alarm script
-   to run before aborting it.
-
 HTTP Engine
 ===========
 
@@ -3015,18 +2999,6 @@ HostDB
 
     Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING host.db
-
-   The filename to persist hostdb to on disk.
-
-.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 0
-
-   Set the frequency (in seconds) to sync hostdb to disk. If set to zero (default as of v9.0.0), we won't
-   sync to disk ever.
-
-   Note: hostdb is synced to disk on a per-partition basis (of which there are 64).
-   This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
-
 Logging Configuration
 =====================
 
@@ -4189,7 +4161,7 @@ Client-Related Configuration
    Can be useful if using a crypto engine that communicates off chip.  The
    thread will be rescheduled for other work until the crypto engine operation
    completes. A test crypto engine that inserts a 5 second delay on private key
-   operations can be found at :ts:git:`contrib/openssl/async_engine.c`.
+   operations can be found at :ts:git:`contrib/openssl/async_engine.cc`.
 
 .. ts:cv:: CONFIG proxy.config.ssl.engine.conf_file STRING NULL
 
@@ -4269,6 +4241,14 @@ OCSP Stapling Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.cache_timeout INT 3600
 
    Number of seconds before an OCSP response expires in the stapling cache.
+
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_mode INT 0
+
+   Set the request method to prefer when querying OCSP responders. The default
+   is zero, or POST, and a value of 1 will cause ATS to attempt a GET request.
+   Because the length of the encoded request must be less than 255 bytes per RFC
+   6960, Appendix A, ATS will fall back to the POST request method when the
+   encoded size exceeds this limit.
 
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
    :units: seconds
@@ -5219,6 +5199,13 @@ Sockets
    ``1`` Tracks IO Buffer Memory allocations and releases
    ``2`` Tracks IO Buffer Memory and OpenSSL Memory allocations and releases
    ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.system_clock INT 0
+
+   *For advanced users only*. This allows to specify the underlying system clock
+   used by ATS. The default is ``CLOCK_REALTIME`` (``0``), but a higher performance
+   option could be ``CLOCK_REALTIME_COARSE`` (``5``). See ``clock_gettime(2)`` for
+   more details. On Linux, these definitions can be found in ``<linux/time.h>``.
 
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 

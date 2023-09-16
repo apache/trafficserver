@@ -18,6 +18,10 @@
 
 set -e # exit on error
 
+if [ ! -z $1 ]; then
+  srcdir=$1
+fi
+
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")
 srcdir=$(cd $srcdir && pwd)/traffic_logstats

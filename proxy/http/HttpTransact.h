@@ -697,6 +697,7 @@ public:
     bool already_downgraded           = false;
     bool transparent_passthrough      = false;
     bool range_in_cache               = false;
+    bool is_method_stats_incremented  = false;
 
     /// True if the response is cacheable because of negative caching configuration.
     ///
@@ -1108,13 +1109,10 @@ public:
                                          int64_t pushed_response_body_size, const TransactionMilestones &milestones);
   static void milestone_start_api_time(State *s);
   static void milestone_update_api_time(State *s);
-  static void histogram_request_document_size(State *s, int64_t size);
-  static void histogram_response_document_size(State *s, int64_t size);
-  static void user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
-  static void origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
   static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
+  static void update_method_stat(int method);
 };
 
 using TransactEntryFunc_t = void (*)(HttpTransact::State *);

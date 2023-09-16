@@ -37,7 +37,6 @@
 #include "swoc/swoc_ip.h"
 
 #include "tscore/ink_inet.h"
-
 #include "ConfigProcessor.h"
 
 #include "SSLSessionCache.h"
@@ -130,6 +129,7 @@ struct SSLConfigParams : public ConfigInfo {
 
   static bool ssl_ocsp_enabled;
   static int ssl_ocsp_cache_timeout;
+  static bool ssl_ocsp_request_mode;
   static int ssl_ocsp_request_timeout;
   static int ssl_ocsp_update_period;
   static int ssl_handshake_timeout_in;

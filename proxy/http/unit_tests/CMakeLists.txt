@@ -35,7 +35,6 @@ target_link_libraries(test_http
     PRIVATE
         catch2::catch2
         ts::http
-        ts::tsapi
         ts::hdrs # transitive
         logging # transitive
         http_remap # transitive

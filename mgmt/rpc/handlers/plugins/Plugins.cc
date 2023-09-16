@@ -21,7 +21,7 @@
 #include "Plugins.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 
 namespace
 {
@@ -33,6 +33,7 @@ struct PluginMsgInfo {
   std::string data;
   std::string tag;
 };
+
 } // namespace
 namespace YAML
 {
@@ -58,6 +59,12 @@ namespace err = rpc::handlers::errors;
 ts::Rv<YAML::Node>
 plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
 {
+  // The rpc could be ready before plugins are initialized.
+  // We make sure it is ready.
+  if (!lifecycle_hooks) {
+    return err::make_errata(err::Codes::PLUGIN, "Plugin is not yet ready to handle any messages.");
+  }
+
   ts::Rv<YAML::Node> resp;
   try {
     // keep the data.

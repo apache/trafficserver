@@ -76,7 +76,7 @@ EThread::schedule_in(Continuation *cont, ink_hrtime t, int callback_event, void 
 
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, get_hrtime() + t, 0));
+  return schedule(e->init(cont, ink_get_hrtime() + t, 0));
 }
 
 TS_INLINE Event *
@@ -93,7 +93,7 @@ EThread::schedule_every(Continuation *cont, ink_hrtime t, int callback_event, vo
   if (t < 0) {
     return schedule(e->init(cont, t, t));
   } else {
-    return schedule(e->init(cont, get_hrtime() + t, t));
+    return schedule(e->init(cont, ink_get_hrtime() + t, t));
   }
 }
 
@@ -165,7 +165,7 @@ EThread::schedule_in_local(Continuation *cont, ink_hrtime t, int callback_event,
 
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule_local(e->init(cont, get_hrtime() + t, 0));
+  return schedule_local(e->init(cont, ink_get_hrtime() + t, 0));
 }
 
 TS_INLINE Event *
@@ -182,7 +182,7 @@ EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_eve
   if (t < 0) {
     return schedule_local(e->init(cont, t, t));
   } else {
-    return schedule_local(e->init(cont, get_hrtime() + t, t));
+    return schedule_local(e->init(cont, ink_get_hrtime() + t, t));
   }
 }
 

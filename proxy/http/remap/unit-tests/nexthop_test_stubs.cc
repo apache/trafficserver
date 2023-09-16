@@ -166,7 +166,7 @@ HttpRequestData::get_client_ip()
   return &src_ip.sa;
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 void
 ConfigUpdateCbTable::invoke(char const *p)
 {

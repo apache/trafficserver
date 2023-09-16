@@ -37,7 +37,7 @@ QUICPathManagerImpl::open_new_path(const QUICPath &path, ink_hrtime timeout_in)
   }
   this->_current_path = path;
   this->_path_validator.validate(path);
-  this->_verify_timeout_at = Thread::get_hrtime() + timeout_in;
+  this->_verify_timeout_at = ink_get_hrtime() + timeout_in;
 }
 
 void
@@ -55,7 +55,7 @@ QUICPathManagerImpl::_check_verify_timeout()
       // Address validation succeeded
       this->_verify_timeout_at = 0;
       this->_previous_path     = {{}, {}};
-    } else if (this->_verify_timeout_at < Thread::get_hrtime()) {
+    } else if (this->_verify_timeout_at < ink_get_hrtime()) {
       // Address validation failed
       QUICDebug("Switching back to the previous path");
       this->_current_path      = this->_previous_path;

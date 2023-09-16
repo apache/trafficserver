@@ -15,19 +15,7 @@
 #
 #######################
 
-set(CMAKE_SHARED_LIBRARY_PREFIX "")
-
-function(add_atsplugin name)
-  add_library(${name} MODULE ${ARGN})
-  target_link_libraries(${name} PRIVATE traffic_server)
-  set_target_properties(${name} PROPERTIES PREFIX "")
-  set_target_properties(${name} PROPERTIES SUFFIX ".so")
-  install(TARGETS ${name} DESTINATION libexec/trafficserver)
-endfunction()
-
-if(APPLE)
-  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
-endif()
+include(add_atsplugin)
 
 add_subdirectory(authproxy)
 add_subdirectory(background_fetch)
@@ -39,7 +27,6 @@ add_subdirectory(compress)
 add_subdirectory(conf_remap)
 add_subdirectory(escalate)
 add_subdirectory(esi)
-
 add_subdirectory(generator)
 add_subdirectory(header_rewrite)
 add_subdirectory(libloader)
@@ -48,11 +35,18 @@ add_subdirectory(prefetch)
 add_subdirectory(regex_remap)
 add_subdirectory(regex_revalidate)
 add_subdirectory(remap_purge)
+add_subdirectory(remap_stats)
 add_subdirectory(s3_auth)
 add_subdirectory(server_push_preload)
+add_subdirectory(statichit)
 add_subdirectory(stats_over_http)
 add_subdirectory(tcpinfo)
+add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
+
+if(NOT OPENSSL_IS_BORINGSSL)
+    add_subdirectory(ja3_fingerprint)
+endif()
 
 if(ENABLE_LUAJIT)
     add_subdirectory(lua)

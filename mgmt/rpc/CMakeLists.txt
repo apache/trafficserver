@@ -32,7 +32,10 @@ add_library(jsonrpc_protocol STATIC
 )
 add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
 
-target_link_libraries(jsonrpc_protocol PUBLIC ts::tscore)
+target_link_libraries(jsonrpc_protocol
+    PUBLIC
+        ts::tscore
+)
 
 add_library(jsonrpc_server STATIC
         server/RPCServer.cc
@@ -42,7 +45,9 @@ add_library(jsonrpc_server STATIC
 )
 add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
 
-target_link_libraries(jsonrpc_server PUBLIC ts::tscore)
+target_link_libraries(jsonrpc_server
+    PUBLIC
+        ts::jsonrpc_protocol)
 
 add_library(rpcpublichandlers STATIC
         handlers/common/RecordsUtils.cc
@@ -61,3 +66,27 @@ target_link_libraries(rpcpublichandlers
         ts::inkcache
         ts::proxy
 )
+
+add_executable(test_jsonrpc
+        jsonrpc/unit_tests/unit_test_main.cc
+        jsonrpc/unit_tests/test_basic_protocol.cc
+)
+target_link_libraries(test_jsonrpc
+        catch2::catch2
+        ts::jsonrpc_protocol
+        libswoc
+)
+add_test(NAME test_jsonrpc COMMAND test_jsonrpc)
+
+add_executable(test_jsonrpcserver
+        server/unit_tests/unit_test_main.cc
+        server/unit_tests/test_rpcserver.cc
+        ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
+)
+target_link_libraries(test_jsonrpcserver
+        catch2::catch2
+        ts::jsonrpc_server
+        ts::inkevent
+        libswoc
+)
+add_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)

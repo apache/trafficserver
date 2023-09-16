@@ -36,10 +36,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #define NH_Debug(tag, fmt, ...) PrintToStdErr("%s %s:%d:%s() " fmt "\n", tag, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define NH_Error(fmt, ...)      PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define NH_Note(fmt, ...)       PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
@@ -51,10 +47,6 @@ class HttpRequestData;
 void GetConfigInteger(int *v, const char *n);
 void PrintToStdErr(const char *fmt, ...);
 void build_request(HttpRequestData &h, const char *os_hostname);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #include "ControlMatcher.h"
 #include "ParentSelection.h"

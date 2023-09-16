@@ -16,7 +16,7 @@
 
 TSXS?=tsxs
 
-all:	url_sig.c
+all:	url_sig.cc
 	$(TSXS) -v -o url_sig.so $?
 
 install:

@@ -25,6 +25,7 @@
 #include <cstdio>
 #include "Http3Frame.h"
 #include "Http3FrameDispatcher.h"
+#include "Http3SettingsHandler.h"
 
 TEST_CASE("Http3Frame Type", "[http3]")
 {
@@ -265,4 +266,38 @@ TEST_CASE("Http3FrameFactory Fast Create Unknown Frame", "[http3]")
   std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1);
   CHECK(frame1->type() == Http3FrameType::UNKNOWN);
+}
+
+TEST_CASE("SETTINGS frame handler", "[http3]")
+{
+  uint8_t input[] = {
+    0x04,       // Type
+    0x08,       // Length
+    0x06,       // Identifier
+    0x44, 0x00, // Value
+    0x09,       // Identifier
+    0x0f,       // Value
+    0x4a, 0x0a, // Identifier
+    0x00,       // Value
+  };
+
+  Http3SettingsHandler handler     = Http3SettingsHandler(nullptr);
+  Http3SettingsFrame invalid_frame = Http3SettingsFrame(input, sizeof(input), 1);
+  Http3ErrorUPtr error             = Http3ErrorUPtr(nullptr);
+
+  CHECK(invalid_frame.is_valid() == false);
+
+  std::shared_ptr<const Http3Frame> invalid_frame_ptr = std::make_shared<const Http3SettingsFrame>(invalid_frame);
+  error                                               = handler.handle_frame(invalid_frame_ptr);
+
+  REQUIRE(error);
+  CHECK(error->code == Http3ErrorCode::H3_EXCESSIVE_LOAD);
+
+  Http3SettingsFrame valid_frame = Http3SettingsFrame(input, sizeof(input), 3);
+
+  CHECK(valid_frame.is_valid() == true);
+
+  std::shared_ptr<const Http3Frame> valid_frame_ptr = std::make_shared<const Http3SettingsFrame>(valid_frame);
+  error                                             = handler.handle_frame(valid_frame_ptr);
+  CHECK(error == nullptr);
 }

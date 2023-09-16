@@ -34,7 +34,7 @@ Use the following interfaces:
 The plugin registers the plugin and ensures it's running with a
 compatible version of Traffic Server.
 
-.. literalinclude:: ../../../../example/plugins/c-api/version/version.c
+.. literalinclude:: ../../../../example/plugins/c-api/version/version.cc
   :language: c
   :lines: 23-
 

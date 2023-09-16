@@ -345,13 +345,13 @@ AC_ARG_ENABLE([docs],
       TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
     ], [
       enable_doc_build=no
-      AC_MSG_ERROR(Doc building disabled, Python 3.4 or better required)
+      AC_MSG_ERROR([Doc building disabled, Python 3.4 or better required])
     ])
 
     AS_IF([test -z "$JAVA"],
       [
         enable_doc_build=no
-        AC_MSG_ERROR(Doc building disabled, Java required but not found)
+        AC_MSG_ERROR([Doc building disabled, Java required but not found])
       ])
     AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
     AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
@@ -362,7 +362,7 @@ AC_ARG_ENABLE([docs],
       ],[
         sphinx_version_check=no
         enable_doc_build=no
-        AC_MSG_ERROR(Doc building disabled, check Sphinx installation)
+        AC_MSG_ERROR([Doc building disabled, check Sphinx installation])
       ])
 
 
@@ -592,6 +592,19 @@ AC_ARG_ENABLE([32bit-build],
 )
 AC_MSG_RESULT([$enable_32bit])
 
+#
+# Check if disk failure handling tests should be built.
+# This means compiling disk failure simulation code into ATS.
+#
+AC_MSG_CHECKING([whether to build disk failure handling tests])
+AC_ARG_ENABLE([disk-failure-tests],
+  [AS_HELP_STRING([--enable-disk-failure-tests],[Build disk failure tests])],
+  [],
+  [enable_disk_failure_tests=no]
+)
+AC_MSG_RESULT([$enable_disk_failure_tests])
+AM_CONDITIONAL([ENABLE_DISK_FAILURE_TESTS], [ test "x${enable_disk_failure_tests}" = "xyes" ])
+
 
 #
 # Installation directories
@@ -704,7 +717,7 @@ AC_COMPILE_IFELSE([
     AC_MSG_RESULT(yes)
     ], [
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR([*** A compiler with support for -std=c++$CXXSTD is required.])
+    AC_MSG_ERROR([A compiler with support for -std=c++$CXXSTD is required])
 ])
 AC_LANG_POP
 CXX="$ac_save_CXX"
@@ -758,6 +771,7 @@ esac
 
 TS_ADDTO(AM_CPPFLAGS, [-D$host_os_def])
 AM_CONDITIONAL([OS_LINUX], [test "x$host_os_def" = "xlinux"])
+AM_CONDITIONAL([OS_NON_MACOS], [test "x$host_os_def" != "xdarwin"])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
@@ -1011,13 +1025,13 @@ fi
 # Flags for ASAN
 if test "x${enable_asan}" = "xyes"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
 elif test "x${enable_asan}" = "xstatic"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
   fi
   asan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=address -static-libasan"
@@ -1028,7 +1042,7 @@ elif test "x${enable_asan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static ASAN library.)
+      AC_MSG_ERROR([Cannot find static ASAN library])
     ]
   )
   AC_LANG_POP
@@ -1040,23 +1054,23 @@ fi
 # Flags for LSAN stand-alone mode
 if test "x${enable_lsan}" = "xyes"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
+    AC_MSG_ERROR([ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode])
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
 elif test "x${enable_lsan}" = "xstatic"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
+    AC_MSG_ERROR([ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode])
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
+    AC_MSG_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
   fi
   AC_CHECK_LIB(lsan, _init, [lsan_have_libs=yes], [lsan_have_libs=no])
   if test "x${lsan_have_libs}" == "xno"; then
-    AC_MSG_ERROR(Cannot find LSAN static library)
+    AC_MSG_ERROR([Cannot find LSAN static library])
   fi
   lsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=leak -static-liblsan"
@@ -1067,7 +1081,7 @@ elif test "x${enable_lsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static LSAN library.)
+      AC_MSG_ERROR([Cannot find static LSAN library])
     ]
   )
   AC_LANG_POP
@@ -1083,7 +1097,7 @@ if test "x${enable_tsan}" = "xyes"; then
 elif test "x${enable_tsan}" = "xstatic"; then
   AC_CHECK_LIB(tsan, _init, [tsan_have_libs=yes], [tsan_have_libs=no])
   if test "x${tsan_have_libs}" == "xno"; then
-    AC_MSG_ERROR(Cannot find TSAN static library)
+    AC_MSG_ERROR([Cannot find TSAN static library])
   fi
   tsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fsanitize=thread -static-libtsan"
@@ -1094,7 +1108,7 @@ elif test "x${enable_tsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR(Cannot find static TSAN library.)
+      AC_MSG_ERROR([Cannot find static TSAN library])
     ]
   )
   AC_LANG_POP
@@ -1103,11 +1117,17 @@ elif test "x${enable_tsan}" = "xstatic"; then
   TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread -static-libtsan])
 fi
 
+# Build for disk failure simulation
+if test "x${enable_disk_failure_tests}" = "xyes"; then
+  TS_ADDTO(AM_CFLAGS, [-DAIO_FAULT_INJECTION])
+  TS_ADDTO(AM_CXXFLAGS, [-DAIO_FAULT_INJECTION])
+fi
+
 # Checks for pointer size.
 # TODO: Later this is irrelevant, and we should just bail on 32-bit platforms always
 AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
-  AC_MSG_ERROR(Cannot determine size of void*)
+  AC_MSG_ERROR([Cannot determine size of void*])
 fi
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
@@ -1115,7 +1135,7 @@ if test "${ac_cv_sizeof_voidp}" = "4"; then
    AS_IF([test x"$enable_32bit_build" = "xyes"], [
      AC_MSG_NOTICE([Explicitly building on a 32-bit platform, this might be unsupported soon!])
    ], [
-     AC_MSG_ERROR(You are trying to build on a 32-bit platform, which is unsupported.)
+     AC_MSG_ERROR([You are trying to build on a 32-bit platform, which is unsupported])
    ])
 fi
 
@@ -1379,7 +1399,7 @@ AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
 if test "x${enable_zlib}" != "xyes"; then
-  AC_MSG_ERROR([Cannot find zlib library. Configure --with-zlib=DIR])
+  AC_MSG_ERROR([Cannot find zlib library, configure --with-zlib=DIR])
 fi
 
 #
@@ -1417,7 +1437,7 @@ AC_CHECK_FUNCS(malloc_usable_size)
 #
 TS_CHECK_PCRE
 if test "x${enable_pcre}" != "xyes"; then
-  AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
+  AC_MSG_ERROR([Cannot find pcre library, configure --with-pcre=DIR])
 fi
 
 # Check for optional brotli library
@@ -1433,16 +1453,13 @@ if test "${has_quiche}" = "1"; then
 if test "$openssl_is_boringssl" = "1" ; then
 enable_quic=yes
 else
-  AC_MSG_ERROR([Use of BoringSSL is required if Quiche is used.])
+  AC_MSG_ERROR([Use of BoringSSL is required if Quiche is used])
 fi
 fi
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 AC_SUBST(has_quiche)
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
-
-# Check for optional WAVM library
-TS_CHECK_WAVM
 
 #
 # Enable experimental/uri_signing plugin
@@ -1648,35 +1665,6 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
 )
 AC_SUBST(use_posix_cap)
 
-#
-# If the OS is linux, we can use the '--enable-experimental-linux-native-aio' option to
-# replace the aio thread mode. Effective only on the linux system.
-#
-
-AC_MSG_CHECKING([whether to enable Linux native AIO])
-AC_ARG_ENABLE([experimental-linux-native-aio],
-  [AS_HELP_STRING([--enable-experimental-linux-native-aio], [WARNING this is experimental and has known issues enable native Linux AIO support @<:@default=no@:>@])],
-  [enable_linux_native_aio="${enableval}"],
-  [enable_linux_native_aio=no]
-)
-
-AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
-  if test $host_os_def  != "linux"; then
-    AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
-  fi
-
-  AC_CHECK_HEADERS([libaio.h], [],
-    [AC_MSG_ERROR([Linux native AIO requires libaio.h])]
-  )
-
-  AC_SEARCH_LIBS([io_submit], [aio], [],
-    [AC_MSG_ERROR([Linux native AIO requires libaio])]
-  )
-])
-
-AC_MSG_RESULT([$enable_linux_native_aio])
-TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-
 # Check for enabling io_uring on linux
 
 AC_MSG_CHECKING([whether to enable Linux io_uring])
@@ -1712,14 +1700,19 @@ use_hwloc=0
 AS_IF([test "x$enable_hwloc" = "xyes"], [
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
   PKG_CHECK_MODULES([HWLOC], [hwloc], [
+    SAVE_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="${HWLOC_CFLAGS}"
+
     SAVE_LIBS="$LIBS"
-    LIBS="-lhwloc"
+    LIBS="${HWLOC_LIBS}"
+
     AC_LANG_PUSH([C++])
     AC_MSG_CHECKING([for hwloc C++ linking])
     AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
+      AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],
+      [
       use_hwloc=1
-      AC_SUBST([HWLOC_CFLAGS])
+      AC_SUBST([HWLOC_INCLUDES], "$HWLOC_CFLAGS")
       AC_SUBST([HWLOC_LIBS])
       AC_MSG_RESULT([yes])
       # Old versions of libhwloc don't have HWLOC_OBJ_PU.
@@ -1730,14 +1723,15 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
     ], [
       AC_MSG_RESULT([no])
       AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
-      AC_SUBST([HWLOC_CFLAGS],[""])
+      AC_SUBST([HWLOC_INCLUDES],[""])
       AC_SUBST([HWLOC_LIBS],[""])
     ])
     AC_LANG_POP()
     LIBS="$SAVE_LIBS"
+    CXXFLAGS="$SAVE_CXXFLAGS"
   ], [
     AC_MSG_WARN([hwloc not found, try --disable-hwloc])
-    AC_SUBST([HWLOC_CFLAGS],[""])
+    AC_SUBST([HWLOC_INCLUDES],[""])
     AC_SUBST([HWLOC_LIBS],[""])
   ])
 ])
@@ -2358,7 +2352,6 @@ AC_CONFIG_FILES([
   example/Makefile
   example/plugins/Makefile
   example/plugins/c-api/Makefile
-  example/plugins/cpp-api/Makefile
   include/Makefile
   include/ts/Makefile
   include/tscpp/api/Makefile

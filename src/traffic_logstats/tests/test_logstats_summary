@@ -17,7 +17,11 @@
 #  limitations under the License.
 
 set -e # exit on error
-set -x # turn on debug
+#set -x # turn on debug
+
+if [ ! -z $1 ]; then
+  srcdir=$1
+fi
 
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")

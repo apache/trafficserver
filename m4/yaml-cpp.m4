@@ -82,7 +82,7 @@ fi
 AC_SUBST([YAMLCPP_INCLUDES])
 AC_SUBST([YAMLCPP_LIBS])
 AC_SUBST([YAMLCPP_LDFLAGS])
-AC_DEFINE([YAMLCPP_LIB_VERSION], ["0.7.0"], [yamlcpp library version])
+AC_DEFINE([YAMLCPP_LIB_VERSION], ["0.8.0"], [yamlcpp library version])
 
 ])
 

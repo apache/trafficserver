@@ -47,7 +47,7 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -56,7 +56,7 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_NO_ERROR);
+    CHECK(!error);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == 12);
   }
@@ -95,7 +95,7 @@ TEST_CASE("control stream tests", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -104,7 +104,8 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -135,7 +136,7 @@ TEST_CASE("control stream tests", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -144,7 +145,8 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_MISSING_SETTINGS);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_MISSING_SETTINGS);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 3);
   }
@@ -173,7 +175,7 @@ TEST_CASE("control stream tests", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -182,7 +184,8 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -211,7 +214,7 @@ TEST_CASE("control stream tests", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -220,7 +223,8 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -249,7 +253,7 @@ TEST_CASE("control stream tests", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -258,7 +262,8 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -277,13 +282,13 @@ TEST_CASE("ignore unknown frames", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
     CHECK(nread == 0);
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_NO_ERROR);
+    CHECK(!error);
     CHECK(nread == 0);
   }
 }
@@ -308,7 +313,7 @@ TEST_CASE("Reserved frame type not allowed", "[http3]")
     MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
     uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -317,7 +322,8 @@ TEST_CASE("Reserved frame type not allowed", "[http3]")
     CHECK(nread == 0);
 
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
-    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    REQUIRE(error);
+    CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 12);
   }

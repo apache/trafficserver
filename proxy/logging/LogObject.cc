@@ -66,8 +66,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
       ink_atomic_increment(&_num_flush_buffers, -1);
       Warning("Dropping log buffer, can't keep up.");
-      RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_bytes_lost_before_preproc_stat,
-                     b->header()->byte_count);
+      Metrics::increment(log_rsb.bytes_lost_before_preproc, b->header()->byte_count);
       delete b;
     } else {
       new_q.push(b);
@@ -516,7 +515,7 @@ private:
   wakeup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     for (auto &[o, b] : current_buffers) {
-      if (b && ink_hrtime_to_sec(Thread::get_hrtime()) > b->expiration_time()) {
+      if (b && ink_hrtime_to_sec(ink_get_hrtime()) > b->expiration_time()) {
         o->flush_buffer(b);
         b = nullptr;
       }
@@ -1338,8 +1337,7 @@ LogObjectManager::find_by_format_name(const char *name) const
 int
 LogObjectManager::log(LogAccess *lad)
 {
-  int ret           = Log::SKIP;
-  ProxyMutex *mutex = this_thread()->mutex.get();
+  int ret = Log::SKIP;
 
   for (unsigned i = 0; i < this->_objects.size(); i++) {
     ret |= _objects[i]->log(lad);
@@ -1351,15 +1349,15 @@ LogObjectManager::log(LogAccess *lad)
   // The if-statement should keep step with the priority order.
   //
   if (unlikely(ret & Log::FAIL)) {
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_fail_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_fail);
   } else if (unlikely(ret & Log::FULL)) {
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_full_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_full);
   } else if (likely(ret & Log::LOG_OK)) {
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_ok_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_ok);
   } else if (unlikely(ret & Log::AGGR)) {
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_aggr_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_aggr);
   } else if (likely(ret & Log::SKIP)) {
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_skip_stat, 1);
+    Metrics::increment(log_rsb.event_log_access_skip);
   } else {
     ink_release_assert(!"Unexpected result");
   }
@@ -1423,7 +1421,7 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     box.check(mgr2.get_num_objects() == 4, "Testing that manager 2 has 4 objects");
 
     rprintf(t, "running Log::periodoc_tasks()\n");
-    Log::periodic_tasks(Thread::get_hrtime() / HRTIME_SECOND);
+    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECOND);
     rprintf(t, "Log::periodoc_tasks() done\n");
   }
 

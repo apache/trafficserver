@@ -228,6 +228,9 @@ public:
 private:
   virtual void *_prepareForMigration();
   virtual NetProcessor *_getNetProcessor();
+
+  inline static DbgCtl _dbg_ctl_socket{"socket"};
+  inline static DbgCtl _dbg_ctl_socket_mptcp{"socket_mptcp"};
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
@@ -268,10 +271,10 @@ UnixNetVConnection::set_mptcp_state()
   int mptcp_enabled_size = sizeof(mptcp_enabled);
 
   if (0 == safe_getsockopt(con.fd, IPPROTO_TCP, MPTCP_ENABLED, (char *)&mptcp_enabled, &mptcp_enabled_size)) {
-    Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
+    Dbg(_dbg_ctl_socket_mptcp, "MPTCP socket state: %d", mptcp_enabled);
     mptcp_state = mptcp_enabled > 0 ? true : false;
   } else {
-    Debug("socket_mptcp", "MPTCP failed getsockopt(): %s", strerror(errno));
+    Dbg(_dbg_ctl_socket_mptcp, "MPTCP failed getsockopt(): %s", strerror(errno));
   }
 }
 
@@ -290,15 +293,15 @@ UnixNetVConnection::get_inactivity_timeout()
 inline void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
-  Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
+  Dbg(_dbg_ctl_socket, "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
-  next_activity_timeout_at = (active_timeout_in > 0) ? Thread::get_hrtime() + timeout_in : 0;
+  next_activity_timeout_at = (active_timeout_in > 0) ? ink_get_hrtime() + timeout_in : 0;
 }
 
 inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
-  Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
+  Dbg(_dbg_ctl_socket, "Cancel inactive timeout for NetVC=%p", this);
   inactivity_timeout_in      = 0;
   next_inactivity_timeout_at = 0;
 }
@@ -306,7 +309,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
 inline void
 UnixNetVConnection::cancel_active_timeout()
 {
-  Debug("socket", "Cancel active timeout for NetVC=%p", this);
+  Dbg(_dbg_ctl_socket, "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
 }

@@ -18,7 +18,7 @@ pkglib_LTLIBRARIES += experimental/cookie_remap/cookie_remap.la
 
 experimental_cookie_remap_cookie_remap_la_SOURCES = \
 	experimental/cookie_remap/cookie_remap.cc \
-	experimental/cookie_remap/hash.c \
+	experimental/cookie_remap/hash.cc \
 	experimental/cookie_remap/strip.cc \
 	experimental/cookie_remap/cookiejar.cc
 

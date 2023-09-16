@@ -36,7 +36,7 @@ How it Works
 
 The plugin uses the library and header files from the Proxy-Wasm project.
 
-* https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/72ce32f7b11f9190edf874028255e1309e41690f
+* https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/b7e690703c7f26707438a2f1ebd7c197bc8f0296
 * https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/tree/fd0be8405db25de0264bdb78fae3a82668c03782
 
 Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAMR and
@@ -56,9 +56,9 @@ Compiling the Plugin
 
 ::
 
-  wget https://github.com/bytecodealliance/wasm-micro-runtime/archive/c3d66f916ef8093e5c8cacf3329ed968f807cf58.tar.gz
-  tar zxvf c3d66f916ef8093e5c8cacf3329ed968f807cf58.tar.gz
-  cd wasm-micro-runtime-c3d66f916ef8093e5c8cacf3329ed968f807cf58
+  wget https://github.com/bytecodealliance/wasm-micro-runtime/archive/refs/tags/WAMR-1.2.1.tar.gz
+  tar zxvf WAMR-1.2.1.tar.gz
+  cd wasm-micro-runtime-WAMR-1.2.1
   cp core/iwasm/include/* /usr/local/include/
   cd product-mini/platforms/linux
   mkdir build
@@ -71,13 +71,14 @@ Compiling the Plugin
 
 ::
 
-  wget https://github.com/WasmEdge/WasmEdge/archive/refs/tags/proxy-wasm/0.11.2.tar.gz
-  tar zxvf 0.11.2.tar.gz
-  cd WasmEdge-proxy-wasm-0.11.2/utils
+  wget https://github.com/WasmEdge/WasmEdge/archive/refs/tags/proxy-wasm/0.13.1.tar.gz
+  tar zxvf 0.13.1.tar.gz
+  cd WasmEdge-proxy-wasm-0.13.1/utils
   ./install.sh
 
 * Copy contents from ~/.wasmedge/include to /usr/local/include
 * Copy contents from ~/.wasmedge/lib to /usr/local/lib
+* The installation script will make changes to your environment variables. You can comment those out for now before compiling the plugin.
 
 **Configure ATS to compile with experimental plugins**
 

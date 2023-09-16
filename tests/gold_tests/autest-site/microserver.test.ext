@@ -123,10 +123,12 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
         plain_sock = socket.socket(socket.AF_INET)
 
     if isSsl:
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
         if clientcert != '' or clientkey != '':
-            sock = ssl.wrap_socket(plain_sock, keyfile=clientkey, certfile=clientcert)
-        else:
-            sock = ssl.wrap_socket(plain_sock)
+            context.load_cert_chain(certfile=clientcert, keyfile=clientkey)
+        sock = context.wrap_socket(plain_sock)
     else:
         sock = plain_sock
 
@@ -138,11 +140,11 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
             "Connection refused: {0}:{1}".format(
                 serverHost, port))
         return False
-    except ssl.SSLError:
+    except ssl.SSLError as e:
         host.WriteDebug(
             ['uServerUpAndRunning', 'when'],
-            "SSL connection error: {0}:{1}".format(
-                serverHost, port))
+            "SSL connection error: {0}:{1}:{2}".format(
+                serverHost, port, e))
         return False
 
     sock.sendall(request.encode())

@@ -93,7 +93,6 @@ main(int argc, const char **argv)
 
   Thread *main_thread = new EThread;
   main_thread->set_specific();
-  net_config_poll_timeout = 10;
   ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
 
   SSLInitializeLibrary();
@@ -174,7 +173,7 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
   ink_assert(false);
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 
 APIHook *
 APIHook::next() const
@@ -348,7 +347,7 @@ PreWarmManager::reconfigure()
 
 PreWarmManager prewarmManager;
 
-#include "../src/traffic_server/FetchSM.h"
+#include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()

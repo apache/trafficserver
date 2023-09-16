@@ -42,6 +42,6 @@ public:
   handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */) override
   {
     this->total_frame_received++;
-    return Http3ErrorUPtr(new Http3NoError());
+    return Http3ErrorUPtr(nullptr);
   }
 };

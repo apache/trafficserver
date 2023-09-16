@@ -23,54 +23,75 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <utility>
 
-#include <openssl/sha.h>
-
 #include "include/proxy-wasm/bytecode_util.h"
 #include "include/proxy-wasm/signature_util.h"
 #include "include/proxy-wasm/vm_id_handle.h"
+#include "src/hash.h"
 
 namespace proxy_wasm {
 
 namespace {
 
-// Map from Wasm Key to the local Wasm instance.
+// Map from Wasm key to the thread-local Wasm instance.
 thread_local std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> local_wasms;
+// Wasm key queue to track stale entries in `local_wasms`.
+thread_local std::queue<std::string> local_wasms_keys;
+
+// Map from plugin key to the thread-local plugin instance.
 thread_local std::unordered_map<std::string, std::weak_ptr<PluginHandleBase>> local_plugins;
+// Plugin key queue to track stale entries in `local_plugins`.
+thread_local std::queue<std::string> local_plugins_keys;
+
+// Check no more than `MAX_LOCAL_CACHE_GC_CHUNK_SIZE` cache entries at a time during stale entries
+// cleanup.
+const size_t MAX_LOCAL_CACHE_GC_CHUNK_SIZE = 64;
+
 // Map from Wasm Key to the base Wasm instance, using a pointer to avoid the initialization fiasco.
 std::mutex base_wasms_mutex;
 std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> *base_wasms = nullptr;
 
-std::vector<uint8_t> Sha256(const std::vector<std::string_view> &parts) {
-  uint8_t sha256[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha_ctx;
-  SHA256_Init(&sha_ctx);
-  for (auto part : parts) {
-    SHA256_Update(&sha_ctx, part.data(), part.size());
-  }
-  SHA256_Final(sha256, &sha_ctx);
-  return std::vector<uint8_t>(std::begin(sha256), std::end(sha256));
+void cacheLocalWasm(const std::string &key, const std::shared_ptr<WasmHandleBase> &wasm_handle) {
+  local_wasms[key] = wasm_handle;
+  local_wasms_keys.emplace(key);
 }
 
-std::string BytesToHex(const std::vector<uint8_t> &bytes) {
-  static const char *const hex = "0123456789ABCDEF";
-  std::string result;
-  result.reserve(bytes.size() * 2);
-  for (auto byte : bytes) {
-    result.push_back(hex[byte >> 4]);
-    result.push_back(hex[byte & 0xf]);
+void cacheLocalPlugin(const std::string &key,
+                      const std::shared_ptr<PluginHandleBase> &plugin_handle) {
+  local_plugins[key] = plugin_handle;
+  local_plugins_keys.emplace(key);
+}
+
+template <class T>
+void removeStaleLocalCacheEntries(std::unordered_map<std::string, std::weak_ptr<T>> &cache,
+                                  std::queue<std::string> &keys) {
+  auto num_keys_to_check = std::min(MAX_LOCAL_CACHE_GC_CHUNK_SIZE, keys.size());
+  for (size_t i = 0; i < num_keys_to_check; i++) {
+    std::string key(keys.front());
+    keys.pop();
+
+    const auto it = cache.find(key);
+    if (it == cache.end()) {
+      continue;
+    }
+
+    if (it->second.expired()) {
+      cache.erase(it);
+    } else {
+      keys.push(std::move(key));
+    }
   }
-  return result;
 }
 
 } // namespace
 
 std::string makeVmKey(std::string_view vm_id, std::string_view vm_configuration,
                       std::string_view code) {
-  return BytesToHex(Sha256({vm_id, vm_configuration, code}));
+  return Sha256String({vm_id, "||", vm_configuration, "||", code});
 }
 
 class WasmBase::ShutdownHandle {
@@ -472,6 +493,10 @@ bool WasmHandleBase::canary(const std::shared_ptr<PluginBase> &plugin,
   if (this->wasm() == nullptr) {
     return false;
   }
+  auto it = plugin_canary_cache_.find(plugin->key());
+  if (it != plugin_canary_cache_.end()) {
+    return it->second;
+  }
   auto configuration_canary_handle = clone_factory(shared_from_this());
   if (!configuration_canary_handle) {
     this->wasm()->fail(FailState::UnableToCloneVm, "Failed to clone Base Wasm");
@@ -490,9 +515,11 @@ bool WasmHandleBase::canary(const std::shared_ptr<PluginBase> &plugin,
   if (!configuration_canary_handle->wasm()->configure(root_context, plugin)) {
     configuration_canary_handle->wasm()->fail(FailState::ConfigureFailed,
                                               "Failed to configure base Wasm plugin");
+    plugin_canary_cache_[plugin->key()] = false;
     return false;
   }
   configuration_canary_handle->kill();
+  plugin_canary_cache_[plugin->key()] = true;
   return true;
 }
 
@@ -542,14 +569,15 @@ std::shared_ptr<WasmHandleBase> createWasm(const std::string &vm_key, const std:
 
 std::shared_ptr<WasmHandleBase> getThreadLocalWasm(std::string_view vm_key) {
   auto it = local_wasms.find(std::string(vm_key));
-  if (it == local_wasms.end()) {
-    return nullptr;
+  if (it != local_wasms.end()) {
+    auto wasm = it->second.lock();
+    if (wasm) {
+      return wasm;
+    }
+    local_wasms.erase(it);
   }
-  auto wasm = it->second.lock();
-  if (!wasm) {
-    local_wasms.erase(std::string(vm_key));
-  }
-  return wasm;
+  removeStaleLocalCacheEntries(local_wasms, local_wasms_keys);
+  return nullptr;
 }
 
 static std::shared_ptr<WasmHandleBase>
@@ -563,9 +591,9 @@ getOrCreateThreadLocalWasm(const std::shared_ptr<WasmHandleBase> &base_handle,
     if (wasm_handle) {
       return wasm_handle;
     }
-    // Remove stale entry.
-    local_wasms.erase(vm_key);
+    local_wasms.erase(it);
   }
+  removeStaleLocalCacheEntries(local_wasms, local_wasms_keys);
   // Create and initialize new thread-local WasmVM.
   auto wasm_handle = clone_factory(base_handle);
   if (!wasm_handle) {
@@ -577,7 +605,7 @@ getOrCreateThreadLocalWasm(const std::shared_ptr<WasmHandleBase> &base_handle,
     base_handle->wasm()->fail(FailState::UnableToInitializeCode, "Failed to initialize Wasm code");
     return nullptr;
   }
-  local_wasms[vm_key] = wasm_handle;
+  cacheLocalWasm(vm_key, wasm_handle);
   wasm_handle->wasm()->wasm_vm()->addFailCallback([vm_key](proxy_wasm::FailState fail_state) {
     if (fail_state == proxy_wasm::FailState::RuntimeError) {
       // If VM failed, erase the entry so that:
@@ -600,9 +628,9 @@ std::shared_ptr<PluginHandleBase> getOrCreateThreadLocalPlugin(
     if (plugin_handle) {
       return plugin_handle;
     }
-    // Remove stale entry.
-    local_plugins.erase(key);
+    local_plugins.erase(it);
   }
+  removeStaleLocalCacheEntries(local_plugins, local_plugins_keys);
   // Get thread-local WasmVM.
   auto wasm_handle = getOrCreateThreadLocalWasm(base_handle, clone_factory);
   if (!wasm_handle) {
@@ -620,7 +648,7 @@ std::shared_ptr<PluginHandleBase> getOrCreateThreadLocalPlugin(
     return nullptr;
   }
   auto plugin_handle = plugin_factory(wasm_handle, plugin);
-  local_plugins[key] = plugin_handle;
+  cacheLocalPlugin(key, plugin_handle);
   wasm_handle->wasm()->wasm_vm()->addFailCallback([key](proxy_wasm::FailState fail_state) {
     if (fail_state == proxy_wasm::FailState::RuntimeError) {
       // If VM failed, erase the entry so that:
@@ -640,6 +668,26 @@ void clearWasmCachesForTesting() {
     delete base_wasms;
     base_wasms = nullptr;
   }
+}
+
+std::vector<std::string> staleLocalPluginsKeysForTesting() {
+  std::vector<std::string> keys;
+  for (const auto &kv : local_plugins) {
+    if (kv.second.expired()) {
+      keys.push_back(kv.first);
+    }
+  }
+  return keys;
+}
+
+std::vector<std::string> staleLocalWasmsKeysForTesting() {
+  std::vector<std::string> keys;
+  for (const auto &kv : local_wasms) {
+    if (kv.second.expired()) {
+      keys.push_back(kv.first);
+    }
+  }
+  return keys;
 }
 
 } // namespace proxy_wasm

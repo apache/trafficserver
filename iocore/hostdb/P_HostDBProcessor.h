@@ -35,6 +35,9 @@
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
+#include "api/Metrics.h"
+
+using ts::Metrics;
 
 //
 // Data
@@ -55,9 +58,6 @@ enum {
 
 extern int hostdb_ttl_mode;
 extern int hostdb_srv_enabled;
-
-// extern int hostdb_timestamp;
-extern ts_seconds hostdb_sync_frequency;
 extern int hostdb_disable_reverse_lookup;
 
 // Static configuration information
@@ -94,8 +94,7 @@ extern const char *string_for(HostDBMark mark);
 #define HOST_DB_CACHE_MINOR_VERSION 0
 // 2.2: IP family split 2.1 : IPv6
 
-#define DEFAULT_HOST_DB_FILENAME "host.db"
-#define DEFAULT_HOST_DB_SIZE     (1 << 14)
+#define DEFAULT_HOST_DB_SIZE (1 << 14)
 // Timeout DNS every 24 hours by default if ttl_mode is enabled
 #define HOST_DB_IP_TIMEOUT (24 * 60 * 60)
 // DNS entries should be revalidated every 12 hours
@@ -120,43 +119,17 @@ const unsigned int HOST_DB_MAX_TTL = (0x1FFFFF); // 24 days
 struct HostEnt;
 
 // Stats
-enum HostDB_Stats {
-  hostdb_total_lookups_stat,
-  hostdb_total_hits_stat,        // D == total hits
-  hostdb_total_serve_stale_stat, // D == total times we served a stale response
-  hostdb_ttl_stat,               // D average TTL
-  hostdb_ttl_expires_stat,       // D == TTL Expires
-  hostdb_re_dns_on_reload_stat,
-  hostdb_insert_duplicate_to_pending_dns_stat,
-  HostDB_Stat_Count
+struct HostDBStatsBlock {
+  ts::Metrics::IntType *total_lookups;
+  ts::Metrics::IntType *total_hits;
+  ts::Metrics::IntType *total_serve_stale;
+  ts::Metrics::IntType *ttl;
+  ts::Metrics::IntType *ttl_expires;
+  ts::Metrics::IntType *re_dns_on_reload;
+  ts::Metrics::IntType *insert_duplicate_to_pending_dns;
 };
 
-struct RecRawStatBlock;
-extern RecRawStatBlock *hostdb_rsb;
-
-// Stat Macros
-
-#define HOSTDB_DEBUG_COUNT_DYN_STAT(_x, _y) RecIncrRawStatCount(hostdb_rsb, mutex->thread_holding, (int)_x, _y)
-
-#define HOSTDB_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, 1)
-
-#define HOSTDB_INCREMENT_DYN_STAT_THREAD(_x, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_x, 1)
-
-#define HOSTDB_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, -1)
-
-#define HOSTDB_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, _r)
-
-#define HOSTDB_READ_DYN_STAT(_x, _count, _sum)        \
-  do {                                                \
-    RecGetRawStatSum(hostdb_rsb, (int)_x, &_sum);     \
-    RecGetRawStatCount(hostdb_rsb, (int)_x, &_count); \
-  } while (0)
-
-#define HOSTDB_SET_DYN_COUNT(_x, _count) RecSetRawStatCount(hostdb_rsb, _x, _count);
-
-#define HOSTDB_INCREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, 1);
-
-#define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
+extern HostDBStatsBlock hostdb_rsb;
 
 struct HostFile;
 

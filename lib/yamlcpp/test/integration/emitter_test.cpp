@@ -431,6 +431,38 @@ TEST_F(EmitterTest, BlockMapAsKey) {
   ExpectEmit("? key: value\n  next key: next value\n: total value");
 }
 
+TEST_F(EmitterTest, TaggedBlockMapAsKey) {
+  out << BeginMap;
+  out << Key;
+  out << LocalTag("innerMap");
+  out << BeginMap;
+  out << Key << "key" << Value << "value";
+  out << EndMap;
+  out << Value;
+  out << "outerValue";
+  out << EndMap;
+
+  ExpectEmit(R"(? !innerMap
+  key: value
+: outerValue)");
+}
+
+TEST_F(EmitterTest, TaggedBlockListAsKey) {
+  out << BeginMap;
+  out << Key;
+  out << LocalTag("innerList");
+  out << BeginSeq;
+  out << "listItem";
+  out << EndSeq;
+  out << Value;
+  out << "outerValue";
+  out << EndMap;
+
+  ExpectEmit(R"(? !innerList
+  - listItem
+: outerValue)");
+}
+
 TEST_F(EmitterTest, AliasAndAnchor) {
   out << BeginSeq;
   out << Anchor("fred");
@@ -520,7 +552,7 @@ TEST_F(EmitterTest, VerbatimTagInBlockMap) {
   out << Value << VerbatimTag("!waz") << "baz";
   out << EndMap;
 
-  ExpectEmit("!<!foo> bar: !<!waz> baz");
+  ExpectEmit("? !<!foo> bar\n: !<!waz> baz");
 }
 
 TEST_F(EmitterTest, VerbatimTagInFlowMap) {
@@ -899,7 +931,7 @@ TEST_F(EmitterTest, Unicode) {
 
 TEST_F(EmitterTest, DoubleQuotedUnicode) {
   out << DoubleQuoted << "\x24 \xC2\xA2 \xE2\x82\xAC \xF0\xA4\xAD\xA2";
-  ExpectEmit("\"\x24 \xC2\xA2 \xE2\x82\xAC \xF0\xA4\xAD\xA2\"");
+  ExpectEmit("\"\x24 \xC2\xA2 \xE2\x82\xAC \xF0\xA4\xAD\xA2\""); 
 }
 
 TEST_F(EmitterTest, EscapedJsonString) {
@@ -918,7 +950,7 @@ TEST_F(EmitterTest, EscapedJsonString) {
 }
 
 TEST_F(EmitterTest, EscapedCharacters) {
-  out << BeginSeq
+  out << BeginSeq 
     << '\x00'
     << '\x0C'
     << '\x0D'
@@ -966,6 +998,14 @@ TEST_F(EmitterTest, UserType) {
   out << EndSeq;
 
   ExpectEmit("- x: 5\n  bar: hello\n- x: 3\n  bar: goodbye");
+}
+
+TEST_F(EmitterTest, UserType2) {
+  out << BeginSeq;
+  out << Foo(5, "\r");
+  out << EndSeq;
+
+  ExpectEmit("- x: 5\n  bar: \"\\r\"");
 }
 
 TEST_F(EmitterTest, UserTypeInContainer) {
@@ -1398,7 +1438,7 @@ TEST_F(EmitterTest, NaN) {
 	  "bar: .nan");
 }
 
-TEST_F(EmitterTest, ComplexFlowSeqEmbeddingAMapWithNewLine) {
+TEST_F(EmitterTest, ComplexFlowSeqEmbeddingAMapWithNewLine) { 
   out << YAML::BeginMap;
 
   out << YAML::Key << "NodeA" << YAML::Value << YAML::BeginMap;
@@ -1616,6 +1656,15 @@ NodeB:
   k: [*k0, *k1])");
 }
 
+TEST_F(EmitterTest, AnchorEncoding) {
+  Node node;
+  node["--- &$ [*$]1"] = 1;
+  out << node;
+  ExpectEmit("\"--- &$ [*$]1\": 1");
+  Node reparsed = YAML::Load(out.c_str());
+  EXPECT_EQ(reparsed["--- &$ [*$]1"].as<int>(), 1);
+}
+
 class EmitterErrorTest : public ::testing::Test {
  protected:
   void ExpectEmitError(const std::string& expectedError) {
@@ -1686,5 +1735,6 @@ TEST_F(EmitterErrorTest, InvalidAlias) {
 
   ExpectEmitError(ErrorMsg::INVALID_ALIAS);
 }
+
 }  // namespace
 }  // namespace YAML

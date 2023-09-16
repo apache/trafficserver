@@ -15,17 +15,35 @@
 #
 #######################
 
-add_library(tsapi SHARED Metrics.cc)
+add_library(tsapi SHARED
+	InkAPI.cc
+	InkContInternal.cc
+	InkIOCoreAPI.cc
+)
 add_library(ts::tsapi ALIAS tsapi)
+target_link_libraries(tsapi PRIVATE ts::tscore)
+
+add_library(tsapicore STATIC Metrics.cc FetchSM.cc)
+add_library(ts::tsapicore ALIAS tsapicore)
+target_link_libraries(tsapicore PRIVATE ts::tscore)
+
+include_directories(
+  ${IOCORE_INCLUDE_DIRS}
+  ${PROXY_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/mgmt
+)
 
 install(TARGETS tsapi)
 
+if(APPLE)
+  target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
+endif()
 
 add_executable(test_Metrics
         test_Metrics.cc
         )
 
-target_link_libraries(test_Metrics PRIVATE tsapi tscore)
-target_include_directories(test_Metrics PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+target_link_libraries(test_Metrics PRIVATE tsapicore tscore catch2::catch2)
+target_include_directories(test_Metrics PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_test(NAME test_Metrics COMMAND $<TARGET_FILE:test_Metrics>)

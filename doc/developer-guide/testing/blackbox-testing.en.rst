@@ -254,7 +254,6 @@ Condition Testing
         - TS_USE_TLS13
         - TS_USE_QUIC
         - TS_HAS_QUICHE
-        - TS_USE_LINUX_NATIVE_AIO
         - TS_HAS_SO_PEERCRED
         - TS_USE_REMOTE_UNWINDING
         - TS_HAS_128BIT_CAS
@@ -265,10 +264,6 @@ Condition Testing
 Examples:
 +++++++++
 .. code-block:: python
-
-  Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_LINUX_NATIVE_AIO'),
-  )
 
   Test.SkipUnless(
     Condition.HasCurlFeature('http2'),

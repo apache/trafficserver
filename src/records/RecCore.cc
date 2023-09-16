@@ -36,9 +36,13 @@
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"
 
-static bool g_initialized = false;
+using ts::Metrics;
 
-RecRecord g_records[REC_MAX_RECORDS];
+// This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
+// and used (read) from several binaries / modules.
+int max_records_entries   = REC_MAX_RECORDS;
+static bool g_initialized = false;
+RecRecord *g_records      = nullptr;
 std::unordered_map<std::string, RecRecord *> g_records_ht;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
@@ -201,6 +205,9 @@ RecCoreInit(Diags *_diags)
   RecConfigFileInit();
 
   g_num_records = 0;
+
+  // initialize record array for our internal stats (this can be reallocated later)
+  g_records = static_cast<RecRecord *>(ats_malloc(max_records_entries * sizeof(RecRecord)));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);

@@ -81,7 +81,8 @@ Http2SessionAccept::mainEvent(int event, void *data)
   // XXX We should hoist the error handling so that all the protocols generate the statistics
   // without code duplication.
   if (((long)data) == -ECONNABORTED) {
-    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
+    Metrics::increment(http_rsb.ua_counts_errors_pre_accept_hangups);
+    // Metrics::increment(http_rsb.ua_msecs_errors_pre_accept_hangups, 0); // ToDo: This is odd, but we added 0 before as well
   }
 
   ink_abort("HTTP/2 accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));

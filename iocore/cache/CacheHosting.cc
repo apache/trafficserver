@@ -392,7 +392,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
   ink_assert(second_pass == numEntries);
 
-  if (is_dbg_ctl_enabled(dbg_ctl_matcher)) {
+  if (dbg_ctl_matcher.on()) {
     Print();
   }
   return numEntries;
@@ -1053,7 +1053,7 @@ execute_and_verify(RegressionTest *t)
 
   for (int i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
+    if (dbg_ctl_cache_hosting.on()) {
       Dbg(dbg_ctl_cache_hosting, "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
       for (int j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
         Dbg(dbg_ctl_cache_hosting, "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);

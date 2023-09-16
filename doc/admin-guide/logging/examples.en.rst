@@ -52,18 +52,18 @@ The following figure shows a sample log entry in a Netscape Common log file.
 
 The numbered sections correspond to the following log fields in |TS|:
 
-=== ====== ====================================================================
-No. Field  Description
-=== ====== ====================================================================
-1   chi    The IP address of the client's host machine.
-2   --     This hyphen (``-``) is always present in Netscape log entries.
-3   caun   The authenticated client username. A hyphen (``-``) means no
-           authentication was required.
-4   cqtn   The date and time of the client request, enclosed in brackets.
-5   cqtx   The request line, enclosed in quotes.
-6   pssc   The proxy response status code (HTTP reply code).
-7   pscl   The length of the |TS| response to the client in bytes.
-=== ====== ====================================================================
+=== ============= ===============================================================
+No. Field         Description
+=== ============= ===============================================================
+1   chi           The IP address of the client's host machine.
+2   --            This hyphen (``-``) is always present in Netscape log entries.
+3   caun          The authenticated client username. A hyphen (``-``) means no
+                  authentication was required.
+4   cqtn          The date and time of the client request, enclosed in brackets.
+5   cqhm,pqu,cqpv The request line, enclosed in quotes.
+6   pssc          The proxy response status code (HTTP reply code).
+7   pscl          The length of the |TS| response to the client in bytes.
+=== ============= ===============================================================
 
 To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
@@ -72,7 +72,7 @@ following format object:
 
    formats:
    - name: common
-     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>'
 
 .. _admin-logging-examples-extended:
 
@@ -119,7 +119,7 @@ following format object:
 
    formats:
    - name: extended
-     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
 
 .. _admin-logging-examples-extended2:
 
@@ -158,7 +158,7 @@ following format object:
 
    formats:
    - name: extended2
-     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
 
 .. _admin-logging-examples-squid:
 
@@ -261,7 +261,7 @@ of the event data.
 .. code:: yaml
 
    ourformat = format {
-     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
+     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>'
    }
 
    log.binary {
@@ -286,7 +286,7 @@ for them to a UNIX pipe that the alerting software can constantly read from.
 
    formats:
    - name: canaryformat
-     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>'
 
    filters:
    - name: canaryfilter

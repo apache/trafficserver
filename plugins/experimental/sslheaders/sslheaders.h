@@ -24,10 +24,8 @@
 #include <vector>
 #include <string>
 
-extern "C" {
 using X509 = struct x509_st;
 using BIO  = struct bio_st;
-}
 
 #define PLUGIN_NAME "sslheaders"
 

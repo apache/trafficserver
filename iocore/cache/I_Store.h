@@ -96,11 +96,13 @@ public:
   {
     return is_mmapable_internal;
   }
+
   void
   set_mmapable(bool s)
   {
     is_mmapable_internal = s;
   }
+
   int64_t
   size() const
   {
@@ -148,11 +150,6 @@ public:
 
   const char *init(const char *n, int64_t size);
 
-  // 0 on success -1 on failure
-  int path(char *filename,         // for non-file, the filename in the director
-           int64_t *offset,        // for file, start offset (unsupported)
-           char *buf, int buflen); // where to store the path
-
   /// Set the hash seed string.
   void hash_base_string_set(const char *s);
   /// Set the volume number.
@@ -187,38 +184,8 @@ public:
 };
 
 struct Store {
-  //
-  // Public Interface
-  // Thread-safe operations
-  //
-
-  // spread evenly on all disks
-  void spread_alloc(Store &s, unsigned int blocks, bool mmapable = true);
-  void alloc(Store &s, unsigned int blocks, bool only_one = false, bool mmapable = true);
-
-  Span *
-  alloc_one(unsigned int blocks, bool mmapable)
-  {
-    Store s;
-    alloc(s, blocks, true, mmapable);
-    if (s.n_disks) {
-      Span *t   = s.disk[0];
-      s.disk[0] = nullptr;
-      return t;
-    }
-
-    return nullptr;
-  }
-  // try to allocate, return (s == gotten, diff == not gotten)
-  void try_realloc(Store &s, Store &diff);
-
-  // free back the contents of a store.
-  // must have been JUST allocated (no intervening allocs/frees)
-  void free(Store &s);
-  void add(Span *s);
-  void add(Store &s);
-  void dup(Store &s);
   void sort();
+
   void
   extend(unsigned i)
   {
@@ -231,25 +198,8 @@ struct Store {
     }
   }
 
-  // Non Thread-safe operations
-  unsigned int
-  total_blocks(unsigned after = 0) const
-  {
-    int64_t t = 0;
-    for (unsigned i = after; i < n_disks; i++) {
-      if (disk[i]) {
-        t += disk[i]->total_blocks();
-      }
-    }
-    return (unsigned int)t;
-  }
-  // 0 on success -1 on failure
-  // these operations are NOT thread-safe
-  //
-  int clear(char *filename, bool clear_dirs = true);
-  void normalize();
   void delete_all();
-  int remove(char *pathname);
+
   Store();
   ~Store();
 

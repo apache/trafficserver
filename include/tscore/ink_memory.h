@@ -76,10 +76,6 @@
 #define MADV_DONTNEED 4
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 struct IOVec : public iovec {
   IOVec()
   {
@@ -133,12 +129,6 @@ char *_xstrdup(const char *str, int length, const char *path);
 #define ats_strdup(p) _xstrdup((p), -1, nullptr)
 
 #define ats_strndup(p, n) _xstrdup((p), n, nullptr)
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
 
 #include <memory>
 
@@ -622,5 +612,3 @@ struct ats_unique_buf_deleter {
 };
 using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
 ats_unique_buf ats_unique_malloc(size_t size);
-
-#endif /* __cplusplus */

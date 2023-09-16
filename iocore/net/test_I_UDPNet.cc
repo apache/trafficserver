@@ -133,7 +133,6 @@ udp_echo_server()
 
   Thread *main_thread = new EThread();
   main_thread->set_specific();
-  net_config_poll_timeout = 10;
 
   init_diags("udp-.*", nullptr);
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);

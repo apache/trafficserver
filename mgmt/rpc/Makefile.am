@@ -106,7 +106,7 @@ test_jsonrpcserver_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
@@ -164,10 +164,10 @@ distclean-local:
 
 # Build with this file instead of the original one.
 $(shared_overridable_txn_vars_SOURCES):
-	echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
+	@echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
 
 $(shared_rpc_ipc_client_SOURCES):
-	echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
+	@echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
 
 include $(top_srcdir)/mk/tidy.mk
 

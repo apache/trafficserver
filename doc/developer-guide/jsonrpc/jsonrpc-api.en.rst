@@ -1366,6 +1366,7 @@ Description
 Interact with plugins. Send a message to plugins. All plugins that have hooked the ``TSLifecycleHookID::TS_LIFECYCLE_MSG_HOOK`` will receive a callback for that hook.
 The :arg:`tag` and :arg:`data` will be available to the plugin hook processing. It is expected that plugins will use :arg:`tag` to select relevant messages and determine the format of the :arg:`data`.
 
+
 Parameters
 ~~~~~~~~~~
 
@@ -1381,6 +1382,24 @@ Result
 ~~~~~~
 
 The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
+
+If plugins are not yet ready to handle any messages, then the following error will be set:
+
+.. code-block:: json
+
+   {
+      "error": {
+         "code": 9,
+         "message": "Error during execution",
+         "data": [
+            {
+            "code": 5000,
+            "message": "Plugin is not yet ready to handle any messages."
+            }
+         ]
+      }
+   }
+
 
 Examples
 ~~~~~~~~

@@ -40,19 +40,21 @@ namespace ts
 class Metrics
 {
 private:
-  using self_type  = Metrics;
-  using IdType     = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
-  using AtomicType = std::atomic<int64_t>;
+  using self_type = Metrics;
 
 public:
+  using IntType = std::atomic<int64_t>;
+  using IdType  = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
+
   static constexpr uint16_t METRICS_MAX_BLOBS = 8192;
   static constexpr uint16_t METRICS_MAX_SIZE  = 2048;                               // For a total of 16M metrics
   static constexpr IdType NOT_FOUND           = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
+  static const auto MEMORY_ORDER              = std::memory_order_relaxed;
 
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
   using NameContainer   = std::array<NameAndId, METRICS_MAX_SIZE>;
-  using AtomicContainer = std::array<AtomicType, METRICS_MAX_SIZE>;
+  using AtomicContainer = std::array<IntType, METRICS_MAX_SIZE>;
   using MetricStorage   = std::tuple<NameContainer, AtomicContainer>;
   using MetricBlobs     = std::array<MetricStorage *, METRICS_MAX_BLOBS>;
   using LookupTable     = std::unordered_map<std::string_view, IdType>;
@@ -63,7 +65,12 @@ public:
   Metrics &operator=(Metrics &&)          = delete;
   Metrics(Metrics &&)                     = delete;
 
-  virtual ~Metrics() = default;
+  virtual ~Metrics()
+  {
+    for (size_t i = 0; i <= _cur_blob; ++i) {
+      delete _blobs[i];
+    }
+  }
 
   Metrics()
   {
@@ -79,9 +86,16 @@ public:
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
   IdType newMetric(const std::string_view name);
   IdType lookup(const std::string_view name) const;
-  AtomicType *lookup(IdType id, std::string_view *name = nullptr) const;
+  IntType *lookup(IdType id, std::string_view *name = nullptr) const;
 
-  AtomicType &
+  // A bit of a convenience, since we use the ptr to the atomic frequently in the core
+  IntType *
+  newMetricPtr(const std::string_view name)
+  {
+    return lookup(newMetric(name));
+  }
+
+  IntType &
   operator[](IdType id)
   {
     return *lookup(id);
@@ -98,7 +112,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_add(val) : NOT_FOUND);
+    return (metric ? metric->fetch_add(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   // ToDo: Do we even need these inc/dec functions?
@@ -107,7 +121,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_sub(val) : NOT_FOUND);
+    return (metric ? metric->fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   std::string_view name(IdType id) const;
@@ -118,6 +132,35 @@ public:
     auto [blob, entry] = _splitID(id);
 
     return (id >= 0 && ((blob < _cur_blob && entry < METRICS_MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+  }
+
+  // Static methods to encapsulate access to the atomic's
+  static void
+  increment(IntType *metric, uint64_t val = 1)
+  {
+    ink_assert(metric);
+    metric->fetch_add(val, MEMORY_ORDER);
+  }
+
+  static void
+  decrement(IntType *metric, uint64_t val = 1)
+  {
+    ink_assert(metric);
+    metric->fetch_sub(val, MEMORY_ORDER);
+  }
+
+  static int64_t
+  read(IntType *metric)
+  {
+    ink_assert(metric);
+    return metric->load();
+  }
+
+  static void
+  write(IntType *metric, int64_t val)
+  {
+    ink_assert(metric);
+    return metric->store(val);
   }
 
   class iterator
@@ -232,6 +275,7 @@ private:
   MetricBlobs _blobs;
   uint16_t _cur_blob = 0;
   uint16_t _cur_off  = 0;
+
 }; // class Metrics
 
 } // namespace ts

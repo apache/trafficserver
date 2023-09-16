@@ -1,5 +1,5 @@
 #
-# Makefile.am for the Enterprise Management module.
+# Makefile.am for the config Management module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,8 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
-
 AM_CPPFLAGS += \
     $(iocore_include_dirs) \
     -I$(abs_top_srcdir)/iocore/utils \
@@ -34,25 +32,15 @@ AM_CPPFLAGS += \
 
 # ^^ all the proxy is to include the PluginCallbacks.
 
-noinst_LTLIBRARIES = libconfigmanager.la
-#check_PROGRAMS = test_configfiles
-
+noinst_LIBRARIES = libconfigmanager.a
 
 TESTS = $(check_PROGRAMS)
 
 # Protocol library only, no transport.
-libconfigmanager_COMMON = \
+libconfigmanager_a_SOURCES = \
 	FileManager.h \
 	FileManager.cc \
 	AddConfigFilesHere.cc
-
-
-libconfigmanager_la_SOURCES = \
-	$(libconfigmanager_COMMON)
-
-libconfigmanager_la_LIBADD = \
-	$(top_builddir)/src/tscore/libtscore.a
-
 
 include $(top_srcdir)/mk/tidy.mk
 

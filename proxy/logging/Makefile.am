@@ -80,9 +80,9 @@ test_LogUtils_SOURCES = \
 	unit-tests/test_LogUtils.cc
 
 test_LogUtils_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_RolledLogDeleter_CPPFLAGS = \
@@ -96,9 +96,9 @@ test_RolledLogDeleter_SOURCES = \
 	unit-tests/test_RolledLogDeleter.cc
 
 test_RolledLogDeleter_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(EXTRA_DIST)

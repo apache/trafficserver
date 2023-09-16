@@ -31,6 +31,7 @@
 #pragma once
 
 #include "P_UDPConnection.h"
+#include "UDPEventIO.h"
 
 class UnixUDPConnection : public UDPConnectionInternal
 {
@@ -48,7 +49,7 @@ public:
   int onCallbackQueue    = 0;
   Action *callbackAction = nullptr;
   EThread *ethread       = nullptr;
-  EventIO ep;
+  UDPEventIO ep;
 
   UnixUDPConnection(int the_fd);
   ~UnixUDPConnection() override;

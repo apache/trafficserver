@@ -70,7 +70,7 @@ struct IpHelper {
   }
 };
 
-using ConnectingIpPool = std::unordered_multimap<IpEndpoint, ConnectingEntry *, IpHelper>;
+using ConnectingIpPool = std::unordered_multimap<IpEndpoint, ConnectingEntry *, IpHelper, IpHelper>;
 
 /** Represents the set of connections to an origin. */
 class ConnectingPool

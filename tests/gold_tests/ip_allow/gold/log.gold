@@ -1,0 +1,3 @@
+127.0.0.1 TCP_MISS/200 130 GET https://127.0.0.1:SOMEPORT/get DIRECT - - - 127.0.0.1:SOMEPORT -  sftover=- sftmat=- sftcls=- sftbadclf=- yra=- scheme=http
+127.0.0.1 ERR_PROXY_DENIED/403 453 CONNECT 127.0.0.1:SOMEPORT/connect DIRECT text/html - - 127.0.0.1:SOMEPORT -  sftover=- sftmat=- sftcls=- sftbadclf=- yra=- scheme=UNKNOWN
+127.0.0.1 ERR_PROXY_DENIED/403 453 PUSH https://127.0.0.1:SOMEPORT/h2_push DIRECT text/html - - 127.0.0.1:SOMEPORT -  sftover=- sftmat=- sftcls=- sftbadclf=- yra=- scheme=https

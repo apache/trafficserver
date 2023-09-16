@@ -20,10 +20,12 @@ library_includedir=$(includedir)/ts
 
 library_include_HEADERS = \
 	apidefs.h \
+	DbgCtl.h \
 	ts.h \
 	remap.h \
 	experimental.h \
 	parentselectdefs.h
 
 noinst_HEADERS = \
-	InkAPIPrivateIOCore.h
+	InkAPIPrivateIOCore.h \
+	remap_version.h

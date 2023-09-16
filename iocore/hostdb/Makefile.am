@@ -38,7 +38,7 @@ libinkhostdb_a_SOURCES = \
 	P_HostDB.h \
 	P_HostDBProcessor.h \
 	P_RefCountCache.h \
-	P_RefCountCacheSerializer.h \
+	RefCountCache.cc \
 	RefCountCache.cc \
 	HostFile.h \
 	HostFile.cc \
@@ -64,10 +64,10 @@ test_CPP_FLAGS = \
 	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
-	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @LIBCAP@
 

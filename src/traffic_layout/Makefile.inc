@@ -23,6 +23,7 @@ traffic_layout_traffic_layout_CPPFLAGS = \
     -I$(abs_top_srcdir)/include \
     -I$(abs_top_srcdir)/lib \
     -I$(abs_top_srcdir)/mgmt \
+    @HWLOC_INCLUDES@ \
     @SWOC_INCLUDES@ \
     @YAMLCPP_INCLUDES@ \
     $(TS_INCLUDES)
@@ -45,5 +46,5 @@ traffic_layout_traffic_layout_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBLZMA@ @LIBPCRE@ @LIBCAP@

@@ -3802,19 +3802,8 @@ msgid ""
 "status."
 msgstr ""
 
-#: ../../../admin-guide/files/records.yaml.en.rst:2493
-msgid "The filename to persist hostdb to on disk."
-msgstr ""
-
 #: ../../../admin-guide/files/records.yaml.en.rst:2497
 msgid "Set the frequency (in seconds) to sync hostdb to disk."
-msgstr ""
-
-#: ../../../admin-guide/files/records.yaml.en.rst:2499
-msgid ""
-"Note: hostdb is syncd to disk on a per-partition basis (of which there are "
-"64). This means that the minimum time to sync all data to disk is :ts:cv:"
-"`proxy.config.cache.hostdb.sync_frequency` * 64"
 msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2503

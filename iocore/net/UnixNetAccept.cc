@@ -30,6 +30,14 @@ using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
 int NetAccept::accept_till_done = 1;
 
+namespace
+{
+
+DbgCtl dbg_ctl_iocore_net{"iocore_net"};
+DbgCtl dbg_ctl_iocore_net_accept_start{"iocore_net_accept_start"};
+
+} // end anonymous namespace
+
 static void
 safe_delay(int msec)
 {
@@ -73,7 +81,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
-    NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
+    Metrics::increment(net_rsb.tcp_accept);
 
     vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
     if (!vc) {
@@ -81,11 +89,11 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
 
     ++count;
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(na->opt.f_proxy_protocol);
@@ -103,7 +111,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
     EThread *t;
     NetHandler *h;
-    if (e->ethread->is_event_type(na->opt.etype)) {
+    if (e->ethread->is_event_type(ET_NET)) {
       t = e->ethread;
       h = get_NetHandler(t);
       // Assign NetHandler->mutex to NetVC
@@ -115,7 +123,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
         vc->handleEvent(EVENT_NONE, e);
       }
     } else {
-      t = eventProcessor.assign_thread(na->opt.etype);
+      t = eventProcessor.assign_thread(ET_NET);
       h = get_NetHandler(t);
       // Assign NetHandler->mutex to NetVC
       vc->mutex = h->mutex;
@@ -163,7 +171,8 @@ NetAccept::init_accept_loop()
     NetAccept *a = (i < n - 1) ? clone() : this;
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
-    Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", i + 1, ats_ip_port_host_order(&server.accept_addr));
+    Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
+        ats_ip_port_host_order(&server.accept_addr));
   }
 }
 
@@ -178,7 +187,7 @@ void
 NetAccept::init_accept(EThread *t)
 {
   if (!t) {
-    t = eventProcessor.assign_thread(opt.etype);
+    t = eventProcessor.assign_thread(ET_NET);
   }
 
   if (!action_->continuation->mutex) {
@@ -227,7 +236,6 @@ NetAccept::init_accept_per_thread()
   int i, n;
   int listen_per_thread = 0;
 
-  ink_assert(opt.etype >= 0);
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
   if (listen_per_thread == 0) {
@@ -238,11 +246,11 @@ NetAccept::init_accept_per_thread()
   }
 
   SET_HANDLER(&NetAccept::accept_per_thread);
-  n = eventProcessor.thread_group[opt.etype]._count;
+  n = eventProcessor.thread_group[ET_NET]._count;
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
-    EThread *t   = eventProcessor.thread_group[opt.etype]._thread[i];
+    EThread *t   = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
     t->schedule_imm(a);
   }
@@ -321,7 +329,7 @@ NetAccept::do_blocking_accept(EThread *t)
       check_throttle_warning(ACCEPT);
       // close the connection as we are in throttle state
       con.close();
-      NET_SUM_DYN_STAT(net_connections_throttled_in_stat, 1);
+      Metrics::increment(net_rsb.connections_throttled_in);
       continue;
     }
 
@@ -329,7 +337,7 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-    NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
+    Metrics::increment(net_rsb.tcp_accept);
 
     // Use 'nullptr' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
@@ -337,11 +345,11 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
@@ -364,7 +372,7 @@ NetAccept::do_blocking_accept(EThread *t)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread *localt = eventProcessor.assign_thread(opt.etype);
+    EThread *localt = eventProcessor.assign_thread(ET_NET);
     NetHandler *h   = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
@@ -392,14 +400,14 @@ NetAccept::acceptEvent(int event, void *ep)
   if (lock.is_locked()) {
     if (action_->cancelled) {
       e->cancel();
-      NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
+      Metrics::decrement(net_rsb.accepts_currently_open);
       delete this;
       return EVENT_DONE;
     }
 
     int res;
     if ((res = accept_fn(this, e, false)) < 0) {
-      NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
+      Metrics::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
       Warning("Traffic Server may be unable to accept more network"
@@ -437,11 +445,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
       if (check_net_throttle(ACCEPT)) {
         // close the connection as we are in throttle state
         con.close();
-        NET_SUM_DYN_STAT(net_connections_throttled_in_stat, 1);
+        Metrics::increment(net_rsb.connections_throttled_in);
         continue;
       }
-      Debug("iocore_net", "accepted a new socket: %d", fd);
-      NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
+      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", fd);
+      Metrics::increment(net_rsb.tcp_accept);
       if (opt.send_bufsize > 0) {
         if (unlikely(SocketManager::set_sndbuf_size(fd, opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
@@ -469,7 +477,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     // check return value from accept()
     if (res < 0) {
-      Debug("iocore_net", "received : %s", strerror(errno));
+      Dbg(dbg_ctl_iocore_net, "received : %s", strerror(errno));
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
 #if defined(__linux__)
@@ -490,11 +498,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
     ink_release_assert(vc);
 
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
@@ -533,7 +541,7 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
+  Metrics::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }
@@ -550,7 +558,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   }
 
   // Don't think this ever happens ...
-  NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
+  Metrics::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }

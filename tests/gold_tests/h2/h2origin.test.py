@@ -97,3 +97,18 @@ ts.Disk.squid_log.Content += Testers.ContainsExpression(" [5-9] http/2 http/2", 
 ts.Disk.squid_log.Content += Testers.ExcludesExpression(" [5-9] http/1.1 http/2", "cases 5-11 request http/2")
 ts.Disk.squid_log.Content += Testers.ContainsExpression(" 1[0-1] http/2 http/2", "cases 5-11 request http/2")
 ts.Disk.squid_log.Content += Testers.ExcludesExpression(" 1[0-1] http/1.1 http/2", "cases 5-11 request http/2")
+
+tr = Test.AddTestRun("Test HTTP method Metrics")
+tr.Processes.Default.Command = (
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
+    " 'traffic_ctl metric get" +
+    " proxy.process.http.get_requests" +
+    " proxy.process.http.post_requests" +
+    " proxy.process.http.put_requests'" +
+    f" {Test.TestDirectory}/gold/http-request-method-metrics.gold"
+)
+# Need to copy over the environment so traffic_ctl knows where to find the unix
+# domain socket
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = ts

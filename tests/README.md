@@ -57,9 +57,6 @@ is the path to `bin` directory of your TrafficServer installation prefix:
     pipenv detected!
     Using the pre-existing virtual environment.
     Environment config finished. Running AuTest...
-    Running Test CppDelayTransformation: Skipped
-    Warning: Skipping test CppDelayTransformation because:
-     /opt/ats/libexec/trafficserver/DelayTransformationPlugin.so not found.
     Running Test TSVConnFd:F Failed
     Running Test accept_timeout: Skipped
     Warning: Skipping test accept_timeout because:
@@ -349,20 +346,11 @@ ts.Disk.remap_config.AddLine(
  * TS_USE_TLS13
  * TS_USE_QUIC
  * TS_HAS_QUICHE
- * TS_USE_LINUX_NATIVE_AIO
  * TS_HAS_SO_PEERCRED
  * TS_USE_REMOTE_UNWINDING
  * TS_HAS_128BIT_CAS
  * TS_HAS_TESTS
  * TS_HAS_WCCP
-
-### Example
-```python
-#create the origin server process
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_LINUX_NATIVE_AIO'),
-)
-```
 
 ### Condition.HasCurlFeature(feature)
  * feature - The feature to test for

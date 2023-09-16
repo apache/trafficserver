@@ -68,7 +68,7 @@ It should be called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 may be used again.
 
 :func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed
-to by :arg:`parser`. The :arg:`parser` pointer must not be NULL.
+to by :arg:`parser`. The :arg:`parser` pointer must not be nullptr.
 
 Return Values
 =============

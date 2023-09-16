@@ -28,6 +28,23 @@
 #include "tscore/ink_sys_control.h"
 #include "tscore/Diags.h"
 
+namespace
+{
+rlim_t global_fds_limit = 8000;
+}
+
+rlim_t
+ink_get_fds_limit()
+{
+  return global_fds_limit;
+}
+
+void
+ink_set_fds_limit(rlim_t limit)
+{
+  global_fds_limit = limit;
+}
+
 rlim_t
 ink_max_out_rlimit(int which)
 {

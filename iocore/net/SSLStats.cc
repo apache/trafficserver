@@ -27,15 +27,15 @@
 
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
+#include "records/P_RecProcess.h"
 
-RecRawStatBlock *ssl_rsb = nullptr;
-std::unordered_map<std::string, intptr_t> cipher_map;
+SSLStatsBlock ssl_rsb;
+std::unordered_map<std::string, ts::Metrics::IntType *> cipher_map;
 
-static int
-SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+// ToDo: This gets called once per global sync, for now at least.
+void
+SSLPeriodicMetricsUpdate()
 {
-  // Grab all the stats we want from OpenSSL and set the stats. This function only needs to be called by one of the
-  // involved stats, all others *must* call RecRawStatSyncSum.
   SSLCertificateConfig::scoped_config certLookup;
 
   int64_t sessions = 0;
@@ -43,6 +43,7 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   int64_t misses   = 0;
   int64_t timeouts = 0;
 
+  Debug("ssl", "Starting to update the new session metrics");
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
@@ -59,31 +60,21 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
     }
   }
 
-  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_sessions_stat, sessions);
-  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_hit_stat, hits);
-  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_miss_stat, misses);
-  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
-
-  return RecRawStatSyncCount(name, data_type, data, rsb, id);
+  Metrics::write(ssl_rsb.user_agent_sessions, sessions);
+  Metrics::write(ssl_rsb.user_agent_session_hit, hits);
+  Metrics::write(ssl_rsb.user_agent_session_miss, misses);
+  Metrics::write(ssl_rsb.user_agent_session_timeout, timeouts);
 }
 
 static void
-add_cipher_stat(const char *cipherName, const std::string &statName, int index)
+add_cipher_stat(const char *cipherName, const std::string &statName)
 {
-  // If room in allocated space ...
-  if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
-    // Too many ciphers, increase ssl_cipher_stats_end.
-    SSLError("too many ciphers to register metric '%s', increase SSL_Stats::ssl_cipher_stats_end", statName.c_str());
-    return;
-  }
-
   // If not already registered ...
   if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
-    cipher_map.emplace(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
-    // Register as non-persistent since the order/index is dependent upon configuration.
-    RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)ssl_cipher_stats_start + index,
-                       RecRawStatSyncSum);
-    SSL_CLEAR_DYN_STAT((int)ssl_cipher_stats_start + index);
+    ts::Metrics &intm            = ts::Metrics::getInstance();
+    ts::Metrics::IntType *metric = intm.newMetricPtr(statName);
+
+    cipher_map.emplace(cipherName, metric);
     Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
   }
 }
@@ -94,181 +85,90 @@ SSLInitializeStatistics()
   SSL_CTX *ctx;
   SSL *ssl;
   STACK_OF(SSL_CIPHER) * ciphers;
+  ts::Metrics &intm = ts::Metrics::getInstance();
 
-  // Allocate SSL statistics block.
-  ssl_rsb = RecAllocateRawStatBlock(static_cast<int>(Ssl_Stat_Count));
-  ink_assert(ssl_rsb != nullptr);
+  // For now, register with the librecords global sync.
+  RecRegNewSyncStatSync(SSLPeriodicMetricsUpdate);
 
-  // SSL client errors.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_other_errors", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_other_errors_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_expired_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_expired_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_revoked_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_revoked_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_unknown_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_cert_verify_failed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_cert_verify_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_bad_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_decryption_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_wrong_version_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_ca", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_user_agent_unknown_ca_stat, RecRawStatSyncSum);
-
-  // Polled SSL context statistics.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_sessions", RECD_COUNTER, RECP_NON_PERSISTENT,
-                     (int)ssl_user_agent_sessions_stat,
-                     SSLRecRawStatSyncCount); //<- only use this fn once
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_hit", RECD_COUNTER, RECP_NON_PERSISTENT,
-                     (int)ssl_user_agent_session_hit_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_miss", RECD_COUNTER, RECP_NON_PERSISTENT,
-                     (int)ssl_user_agent_session_miss_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_timeout", RECD_COUNTER, RECP_NON_PERSISTENT,
-                     (int)ssl_user_agent_session_timeout_stat, RecRawStatSyncCount);
-
-  // SSL server errors.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_other_errors", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_other_errors_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_expired_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_expired_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_revoked_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_revoked_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_unknown_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_cert_verify_failed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_cert_verify_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_bad_cert", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_bad_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_decryption_failed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_decryption_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_wrong_version", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_wrong_version_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_ca", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_server_unknown_ca_stat, RecRawStatSyncSum);
-
-  // SSL handshake time
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_handshake_time_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_attempts_handshake_count_in_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_success_handshake_count_in_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_attempts_handshake_count_out_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_success_handshake_count_out_stat, RecRawStatSyncCount);
-
-  // TLS tickets
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_created", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tickets_created_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tickets_verified_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_not_found", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tickets_not_found_stat, RecRawStatSyncCount);
-  // TODO: ticket renewal is not used right now.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tickets_renewed_stat, RecRawStatSyncCount);
-  // The number of session tickets verified with an "old" key.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified_old_key", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tickets_verified_old_key_stat, RecRawStatSyncCount);
-  // The number of ticket keys renewed.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_ticket_keys_renewed", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_ticket_keys_renewed_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_session_cache_hit, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_origin_session_cache_hit", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_session_cache_hit, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_new_session", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_session_cache_new_session, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_session_cache_miss, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_origin_session_cache_miss", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_origin_session_cache_miss, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_eviction", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_session_cache_eviction, RecRawStatSyncCount);
-
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_session_cache_lock_contention, RecRawStatSyncCount);
-
-  // Track dynamic record size
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.default_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_dyn_def_tls_record_count, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.max_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_dyn_max_tls_record_count, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.redo_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_dyn_redo_tls_record_count, RecRawStatSyncCount);
-
-  // error stats
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_syscall, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl", RECD_COUNTER, RECP_PERSISTENT, (int)ssl_error_ssl,
-                     RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_async", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_async, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_sni_name_set_failure, RecRawStatSyncCount);
-
-  // ocsp stapling stats
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_revoked_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_ocsp_revoked_cert_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_ocsp_unknown_cert_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refreshed_cert", RECD_INT, RECP_PERSISTENT,
-                     (int)ssl_ocsp_refreshed_cert_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refresh_cert_failure", RECD_INT, RECP_PERSISTENT,
-                     (int)ssl_ocsp_refresh_cert_failure_stat, RecRawStatSyncCount);
-
-  // SSL Version stats
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_sslv3", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_sslv3, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv1", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tlsv1, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv11", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tlsv11, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv12", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tlsv12, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv13", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_total_tlsv13, RecRawStatSyncCount);
-
-  // TLSv1.3 0-RTT stats
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.early_data_received", RECD_INT, RECP_PERSISTENT,
-                     (int)ssl_early_data_received_count, RecRawStatSyncCount);
-
-  // Origin Server Session Reuse stats
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_session_reused", RECD_INT, RECP_PERSISTENT,
-                     (int)ssl_origin_session_reused_count, RecRawStatSyncCount);
+  ssl_rsb.early_data_received_count          = intm.newMetricPtr("proxy.process.ssl.early_data_received");
+  ssl_rsb.error_async                        = intm.newMetricPtr("proxy.process.ssl.ssl_error_async");
+  ssl_rsb.error_ssl                          = intm.newMetricPtr("proxy.process.ssl.ssl_error_ssl");
+  ssl_rsb.error_syscall                      = intm.newMetricPtr("proxy.process.ssl.ssl_error_syscall");
+  ssl_rsb.ocsp_refresh_cert_failure          = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_refresh_cert_failure");
+  ssl_rsb.ocsp_refreshed_cert                = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_refreshed_cert");
+  ssl_rsb.ocsp_revoked_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_revoked_cert");
+  ssl_rsb.ocsp_unknown_cert                  = intm.newMetricPtr("proxy.process.ssl.ssl_ocsp_unknown_cert");
+  ssl_rsb.origin_server_bad_cert             = intm.newMetricPtr("proxy.process.ssl.origin_server_bad_cert");
+  ssl_rsb.origin_server_cert_verify_failed   = intm.newMetricPtr("proxy.process.ssl.origin_server_cert_verify_failed");
+  ssl_rsb.origin_server_decryption_failed    = intm.newMetricPtr("proxy.process.ssl.origin_server_decryption_failed");
+  ssl_rsb.origin_server_expired_cert         = intm.newMetricPtr("proxy.process.ssl.origin_server_expired_cert");
+  ssl_rsb.origin_server_other_errors         = intm.newMetricPtr("proxy.process.ssl.origin_server_other_errors");
+  ssl_rsb.origin_server_revoked_cert         = intm.newMetricPtr("proxy.process.ssl.origin_server_revoked_cert");
+  ssl_rsb.origin_server_unknown_ca           = intm.newMetricPtr("proxy.process.ssl.origin_server_unknown_ca");
+  ssl_rsb.origin_server_unknown_cert         = intm.newMetricPtr("proxy.process.ssl.origin_server_unknown_cert");
+  ssl_rsb.origin_server_wrong_version        = intm.newMetricPtr("proxy.process.ssl.origin_server_wrong_version");
+  ssl_rsb.origin_session_reused_count        = intm.newMetricPtr("proxy.process.ssl.origin_session_reused");
+  ssl_rsb.sni_name_set_failure               = intm.newMetricPtr("proxy.process.ssl.ssl_sni_name_set_failure");
+  ssl_rsb.origin_session_cache_hit           = intm.newMetricPtr("proxy.process.ssl.ssl_origin_session_cache_hit");
+  ssl_rsb.origin_session_cache_miss          = intm.newMetricPtr("proxy.process.ssl.ssl_origin_session_cache_miss");
+  ssl_rsb.session_cache_eviction             = intm.newMetricPtr("proxy.process.ssl.ssl_session_cache_eviction");
+  ssl_rsb.session_cache_hit                  = intm.newMetricPtr("proxy.process.ssl.ssl_session_cache_hit");
+  ssl_rsb.session_cache_lock_contention      = intm.newMetricPtr("proxy.process.ssl.ssl_session_cache_lock_contention");
+  ssl_rsb.session_cache_miss                 = intm.newMetricPtr("proxy.process.ssl.ssl_session_cache_miss");
+  ssl_rsb.session_cache_new_session          = intm.newMetricPtr("proxy.process.ssl.ssl_session_cache_new_session");
+  ssl_rsb.total_attempts_handshake_count_in  = intm.newMetricPtr("proxy.process.ssl.total_attempts_handshake_count_in");
+  ssl_rsb.total_attempts_handshake_count_out = intm.newMetricPtr("proxy.process.ssl.total_attempts_handshake_count_out");
+  ssl_rsb.total_dyn_def_tls_record_count     = intm.newMetricPtr("proxy.process.ssl.default_record_size_count");
+  ssl_rsb.total_dyn_max_tls_record_count     = intm.newMetricPtr("proxy.process.ssl.max_record_size_count");
+  ssl_rsb.total_dyn_redo_tls_record_count    = intm.newMetricPtr("proxy.process.ssl.redo_record_size_count");
+  ssl_rsb.total_handshake_time               = intm.newMetricPtr("proxy.process.ssl.total_handshake_time");
+  ssl_rsb.total_sslv3                        = intm.newMetricPtr("proxy.process.ssl.ssl_total_sslv3");
+  ssl_rsb.total_success_handshake_count_in   = intm.newMetricPtr("proxy.process.ssl.total_success_handshake_count_in");
+  ssl_rsb.total_success_handshake_count_out  = intm.newMetricPtr("proxy.process.ssl.total_success_handshake_count_out");
+  ssl_rsb.total_ticket_keys_renewed          = intm.newMetricPtr("proxy.process.ssl.total_ticket_keys_renewed");
+  ssl_rsb.total_tickets_created              = intm.newMetricPtr("proxy.process.ssl.total_tickets_created");
+  ssl_rsb.total_tickets_not_found            = intm.newMetricPtr("proxy.process.ssl.total_tickets_not_found");
+  ssl_rsb.total_tickets_renewed              = intm.newMetricPtr("proxy.process.ssl.total_tickets_renewed"); // ToDo: Not used?
+  ssl_rsb.total_tickets_verified             = intm.newMetricPtr("proxy.process.ssl.total_tickets_verified");
+  ssl_rsb.total_tickets_verified_old_key     = intm.newMetricPtr("proxy.process.ssl.total_tickets_verified_old_key");
+  ssl_rsb.total_tlsv1                        = intm.newMetricPtr("proxy.process.ssl.ssl_total_tlsv1");
+  ssl_rsb.total_tlsv11                       = intm.newMetricPtr("proxy.process.ssl.ssl_total_tlsv11");
+  ssl_rsb.total_tlsv12                       = intm.newMetricPtr("proxy.process.ssl.ssl_total_tlsv12");
+  ssl_rsb.total_tlsv13                       = intm.newMetricPtr("proxy.process.ssl.ssl_total_tlsv13");
+  ssl_rsb.user_agent_bad_cert                = intm.newMetricPtr("proxy.process.ssl.user_agent_bad_cert");
+  ssl_rsb.user_agent_cert_verify_failed      = intm.newMetricPtr("proxy.process.ssl.user_agent_cert_verify_failed");
+  ssl_rsb.user_agent_decryption_failed       = intm.newMetricPtr("proxy.process.ssl.user_agent_decryption_failed");
+  ssl_rsb.user_agent_expired_cert            = intm.newMetricPtr("proxy.process.ssl.user_agent_expired_cert");
+  ssl_rsb.user_agent_other_errors            = intm.newMetricPtr("proxy.process.ssl.user_agent_other_errors");
+  ssl_rsb.user_agent_revoked_cert            = intm.newMetricPtr("proxy.process.ssl.user_agent_revoked_cert");
+  ssl_rsb.user_agent_session_hit             = intm.newMetricPtr("proxy.process.ssl.user_agent_session_hit");
+  ssl_rsb.user_agent_session_miss            = intm.newMetricPtr("proxy.process.ssl.user_agent_session_miss");
+  ssl_rsb.user_agent_session_timeout         = intm.newMetricPtr("proxy.process.ssl.user_agent_session_timeout");
+  ssl_rsb.user_agent_sessions                = intm.newMetricPtr("proxy.process.ssl.user_agent_sessions");
+  ssl_rsb.user_agent_unknown_ca              = intm.newMetricPtr("proxy.process.ssl.user_agent_unknown_ca");
+  ssl_rsb.user_agent_unknown_cert            = intm.newMetricPtr("proxy.process.ssl.user_agent_unknown_cert");
+  ssl_rsb.user_agent_wrong_version           = intm.newMetricPtr("proxy.process.ssl.user_agent_wrong_version");
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
   // configuration reloads and works for the case where we honor the client cipher preference.
-
   SSLMultiCertConfigLoader loader(nullptr);
   ctx     = loader.default_server_ssl_ctx();
   ssl     = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
 
   // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
-  int index;
-  for (index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
+  for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
     SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
     std::string statName   = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
-    add_cipher_stat(cipherName, statName, index);
+
+    add_cipher_stat(cipherName, statName);
   }
 
   // Add "OTHER" for ciphers not on the map
-  add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER, index);
+  add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
 
   SSL_free(ssl);
   SSLReleaseContext(ctx);

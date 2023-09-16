@@ -29,10 +29,6 @@ Assertions
 
 #include "tscore/ink_apidefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* don't use assert, no really DON'T use assert */
 #undef assert
 #define assert __DONT_USE_BARE_assert_USE_ink_assert__
@@ -50,9 +46,6 @@ void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 #endif
 
 #define ink_release_assert(EX) ((void)(__builtin_expect(!!(EX), 0) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
-
-#ifdef __cplusplus
-}
 
 /*
 Use cast_to_derived() to cast a pointer/reference to a dynamic base class into a pointer/reference to a class
@@ -99,5 +92,3 @@ cast_to_derived(Base &b)
 
 #endif
 }
-
-#endif /* __cplusplus */

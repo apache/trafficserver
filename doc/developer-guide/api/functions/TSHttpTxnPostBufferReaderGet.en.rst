@@ -55,7 +55,7 @@ handler makes use of :c:func:`TSHttpTxnPostBufferReaderGet`.
 
        int64_t consumed      = 0;
        TSIOBufferBlock block = TSIOBufferReaderStart(post_buffer_reader);
-       while (block != NULL) {
+       while (block != nullptr) {
          int64_t data_len        = 0;
          const char *block_bytes = TSIOBufferBlockReadStart(block, post_buffer_reader, &data_len);
          memcpy(body_bytes + consumed, block_bytes, data_len);
@@ -74,5 +74,5 @@ handler makes use of :c:func:`TSHttpTxnPostBufferReaderGet`.
      return 0;
    }
 
-:ts:git:`example/plugins/c-api/request_buffer/request_buffer.c` is a simple
+:ts:git:`example/plugins/c-api/request_buffer/request_buffer.cc` is a simple
 yet complete plugin that accesses HTTP request bodies.

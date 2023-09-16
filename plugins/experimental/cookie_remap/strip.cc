@@ -189,7 +189,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   char *w, *out_end;      /* where we write to, write limit */
 
   /* validate params */
-  if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len < 0 || (out == nullptr && *out_len > 0) ||
+  if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len <= 0 || (out == nullptr && *out_len > 0) ||
       (flags & (~allowed_flags))) {
     if (out != nullptr && out_len != nullptr && *out_len > 0) {
       *out     = '\0';
@@ -228,7 +228,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   retval = stripped_core(r, in_end, &w, out_end, flags);
 
   /* null terminate */
-  out_end += out_end ? 1 : 0;            /* undo decrement at start */
+  out_end++;                             /* undo decrement at start */
   write_char_if_room(&w, out_end, '\0'); /* try to term at end of output */
 
   /* report the required/used length */

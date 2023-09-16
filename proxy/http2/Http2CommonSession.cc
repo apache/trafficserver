@@ -98,32 +98,32 @@ Http2CommonSession::common_free(ProxySession *ssn)
   if (cause_of_death != Http2SessionCod::NOT_PROVIDED) {
     switch (cause_of_death) {
     case Http2SessionCod::HIGH_ERROR_RATE:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_high_error_rate);
       break;
     case Http2SessionCod::NOT_PROVIDED:
       // Can't happen but this case is here to not have default case.
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      Metrics::increment(http2_rsb.session_die_other);
       break;
     }
   } else {
     switch (dying_event) {
     case VC_EVENT_NONE:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
+      Metrics::increment(http2_rsb.session_die_default);
       break;
     case VC_EVENT_ACTIVE_TIMEOUT:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_active);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
+      Metrics::increment(http2_rsb.session_die_inactive);
       break;
     case VC_EVENT_ERROR:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
+      Metrics::increment(http2_rsb.session_die_error);
       break;
     case VC_EVENT_EOS:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
+      Metrics::increment(http2_rsb.session_die_eos);
       break;
     default:
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      Metrics::increment(http2_rsb.session_die_other);
       break;
     }
   }
@@ -172,7 +172,7 @@ Http2CommonSession::flush()
 {
   if (this->_pending_sending_data_size > 0) {
     this->_pending_sending_data_size = 0;
-    this->_write_buffer_last_flush   = Thread::get_hrtime();
+    this->_write_buffer_last_flush   = ink_get_hrtime();
     write_reenable();
   }
 }
@@ -406,8 +406,18 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 bool
 Http2CommonSession::_should_do_something_else()
 {
+  if (this->_interrupt_reading_frames) {
+    this->_interrupt_reading_frames = false;
+    return true;
+  }
   // Do something else every 128 incoming frames if connection state isn't closed
   return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
+}
+
+void
+Http2CommonSession::interrupt_reading_frames()
+{
+  this->_interrupt_reading_frames = true;
 }
 
 int64_t

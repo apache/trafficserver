@@ -149,7 +149,7 @@ Trie<T>::Insert(const char *key, T *value, int rank, int key_len /* = -1 */)
   int i           = 0;
 
   while (true) {
-    if (is_dbg_ctl_enabled(dbg_ctl_insert)) {
+    if (dbg_ctl_insert.on()) {
       Dbg(dbg_ctl_insert, "Visiting Node...");
       curr_node->Print(dbg_ctl_insert);
     }
@@ -195,7 +195,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
   int i                  = 0;
 
   while (curr_node) {
-    if (is_dbg_ctl_enabled(dbg_ctl_search)) {
+    if (dbg_ctl_search.on()) {
       DbgPrint(dbg_ctl_search, "Visiting node...");
       curr_node->Print(dbg_ctl_search);
     }

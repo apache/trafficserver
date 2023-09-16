@@ -49,21 +49,20 @@ transaction and associate data to the transaction.
 
     #include <ts/ts.h>
 
-    #define DBG_TAG "txn"
+    char const DBG_TAG[] = "txn";
 
     /* Structure to be associated to txns */
-    typedef struct {
+    struct TxnData {
        int i;
        float f;
-       char *s;
-    } TxnData;
+       char const *s;
+    };
 
     /* Allocate memory and init a TxnData structure */
     TxnData *
     txn_data_alloc()
     {
-       TxnData *data;
-       data = TSmalloc(sizeof(TxnData));
+       auto data{new TxnData};
 
        data->i = 1;
        data->f = 0.5;
@@ -71,19 +70,12 @@ transaction and associate data to the transaction.
        return data;
     }
 
-    /* Free up a TxnData structure */
-    void
-    txn_data_free(TxnData *data)
-    {
-       TSfree(data);
-    }
-
     /* Handler for event READ_REQUEST and TXN_CLOSE */
     static int
     local_hook_handler (TSCont contp, TSEvent event, void *edata)
     {
        TSHttpTxn txnp = (TSHttpTxn) edata;
-       TxnData *txn_data = TSContDataGet(contp);
+       auto txn_data = static_cast<TxnData *>(TSContDataGet(contp));
        switch (event) {
        case TS_EVENT_HTTP_READ_REQUEST_HDR:
           /* Modify values of txn data */
@@ -97,7 +89,7 @@ transaction and associate data to the transaction.
           TSDebug(DBG_TAG, "Txn data i=%d f=%f s=%s", txn_data->i, txn_data->f, txn_data->s);
 
           /* Then destroy the txn cont and its data */
-          txn_data_free(txn_data);
+          delete txn_data;
           TSContDestroy(contp);
           break;
 
@@ -114,7 +106,7 @@ transaction and associate data to the transaction.
     static int
     global_hook_handler (TSCont contp, TSEvent event, void *edata)
     {
-       TSHttpTxn txnp = (TSHttpTxn) edata;
+       auto txnp = static_cast<TSHttpTxn>(edata);
        TSCont txn_contp;
        TxnData *txn_data;
 
@@ -143,11 +135,9 @@ transaction and associate data to the transaction.
     void
     TSPluginInit (int argc, const char *argv[])
     {
-       TSCont contp;
-
        /* Note that we do not need a mutex for this txn since it registers globally
           and doesn't have any data associated with it */
-       contp = TSContCreate(global_hook_handler, NULL);
+       TSCont contp = TSContCreate(global_hook_handler, nullptr);
 
        /* Register globally */
        TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);

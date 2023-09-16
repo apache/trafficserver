@@ -34,7 +34,6 @@
 // Common Interface impl                     //
 ///////////////////////////////////////////////
 
-thread_local ink_hrtime Thread::cur_time = ink_get_hrtime_internal();
 thread_local Thread *Thread::this_thread_ptr;
 
 Thread::Thread()

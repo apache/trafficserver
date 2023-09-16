@@ -79,7 +79,7 @@ Description
 
     .. code-block:: cpp
 
-        TSRPCProviderHandle info = TSRPCRegister("FooBar's Plugin!", 16, "0.7.0", 5);
+        TSRPCProviderHandle info = TSRPCRegister("FooBar's Plugin!", 16, "0.8.0", 5);
         ...
         TSRPCHandlerOptions opt{{true}};
         TSRPCRegisterMethodHandler("my_join_string_handler", 22, func, info, &opt);

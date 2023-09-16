@@ -25,6 +25,9 @@
 
 #include "I_EventSystem.h"
 #include "tscore/PendingAction.h"
+#include "api/Metrics.h"
+
+using ts::Metrics;
 
 #define MAX_NAMED                       32
 #define DEFAULT_DNS_RETRIES             5
@@ -75,33 +78,24 @@ extern unsigned int dns_sequence_number;
 #endif
 
 // Stats
-enum DNS_Stats {
-  dns_total_lookups_stat,
-  dns_response_time_stat,
-  dns_success_time_stat,
-  dns_lookup_success_stat,
-  dns_lookup_fail_stat,
-  dns_fail_time_stat,
-  dns_retries_stat,
-  dns_max_retries_exceeded_stat,
-  dns_in_flight_stat,
-  dns_tcp_retries_stat,
-  dns_tcp_reset_stat,
-  DNS_Stat_Count
+struct DNSStatsBlock {
+  ts::Metrics::IntType *fail_time;
+  ts::Metrics::IntType *in_flight;
+  ts::Metrics::IntType *lookup_fail;
+  ts::Metrics::IntType *lookup_success;
+  ts::Metrics::IntType *max_retries_exceeded;
+  ts::Metrics::IntType *response_time;
+  ts::Metrics::IntType *retries;
+  ts::Metrics::IntType *success_time;
+  ts::Metrics::IntType *tcp_reset;
+  ts::Metrics::IntType *tcp_retries;
+  ts::Metrics::IntType *total_lookups;
 };
 
 struct HostEnt;
 struct DNSHandler;
 
-struct RecRawStatBlock;
-extern RecRawStatBlock *dns_rsb;
-
-// Stat Macros
-#define DNS_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, 1)
-
-#define DNS_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, -1)
-
-#define DNS_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, _r)
+extern DNSStatsBlock dns_rsb;
 
 /**
   One DNSEntry is allocated per outstanding request. This continuation
@@ -200,26 +194,26 @@ struct DNSHandler : public Continuation {
     ++failover_number[name_server];
     Dbg(_dbg_ctl_dns, "sent_one: failover_number for resolver %d is %d", name_server, failover_number[name_server]);
     if (failover_number[name_server] >= dns_failover_number && !crossed_failover_number[name_server])
-      crossed_failover_number[name_server] = Thread::get_hrtime();
+      crossed_failover_number[name_server] = ink_get_hrtime();
   }
 
   bool
   failover_now(int i)
   {
-    if (is_dbg_ctl_enabled(_dbg_ctl_dns)) {
+    if (_dbg_ctl_dns.on()) {
       DbgPrint(_dbg_ctl_dns, "failover_now: Considering immediate failover, target time is %" PRId64 "",
                (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
-      DbgPrint(_dbg_ctl_dns, "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
+      DbgPrint(_dbg_ctl_dns, "\tdelta time is %" PRId64 "", (ink_get_hrtime() - crossed_failover_number[i]));
     }
-    return ns_down[i] || (crossed_failover_number[i] &&
-                          ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
+    return ns_down[i] ||
+           (crossed_failover_number[i] && ((ink_get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
   }
 
   bool
   failover_soon(int i)
   {
     return ns_down[i] || (crossed_failover_number[i] &&
-                          ((Thread::get_hrtime() - crossed_failover_number[i]) >
+                          ((ink_get_hrtime() - crossed_failover_number[i]) >
                            (HRTIME_SECONDS(dns_failover_try_period + failover_soon_number[i] * FAILOVER_SOON_RETRY))));
   }
 

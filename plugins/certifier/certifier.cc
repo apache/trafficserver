@@ -211,7 +211,7 @@ public:
 
         // Remove oldest node if size exceeds limit
         if (++size > limit) {
-          TSDebug(PLUGIN_NAME, "Removing %s", tail->commonName.c_str());
+          TSDebug(PLUGIN_NAME, "%s: removing '%s'", __func__, tail->commonName.c_str());
           auto iter = cnDataMap.find(tail->commonName);
           if (iter != cnDataMap.end()) {
             local = std::move(iter->second); // copy ownership
@@ -224,7 +224,7 @@ public:
         }
       }
     }
-    TSDebug(PLUGIN_NAME, "%s Prepend to LRU list...List Size:%d Map Size: %d", data->commonName.c_str(), size,
+    TSDebug(PLUGIN_NAME, "%s: prepending '%s' to LRU ... list size: %d, map size: %d", __func__, data->commonName.c_str(), size,
             static_cast<int>(cnDataMap.size()));
 
     TSMutexUnlock(list_mutex);
@@ -344,44 +344,46 @@ addSANExtToCert(X509 *cert, std::string_view dnsName)
 static scoped_X509
 mkcrt(const std::string &commonName, int serial)
 {
-  TSDebug(PLUGIN_NAME, "Entering mkcrt()...");
   scoped_EVP_PKEY pktmp;
   scoped_X509 cert;
 
   cert.reset(X509_new());
 
-  /// Set X509V3
+  // Set X509V3
   if (X509_set_version(cert.get(), 2) == 0) {
-    TSError("[%s] mkcrt(): Failed to set X509V3.", PLUGIN_NAME);
+    TSError("[%s] %s: failed to set X509V3", PLUGIN_NAME, __func__);
     return nullptr;
   }
 
-  /// Set serial number
+  // Set serial number
   // TSDebug("txn_monitor", "serial: %d", serial);
   ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), serial);
 
-  /// Set issuer from CA cert
+  // Set issuer from CA cert
   if (X509_set_issuer_name(cert.get(), X509_get_subject_name(ca_cert_scoped.get())) == 0) {
-    TSError("[%s] mkcrt(): Failed to set issuer.", PLUGIN_NAME);
+    TSError("[%s] %s: failed to set certificate issuer", PLUGIN_NAME, __func__);
     return nullptr;
   }
-  /// Set certificate time
+
+  // Set certificate time
   X509_gmtime_adj(X509_get_notBefore(cert.get()), 0);
   X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
-  /// Get handle to subject name
+  // Get handle to subject name
   X509_NAME *n = X509_get_subject_name(cert.get());
-  /// Set common name field
+  // Set common name field
   if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.c_str(), -1, -1, 0) != 1) {
-    TSError("[%s] mkcsr(): Failed to add entry.", PLUGIN_NAME);
+    TSError("[%s] %s: failed to add certificate subject CN", PLUGIN_NAME, __func__);
     return nullptr;
   }
-  /// Set Traffic Server public key
+
+  // Set Traffic Server public key
   if (X509_set_pubkey(cert.get(), ca_pkey_scoped.get()) == 0) {
-    TSDebug(PLUGIN_NAME, "mkcrt(): Failed to set X509 public key.");
+    TSError("[%s] %s: failed to set certificate public key", PLUGIN_NAME, __func__);
     return nullptr;
   }
-  /// Add the Subject Alternative Name (SAN) extension
+
+  // Add the Subject Alternative Name (SAN) extension
   addSANExtToCert(cert.get(), commonName);
 
   // Sign the certificate
@@ -419,7 +421,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
     /// Try open the file if directory exists
     fp = fopen(cert_filename.c_str(), "rt");
   }
-  TSDebug(PLUGIN_NAME, "shadow_cert_generator(): Cert file is expected at %s", cert_filename.c_str());
+  TSDebug(PLUGIN_NAME, "%s: cert file is expected at %s", __func__, cert_filename.c_str());
   /// If cert file exists and is readable
   if (fp != nullptr) {
     cert.reset(PEM_read_X509(fp, nullptr, nullptr, nullptr));
@@ -427,17 +429,16 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 
     if (cert == nullptr) {
       /// Problem with cert file / openssl read
-      TSError("[%s] [shadow_cert_generator] Problem with loading certs", PLUGIN_NAME);
-      std::remove(cert_filename.c_str());
+      TSError("[%s] %s: failed o load certificate from '%s'", PLUGIN_NAME, __func__, cert_filename.c_str());
     } else {
-      TSDebug(PLUGIN_NAME, "shadow_cert_generator(): Loaded cert from file");
+      TSDebug(PLUGIN_NAME, "%s: loaded certificate from '%s'", __func__, cert_filename.c_str());
     }
   }
 
   /// No valid certs available from disk, create one and write to file
   if (cert == nullptr) {
     if (!sign_enabled) {
-      TSDebug(PLUGIN_NAME, "shadow_cert_generator(): No certs found and dynamic generation disabled. Marked as wontdo.");
+      TSDebug(PLUGIN_NAME, "%s: no certs found and dynamic generation disabled; marked as wontdo", __func__);
       // There won't be certs available. Mark this servername as wontdo
       // Pass on as if plugin doesn't exist
       ssl_list->setup_data_ctx(commonName, localQ, nullptr, nullptr, true);
@@ -450,7 +451,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
       TSContDestroy(contp);
       return TS_SUCCESS;
     }
-    TSDebug(PLUGIN_NAME, "shadow_cert_generator(): Creating shadow certs");
+    TSDebug(PLUGIN_NAME, "%s: creating shadow certs", __func__);
 
     /// Get serial number
     TSMutexLock(serial_mutex);
@@ -467,7 +468,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
     /// Create cert
     cert = mkcrt(commonName, serial);
     if (cert == nullptr) {
-      TSDebug(PLUGIN_NAME, "[shadow_cert_generator] Cert generation failed");
+      TSDebug(PLUGIN_NAME, "%s: cert generation failed", __func__);
       TSContDestroy(contp);
       ssl_list->set_schedule(commonName, false);
       return TS_ERROR;
@@ -475,10 +476,10 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 
     /// Write certs to file
     if ((fp = fopen(cert_filename.c_str(), "w+")) == nullptr) {
-      TSDebug(PLUGIN_NAME, "shadow_cert_generator(): Error opening file: %s\n", strerror(errno));
+      TSDebug(PLUGIN_NAME, "%s: error opening file: %s", __func__, strerror(errno));
     } else {
       if (!PEM_write_X509(fp, cert.get())) {
-        TSDebug(PLUGIN_NAME, "shadow_cert_generator(): Error writing cert to disk");
+        TSDebug(PLUGIN_NAME, "%s: error writing cert to disk", __func__);
       }
       fclose(fp);
     }
@@ -489,23 +490,23 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
   ctx.reset(ref_ctx);
 
   if (SSL_CTX_use_certificate(ref_ctx, cert.get()) < 1) {
-    TSError("[%s] shadow_cert_handler(): Failed to use certificate in SSL_CTX.", PLUGIN_NAME);
+    TSError("[%s] %s: failed to use certificate in SSL_CTX", PLUGIN_NAME, __func__);
     TSContDestroy(contp);
     ssl_list->set_schedule(commonName, false);
     return TS_ERROR;
   }
   if (SSL_CTX_use_PrivateKey(ref_ctx, ca_pkey_scoped.get()) < 1) {
-    TSError("[%s] shadow_cert_handler(): Failed to use private key in SSL_CTX.", PLUGIN_NAME);
+    TSError("[%s] %s: failed to use private key in SSL_CTX", PLUGIN_NAME, __func__);
     TSContDestroy(contp);
     ssl_list->set_schedule(commonName, false);
     return TS_ERROR;
   }
-  TSDebug(PLUGIN_NAME, "shadow_cert_generator(): cert and context ready, clearing the queue");
+  TSDebug(PLUGIN_NAME, "%s: cert and context ready, clearing the queue", __func__);
   ssl_list->setup_data_ctx(commonName, localQ, std::move(ctx), std::move(cert), false);
 
   /// Clear the queue by setting context for each and reenable them
   while (!localQ.empty()) {
-    TSDebug(PLUGIN_NAME, "\tClearing the queue size %lu", localQ.size());
+    TSDebug(PLUGIN_NAME, "%s: clearing the queue size %lu", __func__, localQ.size());
     TSVConn ssl_vc = reinterpret_cast<TSVConn>(localQ.front());
     localQ.pop();
     TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
@@ -529,28 +530,33 @@ cert_retriever(TSCont contp, TSEvent event, void *edata)
   SSL_CTX *ref_ctx       = nullptr;
 
   if (servername == nullptr) {
-    TSError("[%s] cert_retriever(): No SNI available.", PLUGIN_NAME);
+    TSError("[%s] %s: no SNI available", __func__, PLUGIN_NAME);
     return TS_ERROR;
   }
+
   bool wontdo = false;
   ref_ctx     = ssl_list->lookup_and_create(servername, edata, wontdo);
+
   if (wontdo) {
-    TSDebug(PLUGIN_NAME, "cert_retriever(): Won't generate cert for %s", servername);
+    TSDebug(PLUGIN_NAME, "%s: won't generate cert for %s", __func__, servername);
     TSVConnReenable(ssl_vc);
-  } else if (nullptr == ref_ctx) {
-    // If no existing context, schedule TASK thread to generate
-    TSDebug(PLUGIN_NAME, "cert_retriever(): schedule thread to generate/retrieve cert for %s", servername);
-    TSCont schedule_cont = TSContCreate(shadow_cert_generator, TSMutexCreate());
-    TSContDataSet(schedule_cont, (void *)servername);
-    TSContScheduleOnPool(schedule_cont, 0, TS_THREAD_POOL_TASK);
-  } else {
-    // Use existing context
-    TSDebug(PLUGIN_NAME, "cert_retriever(): Reuse existing cert and context for %s", servername);
-    SSL_set_SSL_CTX(ssl, ref_ctx);
-    TSVConnReenable(ssl_vc);
+    return TS_SUCCESS;
   }
 
-  /// For scheduled connections, the scheduled continuation will handle the reenabling
+  if (ref_ctx) {
+    // Use existing context.
+    TSDebug(PLUGIN_NAME, "%s: reusing existing cert and context for %s", __func__, servername);
+    SSL_set_SSL_CTX(ssl, ref_ctx);
+    TSVConnReenable(ssl_vc);
+    return TS_SUCCESS;
+  }
+
+  // If no existing context, schedule TASK thread to generate.
+  TSDebug(PLUGIN_NAME, "%s: scheduling thread to generate/retrieve cert for %s", __func__, servername);
+  TSCont schedule_cont = TSContCreate(shadow_cert_generator, TSMutexCreate());
+  TSContDataSet(schedule_cont, const_cast<char *>(servername));
+  TSContScheduleOnPool(schedule_cont, 0, TS_THREAD_POOL_TASK);
+
   return TS_SUCCESS;
 }
 
@@ -607,66 +613,73 @@ TSPluginInit(int argc, const char *argv[])
     case '?':
       break;
     default:
-      TSDebug(PLUGIN_NAME, "Unexpected options.");
-      TSError("[%s] Unexpected options error.", PLUGIN_NAME);
+      TSDebug(PLUGIN_NAME, "unexpected options");
+      TSError("[%s] unexpected options error", PLUGIN_NAME);
       return;
     }
   }
 
   // Register plugin and create callback
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Unable to initialize plugin (disabled). Failed to register plugin.", PLUGIN_NAME);
-  } else if ((cb_shadow = TSContCreate(cert_retriever, nullptr)) == nullptr) {
-    TSError("[%s] Unable to initialize plugin (disabled). Failed to create shadow cert cb.", PLUGIN_NAME);
-  } else {
-    if ((sign_enabled = cert && key && serial)) {
-      // Dynamic cert generation enabled. Initialize CA key, cert and serial
-      // To comply to openssl, key and cert file are opened as FILE*
-      FILE *fp = nullptr;
-      if ((fp = fopen(cert, "rt")) == nullptr) {
-        TSDebug(PLUGIN_NAME, "fopen() error is %d: %s for %s", errno, strerror(errno), cert);
-        TSError("[%s] Unable to initialize plugin. Failed to open ca cert.", PLUGIN_NAME);
-        return;
-      }
-      ca_cert_scoped.reset(PEM_read_X509(fp, nullptr, nullptr, nullptr));
-      fclose(fp);
-
-      if ((fp = fopen(key, "rt")) == nullptr) {
-        TSDebug(PLUGIN_NAME, "fopen() error is %d: %s for %s", errno, strerror(errno), key);
-        TSError("[%s] Unable to initialize plugin. Failed to open ca key.", PLUGIN_NAME);
-        return;
-      }
-      ca_pkey_scoped.reset(PEM_read_PrivateKey(fp, nullptr, nullptr, nullptr));
-      fclose(fp);
-
-      if (ca_pkey_scoped == nullptr || ca_cert_scoped == nullptr) {
-        TSDebug(PLUGIN_NAME, "PEM_read failed to read %s %s", ca_pkey_scoped ? "" : "pkey", ca_cert_scoped ? "" : "cert");
-        TSError("[%s] Unable to initialize plugin. Failed to read ca key/cert.", PLUGIN_NAME);
-        return;
-      }
-
-      // Read serial file
-      serial_file.open(serial, std::fstream::in | std::fstream::out);
-      if (!serial_file.is_open()) {
-        TSDebug(PLUGIN_NAME, "Failed to open serial file.");
-        TSError("[%s] Unable to initialize plugin. Failed to open serial.", PLUGIN_NAME);
-        return;
-      }
-      /// Initialize mutex and serial number
-      serial_mutex = TSMutexCreate();
-      ca_serial    = 0;
-
-      serial_file.seekg(0, serial_file.beg);
-      serial_file >> ca_serial;
-      if (serial_file.bad() || serial_file.fail()) {
-        ca_serial = 0;
-      }
-    }
-    TSDebug(PLUGIN_NAME, "Dynamic cert generation %s", sign_enabled ? "enabled" : "disabled");
-
-    /// Add global hooks
-    TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_shadow);
+    TSError("[%s] unable to initialize plugin (disabled): failed to register plugin", PLUGIN_NAME);
+    return;
   }
+
+  if ((cb_shadow = TSContCreate(cert_retriever, nullptr)) == nullptr) {
+    TSError("[%s] unable to initialize plugin (disabled): failed to create shadow cert cb", PLUGIN_NAME);
+    return;
+  }
+
+  if (cert && key && serial) {
+    sign_enabled = true;
+
+    // Dynamic cert generation enabled. Initialize CA key, cert and serial
+    // To comply to openssl, key and cert file are opened as FILE*
+    FILE *fp = nullptr;
+    if ((fp = fopen(cert, "r")) == nullptr) {
+      TSDebug(PLUGIN_NAME, "fopen() error is %d: %s for %s", errno, strerror(errno), cert);
+      TSError("[%s] unable to initialize plugin: failed to open CA certificate '%s'", PLUGIN_NAME, cert);
+      return;
+    }
+    ca_cert_scoped.reset(PEM_read_X509(fp, nullptr, nullptr, nullptr));
+    fclose(fp);
+
+    if ((fp = fopen(key, "r")) == nullptr) {
+      TSDebug(PLUGIN_NAME, "fopen() error is %d: %s for %s", errno, strerror(errno), key);
+      TSError("[%s] unable to initialize plugin: failed to open CA key '%s'", PLUGIN_NAME, key);
+      return;
+    }
+    ca_pkey_scoped.reset(PEM_read_PrivateKey(fp, nullptr, nullptr, nullptr));
+    fclose(fp);
+
+    if (ca_pkey_scoped == nullptr || ca_cert_scoped == nullptr) {
+      TSDebug(PLUGIN_NAME, "PEM_read failed to read %s %s", ca_pkey_scoped ? "" : "pkey", ca_cert_scoped ? "" : "cert");
+      TSError("[%s] unable to initialize plugin: failed to parse ca key or certificate", PLUGIN_NAME);
+      return;
+    }
+
+    // Read serial file
+    serial_file.open(serial, std::fstream::in | std::fstream::out);
+    if (!serial_file.is_open()) {
+      TSDebug(PLUGIN_NAME, "failed to open serial file '%s'", serial);
+      TSError("[%s] unable to initialize plugin: failed to open serial file '%s'", PLUGIN_NAME, serial);
+      return;
+    }
+    /// Initialize mutex and serial number
+    serial_mutex = TSMutexCreate();
+    ca_serial    = 0;
+
+    serial_file.seekg(0, serial_file.beg);
+    serial_file >> ca_serial;
+    if (serial_file.bad() || serial_file.fail()) {
+      ca_serial = 0;
+    }
+  }
+
+  TSDebug(PLUGIN_NAME, "dynamic certificate generation %s", sign_enabled ? "enabled" : "disabled");
+
+  /// Add global hooks
+  TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_shadow);
 
   return;
 }

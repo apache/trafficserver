@@ -65,9 +65,6 @@ SSLNetProcessor::start(int, size_t stacksize)
   }
   SSLTicketKeyConfig::startup();
 
-  // Acquire a SSLConfigParams instance *after* we start SSL up.
-  // SSLConfig::scoped_config params;
-
   // Initialize SSL statistics. This depends on an initial set of certificates being loaded above.
   SSLInitializeStatistics();
 

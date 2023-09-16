@@ -92,21 +92,6 @@ private:
   bool _is_control_stream_initialized = false;
 };
 
-class Http3SettingsHandler : public Http3FrameHandler
-{
-public:
-  Http3SettingsHandler(Http3Session *session) : _session(session){};
-
-  // Http3FrameHandler
-  std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
-                              Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
-
-private:
-  // TODO: clarify Http3Session I/F for Http3SettingsHandler and Http3App
-  Http3Session *_session = nullptr;
-};
-
 class Http3SettingsFramer : public Http3FrameGenerator
 {
 public:

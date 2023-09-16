@@ -42,6 +42,7 @@ benchmark_CPP_FLAGS = \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
     -I$(abs_top_srcdir)/lib/catch2 \
+    @HWLOC_INCLUDES@ \
     @OPENSSL_INCLUDES@ \
     @SWOC_INCLUDES@
 
@@ -49,7 +50,7 @@ benchmark_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@ \
     @LIBPCRE@ \

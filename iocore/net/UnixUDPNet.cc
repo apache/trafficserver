@@ -34,13 +34,17 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
-#include "P_DNSConnection.h"
+#include "AsyncSignalEventIO.h"
+#include "I_AIO.h"
+#if TS_USE_LINUX_IO_URING
+#include "I_IO_URING.h"
+#endif
 #include "P_Net.h"
 #include "P_UDPNet.h"
 #include "tscore/ink_inet.h"
-
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
+#include "P_UnixNet.h"
 
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.
@@ -61,7 +65,13 @@ namespace
 #ifdef HAVE_RECVMMSG
 const uint32_t MAX_RECEIVE_MSG_PER_CALL{16}; //< VLEN parameter for the recvmmsg call.
 #endif
-}; // namespace
+
+DbgCtl dbg_ctl_udpnet{"udpnet"};
+DbgCtl dbg_ctl_udp_read{"udp-read"};
+DbgCtl dbg_ctl_udp_send{"udp-send"};
+DbgCtl dbg_ctl_iocore_udp_main{"iocore_udp_main-send"};
+
+} // end anonymous namespace
 
 UDPPacket *
 UDPPacket::new_UDPPacket()
@@ -253,14 +263,19 @@ initialize_thread_for_udp_net(EThread *thread)
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
   thread->set_tail_handler(nh);
-  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
-  new (thread->ep) EventIO();
-  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
-  thread->ep->start(upd, thread->evfd, nullptr, EVENTIO_READ);
+#if TS_USE_LINUX_IO_URING
+  auto ep = new IOUringEventIO();
+  ep->start(upd, IOUringContext::local_context());
 #else
-  thread->ep->start(upd, thread->evpipe[0], nullptr, EVENTIO_READ);
+  auto ep = new AsyncSignalEventIO();
+  ep->start(upd, thread->evfd, EVENTIO_READ);
 #endif
+#else
+  auto ep = new AsyncSignalEventIO();
+  ep->start(upd, thread->evpipe[0], EVENTIO_READ);
+#endif
+  thread->ep = ep;
 }
 
 EventType
@@ -414,7 +429,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
 
     // truncated check
     if (msg.msg_flags & MSG_TRUNC) {
-      Debug("udp-read", "The UDP packet is truncated");
+      Dbg(dbg_ctl_udp_read, "The UDP packet is truncated");
     }
 
     safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr), &toaddr_len);
@@ -433,8 +448,8 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     }
 
     // If gro was used, then the kernel will tell us the size of each part that was spliced together.
-    Debug("udp-read", "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(r), static_cast<long long>(gso_size),
-          (gso_size > 0 ? "GRO" : "No GRO"));
+    Dbg(dbg_ctl_udp_read, "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(r), static_cast<long long>(gso_size),
+        (gso_size > 0 ? "GRO" : "No GRO"));
 
     IOBufferBlock *block;
     int64_t remaining{r};
@@ -455,7 +470,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
           block->next    = nullptr;
         }
       }
-      Debug("udp-read", "Creating packet");
+      Dbg(dbg_ctl_udp_read, "Creating packet");
       // create packet
       UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
       p->setConnection(uc);
@@ -470,7 +485,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     iters++;
   } while (r > 0);
   if (iters >= 1) {
-    Debug("udp-read", "read %d at a time", iters);
+    Dbg(dbg_ctl_udp_read, "read %d at a time", iters);
   }
   // if not already on to-be-called-back queue, then add it.
   if (!uc->onCallbackQueue) {
@@ -544,25 +559,25 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
   const int return_val = SocketManager::recvmmsg(uc->getFd(), mmsg, MAX_RECEIVE_MSG_PER_CALL, MSG_WAITFORONE, nullptr);
 
   if (return_val <= 0) {
-    Debug("udp-read", "Done. recvmmsg() ret is %d, errno %s", return_val, strerror(errno));
+    Dbg(dbg_ctl_udp_read, "Done. recvmmsg() ret is %d, errno %s", return_val, strerror(errno));
     return;
   }
-  Debug("udp-read", "recvmmsg() read %d packets", return_val);
+  Dbg(dbg_ctl_udp_read, "recvmmsg() read %d packets", return_val);
 
   Ptr<IOBufferBlock> chain, next_chain;
   for (auto packet_num = 0; packet_num < return_val; packet_num++) {
     gso_size = 0;
 
-    Debug("udp-read", "Processing message %d from a total of %d", packet_num, return_val);
+    Dbg(dbg_ctl_udp_read, "Processing message %d from a total of %d", packet_num, return_val);
     struct msghdr &mhdr = mmsg[packet_num].msg_hdr;
 
     if (mhdr.msg_flags & MSG_TRUNC) {
-      Debug("udp-read", "The UDP packet is truncated");
+      Dbg(dbg_ctl_udp_read, "The UDP packet is truncated");
       break;
     }
 
     if (mhdr.msg_namelen <= 0) {
-      Debug("udp-read", "Unable to get remote address from recvmmsg() for fd: %d", uc->getFd());
+      Dbg(dbg_ctl_udp_read, "Unable to get remote address from recvmmsg() for fd: %d", uc->getFd());
       return;
     }
 
@@ -587,8 +602,8 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
     total_bytes_read       += received;
 
     // If gro was used, then the kernel will tell us the size of each part that was spliced together.
-    Debug("udp-read", "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(received), static_cast<long long>(gso_size),
-          (gso_size > 0 ? "GRO" : "No GRO"));
+    Dbg(dbg_ctl_udp_read, "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(received),
+        static_cast<long long>(gso_size), (gso_size > 0 ? "GRO" : "No GRO"));
 
     auto chain = buffer_chain[packet_num];
     IOBufferBlock *block;
@@ -610,7 +625,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
           block->next    = nullptr;
         }
       }
-      Debug("udp-read", "Creating packet");
+      Dbg(dbg_ctl_udp_read, "Creating packet");
       // create packet
       UDPPacket *p =
         UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr[packet_num]), ats_ip_sa_cast(&toaddr[packet_num]), chain);
@@ -623,7 +638,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
       next_chain = nullptr;
     }
   }
-  Debug("udp-read", "Total bytes read %ld from %d packets.", total_bytes_read, return_val);
+  Dbg(dbg_ctl_udp_read, "Total bytes read %ld from %d packets.", total_bytes_read, return_val);
 
   // if not already on to-be-called-back queue, then add it.
   if (!uc->onCallbackQueue) {
@@ -1005,8 +1020,8 @@ bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
   int res = 0, fd = -1;
-  int local_addr_len;
   IpEndpoint local_addr;
+  int local_addr_len = sizeof(local_addr.sa);
 
   // Need to do address calculations first, so we can determine the
   // address family for socket creation.
@@ -1040,12 +1055,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
 
   if (opt.socket_recv_bufsize > 0) {
     if (unlikely(SocketManager::set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
+      Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
     if (unlikely(SocketManager::set_sndbuf_size(fd, opt.socket_send_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
+      Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
     }
   }
 
@@ -1062,7 +1077,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
 #endif
     if (!succeeded) {
-      Debug("udpnet", "setsockeopt for pktinfo failed");
+      Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto HardError;
     }
   } else if (opt.ip_family == AF_INET6) {
@@ -1078,7 +1093,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
 #endif
     if (!succeeded) {
-      Debug("udpnet", "setsockeopt for pktinfo failed");
+      Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto HardError;
     }
   }
@@ -1086,23 +1101,23 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   if (local_addr.network_order_port() || !is_any_address) {
     if (-1 == SocketManager::ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       char buff[INET6_ADDRPORTSTRLEN];
-      Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
+      Dbg(dbg_ctl_udpnet, "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
       goto SoftError;
     }
 
     if (safe_getsockname(fd, &local_addr.sa, &local_addr_len) < 0) {
-      Debug("udpnet", "CreateUdpsocket: getsockname didn't work");
+      Dbg(dbg_ctl_udpnet, "CreateUdpsocket: getsockname didn't work");
       goto HardError;
     }
   }
 
   *resfd  = fd;
   *status = nullptr;
-  Debug("udpnet", "creating a udp socket port = %d, %d---success", ats_ip_port_host_order(remote_addr),
-        ats_ip_port_host_order(local_addr));
+  Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d, %d---success", ats_ip_port_host_order(remote_addr),
+      ats_ip_port_host_order(local_addr));
   return true;
 SoftError:
-  Debug("udpnet", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
+  Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
   if (fd != -1) {
     SocketManager::close(fd);
   }
@@ -1110,7 +1125,7 @@ SoftError:
   *status = nullptr;
   return false;
 HardError:
-  Debug("udpnet", "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
+  Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
   if (fd != -1) {
     SocketManager::close(fd);
   }
@@ -1155,7 +1170,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
 #endif
     if (!succeeded) {
-      Debug("udpnet", "setsockeopt for pktinfo failed");
+      Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto Lerror;
     }
   } else if (addr->sa_family == AF_INET6) {
@@ -1171,7 +1186,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
 #endif
     if (!succeeded) {
-      Debug("udpnet", "setsockeopt for pktinfo failed");
+      Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto Lerror;
     }
   }
@@ -1180,9 +1195,9 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   if (G_udp_config.enable_gro) {
     int gro = 1;
     if (safe_setsockopt(fd, IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == 0) {
-      Debug("udpnet", "setsockopt UDP_GRO ok");
+      Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO ok");
     } else {
-      Debug("udpnet", "setsockopt UDP_GRO. errno=%d", errno);
+      Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO. errno=%d", errno);
     }
   }
 #endif
@@ -1199,31 +1214,31 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   }
 
   if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT) < 0) {
-    Debug("udpnet", "setsockopt for SO_REUSEPORT failed");
+    Dbg(dbg_ctl_udpnet, "setsockopt for SO_REUSEPORT failed");
     goto Lerror;
   }
 
 #ifdef SO_REUSEPORT_LB
   if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
-    Debug("udpnet", "setsockopt for SO_REUSEPORT_LB failed");
+    Dbg(dbg_ctl_udpnet, "setsockopt for SO_REUSEPORT_LB failed");
     goto Lerror;
   }
 #endif
 
   if (need_bind && (SocketManager::ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
-    Debug("udpnet", "ink_bind failed");
+    Dbg(dbg_ctl_udpnet, "ink_bind failed");
     goto Lerror;
   }
 
   // check this for GRO
   if (recv_bufsize) {
     if (unlikely(SocketManager::set_rcvbuf_size(fd, recv_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
+      Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", recv_bufsize);
     }
   }
   if (send_bufsize) {
     if (unlikely(SocketManager::set_sndbuf_size(fd, send_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
+      Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", send_bufsize);
     }
   }
   if (safe_getsockname(fd, &myaddr.sa, &myaddr_len) < 0) {
@@ -1231,14 +1246,14 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   }
   n = new UnixUDPConnection(fd);
 
-  Debug("udpnet", "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
+  Dbg(dbg_ctl_udpnet, "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
   n->setBinding(&myaddr.sa);
   n->bindToThread(cont, cont->getThreadAffinity());
 
   pc = get_UDPPollCont(n->ethread);
   pd = pc->pollDescriptor;
 
-  n->ep.start(pd, n, EVENTIO_READ);
+  n->ep.start(pd, n, get_UDPNetHandler(cont->getThreadAffinity()), EVENTIO_READ);
 
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
@@ -1246,7 +1261,7 @@ Lerror:
   if (fd != NO_FD) {
     SocketManager::close(fd);
   }
-  Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
+  Dbg(dbg_ctl_udpnet, "Error: %s (%d)", strerror(errno), errno);
 
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, nullptr);
   return ACTION_IO_ERROR;
@@ -1273,7 +1288,7 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now     = Thread::get_hrtime_updated();
+  ink_hrtime now     = ink_get_hrtime();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
   ink_hrtime pktSendTime;
@@ -1290,7 +1305,7 @@ UDPQueue::service(UDPNetHandler *nh)
     ink_assert(p->link.prev == nullptr);
     ink_assert(p->link.next == nullptr);
     // insert into our queue.
-    Debug("udp-send", "Adding %p", p);
+    Dbg(dbg_ctl_udp_send, "Adding %p", p);
     if (p->p.conn->lastPktStartTime == 0) {
       pktSendStartTime = std::max(now, p->p.delivery_time);
     } else {
@@ -1319,8 +1334,8 @@ void
 UDPQueue::SendPackets()
 {
   UDPPacket *p;
-  static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
-  ink_hrtime now                    = Thread::get_hrtime_updated();
+  static ink_hrtime lastCleanupTime = ink_get_hrtime();
+  ink_hrtime now                    = ink_get_hrtime();
   ink_hrtime send_threshold_time    = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe;
@@ -1373,7 +1388,7 @@ sendPackets:
 
   if ((bytesThisSlot > 0) && nsent) {
     // redistribute the slack...
-    now = Thread::get_hrtime_updated();
+    now = ink_get_hrtime();
     if (pipeInfo.firstPacket(now) == nullptr) {
       pipeInfo.advanceNow(now);
     }
@@ -1394,7 +1409,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
   int n, count = 0;
 
   p->p.conn->lastSentPktStartTime = p->p.delivery_time;
-  Debug("udp-send", "Sending %p", p);
+  Dbg(dbg_ctl_udp_send, "Sending %p", p);
 
   msg.msg_control    = nullptr;
   msg.msg_controllen = 0;
@@ -1441,11 +1456,11 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
           ++count;
           if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
             // tried too many times; give up
-            Debug("udpnet", "Send failed: too many retries");
+            Dbg(dbg_ctl_udpnet, "Send failed: too many retries");
             return;
           }
         } else {
-          Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+          Dbg(dbg_ctl_udp_send, "Error: %s (%d)", strerror(errno), errno);
           return;
         }
       }
@@ -1469,11 +1484,11 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
             ++count;
             if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
               // tried too many times; give up
-              Debug("udpnet", "Send failed: too many retries");
+              Dbg(dbg_ctl_udpnet, "Send failed: too many retries");
               return;
             }
           } else {
-            Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+            Dbg(dbg_ctl_udp_send, "Error: %s (%d)", strerror(errno), errno);
             return;
           }
         }
@@ -1502,7 +1517,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
       if ((n >= 0) || (errno != EAGAIN)) {
         // send succeeded or some random error happened.
         if (n < 0) {
-          Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+          Dbg(dbg_ctl_udp_send, "Error: %s (%d)", strerror(errno), errno);
         }
 
         break;
@@ -1511,7 +1526,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
         ++count;
         if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
           // tried too many times; give up
-          Debug("udpnet", "Send failed: too many retries");
+          Dbg(dbg_ctl_udpnet, "Send failed: too many retries");
           break;
         }
       }
@@ -1647,15 +1662,15 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
 #ifdef SOL_UDP
     if (use_udp_gso && errno == EIO) {
       Warning("Disabling UDP GSO due to an error");
-      Debug("udp-send", "Disabling UDP GSO due to an error");
+      Dbg(dbg_ctl_udp_send, "Disabling UDP GSO due to an error");
       use_udp_gso = false;
       return SendMultipleUDPPackets(p, n);
     } else {
-      Debug("udp-send", "udp_gso=%d res=%d errno=%d", use_udp_gso, res, errno);
+      Dbg(dbg_ctl_udp_send, "udp_gso=%d res=%d errno=%d", use_udp_gso, res, errno);
       return res;
     }
 #else
-    Debug("udp-send", "res=%d errno=%d", res, errno);
+    Dbg(dbg_ctl_udp_send, "res=%d errno=%d", res, errno);
     return res;
 #endif
   }
@@ -1663,7 +1678,8 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   if (res > 0) {
 #ifdef SOL_UDP
     if (use_udp_gso) {
-      Debug("udp-send", "Sent %d messages by processing %d UDPPackets (GSO)", res, n);
+      ink_assert(res <= n);
+      Dbg(dbg_ctl_udp_send, "Sent %d messages by processing %d UDPPackets (GSO)", res, n);
     } else {
 #endif
       int i    = 0;
@@ -1675,7 +1691,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
           res -= (p[i]->p.chain.get()->size() / p[i]->p.segment_size) + ((p[i]->p.chain.get()->size() % p[i]->p.segment_size) != 0);
         }
       }
-      Debug("udp-send", "Sent %d messages by processing %d UDPPackets", nmsg, i);
+      Dbg(dbg_ctl_udp_send, "Sent %d messages by processing %d UDPPackets", nmsg, i);
       res = i;
 #ifdef SOL_UDP
     }
@@ -1696,21 +1712,9 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
 
 #undef LINK
 
-static void
-net_signal_hook_callback(EThread *thread)
-{
-#if HAVE_EVENTFD
-  uint64_t counter;
-  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
-#else
-  char dummy[1024];
-  ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
-#endif
-}
-
 UDPNetHandler::UDPNetHandler(Cfg &&cfg) : udpOutQueue(cfg.enable_gso), _cfg{std::move(cfg)}
 {
-  nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
+  nextCheck = ink_get_hrtime() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER(&UDPNetHandler::startNetEvent);
 }
@@ -1739,7 +1743,7 @@ int
 UDPNetHandler::mainNetEvent(int event, Event *e)
 {
   ink_assert(trigger_event == e && event == EVENT_POLL);
-  return this->waitForActivity(net_config_poll_timeout);
+  return this->waitForActivity(EThread::default_wait_interval_ms);
 }
 
 int
@@ -1778,38 +1782,13 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
   int i        = 0;
   EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    epd = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
-    if (epd->type == EVENTIO_UDP_CONNECTION) {
-      // TODO: handle EVENTIO_ERROR
-      if (get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) {
-        uc = epd->data.uc;
-        ink_assert(uc && uc->mutex && uc->continuation);
-        ink_assert(uc->refcount >= 1);
-        open_list.in_or_enqueue(uc); // due to the above race
-        if (uc->shouldDestroy()) {
-          open_list.remove(uc);
-          uc->Release();
-        } else {
-          udpNetInternal.udp_read_from_net(this, uc);
-        }
-      } else {
-        Debug("iocore_udp_main", "Unhandled epoll event: 0x%04x", get_ev_events(pc->pollDescriptor, i));
-      }
-    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
-      // TODO: handle DNS conn if there is ET_UDP
-      if (epd->data.dnscon != nullptr) {
-        epd->data.dnscon->trigger();
-#if defined(USE_EDGE_TRIGGER)
-        epd->refresh(EVENTIO_READ);
-#endif
-      }
-    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      net_signal_hook_callback(this->thread);
-    }
+    epd       = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
+    int flags = get_ev_events(pc->pollDescriptor, i);
+    epd->process_event(flags);
   } // end for
 
   // remove dead UDP connections
-  ink_hrtime now = Thread::get_hrtime_updated();
+  ink_hrtime now = ink_get_hrtime();
   if (now >= nextCheck) {
     forl_LL(UnixUDPConnection, xuc, open_list)
     {
@@ -1820,7 +1799,7 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
         xuc->Release();
       }
     }
-    nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
+    nextCheck = ink_get_hrtime() + HRTIME_MSECONDS(1000);
   }
   // service UDPConnections with data ready for callback.
   Que(UnixUDPConnection, callback_link) q = udp_callbacks;

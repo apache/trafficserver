@@ -856,6 +856,14 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
   }
 
   if (url->m_ptr_host) {
+    // Force brackets for IPv6. Note colon must occur in first 5 characters.
+    // But it can be less (e.g. "::1").
+    int const n          = url->m_len_host;
+    bool const bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
+    if (bracket_p) {
+      length += 2;
+    }
+
     length += url->m_len_host;
     if (url->m_ptr_port && url->m_port) {
       length += url->m_len_port + 1; // +1 for ":"
@@ -1524,8 +1532,13 @@ done:
       // correcting this behavior, therefore, we maintain the current
       // functionality but add state to determine whether the path was
       // absolutely empty so we can reconstruct such URLs.
-      ++path_start;
+      //
+      // Remove all preceding slashes
+      while (path_start < path_end && *path_start == '/') {
+        ++path_start;
+      }
     }
+
     url->set_path(heap, path_start, path_end - path_start, copy_strings);
   } else if (!nothing_after_host) {
     // There was no path set via '/': it is absolutely empty. However, if there
@@ -1577,7 +1590,10 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
   cur              = static_cast<const char *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
-    ++cur;
+    // Remove all preceding slashes
+    while (cur < end && *cur == '/') {
+      cur++;
+    }
   } else {
     host_end = cur = end;
   }
@@ -1859,6 +1875,16 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
       while (t < ends[i]) {
         if ((i == 0) || (i == 6)) { // scheme and host
           unescape_str_tolower(p, e, t, ends[i], s);
+        } else if (i == 8 || i == 10 || i == 12) { // path, params, query
+          // Don't unescape the parts of the URI that are processed by the
+          // origin since it may behave differently based upon whether these are
+          // escaped or not. Therefore differently encoded strings should be
+          // cached separately via differentiated hashes.
+          int path_len = ends[i] - t;
+          int min_len  = std::min(path_len, static_cast<int>(e - p));
+          memcpy(p, t, min_len);
+          p += min_len;
+          t += min_len;
         } else {
           unescape_str(p, e, t, ends[i], s);
         }

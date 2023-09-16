@@ -87,24 +87,24 @@ public:
    * @return True if the action is suppressed per the configured interval,
    * false otherwise.
    */
-  virtual bool is_throttled(uint64_t &suppressed_count);
+  bool is_throttled(uint64_t &suppressed_count);
 
   /** Set the log throttling interval to a new value.
    *
    * @param[in] interval The new interval to set.
    */
-  virtual void set_throttling_interval(std::chrono::microseconds new_interval);
+  void set_throttling_interval(std::chrono::microseconds new_interval);
 
   /** Manually reset the throttling counter to the current time.
    *
    * @return the number of messages skipped since the previous positive return
    * of the functor operator.
    */
-  virtual uint64_t reset_counter();
+  uint64_t reset_counter();
 
 private:
   /// Base clock.
-  using Clock = std::chrono::system_clock;
+  using Clock = std::chrono::steady_clock;
 
   /** A time_point with a noexcept constructor.
    *
@@ -125,7 +125,7 @@ private:
   };
 
   /// Time that the last item was emitted.
-  std::atomic<TimePoint> _last_allowed_time;
+  std::atomic<TimePoint> _last_allowed_time{TimePoint()};
 
   /// The minimum number of microseconds desired between actions.
   std::atomic<std::chrono::microseconds> _interval{std::chrono::microseconds{0}};

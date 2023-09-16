@@ -261,14 +261,6 @@ public:
     lookup_table.insert(make_pair("505", LookupItem("505", "proxy.process.http.505_responses", 5)));
     lookup_table.insert(make_pair("5xx", LookupItem("5xx", "proxy.process.http.5xx_responses", 5)));
 
-    lookup_table.insert(make_pair("s_100", LookupItem("100 B", "proxy.process.http.response_document_size_100", 5)));
-    lookup_table.insert(make_pair("s_1k", LookupItem("1 KB", "proxy.process.http.response_document_size_1K", 5)));
-    lookup_table.insert(make_pair("s_3k", LookupItem("3 KB", "proxy.process.http.response_document_size_3K", 5)));
-    lookup_table.insert(make_pair("s_5k", LookupItem("5 KB", "proxy.process.http.response_document_size_5K", 5)));
-    lookup_table.insert(make_pair("s_10k", LookupItem("10 KB", "proxy.process.http.response_document_size_10K", 5)));
-    lookup_table.insert(make_pair("s_1m", LookupItem("1 MB", "proxy.process.http.response_document_size_1M", 5)));
-    lookup_table.insert(make_pair("s_>1m", LookupItem("> 1 MB", "proxy.process.http.response_document_size_inf", 5)));
-
     // sum together
     lookup_table.insert(make_pair("ram_hit_miss", LookupItem("Ram Hit+Miss", "ram_hit", "ram_miss", 6)));
     lookup_table.insert(make_pair("client_net", LookupItem("Net (bits)", "client_head", "client_body", 7)));
@@ -326,9 +318,16 @@ public:
 
       curl = curl_easy_init();
       if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
+        CURLcode url, function, buffer;
+
+        url      = curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
+        function = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        buffer   = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
+
+        if ((url | function | buffer) != CURLE_OK) {
+          fprintf(stderr, "error setting curl 1 or more options. url: %d, function: %d, buffer: %d", url, function, buffer);
+          exit(1);
+        }
 
         // update time
         gettimeofday(&_time, nullptr);

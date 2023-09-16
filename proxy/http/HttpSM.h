@@ -43,7 +43,7 @@
 #include "HttpVCTable.h"
 #include "UrlRewrite.h"
 #include "HttpTunnel.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "../ProxyTransaction.h"
 #include "HdrUtils.h"
 #include "tscore/History.h"

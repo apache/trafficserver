@@ -46,3 +46,9 @@ Logging and Metrics
 
 Plugins
 -------
+
+Switch to C++17
+^^^^^^^^^^^^^^^
+
+Plugins are now required to be compiled as C++ code, rather than straight C.
+The API is tested with C++17, so code compatible with this version is preferred.

@@ -26,16 +26,8 @@
 #include <string>
 #include "SpecialIncludeHandler.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 EsiLib::SpecialIncludeHandler *createSpecialIncludeHandler(EsiLib::Variables &esi_vars, EsiLib::Expression &esi_expr,
                                                            HttpDataFetcher &fetcher, const std::string &id);
-
-#ifdef __cplusplus
-}
-#endif
 
 namespace EsiLib
 {

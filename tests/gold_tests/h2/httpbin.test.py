@@ -30,7 +30,7 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
     Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
 )
-#Test.ContinueOnFail = True
+# Test.ContinueOnFail = True
 
 # ----
 # Setup httpbin Origin Server
@@ -65,7 +65,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: access
-      format: '[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
+      format: '[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
 
   logs:
     - filename: access

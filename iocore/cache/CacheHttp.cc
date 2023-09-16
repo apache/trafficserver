@@ -149,7 +149,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
         }
       }
 
-      if (temps || !(data[i].alternate.object_key_get() == zero_key)) {
+      if (temps || !(data[i].alternate.object_key_get().is_zero())) {
         snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(), CacheKey(data[i].alternate.object_key_get()).toHexStr(buf));
         tmp       = strlen(p);
         p        += tmp;
@@ -191,9 +191,10 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
     count++;
   }
 
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_vector_marshal_stat, 1);
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_marshal_stat, count);
-  GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(cache_hdr_marshal_bytes_stat, buf - start);
+  Metrics::increment(cache_rsb.hdr_vector_marshal);
+  Metrics::increment(cache_rsb.hdr_marshal, count);
+  Metrics::increment(cache_rsb.hdr_marshal_bytes, buf - start);
+
   return buf - start;
 }
 

@@ -23,7 +23,7 @@ TEST(ErrorMessageTest, BadSubscriptErrorMessage) {
   // Test that printable key is part of error message
   EXPECT_THROW_EXCEPTION(YAML::BadSubscript, doc["first"]["second"]["fourth"],
                          "operator[] call on a scalar (key: \"fourth\")");
-
+  
   EXPECT_THROW_EXCEPTION(YAML::BadSubscript, doc["first"]["second"][37],
                          "operator[] call on a scalar (key: \"37\")");
 
@@ -47,15 +47,15 @@ TEST(ErrorMessageTest, Ex9_1_InvalidNodeErrorMessage) {
   // Test that printable key is part of error message
   EXPECT_THROW_EXCEPTION(YAML::InvalidNode, doc["first"]["fourth"].as<int>(),
                          "invalid node; first invalid key: \"fourth\"");
-
+  
   EXPECT_THROW_EXCEPTION(YAML::InvalidNode, doc["first"][37].as<int>(),
                          "invalid node; first invalid key: \"37\"");
-
+ 
   // Non-printable key is not included in error message
   EXPECT_THROW_EXCEPTION(YAML::InvalidNode,
                          doc["first"][std::vector<int>()].as<int>(),
                          "invalid node; this may result from using a map "
                          "iterator as a sequence iterator, or vice-versa");
 }
-}
+}   
 }

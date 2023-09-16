@@ -15,7 +15,7 @@
 #
 #######################
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20..3.27)
 project(ats VERSION 10.0.0)
 
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -56,6 +56,31 @@ option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
+option(ENABLE_DOCS "Build docs (default OFF)")
+option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
+if(ENABLE_DISK_FAILURE_TESTS)
+    add_compile_definitions("AIO_FAULT_INJECTION")
+endif()
+option(ENABLE_AUTEST "Setup autest (default OFF)")
+option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
+
+# Setup user
+# NOTE: this is the user trafficserver runs as
+set(WITH_USER nobody CACHE STRING "The system user (default nobody)")
+# NOTE: I can't tell that this is used at all besides being printed
+set(WITH_GROUP nobody CACHE STRING "The system group (default nobody, or specified user's group)")
+
+if(WITH_GROUP STREQUAL nobody)
+  execute_process(COMMAND id -ng ${WITH_USER} OUTPUT_VARIABLE TS_PKGSYSGROUP OUTPUT_STRIP_TRAILING_WHITESPACE)
+else()
+  set(TS_PKGSYSGROUP ${WITH_GROUP})
+endif()
+set(TS_PKGSYSUSER ${WITH_USER})
+
+# Setup default install directory
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX /usr/local/trafficserver CACHE PATH "Default install path" FORCE)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     set(DEFAULT_POSIX_CAP ON)
@@ -80,6 +105,7 @@ set(ENABLE_TPROXY
 option(ENABLE_QUICHE   "Use quiche (default OFF)")
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
+option(ENABLE_EXAMPLE  "Build example directory (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(MAX_EVENT_THREADS
     4096
@@ -96,6 +122,7 @@ set(MAX_THREADS_PER_TYPE
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(TS_USE_HWLOC "Use hwloc (default OFF)")
+option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
@@ -227,6 +254,13 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
+# ncurses is used in traffic_top
+find_package(Curses)
+set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})
+set(HAVE_NCURSES_H ${CURSES_HAVE_NCURSES_H})
+set(HAVE_NCURSES_CURSES_H ${CURSES_HAVE_NCURSES_CURSES_H})
+set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
+
 include(Check128BitCas)
 include(ConfigureTransparentProxy)
 
@@ -241,13 +275,11 @@ check_symbol_exists(SO_PEERCRED "sys/socket.h" TS_HAS_SO_PEERCRED)
 if(TS_NO_USE_TLS13)
     set(TS_USE_TLS13 FALSE CACHE)
 endif()
+check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
 set(CMAKE_REQUIRED_LIBRARIES uring)
 check_symbol_exists(io_uring_queue_init "liburing.h" HAVE_IOURING)
-unset(CMAKE_REQUIRED_LIBRARIES)
-set(CMAKE_REQUIRED_LIBRARIES aio)
-check_symbol_exists(io_submit "libaio.h" HAVE_LIBAIO)
 unset(CMAKE_REQUIRED_LIBRARIES)
 check_symbol_exists(getresuid unistd.h HAVE_GETRESUID)
 check_symbol_exists(getresgid unistd.h HAVE_GETRESGID)
@@ -256,15 +288,9 @@ check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
 if (HAVE_IOURING AND USE_IOURING)
-    message(Using io_uring)
+    message(STATUS "Using io_uring")
     set(TS_USE_LINUX_IO_URING 1)
 endif(HAVE_IOURING AND USE_IOURING)
-
-option(USE_LIBAIO "Use experimental libaio (linux only)" 0)
-if (HAVE_LIBAIO AND USE_LIBAIO)
-    message(Using libaio)
-    set(TS_USE_LINUX_NATIVE_AIO 1)
-endif(HAVE_LIBAIO AND USE_LIBAIO)
 
 # Check ssl functionality
 list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
@@ -295,13 +321,27 @@ check_symbol_exists(
 )
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 
-# Catch2 for tests
-set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
+if(ENABLE_DOCS OR ENABLE_AUTEST)
+    find_package(Python3 REQUIRED)
+    find_program(PipEnv pipenv REQUIRED)
+endif()
+
+if(ENABLE_DOCS)
+    find_package(Java COMPONENTS Runtime REQUIRED)
+endif()
+
+if(ENABLE_AUTEST)
+  set(AUTEST_SANDBOX ${CMAKE_BINARY_DIR}/_sandbox CACHE STRING "Location for autest output (default
+  CMAKE_BINARY_DIR/_sandbox)")
+  set(PROXY_VERIFIER_VERSION "v2.10.1")
+  set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
+  include(proxy-verifier)
+endif()
 
 include(CTest)
 set(TS_HAS_TESTS ${BUILD_REGRESSION_TESTING})
 
-message("Configuring for ${HOST_OS}")
+message(STATUS "Configuring for ${HOST_OS}")
 
 if(HOST_OS STREQUAL "linux")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
@@ -356,6 +396,16 @@ include(subproject_version)
 subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
 
 set(rel_cachedir var/trafficserver)
+
+if(EXISTS "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
+    message(STATUS "Autoconf build detected in source tree. Removing autoconf headers.")
+endif()
+
+# In-tree autoconf configuration causes duplicate definitions of some symbols
+# in generated headers. If the files don't exist, no error is emitted.
+file(REMOVE "${PROJECT_SOURCE_DIR}/include/tscore/ink_config.h")
+file(REMOVE "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
+
 configure_file(configs/storage.config.default.in configs/storage.config.default)
 configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
@@ -363,7 +413,6 @@ configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
 enable_testing()
 
-add_subdirectory(src/api)
 add_subdirectory(src/tscpp/util)
 add_subdirectory(src/tscpp/api)
 add_subdirectory(src/tscore)
@@ -372,21 +421,47 @@ add_subdirectory(iocore)
 add_subdirectory(proxy)
 add_subdirectory(mgmt/config)
 add_subdirectory(mgmt/rpc)
+add_subdirectory(src/api)
 add_subdirectory(src/traffic_crashlog)
 add_subdirectory(src/traffic_server)
 add_subdirectory(src/traffic_ctl)
 add_subdirectory(src/traffic_layout)
+add_subdirectory(src/traffic_cache_tool)
+add_subdirectory(src/traffic_logcat)
+add_subdirectory(src/traffic_logstats)
+if(CURSES_FOUND)
+add_subdirectory(src/traffic_top)
+endif()
+add_subdirectory(src/traffic_via)
 if(ENABLE_WCCP)
     add_subdirectory(src/wccp)
     add_subdirectory(src/traffic_wccp)
 endif()
+if (ENABLE_CRIPTS)
+    add_subdirectory(src/cripts)
+endif()
 add_subdirectory(src/tests)
-add_subdirectory(tests)
+if(ENABLE_AUTEST)
+    add_subdirectory(tests)
+endif()
 if(ENABLE_FUZZING)
     add_subdirectory(tests/fuzzing)
 endif()
 add_subdirectory(plugins)
 add_subdirectory(configs)
+if(ENABLE_EXAMPLE)
+    add_subdirectory(example)
+endif()
+
+if(ENABLE_DOCS)
+    add_subdirectory(doc)
+endif()
+add_subdirectory(rc)
+
+if(ENABLE_BENCHMARKS)
+    message(STATUS "Building benchmarks in tools/benchmark")
+    add_subdirectory(tools/benchmark)
+endif()
 
 add_custom_target(clang-format-install
         COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
@@ -437,8 +512,8 @@ add_custom_target(format
         COMMENT "formatting all files"
         )
 
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
-    message("Installing github hook")
+if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git AND NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
+    message(STATUS "Installing github hook")
     configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
 endif()
 
@@ -448,7 +523,7 @@ install(DIRECTORY DESTINATION var/trafficserver)
 
 # Display build summary
 include(CMakePrintHelpers)
-message("Build Summary:")
+message(STATUS "Build Summary:")
 cmake_print_variables(CMAKE_SYSTEM_NAME)
 cmake_print_variables(CMAKE_SYSTEM_VERSION)
 cmake_print_variables(CMAKE_SYSTEM_PROCESSOR)
@@ -461,7 +536,8 @@ cmake_print_variables(CMAKE_CXX_FLAGS)
 cmake_print_variables(CMAKE_C_FLAGS)
 cmake_print_variables(BUILD_PERSON)
 cmake_print_variables(BUILD_GROUP)
+cmake_print_variables(TS_PKGSYSUSER)
+cmake_print_variables(TS_PKGSYSGROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
-cmake_print_variables(OPENSSL_VERSION)

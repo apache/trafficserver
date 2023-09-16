@@ -16,35 +16,35 @@
 #######################
 
 add_atsplugin(tslua
-    ts_lua.c
-    ts_lua_cached_response.c
-    ts_lua_client_request.c
-    ts_lua_client_response.c
-    ts_lua_client_response.c
-    ts_lua_context.c
-    ts_lua_hook.c
-    ts_lua_http.c
-    ts_lua_http_intercept.c
-    ts_lua_log.c
-    ts_lua_misc.c
-    ts_lua_server_request.c
-    ts_lua_server_response.c
-    ts_lua_transform.c
-    ts_lua_util.c
-    ts_lua_remap.c
-    ts_lua_http_cntl.c
-    ts_lua_http_milestone.c
-    ts_lua_http_txn_info.c
-    ts_lua_http_config.c
-    ts_lua_mgmt.c
-    ts_lua_package.c
-    ts_lua_string.c
-    ts_lua_crypto.c
-    ts_lua_stat.c
-    ts_lua_io.c
-    ts_lua_coroutine.c
-    ts_lua_fetch.c
-    ts_lua_constant.c
+    ts_lua.cc
+    ts_lua_cached_response.cc
+    ts_lua_client_request.cc
+    ts_lua_client_response.cc
+    ts_lua_client_response.cc
+    ts_lua_context.cc
+    ts_lua_hook.cc
+    ts_lua_http.cc
+    ts_lua_http_intercept.cc
+    ts_lua_log.cc
+    ts_lua_misc.cc
+    ts_lua_server_request.cc
+    ts_lua_server_response.cc
+    ts_lua_transform.cc
+    ts_lua_util.cc
+    ts_lua_remap.cc
+    ts_lua_http_cntl.cc
+    ts_lua_http_milestone.cc
+    ts_lua_http_txn_info.cc
+    ts_lua_http_config.cc
+    ts_lua_mgmt.cc
+    ts_lua_package.cc
+    ts_lua_string.cc
+    ts_lua_crypto.cc
+    ts_lua_stat.cc
+    ts_lua_io.cc
+    ts_lua_coroutine.cc
+    ts_lua_fetch.cc
+    ts_lua_constant.cc
 )
 
 target_include_directories(tslua PRIVATE "${PROJECT_SOURCE_DIR}/include")

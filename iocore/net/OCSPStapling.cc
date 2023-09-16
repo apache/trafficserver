@@ -27,11 +27,14 @@
 #include <openssl/asn1t.h>
 
 #include "tscore/ink_memory.h"
+#include "tscore/Encoding.h"
+#include "tscore/ink_base64.h"
+#include "tscore/ink_string.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "SSLStats.h"
-#include "FetchSM.h"
+#include "api/FetchSM.h"
 
 // Macros for ASN1 and the code in TS_OCSP_* functions were borrowed from OpenSSL 3.1.0 (a92271e03a8d0dee507b6f1e7f49512568b2c7ad),
 // and were modified to make them compilable with BoringSSL and C++ compiler.
@@ -40,6 +43,10 @@
 // This should be the response for a single certificate and will typically include the responder certificate chain,
 // so 10K should be more than enough.
 #define MAX_STAPLING_DER 10240
+
+// maximum length allowed for the encoded OCSP GET request; per RFC 6960, Appendix A, the encoded request must be less than 255
+// bytes
+#define MAX_OCSP_GET_ENCODED_LENGTH 255 // maximum of 254 bytes + \0
 
 extern ClassAllocator<FetchSM> FetchSMAllocator;
 
@@ -299,7 +306,7 @@ public:
   }
 
   void
-  set_request_line(bool use_post, const char *uri)
+  set_request_line(bool use_get, const char *uri)
   {
     struct sockaddr_in sin;
     memset(&sin, 0, sizeof(sin));
@@ -308,11 +315,8 @@ public:
     sin.sin_port        = 65535;
 
     this->_fsm = FetchSMAllocator.alloc();
-    if (use_post) {
-      this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
-    } else {
-      this->_fsm->ext_init(this, "GET", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
-    }
+    this->_fsm->ext_init(this, use_get ? "GET" : "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin),
+                         TS_FETCH_FLAGS_SKIP_REMAP);
   }
 
   int
@@ -981,10 +985,10 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
   case TS_OCSP_CERTSTATUS_GOOD:
     break;
   case TS_OCSP_CERTSTATUS_REVOKED:
-    SSL_INCREMENT_DYN_STAT(ssl_ocsp_revoked_cert_stat);
+    Metrics::increment(ssl_rsb.ocsp_revoked_cert);
     break;
   case TS_OCSP_CERTSTATUS_UNKNOWN:
-    SSL_INCREMENT_DYN_STAT(ssl_ocsp_unknown_cert_stat);
+    Metrics::increment(ssl_rsb.ocsp_unknown_cert);
     break;
   default:
     break;
@@ -996,18 +1000,17 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 }
 
 static TS_OCSP_RESPONSE *
-query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, int req_timeout)
+query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, int req_timeout, bool use_get)
 {
   ink_hrtime start, end;
   TS_OCSP_RESPONSE *resp = nullptr;
 
-  start = Thread::get_hrtime();
+  start = ink_get_hrtime();
   end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
 
   HTTPRequest httpreq;
-  bool use_post = true;
 
-  httpreq.set_request_line(use_post, uri);
+  httpreq.set_request_line(use_get, uri);
 
   // Host header
   const char *host  = strstr(uri, "://") + 3;
@@ -1024,7 +1027,7 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
   }
 
   // Content-Type, Content-Length, Request Body
-  if (use_post) {
+  if (!use_get) {
     if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(TS_OCSP_REQUEST), (const ASN1_VALUE *)req) != 1) {
       Error("failed to make a request for OCSP server; uri=%s", uri);
       return nullptr;
@@ -1037,7 +1040,7 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
   // Wait until the request completes
   do {
     ink_hrtime_sleep(HRTIME_MSECONDS(1));
-  } while (!httpreq.is_done() && (Thread::get_hrtime() < end));
+  } while (!httpreq.is_done() && (ink_get_hrtime() < end));
 
   if (!httpreq.is_done()) {
     Error("OCSP request was timed out; uri=%s", uri);
@@ -1073,17 +1076,118 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
   return nullptr;
 }
 
+// The default encoding table, per the RFC, does not encode any of the following: ,+/=
+static const unsigned char encoding_map[32] = {
+  0xFF, 0xFF, 0xFF,
+  0xFF,       // control
+  0xB4,       // space " # %
+  0x19,       // , + /
+  0x00,       //
+  0x0E,       // < > =
+  0x00, 0x00, //
+  0x00,       //
+  0x1E, 0x80, // [ \ ] ^ `
+  0x00, 0x00, //
+  0x1F,       // { | } ~ DEL
+  0x00, 0x00, 0x00,
+  0x00, // all non-ascii characters unmodified
+  0x00, 0x00, 0x00,
+  0x00, //               .
+  0x00, 0x00, 0x00,
+  0x00, //               .
+  0x00, 0x00, 0x00,
+  0x00 //               .
+};
+
+static IOBufferBlock *
+make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
+{
+  unsigned char *ocsp_der = nullptr;
+  int ocsp_der_len        = -1;
+  char ocsp_encoded_der[MAX_OCSP_GET_ENCODED_LENGTH]; // Stores base64 encoded data
+  size_t ocsp_encoded_der_len = 0;
+  char ocsp_escaped[MAX_OCSP_GET_ENCODED_LENGTH];
+  int ocsp_escaped_len = -1;
+  IOBufferBlock *url   = nullptr;
+
+  ocsp_der_len = i2d_TS_OCSP_REQUEST(req, &ocsp_der);
+
+  // ats_base64_encode does not insert newlines, which would need to be removed otherwise.
+  // When ats_base64_encode is false, the encoded length exceeds the length of our buffer,
+  // which is set to MAX_OCSP_GET_ENCODED_LENGTH; 255 bytes per RFC6960, Appendix A.
+  if (ocsp_der_len <= 0 || ocsp_der == nullptr) {
+    Error("stapling_refresh_response: unable to convert OCSP request to DER; falling back to POST; url=%s", base_url);
+    return nullptr;
+  }
+  Debug("ssl_ocsp", "converted OCSP request to DER; length=%d", ocsp_der_len);
+
+  if (ats_base64_encode(ocsp_der, ocsp_der_len, ocsp_encoded_der, MAX_OCSP_GET_ENCODED_LENGTH, &ocsp_encoded_der_len) == false ||
+      ocsp_encoded_der_len == 0) {
+    Error("stapling_refresh_response: unable to base64 encode OCSP DER; falling back to POST; url=%s", base_url);
+    OPENSSL_free(ocsp_der);
+    return nullptr;
+  }
+  OPENSSL_free(ocsp_der);
+  Debug("ssl_ocsp", "encoded DER with base64: %s", ocsp_encoded_der);
+
+  if (nullptr == Encoding::pure_escapify_url(nullptr, ocsp_encoded_der, ocsp_encoded_der_len, &ocsp_escaped_len, ocsp_escaped,
+                                             MAX_OCSP_GET_ENCODED_LENGTH, encoding_map)) {
+    Error("stapling_refresh_response: unable to escapify encoded url; falling back to POST; url=%s", base_url);
+    return nullptr;
+  }
+  Debug("ssl_ocsp", "escaped encoded path; %d bytes, %s", ocsp_escaped_len, ocsp_escaped);
+
+  size_t total_url_len =
+    sizeof(char) * (strlen(base_url) + 1 + ocsp_escaped_len + 1); // <base URL> + / + <encoded OCSP request> + \0
+  unsigned int buffer_idx  = DEFAULT_SMALL_BUFFER_SIZE;           // idx 2, aka BUFFER_SIZE_INDEX_512 should be enough in most cases
+  unsigned int buffer_size = BUFFER_SIZE_FOR_INDEX(buffer_idx);
+
+  // increase buffer index as necessary to fit the largest observed encoded_path_len
+  while (buffer_size < total_url_len && buffer_idx < MAX_BUFFER_SIZE_INDEX) {
+    buffer_size = BUFFER_SIZE_FOR_INDEX(++buffer_idx);
+    Debug("ssl_ocsp", "increased buffer index to %d", buffer_idx);
+  }
+
+  if (buffer_size < total_url_len) {
+    // this case should never occur; the largest index, 14, is 2MB
+    Error("Unable to identify a buffer index large enough to fit %zu bytes for the the request url; maximum index %d with size %d",
+          total_url_len, buffer_idx, buffer_size);
+    return nullptr;
+  }
+
+  Debug("ssl_ocsp", "creating new buffer block with index %d, size %d, to store %zu encoded bytes", buffer_idx, buffer_size,
+        total_url_len);
+  url = new_IOBufferBlock();
+  url->alloc(buffer_idx);
+
+  int written = ink_strlcpy(url->end(), base_url, url->write_avail());
+  url->fill(written);
+
+  // Append '/' if base_url does not end with it
+  if (url->buf()[url->size() - 1] != '/') {
+    strncat(url->end(), "/", 1);
+    url->fill(1);
+  }
+
+  written = ink_strlcat(url->end(), ocsp_escaped, url->write_avail());
+  url->fill(written);
+  Debug("ssl_ocsp", "appended encoded data to path: %s", url->buf());
+
+  return url;
+}
+
 static bool
 stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 {
-  bool rv              = true;
-  TS_OCSP_REQUEST *req = nullptr;
-  TS_OCSP_CERTID *id   = nullptr;
-  int response_status  = 0;
+  bool rv                    = true;
+  TS_OCSP_REQUEST *req       = nullptr;
+  TS_OCSP_CERTID *id         = nullptr;
+  int response_status        = 0;
+  IOBufferBlock *url_for_get = nullptr;
+  const char *url            = nullptr; // Final URL to use
+  bool use_get               = false;
 
   *prsp = nullptr;
-
-  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; uri=%s", cinf->uri);
 
   req = TS_OCSP_REQUEST_new();
   if (!req) {
@@ -1097,7 +1201,21 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
     goto err;
   }
 
-  *prsp = query_responder(cinf->uri, cinf->user_agent, req, SSLConfigParams::ssl_ocsp_request_timeout);
+  if (SSLConfigParams::ssl_ocsp_request_mode) { // True: GET, False: POST
+    url_for_get = make_url_for_get(req, cinf->uri);
+    if (url_for_get != nullptr) {
+      url     = url_for_get->buf();
+      use_get = true;
+    }
+  }
+  if (url == nullptr) {
+    // GET request is disabled or the request is too large for GET request
+    url = cinf->uri;
+  }
+
+  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; method=%s uri=%s", use_get ? "GET" : "POST", cinf->uri);
+
+  *prsp = query_responder(url, cinf->user_agent, req, SSLConfigParams::ssl_ocsp_request_timeout, use_get);
   if (*prsp == nullptr) {
     goto err;
   }
@@ -1107,7 +1225,8 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
     Debug("ssl_ocsp", "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
-    Error("stapling_refresh_response: responder response error; uri=%s response_status=%d", cinf->uri, response_status);
+    Error("stapling_refresh_response: responder response error; uri=%s method=%s response_status=%d", cinf->uri,
+          use_get ? "GET" : "POST", response_status);
   }
 
   if (!stapling_cache_response(*prsp, cinf)) {
@@ -1127,6 +1246,9 @@ done:
   }
   if (*prsp) {
     TS_OCSP_RESPONSE_free(*prsp);
+  }
+  if (url_for_get) {
+    url_for_get->free();
   }
   return rv;
 }
@@ -1159,10 +1281,10 @@ ocsp_update()
               ink_mutex_release(&cinf->stapling_mutex);
               if (stapling_refresh_response(cinf, &resp)) {
                 Debug("ssl_ocsp", "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+                Metrics::increment(ssl_rsb.ocsp_refreshed_cert);
               } else {
                 Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+                Metrics::increment(ssl_rsb.ocsp_refresh_cert_failure);
               }
             } else {
               ink_mutex_release(&cinf->stapling_mutex);

@@ -63,7 +63,7 @@ and a location (``TSMLoc``) within the buffer.
 
 After a call to ``TSMimeHdrFieldDestroy`` or ``TSMimeHdrFieldRemove`` is
 made, you must deallocate the ``TSMLoc`` handle with a call to
-``TSHandleMLocRelease``. You do not need to deallocate a ``NULL`` handles.
+``TSHandleMLocRelease``. You do not need to deallocate a ``nullptr`` handles.
 For example: if you call ``TSMimeHdrFieldValueStringGet`` to get the value of
 the content type field and the field does not exist, then it returns
 ``TS_NULL_MLOC``. In such a case, you wouldn't need to deallocate the handle

@@ -84,7 +84,7 @@ example, ``TSrealloc`` behaves like the C library routine ``realloc``.
 There are two main reasons for using the routines provided by Traffic
 Server. The first is portability: the Traffic Server API routines behave
 the same on all of Traffic Server's supported platforms. For example,
-``realloc`` does not accept an argument of ``NULL`` on some platforms.
+``realloc`` does not accept an argument of ``nullptr`` on some platforms.
 The second reason is that the Traffic Server routines actually track the
 memory allocations by file and line number. This tracking is very
 efficient, always turned on, and quite useful when tracking down memory

@@ -37,6 +37,10 @@
 #include "I_IO_URING.h"
 #endif
 
+#include "api/Metrics.h"
+
+using ts::Metrics;
+
 // for debugging
 // #define AIO_STATS 1
 
@@ -45,41 +49,10 @@ static constexpr ts::ModuleVersion AIO_MODULE_INTERNAL_VERSION{AIO_MODULE_PUBLIC
 TS_INLINE int
 AIOCallback::ok()
 {
-  return (off_t)aiocb.aio_nbytes == (off_t)aio_result;
+  return (aiocb.aio_nbytes == static_cast<size_t>(aio_result)) && (aio_result >= 0);
 }
 
-extern Continuation *aio_err_callbck;
-
-#if AIO_MODE == AIO_MODE_NATIVE
-
-struct AIOCallbackInternal : public AIOCallback {
-  int io_complete(int event, void *data);
-  AIOCallbackInternal()
-  {
-    memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
-    this->aiocb.aio_fildes = -1;
-    SET_HANDLER(&AIOCallbackInternal::io_complete);
-  }
-};
-
-TS_INLINE int
-AIOVec::mainEvent(int /* event */, Event *)
-{
-  ++completed;
-  if (completed < size)
-    return EVENT_CONT;
-  else if (completed == size) {
-    SCOPED_MUTEX_LOCK(lock, action.mutex, this_ethread());
-    if (!action.cancelled)
-      action.continuation->handleEvent(AIO_EVENT_DONE, first);
-    delete this;
-    return EVENT_DONE;
-  }
-  ink_assert(!"AIOVec mainEvent err");
-  return EVENT_ERROR;
-}
-
-#else /* AIO_MODE != AIO_MODE_NATIVE */
+extern Continuation *aio_err_callback;
 
 struct AIO_Reqs;
 
@@ -118,20 +91,21 @@ struct AIO_Reqs {
   int requests_queued = 0;
 };
 
-#endif // AIO_MODE == AIO_MODE_NATIVE
-
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)
 {
   (void)event;
   (void)data;
-  if (aio_err_callbck && !ok()) {
+  if (aio_err_callback && !ok()) {
     AIOCallback *err_op          = new AIOCallbackInternal();
     err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
     err_op->aiocb.aio_lio_opcode = this->aiocb.aio_lio_opcode;
-    err_op->mutex                = aio_err_callbck->mutex;
-    err_op->action               = aio_err_callbck;
-    eventProcessor.schedule_imm(err_op);
+    err_op->mutex                = aio_err_callback->mutex;
+    err_op->action               = aio_err_callback;
+
+    // Take this lock in-line because we want to stop other I/O operations on this disk ASAP
+    SCOPED_MUTEX_LOCK(lock, aio_err_callback->mutex, this_ethread());
+    err_op->action.continuation->handleEvent(EVENT_NONE, err_op);
   }
   if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
@@ -158,15 +132,16 @@ public:
 };
 #endif
 
-enum aio_stat_enum {
-  AIO_STAT_READ_PER_SEC,
-  AIO_STAT_KB_READ_PER_SEC,
-  AIO_STAT_WRITE_PER_SEC,
-  AIO_STAT_KB_WRITE_PER_SEC,
+struct AIOStatsBlock {
+  Metrics::IntType *read_count;
+  Metrics::IntType *kb_read;
+  Metrics::IntType *write_count;
+  Metrics::IntType *kb_write;
+
 #if TS_USE_LINUX_IO_URING
-  AIO_STAT_IO_URING_SUBMITTED,
-  AIO_STAT_IO_URING_COMPLETED,
+  Metrics::IntType *io_uring_submitted;
+  Metrics::IntType *io_uring_completed;
 #endif
-  AIO_STAT_COUNT
 };
-extern RecRawStatBlock *aio_rsb;
+
+extern AIOStatsBlock aio_rsb;

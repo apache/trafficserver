@@ -61,7 +61,7 @@ Types
       and not :func:`TSPluginInit`.
 
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and
-      ``NULL`` data.
+      ``nullptr`` data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_PORTS_READY_HOOK
 
@@ -71,14 +71,14 @@ Types
       is called will be accepted by |TS|, making this a convenient place to signal
       external processes of that.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_READY` and ``NULL``
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_CACHE_READY_HOOK
 
       Called after |TS| cache initialization has finished.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and ``NULL``
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_MSG_HOOK
@@ -103,7 +103,7 @@ Types
 
       Called after |TS| task threads have been started.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``NULL``
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_SSL_SECRET_HOOK
@@ -118,7 +118,7 @@ Types
 
       Called after |TS| receiving a shutdown signal, such as SIGTERM.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``NULL`` data.
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``nullptr`` data.
 
 .. c:struct:: TSPluginMsg
 
@@ -177,7 +177,7 @@ directly.
    void
    TSPluginInit (int argc, const char * argv[])
    {
-      TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, TSContCreate(local_ssl_init, NULL));
+      TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, TSContCreate(local_ssl_init, nullptr));
    }
 
 History

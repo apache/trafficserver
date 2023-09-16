@@ -43,9 +43,9 @@
 
 .. _overridable_txn_vars.cc: https://github.com/apache/trafficserver/blob/master/src/shared/overridable_txn_vars.cc
 
-.. |ts_lua_http_config.c| replace:: ``ts_lua_http_config.c``
+.. |ts_lua_http_config.cc| replace:: ``ts_lua_http_config.cc``
 
-.. _ts_lua_http_config.c: https://github.com/apache/trafficserver/blob/master/plugins/experimental/ts_lua/ts_lua_http_config.c
+.. _ts_lua_http_config.cc: https://github.com/apache/trafficserver/blob/master/plugins/experimental/ts_lua/ts_lua_http_config.cc
 
 .. |TSHttpOverridableConfig.en.rst| replace:: ``TSHttpOverridableConfig.en.rst``
 
@@ -153,7 +153,7 @@ check:``RecCheckT``
 pattern:``char const*``
    This provides a regular expressions (PCRE format) for validating the value,
    beyond the basic type validation performed by ``RecCheckT``. This can be
-   ``NULL`` if there is no regular expression to use.
+   ``nullptr`` if there is no regular expression to use.
 
 access:``RecAccessT``
    Access control. The valid values are:
@@ -320,7 +320,7 @@ required for generic access:
 #. Update the testing logic in |InkAPITest.cc|_ by adding the string name of the
    configuration variable to the ``SDK_Overridable_Configs`` array.
 
-#. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.c|_.
+#. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.cc|_.
 
 #. Update the documentation of :ref:`ts-overridable-config` in |TSHttpOverridableConfig.en.rst|_.
 

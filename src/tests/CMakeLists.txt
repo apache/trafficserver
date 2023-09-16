@@ -20,7 +20,6 @@
 include_directories(
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CATCH_INCLUDE_DIR}
 )
 
 link_libraries(
@@ -48,13 +47,14 @@ link_libraries(
         aio
         records
         tscore
-        tsapi
+        tsapicore
         tscpputil
         proxy
         inknet
         inkevent
         yaml-cpp
         libswoc
+        catch2::catch2
 )
 if (TS_USE_LINUX_IO_URING)
     link_libraries(inkuring uring)
@@ -87,6 +87,18 @@ macro(add_stubbed_test name)
 endmacro()
 
 add_cache_test(Cache ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Cache.cc)
+add_cache_test(Populated_Cache ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Populated_Cache.cc)
+if(ENABLE_DISK_FAILURE_TESTS)
+foreach(i RANGE 1)
+    add_cache_test(Disk_Init_Failure_${i} ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Disk_Init_Failure.cc)
+    target_compile_definitions(Disk_Init_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
+endforeach()
+foreach(i RANGE 5 20)
+    add_cache_test(Disk_Failure_${i} ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Disk_Failure.cc)
+    target_compile_definitions(Disk_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
+endforeach()
+add_cache_test(Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Populated_Cache_Disk_Failure.cc)
+endif()
 add_cache_test(RWW ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_RWW.cc)
 add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S.cc)
 add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L.cc)
@@ -120,6 +132,12 @@ target_link_libraries(test_net
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
+
+add_stubbed_test(HttpTransact
+  ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/main.cc
+  ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/test_HttpTransact.cc
+)
+
 # maybe move this one back to iocore/eventsystem/CMakeLists.txt
 #add_stubbed_test(MIOBufferWriter ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_MIOBufferWriter.cc)
 #add_stubbed_test(ProxyAllocator ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/benchmark_ProxyAllocator.cc)

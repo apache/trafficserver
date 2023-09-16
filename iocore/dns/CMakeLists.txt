@@ -19,6 +19,7 @@
 add_library(inkdns STATIC
     DNS.cc
     DNSConnection.cc
+    DNSEventIO.cc
     Inline.cc
     SplitDNS.cc
 )

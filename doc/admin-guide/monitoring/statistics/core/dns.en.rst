@@ -22,8 +22,7 @@
 DNS
 ***
 
-.. ts:stat:: global proxy.process.dns.fail_avg_time integer
-   :type: derivative
+.. ts:stat:: global proxy.process.dns.fail_time integer
    :units: milliseconds
    :ungathered:
 
@@ -47,8 +46,7 @@ DNS
 
    The number of resetting TCP connection in TCP_RETRY connection mode.
 
-.. ts:stat:: global proxy.process.dns.lookup_avg_time integer
-   :type: derivative
+.. ts:stat:: global proxy.process.dns.lookup_time integer
    :units: milliseconds
    :ungathered:
 
@@ -79,8 +77,7 @@ DNS
    :type: counter
    :ungathered:
 
-.. ts:stat:: global proxy.process.dns.success_avg_time integer
-   :type: derivative
+.. ts:stat:: global proxy.process.dns.success_time integer
    :units: milliseconds
    :ungathered:
 
@@ -92,4 +89,3 @@ DNS
 
    The total number of DNS lookups which have been performed since statistics
    collection began.
-

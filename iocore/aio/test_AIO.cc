@@ -22,7 +22,7 @@
  */
 
 #include "P_AIO.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "tscore/ink_hw.h"
 #include "tscore/I_Layout.h"
 #include "tscore/TSSystemState.h"
@@ -32,9 +32,6 @@
 
 using std::cout;
 using std::endl;
-
-// Necessary for AIO
-int net_config_poll_timeout = 10;
 
 #include "diags.i"
 
@@ -223,8 +220,8 @@ dump_summary()
   printf("-----------------\n");
   printf("IO_URING results\n");
   printf("-----------------\n");
-  printf("submissions: %lu\n", io_uring_submissions.load());
-  printf("completions: %lu\n", io_uring_completions.load());
+  printf("submissions: %lu\n", Metrics::read(aio_rsb.io_uring_submitted);
+  printf("completions: %lu\n", Metrics::read(aio_rsb.io_uring_completed);
 #endif
 
   if (delete_disks) {
@@ -267,11 +264,11 @@ int
 AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!time_start) {
-    time_start = Thread::get_hrtime();
+    time_start = ink_get_hrtime();
     fprintf(stderr, "Starting the aio_testing \n");
   }
-  if ((Thread::get_hrtime() - time_start) > (run_time * HRTIME_SECOND)) {
-    time_end = Thread::get_hrtime();
+  if ((ink_get_hrtime() - time_start) > (run_time * HRTIME_SECOND)) {
+    time_end = ink_get_hrtime();
     ink_atomic_increment(&n_accessors, -1);
     if (n_accessors <= 0) {
       dump_summary();
@@ -499,12 +496,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   Thread *main_thread = new EThread;
   main_thread->set_specific();
 
-#if AIO_MODE == AIO_MODE_NATIVE
-  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
-    et->diskHandler = new DiskHandler();
-    et->schedule_imm(et->diskHandler);
-  }
-#endif
 #if TS_USE_LINUX_IO_URING
   if (!io_uring_force_thread) {
     for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {

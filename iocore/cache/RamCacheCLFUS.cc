@@ -301,7 +301,8 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           if (!e->flag_bits.copy) { // don't bother if we have to copy anyway
             int64_t delta  = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
             this->_bytes  += delta;
-            CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
+            Metrics::increment(cache_rsb.ram_cache_bytes, delta);
+            Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
             e->size = e->compressed_len;
             check_accounting(this);
             e->flag_bits.compressed = 0;
@@ -316,11 +317,13 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           }
           (*ret_data) = data;
         }
-        CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
+        Metrics::increment(cache_rsb.ram_cache_hits);
+        Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_hits);
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
         return ram_hit_state;
       } else {
-        CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
+        Metrics::increment(cache_rsb.ram_cache_misses);
+        Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_misses);
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
         return 0;
       }
@@ -330,7 +333,9 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
   }
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " MISS", key->slice32(3), auxkey);
 Lerror:
-  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
+  Metrics::increment(cache_rsb.ram_cache_misses);
+  Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_misses);
+
   return 0;
 Lfailed:
   ats_free(b);
@@ -402,7 +407,8 @@ RamCacheCLFUS::_destroy(RamCacheCLFUSEntry *e)
   if (!e->flag_bits.lru) {
     this->_objects--;
     this->_bytes -= e->size + ENTRY_OVERHEAD;
-    CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(int64_t)e->size);
+    Metrics::decrement(cache_rsb.ram_cache_bytes, e->size);
+    Metrics::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, e->size);
     e->data = nullptr;
   } else {
     this->_history--;
@@ -530,7 +536,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         e->compressed_len  = l;
         int64_t delta      = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
         this->_bytes      += delta;
-        CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
+        Metrics::increment(cache_rsb.ram_cache_bytes, delta);
+        Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
         e->size = l;
       } else {
         ats_free(b);
@@ -539,7 +546,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         memcpy(bb, e->data->data(), e->len);
         int64_t delta  = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
         this->_bytes  += delta;
-        CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
+        Metrics::increment(cache_rsb.ram_cache_bytes, delta);
+        Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
         e->size = e->len;
         l       = e->len;
       }
@@ -570,7 +578,8 @@ RamCacheCLFUS::_requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
   RamCacheCLFUSEntry *victim = nullptr;
   while ((victim = victims.dequeue())) {
     this->_bytes += victim->size + ENTRY_OVERHEAD;
-    CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, victim->size);
+    Metrics::increment(cache_rsb.ram_cache_bytes, victim->size);
+    Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
     victim->hits = REQUEUE_HITS(victim->hits);
     this->_lru[0].enqueue(victim);
   }
@@ -605,7 +614,8 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       this->_lru[e->flag_bits.lru].enqueue(e);
       int64_t delta  = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       this->_bytes  += delta;
-      CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
+      Metrics::increment(cache_rsb.ram_cache_bytes, delta);
+      Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
       if (!copy) {
         e->size = size;
         e->data = data;
@@ -666,7 +676,8 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       continue;
     }
     this->_bytes -= victim->size + ENTRY_OVERHEAD;
-    CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(int64_t)victim->size);
+    Metrics::decrement(cache_rsb.ram_cache_bytes, victim->size);
+    Metrics::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
     victims.enqueue(victim);
     if (victim == this->_compressed) {
       this->_compressed = nullptr;
@@ -694,7 +705,8 @@ Linsert:
   while ((victim = victims.dequeue())) {
     if (this->_bytes + size + victim->size <= this->_max_bytes) {
       this->_bytes += victim->size + ENTRY_OVERHEAD;
-      CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, victim->size);
+      Metrics::increment(cache_rsb.ram_cache_bytes, victim->size);
+      Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
       victim->hits = REQUEUE_HITS(victim->hits);
       this->_lru[0].enqueue(victim);
     } else {
@@ -726,7 +738,8 @@ Linsert:
   }
   e->flag_bits.copy  = copy;
   this->_bytes      += size + ENTRY_OVERHEAD;
-  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
+  Metrics::increment(cache_rsb.ram_cache_bytes, size);
+  Metrics::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, size);
   e->size = size;
   this->_objects++;
   this->_lru[0].enqueue(e);

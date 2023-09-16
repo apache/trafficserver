@@ -38,8 +38,8 @@
  ****************************************************************************/
 #pragma once
 
-#include "EventIO.h"
 #include "I_NetProcessor.h"
+#include "NetAcceptEventIO.h"
 #include <vector>
 #include "tscore/ink_platform.h"
 #include "P_Connection.h"
@@ -76,7 +76,11 @@ struct NetAcceptAction : public Action, public RefCountObj {
     return Action::operator=(acont);
   }
 
-  ~NetAcceptAction() override { Debug("net_accept", "NetAcceptAction dying"); }
+  ~NetAcceptAction() override
+  {
+    static DbgCtl dbg_ctl{"net_accept"};
+    Dbg(dbg_ctl, "NetAcceptAction dying");
+  }
 };
 
 //
@@ -91,7 +95,7 @@ struct NetAccept : public Continuation {
   int id                      = -1;
   Ptr<NetAcceptAction> action_;
   SSLNextProtocolAccept *snpa = nullptr;
-  EventIO ep;
+  NetAcceptEventIO ep;
 
   HttpProxyPort *proxyPort = nullptr;
   AcceptOptions opt;

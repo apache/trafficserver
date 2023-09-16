@@ -25,6 +25,16 @@
 #include "PollCont.h"
 #include "P_Net.h"
 
+namespace
+{
+#ifdef DEBUG
+
+DbgCtl dbg_ctl_iocore_net_poll{"iocore_net_poll"};
+DbgCtl dbg_ctl_v_iocore_net_poll{"v_iocore_net_poll"};
+
+#endif
+} // end anonymous namespace
+
 PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)
   : Continuation(m.get()), net_handler(nullptr), nextPollDescriptor(nullptr), poll_timeout(pt)
 {
@@ -66,30 +76,29 @@ PollCont::do_poll(ink_hrtime timeout)
      * read or write) that need processing [ebalsa] */
     if (likely(!net_handler->read_ready_list.empty() || !net_handler->write_ready_list.empty() ||
                !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
-      NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
-               net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
-               net_handler->write_enable_list.empty());
+      NetDbg(dbg_ctl_iocore_net_poll, "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
+             net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(), net_handler->write_enable_list.empty());
       poll_timeout = 0; // poll immediately returns -- we have triggered stuff
                         // to process right now
     } else if (timeout >= 0) {
       poll_timeout = ink_hrtime_to_msec(timeout);
     } else {
-      poll_timeout = net_config_poll_timeout;
+      poll_timeout = EThread::default_wait_interval_ms;
     }
   }
 // wait for fd's to trigger, or don't wait if timeout is 0
 #if TS_USE_EPOLL
   pollDescriptor->result =
     epoll_wait(pollDescriptor->epoll_fd, pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
-           poll_timeout, pollDescriptor->result);
+  NetDbg(dbg_ctl_v_iocore_net_poll, "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
+         poll_timeout, pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec  = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
     kevent(pollDescriptor->kqueue_fd, nullptr, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
-  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
-           poll_timeout, pollDescriptor->result);
+  NetDbg(dbg_ctl_v_iocore_net_poll, "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
+         poll_timeout, pollDescriptor->result);
 #endif
 }

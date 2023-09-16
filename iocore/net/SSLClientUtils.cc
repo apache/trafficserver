@@ -127,7 +127,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
   netvc->set_verify_cert(nullptr);
-  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+
+  if (netvc->getSSLHandshakeStatus() == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+    // Verify server hook failed and set the status to SSL_HANDSHAKE_ERROR
     unsigned char *sni_name;
     char buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {

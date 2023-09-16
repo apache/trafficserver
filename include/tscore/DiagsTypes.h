@@ -41,7 +41,6 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "SourceLocation.h"
-#include "DbgCtl.h"
 
 #include "tscpp/util/ts_diag_levels.h"
 
@@ -170,12 +169,6 @@ public:
   on_for_TSDebug(const char *tag) const
   {
     return unlikely(this->on_for_TSDebug()) && tag_activated(tag, DiagsTagType_Debug);
-  }
-
-  bool
-  on(DbgCtl const &ctl) const
-  {
-    return unlikely(this->on(DiagsTagType_Debug)) && ctl.ptr()->on;
   }
 
   /////////////////////////////////////

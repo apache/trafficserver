@@ -29,13 +29,13 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http/remap \
-	-I$(abs_top_srcdir)/src/traffic_server \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@YAMLCPP_INCLUDES@ \
 	@SWOC_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/regression.txt
 
 check_PROGRAMS = test_certlookup test_UDPNet test_libinknet
 noinst_LIBRARIES = libinknet.a
@@ -51,9 +51,9 @@ test_certlookup_SOURCES = \
 	SSLCertLookup.cc
 
 test_certlookup_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@YAMLCPP_LIBS@ \
 	@SWOC_LIBS@ \
@@ -87,7 +87,7 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 if ENABLE_QUIC
@@ -128,7 +128,7 @@ test_libinknet_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBCAP@
@@ -139,9 +139,10 @@ test_libinknet_LDADD += \
 endif
 
 libinknet_a_SOURCES = \
-	AcceptOptions.cc \
 	AcceptOptions.h \
 	ALPNSupport.cc \
+	AsyncSignalEventIO.cc \
+	AsyncSignalEventIO.h \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	BoringSSLUtils.cc \
@@ -161,6 +162,8 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \
 	Net.cc \
+	NetAcceptEventIO.h \
+	NetAcceptEventIO.cc \
 	NetHandler.h \
 	NetHandler.cc \
 	NetVCOptions.h \
@@ -202,6 +205,8 @@ libinknet_a_SOURCES = \
 	PreWarmManager.cc \
 	ProxyProtocol.h \
 	ProxyProtocol.cc \
+	ReadWriteEventIO.h \
+	ReadWriteEventIO.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
 	SSLClientCoordinator.cc \
@@ -229,6 +234,8 @@ libinknet_a_SOURCES = \
 	TLSSNISupport.cc \
 	TLSTunnelSupport.cc \
 	TLSCertSwitchSupport.cc \
+	UDPEventIO.h \
+	UDPEventIO.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \

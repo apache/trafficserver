@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include <ts/DbgCtl.h>
 #include "DiagsTypes.h"
 #include "SourceLocation.h"
 #include "LogMessage.h"
@@ -163,39 +164,12 @@ diags()
     }                                                              \
   } while (false)
 
-inline bool
-is_dbg_ctl_enabled(DbgCtl const &ctl)
-{
-  return unlikely(diags()->on()) && ctl.ptr()->on;
-}
-
-// printf-line debug output.  First parameter must be DbgCtl instance. Assumes debug control is enabled, and
-// debug output globally enabled.
-//
-#define DbgPrint(CTL, ...)                                                             \
-  do {                                                                                 \
-    static const SourceLocation DbgPrintf_loc = MakeSourceLocation();                  \
-    static LogMessage DbgPrintf_log_message;                                           \
-    DbgPrintf_log_message.print(CTL.ptr()->tag, DL_Debug, DbgPrintf_loc, __VA_ARGS__); \
-  } while (false)
-
-// printf-like debug output.  First parameter must be an instance of DbgCtl.
-//
-#define Dbg(CTL, ...)                               \
-  do {                                              \
-    if (unlikely(diags()->on()) && CTL.ptr()->on) { \
-      DbgPrint(CTL, __VA_ARGS__);                   \
-    }                                               \
-  } while (false)
-
 // A BufferWriter version of Dbg().
-#define Dbg_bw(ctl__, fmt, ...)                                                     \
-  do {                                                                              \
-    if (unlikely(diags()->on())) {                                                  \
-      if (ctl__.ptr()->on) {                                                        \
-        DbgPrint(ctl__, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
-      }                                                                             \
-    }                                                                               \
+#define Dbg_bw(ctl__, fmt, ...)                                                   \
+  do {                                                                            \
+    if (ctl__.on()) {                                                             \
+      DbgPrint(ctl__, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
+    }                                                                             \
   } while (false)
 
 // A BufferWriter version of Debug().
@@ -203,7 +177,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
   do {                                                                                     \
     if (unlikely(diags()->on())) {                                                         \
       static DbgCtl Debug_bw_ctl(tag__);                                                   \
-      if (Debug_bw_ctl.ptr()->on) {                                                        \
+      if (Debug_bw_ctl.tag_on()) {                                                         \
         DbgPrint(Debug_bw_ctl, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
       }                                                                                    \
     }                                                                                      \
@@ -216,7 +190,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
   do {                                    \
     if (unlikely(diags()->on())) {        \
       static DbgCtl Debug_ctl(TAG);       \
-      if (Debug_ctl.ptr()->on) {          \
+      if (Debug_ctl.tag_on()) {           \
         DbgPrint(Debug_ctl, __VA_ARGS__); \
       }                                   \
     }                                     \
@@ -227,7 +201,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
 #define SpecificDbg(FLAG, CTL, ...) \
   do {                              \
     if (unlikely(diags()->on())) {  \
-      if (FLAG || CTL.ptr()->on) {  \
+      if ((FLAG) || CTL.tag_on()) { \
         DbgPrint(CTL, __VA_ARGS__); \
       }                             \
     }                               \
@@ -238,7 +212,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
 #define is_debug_tag_set(TAG)                 \
   (unlikely(diags()->on()) && ([]() -> bool { \
      static DbgCtl idts_ctl(TAG);             \
-     return idts_ctl.ptr()->on != 0;          \
+     return idts_ctl.tag_on() != 0;           \
    }()))
 
 #define SpecificDebug(FLAG, TAG, ...)               \
@@ -246,7 +220,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
     {                                               \
       static DbgCtl SpecificDebug_ctl(TAG);         \
       if (unlikely(diags()->on())) {                \
-        if (FLAG || SpecificDebug_ctl.ptr()->on) {  \
+        if (FLAG || SpecificDebug_ctl.tag_on()) {   \
           DbgPrint(SpecificDebug_ctl, __VA_ARGS__); \
         }                                           \
       }                                             \
@@ -261,7 +235,6 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
 #else // TS_USE_DIAGS
 
 #define Diag(...)
-#define Dbg(...)
 #define Debug(...)
 #define SpecificDbg(...)
 

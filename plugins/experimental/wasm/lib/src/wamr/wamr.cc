@@ -125,10 +125,12 @@ bool Wamr::load(std::string_view bytecode, std::string_view /*precompiled*/,
     return false;
   }
 
-  WasmByteVec vec;
-  wasm_byte_vec_new(vec.get(), bytecode.size(), bytecode.data());
-
-  module_ = wasm_module_new(store_.get(), vec.get());
+  wasm_byte_vec_t binary = {.size = bytecode.size(),
+                            .data = (char *)bytecode.data(),
+                            .num_elems = bytecode.size(),
+                            .size_of_elem = sizeof(byte_t),
+                            .lock = nullptr};
+  module_ = wasm_module_new(store_.get(), &binary);
   if (module_ == nullptr) {
     return false;
   }
@@ -259,9 +261,15 @@ bool Wamr::link(std::string_view /*debug_name*/) {
     const wasm_name_t *name_ptr = wasm_importtype_name(import_types.get()->data[i]);
     const wasm_externtype_t *extern_type = wasm_importtype_type(import_types.get()->data[i]);
 
-    std::string_view module_name(module_name_ptr->data, module_name_ptr->size);
-    std::string_view name(name_ptr->data, name_ptr->size);
-    assert(name_ptr->size > 0);
+    if (std::strlen(name_ptr->data) == 0) {
+      fail(FailState::UnableToInitializeCode, std::string("The name field of import_types[") +
+                                                  std::to_string(i) + std::string("] is empty"));
+      return false;
+    }
+
+    std::string_view module_name(module_name_ptr->data);
+    std::string_view name(name_ptr->data);
+
     switch (wasm_externtype_kind(extern_type)) {
     case WASM_EXTERN_FUNC: {
       auto it = host_functions_.find(std::string(module_name) + "." + std::string(name));
@@ -344,17 +352,15 @@ bool Wamr::link(std::string_view /*debug_name*/) {
   wasm_instance_exports(instance_.get(), exports.get());
 
   for (size_t i = 0; i < export_types.get()->size; i++) {
-    const wasm_externtype_t *exp_extern_type = wasm_exporttype_type(export_types.get()->data[i]);
     wasm_extern_t *actual_extern = exports.get()->data[i];
 
     wasm_externkind_t kind = wasm_extern_kind(actual_extern);
-    assert(kind == wasm_externtype_kind(exp_extern_type));
+    assert(kind == wasm_externtype_kind(wasm_exporttype_type(export_types.get()->data[i])));
     switch (kind) {
     case WASM_EXTERN_FUNC: {
       WasmFuncPtr func = wasm_func_copy(wasm_extern_as_func(actual_extern));
       const wasm_name_t *name_ptr = wasm_exporttype_name(export_types.get()->data[i]);
-      module_functions_.insert_or_assign(std::string(name_ptr->data, name_ptr->size),
-                                         std::move(func));
+      module_functions_.insert_or_assign(std::string(name_ptr->data), std::move(func));
     } break;
     case WASM_EXTERN_GLOBAL: {
       // TODO(mathetake): add support when/if needed.

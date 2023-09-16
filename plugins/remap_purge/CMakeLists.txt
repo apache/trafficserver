@@ -15,6 +15,6 @@
 #
 #######################
 
-add_atsplugin(remap_purge remap_purge.c)
+add_atsplugin(remap_purge remap_purge.cc)
 
 target_include_directories(remap_purge PRIVATE "${PROJECT_SOURCE_DIR}/include")

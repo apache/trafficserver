@@ -1318,4 +1318,17 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump cons
 inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const& spec, BufferWriter const& ww) {
   return bwformat(w, spec, TextView(ww));
 }
+
+template <typename T>
+BufferWriter &
+BufferWriter::format(bwf::Spec const &spec, T const &t) {
+  return bwformat(*this, spec, t);
+}
+
+template <typename T>
+BufferWriter &
+BufferWriter::format(bwf::Spec const &spec, T && t) {
+  return bwformat(*this, spec, t);
+}
+
 }} // namespace swoc::SWOC_VERSION_NS

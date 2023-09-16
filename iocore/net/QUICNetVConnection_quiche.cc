@@ -184,6 +184,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_established(int event, Event *data)
 {
+  if (!this->_quiche_con) {
+    // Connection has been closed.
+    return EVENT_DONE;
+  }
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
     this->_handle_read_ready();

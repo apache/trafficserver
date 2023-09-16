@@ -23,7 +23,6 @@
 #pragma once
 #include <ts/apidefs.h>
 #include "tscpp/api/utils.h"
-extern "C" {
 
 /**
  * Invoked for "general" plugins - listed in plugin.config. The arguments in the
@@ -44,4 +43,3 @@ void TSPluginInit(int argc, const char *argv[]);
  * @param errbuf_size Not used
  */
 TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance_handle, char *errbuf, int errbuf_size);
-}

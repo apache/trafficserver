@@ -89,7 +89,7 @@ typedef enum {
   SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
 } SslVConnOp;
 
-enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
+enum class SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
 
 //////////////////////////////////////////////////////////////////
 //
@@ -124,14 +124,20 @@ public:
     return retval;
   }
 
+  SSLHandshakeStatus
+  getSSLHandshakeStatus() const
+  {
+    return sslHandshakeStatus;
+  }
+
   bool
   getSSLHandShakeComplete() const override
   {
-    return sslHandshakeStatus != SSL_HANDSHAKE_ONGOING;
+    return sslHandshakeStatus != SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   }
 
   virtual void
-  setSSLHandShakeComplete(enum SSLHandshakeStatus state)
+  setSSLHandShakeComplete(SSLHandshakeStatus state)
   {
     sslHandshakeStatus = state;
   }
@@ -423,7 +429,7 @@ private:
   NetProcessor *_getNetProcessor() override;
   void *_prepareForMigration() override;
 
-  enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+  enum SSLHandshakeStatus sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
   bool first_ssl_connect                     = true;
   MIOBuffer *handShakeBuffer                 = nullptr;
@@ -455,6 +461,8 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
+  static char const *get_ssl_handshake_hook_state_name(SSLHandshakeHookState state);
+
   int64_t redoWriteSize = 0;
 
   X509_STORE_CTX *verify_cert = nullptr;
@@ -463,7 +471,7 @@ private:
   std::unique_ptr<char[]> _ca_cert_file;
   std::unique_ptr<char[]> _ca_cert_dir;
 
-  EventIO async_ep{};
+  ReadWriteEventIO async_ep{};
 
   // early data related stuff
 #if TS_HAS_TLS_EARLY_DATA

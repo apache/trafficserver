@@ -71,11 +71,10 @@ test_libhttp2_LDADD = \
 	HTTP2.o \
 	Http2Frame.o \
 	HPACK.o \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/api/libtsapi.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
@@ -130,7 +129,7 @@ test_HPACK_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 
 test_HPACK_SOURCES = \

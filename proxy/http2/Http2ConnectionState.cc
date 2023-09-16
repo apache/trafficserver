@@ -487,6 +487,8 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
         stream->send_request(*this);
       }
     }
+    // Give a chance to send response before reading next frame.
+    this->session->interrupt_reading_frames();
   } else {
     // NOTE: Expect CONTINUATION Frame. Do NOT change state of stream or decode
     // Header Blocks.
@@ -551,7 +553,7 @@ Http2ConnectionState::rcv_priority_frame(const Http2Frame &frame)
   // Close this connection if its priority frame count received exceeds a limit
   if (Http2::max_priority_frames_per_minute != 0 &&
       this->get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
+    Metrics::increment(http2_rsb.max_priority_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent priority changes: %u priority changes within a last minute",
                      this->get_received_priority_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -662,7 +664,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   this->increment_received_settings_frame_count();
   // Close this connection if its SETTINGS frame count exceeds a limit
   if (this->get_received_settings_frame_count() > Http2::max_settings_frames_per_minute) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
+    Metrics::increment(http2_rsb.max_settings_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
                      this->get_received_settings_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -702,7 +704,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   uint32_t n_settings = 0;
   while (nbytes < frame.header().length) {
     if (n_settings >= Http2::max_settings_per_frame) {
-      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED, this_ethread());
+      Metrics::increment(http2_rsb.max_settings_per_frame_exceeded);
       Http2StreamDebug(this->session, stream_id, "Observed too many settings in a frame");
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                         "recv settings too many settings in a frame");
@@ -743,7 +745,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   this->increment_received_settings_count(n_settings);
   // Close this connection if its settings count received exceeds a limit
   if (this->get_received_settings_count() > Http2::max_settings_per_minute) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED, this_ethread());
+    Metrics::increment(http2_rsb.max_settings_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
                      this->get_received_settings_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -797,7 +799,7 @@ Http2ConnectionState::rcv_ping_frame(const Http2Frame &frame)
   this->increment_received_ping_frame_count();
   // Close this connection if its ping count received exceeds a limit
   if (this->get_received_ping_frame_count() > Http2::max_ping_frames_per_minute) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
+    Metrics::increment(http2_rsb.max_ping_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent PING frames: %u PING frames within a last minute",
                      this->get_received_ping_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -1047,6 +1049,8 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     stream->new_transaction(frame.is_from_early_data());
     // Send request header to SM
     stream->send_request(*this);
+    // Give a chance to send response before reading next frame.
+    this->session->interrupt_reading_frames();
   } else {
     // NOTE: Expect another CONTINUATION Frame. Do nothing.
     Http2StreamDebug(this->session, stream_id, "No END_HEADERS flag, expecting CONTINUATION frame");
@@ -1612,10 +1616,8 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   // stream limit to be exceeded MUST treat this as a stream error.
   int check_max_concurrent_limit = 0;
   int check_count                = 0;
-  int max_streams_stat           = 0;
   if (is_client_streamid) {
-    check_count      = peer_streams_count_in;
-    max_streams_stat = HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN;
+    check_count = peer_streams_count_in;
     // If this is an outbound client stream, must check against the peer's max_concurrent
     if (session->is_outbound()) {
       check_max_concurrent_limit = peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
@@ -1623,8 +1625,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
       check_max_concurrent_limit = acknowledged_local_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     }
   } else { // Not a client stream (i.e. a push)
-    check_count      = peer_streams_count_out;
-    max_streams_stat = HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT;
+    check_count = peer_streams_count_out;
     // If this is an outbound non-client stream, must check against the local max_concurrent
     if (session->is_outbound()) {
       check_max_concurrent_limit = acknowledged_local_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
@@ -1634,7 +1635,8 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   }
   // If we haven't got the peers settings yet, just hope for the best
   if (check_max_concurrent_limit >= 0 && check_count >= check_max_concurrent_limit) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(max_streams_stat, this_ethread());
+    Metrics::increment(is_client_streamid ? http2_rsb.max_concurrent_streams_exceeded_in :
+                                            http2_rsb.max_concurrent_streams_exceeded_out);
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                        "recv headers creating stream beyond max_concurrent limit");
     return nullptr;
@@ -2390,7 +2392,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   Http2StreamDebug(session, id, "Send RST_STREAM frame");
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
+    Metrics::increment(http2_rsb.stream_errors_count);
     ++stream_error_count;
   }
 
@@ -2498,7 +2500,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   Http2ConDebug(session, "Send GOAWAY frame, last_stream_id: %d", id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
+    Metrics::increment(http2_rsb.connection_errors_count);
   }
 
   this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
@@ -2586,8 +2588,7 @@ Http2ConnectionState::_adjust_concurrent_stream()
     return max_concurrent_streams;
   }
 
-  int64_t current_client_streams = 0;
-  RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_client_streams);
+  int64_t current_client_streams = Metrics::read(http2_rsb.current_client_stream_count);
 
   Http2ConDebug(session, "current client streams: %" PRId64, current_client_streams);
 
@@ -2656,7 +2657,7 @@ Http2ConnectionState::increment_peer_rwnd(size_t amount)
   double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
   double avg = sum / this->_recent_rwnd_increment.size();
   if (avg < Http2::min_avg_window_update) {
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE, this_ethread());
+    Metrics::increment(http2_rsb.insufficient_avg_window_update);
     return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
   }
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;

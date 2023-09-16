@@ -37,7 +37,7 @@ increment_ssl_client_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    Metrics::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
 
@@ -46,31 +46,31 @@ increment_ssl_client_error(unsigned long err)
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
+    Metrics::increment(ssl_rsb.user_agent_expired_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
+    Metrics::increment(ssl_rsb.user_agent_revoked_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
+    Metrics::increment(ssl_rsb.user_agent_unknown_cert);
     break;
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
+    Metrics::increment(ssl_rsb.user_agent_cert_verify_failed);
     break;
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
+    Metrics::increment(ssl_rsb.user_agent_bad_cert);
     break;
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
+    Metrics::increment(ssl_rsb.user_agent_decryption_failed);
     break;
   case SSL_R_WRONG_VERSION_NUMBER:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
+    Metrics::increment(ssl_rsb.user_agent_wrong_version);
     break;
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
+    Metrics::increment(ssl_rsb.user_agent_unknown_ca);
     break;
   default:
-    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    Metrics::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
 
@@ -84,7 +84,7 @@ increment_ssl_server_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    Metrics::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }
 
@@ -93,31 +93,31 @@ increment_ssl_server_error(unsigned long err)
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
+    Metrics::increment(ssl_rsb.origin_server_expired_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
+    Metrics::increment(ssl_rsb.origin_server_revoked_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
+    Metrics::increment(ssl_rsb.origin_server_unknown_cert);
     break;
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
+    Metrics::increment(ssl_rsb.origin_server_cert_verify_failed);
     break;
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
+    Metrics::increment(ssl_rsb.origin_server_bad_cert);
     break;
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
+    Metrics::increment(ssl_rsb.origin_server_decryption_failed);
     break;
   case SSL_R_WRONG_VERSION_NUMBER:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
+    Metrics::increment(ssl_rsb.origin_server_wrong_version);
     break;
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
+    Metrics::increment(ssl_rsb.origin_server_unknown_ca);
     break;
   default:
-    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    Metrics::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }
 
@@ -147,9 +147,9 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
 #endif
     if (debug) {
-      if (diags()->on(ssl_diags_dbg_ctl)) {
-        diags()->print(ssl_diags_dbg_ctl.ptr()->tag, DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf),
-                       file, line, (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
+      if (ssl_diags_dbg_ctl.on()) {
+        diags()->print(ssl_diags_dbg_ctl.tag(), DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file,
+                       line, (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
                        vc ? ": peer address is " : "", ip_buf);
       }
     } else {
@@ -172,8 +172,8 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
 
   va_start(ap, fmt);
   if (debug) {
-    if (diags()->on(ssl_diags_dbg_ctl)) {
-      diags()->print_va(ssl_diags_dbg_ctl.ptr()->tag, DL_Debug, &loc, fmt, ap);
+    if (ssl_diags_dbg_ctl.on()) {
+      diags()->print_va(ssl_diags_dbg_ctl.tag(), DL_Debug, &loc, fmt, ap);
     }
   } else {
     diags()->error_va(DL_Error, &loc, fmt, ap);

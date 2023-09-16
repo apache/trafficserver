@@ -21,7 +21,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/io_uring \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	@SWOC_INCLUDES@
+	@HWLOC_INCLUDES@ \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 TESTS = test_AIO.sample
@@ -33,7 +34,9 @@ libinkaio_a_SOURCES = \
 	AIO.cc \
 	I_AIO.h \
 	Inline.cc \
-	P_AIO.h
+	P_AIO.h \
+	AIO_fault_injection.h \
+	AIO_fault_injection.cc
 
 test_AIO_LDFLAGS = \
 	@AM_LDFLAGS@ \
@@ -53,10 +56,10 @@ test_AIO_CPPFLAGS = \
 
 test_AIO_LDADD = \
 	libinkaio.a \
-	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 

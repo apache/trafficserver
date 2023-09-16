@@ -77,7 +77,6 @@ getEventName(TSEvent event)
   default:
     return "UNHANDLED";
   }
-  return "UNHANDLED";
 }
 
 /**

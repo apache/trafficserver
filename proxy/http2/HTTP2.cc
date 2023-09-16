@@ -22,6 +22,7 @@
  */
 
 #include "hdrs/VersionConverter.h"
+#include "hdrs/HeaderValidator.h"
 #include "HTTP2.h"
 #include "HPACK.h"
 
@@ -47,40 +48,7 @@ static VersionConverter hvc;
 } // namespace
 
 // Statistics
-RecRawStatBlock *http2_rsb;
-static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME        = "proxy.process.http2.current_client_connections";
-static const char *const HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME        = "proxy.process.http2.current_server_connections";
-static const char *const HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_active_client_connections";
-static const char *const HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME = "proxy.process.http2.current_active_server_connections";
-static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME            = "proxy.process.http2.current_client_streams";
-static const char *const HTTP2_STAT_CURRENT_SERVER_STREAM_NAME            = "proxy.process.http2.current_server_streams";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME              = "proxy.process.http2.total_client_streams";
-static const char *const HTTP2_STAT_TOTAL_SERVER_STREAM_NAME              = "proxy.process.http2.total_server_streams";
-static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME          = "proxy.process.http2.total_transactions_time";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME          = "proxy.process.http2.total_client_connections";
-static const char *const HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME          = "proxy.process.http2.total_server_connections";
-static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME                = "proxy.process.http2.connection_errors";
-static const char *const HTTP2_STAT_STREAM_ERRORS_NAME                    = "proxy.process.http2.stream_errors";
-static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME              = "proxy.process.http2.session_die_default";
-static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME                = "proxy.process.http2.session_die_other";
-static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME               = "proxy.process.http2.session_die_active";
-static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "proxy.process.http2.session_die_inactive";
-static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
-static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
-static const char *const HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME      = "proxy.process.http2.session_die_high_error_rate";
-static const char *const HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME  = "proxy.process.http2.max_settings_per_frame_exceeded";
-static const char *const HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME = "proxy.process.http2.max_settings_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_settings_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_ping_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
-  "proxy.process.http2.max_priority_frames_per_minute_exceeded";
-static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
-static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
-  "proxy.process.http2.max_concurrent_streams_exceeded_in";
-static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME =
-  "proxy.process.http2.max_concurrent_streams_exceeded_out";
+Http2StatsBlock http2_rsb;
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -470,11 +438,6 @@ Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
                            bool is_trailing_header, uint32_t maximum_table_size, bool is_outbound)
 {
-  const MIMEField *field = nullptr;
-  const char *name       = nullptr;
-  int name_len           = 0;
-  const char *value      = nullptr;
-  int value_len          = 0;
   int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
 
   if (result < 0) {
@@ -489,105 +452,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (len_read) {
     *len_read = result;
   }
-
-  MIMEFieldIter iter;
-  auto method_field       = hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
-  bool has_connect_method = false;
-  if (method_field) {
-    int method_len;
-    const char *method_value = method_field->value_get(&method_len);
-    has_connect_method       = method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method_value, HTTP_LEN_CONNECT) == 0;
-  }
-  unsigned int expected_pseudo_header_count = is_outbound ? 1 : has_connect_method ? 2 : 4;
-  unsigned int pseudo_header_count          = 0;
-
-  if (is_trailing_header) {
-    expected_pseudo_header_count = 0;
-  }
-  for (auto &field : *hdr) {
-    name = field.name_get(&name_len);
-    // Pseudo headers must appear before regular headers
-    if (name_len && name[0] == ':') {
-      ++pseudo_header_count;
-      if (pseudo_header_count > expected_pseudo_header_count) {
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    } else if (name_len <= 0) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    } else {
-      if (pseudo_header_count != expected_pseudo_header_count) {
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    }
-  }
-
-  // rfc7540,sec8.1.2.2: Any message containing connection-specific header
-  // fields MUST be treated as malformed
-  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr ||
-      hdr->field_find(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE) != nullptr ||
-      hdr->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION) != nullptr ||
-      hdr->field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE) != nullptr) {
-    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-  }
-
-  // :path pseudo header MUST NOT empty for http or https URIs
-  field = hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
-  if (field) {
-    field->value_get(&value_len);
-    if (value_len == 0) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    }
-  }
-
-  // when The TE header field is received, it MUST NOT contain any
-  // value other than "trailers".
-  field = hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
-  if (field) {
-    value = field->value_get(&value_len);
-    if (!(value_len == 8 && memcmp(value, "trailers", 8) == 0)) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    }
-  }
-
-  if (!is_trailing_header) {
-    // Check pseudo headers
-    if (is_outbound) {
-      if (hdr->fields_count() >= 1) {
-        if (hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) == nullptr) {
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-      } else {
-        // There should at least be :status pseudo header.
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    } else {
-      if (!has_connect_method && hdr->fields_count() >= 4) {
-        if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
-          // Decoded header field is invalid
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-      } else if (has_connect_method && hdr->fields_count() >= 2) {
-        if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) != nullptr ||
-            hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) != nullptr ||
-            hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
-          // Decoded header field is invalid
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-
-      } else {
-        // Pseudo headers is insufficient
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    }
-  }
-
-  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  return HeaderValidator::is_h2_h3_header_valid(*hdr, is_outbound, is_trailing_header) ? Http2ErrorCode::HTTP2_ERROR_NO_ERROR :
+                                                                                         Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
 }
 
 // Initialize this subsystem with librecords configs (for now)
@@ -701,69 +567,38 @@ Http2::init()
   } while (0);
 
   // Setup statistics
-  http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT), RecRawStatSyncSum);
-  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_STREAM_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CONNECTION_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CONNECTION_ERRORS_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_STREAM_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_STREAM_ERRORS_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_DEFAULT_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_DEFAULT), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_OTHER_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_OTHER), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_EOS_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_EOS), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_ACTIVE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_ACTIVE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_INACTIVE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_INACTIVE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_ERROR_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_ERROR), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME, RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT), RecRawStatSyncSum);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+
+  http2_rsb.current_client_session_count           = intm.newMetricPtr("proxy.process.http2.current_client_connections");
+  http2_rsb.current_server_session_count           = intm.newMetricPtr("proxy.process.http2.current_server_connections");
+  http2_rsb.current_active_client_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_client_connections");
+  http2_rsb.current_active_server_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_server_connections");
+  http2_rsb.current_client_stream_count            = intm.newMetricPtr("proxy.process.http2.current_client_streams");
+  http2_rsb.current_server_stream_count            = intm.newMetricPtr("proxy.process.http2.current_server_streams");
+  http2_rsb.total_client_stream_count              = intm.newMetricPtr("proxy.process.http2.total_client_streams");
+  http2_rsb.total_server_stream_count              = intm.newMetricPtr("proxy.process.http2.total_server_streams");
+  http2_rsb.total_transactions_time                = intm.newMetricPtr("proxy.process.http2.total_transactions_time");
+  http2_rsb.total_client_connection_count          = intm.newMetricPtr("proxy.process.http2.total_client_connections");
+  http2_rsb.total_server_connection_count          = intm.newMetricPtr("proxy.process.http2.total_server_connections");
+  http2_rsb.stream_errors_count                    = intm.newMetricPtr("proxy.process.http2.stream_errors");
+  http2_rsb.connection_errors_count                = intm.newMetricPtr("proxy.process.http2.connection_errors");
+  http2_rsb.session_die_default                    = intm.newMetricPtr("proxy.process.http2.session_die_default");
+  http2_rsb.session_die_other                      = intm.newMetricPtr("proxy.process.http2.session_die_other");
+  http2_rsb.session_die_active                     = intm.newMetricPtr("proxy.process.http2.session_die_active");
+  http2_rsb.session_die_inactive                   = intm.newMetricPtr("proxy.process.http2.session_die_inactive");
+  http2_rsb.session_die_eos                        = intm.newMetricPtr("proxy.process.http2.session_die_eos");
+  http2_rsb.session_die_error                      = intm.newMetricPtr("proxy.process.http2.session_die_error");
+  http2_rsb.session_die_high_error_rate            = intm.newMetricPtr("proxy.process.http2.session_die_high_error_rate");
+  http2_rsb.max_settings_per_frame_exceeded        = intm.newMetricPtr("proxy.process.http2.max_settings_per_frame_exceeded");
+  http2_rsb.max_settings_per_minute_exceeded       = intm.newMetricPtr("proxy.process.http2.max_settings_per_minute_exceeded");
+  http2_rsb.max_settings_frames_per_minute_exceeded =
+    intm.newMetricPtr("proxy.process.http2.max_settings_frames_per_minute_exceeded");
+  http2_rsb.max_ping_frames_per_minute_exceeded = intm.newMetricPtr("proxy.process.http2.max_ping_frames_per_minute_exceeded");
+  http2_rsb.max_priority_frames_per_minute_exceeded =
+    intm.newMetricPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
+  http2_rsb.insufficient_avg_window_update      = intm.newMetricPtr("proxy.process.http2.insufficient_avg_window_update");
+  http2_rsb.max_concurrent_streams_exceeded_in  = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
+  http2_rsb.max_concurrent_streams_exceeded_out = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
 
   http2_init();
 }

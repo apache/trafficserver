@@ -60,7 +60,7 @@ struct ShowNet : public ShowCont {
       return EVENT_DONE;
     }
 
-    ink_hrtime now = Thread::get_hrtime();
+    ink_hrtime now = ink_get_hrtime();
     forl_LL(NetEvent, ne, nh->open_list)
     {
       auto vc = dynamic_cast<UnixNetVConnection *>(ne);

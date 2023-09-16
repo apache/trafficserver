@@ -59,9 +59,10 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
     if (!lock.is_locked() || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
-      c->vio.op    = VIO::READ;
-      c->base_stat = cache_read_active_stat;
-      CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+      c->vio.op  = VIO::READ;
+      c->op_type = static_cast<int>(CacheOpType::Read);
+      Metrics::increment(cache_rsb.status[c->op_type].active);
+      Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->first_key = c->key = c->earliest_key = *key;
       c->vol                                  = vol;
       c->frag_type                            = type;
@@ -89,7 +90,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
     }
   }
 Lmiss:
-  CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -128,8 +130,9 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
       c->first_key = c->key = c->earliest_key = *key;
       c->vol                                  = vol;
       c->vio.op                               = VIO::READ;
-      c->base_stat                            = cache_read_active_stat;
-      CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+      c->op_type                              = static_cast<int>(CacheOpType::Read);
+      Metrics::increment(cache_rsb.status[c->op_type].active);
+      Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
       c->params    = params;
@@ -160,7 +163,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     }
   }
 Lmiss:
-  CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -199,8 +203,10 @@ CacheVC::openReadFromWriterFailure(int event, Event *e)
 {
   od = nullptr;
   vector.clear(false);
-  CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-  CACHE_INCREMENT_DYN_STAT(cache_read_busy_failure_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(cache_rsb.read_busy_failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.read_busy_failure);
   _action.continuation->handleEvent(event, e);
   free_CacheVC(this);
   return EVENT_DONE;
@@ -322,7 +328,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
     // before the open_write, but the reader could not get the volume
     // lock. If we don't reset the clock here, we won't choose any writer
     // and hence fail the read request.
-    start_time                = Thread::get_hrtime();
+    start_time                = ink_get_hrtime();
     f.read_from_writer_called = 1;
   }
   cancel_trigger();
@@ -448,7 +454,9 @@ CacheVC::openReadFromWriter(int event, Event *e)
         dir_clean(&first_dir);
         dir_clean(&earliest_dir);
         SET_HANDLER(&CacheVC::openReadFromWriterMain);
-        CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
+        Metrics::increment(cache_rsb.read_busy_success);
+        Metrics::increment(vol->cache_vol->vol_rsb.read_busy_success);
+
         return callcont(CACHE_EVENT_OPEN_READ);
       }
       // want to snarf the new headers from the writer
@@ -486,7 +494,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
   DDbg(dbg_ctl_cache_read_agg, "%p: key: %X %X: single fragment read", this, first_key.slice32(1), key.slice32(0));
   MUTEX_RELEASE(writer_lock);
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
-  CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
+  Metrics::increment(cache_rsb.read_busy_success);
+  Metrics::increment(vol->cache_vol->vol_rsb.read_busy_success);
   return callcont(CACHE_EVENT_OPEN_READ);
 }
 
@@ -630,19 +639,20 @@ CacheVC::openReadReadDone(int event, Event *e)
       }
     }
     // fall through for truncated documents
+  Lerror : {
+    // Keep the lock on vol->mutex, for dir_delete.
+    char tmpstring[CRYPTO_HEX_SIZE];
+    if (request.valid()) {
+      int url_length;
+      const char *url_text = request.url_get()->string_get_ref(&url_length);
+      Warning("Document %s truncated, url[%.*s] .. clearing", earliest_key.toHexStr(tmpstring), url_length, url_text);
+    } else {
+      Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
+    }
+    dir_delete(&earliest_key, vol, &earliest_dir);
   }
-Lerror : {
-  char tmpstring[CRYPTO_HEX_SIZE];
-  if (request.valid()) {
-    int url_length;
-    const char *url_text = request.url_get()->string_get_ref(&url_length);
-    Warning("Document %s truncated, url[%.*s] .. clearing", earliest_key.toHexStr(tmpstring), url_length, url_text);
-  } else {
-    Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
   }
-  dir_delete(&earliest_key, vol, &earliest_dir);
   return calluser(VC_EVENT_ERROR);
-}
 Ldone:
   return calluser(VC_EVENT_EOS);
 Lcallreturn:
@@ -669,7 +679,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return calluser(VC_EVENT_EOS);
     }
     HTTPInfo::FragOffset *frags = alternate.get_frag_table();
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+    if (dbg_ctl_cache_seek.on()) {
       char b[CRYPTO_HEX_SIZE], c[CRYPTO_HEX_SIZE];
       Dbg(dbg_ctl_cache_seek, "Seek @ %" PRId64 " in %s from #%d @ %" PRId64 "/%d:%s", seek_to, first_key.toHexStr(b), fragment,
           doc_pos, doc->len, doc->key.toHexStr(c));
@@ -715,7 +725,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           --fragment;
         }
 
-        if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+        if (dbg_ctl_cache_seek.on()) {
           char target_key_str[CRYPTO_HEX_SIZE];
           key.toHexStr(target_key_str);
           DbgPrint(dbg_ctl_cache_seek, "Seek #%d @ %" PRId64 " -> #%d @ %" PRId64 ":%s", cfi, doc_pos, target, seek_to,
@@ -732,7 +742,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     seek_to   = 0;
     ntodo     = vio.ntodo();
     bytes     = doc->len - doc_pos;
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_seek)) {
+    if (dbg_ctl_cache_seek.on()) {
       char target_key_str[CRYPTO_HEX_SIZE];
       DbgPrint(dbg_ctl_cache_seek, "Read # %d @ %" PRId64 "/%d for %" PRId64 " %s", fragment, doc_pos, doc->len, bytes,
                key.toHexStr(target_key_str));
@@ -766,7 +776,8 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
       doc->magic = DOC_CORRUPT;
 
-      CACHE_INCREMENT_DYN_STAT(cache_read_seek_fail_stat);
+      Metrics::increment(cache_rsb.read_seek_fail);
+      Metrics::increment(vol->cache_vol->vol_rsb.read_seek_fail);
 
       CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
       if (!lock.is_locked()) {
@@ -971,7 +982,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // that it inserted
           od->first_dir   = first_dir;
           od->writing_vec = true;
-          earliest_key    = zero_key;
+
+          earliest_key.clear();
 
           // set up this VC as a alternate delete write_vc
           vio.op          = VIO::WRITE;
@@ -1002,14 +1014,16 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       vol->close_write(this);
     }
   }
-  CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return free_CacheVC(this);
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
 Lsuccess:
   if (write_vc) {
-    CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
+    Metrics::increment(cache_rsb.read_busy_success);
+    Metrics::increment(vol->cache_vol->vol_rsb.read_busy_success);
   }
   SET_HANDLER(&CacheVC::openReadMain);
   return callcont(CACHE_EVENT_OPEN_READ);
@@ -1060,7 +1074,8 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     }
   }
 
-  CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_ALT_MISS);
   return free_CacheVC(this);
 Lrestart:
@@ -1201,7 +1216,8 @@ CacheVC::openReadStartHead(int event, Event *e)
         if (cl != doc_len) {
           Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %" PRId64 " != %" PRId64,
                   key.slice32(0), cl, doc_len);
-          CACHE_INCREMENT_DYN_STAT(cache_read_invalid_stat);
+          Metrics::increment(cache_rsb.read_invalid);
+          Metrics::increment(vol->cache_vol->vol_rsb.read_invalid);
           err = ECACHE_BAD_META_DATA;
           goto Ldone;
         }
@@ -1214,7 +1230,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       doc_len           = doc->total_len;
     }
 
-    if (is_dbg_ctl_enabled(dbg_ctl_cache_read)) { // amc debug
+    if (dbg_ctl_cache_read.on()) { // amc debug
       char xt[CRYPTO_HEX_SIZE], yt[CRYPTO_HEX_SIZE];
       DbgPrint(dbg_ctl_cache_read, "CacheReadStartHead - read %s target %s - %s %d of %" PRId64 " bytes, %d fragments",
                doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", doc->len, doc->total_len,
@@ -1266,10 +1282,12 @@ CacheVC::openReadStartHead(int event, Event *e)
   }
 Ldone:
   if (!f.lookup) {
-    CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
+    Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-err);
   } else {
-    CACHE_INCREMENT_DYN_STAT(cache_lookup_failure_stat);
+    Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
     _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, (void *)-err);
   }
   return free_CacheVC(this);
@@ -1279,7 +1297,8 @@ Lsuccess:
   SET_HANDLER(&CacheVC::openReadMain);
   return callcont(CACHE_EVENT_OPEN_READ);
 Lookup:
-  CACHE_INCREMENT_DYN_STAT(cache_lookup_success_stat);
+  Metrics::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_LOOKUP, nullptr);
   return free_CacheVC(this);
 Learliest:

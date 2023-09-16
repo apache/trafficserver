@@ -33,24 +33,6 @@
 #endif
 #include "tscore/ink_stack_trace.h"
 
-#define CACHE_INC_DIR_USED(_m)                            \
-  do {                                                    \
-    ProxyMutex *mutex = _m.get();                         \
-    CACHE_INCREMENT_DYN_STAT(cache_direntries_used_stat); \
-  } while (0)
-
-#define CACHE_DEC_DIR_USED(_m)                            \
-  do {                                                    \
-    ProxyMutex *mutex = _m.get();                         \
-    CACHE_DECREMENT_DYN_STAT(cache_direntries_used_stat); \
-  } while (0)
-
-#define CACHE_INC_DIR_COLLISIONS(_m)                                \
-  do {                                                              \
-    ProxyMutex *mutex = _m.get();                                   \
-    CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
-  } while (0);
-
 namespace
 {
 
@@ -382,12 +364,13 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
     }
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
-      if (is_dbg_ctl_enabled(dbg_ctl_dir_clean)) {
+      if (dbg_ctl_dir_clean.on()) {
         Dbg(dbg_ctl_dir_clean, "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
             dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
-        CACHE_DEC_DIR_USED(vol->mutex);
+        Metrics::decrement(cache_rsb.direntries_used);
+        Metrics::decrement(vol->cache_vol->vol_rsb.direntries_used);
       }
       e = dir_delete_entry(e, p, s, vol);
       continue;
@@ -422,7 +405,8 @@ dir_clear_range(off_t start, off_t end, Vol *vol)
   for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
-      CACHE_DEC_DIR_USED(vol->mutex);
+      Metrics::decrement(cache_rsb.direntries_used);
+      Metrics::decrement(vol->cache_vol->vol_rsb.direntries_used);
       dir_set_offset(e, 0); // delete
     }
   }
@@ -457,7 +441,8 @@ freelist_clean(int s, Vol *vol)
     for (int l = 0; l < DIR_DEPTH; l++) {
       Dir *e = dir_bucket_row(b, l);
       if (dir_head(e) && !(n++ % 10)) {
-        CACHE_DEC_DIR_USED(vol->mutex);
+        Metrics::decrement(cache_rsb.direntries_used);
+        Metrics::decrement(vol->cache_vol->vol_rsb.direntries_used);
         dir_set_offset(e, 0); // delete
       }
     }
@@ -584,7 +569,8 @@ Lagain:
             // may not accurately reflect the number of documents
             // having the same first_key
             DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-            CACHE_INC_DIR_COLLISIONS(vol->mutex);
+            Metrics::increment(cache_rsb.directory_collision_count);
+            Metrics::increment(vol->cache_vol->vol_rsb.directory_collision_count);
           }
           goto Lcont;
         }
@@ -596,7 +582,8 @@ Lagain:
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < vol->len);
           return 1;
         } else { // delete the invalid entry
-          CACHE_DEC_DIR_USED(vol->mutex);
+          Metrics::decrement(cache_rsb.direntries_used);
+          Metrics::decrement(vol->cache_vol->vol_rsb.direntries_used);
           e = dir_delete_entry(e, p, s, vol);
           continue;
         }
@@ -610,7 +597,8 @@ Lagain:
   }
   if (collision) { // last collision no longer in the list, retry
     DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-    CACHE_INC_DIR_COLLISIONS(vol->mutex);
+    Metrics::increment(cache_rsb.directory_collision_count);
+    Metrics::increment(vol->cache_vol->vol_rsb.directory_collision_count);
     collision = nullptr;
     goto Lagain;
   }
@@ -681,7 +669,9 @@ Lfill:
        bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   vol->header->dirty = 1;
-  CACHE_INC_DIR_USED(vol->mutex);
+  Metrics::increment(cache_rsb.direntries_used);
+  Metrics::increment(vol->cache_vol->vol_rsb.direntries_used);
+
   return 1;
 }
 
@@ -730,7 +720,8 @@ Lagain:
   // get from this row first
   e = b;
   if (dir_is_empty(e)) {
-    CACHE_INC_DIR_USED(vol->mutex);
+    Metrics::increment(cache_rsb.direntries_used);
+    Metrics::increment(vol->cache_vol->vol_rsb.direntries_used);
     goto Lfill;
   }
   for (l = 1; l < DIR_DEPTH; l++) {
@@ -746,7 +737,8 @@ Lagain:
     goto Lagain;
   }
 Llink:
-  CACHE_INC_DIR_USED(vol->mutex);
+  Metrics::increment(cache_rsb.direntries_used);
+  Metrics::increment(vol->cache_vol->vol_rsb.direntries_used);
   // as with dir_insert above, need to insert new entries at the tail of the linked list
   Dir *prev, *last;
 
@@ -794,7 +786,8 @@ dir_delete(const CacheKey *key, Vol *vol, Dir *del)
       }
 #endif
       if (dir_compare_tag(e, key) && dir_offset(e) == dir_offset(del)) {
-        CACHE_DEC_DIR_USED(vol->mutex);
+        Metrics::decrement(cache_rsb.direntries_used);
+        Metrics::decrement(vol->cache_vol->vol_rsb.direntries_used);
         dir_delete_entry(e, p, s, vol);
         CHECK_DIR(d);
         return 1;
@@ -1103,13 +1096,13 @@ Lrestart:
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
-    if (io.aio_result != static_cast<int64_t>(io.aiocb.aio_nbytes)) {
+    if (!io.ok()) {
       Warning("vol write error during directory sync '%s'", gvol[vol_idx]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
     }
-    CACHE_SUM_DYN_STAT(cache_directory_sync_bytes_stat, io.aio_result);
-
+    Metrics::increment(cache_rsb.directory_sync_bytes, io.aio_result);
+    Metrics::increment(vol->cache_vol->vol_rsb.directory_sync_bytes, io.aio_result);
     trigger = eventProcessor.schedule_in(this, SYNC_DELAY);
     return EVENT_CONT;
   }
@@ -1121,7 +1114,7 @@ Lrestart:
     }
 
     if (!vol->dir_sync_in_progress) {
-      start_time = Thread::get_hrtime();
+      start_time = ink_get_hrtime();
     }
 
     // recompute hit_evacuate_window
@@ -1202,8 +1195,10 @@ Lrestart:
       writepos += headerlen;
     } else {
       vol->dir_sync_in_progress = false;
-      CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
-      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, Thread::get_hrtime() - start_time);
+      Metrics::increment(cache_rsb.directory_sync_count);
+      Metrics::increment(vol->cache_vol->vol_rsb.directory_sync_count);
+      Metrics::increment(cache_rsb.directory_sync_time, ink_get_hrtime() - start_time);
+      Metrics::increment(vol->cache_vol->vol_rsb.directory_sync_time, ink_get_hrtime() - start_time);
       start_time = 0;
       goto Ldone;
     }
@@ -1390,7 +1385,7 @@ Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this para
 //
 
 // permutation table
-uint8_t CacheKey_next_table[256] = {
+const uint8_t CacheKey_next_table[256] = {
   21,  53,  167, 51,  255, 126, 241, 151, 115, 66,  155, 174, 226, 215, 80,  188, 12,  95,  8,   24,  162, 201, 46,  104, 79,  172,
   39,  68,  56,  144, 142, 217, 101, 62,  14,  108, 120, 90,  61,  47,  132, 199, 110, 166, 83,  125, 57,  65,  19,  130, 148, 116,
   228, 189, 170, 1,   71,  0,   252, 184, 168, 177, 88,  229, 242, 237, 183, 55,  13,  212, 240, 81,  211, 74,  195, 205, 147, 93,
@@ -1404,7 +1399,7 @@ uint8_t CacheKey_next_table[256] = {
 };
 
 // permutation table
-uint8_t CacheKey_prev_table[256] = {
+const uint8_t CacheKey_prev_table[256] = {
   57,  55,  119, 141, 158, 152, 218, 165, 18,  178, 89,  172, 16,  68,  34,  146, 153, 233, 114, 48,  229, 0,   187, 154, 19,  180,
   148, 230, 240, 140, 78,  143, 123, 130, 219, 128, 101, 102, 215, 26,  243, 127, 239, 94,  223, 118, 22,  39,  194, 168, 157, 3,
   173, 1,   248, 67,  28,  46,  156, 175, 162, 38,  33,  81,  179, 47,  9,   159, 27,  126, 200, 56,  234, 111, 73,  251, 206, 197,
@@ -1516,19 +1511,19 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   // test insert-delete
   rprintf(t, "insert-delete test\n");
   regress_rand_init(13);
-  ttime = Thread::get_hrtime_updated();
+  ttime = ink_get_hrtime();
   for (i = 0; i < newfree; i++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, vol, &dir);
   }
-  uint64_t us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
+  uint64_t us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the insert rate only if its not 0
   if (us) {
     rprintf(t, "insert rate = %d / second\n", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
   }
   regress_rand_init(13);
-  ttime = Thread::get_hrtime_updated();
+  ttime = ink_get_hrtime();
   for (i = 0; i < newfree; i++) {
     Dir *last_collision = nullptr;
     regress_rand_CacheKey(&key);
@@ -1536,7 +1531,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
       ret = REGRESSION_TEST_FAILED;
     }
   }
-  us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
+  us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the probe rate only if its not 0
   if (us) {

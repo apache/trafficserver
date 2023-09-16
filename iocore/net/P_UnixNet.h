@@ -30,12 +30,20 @@
 #include "PollCont.h"
 #include "EventIO.h"
 #include "NetHandler.h"
+#include "tscore/ink_platform.h"
+
+#if TS_USE_LINUX_IO_URING
+#include "IOUringEventIO.h"
+#endif
+
+#include "P_DNSConnection.h"
 #include "P_Net.h"
 #include "P_NetAccept.h"
 #include "P_UnixNetProcessor.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixPollDescriptor.h"
 #include <limits>
+#include "tscore/ink_sys_control.h"
 
 NetHandler *get_NetHandler(EThread *t);
 PollCont *get_PollCont(EThread *t);
@@ -50,7 +58,6 @@ extern ink_hrtime emergency_throttle_time;
 extern int net_connections_throttle;
 extern bool net_memory_throttle;
 extern int fds_throttle;
-extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 
 //
@@ -85,11 +92,9 @@ enum ThrottleType {
 TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {
-  double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int64_t sval    = 0;
+  double headroom    = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
+  int currently_open = static_cast<int>(Metrics::read(net_rsb.connections_currently_open));
 
-  NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
-  int currently_open = static_cast<int>(sval);
   // deal with race if we got to multiple net threads
   if (currently_open < 0) {
     currently_open = 0;
@@ -100,7 +105,7 @@ net_connections_to_throttle(ThrottleType t)
 TS_INLINE void
 check_shedding_warning()
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
     Warning("number of connections reaching shedding limit");
@@ -122,7 +127,7 @@ check_net_throttle(ThrottleType t)
 TS_INLINE void
 check_throttle_warning(ThrottleType type)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     int connections       = net_connections_to_throttle(type);
@@ -138,7 +143,7 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   (void)data_type;
   (void)value;
   (void)data;
-  int throttle = fds_limit - THROTTLE_FD_HEADROOM;
+  int throttle = ink_get_fds_limit() - THROTTLE_FD_HEADROOM;
   if (fds_throttle == 0) {
     net_connections_throttle = fds_throttle;
   } else if (fds_throttle < 0) {
@@ -198,7 +203,7 @@ accept_error_seriousness(int res)
 TS_INLINE void
 check_transient_accept_error(int res)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (!last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);
@@ -225,7 +230,8 @@ read_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
+    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
+        ne);
   }
   ne->read.enabled = 0;
   nh->read_ready_list.remove(ne);
@@ -248,7 +254,8 @@ write_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
+    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
+        ne);
   }
   ne->write.enabled = 0;
   nh->write_ready_list.remove(ne);

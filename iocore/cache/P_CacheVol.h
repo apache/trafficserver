@@ -27,6 +27,8 @@
 
 #include "tscore/CryptoHash.h"
 
+#include "P_Cache.h"
+
 #define CACHE_BLOCK_SHIFT        9
 #define CACHE_BLOCK_SIZE         (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
 #define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), STORE_BLOCK_SIZE)
@@ -256,10 +258,10 @@ struct Vol : public Continuation {
   ~Vol() override { ats_free(agg_buffer); }
 };
 
-struct AIO_Callback_handler : public Continuation {
+struct AIO_failure_handler : public Continuation {
   int handle_disk_failure(int event, void *data);
 
-  AIO_Callback_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_Callback_handler::handle_disk_failure); }
+  AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
 };
 
 struct CacheVol {
@@ -272,7 +274,7 @@ struct CacheVol {
   DiskVol **disk_vols   = nullptr;
   LINK(CacheVol, link);
   // per volume stats
-  RecRawStatBlock *vol_rsb = nullptr;
+  CacheStatsBlock vol_rsb;
 
   CacheVol() {}
 };

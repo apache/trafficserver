@@ -107,10 +107,6 @@ public:
   Que(NetEvent, active_queue_link) active_queue;
   uint32_t active_queue_size = 0;
 
-#ifdef TS_USE_LINUX_IO_URING
-  EventIO uring_evio;
-#endif
-
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
     uint32_t max_connections_in                 = 0;
@@ -226,6 +222,9 @@ public:
   void free_netevent(NetEvent *ne);
 
   NetHandler();
+
+  inline static DbgCtl dbg_ctl_socket{"socket"};
+  inline static DbgCtl dbg_ctl_iocore_net{"iocore_net"};
 
 private:
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);

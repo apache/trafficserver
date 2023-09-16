@@ -29,22 +29,38 @@
 #include "tscore/Regex.h"
 
 #ifdef PCRE_CONFIG_JIT
-static pcre_jit_stack *
-get_jit_stack(void *data ATS_UNUSED)
+/*
+Using two thread locals avoids the deadlock because without the thread local object access, get_jit_stack doesn't call
+the TLS init function which ends up calling __cxx_thread_atexit(which locks the dl_whatever mutex). Since the raw
+pointer doesn't have a destructor to call, it doesn't need to call this. Interestingly, get_jit_stack was calling the
+TLS init function to setup the destructor call at thread exit whether or not the class was declared in the function
+body.
+*/
+namespace
 {
-  thread_local struct JitStack {
-    JitStack()
-    {
-      jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
+thread_local pcre_jit_stack *jit_stack;
+
+struct JitStackCleanup {
+  ~JitStackCleanup()
+  {
+    if (jit_stack) {
+      pcre_jit_stack_free(jit_stack);
     }
-    ~JitStack() { pcre_jit_stack_free(jit_stack); }
+  }
+};
+thread_local JitStackCleanup jsc;
 
-    pcre_jit_stack *jit_stack = nullptr;
-  } stack;
-
-  return stack.jit_stack;
+pcre_jit_stack *
+get_jit_stack(void *)
+{
+  if (!jit_stack) {
+    jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
+  }
+  return jit_stack;
 }
-#endif
+
+} // end anonymous namespace
+#endif // def PCRE_CONFIG_JIT
 
 Regex::Regex(Regex &&that) noexcept : regex(that.regex), regex_extra(that.regex_extra)
 {

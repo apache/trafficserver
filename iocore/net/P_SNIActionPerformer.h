@@ -75,10 +75,10 @@ public:
     if (ssl_vc) {
       if (!enable_h2) {
         ssl_vc->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
-        Debug("ssl_sni", "H2 disabled, fqdn [%s]", servername);
+        Dbg(dbg_ctl_ssl_sni, "H2 disabled, fqdn [%s]", servername);
       } else {
         ssl_vc->enableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
-        Debug("ssl_sni", "H2 enabled, fqdn [%s]", servername);
+        Dbg(dbg_ctl_ssl_sni, "H2 enabled, fqdn [%s]", servername);
       }
     }
     return SSL_TLSEXT_ERR_OK;
@@ -179,7 +179,7 @@ public:
     if (ssl_netvc) {
       if (fnArrIndexes.empty()) {
         ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
+        Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       } else {
         bool port_is_dynamic = false;
         auto fixed_dst{destination};
@@ -189,7 +189,8 @@ public:
           fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
         }
         ssl_netvc->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
+        Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(),
+            servername);
       }
 
       if (type == SNIRoutingType::BLIND) {
@@ -320,7 +321,7 @@ public:
   {
     auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
     const char *servername = snis->get_sni_server_name();
-    Debug("ssl_sni", "action verify param %d, fqdn [%s]", this->mode, servername);
+    Dbg(dbg_ctl_ssl_sni, "action verify param %d, fqdn [%s]", this->mode, servername);
     setClientCertLevel(ssl_vc->ssl, this->mode);
     ssl_vc->set_ca_cert_file(ca_file, ca_dir);
     setClientCertCACerts(ssl_vc->ssl, ssl_vc->get_ca_cert_file(), ssl_vc->get_ca_cert_dir());
@@ -388,7 +389,7 @@ public:
   {
     if (this->min_ver >= 0 || this->max_ver >= 0) {
       const char *servername = snis->get_sni_server_name();
-      Debug("ssl_sni", "TLSValidProtocol min=%d, max=%d, fqdn [%s]", this->min_ver, this->max_ver, servername);
+      Dbg(dbg_ctl_ssl_sni, "TLSValidProtocol min=%d, max=%d, fqdn [%s]", this->min_ver, this->max_ver, servername);
       auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
       ssl_vc->set_valid_tls_version_min(this->min_ver);
       ssl_vc->set_valid_tls_version_max(this->max_ver);
@@ -396,7 +397,7 @@ public:
       if (!unset) {
         auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
         const char *servername = snis->get_sni_server_name();
-        Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
+        Dbg(dbg_ctl_ssl_sni, "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
         ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
         Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and ivalid_tls_version_max_in instead.");
       }
@@ -467,6 +468,7 @@ public:
 #if TS_HAS_TLS_EARLY_DATA
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
     if (ssl_vc) {
+      Debug("ssl_sni", "Setting server_max_early_data to %u", server_max_early_data);
       ssl_vc->hints_from_sni.server_max_early_data = server_max_early_data;
       const uint32_t EARLY_DATA_DEFAULT_SIZE       = 16384;
       const uint32_t server_recv_max_early_data =

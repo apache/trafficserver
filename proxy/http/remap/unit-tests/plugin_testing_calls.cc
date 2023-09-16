@@ -36,10 +36,6 @@
 
 PluginDebugObject debugObject;
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 TSReturnCode
 handleInitRun(char *errbuf, int errbuf_size, int &counter)
 {
@@ -116,7 +112,7 @@ TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus)
 }
 
 /* The following functions are meant for unit testing */
-int
+extern "C" int
 pluginDsoVersionTest()
 {
 #ifdef PLUGINDSOVER
@@ -131,7 +127,3 @@ getPluginDebugObjectTest()
 {
   return (void *)&debugObject;
 }
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */

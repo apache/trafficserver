@@ -33,7 +33,7 @@
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 #include <openssl/core_names.h>
 #endif
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "tscore/ink_config.h"
 
 // Remove this when drop OpenSSL 1.0.2 support
@@ -143,7 +143,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
   *copy = 0;
   if (diags()->on()) {
     static DbgCtl dbg_ctl("ssl.session_cache.get");
-    if (dbg_ctl.ptr()->on) {
+    if (dbg_ctl.tag_on()) {
       char printable_buf[(len * 2) + 1];
       sid.toString(printable_buf, sizeof(printable_buf));
       DbgPrint(dbg_ctl, "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
@@ -164,7 +164,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 
     // Double check the timeout
     if (is_ssl_session_timed_out(session)) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
+      Metrics::increment(ssl_rsb.session_cache_miss);
 // Due to bug in openssl, the timeout is checked, but only removed
 // from the openssl built-in hash table.  The external remove cb is not called
 #if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
@@ -173,12 +173,12 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
       SSL_SESSION_free(session);
       session = nullptr;
     } else {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
+      Metrics::increment(ssl_rsb.session_cache_hit);
       this->_setSSLSessionCacheHit(true);
       this->_setSSLCurveNID(exdata->curve);
     }
   } else {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
+    Metrics::increment(ssl_rsb.session_cache_miss);
   }
   return session;
 }
@@ -192,16 +192,16 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
   if (shared_sess != nullptr) {
     // Double check the timeout
     if (is_ssl_session_timed_out(shared_sess.get())) {
-      SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
+      Metrics::increment(ssl_rsb.origin_session_cache_miss);
       origin_sess_cache->remove_session(lookup_key);
       shared_sess.reset();
     } else {
-      SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_hit);
+      Metrics::increment(ssl_rsb.origin_session_cache_hit);
       this->_setSSLOriginSessionCacheHit(true);
       this->_setSSLCurveNID(curve);
     }
   } else {
-    SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
+    Metrics::increment(ssl_rsb.origin_session_cache_miss);
   }
   return shared_sess;
 }
@@ -247,7 +247,7 @@ TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblo
 #endif
 
   Debug("ssl_session_ticket", "create ticket for a new session.");
-  SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
+  Metrics::increment(ssl_rsb.total_tickets_created);
   return 1;
 }
 
@@ -283,10 +283,10 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
 
       Debug("ssl_session_ticket", "verify the ticket for an existing session.");
       // Increase the total number of decrypted tickets.
-      SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
+      Metrics::increment(ssl_rsb.total_tickets_verified);
 
       if (i != 0) { // The number of tickets decrypted with "older" keys.
-        SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
+        Metrics::increment(ssl_rsb.total_tickets_verified_old_key);
       }
 
       this->_setSSLSessionCacheHit(true);
@@ -304,7 +304,7 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
   }
 
   Debug("ssl_session_ticket", "keyname is not consistent.");
-  SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
+  Metrics::increment(ssl_rsb.total_tickets_not_found);
   return 0;
 }
 

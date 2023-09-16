@@ -15,4 +15,4 @@
 #
 #######################
 
-add_atsplugin(healthchecks healthchecks.c)
+add_atsplugin(healthchecks healthchecks.cc)

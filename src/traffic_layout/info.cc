@@ -109,7 +109,6 @@ produce_features(bool json)
   print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
   print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
   print_feature("TS_HAS_QUICHE", TS_HAS_QUICHE, json);
-  print_feature("TS_USE_LINUX_NATIVE_AIO", TS_USE_LINUX_NATIVE_AIO, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);
   print_feature("SIZEOF_VOIDP", SIZEOF_VOIDP, json);

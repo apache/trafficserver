@@ -28,96 +28,77 @@
 #include "records/I_RecProcess.h"
 #include "SSLDiags.h"
 
-/* Stats should only be accessed using these macros */
-#define SSL_INCREMENT_DYN_STAT(x)        RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1)
-#define SSL_DECREMENT_DYN_STAT(x)        RecIncrRawStat(ssl_rsb, nullptr, (int)x, -1)
-#define SSL_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(ssl_rsb, x, count)
-#define SSL_INCREMENT_DYN_STAT_EX(x, y)  RecIncrRawStat(ssl_rsb, nullptr, (int)x, y)
-#define SSL_CLEAR_DYN_STAT(x)            \
-  do {                                   \
-    RecSetRawStatSum(ssl_rsb, (x), 0);   \
-    RecSetRawStatCount(ssl_rsb, (x), 0); \
-  } while (0)
-#define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
-  do {                                             \
-    SSLVCDebug((vc), fmt, ##__VA_ARGS__);          \
-    RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1);   \
-  } while (0)
+#include "api/Metrics.h"
 
-enum SSL_Stats {
-  ssl_origin_server_expired_cert_stat,
-  ssl_user_agent_expired_cert_stat,
-  ssl_origin_server_revoked_cert_stat,
-  ssl_user_agent_revoked_cert_stat,
-  ssl_origin_server_unknown_cert_stat,
-  ssl_user_agent_unknown_cert_stat,
-  ssl_origin_server_cert_verify_failed_stat,
-  ssl_user_agent_cert_verify_failed_stat,
-  ssl_origin_server_bad_cert_stat,
-  ssl_user_agent_bad_cert_stat,
-  ssl_origin_server_decryption_failed_stat,
-  ssl_user_agent_decryption_failed_stat,
-  ssl_origin_server_wrong_version_stat,
-  ssl_user_agent_wrong_version_stat,
-  ssl_origin_server_other_errors_stat,
-  ssl_user_agent_other_errors_stat,
-  ssl_origin_server_unknown_ca_stat,
-  ssl_user_agent_unknown_ca_stat,
-  ssl_user_agent_sessions_stat,
-  ssl_user_agent_session_hit_stat,
-  ssl_user_agent_session_miss_stat,
-  ssl_user_agent_session_timeout_stat,
-  ssl_total_handshake_time_stat,
-  ssl_total_attempts_handshake_count_in_stat,
-  ssl_total_success_handshake_count_in_stat,
-  ssl_total_tickets_created_stat,
-  ssl_total_tickets_verified_stat,
-  ssl_total_tickets_verified_old_key_stat, // verified with old key.
-  ssl_total_ticket_keys_renewed_stat,      // number of keys renewed.
-  ssl_total_tickets_not_found_stat,
-  ssl_total_tickets_renewed_stat,
-  ssl_total_dyn_def_tls_record_count,
-  ssl_total_dyn_max_tls_record_count,
-  ssl_total_dyn_redo_tls_record_count,
-  ssl_session_cache_hit,
-  ssl_origin_session_cache_hit,
-  ssl_session_cache_miss,
-  ssl_origin_session_cache_miss,
-  ssl_session_cache_eviction,
-  ssl_session_cache_lock_contention,
-  ssl_session_cache_new_session,
-  ssl_early_data_received_count, // how many times we received early data
-  ssl_origin_session_reused_count,
+using ts::Metrics;
 
-  /* error stats */
-  ssl_error_syscall,
-  ssl_error_ssl,
-  ssl_error_async,
-  ssl_sni_name_set_failure,
-  ssl_total_attempts_handshake_count_out_stat,
-  ssl_total_success_handshake_count_out_stat,
-
-  /* ocsp stapling stats */
-  ssl_ocsp_revoked_cert_stat,
-  ssl_ocsp_unknown_cert_stat,
-  ssl_ocsp_refreshed_cert_stat,
-  ssl_ocsp_refresh_cert_failure_stat,
-
-  /* SSL/TLS versions */
-  ssl_total_sslv3,
-  ssl_total_tlsv1,
-  ssl_total_tlsv11,
-  ssl_total_tlsv12,
-  ssl_total_tlsv13,
-
-  ssl_cipher_stats_start = 100,
-  ssl_cipher_stats_end   = 300,
-
-  Ssl_Stat_Count
+// For some odd reason, these have to be initialized with nullptr, because the order
+// of initialization and how we load certs is weird... In reality only the metric
+// for ssl_rsb.total_ticket_keys_renewed needs this initialization, but lets be
+// consistent at least.
+struct SSLStatsBlock {
+  ts::Metrics::IntType *early_data_received_count          = nullptr;
+  ts::Metrics::IntType *error_async                        = nullptr;
+  ts::Metrics::IntType *error_ssl                          = nullptr;
+  ts::Metrics::IntType *error_syscall                      = nullptr;
+  ts::Metrics::IntType *ocsp_refresh_cert_failure          = nullptr;
+  ts::Metrics::IntType *ocsp_refreshed_cert                = nullptr;
+  ts::Metrics::IntType *ocsp_revoked_cert                  = nullptr;
+  ts::Metrics::IntType *ocsp_unknown_cert                  = nullptr;
+  ts::Metrics::IntType *origin_server_bad_cert             = nullptr;
+  ts::Metrics::IntType *origin_server_cert_verify_failed   = nullptr;
+  ts::Metrics::IntType *origin_server_decryption_failed    = nullptr;
+  ts::Metrics::IntType *origin_server_expired_cert         = nullptr;
+  ts::Metrics::IntType *origin_server_other_errors         = nullptr;
+  ts::Metrics::IntType *origin_server_revoked_cert         = nullptr;
+  ts::Metrics::IntType *origin_server_unknown_ca           = nullptr;
+  ts::Metrics::IntType *origin_server_unknown_cert         = nullptr;
+  ts::Metrics::IntType *origin_server_wrong_version        = nullptr;
+  ts::Metrics::IntType *origin_session_cache_hit           = nullptr;
+  ts::Metrics::IntType *origin_session_cache_miss          = nullptr;
+  ts::Metrics::IntType *origin_session_reused_count        = nullptr;
+  ts::Metrics::IntType *session_cache_eviction             = nullptr;
+  ts::Metrics::IntType *session_cache_hit                  = nullptr;
+  ts::Metrics::IntType *session_cache_lock_contention      = nullptr;
+  ts::Metrics::IntType *session_cache_miss                 = nullptr;
+  ts::Metrics::IntType *session_cache_new_session          = nullptr;
+  ts::Metrics::IntType *sni_name_set_failure               = nullptr;
+  ts::Metrics::IntType *total_attempts_handshake_count_in  = nullptr;
+  ts::Metrics::IntType *total_attempts_handshake_count_out = nullptr;
+  ts::Metrics::IntType *total_dyn_def_tls_record_count     = nullptr;
+  ts::Metrics::IntType *total_dyn_max_tls_record_count     = nullptr;
+  ts::Metrics::IntType *total_dyn_redo_tls_record_count    = nullptr;
+  ts::Metrics::IntType *total_handshake_time               = nullptr;
+  ts::Metrics::IntType *total_sslv3                        = nullptr;
+  ts::Metrics::IntType *total_success_handshake_count_in   = nullptr;
+  ts::Metrics::IntType *total_success_handshake_count_out  = nullptr;
+  ts::Metrics::IntType *total_ticket_keys_renewed          = nullptr;
+  ts::Metrics::IntType *total_tickets_created              = nullptr;
+  ts::Metrics::IntType *total_tickets_not_found            = nullptr;
+  ts::Metrics::IntType *total_tickets_renewed              = nullptr;
+  ts::Metrics::IntType *total_tickets_verified_old_key     = nullptr;
+  ts::Metrics::IntType *total_tickets_verified             = nullptr;
+  ts::Metrics::IntType *total_tlsv1                        = nullptr;
+  ts::Metrics::IntType *total_tlsv11                       = nullptr;
+  ts::Metrics::IntType *total_tlsv12                       = nullptr;
+  ts::Metrics::IntType *total_tlsv13                       = nullptr;
+  ts::Metrics::IntType *user_agent_bad_cert                = nullptr;
+  ts::Metrics::IntType *user_agent_cert_verify_failed      = nullptr;
+  ts::Metrics::IntType *user_agent_decryption_failed       = nullptr;
+  ts::Metrics::IntType *user_agent_expired_cert            = nullptr;
+  ts::Metrics::IntType *user_agent_other_errors            = nullptr;
+  ts::Metrics::IntType *user_agent_revoked_cert            = nullptr;
+  ts::Metrics::IntType *user_agent_session_hit             = nullptr;
+  ts::Metrics::IntType *user_agent_session_miss            = nullptr;
+  ts::Metrics::IntType *user_agent_session_timeout         = nullptr;
+  ts::Metrics::IntType *user_agent_sessions                = nullptr;
+  ts::Metrics::IntType *user_agent_unknown_ca              = nullptr;
+  ts::Metrics::IntType *user_agent_unknown_cert            = nullptr;
+  ts::Metrics::IntType *user_agent_wrong_version           = nullptr;
 };
 
-extern RecRawStatBlock *ssl_rsb;
-extern std::unordered_map<std::string, intptr_t> cipher_map;
+extern SSLStatsBlock ssl_rsb;
+extern std::unordered_map<std::string, Metrics::IntType *> cipher_map;
 
 // Initialize SSL statistics.
 void SSLInitializeStatistics();

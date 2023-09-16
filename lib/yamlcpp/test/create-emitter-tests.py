@@ -133,7 +133,7 @@ def expand(template):
         for car in expand(template[:1]):
             for cdr in expand(template[1:]):
                 yield car + cdr
-
+            
 
 def gen_events():
     for template in gen_templates():
@@ -153,7 +153,7 @@ class Writer(object):
     def __init__(self, out):
         self.out = out
         self.indent = 0
-
+    
     def writeln(self, s):
         self.out.write('%s%s\n' % (' ' * self.indent, s))
 
@@ -166,14 +166,14 @@ class Scope(object):
     def __enter__(self):
         self.writer.writeln('%s {' % self.name)
         self.writer.indent += self.indent
-
+    
     def __exit__(self, type, value, traceback):
         self.writer.indent -= self.indent
         self.writer.writeln('}')
 
 def create_emitter_tests(out):
     out = Writer(out)
-
+    
     includes = [
         'handler_test.h',
         'yaml-cpp/yaml.h',

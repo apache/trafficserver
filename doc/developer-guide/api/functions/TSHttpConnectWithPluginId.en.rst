@@ -61,7 +61,7 @@ stack via the loopback interface.
    the connection. It is accessible via the log field :ref:`pitag
    <pitag>`. This is intended as a class or type identifier that
    is consistent across all connections for this plugin. In effect,
-   the name of the plugin. This can be :literal:`NULL`.
+   the name of the plugin. This can be :literal:`nullptr`.
 
 :arg:`id`
    This is a numeric identifier that is passed through to the HTTP

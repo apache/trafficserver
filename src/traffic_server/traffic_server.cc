@@ -98,7 +98,7 @@ extern "C" int plock(int);
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"
@@ -135,8 +135,7 @@ static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 static const long MAX_LOGIN = ink_login_name_max();
 
 static void init_ssl_ctx_callback(void *ctx, bool server);
-// This isn't static as its also called from InkAPI.cc
-void load_config_file_callback(const char *parent_file, const char *remap_file);
+extern void load_config_file_callback(const char *parent_file, const char *remap_file);
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
 
@@ -159,7 +158,6 @@ static int regression_list        = 0;
 static int regression_level       = REGRESSION_TEST_NONE;
 #endif
 static int auto_clear_hostdb_flag = 0;
-extern int fds_limit;
 
 static char command_string[512] = "";
 static char conf_dir[512]       = "";
@@ -170,7 +168,7 @@ static char error_tags[1024]    = "";
 static char action_tags[1024]   = "";
 static int show_statistics      = 0;
 static DiagsConfig *diagsConfig = nullptr;
-HttpBodyFactory *body_factory   = nullptr;
+extern HttpBodyFactory *body_factory;
 
 static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.
@@ -207,6 +205,8 @@ static ArgumentDescription argument_descriptions[] = {
   {"disable_freelist",  'f', "Disable the freelist memory allocator",                                                               "T",     &cmd_disable_freelist,           "PROXY_DPRINTF_LEVEL",     nullptr},
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator",                                             "T",     &cmd_disable_pfreelist,
    "PROXY_DPRINTF_LEVEL",                                                                                                                                                                                nullptr},
+  {"maxRecords",        'm', "Max number of librecords metrics and configurations (default & minimum: 2048)",                       "I",     &max_records_entries,
+   "PROXY_MAX_RECORDS",                                                                                                                                                                                  nullptr},
 
 #if TS_HAS_TESTS
   {"regression",        'R', "Regression Level (quick:1..long:3)",                                                                  "I",     &regression_level,               "PROXY_REGRESSION",        nullptr},
@@ -607,7 +607,7 @@ init_system()
   //
   // Delimit file Descriptors
   //
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE);
+  ink_set_fds_limit(ink_max_out_rlimit(RLIMIT_NOFILE));
 }
 
 static void
@@ -1221,9 +1221,10 @@ cmd_help(char *cmd)
 static void
 check_fd_limit()
 {
-  int fds_throttle = -1;
-  REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
-  if (fds_throttle > fds_limit - THROTTLE_FD_HEADROOM) {
+  int check_throttle = -1;
+  int fds_limit      = static_cast<int>(ink_get_fds_limit());
+  REC_ReadConfigInteger(check_throttle, "proxy.config.net.connections_throttle");
+  if (check_throttle > fds_limit - THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
     if (new_fds_throttle < 1) {
       ink_abort("too few file descriptors (%d) available", fds_limit);
@@ -1233,7 +1234,7 @@ check_fd_limit()
              "connection throttle too high, "
              "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
              "using throttle of %d",
-             fds_throttle, THROTTLE_FD_HEADROOM, fds_limit, new_fds_throttle);
+             check_throttle, THROTTLE_FD_HEADROOM, fds_limit, new_fds_throttle);
     Warning("%s", msg);
   }
 }
@@ -1326,7 +1327,7 @@ static void
 adjust_sys_settings()
 {
   struct rlimit lim;
-  int fds_throttle = -1;
+  int cfg_fds_throttle = -1;
   rlim_t maxfiles;
 
   maxfiles = ink_get_max_files();
@@ -1340,19 +1341,19 @@ adjust_sys_settings()
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = static_cast<int>(lim.rlim_cur);
+      ink_set_fds_limit(lim.rlim_cur);
       syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
              static_cast<int>(lim.rlim_max));
     }
   }
 
-  REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+  REC_ReadConfigInteger(cfg_fds_throttle, "proxy.config.net.connections_throttle");
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-    if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
-      lim.rlim_cur = (lim.rlim_max = (rlim_t)(fds_throttle + THROTTLE_FD_HEADROOM));
+    if (cfg_fds_throttle > static_cast<int>(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
+      lim.rlim_cur = (lim.rlim_max = static_cast<rlim_t>(cfg_fds_throttle + THROTTLE_FD_HEADROOM));
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-        fds_limit = static_cast<int>(lim.rlim_cur);
+        ink_set_fds_limit(lim.rlim_cur);
         syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
                static_cast<int>(lim.rlim_max));
       }
@@ -1392,34 +1393,26 @@ struct ShowStats : public Continuation {
     if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     }
-    int64_t sval, cval;
-
-    NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
-    int64_t d_rb  = sval - last_rb;
+    int64_t d_rb  = Metrics::read(net_rsb.calls_to_readfromnet) - last_rb;
     last_rb      += d_rb;
 
-    NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
-    int64_t d_wb  = sval - last_wb;
+    int64_t d_wb  = Metrics::read(net_rsb.calls_to_writetonet) - last_wb;
     last_wb      += d_wb;
 
-    NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
-    int64_t d_nrb  = sval - last_nrb;
+    int64_t d_nrb  = Metrics::read(net_rsb.read_bytes) - last_nrb;
     last_nrb      += d_nrb;
-    int64_t d_nr   = cval - last_nr;
+    int64_t d_nr   = Metrics::read(net_rsb.read_bytes_count) - last_nr;
     last_nr       += d_nr;
 
-    NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
-    int64_t d_nwb  = sval - last_nwb;
+    int64_t d_nwb  = Metrics::read(net_rsb.write_bytes) - last_nwb;
     last_nwb      += d_nwb;
-    int64_t d_nw   = cval - last_nw;
+    int64_t d_nw   = Metrics::read(net_rsb.write_bytes_count) - last_nw;
     last_nw       += d_nw;
 
-    NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
-    int64_t d_o = sval;
+    int64_t d_o = Metrics::read(net_rsb.connections_currently_open);
+    int64_t d_p = Metrics::read(net_rsb.handler_run) - last_p;
 
-    NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
-    int64_t d_p  = cval - last_p;
-    last_p      += d_p;
+    last_p += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
            d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
@@ -1943,6 +1936,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
+  // Pick the system clock to choose, likely only on Linux. See <linux/time.h>.
+  extern int gSystemClock; // 0 == CLOCK_REALTIME, the default
+  REC_ReadConfigInteger(gSystemClock, "proxy.config.system_clock");
+
   // JSONRPC server and handlers
   if (auto &&[ok, msg] = initialize_jsonrpc_server(); !ok) {
     Warning("JSONRPC server could not be started.\n  Why?: '%s' ... Continuing without it.", msg.c_str());
@@ -2019,14 +2016,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This has some special semantics, in that providing this configuration on
   // command line has higher priority than what is set in records.yaml.
   if (-1 != poll_timeout) {
-    net_config_poll_timeout = poll_timeout;
+    EThread::default_wait_interval_ms = poll_timeout;
   } else {
-    REC_ReadConfigInteger(net_config_poll_timeout, "proxy.config.net.poll_timeout");
+    REC_ReadConfigInteger(EThread::default_wait_interval_ms, "proxy.config.net.poll_timeout");
   }
 
   // This shouldn't happen, but lets make sure we run somewhat reasonable.
-  if (net_config_poll_timeout < 0) {
-    net_config_poll_timeout = 10; // Default value for all platform.
+  if (EThread::default_wait_interval_ms < 0) {
+    EThread::default_wait_interval_ms = 10; // Default value for all platform.
   }
 
   REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
@@ -2309,12 +2306,6 @@ static void
 load_ssl_file_callback(const char *ssl_file)
 {
   FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT, ssl_file);
-}
-
-void
-load_config_file_callback(const char *parent_file, const char *remap_file)
-{
-  FileManager::instance().configFileChild(parent_file, remap_file);
 }
 
 static void

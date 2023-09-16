@@ -193,7 +193,7 @@ a configuration with only one cache volume: :literal:`0`.
 .. ts:stat:: global proxy.process.cache.volume_0.write.backlog.failure integer
    :type: counter
 
-.. ts:stat:: global proxy.process.cache.volume_0.write_bytes_stat integer
+.. ts:stat:: global proxy.process.cache.volume_0.write_bytes integer
    :type: counter
    :units: bytes
    :ungathered:
@@ -203,4 +203,3 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.write.success integer
    :type: counter
-

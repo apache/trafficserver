@@ -226,7 +226,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
    - total_len. The total number of bytes for the document so far.
      Doc->total_len and alternate's total len is set to this value.
    - first_key. Doc's first_key is set to this value.
-   - pin_in_cache. Doc's pinned value is set to this + Thread::get_hrtime().
+   - pin_in_cache. Doc's pinned value is set to this + ink_get_hrtime().
    - earliest_key. If f.use_first_key, Doc's key is set to this value.
    - key. If !f.use_first_key, Doc's key is set to this value.
    - blocks. Used only if write_len is set. Data to be written
@@ -256,8 +256,10 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
                                                       (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
 
   if (agg_error || max_doc_error) {
-    CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
-    CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
+    Metrics::increment(cache_rsb.write_backlog_failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+    Metrics::increment(cache_rsb.status[op_type].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
     vol->agg_todo_size -= agg_len;
     io.aio_result       = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
@@ -330,9 +332,8 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
   }
   b->f.pinned        = pinned;
   b->f.evacuate_head = 1;
-  b->evac_frags.key  = zero_key; // ensure that the block gets
-  // evacuated no matter what
-  b->readers = 0; // ensure that the block does not disappear
+  b->evac_frags.key.clear(); // ensure that the block gets evacuated no matter what
+  b->readers = 0;            // ensure that the block does not disappear
   return b;
 }
 
@@ -437,14 +438,14 @@ Vol::aggWriteDone(int event, Event *e)
 CacheVC *
 new_DocEvacuator(int nbytes, Vol *vol)
 {
-  CacheVC *c        = new_CacheVC(vol);
-  ProxyMutex *mutex = vol->mutex.get();
-  c->base_stat      = cache_evacuate_active_stat;
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->buf          = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  c->vol          = vol;
-  c->f.evacuator  = 1;
-  c->earliest_key = zero_key;
+  CacheVC *c = new_CacheVC(vol);
+  c->op_type = static_cast<int>(CacheOpType::Evacuate);
+  Metrics::increment(cache_rsb.status[c->op_type].active);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  c->buf         = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  c->vol         = vol;
+  c->f.evacuator = 1;
+  c->earliest_key.clear();
   SET_CONTINUATION_HANDLER(c, &CacheVC::evacuateDocDone);
   return c;
 }
@@ -697,7 +698,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   if (!b) {
     goto Ldone;
   }
-  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<time_t>(Thread::get_hrtime() / HRTIME_SECOND)) {
+  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<time_t>(ink_get_hrtime() / HRTIME_SECOND)) {
     goto Ldone;
   }
 
@@ -834,7 +835,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->checksum                        = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
-      doc->pinned = static_cast<time_t>(Thread::get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+      doc->pinned = static_cast<time_t>(ink_get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
     } else {
       dir_set_pinned(&vc->dir, 0);
       doc->pinned = 0;
@@ -844,7 +845,7 @@ agg_copy(char *p, CacheVC *vc)
       if (doc->data_len() || vc->f.allow_empty_doc) {
         doc->key = vc->earliest_key;
       } else { // the vector is being written by itself
-        if (vc->earliest_key == zero_key) {
+        if (vc->earliest_key.is_zero()) {
           do {
             rand_CacheKey(&doc->key, vc->vol->mutex);
           } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
@@ -871,7 +872,7 @@ agg_copy(char *p, CacheVC *vc)
       if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
         ink_assert(vc->write_vector->count() > 0);
         if (!vc->f.update && !vc->f.evac_vector) {
-          ink_assert(!(vc->first_key == zero_key));
+          ink_assert(!(vc->first_key.is_zero()));
           CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
           http_info->object_size_set(vc->total_len);
         }
@@ -895,7 +896,12 @@ agg_copy(char *p, CacheVC *vc)
       {
         ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex.get();
         ink_assert(mutex->thread_holding == this_ethread());
-        CACHE_DEBUG_SUM_DYN_STAT(cache_write_bytes_stat, vc->write_len);
+
+// ToDo: Why are these for debug only ?
+#ifdef DEBUG
+        Metrics::increment(cache_rsb.write_backlog_failure);
+        Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+#endif
       }
       if (vc->f.rewrite_resident_alt) {
         iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
@@ -933,12 +939,11 @@ agg_copy(char *p, CacheVC *vc)
     // for evacuated documents, copy the data, and update directory
     Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
     int l    = vc->vol->round_to_approx_size(doc->len);
-    {
-      ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex.get();
-      ink_assert(mutex->thread_holding == this_ethread());
-      CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);
-      CACHE_DEBUG_SUM_DYN_STAT(cache_gc_bytes_evacuated_stat, l);
-    }
+
+#ifdef DEBUG
+    Metrics::increment(cache_rsb.gc_frags_evacuated);
+    Metrics::increment(vol->cache_vol->vol_rsb.gc_frags_evacuated);
+#endif
 
     doc->sync_serial  = vc->vol->header->sync_serial;
     doc->write_serial = vc->vol->header->write_serial;
@@ -1024,7 +1029,8 @@ Vol::agg_wrap()
   dir_clean_vol(this);
   {
     Vol *vol = this;
-    CACHE_INCREMENT_DYN_STAT(cache_directory_wrap_stat);
+    Metrics::increment(cache_rsb.directory_wrap);
+    Metrics::increment(vol->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", vol->cache_vol->vol_number, vol->hash_text.get());
   }
   periodic_scan();
@@ -1176,7 +1182,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
       dir_delete(&earliest_key, vol, &earliest_dir);
     }
   }
-  if (is_dbg_ctl_enabled(dbg_ctl_cache_update)) {
+  if (dbg_ctl_cache_update.on()) {
     if (f.update && closed > 0) {
       if (!total_len && !f.allow_empty_doc && alternate_index != CACHE_ALT_REMOVED) {
         Dbg(dbg_ctl_cache_update, "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
@@ -1198,17 +1204,9 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   // size of the document
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
     DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
-    switch (fragment) {
-    case 0:
-      CACHE_INCREMENT_DYN_STAT(cache_single_fragment_document_count_stat);
-      break;
-    case 1:
-      CACHE_INCREMENT_DYN_STAT(cache_two_fragment_document_count_stat);
-      break;
-    default:
-      CACHE_INCREMENT_DYN_STAT(cache_three_plus_plus_fragment_document_count_stat);
-      break;
-    }
+
+    Metrics::increment(cache_rsb.fragment_document_count[std::max(fragment, 2)]);
+    Metrics::increment(vol->cache_vol->vol_rsb.fragment_document_count[std::max(fragment, 2)]);
   }
   if (f.close_complete) {
     recursive++;
@@ -1659,7 +1657,8 @@ Lsuccess:
   return callcont(CACHE_EVENT_OPEN_WRITE);
 
 Lfailure:
-  CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
+  Metrics::increment(cache_rsb.status[op_type].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
 Lcancel:
   if (od) {
@@ -1682,7 +1681,8 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
     return free_CacheVC(this);
   }
   if (((err = vol->open_write_lock(this, false, 1)) > 0)) {
-    CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
+    Metrics::increment(cache_rsb.status[op_type].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
     free_CacheVC(this);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
     return EVENT_DONE;
@@ -1712,15 +1712,15 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 
   ink_assert(caches[frag_type] == this);
 
-  intptr_t res      = 0;
-  CacheVC *c        = new_CacheVC(cont);
-  ProxyMutex *mutex = cont->mutex.get();
+  intptr_t res = 0;
+  CacheVC *c   = new_CacheVC(cont);
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
-  c->vio.op    = VIO::WRITE;
-  c->base_stat = cache_write_active_stat;
-  c->vol       = key_to_vol(key, hostname, host_len);
-  Vol *vol     = c->vol;
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+  c->vio.op  = VIO::WRITE;
+  c->op_type = static_cast<int>(CacheOpType::Write);
+  c->vol     = key_to_vol(key, hostname, host_len);
+  Vol *vol   = c->vol;
+  Metrics::increment(cache_rsb.status[c->op_type].active);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = frag_type;
   /*
@@ -1742,7 +1742,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 
   if ((res = c->vol->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
-    CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_FAILURE);
+    Metrics::increment(cache_rsb.status[c->op_type].failure);
+    Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-res);
     free_CacheVC(c);
     return ACTION_RESULT_DONE;
@@ -1777,12 +1778,11 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   }
 
   ink_assert(caches[type] == this);
-  intptr_t err      = 0;
-  int if_writers    = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
-  CacheVC *c        = new_CacheVC(cont);
-  ProxyMutex *mutex = cont->mutex.get();
-  c->vio.op         = VIO::WRITE;
-  c->first_key      = *key;
+  intptr_t err   = 0;
+  int if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
+  CacheVC *c     = new_CacheVC(cont);
+  c->vio.op      = VIO::WRITE;
+  c->first_key   = *key;
   /*
      The transition from single fragment document to a multi-fragment document
      would cause a problem if the key and the first_key collide. In case of
@@ -1828,16 +1828,18 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
        open_write with info set
        close
      */
-    c->f.update  = 1;
-    c->base_stat = cache_update_active_stat;
+    c->f.update = 1;
+    c->op_type  = static_cast<int>(CacheOpType::Update);
     DDbg(dbg_ctl_cache_update, "Update called");
     info->object_key_get(&c->update_key);
-    ink_assert(!(c->update_key == zero_key));
+    ink_assert(!(c->update_key.is_zero()));
     c->update_len = info->object_size_get();
   } else {
-    c->base_stat = cache_write_active_stat;
+    c->op_type = static_cast<int>(CacheOpType::Write);
   }
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
+
+  Metrics::increment(cache_rsb.status[c->op_type].active);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->pin_in_cache = apin_in_cache;
 
   {
@@ -1887,7 +1889,8 @@ Lmiss:
   return ACTION_RESULT_DONE;
 
 Lfailure:
-  CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_FAILURE);
+  Metrics::increment(cache_rsb.status[c->op_type].failure);
+  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
   if (c->od) {
     c->openWriteCloseDir(EVENT_IMMEDIATE, nullptr);

@@ -38,7 +38,7 @@ initialize_thread_for_http_sessions(EThread *, int)
   ink_assert(false);
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 void
 APIHooks::append(INKContInternal *cont)
 {
@@ -104,8 +104,6 @@ HttpAPIHooks *http_global_hooks        = nullptr;
 SslAPIHooks *ssl_hooks                 = nullptr;
 LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
-
-HttpBodyFactory *body_factory = nullptr;
 
 void
 HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
@@ -215,7 +213,7 @@ INKVConnInternal::INKVConnInternal() : INKContInternal() {}
 
 INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
 
-#include "../src/traffic_server/FetchSM.h"
+#include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()

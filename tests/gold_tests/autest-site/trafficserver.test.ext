@@ -181,7 +181,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     # Below was to make shorter paths but the code in
     # set runtime directory(local state dir)
     p.Env['PROXY_CONFIG_LOCAL_STATE_DIR'] = runtime_dir
-    p.Env['PROXY_CONFIG_HOSTDB_STORAGE_PATH'] = runtime_dir
     p.Variables.RUNTIMEDIR = runtime_dir
     p.Variables.LOCALSTATEDIR = runtime_dir
 

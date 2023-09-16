@@ -51,6 +51,7 @@ libhttp3_a_SOURCES = \
   Http3HeaderVIOAdaptor.cc \
   Http3StreamDataVIOAdaptor.cc \
   Http3ProtocolEnforcer.cc \
+  Http3SettingsHandler.cc \
   QPACK.cc
 
 #
@@ -72,7 +73,7 @@ test_LDADD = \
   $(top_builddir)/iocore/net/TLSKeyLogger.o \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/src/api/libtsapi.la \
+  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/src/tscore/libtscore.a \
@@ -86,13 +87,15 @@ test_libhttp3_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@
 test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
+  ./test/stub.cc \
   ./test/test_Http3Frame.cc \
   ./test/test_Http3FrameDispatcher.cc \
   ./Http3ProtocolEnforcer.cc \
   ./Http3FrameDispatcher.cc \
   ./Http3DebugNames.cc \
   ./Http3Config.cc \
-  ./Http3Frame.cc
+  ./Http3Frame.cc \
+  ./Http3SettingsHandler.cc
 
 test_qpack_CPPFLAGS = $(test_CPPFLAGS)
 test_qpack_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@

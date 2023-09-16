@@ -37,17 +37,22 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
 
-static constexpr char debug_tag[]   = "quic_sec";
-static constexpr char v_debug_tag[] = "v_quic_sec";
+namespace
+{
 
-#define QUICDebug(fmt, ...)       Debug(debug_tag, fmt, ##__VA_ARGS__)
-#define QUICQCDebug(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
+DbgCtl dbg_ctl{"quic_sec"};
+DbgCtl dbg_ctl_v{"v_quic_sec"};
+DbgCtl dbg_ctl_quick_ph{"quic_ph"};
+
+} // end anonymous namespace
+
+#define QUICDebug(fmt, ...)       Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
+#define QUICQCDebug(qc, fmt, ...) Dbg(dbg_ctl, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 // ["local dcid" - "local scid"]
-#define QUICPHDebug(dcid, scid, fmt, ...) \
-  Debug(debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+#define QUICPHDebug(dcid, scid, fmt, ...) Dbg(dbg_ctl, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 #define QUICVPHDebug(dcid, scid, fmt, ...) \
-  Debug(v_debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+  Dbg(dbg_ctl_v, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 
 //
 // QUICPacketHandler
@@ -102,7 +107,7 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
 {
   UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload);
 
-  if (is_debug_tag_set(v_debug_tag)) {
+  if (dbg_ctl_v.on()) {
     ip_port_text_buffer ipb;
     QUICConnectionId dcid = QUICConnectionId::ZERO();
     QUICConnectionId scid = QUICConnectionId::ZERO();
@@ -257,7 +262,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
-    if (is_debug_tag_set(v_debug_tag)) {
+    if (dbg_ctl_v.on()) {
       ip_port_text_buffer ipb_from;
       ip_port_text_buffer ipb_to;
       QUICVPHDebug(scid, dcid, "recv LH packet from %s to %s size=%" PRId64,
@@ -299,7 +304,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
   } else {
     // TODO: lookup DCID by 5-tuple when ATS omits SCID
-    if (is_debug_tag_set(v_debug_tag)) {
+    if (dbg_ctl_v.on()) {
       ip_port_text_buffer ipb_from;
       ip_port_text_buffer ipb_to;
       QUICVPHDebug(scid, dcid, "recv SH packet from %s to %s size=%" PRId64,
@@ -339,7 +344,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       this->_send_stateless_reset(dcid, params->instance_id(), udp_packet->getConnection(), udp_packet->from, buf_len - 1);
     udp_packet->free();
 
-    if (is_debug_tag_set(debug_tag) && sent) {
+    if (dbg_ctl.on() && sent) {
       QUICPHDebug(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid.hex().c_str());
     }
 
@@ -350,7 +355,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       this->_send_stateless_reset(dcid, params->instance_id(), udp_packet->getConnection(), udp_packet->from, buf_len - 1);
     udp_packet->free();
 
-    if (is_debug_tag_set(debug_tag) && sent) {
+    if (dbg_ctl.on() && sent) {
       QUICPHDebug(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid.hex().c_str());
     }
 
@@ -367,7 +372,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICConnectionId original_cid = dcid;
     QUICConnectionId peer_cid     = scid;
 
-    if (is_debug_tag_set("quic_sec")) {
+    if (dbg_ctl.on()) {
       QUICPHDebug(peer_cid, original_cid, "client initial dcid=%s", original_cid.hex().c_str());
     }
 
@@ -376,7 +381,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
              &this->_rtable, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->thread      = eth;
     vc->mutex       = new_ProxyMutex();
     vc->action_     = *this->action_;
@@ -555,7 +560,7 @@ QUICPacketHandlerOut::event_handler(int event, Event *data)
     return EVENT_CONT;
   }
   default:
-    Debug("quic_ph", "Unknown Event (%d)", event);
+    Dbg(dbg_ctl_quic_ph, "Unknown Event (%d)", event);
 
     break;
   }
@@ -576,7 +581,7 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
   const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
   uint64_t buf_len     = block->size();
 
-  if (is_debug_tag_set(debug_tag)) {
+  if (dbg_ctl.on()) {
     ip_port_text_buffer ipb_from;
     ip_port_text_buffer ipb_to;
     QUICQCDebug(this->_vc, "recv %s packet from %s to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),

@@ -24,6 +24,7 @@ Record statistics support
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
 #include <string_view>
+#include <list>
 
 //-------------------------------------------------------------------------
 // RecAllocateRawStatBlock
@@ -341,14 +342,37 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
 }
 
 //-------------------------------------------------------------------------
+// Register a new stats sync feature. ToDo: This is piggybacking on the
+// old metrics for now, this should likely move to the Metrics interface
+// later, and let it create a sync thread (or use TASK threads if these
+// callbacks are deemed cheap.)
+//-------------------------------------------------------------------------
+
+static std::list<RecCallbackFunction> _newCbs;
+
+void
+RecRegNewSyncStatSync(RecCallbackFunction callback)
+{
+  _newCbs.push_back(callback);
+}
+
+//-------------------------------------------------------------------------
 // RecExecRawStatSyncCbs
 //-------------------------------------------------------------------------
+
 int
 RecExecRawStatSyncCbs()
 {
   RecRecord *r;
   int i, num_records;
 
+  // Call the new sync callbacks, needed for the new Metrics. ToDo: This should move
+  // once the old sync thread and events are completely removed.
+  for (const auto &callback : _newCbs) {
+    callback();
+  }
+
+  // Now sync all the legacy metrics
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     r = &(g_records[i]);

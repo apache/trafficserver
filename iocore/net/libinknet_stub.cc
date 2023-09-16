@@ -71,7 +71,7 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
   ink_assert(false);
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 int
 APIHook::invoke(int, void *) const
 {
@@ -156,7 +156,7 @@ PreWarmManager::reconfigure()
 
 PreWarmManager prewarmManager;
 
-#include "../src/traffic_server/FetchSM.h"
+#include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()

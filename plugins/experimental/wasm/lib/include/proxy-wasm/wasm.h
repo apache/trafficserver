@@ -337,6 +337,7 @@ public:
 
 protected:
   std::shared_ptr<WasmBase> wasm_base_;
+  std::unordered_map<std::string, bool> plugin_canary_cache_;
 };
 
 std::string makeVmKey(std::string_view vm_id, std::string_view configuration,

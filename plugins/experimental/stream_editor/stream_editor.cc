@@ -827,7 +827,7 @@ read_conf(const char *filename, ruleset_t *&in, ruleset_t *&out)
   fclose(file);
 }
 
-extern "C" void
+void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;

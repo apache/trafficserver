@@ -31,11 +31,11 @@ containing the append text is a parameter you specify in
 
     append_transform.so path/to/file
 
-The append_transform plugin is based on ``null_transform.c``. The only
+The append_transform plugin is based on ``null_transform.cc``. The only
 difference is that after the plugin feeds the document through the
 transformation, it adds text to the response.
 
-Below is a list of the functions in ``append_transform.c``, in the order
+Below is a list of the functions in ``append_transform.cc``, in the order
 they appear in the source code. Below each entry is a description of
 what the function does:
 
@@ -46,12 +46,12 @@ what the function does:
 
    .. code-block:: c
 
-       typedef struct {
+       struct MyData {
            TSVIO output_vio;
            TSIOBuffer output_buffer;
            TSIOBufferReader output_reader;
            int append_needed;
-       } MyData;
+       };
 
    The ``MyData`` structure is used to represent data that the
    transformation (vconnection) needs. The transformation's data pointer

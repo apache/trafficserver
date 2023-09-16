@@ -1480,7 +1480,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     }
     p->read_vio = nullptr;
     p->vc->do_io_close(EHTTP_ERROR);
-    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_abort);
+    Metrics::increment(http_rsb.origin_shutdown_tunnel_abort);
     update_stats_after_abort(p->vc_type);
   }
 }
@@ -1597,7 +1597,7 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
         c->alive = false;
-        HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
+        Metrics::decrement(http_rsb.current_cache_connections);
       } else if (c->self_producer) {
         chain_abort_cache_write(c->self_producer);
       }
@@ -1711,7 +1711,7 @@ HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
   switch (t) {
   case HT_CACHE_READ:
   case HT_CACHE_WRITE:
-    HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
+    Metrics::decrement(http_rsb.current_cache_connections);
     break;
   default:
     // Handled here:
@@ -1729,14 +1729,14 @@ HttpTunnel::internal_error()
 void
 HttpTunnel::mark_tls_tunnel_active()
 {
-  _tls_tunnel_last_update = Thread::get_hrtime();
+  _tls_tunnel_last_update = ink_get_hrtime();
 
   if (_tls_tunnel_active) {
     return;
   }
 
   _tls_tunnel_active = true;
-  HTTP_INCREMENT_DYN_STAT(tunnel_current_active_connections_stat);
+  Metrics::increment(http_rsb.tunnel_current_active_connections);
 
   _schedule_tls_tunnel_activity_check_event();
 }
@@ -1749,7 +1749,7 @@ HttpTunnel::mark_tls_tunnel_inactive()
   }
 
   _tls_tunnel_active = false;
-  HTTP_DECREMENT_DYN_STAT(tunnel_current_active_connections_stat);
+  Metrics::decrement(http_rsb.tunnel_current_active_connections);
 
   if (_tls_tunnel_activity_check_event) {
     _tls_tunnel_activity_check_event->cancel();
@@ -1780,7 +1780,7 @@ HttpTunnel::_is_tls_tunnel_active() const
   // This should not be called if period is 0
   ink_release_assert(period > 0);
 
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
 
   Debug("http_tunnel", "now=%" PRId64 " last_update=%" PRId64, now, _tls_tunnel_last_update);
 

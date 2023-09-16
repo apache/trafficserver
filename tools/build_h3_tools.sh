@@ -28,7 +28,7 @@ cd "${WORKDIR}"
 echo "Building H3 dependencies in ${WORKDIR} ..."
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.0+quic+locks"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.2+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -113,29 +113,29 @@ else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.20.1.${OS}-${ARCH}.tar.gz
-rm go1.20.1.${OS}-${ARCH}.tar.gz
+wget https://go.dev/dl/go1.21.0.${OS}-${ARCH}.tar.gz
+sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.0.${OS}-${ARCH}.tar.gz
+rm go1.21.0.${OS}-${ARCH}.tar.gz
+sudo chmod -R a+rX ${BASE}
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
   git clone https://boringssl.googlesource.com/boringssl
   cd boringssl
-  git checkout 31bad2514d21f6207f3925ba56754611c462a873
+  git checkout e4f60679caa293c047be69f57fc48b46c7452327
   cd ..
 fi
 cd boringssl
-mkdir -p build
-cd build
 cmake \
+  -B build \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DBUILD_SHARED_LIBS=1 ../
-
-${MAKE} -j ${num_threads}
-sudo ${MAKE} install
-cd ../..
+  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
+  -DBUILD_SHARED_LIBS=1
+cmake --build build -j ${num_threads}
+sudo cmake --install build
+sudo chmod -R a+rX ${BASE}
 
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
@@ -155,19 +155,21 @@ sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
 [ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
 sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
 sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
+sudo chmod -R a+rX ${BASE}
 cd ..
 
-# OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
 echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
 cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install_sw
+sudo chmod -R a+rX ${BASE}
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
 sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # OpenSSL will install in /lib or lib64 depending upon the architecture.
@@ -183,11 +185,7 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-if [ ! -d nghttp3 ]; then
-  git clone --depth 1 -b v0.12.0 https://github.com/ngtcp2/nghttp3.git
-  cd nghttp3
-  cd ..
-fi
+[ ! -d nghttp3 ] && git clone --depth 1 -b v0.13.0 https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 autoreconf -if
 ./configure \
@@ -199,15 +197,12 @@ autoreconf -if
   --enable-lib-only
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-if [ ! -d ngtcp2 ]; then
-  git clone --depth 1 -b v0.16.0 https://github.com/ngtcp2/ngtcp2.git
-  cd ngtcp2
-  cd ..
-fi
+[ ! -d ngtcp2 ] && git clone --depth 1 -b v0.17.0 https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -219,18 +214,12 @@ autoreconf -if
   --enable-lib-only
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-if [ ! -d nghttp2 ]; then
-  git clone https://github.com/tatsuhiro-t/nghttp2.git
-  cd nghttp2
-  # The following has a fix for builds on systems, like Mac, which do not have
-  # libev. There isn't currently a release with this fix yet.
-  git checkout 2c955ab76b42dfce58e812da6bbe8a526a125fea
-  cd ..
-fi
+[ ! -d nghttp2 ] && git clone --depth 1 -b v1.55.1 https://github.com/tatsuhiro-t/nghttp2.git
 cd nghttp2
 autoreconf -if
 if [ `uname -s` = "Darwin" ] || [ `uname -s` = "FreeBSD" ]
@@ -252,15 +241,13 @@ fi
   ${ENABLE_APP}
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --depth 1 -b curl-8_2_1 https://github.com/curl/curl.git
 cd curl
-# There isn't currently a released curl yet which has the updates for the above
-# ngtcp2 and nghttp3 library versions.
-git checkout 891e25edb8527bb8de79cdca6d943216c230e905
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.
 autoreconf -fi || autoreconf -fi
@@ -275,4 +262,5 @@ autoreconf -fi || autoreconf -fi
   LDFLAGS="${LDFLAGS}"
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+sudo chmod -R a+rX ${BASE}
 cd ..

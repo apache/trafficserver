@@ -33,6 +33,11 @@
 #define BUILD_NUMBER "@BUILD_NUMBER@"
 
 #cmakedefine HAVE_BROTLI_ENCODE_H 1
+#cmakedefine HAVE_CLOCK_GETTIME 1
+#cmakedefine HAVE_CURSES_H 1
+#cmakedefine HAVE_NCURSES_H 1
+#cmakedefine HAVE_NCURSES_CURSES_H 1
+#cmakedefine HAVE_NCURSES_NCURSES_H 1
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FLOAT_H 1
 #cmakedefine HAVE_LZMA_H 1
@@ -86,9 +91,8 @@
 
 #define SIZEOF_VOIDP @CMAKE_SIZEOF_VOID_P@
 
-/* TODO(cmcfarlen): make this configurable */
-#define TS_PKGSYSUSER "@pkgsysuser@"
-#define TS_PKGSYSGROUP "@pkgsysgroup@"
+#define TS_PKGSYSUSER "@TS_PKGSYSUSER@"
+#define TS_PKGSYSGROUP "@TS_PKGSYSGROUP@"
 
 #define TS_BUILD_PREFIX "@CMAKE_INSTALL_PREFIX@"
 #define TS_BUILD_EXEC_PREFIX ""
@@ -135,7 +139,6 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_HWLOC
 #cmakedefine01 TS_USE_KQUEUE
 #cmakedefine01 TS_USE_LINUX_IO_URING
-#cmakedefine01 TS_USE_LINUX_NATIVE_AIO
 #cmakedefine01 TS_USE_POSIX_CAP
 #cmakedefine01 TS_USE_QUIC
 #cmakedefine01 TS_USE_REMOTE_UNWINDING

@@ -107,7 +107,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
 
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
-    HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
+    Metrics::increment(http_rsb.current_cache_connections);
     ink_assert((cache_read_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
     if (cache_read_vc) {
       // redirect follow in progress, close the previous cache_read_vc
@@ -164,7 +164,7 @@ HttpCacheSM::write_retry_done() const
 {
   MgmtInt const timeout_ms = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
   if (0 < timeout_ms && 0 < open_write_start) {
-    ink_hrtime const elapsed = Thread::get_hrtime() - open_write_start;
+    ink_hrtime const elapsed = ink_get_hrtime() - open_write_start;
     MgmtInt const msecs      = ink_hrtime_to_msec(elapsed);
     return timeout_ms < msecs;
   } else {
@@ -186,7 +186,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
-    HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
+    Metrics::increment(http_rsb.current_cache_connections);
     ink_assert(cache_write_vc == nullptr);
     cache_write_vc = static_cast<CacheVConnection *>(data);
     open_write_cb  = true;
@@ -217,7 +217,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
         open_write_tries            = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
         MgmtInt const retry_timeout = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
         if (0 < retry_timeout) {
-          open_write_start = Thread::get_hrtime() - ink_hrtime_from_msec(retry_timeout);
+          open_write_start = ink_get_hrtime() - ink_hrtime_from_msec(retry_timeout);
         }
       }
     }
@@ -366,7 +366,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   open_write_cb = false;
   open_write_tries++;
   if (0 == open_write_start) {
-    open_write_start = Thread::get_hrtime();
+    open_write_start = ink_get_hrtime();
   }
   this->retry_write = retry;
 
