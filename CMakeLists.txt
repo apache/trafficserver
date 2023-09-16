@@ -48,9 +48,19 @@ execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAI
 
 # Options
 include(AutoOptionHelpers)
-auto_off_feature_package(jemalloc TS_HAS_JEMALLOC "Use jemalloc (default OFF)")
-auto_off_feature_package(mimalloc TS_HAS_MIMALLOC "Use mimalloc (default OFF)")
-auto_off_feature_package(LuaJIT LuaJIT_FOUND "Use LuaJIT (default OFF)")
+auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
+auto_option(JEMALLOC
+    FEATURE_VAR TS_HAS_JEMALLOC
+    PACKAGE_DEPENDS jemalloc
+    DEFAULT OFF
+)
+auto_option(MIMALLOC
+    FEATURE_VAR TS_HAS_MIMALLOC
+    PACKAGE_DEPENDS mimalloc
+    DEFAULT OFF
+)
+auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
+auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
@@ -104,10 +114,7 @@ set(ENABLE_TPROXY
         anything else to enable."
 )
 option(ENABLE_QUICHE   "Use quiche (default OFF)")
-auto_feature_package(unwind
-    TS_USE_REMOTE_UNWINDING
-    "Use libunwind if found on system (default ON)"
-)
+
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
 option(ENABLE_EXAMPLE  "Build example directory (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
@@ -126,10 +133,6 @@ set(MAX_THREADS_PER_TYPE
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
-auto_feature_package(hwloc
-    TS_USE_HWLOC
-    "Use hwloc"
-)
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
@@ -183,10 +186,6 @@ endif()
 find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
-endif()
-
-if(ENABLE_LUAJIT)
-    find_package(LuaJIT REQUIRED)
 endif()
 
 if(ENABLE_POSIX_CAP)
@@ -543,5 +542,4 @@ cmake_print_variables(TS_PKGSYSGROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
-cmake_print_variables(OPENSSL_VERSION)
 print_auto_options_summary()

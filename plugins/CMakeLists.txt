@@ -48,7 +48,7 @@ if(NOT OPENSSL_IS_BORINGSSL)
     add_subdirectory(ja3_fingerprint)
 endif()
 
-if(ENABLE_LUAJIT)
+if(USE_LUAJIT)
     add_subdirectory(lua)
 endif()
 

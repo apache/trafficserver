@@ -115,26 +115,6 @@ macro(auto_option _FEATURE_NAME)
   endif()
 endmacro()
 
-macro(AUTO_FEATURE_PACKAGE _PACKAGE_NAME _FEATURE_VAR _DESCRIPTION)
-  string(TOUPPER ${_PACKAGE_NAME} UP)
-  auto_option(${UP}
-    DESCRIPTION ${_DESCRIPTION}
-    FEATURE_VAR ${_FEATURE_VAR}
-    PACKAGE_DEPENDS ${_PACKAGE_NAME}
-  )
-endmacro()
-
-macro(AUTO_OFF_FEATURE_PACKAGE _PACKAGE_NAME _FEATURE_VAR _DESCRIPTION)
-  # Need to set our cache string before the default one gets set.
-  string(TOUPPER ${_PACKAGE_NAME} UP)
-  auto_feature_package(${UP}
-    DESCRIPTION ${_DESCRIPTION}
-    FEATURE_VAR ${_FEATURE_VAR}
-    PACKAGE_DEPENDS ${_PACKAGE_NAME}
-    DEFAULT OFF
-  )
-endmacro()
-
 # Prints a colorized summary of one auto option.
 function(PRINT_AUTO_OPTION _NAME)
   string(ASCII 27 ESC)
