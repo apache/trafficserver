@@ -44,6 +44,10 @@ else()
   set(yaml-cpp-label-postfix "static")
 endif()
 
+if (NOT YAML_BUILD_SHARED_LIBS)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 set(build-shared $<BOOL:${YAML_BUILD_SHARED_LIBS}>)
 set(build-windows-dll $<AND:$<BOOL:${CMAKE_HOST_WIN32}>,${build-shared}>)
 set(not-msvc $<NOT:$<CXX_COMPILER_ID:MSVC>>)

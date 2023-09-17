@@ -276,6 +276,26 @@ software:
 > The functionality of OpenSSL <http://www.openssl.org/> is
 > utilized in parts of the software.
 
+## Fuzzing
+
+### FLAGS
+
+```bash
+export CC=clang
+export CXX=clang++
+export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link"
+export CXXFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link"
+export LIB_FUZZING_ENGINE=-fsanitize=fuzzer
+```
+
+### Compile
+
+```bash
+mkdir -p build && cd build/
+cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF ../.
+make -j$(nproc)
+```
+
 ## ADDITIONAL INFO
 
 - Web page: https://trafficserver.apache.org/

@@ -63,6 +63,7 @@ auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
+option(ENABLE_FUZZING  "Enable fuzzing (default OFF)")
 option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
@@ -375,6 +376,13 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>)
 
+# Enable fuzzing
+if(ENABLE_FUZZING)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "Fuzzing is only supported with clang")
+    endif()
+endif()
+
 # Common includes for everyone
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
@@ -447,6 +455,9 @@ endif()
 add_subdirectory(src/tests)
 if(ENABLE_AUTEST)
     add_subdirectory(tests)
+endif()
+if(ENABLE_FUZZING)
+    add_subdirectory(tests/fuzzing)
 endif()
 add_subdirectory(plugins)
 add_subdirectory(configs)
