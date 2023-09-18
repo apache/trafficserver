@@ -34,10 +34,11 @@ endfunction()
 
 macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
   if(${${_OPTION_VAR}} STREQUAL AUTO)
-    set(STRICTNESS QUIET)
+    set(STRICTNESS)
   else()
     set(STRICTNESS REQUIRED)
   endif()
+
 
   foreach(PACKAGE_NAME ${_PACKAGE_DEPENDS})
     find_package(${PACKAGE_NAME} ${STRICTNESS})
@@ -97,7 +98,10 @@ macro(auto_option _FEATURE_NAME)
     set(FEATURE_VAR "USE_${_FEATURE_NAME}")
   endif()
 
-  if(NOT ARG_DEFAULT)
+
+  if(ARG_DEFAULT STREQUAL OFF)
+    set(DEFAULT OFF)
+  elseif(NOT ARG_DEFAULT)
     set(DEFAULT AUTO)
   elseif(ARG_DEFAULT MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
     set(DEFAULT ${ARG_DEFAULT})
@@ -107,7 +111,7 @@ macro(auto_option _FEATURE_NAME)
 
   _register_auto_option(${OPTION_VAR} ${FEATURE_VAR} "${ARG_DESCRIPTION}" "${DEFAULT}")
 
-  if(${${OPTION_VAR}})
+  if(${${OPTION_VAR}} MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
     set(${FEATURE_VAR} TRUE)
     _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
   else()
