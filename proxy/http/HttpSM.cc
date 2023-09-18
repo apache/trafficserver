@@ -7394,9 +7394,8 @@ HttpSM::kill_this()
     if (_netvc) {
       _netvc->do_io_close();
       free_MIOBuffer(_netvc_read_buffer);
-    } else if (server_txn == nullptr) {
-      this->cancel_pending_server_connection();
     }
+    this->cancel_pending_server_connection();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort
