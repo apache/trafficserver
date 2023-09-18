@@ -1839,7 +1839,6 @@ HttpTransact::PPDNSLookup(State *s)
   //  parents, check to see if we've already built our request
   if (!s->hdr_info.server_request.valid()) {
     build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-
     // Take care of deferred (issue revalidate) work in building
     //   the request
     if (s->pending_work != nullptr) {
@@ -7751,8 +7750,8 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   ink_assert(outgoing_version != HTTP_0_9);
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
-
   URL *url = outgoing_request->url_get();
+
   // Remove fragment from upstream URL
   url->fragment_set(nullptr, 0);
 
@@ -7790,6 +7789,13 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     // cannot deal with absolute URLs.
     TxnDebug("http_trans", "removing host name from url");
     HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
+  }
+
+  // If we are going to a peer cache and want to use the pristine URL, get it from the base request
+  if (s->parent_result.use_pristine) {
+    int tmp_len   = 0;
+    auto tmp_char = s->unmapped_url.host_get(&tmp_len);
+    outgoing_request->url_get()->host_set(tmp_char, tmp_len);
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,

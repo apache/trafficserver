@@ -476,9 +476,18 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
     if (ring_mode == NH_PEERING_RING && !cache_peer_result && cur_ring == 0) {
       result.do_not_cache_response = true;
+
       NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
                (result.do_not_cache_response) ? "true" : "false");
     }
+
+    // We want to use the pristine/pre-remap URL when going to a peer so it can handle
+    // the request without needing extra remaps to handle the post-remap URL
+    if (ring_mode == NH_PEERING_RING && cur_ring == 0 && use_pristine) {
+      result.use_pristine = true;
+      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] setting use pristine to true", sm_id);
+    }
+
     ink_assert(result.hostname != nullptr);
     ink_assert(result.port != 0);
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result.result],
@@ -492,6 +501,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     result.hostname = nullptr;
     result.port     = 0;
     result.retry    = false;
+
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
              ParentResultStr[result.result]);
   }
