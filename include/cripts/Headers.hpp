@@ -26,7 +26,7 @@
 #include <ts/remap.h>
 #include <ts/ts.h>
 
-#include <cripts/Preamble.hpp>
+#include <cripts/Transaction.hpp>
 
 class Header
 {

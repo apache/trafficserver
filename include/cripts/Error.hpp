@@ -22,8 +22,6 @@
 
 #include <utility>
 
-#include <cripts/Preamble.hpp>
-
 namespace Cript
 {
 class Context;

@@ -20,7 +20,6 @@
 #include <ts/remap.h>
 #include <ts/ts.h>
 
-#include <cripts/Preamble.hpp>
 #include <cripts/Bundle.hpp>
 
 // Case hierarchy, this is from ATS ts_meta.h.

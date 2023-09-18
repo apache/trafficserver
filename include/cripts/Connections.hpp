@@ -33,7 +33,6 @@ class Context;
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-#include <cripts/Preamble.hpp>
 #include <cripts/Matcher.hpp>
 
 namespace Cript

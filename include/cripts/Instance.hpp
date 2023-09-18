@@ -24,7 +24,6 @@
 #include <ts/remap.h>
 #include <ts/ts.h>
 
-#include <cripts/Preamble.hpp>
 #include <cripts/Plugins.hpp>
 #include <cripts/Metrics.hpp>
 #include <cripts/Transaction.hpp>
