@@ -75,21 +75,15 @@ struct SSLNextProtocolTrampoline : public Continuation {
 
     SSLNetVConnection *netvc;
 
-    vio   = static_cast<VIO *>(edata);
-    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
+    vio = static_cast<VIO *>(edata);
 
     switch (event) {
     case VC_EVENT_EOS:
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      if (netvc != nullptr) {
-        netvc->do_io_close();
-      } else { // Try making a unix netvc
-        UnixNetVConnection *vc = dynamic_cast<UnixNetVConnection *>(vio->vc_server);
-        if (vc != nullptr) {
-          vc->do_io_close();
-        }
+      if (vio->vc_server != nullptr) {
+        vio->vc_server->do_io_close();
       }
       delete this;
       return EVENT_ERROR;
@@ -101,9 +95,9 @@ struct SSLNextProtocolTrampoline : public Continuation {
 
     // This wasn't really a TLS connection
     // Trying to process it as a TCP connection
+    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
     if (netvc == nullptr) {
-      UnixNetVConnection *plain_netvc = dynamic_cast<UnixNetVConnection *>(vio->vc_server);
-      send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, plain_netvc);
+      send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, vio->vc_server);
     } else {
       // Cancel the action, so later timeouts and errors don't try to
       // send the event to the Accept object.  After this point, the accept
