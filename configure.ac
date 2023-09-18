@@ -400,6 +400,19 @@ AC_MSG_RESULT([$enable_wccp])
 TS_ARG_ENABLE_VAR([has],[wccp])
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
+#
+# Cripts
+#
+AC_MSG_CHECKING([whether to enable Cripts support])
+AC_ARG_ENABLE([cripts],
+  [AS_HELP_STRING([--enable-cripts],[enable Cripts])],
+  [],
+  [enable_cripts=no]
+)
+AC_MSG_RESULT([$enable_cripts])
+TS_ARG_ENABLE_VAR([has],[cripts])
+AM_CONDITIONAL([BUILD_CRIPTS], [test 0 -ne $has_cripts])
+
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -1440,8 +1453,13 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library, configure --with-pcre=DIR])
 fi
 
+TS_CHECK_PCRE2
+
 # Check for optional brotli library
 TS_CHECK_BROTLI
+
+# Check for optional fmt library
+TS_CHECK_FMT
 
 # Check for optional luajit library
 TS_CHECK_LUAJIT
@@ -2371,6 +2389,7 @@ AC_CONFIG_FILES([
   lib/Makefile
   src/tscpp/api/Makefile
   src/wccp/Makefile
+  src/cripts/Makefile
   lib/fastlz/Makefile
   lib/swoc/Makefile
   lib/yamlcpp/Makefile

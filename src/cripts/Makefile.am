@@ -1,4 +1,6 @@
 #
+# Makefile.am for Cripts module.
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,32 +19,32 @@
 
 include $(top_srcdir)/mk/tidy.mk
 
-bin_PROGRAMS =
-check_PROGRAMS =
-TESTS =
-lib_LTLIBRARIES =
-noinst_PROGRAMS =
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/iocore/eventsystem \
+	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/ \
+	@SWOC_INCLUDES@
 
-SUBDIRS = tscpp/api api
+noinst_LIBRARIES = libcripts.a
 
-if BUILD_WCCP
-SUBDIRS += wccp
-include traffic_wccp/Makefile.inc
-endif
+libcripts_a_SOURCES = \
+	Configs.cc \
+	Connections.cc \
+	Crypto.cc \
+	Error.cc \
+	Files.cc \
+	Geo.cc \
+	Headers.cc \
+	Instance.cc \
+	Lulu.cc \
+	Matcher.cc \
+	Metrics.cc \
+	Plugins.cc \
+	UUID.cc \
+	Urls.cc \
+	Bundles/Common.cc \
+	Bundles/LogsMetrics.cc
 
-if BUILD_CRIPTS
-SUBDIRS += cripts
-endif
-
-include traffic_cache_tool/Makefile.inc
-include traffic_via/Makefile.inc
-include traffic_top/Makefile.inc
-include traffic_server/Makefile.inc
-include traffic_logstats/Makefile.inc
-include traffic_crashlog/Makefile.inc
-include traffic_layout/Makefile.inc
-include traffic_logcat/Makefile.inc
-include traffic_ctl/Makefile.inc
-
-clang-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)
