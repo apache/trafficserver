@@ -31,14 +31,24 @@ add_executable(fuzz_yamlcpp fuzz_yamlcpp.cc)
 
 
 target_link_libraries(fuzz_esi PRIVATE esi-common esicore)
-target_link_libraries(fuzz_hpack PRIVATE ts::http2 ts::hdrs ts::tsapi)
-target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tsapi)
+target_link_libraries(fuzz_hpack PRIVATE records tscore hdrs inkevent)
+target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
 target_link_libraries(fuzz_json PRIVATE libswoc yaml-cpp ts::jsonrpc_protocol)
 target_link_libraries(fuzz_proxy_protocol PRIVATE inknet inkevent ts::tscore yaml-cpp libswoc)
-target_link_libraries(fuzz_rec_http PRIVATE ts::records ts::tsapi)
+target_link_libraries(fuzz_rec_http PRIVATE records tscore libswoc)
 target_link_libraries(fuzz_yamlcpp PRIVATE  yaml-cpp)
 
 
+target_sources(fuzz_hpack PRIVATE
+        ${CMAKE_SOURCE_DIR}/proxy/http2/HTTP2.cc
+        ${CMAKE_SOURCE_DIR}/proxy/http2/Http2Frame.cc
+        ${CMAKE_SOURCE_DIR}/proxy/http2/HPACK.cc
+)
+target_include_directories(fuzz_hpack PRIVATE
+        ${CMAKE_SOURCE_DIR}/proxy/http2
+        ${PROXY_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/iocore/utils
+)
 target_include_directories(fuzz_json PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/mgmt/rpc
