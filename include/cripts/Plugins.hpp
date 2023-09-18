@@ -17,8 +17,6 @@
 */
 #pragma once
 
-#include <cripts/Preamble.hpp>
-
 // This is not awesome, but these APIs are internal to ATS. Once Cripts becomes
 // part of the ATS core, we can remove this.
 

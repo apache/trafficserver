@@ -23,7 +23,6 @@
 #include <ts/ts.h>
 
 #include <cripts/Instance.hpp>
-#include <cripts/Preamble.hpp>
 
 // Some compile time options
 #define USE_CONTEXT_POOL 1
