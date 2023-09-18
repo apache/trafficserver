@@ -221,13 +221,13 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     } else if (this->_control_stream_id != adapter->stream().id()) {
       error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR,
                                            "Only one control stream per peer is permitted");
-      Debug("http3", "CONTROL stream [%lu] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
+      Debug("http3", "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
       break;
     }
     uint64_t nread = 0;
     error          = this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
     if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-      Debug("http3", "CONTROL stream [%lu] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
+      Debug("http3", "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
     }
     // The sender MUST NOT close the control stream, and the receiver MUST NOT request that the sender close the control stream.
     // If either control stream is closed at any point, this MUST be treated as a connection error of type
@@ -237,7 +237,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   case Http3StreamType::PUSH: {
     error =
       std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
-    Debug("http3", "PUSH stream [%lu] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    Debug("http3", "PUSH stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
     // if a server receives a client-initiated push stream, this MUST be treated as a connection error of type
     // H3_STREAM_CREATION_ERROR
     break;
@@ -252,7 +252,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     // processing. If reading is aborted, the recipient SHOULD use the H3_STREAM_CREATION_ERROR error code or a reserved error code
     // (Section 8.1). The recipient MUST NOT consider unknown stream types to be a connection error of any kind.
     error = std::make_unique<Http3Error>(Http3ErrorClass::STREAM, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Stream type unkown");
-    Debug("http3", "UNKNOWN stream [%lu] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    Debug("http3", "UNKNOWN stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
     break;
   }
   default:
