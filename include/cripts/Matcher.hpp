@@ -102,10 +102,10 @@ namespace List
 
   public:
     Method() = delete;
-    explicit Method(Header::Method method) { push_back(method); }
+    explicit Method(Header::Method method) : std::vector<Header::Method>() { push_back(method); }
     void operator=(const Method &) = delete;
 
-    Method(Method const &method) { insert(end(), std::begin(method), std::end(method)); }
+    Method(Method const &method) : std::vector<Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
 
     Method(const std::initializer_list<Method> &list)
     {
