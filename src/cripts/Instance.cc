@@ -46,7 +46,10 @@ Cript::Instance::initialize(int argc, char *argv[], const char *filename)
     plugin_debug_tag = plugin_debug_tag.substr(slash + 1, period - slash - 1);
   }
 
+#pragma push_macro("set")
+#undef set
   dbg_ctl_cript.set(plugin_debug_tag.c_str());
+#pragma pop_macro("set")
   TSDebug("Cript", "Switching instance debug tag to %s", plugin_debug_tag.c_str());
 }
 

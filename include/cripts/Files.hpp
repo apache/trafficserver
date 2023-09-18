@@ -43,7 +43,7 @@ namespace Line
     void operator=(const Reader &) = delete;
 
     explicit Reader(const std::string &path) : _path(path), _stream{path} {}
-    explicit Reader(const Cript::string_view path) : _path(path), _stream{path} {}
+    explicit Reader(const Cript::string_view path) : _path(path), _stream{_path} {}
 
     operator Cript::string() { return line(); }
 
