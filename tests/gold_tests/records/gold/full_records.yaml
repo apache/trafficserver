@@ -585,7 +585,6 @@ ts:
       algorithm: 2
       enabled: 0
       event_period: 1000
-      max_stats_size: 100
   udp:
     enable_gso: 0
     free_cancelled_pkts_sec: 10
