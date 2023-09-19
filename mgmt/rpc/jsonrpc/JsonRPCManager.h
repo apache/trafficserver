@@ -194,6 +194,8 @@ private:
     };
 
     struct InternalHandler; ///< fw declaration
+    /// To avoid long lines.
+    using InternalHandlers = std::unordered_map<std::string, InternalHandler>;
 
   public:
     Dispatcher();
@@ -276,8 +278,8 @@ private:
     };
     // We will keep all the handlers wrapped inside the InternalHandler class, this will help us
     // to have a single container for all the types(method, notification & plugin method(cond var)).
-    std::unordered_map<std::string, InternalHandler> _handlers; ///< Registered handler container.
-    mutable std::mutex _mutex;                                  ///< insert/find/delete mutex.
+    InternalHandlers _handlers; ///< Registered handler container.
+    mutable std::mutex _mutex;  ///< insert/find/delete mutex.
   };
 
   Dispatcher _dispatcher; ///< Internal handler container and dispatcher logic object.
