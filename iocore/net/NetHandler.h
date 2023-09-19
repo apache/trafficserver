@@ -165,6 +165,7 @@ public:
   void remove_from_keep_alive_queue(NetEvent *ne);
   bool add_to_active_queue(NetEvent *ne);
   void remove_from_active_queue(NetEvent *ne);
+  int get_additional_accepts();
 
   /// Per process initialization logic.
   static void init_for_process();

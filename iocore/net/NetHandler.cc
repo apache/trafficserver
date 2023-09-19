@@ -576,3 +576,10 @@ NetHandler::remove_from_active_queue(NetEvent *ne)
     --active_queue_size;
   }
 }
+
+int
+NetHandler::get_additional_accepts()
+{
+  int config_value = config.additional_accepts + 1;
+  return (config_value > 0 ? config_value : INT32_MAX - 1);
+}

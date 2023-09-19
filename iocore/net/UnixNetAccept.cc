@@ -55,9 +55,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   Connection con;
 
   EThread *t             = e->ethread;
-  NetHandler *handler    = get_NetHandler(t);
-  int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
+  int additional_accepts = get_NetHandler(t)->get_additional_accepts();
 
   if (!blockable) {
     if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex, e->ethread)) {
@@ -131,7 +129,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       vc->mutex = h->mutex;
       t->schedule_imm(vc);
     }
-  } while (count <= additional_accepts);
+  } while (count < additional_accepts);
 
 Ldone:
   if (!blockable) {
@@ -141,8 +139,8 @@ Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts + 1);
-  if (count == additional_accepts + 1) {
+  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(na);
   }
   return count;
@@ -305,9 +303,7 @@ NetAccept::do_blocking_accept(EThread *t)
   con.sock_type = SOCK_STREAM;
 
   int count              = 0;
-  NetHandler *handler    = get_NetHandler(t);
-  int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
+  int additional_accepts = get_NetHandler(t)->get_additional_accepts();
 
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
@@ -359,8 +355,12 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
+<<<<<<< HEAD
     Metrics::increment(net_rsb.connections_currently_open);
     count++;
+=======
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+>>>>>>> 98d516134 (addressing comments)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -392,15 +392,7 @@ NetAccept::do_blocking_accept(EThread *t)
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
     localt->schedule_imm(vc);
-  } while (count <= additional_accepts);
-
-  // for dedicated blocking accept threads, if we reach the maximum additional accepts
-  // there is no point to rescheduling it later for fairness of executing other work,
-  // since work is passed to other threads in a round-robin fashion
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts + 1);
-  if (count == additional_accepts + 1) {
-    safe_delay(net_throttle_delay);
-  }
+  } while (count < additional_accepts);
 
   return 1;
 }
@@ -458,9 +450,8 @@ NetAccept::acceptFastEvent(int event, void *ep)
   UnixNetVConnection *vc = nullptr;
   int count              = 0;
   EThread *t             = e->ethread;
-  NetHandler *handler    = get_NetHandler(t);
-  int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
+  NetHandler *h          = get_NetHandler(t);
+  int additional_accepts = h->get_additional_accepts();
 
   do {
     socklen_t sz = sizeof(con.addr);
@@ -553,22 +544,20 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread *t    = e->ethread;
-    NetHandler *h = get_NetHandler(t);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
     // We must be holding the lock already to do later do_io_read's
     SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
     vc->handleEvent(EVENT_NONE, nullptr);
     vc = nullptr;
-  } while (count <= additional_accepts);
+  } while (count < additional_accepts);
 
 Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts + 1);
-  if (count == additional_accepts + 1) {
+  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(this);
   }
   return EVENT_CONT;
