@@ -192,9 +192,9 @@ reload_config(std::string_view const &id, YAML::Node const &params)
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
   // save config time.
-  RecSetRecordInt("proxy.node.config.reconfigure_time", time(nullptr), REC_SOURCE_DEFAULT);
+  RecSetRecordInt("proxy.process.proxy.reconfigure_time", time(nullptr), REC_SOURCE_DEFAULT);
   // TODO: we may not need this any more
-  RecSetRecordInt("proxy.node.config.reconfigure_required", 0, REC_SOURCE_DEFAULT);
+  RecSetRecordInt("proxy.process.proxy.reconfigure_required", 0, REC_SOURCE_DEFAULT);
 
   return resp;
 }

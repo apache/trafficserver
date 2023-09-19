@@ -34,7 +34,7 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   {
     auto [name, value] = *m.begin();
     REQUIRE(value == 0);
-    REQUIRE(name == "proxy.node.api.metrics.bad_id");
+    REQUIRE(name == "proxy.process.api.metrics.bad_id");
 
     REQUIRE(m.begin() != m.end());
     REQUIRE(++m.begin() == m.end());

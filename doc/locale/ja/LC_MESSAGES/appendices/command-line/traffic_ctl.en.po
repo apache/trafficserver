@@ -185,7 +185,7 @@ msgstr ""
 #: ../../../appendices/command-line/traffic_ctl.en.rst:151
 msgid ""
 "The timestamp of the last reconfiguration event (in seconds since epoch) is "
-"published in the `proxy.node.config.reconfigure_time` metric."
+"published in the `proxy.process.proxy.reconfigure_time` metric."
 msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:158

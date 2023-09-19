@@ -57,7 +57,7 @@ public:
     return unlikely(_instance().event_system_shut_down);
   }
 
-  // Keeps track if the server is in draining state, follows the proxy.node.config.draining metric.
+  // Keeps track if the server is in draining state, follows the proxy.process.proxy.draining metric.
   //
   static bool
   is_draining()

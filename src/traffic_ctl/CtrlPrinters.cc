@@ -215,13 +215,13 @@ ConfigStatusPrinter::write_output(YAML::Node const &result)
       recordName = recordInfo.name;
       if (recordName == "proxy.process.version.server.long") {
         std::cout << "Version: " << recordInfo.currentValue << "\n";
-      } else if (recordName == "proxy.node.restarts.proxy.start_time") {
+      } else if (recordName == "proxy.process.proxy.start_time") {
         std::cout << swoc::bwprint(text, "{}: {}\n", "Started at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
-      } else if (recordName == "proxy.node.config.reconfigure_time") {
+      } else if (recordName == "proxy.process.proxy.reconfigure_time") {
         std::cout << swoc::bwprint(text, "{}: {}\n", "Reconfigured at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
-      } else if (recordName == "proxy.node.config.reconfigure_required") {
+      } else if (recordName == "proxy.process.proxy.reconfigure_required") {
         std::cout << "Reconfigure required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
-      } else if (recordName == "proxy.node.config.restart_required.proxy") {
+      } else if (recordName == "proxy.process.proxy.restart_required") {
         std::cout << "Restart required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
       }
     }

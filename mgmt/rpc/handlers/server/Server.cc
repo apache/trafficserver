@@ -64,7 +64,7 @@ static bool
 is_server_draining()
 {
   RecInt draining = 0;
-  if (RecGetRecordInt("proxy.node.config.draining", &draining) != REC_ERR_OKAY) {
+  if (RecGetRecordInt("proxy.config.draining", &draining) != REC_ERR_OKAY) {
     return false;
   }
   return draining != 0;
@@ -73,7 +73,7 @@ is_server_draining()
 static void inline set_server_drain(bool drain)
 {
   TSSystemState::drain(drain);
-  RecSetRecordInt("proxy.node.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
+  RecSetRecordInt("proxy.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
 }
 
 ts::Rv<YAML::Node>

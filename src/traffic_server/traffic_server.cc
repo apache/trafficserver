@@ -306,7 +306,10 @@ public:
 
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
-        RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
+        ts::Metrics &intm = ts::Metrics::getInstance();
+        auto id           = intm.lookup("proxy.process.proxy.draining");
+
+        intm[id] = 1;
         TSSystemState::drain(true);
         // Close listening sockets here only if TS is running standalone
         RecInt close_sockets = 0;
@@ -424,9 +427,11 @@ class MemoryLimit : public Continuation
 public:
   MemoryLimit() : Continuation(new_ProxyMutex())
   {
+    ts::Metrics &intm = ts::Metrics::getInstance();
+
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
-    RecRegisterStatInt(RECT_PROCESS, "proxy.process.traffic_server.memory.rss", static_cast<RecInt>(0), RECP_NON_PERSISTENT);
+    memory_rss = intm.newMetricPtr("proxy.process.traffic_server.memory.rss");
   }
 
   ~MemoryLimit() override { mutex = nullptr; }
@@ -446,7 +451,7 @@ public:
     _memory_limit = _memory_limit >> 10; // divide by 1024
 
     if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-      RecSetRecordInt("proxy.process.traffic_server.memory.rss", _usage.ru_maxrss << 10, REC_SOURCE_DEFAULT); // * 1024
+      ts::Metrics::write(memory_rss, _usage.ru_maxrss << 10); // * 1024
       Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
       if (_memory_limit > 0) {
         if (_usage.ru_maxrss > _memory_limit) {
@@ -474,6 +479,7 @@ public:
 private:
   int64_t _memory_limit = 0;
   struct rusage _usage;
+  ts::Metrics::IntType *memory_rss;
 };
 
 /** Gate the emission of the "Traffic Server is fuly initialized" log message.
@@ -799,8 +805,10 @@ CB_After_Cache_Init()
     emit_fully_initialized_message();
   }
 
-  time_t cache_ready_at = time(nullptr);
-  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at, REC_SOURCE_DEFAULT);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+  auto id           = intm.lookup("proxy.process.proxy.cache_ready_time");
+
+  intm[id].store(time(nullptr));
 
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
@@ -1836,12 +1844,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   syslog_log_configure();
 
   // Register stats
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 1, RECP_NON_PERSISTENT);
-  RecSetRecordInt("proxy.node.restarts.proxy.start_time", time(nullptr), REC_SOURCE_DEFAULT);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+  int32_t id;
+
+  id       = intm.newMetric("proxy.process.proxy.reconfigure_time");
+  intm[id] = time(nullptr);
+  id       = intm.newMetric("proxy.process.proxy.start_time");
+  intm[id] = time(nullptr);
+  // These all gets initialied to 0
+  id = intm.newMetric("proxy.process.proxy.reconfigure_required");
+  id = intm.newMetric("proxy.process.proxy.restart_required");
+  id = intm.newMetric("proxy.process.proxy.draining");
+  // This gets updated later (in the callback)
+  id = intm.newMetric("proxy.process.proxy.cache_ready_time");
 
   // init huge pages
   int enabled;

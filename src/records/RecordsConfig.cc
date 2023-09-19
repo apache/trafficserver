@@ -1255,17 +1255,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_NODE, "proxy.node.hostname", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //#
-  //# Restart Stats
-  //#
-  {RECT_NODE, "proxy.node.restarts.proxy.start_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.cache_ready_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.stop_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.restart_count", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  //#
   //# SSL parent proxying info
   //#
   //# Set the value of this variable to 1 if this node
