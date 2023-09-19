@@ -23,10 +23,6 @@
 
 class EThread;
 class Continuation;
-void
-initialize_thread_for_http_sessions(EThread *, int)
-{
-}
 
 #include "P_UnixNet.h"
 #include "P_DNSConnection.h"
