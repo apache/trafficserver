@@ -124,6 +124,22 @@ public:
     return (metric ? metric->fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
+  int64_t
+  read(IdType id)
+  {
+    auto metric = lookup(id);
+
+    return metric->load();
+  }
+
+  void
+  write(IdType id, int64_t val)
+  {
+    auto metric = lookup(id);
+
+    return metric->store(val);
+  }
+
   std::string_view name(IdType id) const;
 
   bool
