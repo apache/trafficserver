@@ -326,11 +326,12 @@ namespace inliner
       request             += std::string(b1, i);
       request             += "\r\n\r\n";
 
-      ats::io::IO *const io = new io::IO();
+      auto io{std::make_unique<io::IO>()};
 
       TSDebug(PLUGIN_TAG, "request:\n%s", request.c_str());
 
-      ats::get(io, io->copy(request), AnotherClass(src_));
+      auto size{io->copy(request)};
+      ats::get(std::move(io), size, AnotherClass(src_));
     }
   };
 
