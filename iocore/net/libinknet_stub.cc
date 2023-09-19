@@ -107,12 +107,6 @@ APIHooks::head() const
   return nullptr;
 }
 
-void
-ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
-{
-  ink_release_assert(false);
-}
-
 #include "ControlMatcher.h"
 char *
 HttpRequestData::get_string()
