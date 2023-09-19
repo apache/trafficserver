@@ -1240,20 +1240,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.plugin.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
 
-  //##############################################################################
-  //#
-  //# Local Manager Specific Records File
-  //#
-  //# <RECORD-TYPE> <NAME> <TYPE> <VALUE (till end of line)>
-  //#
-  //# *NOTE*: All NODE Records must be placed continuously!
-  //#
-  //# Add NODE       Records Here
-  //##############################################################################
-  {RECT_NODE, "proxy.node.hostname_FQ", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.hostname", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   //#
   //# SSL parent proxying info
   //#

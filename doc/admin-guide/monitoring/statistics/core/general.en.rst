@@ -34,14 +34,6 @@ General
 .. ts:stat:: global proxy.process.proxy.restart_required integer
    :type: flag
 
-.. ts:stat:: global proxy.node.hostname_FQ string ats-host.example.com
-
-   Fully-qualified domain name for the host on which |TS| is running.
-
-.. ts:stat:: global proxy.node.hostname string ats-host
-
-   The hostname only, without domain, for the host on which |TS| is running.
-
 .. ts:stat:: global proxy.process.proxy.cache_ready_time integer
    :type: gauge
    :units: seconds
