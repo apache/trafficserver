@@ -33,7 +33,7 @@
 class SSLNextProtocolAccept : public SessionAccept
 {
 public:
-  SSLNextProtocolAccept(Continuation *, bool);
+  SSLNextProtocolAccept(Continuation *, bool, bool);
   ~SSLNextProtocolAccept() override;
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
@@ -60,6 +60,7 @@ private:
   SSLNextProtocolSet protoset;
   SessionProtocolSet protoenabled;
   bool transparent_passthrough;
+  bool allow_plain;
 
   friend struct SSLNextProtocolTrampoline;
 };

@@ -697,6 +697,7 @@ HTTP Engine
    tr-out                      Outbound transparent.
    tr-pass                     Pass through enabled.
    mptcp                       Multipath TCP.
+   allow-plain                 Allow failback to non-TLS for TLS ports
    =========== =============== ========================================
 
 *number*
@@ -720,6 +721,8 @@ ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
 
    Not compatible with: ``blind`` and ``quic``.
+
+   ``allow-plain`` allows a failback to non SSL for such ports.
 
 quic
    Require QUIC termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
@@ -778,6 +781,10 @@ mptcp
    Enable Multipath TCP on this proxy port.
 
    Requires custom Linux kernel available at https://multipath-tcp.org.
+
+allow-plain
+   For TLS ports, will fall back to non-TLS processing if the TLS handshake fails. Incompatible with
+   quic ports.
 
 .. topic:: Example
 

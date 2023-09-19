@@ -181,6 +181,18 @@ public:
     transparentPassThrough = val;
   }
 
+  bool
+  getAllowPlain() const
+  {
+    return allowPlain;
+  }
+
+  void
+  setAllowPlain(bool val)
+  {
+    allowPlain = val;
+  }
+
   // Copy up here so we overload but don't override
   using super::reenable;
 
@@ -438,6 +450,7 @@ private:
   int handShakeBioStored                     = 0;
 
   bool transparentPassThrough = false;
+  bool allowPlain             = false;
 
   int sent_cert = 0;
 
@@ -484,6 +497,8 @@ private:
   void _make_ssl_connection(SSL_CTX *ctx);
   void _bindSSLObject();
   void _unbindSSLObject();
+  UnixNetVConnection *_migrateFromSSL();
+  void _propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t);
 
   int _ssl_read_from_net(EThread *lthread, int64_t &ret);
   ssl_error_t _ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread);
