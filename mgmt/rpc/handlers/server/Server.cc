@@ -63,17 +63,20 @@ namespace err = rpc::handlers::errors;
 static bool
 is_server_draining()
 {
-  RecInt draining = 0;
-  if (RecGetRecordInt("proxy.config.draining", &draining) != REC_ERR_OKAY) {
-    return false;
-  }
-  return draining != 0;
+  ts::Metrics &intm    = ts::Metrics::getInstance();
+  static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+
+  return (intm[drain_id] != 0);
 }
 
-static void inline set_server_drain(bool drain)
+static void
+set_server_drain(bool drain)
 {
+  ts::Metrics &intm    = ts::Metrics::getInstance();
+  static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+
   TSSystemState::drain(drain);
-  RecSetRecordInt("proxy.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
+  intm[drain_id] = TSSystemState::is_draining() ? 1 : 0;
 }
 
 ts::Rv<YAML::Node>

@@ -28,6 +28,7 @@
 #include "config/FileManager.h"
 
 #include "rpc/handlers/common/RecordsUtils.h"
+#include "api/Metrics.h"
 
 namespace utils = rpc::handlers::records::utils;
 
@@ -183,6 +184,9 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 ts::Rv<YAML::Node>
 reload_config(std::string_view const &id, YAML::Node const &params)
 {
+  ts::Metrics &intm       = ts::Metrics::getInstance();
+  static auto reconf_time = intm.lookup("proxy.process.proxy.reconfigure_time");
+  static auto reconf_req  = intm.lookup("proxy.process.proxy.reconfigure_required");
   ts::Rv<YAML::Node> resp;
   Debug("RPC", "invoke plugin callbacks");
   // if there is any error, report it back.
@@ -191,10 +195,9 @@ reload_config(std::string_view const &id, YAML::Node const &params)
   }
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
-  // save config time.
-  RecSetRecordInt("proxy.process.proxy.reconfigure_time", time(nullptr), REC_SOURCE_DEFAULT);
-  // TODO: we may not need this any more
-  RecSetRecordInt("proxy.process.proxy.reconfigure_required", 0, REC_SOURCE_DEFAULT);
+
+  intm[reconf_time] = time(nullptr);
+  intm[reconf_req]  = 0;
 
   return resp;
 }

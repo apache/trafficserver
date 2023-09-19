@@ -270,6 +270,9 @@ public:
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
+    ts::Metrics &intm    = ts::Metrics::getInstance();
+    static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
 
@@ -306,10 +309,7 @@ public:
 
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
-        ts::Metrics &intm = ts::Metrics::getInstance();
-        auto id           = intm.lookup("proxy.process.proxy.draining");
-
-        intm[id] = 1;
+        intm[drain_id] = 1;
         TSSystemState::drain(true);
         // Close listening sockets here only if TS is running standalone
         RecInt close_sockets = 0;
@@ -1852,11 +1852,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   id       = intm.newMetric("proxy.process.proxy.start_time");
   intm[id] = time(nullptr);
   // These all gets initialied to 0
-  id = intm.newMetric("proxy.process.proxy.reconfigure_required");
-  id = intm.newMetric("proxy.process.proxy.restart_required");
-  id = intm.newMetric("proxy.process.proxy.draining");
+  intm.newMetric("proxy.process.proxy.reconfigure_required");
+  intm.newMetric("proxy.process.proxy.restart_required");
+  intm.newMetric("proxy.process.proxy.draining");
   // This gets updated later (in the callback)
-  id = intm.newMetric("proxy.process.proxy.cache_ready_time");
+  intm.newMetric("proxy.process.proxy.cache_ready_time");
 
   // init huge pages
   int enabled;
