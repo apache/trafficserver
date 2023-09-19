@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default build with ninja",
+      "description": "Default build using Ninja generator",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON"
+      }
+    },
+    {
+      "name": "autest",
+      "inherits": ["default"],
+      "binaryDir": "${sourceDir}/build-autest",
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ts-autest",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_EXAMPLE": "ON"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "development",
+      "description": "Development Presets",
+      "inherits": ["default"],
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-dev"
+      }
+    },
+    {
+      "name": "asan",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=address,undefined",
+        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=address,undefined"
+      }
+    },
+    {
+      "name": "dev-asan",
+      "displayName": "dev with asan",
+      "description": "Development Presets with ASAN sanitizer",
+      "inherits": ["dev", "asan"]
+    },
+    {
+      "name": "ci",
+      "displayName": "CI defaults",
+      "description": "Defaults for CI Pipeline builds",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "ENABLE_CCACHE": "ON",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_EXAMPLE": "ON",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats"
+      }
+    },
+    {
+      "name": "ci-rocky",
+      "displayName": "CI Rocky",
+      "description": "CI Pipeline config for Rocky Linux",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/boringssl",
+        "quiche_ROOT": "/opt/quiche",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche"
+      }
+    },
+    {
+      "name": "ci-fedora",
+      "displayName": "CI Fedora",
+      "description": "CI Pipeline config for Fedora Linux",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic"
+      }
+    },
+    {
+      "name": "ci-fedora-quiche",
+      "displayName": "CI Fedora Quiche",
+      "description": "CI Pipeline config for Fedora Linux (quiche build)",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/boringssl",
+        "quiche_ROOT": "/opt/quiche",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "autest",
+      "configurePreset": "autest",
+      "targets": ["autest"]
+    }
+  ]
+}
+
