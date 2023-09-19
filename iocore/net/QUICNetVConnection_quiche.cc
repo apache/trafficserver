@@ -597,13 +597,11 @@ QUICNetVConnection::_handle_read_ready()
   quiche_stream_iter *readable = quiche_conn_readable(this->_quiche_con);
   uint64_t s                   = 0;
   while (quiche_stream_iter_next(readable, &s)) {
-    QUICStreamImpl *stream;
     QUICConVDebug("stream %" PRIu64 " is readable\n", s);
-    stream = static_cast<QUICStreamImpl *>(quiche_conn_stream_application_data(this->_quiche_con, s));
+    QUICStreamImpl *stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
     if (stream == nullptr) {
       this->_stream_manager->create_stream(s);
       stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
-      quiche_conn_stream_init_application_data(this->_quiche_con, s, stream);
     }
     stream->receive_data(this->_quiche_con);
   }
@@ -617,11 +615,10 @@ QUICNetVConnection::_handle_write_ready()
     quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
     uint64_t s                   = 0;
     while (quiche_stream_iter_next(writable, &s)) {
-      QUICStreamImpl *stream = static_cast<QUICStreamImpl *>(quiche_conn_stream_application_data(this->_quiche_con, s));
+      QUICStreamImpl *stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
       if (stream == nullptr) {
         this->_stream_manager->create_stream(s);
         stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
-        quiche_conn_stream_init_application_data(this->_quiche_con, s, stream);
       }
       stream->send_data(this->_quiche_con);
     }
