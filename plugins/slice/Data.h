@@ -106,6 +106,7 @@ struct Data {
     m_hostname[0]     = '\0';
     m_etag[0]         = '\0';
     m_lastmodified[0] = '\0';
+    memset(&m_client_ip, 0, sizeof(m_client_ip));
   }
 
   ~Data()
