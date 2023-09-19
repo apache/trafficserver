@@ -180,7 +180,8 @@ ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)
 void
 ConfigSetPrinter::write_output(YAML::Node const &result)
 {
-  static const std::unordered_map<std::string, std::string> Update_Type_To_String_Message = {
+  using TypeToStringMap                                      = std::unordered_map<std::string, std::string>;
+  static const TypeToStringMap Update_Type_To_String_Message = {
     {"0", "Set {}"                                                                                          }, // UNDEFINED
     {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
     {"2", "Set {}, restart required"                                                                        }, // RESTART_TS
@@ -190,8 +191,8 @@ ConfigSetPrinter::write_output(YAML::Node const &result)
   try {
     auto const &response = result.as<ConfigSetRecordResponse>();
     for (auto &&updatedRec : response.data) {
-      if (auto search = Update_Type_To_String_Message.find(updatedRec.updateType);
-          search != std::end(Update_Type_To_String_Message)) {
+      TypeToStringMap::const_iterator search = Update_Type_To_String_Message.find(updatedRec.updateType);
+      if (search != std::end(Update_Type_To_String_Message)) {
         std::cout << swoc::bwprint(text, search->second, updatedRec.recName) << '\n';
       } else {
         std::cout << "Oops we don't know how to handle the update status for '" << updatedRec.recName << "' ["
