@@ -52,7 +52,6 @@ auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
 auto_option(JEMALLOC
     FEATURE_VAR TS_HAS_JEMALLOC
     PACKAGE_DEPENDS jemalloc
-    DEFAULT OFF
 )
 auto_option(MIMALLOC
     FEATURE_VAR TS_HAS_MIMALLOC
@@ -203,11 +202,6 @@ else()
     find_package(cap QUIET)
 endif()
 set(HAVE_SYS_CAPABILITY_H ${cap_FOUND})
-
-find_package(hwloc)
-if(hwloc_FOUND)
-    set(TS_USE_HWLOC TRUE)
-endif()
 
 find_package(LibLZMA)
 if(LibLZMA_FOUND)
