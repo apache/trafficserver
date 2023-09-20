@@ -130,16 +130,14 @@ JsonRPCManager::Dispatcher::find_handler(specs::RPCRequestInfo const &request, s
 
   std::lock_guard<std::mutex> lock(_mutex);
 
-  auto search = _handlers.find(request.method);
+  InternalHandlers::const_iterator search = _handlers.find(request.method);
 
   if (search == std::end(_handlers)) {
     // no more checks, no handler either notification or method
     ec = error::RPCErrorCode::METHOD_NOT_FOUND;
     return no_handler;
-  }
-
-  // Handler's method type should match the requested method type.
-  if ((request.is_method() && search->second.is_method()) || (request.is_notification() && !search->second.is_method())) {
+  } // Handler's method type should match the requested method type.
+  else if ((request.is_method() && search->second.is_method()) || (request.is_notification() && !search->second.is_method())) {
     return search->second;
   }
 
