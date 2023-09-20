@@ -85,7 +85,6 @@ public:
   bool
   reserve()
   {
-    TSReleaseAssert(_active <= limit);
     TSMutexLock(_active_lock);
     if (_active < limit) {
       ++_active;
