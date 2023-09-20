@@ -522,6 +522,17 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "reset frame wrong length");
   }
 
+  // Update RST_STREAM frame count per minute
+  cstate.increment_received_rst_stream_frame_count();
+  // Close this connection if its RST_STREAM frame count exceeds a limit
+  if (cstate.get_received_rst_stream_frame_count() > Http2::max_rst_stream_frames_per_minute) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
+    Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent RST_STREAM frames: %u frames within a last minute",
+                     cstate.get_received_settings_frame_count());
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                      "reset too frequent RST_STREAM frames");
+  }
+
   if (stream == nullptr || !stream->change_state(frame.header().type, frame.header().flags)) {
     // If a RST_STREAM frame identifying an idle stream is received, the
     // recipient MUST treat this as a connection error of type PROTOCOL_ERROR.
@@ -1951,6 +1962,18 @@ uint32_t
 Http2ConnectionState::get_received_priority_frame_count()
 {
   return this->_received_priority_frame_counter.get_count();
+}
+
+void
+Http2ConnectionState::increment_received_rst_stream_frame_count()
+{
+  this->_received_rst_stream_frame_counter.increment();
+}
+
+uint32_t
+Http2ConnectionState::get_received_rst_stream_frame_count()
+{
+  return this->_received_rst_stream_frame_counter.get_count();
 }
 
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.

@@ -92,6 +92,7 @@ enum {
   HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED,
   HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED,
   HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED,
+  HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED,
   HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE,
 
   HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
@@ -388,6 +389,7 @@ public:
   static uint32_t max_settings_frames_per_minute;
   static uint32_t max_ping_frames_per_minute;
   static uint32_t max_priority_frames_per_minute;
+  static uint32_t max_rst_stream_frames_per_minute;
   static float min_avg_window_update;
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;
