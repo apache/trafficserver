@@ -15,5 +15,5 @@
 #
 #######################
 
-add_autest_plugin(check_ramp check_ramp.c)
-add_autest_plugin(push_request push_request.c)
+add_executable(check_ramp check_ramp.c)
+add_executable(push_request push_request.c)
