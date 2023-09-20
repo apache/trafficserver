@@ -25,6 +25,7 @@
 
 #include "gzip.h"
 #include <zlib.h>
+#include <ts/ts.h>
 
 #include "Utils.h"
 

@@ -24,7 +24,6 @@
 #pragma once
 
 #include "DocNode.h"
-#include "ComponentBase.h"
 
 #include <cstring>
 #include <string>

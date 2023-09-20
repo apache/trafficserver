@@ -23,6 +23,7 @@
 
 #include "EsiProcessor.h"
 #include "Stats.h"
+#include <ts/ts.h>
 #include <cctype>
 
 using std::string;
@@ -32,11 +33,18 @@ const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(
 
 #define FAILURE_INFO_TAG "plugin_esi_failureInfo"
 
-EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
-                           HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr)
-  : ComponentBase(debug_tag),
-    _curr_state(STOPPED),
-    _parser(parser_debug_tag),
+namespace
+{
+DbgCtl dbg_ctl{"plugin_esi_procesor"};
+}
+
+// This can only be used in member functions of EsiProcessor.
+//
+#define DBG(FMT, ...) Dbg(dbg_ctl, FMT " contp=%p", ##__VA_ARGS__, _cont_addr)
+
+EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr)
+  : _curr_state(STOPPED),
+    _parser(),
     _n_prescanned_nodes(0),
     _n_processed_nodes(0),
     _n_processed_try_nodes(0),
@@ -44,9 +52,10 @@ EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag, 
     _fetcher(fetcher),
     _usePackedNodeList(false),
     _esi_vars(variables),
-    _expression(expression_debug_tag, variables),
+    _expression(variables),
     _n_try_blocks_processed(0),
-    _handler_manager(handler_mgr)
+    _handler_manager(handler_mgr),
+    _cont_addr(cont_addr)
 {
 }
 
@@ -54,7 +63,7 @@ bool
 EsiProcessor::start()
 {
   if (_curr_state != STOPPED) {
-    Dbg(_dbg_ctl, "[%s] Implicit call to stop()", __FUNCTION__);
+    DBG("[%s] Implicit call to stop()", __FUNCTION__);
     stop();
   }
   _curr_state        = PARSING;
@@ -69,10 +78,10 @@ EsiProcessor::addParseData(const char *data, int data_len)
     return false;
   }
   if (_curr_state == STOPPED) {
-    Dbg(_dbg_ctl, "[%s] Implicit call to start()", __FUNCTION__);
+    DBG("[%s] Implicit call to start()", __FUNCTION__);
     start();
   } else if (_curr_state != PARSING) {
-    Dbg(_dbg_ctl, "[%s] Can only parse in parse stage", __FUNCTION__);
+    DBG("[%s] Can only parse in parse stage", __FUNCTION__);
     return false;
   }
 
@@ -97,10 +106,10 @@ EsiProcessor::completeParse(const char *data /* = 0 */, int data_len /* = -1 */)
     return false;
   }
   if (_curr_state == STOPPED) {
-    Dbg(_dbg_ctl, "[%s] Implicit call to start()", __FUNCTION__);
+    DBG("[%s] Implicit call to start()", __FUNCTION__);
     start();
   } else if (_curr_state != PARSING) {
-    Dbg(_dbg_ctl, "[%s] Can only parse in parse stage", __FUNCTION__);
+    DBG("[%s] Can only parse in parse stage", __FUNCTION__);
     return false;
   }
 
@@ -134,7 +143,7 @@ bool
 EsiProcessor::_handleParseComplete()
 {
   if (_curr_state != PARSING) {
-    Dbg(_dbg_ctl, "[%s] Cannot handle parse complete in state %d", __FUNCTION__, _curr_state);
+    DBG("[%s] Cannot handle parse complete in state %d", __FUNCTION__, _curr_state);
     return false;
   }
   if (!_preprocess(_node_list, _n_prescanned_nodes)) {
@@ -146,7 +155,7 @@ EsiProcessor::_handleParseComplete()
     map_iter->second->handleParseComplete();
   }
 
-  Dbg(_dbg_ctl, "[%s] Parsed ESI document with %d nodes", __FUNCTION__, int(_node_list.size()));
+  DBG("[%s] Parsed ESI document with %d nodes", __FUNCTION__, int(_node_list.size()));
   _curr_state = WAITING_TO_PROCESS;
 
   return true;
@@ -155,7 +164,7 @@ EsiProcessor::_handleParseComplete()
 DataStatus
 EsiProcessor::_getIncludeStatus(const DocNode &node)
 {
-  Dbg(_dbg_ctl, "[%s] inside getIncludeStatus", __FUNCTION__);
+  DBG("[%s] inside getIncludeStatus", __FUNCTION__);
   if (node.type == DocNode::TYPE_INCLUDE) {
     const Attribute &url = node.attr_list.front();
 
@@ -171,8 +180,7 @@ EsiProcessor::_getIncludeStatus(const DocNode &node)
     }
     const string &processed_url = iter->second;
     DataStatus status           = _fetcher.getRequestStatus(processed_url);
-    Dbg(_dbg_ctl, "[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status, int(processed_url.size()),
-        processed_url.data());
+    DBG("[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status, int(processed_url.size()), processed_url.data());
     return status;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
     int include_data_id            = 0;
@@ -189,12 +197,11 @@ EsiProcessor::_getIncludeStatus(const DocNode &node)
       return STATUS_ERROR;
     }
     DataStatus status = handler->getIncludeStatus(include_data_id);
-    Dbg(_dbg_ctl, "[%s] Successfully got status %d for special include with id %d", __FUNCTION__, int(status),
-        int(include_data_id));
+    DBG("[%s] Successfully got status %d for special include with id %d", __FUNCTION__, int(status), int(include_data_id));
 
     return status;
   }
-  Dbg(_dbg_ctl, "[%s] node of type %s", __FUNCTION__, DocNode::type_names_[node.type]);
+  DBG("[%s] node of type %s", __FUNCTION__, DocNode::type_names_[node.type]);
   return STATUS_DATA_AVAILABLE;
 }
 
@@ -232,7 +239,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
       Stats::increment(Stats::N_INCLUDE_ERRS);
       return false;
     }
-    Dbg(_dbg_ctl, "[%s] Got content successfully for URL [%.*s]", __FUNCTION__, int(processed_url.size()), processed_url.data());
+    DBG("[%s] Got content successfully for URL [%.*s]", __FUNCTION__, int(processed_url.size()), processed_url.data());
     return true;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
     int include_data_id            = 0;
@@ -260,7 +267,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
       Stats::increment(Stats::N_SPCL_INCLUDE_ERRS);
       return false;
     }
-    Dbg(_dbg_ctl, "[%s] Successfully got content for special include with id %d", __FUNCTION__, include_data_id);
+    DBG("[%s] Successfully got content for special include with id %d", __FUNCTION__, include_data_id);
     return true;
   }
   TSError("[%s] Cannot get include data for node of type %s", __FUNCTION__, DocNode::type_names_[node.type]);
@@ -299,10 +306,10 @@ EsiProcessor::process(const char *&data, int &data_len)
     }
 
     if (attempt_succeeded) {
-      Dbg(_dbg_ctl, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
+      DBG("[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
-      Dbg(_dbg_ctl, "[%s] attempt section errored; trying except section", __FUNCTION__);
+      DBG("[%s] attempt section errored; trying except section", __FUNCTION__);
       int n_prescanned_nodes = 0;
       if (!_preprocess(try_iter->except_nodes, n_prescanned_nodes)) {
         TSError("[%s] Failed to preprocess except nodes", __FUNCTION__);
@@ -311,8 +318,7 @@ EsiProcessor::process(const char *&data, int &data_len)
       }
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
       if (_fetcher.getNumPendingRequests()) {
-        Dbg(_dbg_ctl,
-            "[%s] New fetch requests were triggered by except block; "
+        DBG("[%s] New fetch requests were triggered by except block; "
             "Returning NEED_MORE_DATA...",
             __FUNCTION__);
         return NEED_MORE_DATA;
@@ -322,7 +328,7 @@ EsiProcessor::process(const char *&data, int &data_len)
   _curr_state = PROCESSED;
   for (node_iter = _node_list.begin(); node_iter != _node_list.end(); ++node_iter) {
     DocNode &doc_node = *node_iter; // handy reference
-    Dbg(_dbg_ctl, "[%s] Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
+    DBG("[%s] Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
         DocNode::type_names_[doc_node.type], doc_node.data_len, (doc_node.data_len ? doc_node.data : "(null)"));
     if (doc_node.type == DocNode::TYPE_PRE) {
       // just copy the data
@@ -336,8 +342,7 @@ EsiProcessor::process(const char *&data, int &data_len)
   _addFooterData();
   data     = _output_data.c_str();
   data_len = _output_data.size();
-  Dbg(_dbg_ctl, "[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, data_len,
-      (data_len ? data : "(null)"));
+  DBG("[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, data_len, (data_len ? data : "(null)"));
   return SUCCESS;
 }
 
@@ -390,11 +395,11 @@ EsiProcessor::flush(string &data, int &overall_len)
     }
 
     if (attempt_succeeded) {
-      Dbg(_dbg_ctl, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
+      DBG("[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->attempt_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
-      Dbg(_dbg_ctl, "[%s] attempt section errored; trying except section", __FUNCTION__);
+      DBG("[%s] attempt section errored; trying except section", __FUNCTION__);
       int n_prescanned_nodes = 0;
       if (!_preprocess(try_iter->except_nodes, n_prescanned_nodes)) {
         TSError("[%s] Failed to preprocess except nodes", __FUNCTION__);
@@ -402,8 +407,7 @@ EsiProcessor::flush(string &data, int &overall_len)
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->except_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
       if (_fetcher.getNumPendingRequests()) {
-        Dbg(_dbg_ctl,
-            "[%s] New fetch requests were triggered by except block; "
+        DBG("[%s] New fetch requests were triggered by except block; "
             "Returning NEED_MORE_DATA...",
             __FUNCTION__);
       }
@@ -417,7 +421,7 @@ EsiProcessor::flush(string &data, int &overall_len)
   }
   for (; node_iter != _node_list.end(); ++node_iter) {
     DocNode &doc_node = *node_iter; // handy reference
-    Dbg(_dbg_ctl, "[%s] Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
+    DBG("[%s] Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
         DocNode::type_names_[doc_node.type], doc_node.data_len, (doc_node.data_len ? doc_node.data : "(null)"));
 
     if (_getIncludeStatus(doc_node) == STATUS_DATA_PENDING) {
@@ -425,7 +429,7 @@ EsiProcessor::flush(string &data, int &overall_len)
       break;
     }
 
-    Dbg(_dbg_ctl, "[%s] processed node: %d, try blocks processed: %d, processed try nodes: %d", __FUNCTION__, _n_processed_nodes,
+    DBG("[%s] processed node: %d, try blocks processed: %d, processed try nodes: %d", __FUNCTION__, _n_processed_nodes,
         _n_try_blocks_processed, _n_processed_try_nodes);
     if (doc_node.type == DocNode::TYPE_TRY) {
       if (_n_try_blocks_processed <= _n_processed_try_nodes) {
@@ -436,7 +440,7 @@ EsiProcessor::flush(string &data, int &overall_len)
       }
     }
 
-    Dbg(_dbg_ctl, "[%s] really Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
+    DBG("[%s] really Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
         DocNode::type_names_[doc_node.type], doc_node.data_len, (doc_node.data_len ? doc_node.data : "(null)"));
 
     if (doc_node.type == DocNode::TYPE_PRE) {
@@ -459,7 +463,7 @@ EsiProcessor::flush(string &data, int &overall_len)
   _overall_len = _overall_len + data.size();
   overall_len  = _overall_len;
 
-  Dbg(_dbg_ctl, "[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, int(data.size()),
+  DBG("[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, int(data.size()),
       (data.size() ? data.data() : "(null)"));
   return SUCCESS;
 }
@@ -504,7 +508,7 @@ EsiProcessor::_processEsiNode(const DocNodeList::iterator &iter)
   } else if ((node.type == DocNode::TYPE_COMMENT) || (node.type == DocNode::TYPE_REMOVE) || (node.type == DocNode::TYPE_TRY) ||
              (node.type == DocNode::TYPE_CHOOSE) || (node.type == DocNode::TYPE_HTML_COMMENT)) {
     // choose, try and html-comment would've been dealt with earlier
-    Dbg(_dbg_ctl, "[%s] No-op for [%s] node", __FUNCTION__, DocNode::type_names_[node.type]);
+    DBG("[%s] No-op for [%s] node", __FUNCTION__, DocNode::type_names_[node.type]);
     retval = true;
   } else if (node.type == DocNode::TYPE_VARS) {
     retval = _handleVars(node.data, node.data_len);
@@ -513,7 +517,7 @@ EsiProcessor::_processEsiNode(const DocNodeList::iterator &iter)
     retval = false;
   }
   if (retval) {
-    Dbg(_dbg_ctl, "[%s] Processed ESI [%s] node", __FUNCTION__, DocNode::type_names_[node.type]);
+    DBG("[%s] Processed ESI [%s] node", __FUNCTION__, DocNode::type_names_[node.type]);
   } else {
     TSError("[%s] Failed to process ESI doc node of type %d", __FUNCTION__, node.type);
   }
@@ -554,12 +558,12 @@ EsiProcessor::_handleChoose(DocNodeList::iterator &curr_node)
     }
   }
   if (winning_node == end_node) {
-    Dbg(_dbg_ctl, "[%s] All when nodes failed to evaluate to true", __FUNCTION__);
+    DBG("[%s] All when nodes failed to evaluate to true", __FUNCTION__);
     if (otherwise_node != end_node) {
-      Dbg(_dbg_ctl, "[%s] Using otherwise node...", __FUNCTION__);
+      DBG("[%s] Using otherwise node...", __FUNCTION__);
       winning_node = otherwise_node;
     } else {
-      Dbg(_dbg_ctl, "[%s] No otherwise node, nothing to do...", __FUNCTION__);
+      DBG("[%s] No otherwise node, nothing to do...", __FUNCTION__);
       return true;
     }
   }
@@ -598,8 +602,7 @@ bool
 EsiProcessor::_handleVars(const char *str, int str_len)
 {
   const string &str_value = _expression.expand(str, str_len);
-  Dbg(_dbg_ctl, "[%s] Vars expression [%.*s] expanded to [%.*s]", __FUNCTION__, str_len, str, int(str_value.size()),
-      str_value.data());
+  DBG("[%s] Vars expression [%.*s] expanded to [%.*s]", __FUNCTION__, str_len, str, int(str_value.size()), str_value.data());
   _output_data.append(str_value);
   return true;
 }
@@ -613,7 +616,7 @@ EsiProcessor::_handleHtmlComment(const DocNodeList::iterator &curr_node)
     Stats::increment(Stats::N_PARSE_ERRS);
     return false;
   }
-  Dbg(_dbg_ctl, "[%s] parsed %d inner nodes from html comment node", __FUNCTION__, int(inner_nodes.size()));
+  DBG("[%s] parsed %d inner nodes from html comment node", __FUNCTION__, int(inner_nodes.size()));
   DocNodeList::iterator next_node = curr_node;
   ++next_node;
   _node_list.splice(next_node, inner_nodes); // insert after curr node for pre-processing
@@ -639,14 +642,14 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
         TSError("[%s] Failed to preprocess choose node", __FUNCTION__);
         return false;
       }
-      Dbg(_dbg_ctl, "[%s] handled choose node successfully", __FUNCTION__);
+      DBG("[%s] handled choose node successfully", __FUNCTION__);
       break;
     case DocNode::TYPE_TRY:
       if (!_handleTry(list_iter)) {
         TSError("[%s] Failed to preprocess try node", __FUNCTION__);
         return false;
       }
-      Dbg(_dbg_ctl, "[%s] handled try node successfully", __FUNCTION__);
+      DBG("[%s] handled try node successfully", __FUNCTION__);
       break;
     case DocNode::TYPE_HTML_COMMENT:
       /**
@@ -668,10 +671,10 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       Stats::increment(Stats::N_INCLUDES);
       const Attribute &src = list_iter->attr_list.front();
       raw_url.assign(src.value, src.value_len);
-      Dbg(_dbg_ctl, "[%s] Adding fetch request for url [%.*s]", __FUNCTION__, int(raw_url.size()), raw_url.data());
+      DBG("[%s] Adding fetch request for url [%.*s]", __FUNCTION__, int(raw_url.size()), raw_url.data());
       hash_iter = _include_urls.find(raw_url);
       if (hash_iter != _include_urls.end()) { // we have already processed this URL
-        Dbg(_dbg_ctl, "[%s] URL [%.*s] already processed", __FUNCTION__, int(raw_url.size()), raw_url.data());
+        DBG("[%s] URL [%.*s] already processed", __FUNCTION__, int(raw_url.size()), raw_url.data());
         continue;
       }
       const string &expanded_url = _expression.expand(raw_url);
@@ -703,7 +706,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
           return false;
         }
         _include_handlers.insert(IncludeHandlerMap::value_type(handler_id, handler));
-        Dbg(_dbg_ctl, "[%s] Created new special include handler object for id [%s]", __FUNCTION__, handler_id.c_str());
+        DBG("[%s] Created new special include handler object for id [%s]", __FUNCTION__, handler_id.c_str());
       } else {
         handler = map_iter->second;
       }
@@ -717,8 +720,8 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       // overloading this structure's members
       // handler will be in value and include id will be in value_len of the structure
       list_iter->attr_list.push_back(Attribute(INCLUDE_DATA_ID_ATTR, 0, reinterpret_cast<const char *>(handler), special_data_id));
-      Dbg(_dbg_ctl, "[%s] Got id %d for special include at node %d from handler [%s]", __FUNCTION__, special_data_id,
-          n_prescanned_nodes + 1, handler_id.c_str());
+      DBG("[%s] Got id %d for special include at node %d from handler [%s]", __FUNCTION__, special_data_id, n_prescanned_nodes + 1,
+          handler_id.c_str());
     } break;
     default:
       break;

@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <ts/ts.h>
+
 #include "DocNode.h"
 #include "Utils.h"
 

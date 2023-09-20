@@ -21,11 +21,18 @@
   limitations under the License.
  */
 
+#include <ts/ts.h>
+
 #include "Expression.h"
 #include "Utils.h"
 
 using std::string;
 using namespace EsiLib;
+
+namespace
+{
+DbgCtl dbg_ctl{"plugin_esi_vars"};
+}
 
 const string Expression::EMPTY_STRING("");
 const string Expression::TRUE_STRING("true");
@@ -34,7 +41,7 @@ const Expression::OperatorString Expression::OPERATOR_STRINGS[N_OPERATORS] = {
   Expression::OperatorString(">=", 2), Expression::OperatorString("<", 1),  Expression::OperatorString(">", 1),
   Expression::OperatorString("!", 1),  Expression::OperatorString("|", 1),  Expression::OperatorString("&", 1)};
 
-Expression::Expression(const char *dbg_ctl, Variables &variables) : ComponentBase(dbg_ctl), _variables(variables), _value("") {}
+Expression::Expression(Variables &variables) : _variables(variables), _value("") {}
 
 inline bool
 Expression::_stripQuotes(const char *&expr, int &expr_len) const
@@ -62,7 +69,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
   int var_start_index = -1, var_size;
   Utils::trimWhiteSpace(expr, expr_len);
   if (!expr_len) {
-    Dbg(_dbg_ctl, "[%s] Returning empty string for empty expression", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] Returning empty string for empty expression", __FUNCTION__);
     goto lFail;
   }
   if (!_stripQuotes(expr, expr_len)) {
@@ -73,7 +80,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
   for (int i = 0; i < expr_len; ++i) {
     if ((expr[i] == '$') && ((expr_len - i) >= 3) && (expr[i + 1] == '(')) {
       if (var_start_index != -1) {
-        Dbg(_dbg_ctl, "[%s] Cannot have nested variables in expression [%.*s]", __FUNCTION__, expr_len, expr);
+        Dbg(dbg_ctl, "[%s] Cannot have nested variables in expression [%.*s]", __FUNCTION__, expr_len, expr);
         goto lFail;
       }
       var_start_index = i + 2; // skip the '$('
@@ -83,12 +90,12 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
       var_size               = i - var_start_index;
       if (var_size) {
         const string &var_value = _variables.getValue(expr + var_start_index, var_size);
-        Dbg(_dbg_ctl, "[%s] Got value [%.*s] for variable [%.*s]", __FUNCTION__, int(var_value.size()), var_value.data(), var_size,
+        Dbg(dbg_ctl, "[%s] Got value [%.*s] for variable [%.*s]", __FUNCTION__, int(var_value.size()), var_value.data(), var_size,
             expr + var_start_index);
         last_variable_expanded  = (var_value.size() > 0);
         _value                 += var_value;
       } else {
-        Dbg(_dbg_ctl, "[%s] Parsing out empty variable", __FUNCTION__);
+        Dbg(dbg_ctl, "[%s] Parsing out empty variable", __FUNCTION__);
       }
       if (expr[i] == '|') {
         int default_value_start = ++i;
@@ -99,7 +106,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
           ++i;
         }
         if (i == expr_len) {
-          Dbg(_dbg_ctl, "[%s] Expression [%.*s] has unterminated variable (with default value)", __FUNCTION__, expr_len, expr);
+          Dbg(dbg_ctl, "[%s] Expression [%.*s] has unterminated variable (with default value)", __FUNCTION__, expr_len, expr);
           goto lFail;
         }
         const char *default_value = expr + default_value_start;
@@ -108,7 +115,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
           goto lFail;
         }
         if (!last_variable_expanded) {
-          Dbg(_dbg_ctl, "[%s] Using default value [%.*s] as variable expanded to empty string", __FUNCTION__, default_value_len,
+          Dbg(dbg_ctl, "[%s] Using default value [%.*s] as variable expanded to empty string", __FUNCTION__, default_value_len,
               default_value);
           _value.append(default_value, default_value_len);
         }
@@ -119,11 +126,11 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
     }
   }
   if (var_start_index != -1) {
-    Dbg(_dbg_ctl, "[%s] Returning empty string for expression with unterminated variable [%.*s]", __FUNCTION__,
+    Dbg(dbg_ctl, "[%s] Returning empty string for expression with unterminated variable [%.*s]", __FUNCTION__,
         expr_len - var_start_index, expr + var_start_index);
     goto lFail;
   }
-  Dbg(_dbg_ctl, "[%s] Returning final expanded expression [%.*s]", __FUNCTION__, int(_value.size()), _value.data());
+  Dbg(dbg_ctl, "[%s] Returning final expanded expression [%.*s]", __FUNCTION__, int(_value.size()), _value.data());
   return _value;
 
 lFail:
@@ -150,7 +157,7 @@ inline bool
 Expression::_evalSimpleExpr(const char *expr, int expr_len)
 {
   const string &lhs = expand(expr, expr_len);
-  Dbg(_dbg_ctl, "[%s] simple expression [%.*s] evaluated to [%.*s]", __FUNCTION__, expr_len, expr, int(lhs.size()), lhs.data());
+  Dbg(dbg_ctl, "[%s] simple expression [%.*s] evaluated to [%.*s]", __FUNCTION__, expr_len, expr, int(lhs.size()), lhs.data());
   double val;
   return _convert(lhs, val) ? val : !lhs.empty();
 }
@@ -160,7 +167,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
 {
   Utils::trimWhiteSpace(expr, expr_len);
   if (!expr_len) {
-    Dbg(_dbg_ctl, "[%s] Returning false for empty expression", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] Returning false for empty expression", __FUNCTION__);
     return false;
   }
   Operator op = OP_EQ; // stupid initialized checking, make gcc happy
@@ -176,11 +183,11 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
     subexpr     = expr;
     subexpr_len = sep;
     lhs         = expand(subexpr, subexpr_len);
-    Dbg(_dbg_ctl, "[%s] LHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, int(lhs.size()), lhs.data());
+    Dbg(dbg_ctl, "[%s] LHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, int(lhs.size()), lhs.data());
     subexpr     = expr + sep + OPERATOR_STRINGS[op].str_len;
     subexpr_len = expr_len - subexpr_len - OPERATOR_STRINGS[op].str_len;
     rhs         = expand(subexpr, subexpr_len);
-    Dbg(_dbg_ctl, "[%s] RHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, int(rhs.size()), rhs.data());
+    Dbg(dbg_ctl, "[%s] RHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, int(rhs.size()), rhs.data());
     double lhs_numerical = 0;
     double rhs_numerical = 0;
     bool are_numerical   = _convert(lhs, lhs_numerical);
@@ -201,7 +208,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
     default:
       if (lhs.empty() || rhs.empty()) {
         // one of the sides expanded to nothing; invalid comparison
-        Dbg(_dbg_ctl, "[%s] LHS/RHS empty. Cannot evaluate comparisons", __FUNCTION__);
+        Dbg(dbg_ctl, "[%s] LHS/RHS empty. Cannot evaluate comparisons", __FUNCTION__);
         retval = false;
       } else {
         switch (op) {
@@ -218,7 +225,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
           retval = are_numerical ? (lhs_numerical >= rhs_numerical) : (lhs >= rhs);
           break;
         default:
-          Dbg(_dbg_ctl, "[%s] Unknown operator in expression [%.*s]; returning false", __FUNCTION__, expr_len, expr);
+          Dbg(dbg_ctl, "[%s] Unknown operator in expression [%.*s]; returning false", __FUNCTION__, expr_len, expr);
         }
       }
       break;
@@ -227,12 +234,12 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
     if (sep == 0) {
       retval = !_evalSimpleExpr(expr + 1, expr_len - 1);
     } else {
-      Dbg(_dbg_ctl, "[%s] Unary negation not preceding literal in expression [%.*s]; assuming true", __FUNCTION__, expr_len, expr);
+      Dbg(dbg_ctl, "[%s] Unary negation not preceding literal in expression [%.*s]; assuming true", __FUNCTION__, expr_len, expr);
       retval = true;
     }
   } else {
-    Dbg(_dbg_ctl, "[%s] Unknown operator in expression [%.*s]; returning false", __FUNCTION__, expr_len, expr);
+    Dbg(dbg_ctl, "[%s] Unknown operator in expression [%.*s]; returning false", __FUNCTION__, expr_len, expr);
   }
-  Dbg(_dbg_ctl, "[%s] Returning [%s] for expression [%.*s]", __FUNCTION__, (retval ? "true" : "false"), expr_len, expr);
+  Dbg(dbg_ctl, "[%s] Returning [%s] for expression [%.*s]", __FUNCTION__, (retval ? "true" : "false"), expr_len, expr);
   return retval;
 }

@@ -26,18 +26,17 @@
 #include <list>
 
 #include <cstring>
-#include "ComponentBase.h"
 #include "StringHash.h"
 #include "HttpHeader.h"
 #include "Utils.h"
 
 namespace EsiLib
 {
-class Variables : private ComponentBase
+class Variables
 {
 public:
-  Variables(const char *debug_tag, Utils::HeaderValueList allowlistCookies)
-    : ComponentBase(debug_tag), _headers_parsed(false), _query_string(""), _query_string_parsed(false), _cookie_jar_created(false)
+  Variables(void *cont_addr, Utils::HeaderValueList allowlistCookies)
+    : _headers_parsed(false), _query_string(""), _query_string_parsed(false), _cookie_jar_created(false), _cont_addr(cont_addr)
   {
     _allowlistCookies.insert(_allowlistCookies.end(), allowlistCookies.begin(), allowlistCookies.end());
   };
@@ -90,7 +89,7 @@ public:
 
   void clear();
 
-  ~Variables() override { _releaseCookieJar(); };
+  ~Variables() { _releaseCookieJar(); };
 
   // noncopyable
   Variables(const Variables &)            = delete; // non-copyable
@@ -170,5 +169,7 @@ private:
 
   mutable std::string _cached_sub_cookie_value;
   const std::string &_getSubCookieValue(const std::string &cookie_str, size_t cookie_part_divider) const;
+
+  void *_cont_addr;
 };
 }; // namespace EsiLib

@@ -149,7 +149,7 @@ TEST_CASE("esi docnode test")
 {
   SECTION("Test 1")
   {
-    EsiParser parser("parser_test");
+    EsiParser parser;
     string input_data = "foo <esi:include src=blah /> bar";
 
     DocNodeList node_list;
@@ -180,7 +180,7 @@ TEST_CASE("esi docnode test")
 
   SECTION("Test 2")
   {
-    EsiParser parser("parser_test");
+    EsiParser parser;
     string input_data("<esi:choose>"
                       "<esi:when test=c1>"
                       "<esi:try>"

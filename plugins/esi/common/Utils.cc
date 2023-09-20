@@ -23,6 +23,8 @@
 
 #include "Utils.h"
 
+#include <ts/ts.h>
+
 #include <sstream>
 
 using namespace EsiLib;

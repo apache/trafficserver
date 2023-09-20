@@ -23,13 +23,14 @@
 
 #include "EsiGzip.h"
 #include "gzip.h"
+#include <ts/ts.h>
 #include <cctype>
 #include <cstdint>
 
 using std::string;
 using namespace EsiLib;
 
-EsiGzip::EsiGzip(const char *debug_tag) : ComponentBase(debug_tag), _downstream_length(0), _total_data_length(0), _crc(0)
+EsiGzip::EsiGzip() : _downstream_length(0), _total_data_length(0), _crc(0)
 {
   // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
   // coverity[uninit_member]

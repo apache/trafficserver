@@ -23,11 +23,18 @@
 
 #include <dlfcn.h>
 
+#include <ts/ts.h>
+
 #include "HandlerManager.h"
 
 using std::map;
 using std::string;
 using namespace EsiLib;
+
+namespace
+{
+DbgCtl dbg_ctl{"plugin_esi_handler_mgr"};
+}
 
 #define CLASS_NAME "HandlerManager"
 
@@ -61,7 +68,7 @@ HandlerManager::loadObjects(const Utils::KeyValueMap &handlers)
         } else {
           _id_to_function_map.insert(FunctionHandleMap::value_type(id, func_handle));
           _path_to_module_map.insert(ModuleHandleMap::value_type(path, ModuleHandles(obj_handle, func_handle)));
-          Dbg(_dbg_ctl, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
+          Dbg(dbg_ctl, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
         }
       }
     }

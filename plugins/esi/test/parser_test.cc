@@ -45,7 +45,7 @@ check_node_attr(const Attribute &attr, const char *name, const char *value)
 
 TEST_CASE("esi parser test")
 {
-  EsiParser parser("parser_test");
+  EsiParser parser;
 
   SECTION("No src attr")
   {

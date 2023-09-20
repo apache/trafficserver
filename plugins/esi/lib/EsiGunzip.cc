@@ -23,13 +23,14 @@
 
 #include "EsiGunzip.h"
 #include "gzip.h"
+#include <ts/ts.h>
 #include <cctype>
 #include <cstdint>
 
 using std::string;
 using namespace EsiLib;
 
-EsiGunzip::EsiGunzip(const char *debug_tag) : ComponentBase(debug_tag), _downstream_length(0), _total_data_length(0)
+EsiGunzip::EsiGunzip() : _downstream_length(0), _total_data_length(0)
 {
   _init    = false;
   _success = true;

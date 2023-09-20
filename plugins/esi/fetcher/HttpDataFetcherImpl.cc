@@ -33,6 +33,10 @@ using namespace EsiLib;
 
 const int HttpDataFetcherImpl::FETCH_EVENT_ID_BASE = 10000;
 
+// Can only be used in HttpDataFetcherImpl member functions.
+//
+#define DBG(FMT, ...) Dbg(_dbg_ctl, FMT " address=%p", ##__VA_ARGS__, this)
+
 inline void
 HttpDataFetcherImpl::_release(RequestData &req_data)
 {
@@ -46,8 +50,8 @@ HttpDataFetcherImpl::_release(RequestData &req_data)
   }
 }
 
-HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, const char *debug_tag)
-  : _contp(contp), _dbg_ctl(debug_tag), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE), _headers_str("")
+HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, char const *dbg_tag)
+  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE), _headers_str(""), _dbg_ctl(dbg_tag)
 {
   _http_parser = TSHttpParserCreate();
   // default client address to use for fetch url
@@ -86,7 +90,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     ((insert_result.first)->second).callback_objects.push_back(callback_obj);
   }
   if (!insert_result.second) {
-    Dbg(_dbg_ctl, "[%s] Fetch request for url [%s] already added", __FUNCTION__, url.data());
+    DBG("[%s] Fetch request for url [%s] already added", __FUNCTION__, url.data());
     return true;
   }
 
@@ -121,7 +125,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     free(http_req);
   }
 
-  Dbg(_dbg_ctl, "[%s] Successfully added fetch request for URL [%s]", __FUNCTION__, url.data());
+  DBG("[%s] Successfully added fetch request for URL [%s]", __FUNCTION__, url.data());
   _page_entry_lookup.push_back(insert_result.first);
   ++_n_pending_requests;
   return true;
@@ -132,7 +136,7 @@ HttpDataFetcherImpl::_isFetchEvent(TSEvent event, int &base_event_id) const
 {
   base_event_id = _getBaseEventId(event);
   if ((base_event_id < 0) || (base_event_id >= static_cast<int>(_page_entry_lookup.size()))) {
-    Dbg(_dbg_ctl, "[%s] Event id %d not within fetch event id range [%d, %ld)", __FUNCTION__, event, FETCH_EVENT_ID_BASE,
+    DBG("[%s] Event id %d not within fetch event id range [%d, %ld)", __FUNCTION__, event, FETCH_EVENT_ID_BASE,
         static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
     return false;
   }
@@ -185,7 +189,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
     if (req_data.resp_status == TS_HTTP_STATUS_OK) {
       req_data.body_len = endptr - startptr;
       req_data.body     = startptr;
-      Dbg(_dbg_ctl, "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__, req_data.body_len,
+      DBG("[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__, req_data.body_len,
           (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
 
       if (_checkHeaderValue(req_data.bufp, req_data.hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING,
@@ -209,7 +213,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
       }
 
     } else {
-      Dbg(_dbg_ctl, "[%s] Received non-OK status %d for request [%s]", __FUNCTION__, req_data.resp_status, req_str.data());
+      DBG("[%s] Received non-OK status %d for request [%s]", __FUNCTION__, req_data.resp_status, req_str.data());
 
       string empty_response = "";
       for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin(); list_iter != req_data.callback_objects.end();
@@ -218,7 +222,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
       }
     }
   } else {
-    Dbg(_dbg_ctl, "[%s] Could not parse response for request [%s]", __FUNCTION__, req_str.data());
+    DBG("[%s] Could not parse response for request [%s]", __FUNCTION__, req_str.data());
   }
 
   if (!valid_data_received) {
@@ -256,7 +260,7 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
           retval = true;
         }
       } else {
-        Dbg(_dbg_ctl, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__, i, name_len, name);
+        DBG("[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__, i, name_len, name);
       }
       if (retval) {
         break;
@@ -292,8 +296,7 @@ HttpDataFetcherImpl::getData(const string &url, ResponseData &resp_data) const
   }
 
   resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc, req_data.resp_status);
-  Dbg(_dbg_ctl, "[%s] Found data for URL [%s] of size %d starting with [%.5s]", __FUNCTION__, url.data(), req_data.body_len,
-      req_data.body);
+  DBG("[%s] Found data for URL [%s] of size %d starting with [%.5s]", __FUNCTION__, url.data(), req_data.body_len, req_data.body);
   return true;
 }
 

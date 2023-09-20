@@ -25,13 +25,12 @@
 
 #include <string>
 
-#include "ComponentBase.h"
 #include "DocNode.h"
 
-class EsiParser : private EsiLib::ComponentBase
+class EsiParser
 {
 public:
-  EsiParser(const char *debug_tag);
+  EsiParser();
 
   /** clears state */
   void clear();

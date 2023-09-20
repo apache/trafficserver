@@ -23,17 +23,15 @@
 
 #pragma once
 
-#include "ComponentBase.h"
-
 #include <zlib.h>
 #include <string>
 
-class EsiGunzip : private EsiLib::ComponentBase
+class EsiGunzip
 {
 public:
-  EsiGunzip(const char *debug_tag);
+  EsiGunzip();
 
-  ~EsiGunzip() override;
+  ~EsiGunzip();
 
   bool stream_decode(const char *data, int data_len, std::string &udata);
 
