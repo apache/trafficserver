@@ -230,7 +230,7 @@ if(TS_HAS_JEMALLOC AND TS_HAS_MIMALLOC)
 endif()
 
 if(TS_HAS_JEMALLOC)
-    link_libraries(jemalloc)
+    link_libraries(jemalloc::jemalloc)
 elseif(TS_HAS_MIMALLOC)
     link_libraries(mimalloc)
 endif()
