@@ -24,6 +24,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <unordered_map>
 #include <tuple>
 #include <mutex>
@@ -87,6 +88,16 @@ public:
   IdType newMetric(const std::string_view name);
   IdType lookup(const std::string_view name) const;
   IntType *lookup(IdType id, std::string_view *name = nullptr) const;
+
+  std::optional<IntType *>
+  lookupPtr(const std::string_view name) const
+  {
+    IdType id = lookup(name);
+    if (id != NOT_FOUND) {
+      return lookup(id);
+    }
+    return std::nullopt;
+  }
 
   // A bit of a convenience, since we use the ptr to the atomic frequently in the core
   IntType *

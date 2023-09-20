@@ -62,4 +62,17 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
     REQUIRE(m[0].load() == 42);
   }
+
+  SECTION("lookup")
+  {
+    auto nm = m.lookupPtr("notametric");
+    REQUIRE(!nm);
+
+    auto mid = m.newMetric("ametric");
+    auto fm  = m.lookupPtr("ametric");
+    REQUIRE(fm.has_value());
+    REQUIRE(fm.value());
+    REQUIRE(fm.value() == m.lookup(mid));
+    REQUIRE(m.lookup("ametric") == mid);
+  }
 }
