@@ -114,11 +114,6 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   aio_rsb.kb_read     = intm.newMetricPtr("proxy.process.cache.aio.KB_read");
   aio_rsb.kb_write    = intm.newMetricPtr("proxy.process.cache.aio.KB_write");
 
-#if TS_USE_LINUX_IO_URING
-  aio_rsb.io_uring_submitted = intm.newMetricPtr("proxy.process.io_uring.submitted");
-  aio_rsb.io_uring_completed = intm.newMetricPtr("proxy.process.io_uring.completed");
-#endif
-
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 

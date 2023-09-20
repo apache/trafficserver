@@ -35,6 +35,10 @@
 #include <arpa/inet.h>
 #include "tscore/ink_hrtime.h"
 
+#include "api/Metrics.h"
+
+using ts::Metrics;
+
 swoc::file::path
 temp_prefix(const char *basename)
 {
@@ -262,10 +266,14 @@ TEST_CASE("net_io", "[io_uring]")
     connected = true;
   });
 
-  uint64_t completions_before = Metrics::read(aio_rsb.io_uring_completed);
+  auto &m = Metrics::getInstance();
+
+  Metrics::IntType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
+
+  uint64_t completions_before = Metrics::read(completed);
   uint64_t needed             = 2;
 
-  while ((Metrics::read(aio_rsb.io_uring_completed) - completions_before) < needed) {
+  while ((Metrics::read(completed) - completions_before) < needed) {
     ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 

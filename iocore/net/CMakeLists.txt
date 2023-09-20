@@ -129,6 +129,10 @@ target_link_libraries(inknet
         yaml-cpp::yaml-cpp
 )
 
+if(TS_USE_LINUX_IO_URING)
+    target_link_libraries(inknet PUBLIC ts::inkuring)
+endif()
+
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)
 # target_link_libraries(test_net records_p inknet inkevent tscore yaml-cpp libswoc)
