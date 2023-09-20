@@ -480,21 +480,22 @@ uint32_t Http2::initial_window_size_out               = 65535;
 Http2FlowControlPolicy Http2::flow_control_policy_out = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
 uint32_t Http2::no_activity_timeout_out               = 120;
 
-float Http2::stream_error_rate_threshold        = 0.1;
-uint32_t Http2::stream_error_sampling_threshold = 10;
-uint32_t Http2::max_settings_per_frame          = 7;
-uint32_t Http2::max_settings_per_minute         = 14;
-uint32_t Http2::max_settings_frames_per_minute  = 14;
-uint32_t Http2::max_ping_frames_per_minute      = 60;
-uint32_t Http2::max_priority_frames_per_minute  = 120;
-float Http2::min_avg_window_update              = 2560.0;
-uint32_t Http2::con_slow_log_threshold          = 0;
-uint32_t Http2::stream_slow_log_threshold       = 0;
-uint32_t Http2::header_table_size_limit         = 65536;
-uint32_t Http2::write_buffer_block_size         = 262144;
-float Http2::write_size_threshold               = 0.5;
-uint32_t Http2::write_time_threshold            = 100;
-uint32_t Http2::buffer_water_mark               = 0;
+float Http2::stream_error_rate_threshold         = 0.1;
+uint32_t Http2::stream_error_sampling_threshold  = 10;
+uint32_t Http2::max_settings_per_frame           = 7;
+uint32_t Http2::max_settings_per_minute          = 14;
+uint32_t Http2::max_settings_frames_per_minute   = 14;
+uint32_t Http2::max_ping_frames_per_minute       = 60;
+uint32_t Http2::max_priority_frames_per_minute   = 120;
+uint32_t Http2::max_rst_stream_frames_per_minute = 200;
+float Http2::min_avg_window_update               = 2560.0;
+uint32_t Http2::con_slow_log_threshold           = 0;
+uint32_t Http2::stream_slow_log_threshold        = 0;
+uint32_t Http2::header_table_size_limit          = 65536;
+uint32_t Http2::write_buffer_block_size          = 262144;
+float Http2::write_size_threshold                = 0.5;
+uint32_t Http2::write_time_threshold             = 100;
+uint32_t Http2::buffer_water_mark                = 0;
 
 void
 Http2::init()
@@ -541,6 +542,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
+  REC_EstablishStaticConfigInt32U(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
   REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
   REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
   REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
@@ -596,6 +598,8 @@ Http2::init()
   http2_rsb.max_ping_frames_per_minute_exceeded = intm.newMetricPtr("proxy.process.http2.max_ping_frames_per_minute_exceeded");
   http2_rsb.max_priority_frames_per_minute_exceeded =
     intm.newMetricPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
+  http2_rsb.max_rst_stream_frames_per_minute_exceeded =
+    intm.newMetricPtr("proxy.process.http2.max_rst_stream_frames_per_minute_exceeded");
   http2_rsb.insufficient_avg_window_update      = intm.newMetricPtr("proxy.process.http2.insufficient_avg_window_update");
   http2_rsb.max_concurrent_streams_exceeded_in  = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
   http2_rsb.max_concurrent_streams_exceeded_out = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");

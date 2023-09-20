@@ -130,6 +130,82 @@ private:
   int value = -1;
 };
 
+class HTTP2MaxSettingsFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxSettingsFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxSettingsFramesPerMinute() override {}
+
+  int
+  SNIAction(SSL &ssl, const Context &ctx) const override
+  {
+    if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+      snis->hints_from_sni.http2_max_settings_frames_per_minute = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
+class HTTP2MaxPingFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxPingFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxPingFramesPerMinute() override {}
+
+  int
+  SNIAction(SSL &ssl, const Context &ctx) const override
+  {
+    if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+      snis->hints_from_sni.http2_max_ping_frames_per_minute = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
+class HTTP2MaxPriorityFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxPriorityFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxPriorityFramesPerMinute() override {}
+
+  int
+  SNIAction(SSL &ssl, const Context &ctx) const override
+  {
+    if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+      snis->hints_from_sni.http2_max_priority_frames_per_minute = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
+class HTTP2MaxRstStreamFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxRstStreamFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxRstStreamFramesPerMinute() override {}
+
+  int
+  SNIAction(SSL &ssl, const Context &ctx) const override
+  {
+    if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+      snis->hints_from_sni.http2_max_rst_stream_frames_per_minute = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
 class TunnelDestination : public ActionItem
 {
   // ID of the configured variable. This will be used to know which function
