@@ -83,6 +83,8 @@ static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
   "proxy.process.http2.max_ping_frames_per_minute_exceeded";
 static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
   "proxy.process.http2.max_priority_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_rst_stream_frames_per_minute_exceeded";
 static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
 static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
   "proxy.process.http2.max_concurrent_streams_exceeded_in";
@@ -796,35 +798,36 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams_in       = 100;
-uint32_t Http2::min_concurrent_streams_in       = 10;
-uint32_t Http2::max_active_streams_in           = 0;
-bool Http2::throttling                          = false;
-uint32_t Http2::stream_priority_enabled         = 0;
-uint32_t Http2::initial_window_size             = 65535;
-uint32_t Http2::max_frame_size                  = 16384;
-uint32_t Http2::header_table_size               = 4096;
-uint32_t Http2::max_header_list_size            = 4294967295;
-uint32_t Http2::accept_no_activity_timeout      = 120;
-uint32_t Http2::no_activity_timeout_in          = 120;
-uint32_t Http2::active_timeout_in               = 0;
-uint32_t Http2::push_diary_size                 = 256;
-uint32_t Http2::zombie_timeout_in               = 0;
-float Http2::stream_error_rate_threshold        = 0.1;
-uint32_t Http2::stream_error_sampling_threshold = 10;
-uint32_t Http2::max_settings_per_frame          = 7;
-uint32_t Http2::max_settings_per_minute         = 14;
-uint32_t Http2::max_settings_frames_per_minute  = 14;
-uint32_t Http2::max_ping_frames_per_minute      = 60;
-uint32_t Http2::max_priority_frames_per_minute  = 120;
-float Http2::min_avg_window_update              = 2560.0;
-uint32_t Http2::con_slow_log_threshold          = 0;
-uint32_t Http2::stream_slow_log_threshold       = 0;
-uint32_t Http2::header_table_size_limit         = 65536;
-uint32_t Http2::write_buffer_block_size         = 262144;
-float Http2::write_size_threshold               = 0.5;
-uint32_t Http2::write_time_threshold            = 100;
-uint32_t Http2::buffer_water_mark               = 0;
+uint32_t Http2::max_concurrent_streams_in        = 100;
+uint32_t Http2::min_concurrent_streams_in        = 10;
+uint32_t Http2::max_active_streams_in            = 0;
+bool Http2::throttling                           = false;
+uint32_t Http2::stream_priority_enabled          = 0;
+uint32_t Http2::initial_window_size              = 65535;
+uint32_t Http2::max_frame_size                   = 16384;
+uint32_t Http2::header_table_size                = 4096;
+uint32_t Http2::max_header_list_size             = 4294967295;
+uint32_t Http2::accept_no_activity_timeout       = 120;
+uint32_t Http2::no_activity_timeout_in           = 120;
+uint32_t Http2::active_timeout_in                = 0;
+uint32_t Http2::push_diary_size                  = 256;
+uint32_t Http2::zombie_timeout_in                = 0;
+float Http2::stream_error_rate_threshold         = 0.1;
+uint32_t Http2::stream_error_sampling_threshold  = 10;
+uint32_t Http2::max_settings_per_frame           = 7;
+uint32_t Http2::max_settings_per_minute          = 14;
+uint32_t Http2::max_settings_frames_per_minute   = 14;
+uint32_t Http2::max_ping_frames_per_minute       = 60;
+uint32_t Http2::max_priority_frames_per_minute   = 120;
+uint32_t Http2::max_rst_stream_frames_per_minute = 200;
+float Http2::min_avg_window_update               = 2560.0;
+uint32_t Http2::con_slow_log_threshold           = 0;
+uint32_t Http2::stream_slow_log_threshold        = 0;
+uint32_t Http2::header_table_size_limit          = 65536;
+uint32_t Http2::write_buffer_block_size          = 262144;
+float Http2::write_size_threshold                = 0.5;
+uint32_t Http2::write_time_threshold             = 100;
+uint32_t Http2::buffer_water_mark                = 0;
 
 void
 Http2::init()
@@ -849,6 +852,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
+  REC_EstablishStaticConfigInt32U(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
   REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
   REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
   REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
@@ -917,6 +921,8 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,

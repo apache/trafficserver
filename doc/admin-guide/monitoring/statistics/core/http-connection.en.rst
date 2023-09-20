@@ -260,6 +260,13 @@ HTTP/2
    maximum allowed number of priority frames per minute limit which is configured by
    :ts:cv:`proxy.config.http2.max_priority_frames_per_minute`.
 
+.. ts:stat:: global proxy.process.http2.max_rst_stream_frames_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of rst_stream frames per minute limit which is configured by
+   :ts:cv:`proxy.config.http2.max_rst_stream_frames_per_minute`.
+
 .. ts:stat:: global proxy.process.http2.insufficient_avg_window_update integer
    :type: counter
 

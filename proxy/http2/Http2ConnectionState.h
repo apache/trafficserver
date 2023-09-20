@@ -102,6 +102,11 @@ public:
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
+  uint32_t configured_max_settings_frames_per_minute   = 0;
+  uint32_t configured_max_ping_frames_per_minute       = 0;
+  uint32_t configured_max_priority_frames_per_minute   = 0;
+  uint32_t configured_max_rst_stream_frames_per_minute = 0;
+
   void init(Http2CommonSession *ssn);
   void send_connection_preface();
   void destroy();
@@ -167,6 +172,8 @@ public:
   uint32_t get_received_ping_frame_count();
   void increment_received_priority_frame_count();
   uint32_t get_received_priority_frame_count();
+  void increment_received_rst_stream_frame_count();
+  uint32_t get_received_rst_stream_frame_count();
 
   ssize_t client_rwnd() const;
   Http2ErrorCode increment_client_rwnd(size_t amount);
@@ -212,6 +219,7 @@ private:
   Http2FrequencyCounter _received_settings_frame_counter;
   Http2FrequencyCounter _received_ping_frame_counter;
   Http2FrequencyCounter _received_priority_frame_counter;
+  Http2FrequencyCounter _received_rst_stream_frame_counter;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS

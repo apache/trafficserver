@@ -138,6 +138,19 @@ SNIConfigParams::load_sni_config()
     if (item.http2_buffer_water_mark.has_value()) {
       ai->actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
     }
+    if (item.http2_max_settings_frames_per_minute.has_value()) {
+      ai->actions.push_back(std::make_unique<HTTP2MaxSettingsFramesPerMinute>(item.http2_max_settings_frames_per_minute.value()));
+    }
+    if (item.http2_max_ping_frames_per_minute.has_value()) {
+      ai->actions.push_back(std::make_unique<HTTP2MaxPingFramesPerMinute>(item.http2_max_ping_frames_per_minute.value()));
+    }
+    if (item.http2_max_priority_frames_per_minute.has_value()) {
+      ai->actions.push_back(std::make_unique<HTTP2MaxPriorityFramesPerMinute>(item.http2_max_priority_frames_per_minute.value()));
+    }
+    if (item.http2_max_rst_stream_frames_per_minute.has_value()) {
+      ai->actions.push_back(
+        std::make_unique<HTTP2MaxRstStreamFramesPerMinute>(item.http2_max_rst_stream_frames_per_minute.value()));
+    }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
