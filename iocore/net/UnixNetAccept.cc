@@ -88,7 +88,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       goto Ldone; // note: @a con will clean up the socket when it goes out of scope.
     }
 
-    ++count;
+    count++;
     Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
@@ -355,12 +355,8 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-<<<<<<< HEAD
-    Metrics::increment(net_rsb.connections_currently_open);
     count++;
-=======
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
->>>>>>> 98d516134 (addressing comments)
+    Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -513,10 +509,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
       goto Lerror;
     }
 
-    count++;
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
     ink_release_assert(vc);
 
+    count++;
     Metrics::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
