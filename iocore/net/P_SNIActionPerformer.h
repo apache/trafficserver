@@ -73,7 +73,7 @@ public:
     auto snis  = TLSSNISupport::getInstance(&ssl);
     auto alpns = ALPNSupport::getInstance(&ssl);
 
-    if (snis && alpns) {
+    if (snis == nullptr || alpns == nullptr) {
       return SSL_TLSEXT_ERR_OK;
     }
 
