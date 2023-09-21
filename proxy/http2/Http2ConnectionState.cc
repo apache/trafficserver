@@ -1532,7 +1532,8 @@ Http2ConnectionState::create_initiating_stream(Http2Error &error)
     }
   }
 
-  ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session())->is_outbound() == true);
+  ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session()));
+  ink_assert(this->session->is_outbound() == true);
   uint32_t const initial_stream_window = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
   Http2Stream *new_stream =
     THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), -1,
@@ -1642,7 +1643,8 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     return nullptr;
   }
 
-  ink_release_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session())->is_outbound() == false);
+  ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session()));
+  ink_assert(this->session->is_outbound() == true);
   uint32_t initial_stream_window        = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
   uint32_t initial_stream_window_target = initial_stream_window;
   if (is_client_streamid && this->_has_dynamic_stream_window()) {
