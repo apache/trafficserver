@@ -262,7 +262,6 @@ void RecConfigWarnIfUnregistered();
 RecInt REC_ConfigReadInteger(const char *name);
 char *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);
-RecCounter REC_ConfigReadCounter(const char *name);
 
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX
 RecInt REC_readInteger(const char *name, bool *found, bool lock = true);

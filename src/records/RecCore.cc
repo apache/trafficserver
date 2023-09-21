@@ -1138,14 +1138,6 @@ REC_ConfigReadFloat(const char *name)
   return t;
 }
 
-RecCounter
-REC_ConfigReadCounter(const char *name)
-{
-  RecCounter t = 0;
-  RecGetRecordCounter(name, &t);
-  return t;
-}
-
 //-------------------------------------------------------------------------
 // Backwards compatibility. TODO: Should remove these.
 //-------------------------------------------------------------------------
