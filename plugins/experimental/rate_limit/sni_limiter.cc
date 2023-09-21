@@ -158,6 +158,7 @@ SniRateLimiter::initialize(int argc, const char *argv[])
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
+  optind = 1;
 
   TSDebug(PLUGIN_NAME, "Initializing an SNI Rate Limiter");
 
