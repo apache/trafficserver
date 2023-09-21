@@ -24,7 +24,9 @@
 
 #include <openssl/ssl.h>
 #include "TLSEarlyDataSupport.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 
 int TLSEarlyDataSupport::_ex_data_index = -1;
 
@@ -68,7 +70,7 @@ TLSEarlyDataSupport::get_early_data_len() const
 }
 
 void
-TLSEarlyDataSupport::update_early_data_config(uint32_t max_early_data, uint32_t recv_max_early_data)
+TLSEarlyDataSupport::update_early_data_config(SSL *ssl, uint32_t max_early_data, uint32_t recv_max_early_data)
 {
 #if TS_HAS_TLS_EARLY_DATA
   // Must disable OpenSSL's internal anti-replay if external cache is used with

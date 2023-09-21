@@ -224,7 +224,7 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
       SSL_set_bio(ssl, rbio, wbio);
 
 #if TS_HAS_TLS_EARLY_DATA
-      update_early_data_config(SSLConfigParams::server_max_early_data, SSLConfigParams::server_recv_max_early_data);
+      update_early_data_config(ssl, SSLConfigParams::server_max_early_data, SSLConfigParams::server_recv_max_early_data);
 #endif
     }
     this->_bindSSLObject();
