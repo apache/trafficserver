@@ -965,7 +965,7 @@ The response will contain the default `success_response`  or a proper rpc error,
 
 Validation:
 
-You can request for the record `proxy.node.config.reconfigure_time` which will be updated with the time of the requested update.
+You can request for the record `proxy.process.proxy.reconfigure_time` which will be updated with the time of the requested update.
 
 
 .. _jsonrpc-api-management-metrics:

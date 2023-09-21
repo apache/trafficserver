@@ -213,7 +213,7 @@ ts_lua_script_registered(lua_State *L, char *script)
   // first check the reconfigure_time for the script. if it is not found, then it is new
   // if it matches the current reconfigure_time, then it is loaded already
   // And we return the conf pointer of it. Otherwise it can be loaded again.
-  if (TS_SUCCESS == TSMgmtIntGet("proxy.node.config.reconfigure_time", &curr_time)) {
+  if (TS_SUCCESS == TSMgmtIntGet("proxy.process.proxy.reconfigure_time", &curr_time)) {
     lua_pushliteral(L, "__scriptTime");
     lua_pushstring(L, script);
     lua_concat(L, 2);
@@ -260,7 +260,7 @@ ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *conf)
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] registering script [%s]", __FUNCTION__, script);
 
   // we recorded the script reconfigure_time and its conf pointer in registry
-  if (TS_SUCCESS == TSMgmtIntGet("proxy.node.config.reconfigure_time", &time)) {
+  if (TS_SUCCESS == TSMgmtIntGet("proxy.process.proxy.reconfigure_time", &time)) {
     lua_pushliteral(L, "__scriptTime");
     lua_pushstring(L, script);
     lua_concat(L, 2);

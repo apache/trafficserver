@@ -186,7 +186,7 @@ Display the current value of a configuration record.
    modified since the previous configuration load, this command is a no-op.
 
    The timestamp of the last reconfiguration event (in seconds since epoch) is published in the
-   `proxy.node.config.reconfigure_time` metric.
+   `proxy.process.proxy.reconfigure_time` metric.
 
 .. program:: traffic_ctl config
 .. option:: set RECORD VALUE

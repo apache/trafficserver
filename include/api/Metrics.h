@@ -76,7 +76,7 @@ public:
   {
     _blobs[0] = new MetricStorage();
     ink_release_assert(_blobs[0]);
-    ink_release_assert(0 == newMetric("proxy.node.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+    ink_release_assert(0 == newMetric("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
   }
 
   // Singleton
