@@ -137,8 +137,7 @@ PreWarmSM::retry()
   ink_hrtime delay = HRTIME_SECONDS(1 << _retry_counter);
   ++_retry_counter;
 
-  ts::Metrics &intm = ts::Metrics::getInstance();
-  intm.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::RETRY)));
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::RETRY)));
 
   EThread *ethread = this_ethread();
   _retry_event     = ethread->schedule_in_local(this, delay, EVENT_IMMEDIATE);
@@ -628,9 +627,8 @@ PreWarmSM::_record_handshake_time()
     return;
   }
 
-  ts::Metrics &intm = ts::Metrics::getInstance();
-  intm.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_TIME)), duration);
-  intm.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_COUNT)));
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_TIME)), duration);
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_COUNT)), 1);
 }
 
 ////
@@ -690,8 +688,6 @@ PreWarmQueue::state_running(int event, void *data)
 {
   switch (event) {
   case EVENT_INTERVAL: {
-    ts::Metrics &intm = ts::Metrics::getInstance();
-
     for (auto &[dst, info] : _map) {
       // mentain queues
       _delete_closed_sm(info.init_list);
@@ -705,10 +701,10 @@ PreWarmQueue::state_running(int event, void *data)
             dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
             (int)info.open_list->size());
 
-      intm.write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
-      intm.write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), info.open_list->size());
-      intm.increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::HIT)), info.stat.hit);
-      intm.increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::MISS)), info.stat.miss);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), info.open_list->size());
+      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::HIT)), info.stat.hit);
+      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::MISS)), info.stat.miss);
 
       // clear PreWarmQueue::Stat
       info.stat.miss = 0;
@@ -902,8 +898,6 @@ PreWarmQueue::_reconfigure()
   const PreWarm::StatsIdMap &new_stats_id_map = prewarmManager.get_stats_id_map();
 
   Map new_map;
-  ts::Metrics &intm = ts::Metrics::getInstance();
-
   for (auto &entry : new_conf_list) {
     const PreWarm::SPtrConstDst &dst = entry.first;
     PreWarm::SPtrConstConf conf      = entry.second;
@@ -932,8 +926,8 @@ PreWarmQueue::_reconfigure()
   // free unexisting entries
   for (auto &[dst, info] : _map) {
     if (auto entry = new_conf_list.find(dst); entry == new_conf_list.end()) {
-      intm.write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), 0);
-      intm.write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), 0);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), 0);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), 0);
 
       _make_queue_empty(info.init_list);
       delete info.init_list;
@@ -1152,18 +1146,21 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       }
 
       ts::Metrics::IdType stats_id = intm.lookup(name);
+      ts::Metrics::IntType *metric = nullptr;
 
       if (stats_id == ts::Metrics::NOT_FOUND) {
-        stats_id = intm.newMetric(name);
+        metric = intm.newMetricPtr(name);
 
-        if (stats_id < 0) {
+        if (metric == nullptr) {
           Error("couldn't register stat name=%s", name);
         } else {
           ++stats_counter;
         }
+      } else {
+        metric = intm.lookup(stats_id);
       }
 
-      ids[j] = stats_id;
+      ids[j] = metric;
 
       Debug("v_prewarm_init", "stat id=%d name=%s", stats_id, name);
     }
