@@ -32,9 +32,12 @@
 #cmakedefine BUILD_GROUP "@BUILD_GROUP@"
 #define BUILD_NUMBER "@BUILD_NUMBER@"
 
+#cmakedefine HAVE_ALLOCA_H 1
 #cmakedefine HAVE_BROTLI_ENCODE_H 1
 #cmakedefine HAVE_CLOCK_GETTIME 1
 #cmakedefine HAVE_CURSES_H 1
+#cmakedefine HAVE_CURL 1
+#cmakedefine HAVE_CPIO_H 1
 #cmakedefine HAVE_NCURSES_H 1
 #cmakedefine HAVE_NCURSES_CURSES_H 1
 #cmakedefine HAVE_NCURSES_NCURSES_H 1
@@ -43,39 +46,77 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_STDLIB_H 1
 #cmakedefine HAVE_STDINT_H 1
+#cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_INTTYPES_H 1
 #cmakedefine HAVE_STRING_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
 #cmakedefine HAVE_LINUX_MAJOR_H 1
+#cmakedefine HAVE_MALLOC_H 1
+#cmakedefine HAVE_MCHECK_H 1
+#cmakedefine HAVE_MACHINE_ENDIAN_H 1
+#cmakedefine HAVE_SYS_BYTEORDER_H 1
 #cmakedefine HAVE_SYS_DISK_H 1
 #cmakedefine HAVE_SYS_DISKLABEL_H 1
+#cmakedefine HAVE_SYS_ENDIAN_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
 #cmakedefine HAVE_SYS_IOCTL_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
 #cmakedefine HAVE_SYS_TYPES_H 1
+#cmakedefine HAVE_SYS_SOCKIO_H 1
 #cmakedefine HAVE_SYS_STAT_H 1
+#cmakedefine HAVE_SYS_STATFS_H 1
 #cmakedefine HAVE_SYS_STATVFS_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
+#cmakedefine HAVE_SYS_SYSINFO_H 1
 #cmakedefine HAVE_SYS_SYSMACROS_H 1
+#cmakedefine HAVE_SYS_SYSTEMINFO_H 1
+#cmakedefine HAVE_SYS_SYSCTL_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_MOUNT_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
+#cmakedefine HAVE_SYSEXITS_H 1
+#cmakedefine HAVE_STROPTS_H 1
 #cmakedefine HAVE_UNISTD_H 1
+#cmakedefine HAVE_VALUES_H 1
 #cmakedefine HAVE_NETINET_IN_H 1
 #cmakedefine HAVE_NETINET_IN_SYSTM_H 1
 #cmakedefine HAVE_NETINET_TCP_H 1
 #cmakedefine HAVE_NETINET_IP_ICMP_H 1
+#cmakedefine HAVE_NETINET_IP_H 1
 #cmakedefine HAVE_NETDB_H 1
 #cmakedefine HAVE_ARPA_INET_H 1
 #cmakedefine HAVE_ARPA_NAMESER_H 1
 #cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
 #cmakedefine HAVE_SIGINFO_H 1
 #cmakedefine HAVE_ENDIAN_H 1
+#cmakedefine HAVE_MALLOC_USABLE_SIZE 1
+#cmakedefine HAVE_MCHECK_PEDANTIC 1
+#cmakedefine HAVE_POSIX_FADVISE 1
+#cmakedefine HAVE_POSIX_FALLOCATE 1
+#cmakedefine HAVE_POSIX_MADVISE 1
+
+#cmakedefine HAVE_PTHREAD_GETNAME_NP 1
+#cmakedefine HAVE_PTHREAD_GET_NAME_NP 1
+#cmakedefine HAVE_PTHREAD_SETNAME_NP_1 1
+#cmakedefine HAVE_PTHREAD_SETNAME_NP_2 1
+#cmakedefine HAVE_PTHREAD_SET_NAME_NP_1 1
+#cmakedefine HAVE_PTHREAD_SET_NAME_NP_2 1
 
 #cmakedefine01 HAVE_GETRESUID
 #cmakedefine01 HAVE_GETRESGID
+#cmakedefine01 HAVE_GETPAGESIZE
+#cmakedefine01 HAVE_GETPEEREID
+#cmakedefine01 HAVE_GETPEERUCRED
 #cmakedefine01 HAVE_ACCEPT4
 #cmakedefine01 HAVE_EVENTFD
+#cmakedefine01 HAVE_SYSCONF
+#cmakedefine HAVE_RECVMMSG 1
+#cmakedefine HAVE_SENDMMSG 1
+#cmakedefine01 HAVE_STRLCAT
+#cmakedefine01 HAVE_STRLCPY
+#cmakedefine01 HAVE_STRSIGNAL
+
+#cmakedefine01 HAVE_HWLOC_OBJ_PU
 
 #cmakedefine01 HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
 #cmakedefine01 TS_HAS_TLS_KEYLOGGING
@@ -88,6 +129,16 @@
 #cmakedefine HAVE_BIO_METH_GET_CREATE 1
 #cmakedefine HAVE_BIO_METH_GET_DESTROY 1
 #cmakedefine HAVE_HMAC_CTX_NEW 1
+#cmakedefine HAVE_MD5_INIT 1
+
+#cmakedefine HAVE_STRUCT_TCP_INFO 1
+#cmakedefine HAVE_STRUCT_LINUX_TCP_INFO 1
+#cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
+#cmakedefine HAVE_STRUCT_SOCKADDR_IN_SIN_LEN 1
+#cmakedefine HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN 1
+#cmakedefine HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC 1
+#cmakedefine HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 1
+#cmakedefine HAVE_SYSCTLBYNAME 1
 
 #define SIZEOF_VOIDP @CMAKE_SIZEOF_VOID_P@
 
