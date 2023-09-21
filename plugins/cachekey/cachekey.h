@@ -68,6 +68,12 @@ public:
   bool appendUaClass(Classifier &classifier);
   bool finalize() const;
 
+  bool
+  isValid()
+  {
+    return _valid;
+  }
+
   // noncopyable
   CacheKey(const CacheKey &)            = delete; // disallow
   CacheKey &operator=(const CacheKey &) = delete; // disallow
