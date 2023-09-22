@@ -732,7 +732,7 @@ Stripe::dir_check()
   this->loadDir();
   //  uint64_t total_buckets = _segments * _buckets;
   //  uint64_t total_entries = total_buckets * DIR_DEPTH;
-  int frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES];
+  int frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES] = {0};
   int j;
   int stale = 0, in_use = 0, empty = 0;
   int free = 0, head = 0, buckets_in_use = 0;
