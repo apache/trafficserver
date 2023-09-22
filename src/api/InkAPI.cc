@@ -1313,8 +1313,6 @@ APIHooks::clear()
   }
 }
 
-HttpHookState::HttpHookState() : _id(TS_HTTP_LAST_HOOK) {}
-
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
 {
