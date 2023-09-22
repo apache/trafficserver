@@ -393,16 +393,13 @@ cryptoModifiedBase64Decode(const char *in, size_t inLen, char *out, size_t outLe
 {
   size_t bufferLen = inLen;
   switch (inLen % 4) {
-  case 0: /* no padding */
-    break;
   case 2: /* need space for '==' */
     bufferLen += 2;
     break;
   case 3: /* need space for '=' */
     bufferLen += 1;
     break;
-  case 4:     /* malformed base64 */
-    return 0; /* nothing will be written to the output buffer */
+  default: /* no padding */
     break;
   }
 
