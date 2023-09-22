@@ -2193,14 +2193,6 @@ mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int
 }
 
 void
-mime_field_value_set_uint64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint64_t value)
-{
-  char buf[21];
-  int len = mime_format_uint64(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, true);
-}
-
-void
 mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time_t value)
 {
   char buf[33];
@@ -2929,12 +2921,6 @@ int
 mime_format_int64(char *buf, int64_t val, size_t buf_len)
 {
   return ink_fast_ltoa(val, buf, buf_len);
-}
-
-int
-mime_format_uint64(char *buf, uint64_t val, size_t buf_len)
-{
-  return ink_fast_ultoa(val, buf, buf_len);
 }
 
 void

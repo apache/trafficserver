@@ -1857,6 +1857,8 @@ MIMEHdr::set_age(time_t value)
     if (sizeof(time_t) > 4) {
       value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
     } else {
+      // Only on systems where time_t is 32 bits
+      // coverity[Y2K38_SAFETY]
       value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
     }
   }
