@@ -65,7 +65,7 @@ using ipstate = enum { ALLOW_IP, DENY_IP, UNKNOWN_IP };
 class Acl
 {
 public:
-  Acl() {}
+  Acl() { memset(&_mmdb, 0, sizeof(_mmdb)); }
   ~Acl()
   {
     if (db_loaded) {
