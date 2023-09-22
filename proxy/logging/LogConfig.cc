@@ -85,6 +85,7 @@ LogConfig::setup_default_values()
   rolling_interval_sec     = 86400; // 24 hours
   rolling_offset_hr        = 0;
   rolling_size_mb          = 10;
+  rolling_min_count        = 0;
   rolling_max_count        = 0;
   rolling_allow_empty      = false;
   auto_delete_rolled_files = true;
