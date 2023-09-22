@@ -119,7 +119,7 @@ f()
   // atscppapi::Continuation API is designed to support use after move and this
   // test intentionally exercises this behavior. Thus we disable clang-analyzer
   // for this code.
-#ifndef __clang_analyzer__
+#if !defined(__clang_analyzer__) && !defined(__COVERITY__)
   ALWAYS_ASSERT(!c)
   ALWAYS_ASSERT(c.asTSCont() == nullptr)
   ALWAYS_ASSERT(c.mutex() == nullptr)
