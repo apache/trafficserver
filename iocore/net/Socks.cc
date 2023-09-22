@@ -452,7 +452,6 @@ SocksEntry::mainEvent(int event, void *data)
 void
 loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 {
-  int socks_config_fd = -1;
   ats_scoped_str config_pathname;
   swoc::Errata errata;
   std::error_code ec;
@@ -525,9 +524,6 @@ error:
 
   socks_conf_stuff->socks_needed   = 0;
   socks_conf_stuff->accept_enabled = 0;
-  if (socks_config_fd >= 0) {
-    ::close(socks_config_fd);
-  }
 }
 
 int
