@@ -384,6 +384,7 @@ check_symbol_exists(
     "openssl/ssl.h"
     HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
 )
+check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
