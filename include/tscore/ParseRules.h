@@ -872,8 +872,8 @@ ink_atoui(const char *str)
 {
   uint64_t val = ink_atoui64(str);
 
-  if (val > INT_MAX)
-    return INT_MAX;
+  if (val > UINT_MAX)
+    return UINT_MAX;
   else
-    return static_cast<int>(val);
+    return static_cast<unsigned int>(val);
 }

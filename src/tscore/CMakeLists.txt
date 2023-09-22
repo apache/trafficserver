@@ -161,6 +161,7 @@ add_executable(test_tscore
         unit_tests/test_arena.cc
         unit_tests/test_ink_inet.cc
         unit_tests/test_ink_memory.cc
+        unit_tests/test_ink_string.cc
         unit_tests/test_layout.cc
         unit_tests/test_scoped_resource.cc
         unit_tests/unit_test_main.cc

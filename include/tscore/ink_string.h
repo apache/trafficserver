@@ -379,6 +379,18 @@ ink_fast_ltoa(int64_t val, char *buf, int buf_len)
   return ink_small_itoa((int)val, buf, buf_len);
 }
 
+inline int
+ink_fast_ultoa(uint64_t val, char *buf, int buf_len)
+{
+  if (val > 99999) {
+    int ret = snprintf(buf, buf_len, "%" PRIu64 "", val);
+
+    return (ret >= 0 ? ret : 0);
+  }
+
+  return ink_small_itoa((int)val, buf, buf_len);
+}
+
 /// Check for prefix.
 /// @return @c true if @a lhs is a prefix (ignoring case) of @a rhs.
 inline bool
