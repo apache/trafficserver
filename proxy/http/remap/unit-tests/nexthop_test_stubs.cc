@@ -67,7 +67,6 @@ APIHooks::clear()
 
 HttpTunnel::HttpTunnel() {}
 HttpCacheSM::HttpCacheSM() {}
-HttpHookState::HttpHookState() {}
 HttpTunnelConsumer::HttpTunnelConsumer() {}
 HttpTunnelProducer::HttpTunnelProducer() {}
 ChunkedHandler::ChunkedHandler() {}
