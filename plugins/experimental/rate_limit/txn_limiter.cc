@@ -53,7 +53,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Unknown event %d", static_cast<int>(event));
+    Dbg(dbg_ctl, "Unknown event %d", static_cast<int>(event));
     TSError("Unknown event in %s", PLUGIN_NAME);
     break;
   }
@@ -72,7 +72,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
     std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
     delayHeader(txnp, limiter->header, delay);
-    TSDebug(PLUGIN_NAME, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
+    Dbg(dbg_ctl, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -89,7 +89,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
       std::chrono::milliseconds age  = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
       delayHeader(txnp, limiter->header, age);
-      TSDebug(PLUGIN_NAME, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
+      Dbg(dbg_ctl, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
       TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);

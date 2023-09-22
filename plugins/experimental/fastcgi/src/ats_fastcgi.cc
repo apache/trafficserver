@@ -83,11 +83,11 @@ public:
   {
     if (transaction.getCacheStatus() == Transaction::CACHE_LOOKUP_HIT_FRESH) {
       transaction.resume();
-      TSDebug(PLUGIN_NAME, " Cache hit.");
+      Dbg(dbg_ctl, " Cache hit.");
       return;
     }
     if (static_cast<TSHttpTxn>(transaction.getAtsHandle()) == nullptr) {
-      TSDebug(PLUGIN_NAME, "Invalid Transaction.");
+      Dbg(dbg_ctl, "Invalid Transaction.");
       return;
     }
     string path = transaction.getClientRequest().getUrl().getPath();
@@ -214,6 +214,6 @@ TSPluginInit(int argc, const char *argv[])
     TSStatIntSet(phpConnCount, 0);
 
   } else {
-    TSDebug(PLUGIN_NAME, " plugin is disabled.");
+    Dbg(dbg_ctl, " plugin is disabled.");
   }
 }

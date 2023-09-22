@@ -196,17 +196,6 @@ diags()
     }                                     \
   } while (false)
 
-// Same as Dbg above, but this allows a positive override of the DbgCtl, if flag is true.
-//
-#define SpecificDbg(FLAG, CTL, ...) \
-  do {                              \
-    if (unlikely(diags()->on())) {  \
-      if ((FLAG) || CTL.tag_on()) { \
-        DbgPrint(CTL, __VA_ARGS__); \
-      }                             \
-    }                               \
-  } while (false)
-
 // For better performance, use this instead of diags()->on(tag) when the tag parameter is a C-string literal.
 //
 #define is_debug_tag_set(TAG)                 \
@@ -236,7 +225,6 @@ diags()
 
 #define Diag(...)
 #define Debug(...)
-#define SpecificDbg(...)
 
 #define is_debug_tag_set(_t)      0
 #define is_action_tag_set(_t)     0

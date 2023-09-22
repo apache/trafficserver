@@ -52,7 +52,7 @@ TSRemapInit(TSRemapInterface *, char *, int)
     if (timeout < 1) {
       timeout = DEFAULT_TIMEOUT;
     }
-    TSDebug(PLUGIN_TAG, "timeout is set to: %zu", timeout);
+    Dbg(dbg_ctl, "timeout is set to: %zu", timeout);
   }
 
   statistics.failures = TSStatCreate(PLUGIN_TAG ".failures", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
@@ -86,7 +86,7 @@ TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
       return true;
     });
   }
-  TSDebug(PLUGIN_TAG, "skipPostPut is %s", (instance->skipPostPut ? "true" : "false"));
+  Dbg(dbg_ctl, "skipPostPut is %s", (instance->skipPostPut ? "true" : "false"));
 
   *i = static_cast<void *>(instance);
 
@@ -120,7 +120,7 @@ DoRemap(const Instance &i, TSHttpTxn t)
   int length;
   const char *const method = TSHttpHdrMethodGet(buffer, location, &length);
 
-  TSDebug(PLUGIN_TAG, "Method is %s.", std::string(method, length).c_str());
+  Dbg(dbg_ctl, "Method is %s.", std::string(method, length).c_str());
 
   if (i.skipPostPut && ((length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) ||
                         (length == TS_HTTP_LEN_PUT && memcmp(TS_HTTP_METHOD_PUT, method, TS_HTTP_LEN_PUT) == 0))) {
@@ -169,7 +169,7 @@ TSRemapDoRemap(void *i, TSHttpTxn t, TSRemapRequestInfo *r)
   if (!instance->origins.empty() && !TSHttpTxnIsInternal(t)) {
     DoRemap(*instance, t);
   } else {
-    TSDebug(PLUGIN_TAG, "Skipping transaction %p", t);
+    Dbg(dbg_ctl, "Skipping transaction %p", t);
   }
 
   return TSREMAP_NO_REMAP;

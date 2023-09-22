@@ -51,6 +51,11 @@
 
 #define PLUGIN_NAME "server-transform"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 #define STATE_BUFFER      1
 #define STATE_CONNECT     2
 #define STATE_WRITE       3
@@ -183,7 +188,7 @@ transform_connect(TSCont contp, TransformData *data)
   ip_addr.sin_family      = AF_INET;
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port        = server_port;
-  TSDebug(PLUGIN_NAME, "net connect.");
+  Dbg(dbg_ctl, "net connect.");
   action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
   if (!TSActionDone(action)) {
@@ -353,13 +358,13 @@ transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *
 {
   switch (event) {
   case TS_EVENT_NET_CONNECT:
-    TSDebug(PLUGIN_NAME, "connected");
+    Dbg(dbg_ctl, "connected");
 
     data->pending_action = nullptr;
     data->server_vc      = (TSVConn)edata;
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
-    TSDebug(PLUGIN_NAME, "connect failed");
+    Dbg(dbg_ctl, "connect failed");
     data->pending_action = nullptr;
     return transform_bypass(contp, data);
   default:
@@ -496,7 +501,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   /* Check to see if the transformation has been closed by a call to
      TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
-    TSDebug(PLUGIN_NAME, "transformation closed");
+    Dbg(dbg_ctl, "transformation closed");
     transform_destroy(contp);
     return 0;
   } else {
@@ -508,7 +513,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
       TSError("[%s] Didn't get Continuation's Data, ignoring event", PLUGIN_NAME);
       return 0;
     }
-    TSDebug(PLUGIN_NAME, "transform handler event [%d], data->state = [%d]", event, data->state);
+    Dbg(dbg_ctl, "transform handler event [%d], data->state = [%d]", event, data->state);
 
     do {
       switch (data->state) {

@@ -53,8 +53,8 @@
 #include "tscore/TestBox.h"
 
 // This used to be in InkAPITestTool.cc, which we'd just #include here... But that seemed silly.
-#define SDBG_TAG "SockServer"
-#define CDBG_TAG "SockClient"
+DbgCtl dbg_ctl_SockServer{"SockServer"};
+DbgCtl dbg_ctl_SockClient{"SockClient"};
 
 #define IP(a, b, c, d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
@@ -525,7 +525,7 @@ synclient_txn_create()
   txn->status     = REQUEST_INPROGRESS;
   txn->magic      = MAGIC_ALIVE;
 
-  TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
+  Dbg(dbg_ctl_SockClient, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
   return txn;
 }
 
@@ -563,7 +563,7 @@ synclient_txn_close(ClientTxn *txn)
       txn->resp_buffer = nullptr;
     }
 
-    TSDebug(CDBG_TAG, "Client Txn destroyed");
+    Dbg(dbg_ctl_SockClient, "Client Txn destroyed");
   }
 }
 
@@ -623,7 +623,7 @@ synclient_txn_read_response(TSCont contp)
   }
 
   txn->response[txn->response_len] = '\0';
-  TSDebug(CDBG_TAG, "Response = |%s|, req len = %d", txn->response, txn->response_len);
+  Dbg(dbg_ctl_SockClient, "Response = |%s|, req len = %d", txn->response, txn->response_len);
 
   return 1;
 }
@@ -640,13 +640,13 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_VCONN_READ_COMPLETE:
     if (event == TS_EVENT_VCONN_READ_READY) {
-      TSDebug(CDBG_TAG, "READ_READY");
+      Dbg(dbg_ctl_SockClient, "READ_READY");
     } else {
-      TSDebug(CDBG_TAG, "READ_COMPLETE");
+      Dbg(dbg_ctl_SockClient, "READ_COMPLETE");
     }
 
     avail = TSIOBufferReaderAvail(txn->resp_reader);
-    TSDebug(CDBG_TAG, "%" PRId64 " bytes available in buffer", avail);
+    Dbg(dbg_ctl_SockClient, "%" PRId64 " bytes available in buffer", avail);
 
     if (avail > 0) {
       synclient_txn_read_response(contp);
@@ -657,7 +657,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
     break;
 
   case TS_EVENT_VCONN_EOS:
-    TSDebug(CDBG_TAG, "READ_EOS");
+    Dbg(dbg_ctl_SockClient, "READ_EOS");
     // Connection closed. In HTTP/1.0 it means we're done for this request.
     txn->status = REQUEST_SUCCESS;
     synclient_txn_close(static_cast<ClientTxn *>(TSContDataGet(contp)));
@@ -665,7 +665,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
     return 1;
 
   case TS_EVENT_ERROR:
-    TSDebug(CDBG_TAG, "READ_ERROR");
+    Dbg(dbg_ctl_SockClient, "READ_ERROR");
     txn->status = REQUEST_FAILURE;
     synclient_txn_close(static_cast<ClientTxn *>(TSContDataGet(contp)));
     TSContDestroy(contp);
@@ -703,7 +703,7 @@ synclient_txn_write_request(TSCont contp)
   }
 
   /* Start writing the response */
-  TSDebug(CDBG_TAG, "Writing |%s| (%" PRId64 ") bytes", txn->request, len);
+  Dbg(dbg_ctl_SockClient, "Writing |%s| (%" PRId64 ") bytes", txn->request, len);
   txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->req_reader, len);
 
   return 1;
@@ -717,12 +717,12 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
-    TSDebug(CDBG_TAG, "WRITE_READY");
+    Dbg(dbg_ctl_SockClient, "WRITE_READY");
     TSVIOReenable(txn->write_vio);
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(CDBG_TAG, "WRITE_COMPLETE");
+    Dbg(dbg_ctl_SockClient, "WRITE_COMPLETE");
     // Weird: synclient should not close the write part of vconn.
     // Otherwise some strangeness...
 
@@ -732,14 +732,14 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
     break;
 
   case TS_EVENT_VCONN_EOS:
-    TSDebug(CDBG_TAG, "WRITE_EOS");
+    Dbg(dbg_ctl_SockClient, "WRITE_EOS");
     txn->status = REQUEST_FAILURE;
     synclient_txn_close(static_cast<ClientTxn *>(TSContDataGet(contp)));
     TSContDestroy(contp);
     break;
 
   case TS_EVENT_ERROR:
-    TSDebug(CDBG_TAG, "WRITE_ERROR");
+    Dbg(dbg_ctl_SockClient, "WRITE_ERROR");
     txn->status = REQUEST_FAILURE;
     synclient_txn_close(static_cast<ClientTxn *>(TSContDataGet(contp)));
     TSContDestroy(contp);
@@ -761,7 +761,7 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_CONNECT) {
-    TSDebug(CDBG_TAG, "NET_CONNECT");
+    Dbg(dbg_ctl_SockClient, "NET_CONNECT");
 
     txn->req_buffer  = TSIOBufferCreate();
     txn->req_reader  = TSIOBufferReaderAlloc(txn->req_buffer);
@@ -783,7 +783,7 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
 
     return TS_EVENT_IMMEDIATE;
   } else {
-    TSDebug(CDBG_TAG, "NET_CONNECT_FAILED");
+    Dbg(dbg_ctl_SockClient, "NET_CONNECT_FAILED");
     txn->status = REQUEST_FAILURE;
     synclient_txn_close(static_cast<ClientTxn *>(TSContDataGet(contp)));
     TSContDestroy(contp);
@@ -852,9 +852,9 @@ synserver_stop(SocketServer *s)
   if (s->accept_action && !TSActionDone(s->accept_action)) {
     TSActionCancel(s->accept_action);
     s->accept_action = nullptr;
-    TSDebug(SDBG_TAG, "Had to cancel action");
+    Dbg(dbg_ctl_SockServer, "Had to cancel action");
   }
-  TSDebug(SDBG_TAG, "stopped");
+  Dbg(dbg_ctl_SockServer, "stopped");
   return 1;
 }
 
@@ -868,12 +868,12 @@ synserver_delete(SocketServer *s)
     if (s->accept_cont) {
       TSContDestroy(s->accept_cont);
       s->accept_cont = nullptr;
-      TSDebug(SDBG_TAG, "destroyed accept cont");
+      Dbg(dbg_ctl_SockServer, "destroyed accept cont");
     }
 
     s->magic = MAGIC_DEAD;
     TSfree(s);
-    TSDebug(SDBG_TAG, "deleted server");
+    Dbg(dbg_ctl_SockServer, "deleted server");
   }
 
   return 1;
@@ -887,12 +887,12 @@ synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
   SocketServer *s = static_cast<SocketServer *>(TSContDataGet(contp));
   TSAssert(s->magic == MAGIC_ALIVE);
 
-  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
+  Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT", __func__);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
+    Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
     return TS_EVENT_IMMEDIATE;
   }
 
@@ -911,11 +911,11 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
+    Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
     return TS_EVENT_IMMEDIATE;
   }
 
-  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
+  Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT", __func__);
 
   /* Create a new transaction */
   ServerTxn *txn = static_cast<ServerTxn *>(TSmalloc(sizeof(ServerTxn)));
@@ -965,7 +965,7 @@ synserver_txn_close(TSCont contp)
   TSfree(txn);
   TSContDestroy(contp);
 
-  TSDebug(SDBG_TAG, "Server Txn destroyed");
+  Dbg(dbg_ctl_SockServer, "Server Txn destroyed");
   return TS_EVENT_IMMEDIATE;
 }
 
@@ -998,7 +998,7 @@ synserver_txn_write_response(TSCont contp)
   }
 
   /* Start writing the response */
-  TSDebug(SDBG_TAG, "Writing response: |%s| (%" PRId64 ") bytes)", response, len);
+  Dbg(dbg_ctl_SockServer, "Writing response: |%s| (%" PRId64 ") bytes)", response, len);
   txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->resp_reader, len);
 
   /* Now that response is in IOBuffer, free up response */
@@ -1015,23 +1015,23 @@ synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
-    TSDebug(SDBG_TAG, "WRITE_READY");
+    Dbg(dbg_ctl_SockServer, "WRITE_READY");
     TSVIOReenable(txn->write_vio);
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(SDBG_TAG, "WRITE_COMPLETE");
+    Dbg(dbg_ctl_SockServer, "WRITE_COMPLETE");
     TSVConnShutdown(txn->vconn, 0, 1);
     return synserver_txn_close(contp);
     break;
 
   case TS_EVENT_VCONN_EOS:
-    TSDebug(SDBG_TAG, "WRITE_EOS");
+    Dbg(dbg_ctl_SockServer, "WRITE_EOS");
     return synserver_txn_close(contp);
     break;
 
   case TS_EVENT_ERROR:
-    TSDebug(SDBG_TAG, "WRITE_ERROR");
+    Dbg(dbg_ctl_SockServer, "WRITE_ERROR");
     return synserver_txn_close(contp);
     break;
 
@@ -1066,10 +1066,10 @@ synserver_txn_read_request(TSCont contp)
   }
 
   txn->request[txn->request_len] = '\0';
-  TSDebug(SDBG_TAG, "Request = |%s|, req len = %d", txn->request, txn->request_len);
+  Dbg(dbg_ctl_SockServer, "Request = |%s|, req len = %d", txn->request, txn->request_len);
 
   end = (strstr(txn->request, HTTP_REQUEST_END) != nullptr);
-  TSDebug(SDBG_TAG, "End of request = %d", end);
+  Dbg(dbg_ctl_SockServer, "End of request = %d", end);
 
   return end;
 }
@@ -1086,9 +1086,9 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_VCONN_READ_COMPLETE:
-    TSDebug(SDBG_TAG, (event == TS_EVENT_VCONN_READ_READY) ? "READ_READY" : "READ_COMPLETE");
+    Dbg(dbg_ctl_SockServer, (event == TS_EVENT_VCONN_READ_READY) ? "READ_READY" : "READ_COMPLETE");
     avail = TSIOBufferReaderAvail(txn->req_reader);
-    TSDebug(SDBG_TAG, "%" PRId64 " bytes available in buffer", avail);
+    Dbg(dbg_ctl_SockServer, "%" PRId64 " bytes available in buffer", avail);
 
     if (avail > 0) {
       end_of_request = synserver_txn_read_request(contp);
@@ -1104,12 +1104,12 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
     break;
 
   case TS_EVENT_VCONN_EOS:
-    TSDebug(SDBG_TAG, "READ_EOS");
+    Dbg(dbg_ctl_SockServer, "READ_EOS");
     return synserver_txn_close(contp);
     break;
 
   case TS_EVENT_ERROR:
-    TSDebug(SDBG_TAG, "READ_ERROR");
+    Dbg(dbg_ctl_SockServer, "READ_ERROR");
     return synserver_txn_close(contp);
     break;
 
@@ -1135,7 +1135,11 @@ synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)
 #define TC_PASS 1
 #define TC_FAIL 0
 
-#define UTDBG_TAG "sdk_ut"
+DbgCtl dbg_ctl_sdk_ut{"sdk_ut"};
+DbgCtl dbg_ctl_sdk_ut_cache_event{"sdk_ut_cache_event"};
+DbgCtl dbg_ctl_sdk_ut_cache_read{"sdk_ut_cache_read"};
+DbgCtl dbg_ctl_sdk_ut_cache_write{"sdk_ut_cache_write"};
+DbgCtl dbg_ctl_sdk_ut_transform{"sdk_ut_transform"};
 
 // Since there's no way to unregister global hooks, tests that register a hook
 // have to co-operate once they are complete by re-enabling and transactions
@@ -1627,7 +1631,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
   switch (event) {
   case TS_EVENT_CACHE_OPEN_WRITE:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_OPEN_WRITE %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_OPEN_WRITE %d %p", event, data);
     SDK_RPRINT(SDK_Cache_test, "TSCacheWrite", "TestCase1", TC_PASS, "ok");
 
     // data is write_vc
@@ -1657,7 +1661,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_OPEN_WRITE_FAILED %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_OPEN_WRITE_FAILED %d %p", event, data);
     SDK_RPRINT(SDK_Cache_test, "TSCacheWrite", "TestCase1", TC_FAIL, "can't open cache vc, edtata = %p", data);
     TSReleaseAssert(!"cache");
 
@@ -1666,7 +1670,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_CACHE_OPEN_READ:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_OPEN_READ %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_OPEN_READ %d %p", event, data);
     if (read_counter == 2) {
       SDK_RPRINT(SDK_Cache_test, "TSCacheRead", "TestCase2", TC_FAIL, "shouldn't open cache vc");
 
@@ -1679,7 +1683,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
     cache_vconn->read_vconnp = static_cast<TSVConn>(data);
     content_length           = TSVConnCacheObjectSizeGet(cache_vconn->read_vconnp);
-    Debug(UTDBG_TAG "_cache_read", "In cache open read [Content-Length: %" PRId64 "]", content_length);
+    Dbg(dbg_ctl_sdk_ut_cache_read, "In cache open read [Content-Length: %" PRId64 "]", content_length);
     if (content_length != OBJECT_SIZE) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnCacheObjectSizeGet", "TestCase1", TC_FAIL, "cached data size is incorrect");
 
@@ -1693,7 +1697,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_CACHE_OPEN_READ_FAILED:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_OPEN_READ_FAILED %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_OPEN_READ_FAILED %d %p", event, data);
     if (read_counter == 1) {
       SDK_RPRINT(SDK_Cache_test, "TSCacheRead", "TestCase1", TC_FAIL, "can't open cache vc");
 
@@ -1707,7 +1711,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_CACHE_REMOVE:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_REMOVE %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_REMOVE %d %p", event, data);
     SDK_RPRINT(SDK_Cache_test, "TSCacheRemove", "TestCase1", TC_PASS, "ok");
 
     // read the data which has been removed
@@ -1716,7 +1720,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_CACHE_REMOVE_FAILED:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_CACHE_REMOVE_FAILED %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_CACHE_REMOVE_FAILED %d %p", event, data);
     SDK_RPRINT(SDK_Cache_test, "TSCacheRemove", "TestCase1", TC_FAIL, "can't remove cached item");
 
     // no need to continue, return
@@ -1724,26 +1728,26 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_WRITE_COMPLETE %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_VCONN_WRITE_COMPLETE %d %p", event, data);
 
     // VConn/VIO APIs
     nbytes = TSVIONBytesGet(cache_vconn->write_vio);
     ndone  = TSVIONDoneGet(cache_vconn->write_vio);
     ntodo  = TSVIONTodoGet(cache_vconn->write_vio);
-    Debug(UTDBG_TAG "_cache_write", "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
+    Dbg(dbg_ctl_sdk_ut_cache_write, "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
 
     if (ndone == (OBJECT_SIZE / 2)) {
       TSVIONBytesSet(cache_vconn->write_vio, (OBJECT_SIZE - 100));
       TSVIOReenable(cache_vconn->write_vio);
-      Debug(UTDBG_TAG "_cache_write", "Increment write_counter in write_complete [a]");
+      Dbg(dbg_ctl_sdk_ut_cache_write, "Increment write_counter in write_complete [a]");
       return 1;
     } else if (ndone == (OBJECT_SIZE - 100)) {
       TSVIONBytesSet(cache_vconn->write_vio, OBJECT_SIZE);
       TSVIOReenable(cache_vconn->write_vio);
-      Debug(UTDBG_TAG "_cache_write", "Increment write_counter in write_complete [b]");
+      Dbg(dbg_ctl_sdk_ut_cache_write, "Increment write_counter in write_complete [b]");
       return 1;
     } else if (ndone == OBJECT_SIZE) {
-      Debug(UTDBG_TAG "_cache_write", "finishing up [c]");
+      Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [c]");
 
       SDK_RPRINT(SDK_Cache_test, "TSVIOReenable", "TestCase2", TC_PASS, "ok");
       SDK_RPRINT(SDK_Cache_test, "TSVIONBytesSet", "TestCase1", TC_PASS, "ok");
@@ -1761,7 +1765,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
       return 1;
     }
-    Debug(UTDBG_TAG "_cache_write", "finishing up [d]");
+    Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [d]");
 
     if (TSVIOBufferGet(cache_vconn->write_vio) != cache_vconn->bufp) {
       SDK_RPRINT(SDK_Cache_test, "TSVIOBufferGet", "TestCase1", TC_FAIL, "write_vio corrupted");
@@ -1779,7 +1783,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
       SDK_RPRINT(SDK_Cache_test, "TSVIOContGet", "TestCase1", TC_PASS, "ok");
     }
 
-    Debug(UTDBG_TAG "_cache_write", "finishing up [f]");
+    Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [f]");
 
     if (TSVIOMutexGet(cache_vconn->write_vio) != TSContMutexGet(contp)) {
       SDK_RPRINT(SDK_Cache_test, "TSVIOMutexGet", "TestCase1", TC_FAIL, "write_vio corrupted");
@@ -1797,7 +1801,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
       SDK_RPRINT(SDK_Cache_test, "TSVIOVConnGet", "TestCase1", TC_PASS, "ok");
     }
 
-    Debug(UTDBG_TAG "_cache_write", "finishing up [g]");
+    Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [g]");
 
     if (TSVIOReaderGet(cache_vconn->write_vio) != cache_vconn->readerp) {
       SDK_RPRINT(SDK_Cache_test, "TSVIOReaderGet", "TestCase1", TC_FAIL, "write_vio corrupted");
@@ -1811,16 +1815,16 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     TSVConnClose(cache_vconn->write_vconnp);
     cache_vconn->write_vconnp = nullptr;
 
-    Debug(UTDBG_TAG "_cache_write", "finishing up [h]");
+    Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [h]");
 
     // start to read data out of cache
     read_counter++;
     TSCacheRead(contp, cache_vconn->key);
-    Debug(UTDBG_TAG "_cache_read", "starting read [i]");
+    Dbg(dbg_ctl_sdk_ut_cache_read, "starting read [i]");
     return 1;
 
   case TS_EVENT_VCONN_WRITE_READY:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_WRITE_READY %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_VCONN_WRITE_READY %d %p", event, data);
     if (static_cast<TSVIO>(data) != cache_vconn->write_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnWrite", "TestCase1", TC_FAIL, "write_vio corrupted");
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
@@ -1830,13 +1834,13 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->write_vio);
     ndone  = TSVIONDoneGet(cache_vconn->write_vio);
     ntodo  = TSVIONTodoGet(cache_vconn->write_vio);
-    Debug(UTDBG_TAG "_cache_write", "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
+    Dbg(dbg_ctl_sdk_ut_cache_write, "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
 
     TSVIOReenable(cache_vconn->write_vio);
     return 1;
 
   case TS_EVENT_VCONN_READ_COMPLETE:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_READ_COMPLETE %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_VCONN_READ_COMPLETE %d %p", event, data);
     if (static_cast<TSVIO>(data) != cache_vconn->read_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnRead", "TestCase1", TC_FAIL, "read_vio corrupted");
 
@@ -1848,7 +1852,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->read_vio);
     ntodo  = TSVIONTodoGet(cache_vconn->read_vio);
     ndone  = TSVIONDoneGet(cache_vconn->read_vio);
-    Debug(UTDBG_TAG "_cache_read", "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
+    Dbg(dbg_ctl_sdk_ut_cache_read, "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
 
     if (nbytes != (ndone + ntodo)) {
       SDK_RPRINT(SDK_Cache_test, "TSVIONBytesGet", "TestCase1", TC_FAIL, "read_vio corrupted");
@@ -1874,7 +1878,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
         SDK_RPRINT(SDK_Cache_test, "TSVIONDoneSet", "TestCase1", TC_PASS, "ok");
       }
 
-      Debug(UTDBG_TAG "_cache_write", "finishing up [i]");
+      Dbg(dbg_ctl_sdk_ut_cache_write, "finishing up [i]");
 
       // now waiting for 100ms to make sure the key is
       // written in directory remove the content
@@ -1884,7 +1888,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     return 1;
 
   case TS_EVENT_VCONN_READ_READY:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_READ_READY %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_VCONN_READ_READY %d %p", event, data);
     if (static_cast<TSVIO>(data) != cache_vconn->read_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnRead", "TestCase1", TC_FAIL, "read_vio corrupted");
 
@@ -1896,7 +1900,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->read_vio);
     ntodo  = TSVIONTodoGet(cache_vconn->read_vio);
     ndone  = TSVIONDoneGet(cache_vconn->read_vio);
-    Debug(UTDBG_TAG "_cache_read", "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
+    Dbg(dbg_ctl_sdk_ut_cache_read, "Nbytes=%" PRId64 " Ndone=%" PRId64 " Ntodo=%" PRId64 "", nbytes, ndone, ntodo);
 
     if (nbytes != (ndone + ntodo)) {
       SDK_RPRINT(SDK_Cache_test, "TSVIONBytesGet", "TestCase1", TC_FAIL, "read_vio corrupted");
@@ -1915,14 +1919,14 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     // Fix for bug INKqa12276: Must consume data from iobuffer
     nbytes = TSIOBufferReaderAvail(cache_vconn->out_readerp);
     TSIOBufferReaderConsume(cache_vconn->out_readerp, nbytes);
-    TSDebug(UTDBG_TAG "_cache_read", "Consuming %" PRId64 " bytes from cache read VC", nbytes);
+    Dbg(dbg_ctl_sdk_ut_cache_read, "Consuming %" PRId64 " bytes from cache read VC", nbytes);
 
     TSVIOReenable(cache_vconn->read_vio);
-    Debug(UTDBG_TAG "_cache_read", "finishing up [j]");
+    Dbg(dbg_ctl_sdk_ut_cache_read, "finishing up [j]");
     return 1;
 
   case TS_EVENT_TIMEOUT:
-    Debug(UTDBG_TAG "_cache_event", "TS_EVENT_TIMEOUT %d %p", event, data);
+    Dbg(dbg_ctl_sdk_ut_cache_event, "TS_EVENT_TIMEOUT %d %p", event, data);
     // do remove cached doc
     TSCacheRemove(contp, cache_vconn->key);
     return 1;
@@ -1931,10 +1935,10 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     TSReleaseAssert(!"Test SDK_API_TSCache: unexpected event");
   }
 
-  Debug(UTDBG_TAG "_cache_event", "DONE DONE DONE");
+  Dbg(dbg_ctl_sdk_ut_cache_event, "DONE DONE DONE");
 
   // destroy the data structure
-  Debug(UTDBG_TAG "_cache_write", "all tests passed [z]");
+  Dbg(dbg_ctl_sdk_ut_cache_write, "all tests passed [z]");
   TSIOBufferDestroy(cache_vconn->bufp);
   TSIOBufferDestroy(cache_vconn->out_bufp);
   TSCacheKeyDestroy(cache_vconn->key);
@@ -3284,7 +3288,7 @@ checkHttpTxnIncomingAddrGet(SocketTest *test, void *data)
   }
   port = ats_ip_port_host_order(ptr);
 
-  TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", proxy_port->m_port, port);
+  Dbg(dbg_ctl_sdk_ut, "TS HTTP port = %x, Txn incoming client port %x", proxy_port->m_port, port);
 
   if (port == proxy_port->m_port) {
     SDK_RPRINT(test->regtest, "TSHttpTxnIncomingAddrGet", "TestCase1", TC_PASS, "ok");
@@ -3315,7 +3319,7 @@ checkHttpTxnClientAddrGet(SocketTest *test, void *data)
   }
 
   port = ats_ip_port_host_order(ptr);
-  TSDebug(UTDBG_TAG, "Browser port = %x, Txn remote port = %x", browser_port, port);
+  Dbg(dbg_ctl_sdk_ut, "Browser port = %x, Txn remote port = %x", browser_port, port);
 
   if (port == browser_port) {
     SDK_RPRINT(test->regtest, "TSHttpTxnClientAddrGet", "TestCase1", TC_PASS, "ok");
@@ -8044,7 +8048,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         return 0;
       }
       data->req_no++;
-      Debug(UTDBG_TAG "_transform", "Running Browser 2");
+      Dbg(dbg_ctl_sdk_ut_transform, "Running Browser 2");
       synclient_txn_send_request(data->browser2, data->request2);
       TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
@@ -8054,7 +8058,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         return 0;
       }
       data->req_no++;
-      Debug(UTDBG_TAG "_transform", "Running Browser 3");
+      Dbg(dbg_ctl_sdk_ut_transform, "Running Browser 3");
       synclient_txn_send_request(data->browser3, data->request1);
       TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
@@ -8064,7 +8068,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         return 0;
       }
       data->req_no++;
-      Debug(UTDBG_TAG "_transform", "Running Browser 4");
+      Dbg(dbg_ctl_sdk_ut_transform, "Running Browser 4");
       synclient_txn_send_request(data->browser4, data->request2);
       TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
@@ -8165,7 +8169,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  Debug(UTDBG_TAG "_transform", "Starting test");
+  Dbg(dbg_ctl_sdk_ut_transform, "Starting test");
 
   TSCont cont = TSContCreate(transform_hook_handler, TSMutexCreate());
   if (cont == nullptr) {
@@ -8204,7 +8208,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
   socktest->browser4 = synclient_txn_create();
   socktest->request1 = generate_request(4);
   socktest->request2 = generate_request(5);
-  Debug(UTDBG_TAG "_transform", "Running Browser 1");
+  Dbg(dbg_ctl_sdk_ut_transform, "Running Browser 1");
   synclient_txn_send_request(socktest->browser1, socktest->request1);
   // synclient_txn_send_request(socktest->browser2, socktest->request2);
 
@@ -8480,30 +8484,30 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
   TSReleaseAssert(data->magic == MAGIC_ALIVE);
   TSReleaseAssert((data->test_case == TEST_CASE_CONNECT_ID1) || (data->test_case == TEST_CASE_CONNECT_ID2));
 
-  TSDebug(UTDBG_TAG, "Calling cont_test_handler with event %s (%d)", TSHttpEventNameLookup(event), event);
+  Dbg(dbg_ctl_sdk_ut, "Calling cont_test_handler with event %s (%d)", TSHttpEventNameLookup(event), event);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(UTDBG_TAG, "cont_test_handler: event READ_REQUEST");
+    Dbg(dbg_ctl_sdk_ut, "cont_test_handler: event READ_REQUEST");
 
     // First make sure we're getting called for either request 9 or txn 10
     // Otherwise, this is a request sent by another test. do nothing.
     request_id = get_request_id(txnp);
     TSReleaseAssert(request_id != -1);
 
-    TSDebug(UTDBG_TAG, "cont_test_handler: Request id = %d", request_id);
+    Dbg(dbg_ctl_sdk_ut, "cont_test_handler: Request id = %d", request_id);
 
     if ((request_id != TEST_CASE_CONNECT_ID1) && (request_id != TEST_CASE_CONNECT_ID2)) {
-      TSDebug(UTDBG_TAG, "This is not an event for this test !");
+      Dbg(dbg_ctl_sdk_ut, "This is not an event for this test !");
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       goto done;
     }
 
     if ((request_id == TEST_CASE_CONNECT_ID1) && (data->test_case == TEST_CASE_CONNECT_ID1)) {
-      TSDebug(UTDBG_TAG, "Calling TSHttpTxnIntercept");
+      Dbg(dbg_ctl_sdk_ut, "Calling TSHttpTxnIntercept");
       TSHttpTxnIntercept(data->os->accept_cont, txnp);
     } else if ((request_id == TEST_CASE_CONNECT_ID2) && (data->test_case == TEST_CASE_CONNECT_ID2)) {
-      TSDebug(UTDBG_TAG, "Calling TSHttpTxnServerIntercept");
+      Dbg(dbg_ctl_sdk_ut, "Calling TSHttpTxnServerIntercept");
       TSHttpTxnServerIntercept(data->os->accept_cont, txnp);
     }
 
@@ -8513,7 +8517,7 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_TIMEOUT:
     /* Browser still waiting the response ? */
     if (data->browser->status == REQUEST_INPROGRESS) {
-      TSDebug(UTDBG_TAG, "Browser still waiting response...");
+      Dbg(dbg_ctl_sdk_ut, "Browser still waiting response...");
       TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
     }
     /* Browser got the response */
@@ -8526,7 +8530,8 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
       } else {
         body_expected = "Body for response 10";
       }
-      TSDebug(UTDBG_TAG, "Body Response = \n|%s|\nBody Expected = \n|%s|", body_response ? body_response : "*NULL*", body_expected);
+      Dbg(dbg_ctl_sdk_ut, "Body Response = \n|%s|\nBody Expected = \n|%s|", body_response ? body_response : "*NULL*",
+          body_expected);
 
       if (!body_response || strncmp(body_response, body_expected, strlen(body_expected)) != 0) {
         if (data->test_case == TEST_CASE_CONNECT_ID1) {
@@ -8573,7 +8578,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  TSDebug(UTDBG_TAG, "Starting test TSHttpConnectIntercept");
+  Dbg(dbg_ctl_sdk_ut, "Starting test TSHttpConnectIntercept");
 
   TSCont cont_test      = TSContCreate(cont_test_handler, TSMutexCreate());
   ConnectTestData *data = static_cast<ConnectTestData *>(TSmalloc(sizeof(ConnectTestData)));
@@ -8620,7 +8625,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
   // failover period to a very large value.
   dns_failover_period = 1000;
 
-  TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerIntercept");
+  Dbg(dbg_ctl_sdk_ut, "Starting test TSHttpConnectServerIntercept");
 
   TSCont cont_test      = TSContCreate(cont_test_handler, TSMutexCreate());
   ConnectTestData *data = static_cast<ConnectTestData *>(TSmalloc(sizeof(ConnectTestData)));

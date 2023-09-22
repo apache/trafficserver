@@ -23,6 +23,11 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
+namespace sslheaders_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 static void SslHdrExpand(SSL *, const SslHdrInstance::expansion_list &, TSMBuffer, TSMLoc);
 
 static int

@@ -38,6 +38,13 @@ PrintToStdErr(const char *fmt, ...)
   va_end(args);
 }
 
+#else /* PREFETCH_UNIT_TEST */
+
+namespace prefetch_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 #endif /* PREFETCH_UNIT_TEST */
 
 size_t

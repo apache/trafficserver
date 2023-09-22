@@ -27,7 +27,6 @@
 #include <catch.hpp>
 
 #include "EsiParser.h"
-#include "print_funcs.h"
 #include "Utils.h"
 
 using std::string;
@@ -46,8 +45,7 @@ check_node_attr(const Attribute &attr, const char *name, const char *value)
 
 TEST_CASE("esi parser test")
 {
-  Utils::init(&Debug, &Error);
-  EsiParser parser("parser_test", &Debug, &Error);
+  EsiParser parser;
 
   SECTION("No src attr")
   {

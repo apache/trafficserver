@@ -33,6 +33,8 @@ namespace
 
 std::string_view PNAME = "test_plugin";
 
+DbgCtl dbg_ctl{PNAME.data()};
+
 /** Represents the origin address and port that the user specified to which to
  * redirect requests. */
 class TargetAddress
@@ -145,8 +147,8 @@ set_origin(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     return TS_ERROR;
   }
-  TSDebug(PNAME.data(), "Successfully set a transaction's origin to %s:%d", g_target_address->get_address().data(),
-          g_target_address->get_port());
+  Dbg(dbg_ctl, "Successfully set a transaction's origin to %s:%d", g_target_address->get_address().data(),
+      g_target_address->get_port());
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
 }
@@ -156,7 +158,7 @@ set_origin(TSCont cont, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, char const *argv[])
 {
-  TSDebug(PNAME.data(), "Initializing plugin.");
+  Dbg(dbg_ctl, "Initializing plugin.");
 
   TSPluginRegistrationInfo info;
   info.plugin_name   = PNAME.data();
@@ -169,7 +171,7 @@ TSPluginInit(int argc, char const *argv[])
     return;
   }
 
-  TSDebug(PNAME.data(), "Redirecting all requests to %s:%s", argv[1], argv[2]);
+  Dbg(dbg_ctl, "Redirecting all requests to %s:%s", argv[1], argv[2]);
 
   TSCont contp = TSContCreate(set_origin, nullptr);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);

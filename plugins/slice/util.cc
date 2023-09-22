@@ -118,7 +118,7 @@ request_block(TSCont contp, Data *const data)
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (dbg_ctl.on()) {
     std::string const headerstr(header.toString());
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }

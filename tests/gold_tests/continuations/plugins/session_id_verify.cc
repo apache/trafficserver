@@ -31,6 +31,8 @@ static char plugin_name[]   = PLUGIN_NAME;
 static char vendor_name[]   = "Apache";
 static char support_email[] = "bneradt@apache.org";
 
+static DbgCtl dbg_ctl{plugin_name};
+
 int
 global_handler(TSCont continuation, TSEvent event, void *data)
 {
@@ -38,7 +40,7 @@ global_handler(TSCont continuation, TSEvent event, void *data)
 
   switch (event) {
   case TS_EVENT_HTTP_SSN_START: {
-    TSDebug(PLUGIN_NAME, " -- global_handler :: TS_EVENT_HTTP_SSN_START");
+    Dbg(dbg_ctl, " -- global_handler :: TS_EVENT_HTTP_SSN_START");
     int64_t id = TSHttpSsnIdGet(session);
 
     static std::unordered_set<int64_t> seen_ids;
@@ -47,7 +49,7 @@ global_handler(TSCont continuation, TSEvent event, void *data)
     } else {
       seen_ids.insert(id);
     }
-    TSDebug(PLUGIN_NAME, "session id: %" PRId64, id);
+    Dbg(dbg_ctl, "session id: %" PRId64, id);
   } break;
 
   default:
@@ -62,7 +64,7 @@ global_handler(TSCont continuation, TSEvent event, void *data)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(PLUGIN_NAME, "initializing plugin");
+  Dbg(dbg_ctl, "initializing plugin");
 
   TSPluginRegistrationInfo info;
 

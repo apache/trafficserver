@@ -28,6 +28,8 @@ static const std::string_view MultipartBoundary{"\r\n--- ATS xDebug Probe Inject
 
 static char Hostname[1024];
 
+static DbgCtl dbg_ctl_xform{"xdebug_transform"};
+
 static std::string
 getPreBody(TSHttpTxn txn)
 {
@@ -54,7 +56,7 @@ static void
 writePostBody(TSHttpTxn txn, BodyBuilder *data)
 {
   if (data->wrote_body && data->hdr_ready && !data->wrote_postbody.test_and_set()) {
-    TSDebug("xdebug_transform", "body_transform(): Writing postbody headers...");
+    Dbg(dbg_ctl_xform, "body_transform(): Writing postbody headers...");
     std::string postbody = getPostBody(txn);
     TSIOBufferWrite(data->output_buffer.get(), postbody.data(), postbody.length());
     data->nbytes += postbody.length();
@@ -89,7 +91,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     return 0;
   }
   case TS_EVENT_VCONN_WRITE_READY:
-    TSDebug("xdebug_transform", "body_transform(): Event is TS_EVENT_VCONN_WRITE_READY");
+    Dbg(dbg_ctl_xform, "body_transform(): Event is TS_EVENT_VCONN_WRITE_READY");
   // fall through
   default:
     if (!data->output_buffer.get()) {
@@ -99,7 +101,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     }
 
     if (data->wrote_prebody == false) {
-      TSDebug("xdebug_transform", "body_transform(): Writing prebody headers...");
+      Dbg(dbg_ctl_xform, "body_transform(): Writing prebody headers...");
       std::string prebody = getPreBody(txn);
       TSIOBufferWrite(data->output_buffer.get(), prebody.data(), prebody.length()); // write prebody
       data->wrote_prebody  = true;
@@ -116,14 +118,14 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     }
 
     int64_t towrite = TSVIONTodoGet(src_vio);
-    TSDebug("xdebug_transform", "body_transform(): %" PRId64 " bytes of body is expected", towrite);
+    Dbg(dbg_ctl_xform, "body_transform(): %" PRId64 " bytes of body is expected", towrite);
     int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(src_vio));
     towrite       = towrite > avail ? avail : towrite;
     if (towrite > 0) {
       TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(src_vio), towrite, 0);
       TSIOBufferReaderConsume(TSVIOReaderGet(src_vio), towrite);
       TSVIONDoneSet(src_vio, TSVIONDoneGet(src_vio) + towrite);
-      TSDebug("xdebug_transform", "body_transform(): writing %" PRId64 " bytes of body", towrite);
+      Dbg(dbg_ctl_xform, "body_transform(): writing %" PRId64 " bytes of body", towrite);
     }
 
     if (TSVIONTodoGet(src_vio) > 0) {

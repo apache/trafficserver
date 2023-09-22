@@ -40,6 +40,11 @@
 #include "background_fetch.h"
 using OutstandingRequests = std::unordered_map<std::string, bool>;
 
+namespace cache_fill_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // Set a header to a specific value. This will avoid going to through a
 // remove / add sequence in case of an existing header.
@@ -86,7 +91,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// Dump a header on stderr, useful together with TSDebug().
+// Dump a header on stderr, useful together with Dbg().
 static void
 dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 {
@@ -106,7 +111,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   do {
     const char *block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
     if (block_avail > 0) {
-      TSDebug(PLUGIN_NAME, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
+      Dbg(dbg_ctl, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
     }
     TSIOBufferReaderConsume(reader, block_avail);
     block = TSIOBufferReaderStart(reader);
@@ -156,7 +161,7 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
           if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
             url = TSUrlStringGet(request, c_url, &len);
             TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
-            TSDebug(PLUGIN_NAME, "Cache URL is %.*s", len, url);
+            Dbg(dbg_ctl, "Cache URL is %.*s", len, url);
           }
         }
 
@@ -169,7 +174,7 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
             const char *hostp = TSUrlHostGet(mbuf, url_loc, &len);
 
             if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
-              TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
+              Dbg(dbg_ctl, "Set header Host: %.*s", len, hostp);
             }
             ret = true;
           }
@@ -218,24 +223,24 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (dbg_ctl.on()) {
       char buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
         inet_ntop(AF_INET, &(((struct sockaddr_in *)sockaddress)->sin_addr), buf, INET_ADDRSTRLEN);
-        TSDebug(PLUGIN_NAME, "Client IPv4 = %s", buf);
+        Dbg(dbg_ctl, "Client IPv4 = %s", buf);
         break;
       case AF_INET6:
         inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
-        TSDebug(PLUGIN_NAME, "Client IPv6 = %s", buf);
+        Dbg(dbg_ctl, "Client IPv6 = %s", buf);
         break;
       default:
         TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
         break;
       }
-      TSDebug(PLUGIN_NAME, "Starting background fetch, replaying:");
+      Dbg(dbg_ctl, "Starting background fetch, replaying:");
       dump_headers(data->mbuf, data->hdr_loc);
     }
 
@@ -257,7 +262,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     // TSVConnShutdown(data->vc, 0, 1);
     // TSVIOReenable(data->w_vio);
-    TSDebug(PLUGIN_NAME, "Write Complete");
+    Dbg(dbg_ctl, "Write Complete");
     break;
 
   case TS_EVENT_VCONN_READ_READY:
@@ -273,13 +278,13 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
   case TS_EVENT_ERROR:
     if (event == TS_EVENT_VCONN_INACTIVITY_TIMEOUT) {
-      TSDebug(PLUGIN_NAME, "Encountered Inactivity Timeout");
+      Dbg(dbg_ctl, "Encountered Inactivity Timeout");
       TSVConnAbort(data->vc, TS_VC_CLOSE_ABORT);
     } else {
       TSVConnClose(data->vc);
     }
 
-    TSDebug(PLUGIN_NAME, "Closing down background transaction, event= %s(%d)", TSHttpEventNameLookup(event), event);
+    Dbg(dbg_ctl, "Closing down background transaction, event= %s(%d)", TSHttpEventNameLookup(event), event);
     avail = TSIOBufferReaderAvail(data->resp_io_buf_reader);
     data->addBytes(avail);
     TSIOBufferReaderConsume(data->resp_io_buf_reader, avail);
@@ -291,7 +296,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Unhandled event: %s (%d)", TSHttpEventNameLookup(event), event);
+    Dbg(dbg_ctl, "Unhandled event: %s (%d)", TSHttpEventNameLookup(event), event);
     break;
   }
 

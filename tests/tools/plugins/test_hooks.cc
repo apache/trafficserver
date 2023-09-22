@@ -39,6 +39,8 @@ namespace
 #define PINAME "test_hooks"
 char PIName[] = PINAME;
 
+DbgCtl dbg_ctl{PIName};
+
 // NOTE:  It's important to flush this after writing so that a gold test using this plugin can examine the log before TS
 // terminates.
 //
@@ -55,13 +57,13 @@ transactionContFunc(TSCont, TSEvent event, void *eventData)
 {
   logFile << "Transaction: event=" << TSHttpEventNameLookup(event) << std::endl;
 
-  TSDebug(PIName, "Transaction: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
+  Dbg(dbg_ctl, "Transaction: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Transaction: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Transaction: ssn=%p", TSHttpTxnSsnGet(txn));
 
     // Don't assume any order of continuation execution on the same hook.
     ALWAYS_ASSERT((txn == activeTxn) or !activeTxn)
@@ -74,7 +76,7 @@ transactionContFunc(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Transaction: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Transaction: ssn=%p", TSHttpTxnSsnGet(txn));
 
     ALWAYS_ASSERT(txn == activeTxn)
     ALWAYS_ASSERT(TSHttpTxnSsnGet(txn) == activeSsn)
@@ -98,7 +100,7 @@ sessionContFunc(TSCont, TSEvent event, void *eventData)
 {
   logFile << "Session: event=" << TSHttpEventNameLookup(event) << std::endl;
 
-  TSDebug(PIName, "Session: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
+  Dbg(dbg_ctl, "Session: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
   switch (event) {
   case TS_EVENT_HTTP_SSN_CLOSE: {
@@ -116,7 +118,7 @@ sessionContFunc(TSCont, TSEvent event, void *eventData)
     // Don't assume any order of continuation execution on the same hook.
     ALWAYS_ASSERT((txn == activeTxn) or !activeTxn)
 
-    TSDebug(PIName, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
 
     ALWAYS_ASSERT(TSHttpTxnSsnGet(txn) == activeSsn)
 
@@ -129,7 +131,7 @@ sessionContFunc(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_TXN_CLOSE: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
 
     // Don't assume any order of continuation execution on the same hook.
     ALWAYS_ASSERT((txn == activeTxn) or !activeTxn)
@@ -142,7 +144,7 @@ sessionContFunc(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Session: ssn=%p", TSHttpTxnSsnGet(txn));
 
     ALWAYS_ASSERT(txn == activeTxn)
     ALWAYS_ASSERT(TSHttpTxnSsnGet(txn) == activeSsn)
@@ -166,7 +168,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
 {
   logFile << "Global: event=" << TSHttpEventNameLookup(event) << std::endl;
 
-  TSDebug(PIName, "Global: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
+  Dbg(dbg_ctl, "Global: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
   switch (event) {
   case TS_EVENT_VCONN_START: {
@@ -233,7 +235,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
 
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
 
     activeTxn = txn;
 
@@ -245,7 +247,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_TXN_CLOSE: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
 
     ALWAYS_ASSERT(txn == activeTxn)
     ALWAYS_ASSERT(TSHttpTxnSsnGet(txn) == activeSsn)
@@ -258,7 +260,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     auto txn = static_cast<TSHttpTxn>(eventData);
 
-    TSDebug(PIName, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
+    Dbg(dbg_ctl, "Global: ssn=%p", TSHttpTxnSsnGet(txn));
 
     ALWAYS_ASSERT(txn == activeTxn)
     ALWAYS_ASSERT(TSHttpTxnSsnGet(txn) == activeSsn)

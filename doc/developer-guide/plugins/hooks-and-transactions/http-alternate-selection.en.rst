@@ -89,8 +89,8 @@ The sample code below shows how to call the alternate APIs.
       if (accept_transform_field) {
          TSMimeHdrFieldValueStringGet(client_req_buf, client_req_hdr,
             accept_transform_field, 0, &accept_transform_value, &accept_transform_len);
-         TSDebug(DBG_TAG, "Accept-Transform = |%s|",
-            accept_transform_value);
+         Dbg(dbg_ctl, "Accept-Transform = |%s|",
+             accept_transform_value);
       }
 
       /* get the Content-Transform field value from cached server response */
@@ -99,8 +99,8 @@ The sample code below shows how to call the alternate APIs.
       if (content_transform_field) {
          TSMimeHdrFieldValueStringGet(cache_resp_buf, cache_resp_hdr,
             content_transform_field, 0, &content_transform_value, &content_transform_len);
-         TSDebug(DBG_TAG, "Content-Transform = |%s|",
-            content_transform_value);
+         Dbg(dbg_ctl, "Content-Transform = |%s|",
+             content_transform_value);
       }
 
       /* compute quality */
@@ -118,7 +118,7 @@ The sample code below shows how to call the alternate APIs.
          quality = content_plugin ? 0.0 : 0.5;
       }
 
-      TSDebug(DBG_TAG, "Setting quality to %3.1f", quality);
+      Dbg(dbg_ctl, "Setting quality to %3.1f", quality);
 
       /* set quality for this alternate */
       TSHttpAltInfoQualitySet(infop, quality);

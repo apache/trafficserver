@@ -62,6 +62,12 @@
 
 #define unlikely(x) __builtin_expect((x), 0)
 
+namespace inliner_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace inliner_ns;
+
 namespace ats
 {
 struct HttpParser {
@@ -198,22 +204,22 @@ template <class T> struct HttpTransaction {
     assert(self != nullptr);
     switch (e) {
     case TS_EVENT_ERROR:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: ERROR");
+      Dbg(dbg_ctl, "HttpTransaction: ERROR");
       self->t_.error();
       self->abort();
       close(self);
       TSContDataSet(c, nullptr);
       break;
     case TS_EVENT_VCONN_EOS:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: EOS");
+      Dbg(dbg_ctl, "HttpTransaction: EOS");
       goto here;
 
     case TS_EVENT_VCONN_READ_COMPLETE:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: Read Complete");
+      Dbg(dbg_ctl, "HttpTransaction: Read Complete");
       goto here;
 
     case TS_EVENT_VCONN_READ_READY:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: Read");
+      Dbg(dbg_ctl, "HttpTransaction: Read");
     here : {
       assert(self->in_ != nullptr);
       assert(self->in_->reader != nullptr);
@@ -261,7 +267,7 @@ template <class T> struct HttpTransaction {
       }
     } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: Write Complete");
+      Dbg(dbg_ctl, "HttpTransaction: Write Complete");
       self->parsingHeaders_ = true;
       assert(self->in_ == nullptr);
       self->in_ = io::IO::read(self->vconnection_, c);
@@ -272,15 +278,15 @@ template <class T> struct HttpTransaction {
       self->out_.reset();
       break;
     case TS_EVENT_VCONN_WRITE_READY:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: Write Ready (Done: %" PRId64 " Todo: %" PRId64 ")", TSVIONDoneGet(self->out_->vio),
-              TSVIONTodoGet(self->out_->vio));
+      Dbg(dbg_ctl, "HttpTransaction: Write Ready (Done: %" PRId64 " Todo: %" PRId64 ")", TSVIONDoneGet(self->out_->vio),
+          TSVIONTodoGet(self->out_->vio));
       assert(self->out_ != nullptr);
       TSVIOReenable(self->out_->vio);
       break;
     case 106:
     case TS_EVENT_TIMEOUT:
     case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
-      TSDebug(PLUGIN_TAG, "HttpTransaction: Timeout");
+      Dbg(dbg_ctl, "HttpTransaction: Timeout");
       self->t_.timeout();
       self->abort();
       close(self);
@@ -303,7 +309,7 @@ get(const std::string &a, std::unique_ptr<io::IO> i, const int64_t l, const T &t
   socket.sin_family = AF_INET;
   socket.sin_port   = 80;
   if (!inet_pton(AF_INET, a.c_str(), &socket.sin_addr)) {
-    TSDebug(PLUGIN_TAG, "ats::get Invalid address provided \"%s\".", a.c_str());
+    Dbg(dbg_ctl, "ats::get Invalid address provided \"%s\".", a.c_str());
     return false;
   }
   TSVConn vconn = TSHttpConnect(reinterpret_cast<sockaddr *>(&socket));
@@ -313,7 +319,7 @@ get(const std::string &a, std::unique_ptr<io::IO> i, const int64_t l, const T &t
   Transaction *transaction = new Transaction(vconn, contp, std::move(i), l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
-    TSDebug(PLUGIN_TAG, "ats::get Setting active timeout to: %" PRId64, ti);
+    Dbg(dbg_ctl, "ats::get Setting active timeout to: %" PRId64, ti);
     transaction->timeout(ti);
   }
   return true;

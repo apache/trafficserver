@@ -42,7 +42,7 @@ using namespace ats_plugin;
 
 ServerIntercept::~ServerIntercept()
 {
-  TSDebug(PLUGIN_NAME, "~ServerIntercept : Shutting down server intercept._request_id: %d", _request_id);
+  Dbg(dbg_ctl, "~ServerIntercept : Shutting down server intercept._request_id: %d", _request_id);
   _txn = nullptr;
   if (!outputCompleteState) {
     clientAborted = true;
@@ -73,7 +73,7 @@ ServerIntercept::streamReqHeader(const string &data)
 void
 ServerIntercept::streamReqBody(const string &data)
 {
-  TSDebug(PLUGIN_NAME, "[ServerIntercept:%s] bodyCount: %d", __FUNCTION__, bodyCount++);
+  Dbg(dbg_ctl, "[ServerIntercept:%s] bodyCount: %d", __FUNCTION__, bodyCount++);
   if (!Server::server()->writeRequestBody(_request_id, data)) {
     dataBuffered  = true;
     clientBody   += data;
@@ -83,7 +83,7 @@ ServerIntercept::streamReqBody(const string &data)
 void
 ServerIntercept::handleInputComplete()
 {
-  TSDebug(PLUGIN_NAME, "[ServerIntercept:%s] Count : %d \t_request_id: %d", __FUNCTION__, emptyCount++, _request_id);
+  Dbg(dbg_ctl, "[ServerIntercept:%s] Count : %d \t_request_id: %d", __FUNCTION__, emptyCount++, _request_id);
   if (!Server::server()->writeRequestBodyComplete(_request_id)) {
     return;
   }

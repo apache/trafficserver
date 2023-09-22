@@ -44,7 +44,7 @@ GeoIPConditionGeo::initLibrary(const std::string &)
       gGeoIP[db] = GeoIP_open_type(db, GEOIP_MMAP_CACHE);
 
       char *db_info = GeoIP_database_info(gGeoIP[db]);
-      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", db, db_info);
+      Dbg(pi_dbg_ctl, "initialized GeoIP-DB[%d] %s", db, db_info);
       free(db_info);
     }
   }
@@ -79,7 +79,7 @@ GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
       default:
         break;
       }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country: %s", v, ret.c_str());
+      Dbg(pi_dbg_ctl, "eval(): Client IPv%d seems to come from Country: %s", v, ret.c_str());
       break;
 
     // ASN database
@@ -103,7 +103,7 @@ GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
       default:
         break;
       }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN Name: %s", v, ret.c_str());
+      Dbg(pi_dbg_ctl, "eval(): Client IPv%d seems to come from ASN Name: %s", v, ret.c_str());
       break;
     default:
       break;
@@ -145,7 +145,7 @@ GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
     default:
       break;
     }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country ISO: %" PRId64, v, ret);
+    Dbg(pi_dbg_ctl, "eval(): Client IPv%d seems to come from Country ISO: %" PRId64, v, ret);
     break;
 
   case GEO_QUAL_ASN: {
@@ -176,7 +176,7 @@ GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
       ret = strtol(asn_name, nullptr, 10);
     }
   }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
+    Dbg(pi_dbg_ctl, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
     break;
 
   // Likely shouldn't trip, should we assert?

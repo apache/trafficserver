@@ -50,7 +50,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
+  Dbg(dbg_ctl, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
 
   char const *const fname = argv[2];
 
@@ -69,7 +69,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     static_cast<void>(snprintf(config_file, config_file_ct + 1, "%s/%s", config_dir, fname));
   }
 
-  TSDebug(PLUGIN_NAME, "config file name: %s", config_file);
+  Dbg(dbg_ctl, "config file name: %s", config_file);
   struct config *cfg = read_config_from_path(config_file);
   if (!cfg) {
     snprintf(errbuf, errbuf_size, "Unable to open config file: \"%s\"", config_file);

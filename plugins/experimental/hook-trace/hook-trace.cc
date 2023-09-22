@@ -25,6 +25,8 @@
 
 #define PLUGIN_NAME "hook-trace"
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 template <typename T, unsigned N>
 static inline unsigned
 countof(const T (&)[N])
@@ -46,71 +48,71 @@ HttpHookTracer(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    TSDebug(PLUGIN_NAME, "Received SSN_START on session %p", ev.ssn);
+    Dbg(dbg_ctl, "Received SSN_START on session %p", ev.ssn);
     TSHttpSsnReenable(ev.ssn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SSN_CLOSE:
-    TSDebug(PLUGIN_NAME, "Received SSN_CLOSE on session %p", ev.ssn);
+    Dbg(dbg_ctl, "Received SSN_CLOSE on session %p", ev.ssn);
     TSHttpSsnReenable(ev.ssn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SELECT_ALT:
-    TSDebug(PLUGIN_NAME, "Received SELECT_ALT on altinfo %p", ev.alt);
+    Dbg(dbg_ctl, "Received SELECT_ALT on altinfo %p", ev.alt);
     break;
 
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(PLUGIN_NAME, "Received READ_REQUEST_HDR on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received READ_REQUEST_HDR on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
-    TSDebug(PLUGIN_NAME, "Received OS_DNS on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received OS_DNS on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
-    TSDebug(PLUGIN_NAME, "Received SEND_REQUEST_HDR on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received SEND_REQUEST_HDR on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_READ_CACHE_HDR:
-    TSDebug(PLUGIN_NAME, "Received READ_CACHE_HDR on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received READ_CACHE_HDR on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSDebug(PLUGIN_NAME, "Received READ_RESPONSE_HDR on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received READ_RESPONSE_HDR on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    TSDebug(PLUGIN_NAME, "Received SEND_RESPONSE_HDR on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received SEND_RESPONSE_HDR on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_TXN_START:
-    TSDebug(PLUGIN_NAME, "Received TXN_START on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received TXN_START on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
-    TSDebug(PLUGIN_NAME, "Received TXN_CLOSE on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received TXN_CLOSE on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    TSDebug(PLUGIN_NAME, "Received CACHE_LOOKUP_COMPLETE on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received CACHE_LOOKUP_COMPLETE on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_PRE_REMAP:
-    TSDebug(PLUGIN_NAME, "Received PRE_REMAP on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received PRE_REMAP on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_POST_REMAP:
-    TSDebug(PLUGIN_NAME, "Received POST_REMAP on transaction %p", ev.txn);
+    Dbg(dbg_ctl, "Received POST_REMAP on transaction %p", ev.txn);
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -126,31 +128,31 @@ LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_PORTS_INITIALIZED data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_PORTS_INITIALIZED data %p", edata);
     break;
 
   case TS_EVENT_LIFECYCLE_PORTS_READY:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_PORTS_READY data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_PORTS_READY data %p", edata);
     break;
 
   case TS_EVENT_LIFECYCLE_CACHE_READY:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_CACHE_READY data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_CACHE_READY data %p", edata);
     break;
 
   case TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_SERVER_SSL_INITIALIZED data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_SERVER_SSL_INITIALIZED data %p", edata);
     break;
 
   case TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED data %p", edata);
     break;
 
   case TS_EVENT_LIFECYCLE_MSG:
-    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_MSG data %p", edata);
+    Dbg(dbg_ctl, "Received LIFECYCLE_MSG data %p", edata);
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Received unsupported lifecycle event %d data %p", event, edata);
+    Dbg(dbg_ctl, "Received unsupported lifecycle event %d data %p", event, edata);
     break;
   }
 

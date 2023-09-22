@@ -25,17 +25,17 @@ PolicyManager::coalescePolicy(PromotionPolicy *policy)
   if (tag.size() != 0) {
     auto res = _policies.find(tag);
 
-    TSDebug(PLUGIN_NAME, "looking up policy by tag: %s", tag.c_str());
+    DBG("looking up policy by tag: %s", tag.c_str());
 
     if (res != _policies.end()) {
-      TSDebug(PLUGIN_NAME, "repurposing policy for tag: %s", tag.c_str());
+      DBG("repurposing policy for tag: %s", tag.c_str());
 
       ++res->second.second;
       // Repurpose the existing policy, nuking this placeholder.
       delete policy;
       return res->second.first;
     } else {
-      TSDebug(PLUGIN_NAME, "inserting policy for tag: %s", tag.c_str());
+      DBG("inserting policy for tag: %s", tag.c_str());
       _policies[tag] = std::make_pair(policy, 1);
     }
   }
@@ -53,14 +53,14 @@ PolicyManager::releasePolicy(PromotionPolicy *policy)
 
     if (res != _policies.end()) {
       if (0 == --res->second.second) {
-        TSDebug(PLUGIN_NAME, "releasing unused PromotionPolicy");
+        DBG("releasing unused PromotionPolicy");
         delete res->second.first;
         _policies.erase(res);
       }
 
       return;
     } else {
-      TSDebug(PLUGIN_NAME, "Tried to release a policy which was not properly initialized nor acquired via PolicyManager");
+      DBG("Tried to release a policy which was not properly initialized nor acquired via PolicyManager");
     }
   }
 

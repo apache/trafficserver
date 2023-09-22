@@ -28,6 +28,10 @@ extern int TXN_ARG_IDX;
 #define MAX_STAT_LENGTH (1 << 8)
 extern const char *PLUGIN_NAME;
 
+extern DbgCtl cache_promote_dbg_ctl;
+
+#define DBG(...) Dbg(cache_promote_dbg_ctl, __VA_ARGS__)
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Abstract base class for all policies.
 //
@@ -38,7 +42,7 @@ public:
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    TSDebug(PLUGIN_NAME, "PromotionPolicy() CTOR");
+    DBG("PromotionPolicy() CTOR");
     srand48(static_cast<long>(time(nullptr)));
   }
 

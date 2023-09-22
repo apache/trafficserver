@@ -47,7 +47,6 @@
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
 
-// extern int diags_on_for_plugins;
 enum DiagsTagType {
   DiagsTagType_Debug  = 0, // do not renumber --- used as array index
   DiagsTagType_Action = 1
@@ -150,12 +149,6 @@ public:
     return (config.enabled(mode) & 1) || (config.enabled(mode) == 2 && this->get_override());
   }
 
-  bool
-  on_for_TSDebug() const
-  {
-    return (config.enabled(DiagsTagType_Debug) == 1) || (config.enabled(DiagsTagType_Debug) == 2 && this->get_override());
-  }
-
   // is_debug_tag_set() is the faster alternative to this for debug mode, when the tag is a literal C-string
   // (or otherwise is a constexpr returning char const *).
   //
@@ -163,12 +156,6 @@ public:
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
   {
     return unlikely(this->on(mode)) && tag_activated(tag, mode);
-  }
-
-  bool
-  on_for_TSDebug(const char *tag) const
-  {
-    return unlikely(this->on_for_TSDebug()) && tag_activated(tag, DiagsTagType_Debug);
   }
 
   /////////////////////////////////////

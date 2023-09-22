@@ -39,6 +39,8 @@
 static const char *PLUGIN_NAME = "remap_purge";
 static const char *DEFAULT_DIR = "var/trafficserver"; /* Not perfect, but no better API) */
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 typedef struct PurgeInstance_t {
   char *id;
   char *secret;
@@ -82,7 +84,7 @@ init_purge_instance(PurgeInstance *purge)
 
   if (file) {
     if (fscanf(file, "%" PRId64 "", &purge->gen_id) > 0) {
-      TSDebug(PLUGIN_NAME, "Read genID from %s for %s", purge->state_file, purge->id);
+      Dbg(dbg_ctl, "Read genID from %s for %s", purge->state_file, purge->id);
     }
     fclose(file);
   } else {
@@ -115,10 +117,10 @@ update_purge_state(PurgeInstance *purge)
   TSMutexLock(purge->lock);
 
   ++purge->gen_id;
-  TSDebug(PLUGIN_NAME, "Bumping the Generation ID to %" PRId64 " for %s", purge->gen_id, purge->id);
+  Dbg(dbg_ctl, "Bumping the Generation ID to %" PRId64 " for %s", purge->gen_id, purge->id);
 
   if ((file = fopen(purge->state_file, "w"))) {
-    TSDebug(PLUGIN_NAME, "\tsaving state to %s", purge->state_file);
+    Dbg(dbg_ctl, "\tsaving state to %s", purge->state_file);
     fprintf(file, "%" PRId64 "", purge->gen_id);
     fclose(file);
   } else {
@@ -136,7 +138,7 @@ on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
 
-  TSDebug(PLUGIN_NAME, "Fixing up the response on the successful PURGE");
+  Dbg(dbg_ctl, "Fixing up the response on the successful PURGE");
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
     char response[1024];
     int len = snprintf(response, sizeof(response), "PURGED %s\r\n\r\n", purge->id);
@@ -169,7 +171,7 @@ purge_cont(TSCont contp, TSEvent event, void *edata)
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Unexpected event: %d", event);
+    Dbg(dbg_ctl, "Unexpected event: %d", event);
     break;
   }
 
@@ -197,7 +199,7 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
           int header_len;
 
           header = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &header_len);
-          TSDebug(PLUGIN_NAME, "Checking for %.*s == %s ?", header_len, header, purge->secret);
+          Dbg(dbg_ctl, "Checking for %.*s == %s ?", header_len, header, purge->secret);
           if (header && (header_len == purge->secret_len) && !memcmp(header, purge->secret, header_len)) {
             should_purge = true;
           }
@@ -209,7 +211,7 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
           int path_len     = 0;
           const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
-          TSDebug(PLUGIN_NAME, "Checking PATH = %.*s", path_len, path);
+          Dbg(dbg_ctl, "Checking PATH = %.*s", path_len, path);
           if (path && (path_len >= purge->secret_len)) {
             int s_path = path_len - 1;
 
@@ -234,12 +236,12 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
   if (should_purge) {
     TSCont cont = TSContCreate(purge_cont, TSMutexCreate());
 
-    TSDebug(PLUGIN_NAME, "Setting up continuation for PURGE operation");
+    Dbg(dbg_ctl, "Setting up continuation for PURGE operation");
     TSContDataSet(cont, purge);
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
     update_purge_state(purge);
   } else if (purge->gen_id > 0) {
-    TSDebug(PLUGIN_NAME, "Setting request gen_id to %" PRId64, purge->gen_id);
+    Dbg(dbg_ctl, "Setting request gen_id to %" PRId64, purge->gen_id);
     TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_GENERATION, purge->gen_id);
   }
 }
@@ -247,7 +249,7 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  TSDebug(PLUGIN_NAME, "initialized");
+  Dbg(dbg_ctl, "initialized");
   return TS_SUCCESS;
 }
 

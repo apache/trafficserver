@@ -34,6 +34,10 @@ static const char DEBUG_TAG_INIT[] = "continuations_verify.init";
 static const char DEBUG_TAG_MSG[]  = "continuations_verify.msg";
 static const char DEBUG_TAG_HOOK[] = "continuations_verify.hook";
 
+static DbgCtl dbg_ctl_init{DEBUG_TAG_INIT};
+static DbgCtl dbg_ctl_msg{DEBUG_TAG_MSG};
+static DbgCtl dbg_ctl_hook{DEBUG_TAG_HOOK};
+
 // plugin registration info
 static char plugin_name[]   = "continuations_verify";
 static char vendor_name[]   = "apache";
@@ -50,7 +54,7 @@ static int
 handle_msg(TSCont contp, TSEvent event, void *edata)
 {
   if (event == TS_EVENT_LIFECYCLE_MSG) { // External trigger, such as traffic_ctl
-    TSDebug(DEBUG_TAG_MSG, "event TS_EVENT_LIFECYCLE_MSG");
+    Dbg(dbg_ctl_msg, "event TS_EVENT_LIFECYCLE_MSG");
     // Send to a ET net thread just to be sure.
     // Turns out the msg is sent to a task thread, but task
     // threads do not get their thread local copy of the stats
@@ -58,7 +62,7 @@ handle_msg(TSCont contp, TSEvent event, void *edata)
     // the Schedule to a NET thread
     TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
   } else {
-    TSDebug(DEBUG_TAG_MSG, "event %d", event);
+    Dbg(dbg_ctl_msg, "event %d", event);
     TSStatIntIncrement(stat_test_done, 1);
   }
   return 0;
@@ -75,7 +79,7 @@ handle_order_1(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
 
-  TSDebug(DEBUG_TAG_HOOK, "order_1 event %d", event);
+  Dbg(dbg_ctl_hook, "order_1 event %d", event);
 
   // Find the event that happened
   switch (event) {
@@ -105,7 +109,7 @@ handle_order_2(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
 
-  TSDebug(DEBUG_TAG_HOOK, "order_2 event %d", event);
+  Dbg(dbg_ctl_hook, "order_2 event %d", event);
 
   // Find the event that happened
   switch (event) {
@@ -139,7 +143,7 @@ handle_order_2(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(DEBUG_TAG_INIT, "initializing plugin");
+  Dbg(dbg_ctl_init, "initializing plugin");
 
   TSPluginRegistrationInfo info;
 

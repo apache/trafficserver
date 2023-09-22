@@ -44,6 +44,11 @@
 
 #define PLUGIN_NAME "remap"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 class remap_entry
 {
 public:
@@ -136,7 +141,7 @@ store_my_error_message(TSReturnCode retcode, char *err_msg_buf, int buf_size, co
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  TSDebug(PLUGIN_NAME, "enter");
+  Dbg(dbg_ctl, "enter");
 
   if (!plugin_init_counter) {
     if (unlikely(!api_info)) {
@@ -171,7 +176,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   remap_entry *ri;
   int i;
 
-  TSDebug(PLUGIN_NAME, "enter"); // Debug output automatically includes the file, line #, and function.
+  Dbg(dbg_ctl, "enter"); // Debug output automatically includes the file, line #, and function.
 
   if (argc < 2) {
     return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "Incorrect number of arguments - %d", argc);
@@ -181,7 +186,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
   // print all arguments for this particular remapping
   for (i = 0; i < argc; i++) {
-    TSDebug(PLUGIN_NAME, "[%s] - argv[%d] = \"%s\"\n", __func__, i, argv[i]);
+    Dbg(dbg_ctl, "[%s] - argv[%d] = \"%s\"\n", __func__, i, argv[i]);
   }
 
   ri = new remap_entry(argc, argv);
@@ -202,7 +207,7 @@ TSRemapDeleteInstance(void *ih)
 {
   remap_entry *ri = static_cast<remap_entry *>(ih);
 
-  TSDebug(PLUGIN_NAME, "enter");
+  Dbg(dbg_ctl, "enter");
 
   remap_entry::remove_from_list(ri);
 
@@ -223,53 +228,53 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   uint64_t _processing_counter = processing_counter++;
 
   remap_entry *ri = static_cast<remap_entry *>(ih);
-  TSDebug(PLUGIN_NAME, "enter");
+  Dbg(dbg_ctl, "enter");
 
   if (!ri || !rri) {
     return TSREMAP_NO_REMAP; /* TS must remap this request */
   }
 
-  TSDebug(PLUGIN_NAME, "From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
+  Dbg(dbg_ctl, "From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
 
   temp = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &len);
-  TSDebug(PLUGIN_NAME, "Request Host(%d): \"%.*s\"\n", len, len, temp);
+  Dbg(dbg_ctl, "Request Host(%d): \"%.*s\"\n", len, len, temp);
 
   temp = TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &len);
-  TSDebug(PLUGIN_NAME, "Remap To Host: \"%.*s\"\n", len, temp);
+  Dbg(dbg_ctl, "Remap To Host: \"%.*s\"\n", len, temp);
 
   temp = TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &len);
-  TSDebug(PLUGIN_NAME, "Remap From Host: \"%.*s\"\n", len, temp);
+  Dbg(dbg_ctl, "Remap From Host: \"%.*s\"\n", len, temp);
 
-  TSDebug(PLUGIN_NAME, "Request Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->requestUrl));
-  TSDebug(PLUGIN_NAME, "Remap From Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapFromUrl));
-  TSDebug(PLUGIN_NAME, "Remap To Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapToUrl));
+  Dbg(dbg_ctl, "Request Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->requestUrl));
+  Dbg(dbg_ctl, "Remap From Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapFromUrl));
+  Dbg(dbg_ctl, "Remap To Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapToUrl));
 
   temp = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
-  TSDebug(PLUGIN_NAME, "Request Path: \"%.*s\"\n", len, temp);
+  Dbg(dbg_ctl, "Request Path: \"%.*s\"\n", len, temp);
 
   temp = TSUrlPathGet(rri->requestBufp, rri->mapFromUrl, &len);
-  TSDebug(PLUGIN_NAME, "Remap From Path: \"%.*s\"\n", len, temp);
+  Dbg(dbg_ctl, "Remap From Path: \"%.*s\"\n", len, temp);
 
   temp = TSUrlPathGet(rri->requestBufp, rri->mapToUrl, &len);
-  TSDebug(PLUGIN_NAME, "Remap To Path: \"%.*s\"\n", len, temp);
+  Dbg(dbg_ctl, "Remap To Path: \"%.*s\"\n", len, temp);
 
   // InkAPI usage case
   const char *value;
 
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
-    TSDebug(PLUGIN_NAME, "We have \"Date\" header in request\n");
+    Dbg(dbg_ctl, "We have \"Date\" header in request\n");
     value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, nullptr);
-    TSDebug(PLUGIN_NAME, "Header value: %s\n", value);
+    Dbg(dbg_ctl, "Header value: %s\n", value);
   }
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
-    TSDebug(PLUGIN_NAME, "We have \"MyHeader\" header in request\n");
+    Dbg(dbg_ctl, "We have \"MyHeader\" header in request\n");
     value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, nullptr);
-    TSDebug(PLUGIN_NAME, "Header value: %s\n", value);
+    Dbg(dbg_ctl, "Header value: %s\n", value);
   }
 
   // How to store plugin private arguments inside Traffic Server request processing block.
   if (TSUserArgIndexReserve(TS_USER_ARGS_TXN, "remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "Save processing counter %" PRIu64 " inside request processing block\n", _processing_counter);
+    Dbg(dbg_ctl, "Save processing counter %" PRIu64 " inside request processing block\n", _processing_counter);
     TSUserArgSet(rh, arg_index, (void *)_processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
@@ -325,6 +330,6 @@ TSRemapOSResponse(void *ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
   void *data     = TSUserArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
   int request_id = data ? static_cast<int *>(data)[0] : -1;
 
-  TSDebug(PLUGIN_NAME, "Read processing counter %d from request processing block\n", request_id);
-  TSDebug(PLUGIN_NAME, "OS response status: %d\n", os_response_type);
+  Dbg(dbg_ctl, "Read processing counter %d from request processing block\n", request_id);
+  Dbg(dbg_ctl, "OS response status: %d\n", os_response_type);
 }

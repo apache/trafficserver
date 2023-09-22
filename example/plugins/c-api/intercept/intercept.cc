@@ -45,10 +45,10 @@
 #define PLUGIN_NAME "intercept"
 #define PORT        60000
 
-#define VDEBUG(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
+#define VDEBUG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 
 #if DEBUG
-#define VERROR(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
+#define VERROR(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #else
 #define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN_NAME, __FUNCTION__, ##__VA_ARGS__)
 #endif
@@ -56,6 +56,8 @@
 #define VIODEBUG(vio, fmt, ...)                                                                                              \
   VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
          TSVIOVConnGet(vio), ##__VA_ARGS__)
+
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static TSCont TxnHook;
 static TSCont InterceptHook;

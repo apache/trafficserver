@@ -36,6 +36,11 @@
 #define PN  "ssl_verify_test"
 #define PCP "[" PN " Plugin] "
 
+namespace
+{
+DbgCtl dbg_ctl{PN};
+}
+
 std::map<std::string, int> bad_names;
 
 int
@@ -56,15 +61,14 @@ CB_server_verify(TSCont cont, TSEvent event, void *edata)
       reenable_event = TS_EVENT_ERROR;
     }
 
-    TSDebug(PN, "Server verify callback %d %p - event is %s SNI=%s %s", count, ssl_vc,
-            event == TS_EVENT_SSL_VERIFY_SERVER ? "good" : "bad", sni_name,
-            reenable_event == TS_EVENT_ERROR ? "error HS" : "good HS");
+    Dbg(dbg_ctl, "Server verify callback %d %p - event is %s SNI=%s %s", count, ssl_vc,
+        event == TS_EVENT_SSL_VERIFY_SERVER ? "good" : "bad", sni_name, reenable_event == TS_EVENT_ERROR ? "error HS" : "good HS");
 
     int len;
     char const *const method2_name = TSVConnSslSniGet(ssl_vc, &len);
-    TSDebug(PN, "Server verify callback SNI APIs match=%s", 0 == strncmp(method2_name, sni_name, len) ? "true" : "false");
+    Dbg(dbg_ctl, "Server verify callback SNI APIs match=%s", 0 == strncmp(method2_name, sni_name, len) ? "true" : "false");
   } else {
-    TSDebug(PN, "SSL_get_servername failed");
+    Dbg(dbg_ctl, "SSL_get_servername failed");
     reenable_event = TS_EVENT_ERROR;
   }
 
@@ -104,7 +108,7 @@ setup_callbacks(int count)
   TSCont cb = nullptr;
   int i;
 
-  TSDebug(PN, "Setup callbacks count=%d", count);
+  Dbg(dbg_ctl, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {
     cb = TSContCreate(&CB_server_verify, TSMutexCreate());
     TSContDataSet(cb, (void *)static_cast<intptr_t>(i));

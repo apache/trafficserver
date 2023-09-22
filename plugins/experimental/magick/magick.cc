@@ -66,7 +66,9 @@ using byte = unsigned char;
 namespace
 {
 GlobalPlugin *plugin;
-}
+
+DbgCtl dbg_ctl{PLUGIN_TAG};
+} // namespace
 
 struct ThreadPool {
   using Callback = std::function<void(void)>;
@@ -100,7 +102,7 @@ struct ThreadPool {
     for (size_t i = 0; i < size_; ++i) {
       TSThread thread = pool_[i];
       assert(nullptr != thread);
-      TSDebug(PLUGIN_TAG, "Destroying thread number %lu (%p)", i, thread);
+      Dbg(dbg_ctl, "Destroying thread number %lu (%p)", i, thread);
       TSThreadWait(thread);
       TSThreadDestroy(thread);
     }
@@ -141,7 +143,7 @@ struct ThreadPool {
         },
         this);
       assert(nullptr != pool_[i]);
-      TSDebug(PLUGIN_TAG, "Creating thread number %lu (%p)", i, pool_[i]);
+      Dbg(dbg_ctl, "Creating thread number %lu (%p)", i, pool_[i]);
     }
   }
 
@@ -464,20 +466,20 @@ struct ImageTransform : TransformationPlugin {
       argumentMap_(std::move(m)),
       threadPool_(p)
   {
-    TSDebug(PLUGIN_TAG, "ImageTransform");
+    Dbg(dbg_ctl, "ImageTransform");
   }
 
   void
   consume(const std::string_view s) override
   {
-    TSDebug(PLUGIN_TAG, "consume");
+    Dbg(dbg_ctl, "consume");
     blob_.insert(blob_.end(), s.begin(), s.end());
   }
 
   void
   handleInputComplete() override
   {
-    TSDebug(PLUGIN_TAG, "handleInputComplete");
+    Dbg(dbg_ctl, "handleInputComplete");
 
     threadPool_.emplace_back([this]() {
       magick::Image image;
@@ -498,12 +500,12 @@ struct ImageTransform : TransformationPlugin {
       const std::string_view output = wand.get();
       this->produce(output);
 
-      TSDebug(PLUGIN_TAG, "Background transformation is done, resuming continuation (%p)", this);
+      Dbg(dbg_ctl, "Background transformation is done, resuming continuation (%p)", this);
 
       this->setOutputComplete();
     });
 
-    TSDebug(PLUGIN_TAG, "Scheduling background transformation (%p)", this);
+    Dbg(dbg_ctl, "Scheduling background transformation (%p)", this);
   }
 
   CharVector arguments_;
@@ -529,7 +531,7 @@ struct GlobalHookPlugin : GlobalPlugin {
   {
     if (nullptr != f) {
       assert(0 < strlen(f));
-      TSDebug(PLUGIN_TAG, "public key file: %s", f);
+      Dbg(dbg_ctl, "public key file: %s", f);
       key_             = new magick::EVPKey();
       FILE *const file = fopen(f, "r");
       assert(nullptr != file);
@@ -573,7 +575,7 @@ struct GlobalHookPlugin : GlobalPlugin {
                                        "application/pdf" == contentType || "application/postscript" == contentType;
 
     if (compatibleContentType) {
-      TSDebug(PLUGIN_TAG, "Content-Type is compatible: %s", contentType.c_str());
+      Dbg(dbg_ctl, "Content-Type is compatible: %s", contentType.c_str());
       const QueryMap queryMap(t.getServerRequest().getUrl().getQuery());
       const auto &magickQueryParameter = queryMap["magick"];
       if (!magickQueryParameter.empty()) {
@@ -588,7 +590,7 @@ struct GlobalHookPlugin : GlobalPlugin {
             const auto &view2 = magickSigQueryParameter.front();
             CharVector magickSig(view2.data(), view2.data() + view2.size());
             magickSig.insert(magickSig.end(), '\0');
-            TSDebug(PLUGIN_TAG, "Magick Signature: %s", magickSig.data());
+            Dbg(dbg_ctl, "Magick Signature: %s", magickSig.data());
             QueryParameterToCharVector(magickSig);
             verified = magick::verify(reinterpret_cast<const byte *>(magick.data()), magick.size(),
                                       reinterpret_cast<const byte *>(magickSig.data()), magickSig.size(), key_->key);
@@ -598,11 +600,11 @@ struct GlobalHookPlugin : GlobalPlugin {
         if (verified) {
           magick.insert(magick.end(), '\0');
           QueryParameterToCharVector(magick);
-          TSDebug(PLUGIN_TAG, "ImageMagick's syntax: %s", magick.data());
+          Dbg(dbg_ctl, "ImageMagick's syntax: %s", magick.data());
           CharPointerVector argumentMap = QueryParameterToArguments(magick);
           t.addPlugin(new ImageTransform(t, std::move(magick), std::move(argumentMap), threadPool_));
         } else {
-          TSDebug(PLUGIN_TAG, "signature verification failed.");
+          Dbg(dbg_ctl, "signature verification failed.");
           TSError("[" PLUGIN_TAG "] signature verification failed.");
           t.setStatusCode(HTTP_STATUS_FORBIDDEN);
           t.error();

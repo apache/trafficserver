@@ -62,7 +62,7 @@ TSPluginInit(int argc, const char *argv[])
   } else if (!init_ssl_params(argv[1])) {
     init_subscriber();
     TSCont cont = TSContCreate(SSL_session_callback, nullptr);
-    TSDebug(PLUGIN, "TSPluginInit adding TS_SSL_SESSION_HOOK.");
+    Dbg(dbg_ctl, "TSPluginInit adding TS_SSL_SESSION_HOOK.");
     TSHttpHookAdd(TS_SSL_SESSION_HOOK, cont);
   } else {
     TSError("init_ssl_params failed.");

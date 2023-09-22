@@ -66,7 +66,7 @@ get_genid(char *host)
 
   /* open the database */
   if (!kcdbopen(db, genid_kyoto_db, KCOREADER | KCONOLOCK)) {
-    TSDebug(PLUGIN_NAME, "could not open the genid database %s", genid_kyoto_db);
+    Dbg(dbg_ctl, "could not open the genid database %s", genid_kyoto_db);
     TSError("[%s] could not open the genid database %s: %s", PLUGIN_NAME, genid_kyoto_db, strerror(errno));
     return 0;
   }
@@ -74,12 +74,12 @@ get_genid(char *host)
   vbuf = kcdbget(db, host, strlen(host), &vsiz);
 
   if (vbuf) {
-    TSDebug(PLUGIN_NAME, "kcdbget(%s) = %s", host, vbuf);
+    Dbg(dbg_ctl, "kcdbget(%s) = %s", host, vbuf);
     answer = (int)strtol(vbuf, nullptr, 10);
     kcfree(vbuf);
   } else {
     host_size = strlen(host);
-    TSDebug(PLUGIN_NAME, "kcdbget(%s) - no record found, len(%d)", host, host_size);
+    Dbg(dbg_ctl, "kcdbget(%s) - no record found, len(%d)", host, host_size);
     answer = 0;
   }
 
@@ -103,7 +103,7 @@ handle_hook(TSCont *contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(PLUGIN_NAME, "handling TS_EVENT_HTTP_READ_REQUEST_HDR");
+    Dbg(dbg_ctl, "handling TS_EVENT_HTTP_READ_REQUEST_HDR");
 
     if (ok) {
       url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
@@ -122,10 +122,10 @@ handle_hook(TSCont *contp, TSEvent event, void *edata)
     }
 
     if (ok) {
-      TSDebug(PLUGIN_NAME, "From url (%s) discovered host (%s)", url, host);
+      Dbg(dbg_ctl, "From url (%s) discovered host (%s)", url, host);
       if ((gen_id = get_genid(host)) != 0) {
         if (TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_GENERATION, gen_id) != TS_SUCCESS) {
-          TSDebug(PLUGIN_NAME, "Error, unable to modify cache url");
+          Dbg(dbg_ctl, "Error, unable to modify cache url");
           TSError("[%s] Unable to set cache generation for %s to %d", PLUGIN_NAME, url, gen_id);
           ok = 0;
         }

@@ -23,11 +23,18 @@
 
 #include <dlfcn.h>
 
+#include <ts/ts.h>
+
 #include "HandlerManager.h"
 
 using std::map;
 using std::string;
 using namespace EsiLib;
+
+namespace
+{
+DbgCtl dbg_ctl{"plugin_esi_handler_mgr"};
+}
 
 #define CLASS_NAME "HandlerManager"
 
@@ -51,17 +58,17 @@ HandlerManager::loadObjects(const Utils::KeyValueMap &handlers)
       // no, we have to load this object
       void *obj_handle = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL);
       if (!obj_handle) {
-        _errorLog("[%s::%s] Could not load module [%s]. Error [%s]", CLASS_NAME, __FUNCTION__, path.c_str(), dlerror());
+        TSError("[%s::%s] Could not load module [%s]. Error [%s]", CLASS_NAME, __FUNCTION__, path.c_str(), dlerror());
       } else {
         SpecialIncludeHandlerCreator func_handle = (SpecialIncludeHandlerCreator)(dlsym(obj_handle, FACTORY_FUNCTION_NAME));
         if (!func_handle) {
-          _errorLog("[%s::%s] Could not find factory function [%s] in module [%s]. Error [%s]", CLASS_NAME, __FUNCTION__,
-                    FACTORY_FUNCTION_NAME, path.c_str(), dlerror());
+          TSError("[%s::%s] Could not find factory function [%s] in module [%s]. Error [%s]", CLASS_NAME, __FUNCTION__,
+                  FACTORY_FUNCTION_NAME, path.c_str(), dlerror());
           dlclose(obj_handle);
         } else {
           _id_to_function_map.insert(FunctionHandleMap::value_type(id, func_handle));
           _path_to_module_map.insert(ModuleHandleMap::value_type(path, ModuleHandles(obj_handle, func_handle)));
-          _debugLog(_debug_tag, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
+          Dbg(dbg_ctl, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
         }
       }
     }
@@ -73,7 +80,7 @@ HandlerManager::getHandler(Variables &esi_vars, Expression &esi_expr, HttpDataFe
 {
   FunctionHandleMap::const_iterator iter = _id_to_function_map.find(id);
   if (iter == _id_to_function_map.end()) {
-    _errorLog("[%s::%s] handler id [%s] does not map to any loaded object", CLASS_NAME, __FUNCTION__, id.c_str());
+    TSError("[%s::%s] handler id [%s] does not map to any loaded object", CLASS_NAME, __FUNCTION__, id.c_str());
     return nullptr;
   }
   return (*(iter->second))(esi_vars, esi_expr, fetcher, id);

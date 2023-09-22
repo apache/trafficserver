@@ -43,6 +43,12 @@
 using OutstandingRequests = std::unordered_map<std::string, bool>;
 const char PLUGIN_NAME[]  = "cache_fill";
 
+namespace cache_fill_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace cache_fill_ns;
+
 class BgFetchState
 {
 public:
@@ -73,7 +79,7 @@ public:
     }
     TSMutexUnlock(_lock);
 
-    TSDebug(PLUGIN_NAME, "BgFetchState.acquire(): ret = %d, url = %s", ret, url.c_str());
+    Dbg(dbg_ctl, "BgFetchState.acquire(): ret = %d, url = %s", ret, url.c_str());
 
     return ret;
   }

@@ -36,6 +36,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.show_location': 0,
     'proxy.config.diags.debug.tags': 'header.*',
 })
 

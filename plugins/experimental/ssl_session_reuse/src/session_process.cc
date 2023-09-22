@@ -66,7 +66,7 @@ encrypt_session(const char *session_data, int32_t session_data_len, const unsign
   if (ret == 0) {
     encrypted_data.assign(encrypted, encrypted_len);
   } else {
-    TSDebug(PLUGIN, "encrypt_session calling encrypt_encode64 failed, error: %d", ret);
+    Dbg(dbg_ctl, "encrypt_session calling encrypt_encode64 failed, error: %d", ret);
   }
 
   delete[] data;
@@ -99,7 +99,7 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
   std::memset(decrypted, 0, decrypted_size);
   if ((ret = decrypt_decode64(key, key_length, encrypted_data.c_str(), encrypted_data.length(), decrypted, decrypted_size,
                               &decrypted_len)) != 0) {
-    TSDebug(PLUGIN, "decrypt_session calling decrypt_decode64 failed, error: %d", ret);
+    Dbg(dbg_ctl, "decrypt_session calling decrypt_decode64 failed, error: %d", ret);
     goto Cleanup;
   }
 
@@ -117,7 +117,7 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
 
     len_all = ret + sizeof(int64_t) + sizeof(int32_t);
     if (decrypted_len < len_all) {
-      TSDebug(PLUGIN, "Session data length mismatch, got %lu, should be %lu.", decrypted_len, len_all);
+      Dbg(dbg_ctl, "Session data length mismatch, got %lu, should be %lu.", decrypted_len, len_all);
       ret = -1;
       goto Cleanup;
     }
@@ -177,18 +177,18 @@ int
 add_session(char *session_id, int session_id_len, const std::string &encrypted_session)
 {
   std::string session(session_id, session_id_len);
-  TSDebug(PLUGIN, "add_session session_id: %s", hex_str(session).c_str());
+  Dbg(dbg_ctl, "add_session session_id: %s", hex_str(session).c_str());
   char session_data[SSL_SESSION_MAX_DER];
   int32_t session_data_len = SSL_SESSION_MAX_DER;
   int ret = decrypt_session(encrypted_session, (unsigned char *)get_key_ptr(), get_key_length(), session_data, session_data_len);
   if (ret < 0) {
-    TSDebug(PLUGIN, "Failed to decrypt session %.*s, error: %d", session_id_len, hex_str(session).c_str(), ret);
+    Dbg(dbg_ctl, "Failed to decrypt session %.*s, error: %d", session_id_len, hex_str(session).c_str(), ret);
     return ret;
   }
   const unsigned char *loc = reinterpret_cast<const unsigned char *>(session_data);
   SSL_SESSION *sess        = d2i_SSL_SESSION(nullptr, &loc, session_data_len);
   if (nullptr == sess) {
-    TSDebug(PLUGIN, "Failed to transform session buffer %.*s", session_id_len, hex_str(session).c_str());
+    Dbg(dbg_ctl, "Failed to transform session buffer %.*s", session_id_len, hex_str(session).c_str());
     return -1;
   }
   TSSslSessionID sid;

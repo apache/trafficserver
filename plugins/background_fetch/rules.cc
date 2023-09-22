@@ -47,10 +47,10 @@ check_client_ip_configured(TSHttpTxn txnp, const char *cfg_ip)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "cfg_ip %s, client_ip %s", cfg_ip, ip_buf);
+  Dbg(Bg_dbg_ctl, "cfg_ip %s, client_ip %s", cfg_ip, ip_buf);
 
   if ((strlen(cfg_ip) == strlen(ip_buf)) && !strcmp(cfg_ip, ip_buf)) {
-    TSDebug(PLUGIN_NAME, "bg fetch for ip %s, configured ip %s", ip_buf, cfg_ip);
+    Dbg(Bg_dbg_ctl, "bg fetch for ip %s, configured ip %s", ip_buf, cfg_ip);
     return true;
   }
 
@@ -81,11 +81,11 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
   // check for client-ip first
   if (!strcmp(_field, "Client-IP")) {
     if (!strcmp(_value, "*")) {
-      TSDebug(PLUGIN_NAME, "Found client_ip wild card");
+      Dbg(Bg_dbg_ctl, "Found client_ip wild card");
       return true;
     }
     if (check_client_ip_configured(txnp, _value)) {
-      TSDebug(PLUGIN_NAME, "Found client_ip match");
+      Dbg(Bg_dbg_ctl, "Found client_ip match");
       return true;
     }
   }
@@ -103,12 +103,12 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
         unsigned int content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
 
         if (check_content_length(content_len, _value)) {
-          TSDebug(PLUGIN_NAME, "Found content-length match");
+          Dbg(Bg_dbg_ctl, "Found content-length match");
           hdr_found = true;
         }
         TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
       } else {
-        TSDebug(PLUGIN_NAME, "No content-length field in resp");
+        Dbg(Bg_dbg_ctl, "No content-length field in resp");
       }
       TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
     } else {
@@ -123,16 +123,16 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
 
     if (TS_NULL_MLOC != loc) {
       if (!strcmp(_value, "*")) {
-        TSDebug(PLUGIN_NAME, "Found %s wild card", _field);
+        Dbg(Bg_dbg_ctl, "Found %s wild card", _field);
         hdr_found = true;
       } else {
         int val_len         = 0;
         const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, hdr_loc, loc, 0, &val_len);
 
         if (!val_str || val_len <= 0) {
-          TSDebug(PLUGIN_NAME, "invalid field");
+          Dbg(Bg_dbg_ctl, "invalid field");
         } else {
-          TSDebug(PLUGIN_NAME, "comparing with %s", _value);
+          Dbg(Bg_dbg_ctl, "comparing with %s", _value);
           if (std::string_view::npos != std::string_view(val_str, val_len).find(_value)) {
             hdr_found = true;
           }
@@ -140,7 +140,7 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
       }
       TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
     } else {
-      TSDebug(PLUGIN_NAME, "no field %s in request header", _field);
+      Dbg(Bg_dbg_ctl, "no field %s in request header", _field);
     }
     TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
   } else {

@@ -26,6 +26,11 @@
 
 #define PLUGIN_NAME "version"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -59,5 +64,5 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
-  TSDebug(PLUGIN_NAME, "Running in Apache Traffic Server: v%d.%d.%d", major_ts_version, minor_ts_version, patch_ts_version);
+  Dbg(dbg_ctl, "Running in Apache Traffic Server: v%d.%d.%d", major_ts_version, minor_ts_version, patch_ts_version);
 }

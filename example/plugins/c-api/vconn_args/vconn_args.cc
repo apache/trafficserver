@@ -27,7 +27,8 @@
 #include "ts/ts.h"
 
 const char *PLUGIN_NAME = "vconn_arg_test";
-static int last_arg     = 0;
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+static int last_arg = 0;
 
 static int
 vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
@@ -41,7 +42,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
       char *buf = static_cast<char *>(TSmalloc(64));
       snprintf(buf, 64, "Test Arg Idx %d", idx);
       TSUserArgSet(ssl_vc, idx, (void *)buf);
-      TSDebug(PLUGIN_NAME, "Successfully reserve and set arg #%d", idx);
+      Dbg(dbg_ctl, "Successfully reserve and set arg #%d", idx);
     }
     last_arg = idx;
     break;
@@ -53,9 +54,9 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
       const char *name = nullptr;
       const char *desc = nullptr;
       if (TSUserArgIndexLookup(TS_USER_ARGS_VCONN, idx, &name, &desc) == TS_SUCCESS) {
-        TSDebug(PLUGIN_NAME, "Successful lookup for arg #%d: [%s] [%s]", idx, name, desc);
+        Dbg(dbg_ctl, "Successful lookup for arg #%d: [%s] [%s]", idx, name, desc);
       } else {
-        TSDebug(PLUGIN_NAME, "Failed lookup for arg #%d", idx);
+        Dbg(dbg_ctl, "Failed lookup for arg #%d", idx);
       }
       idx++;
     }
@@ -67,16 +68,16 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
     while (idx <= last_arg) {
       char *buf = static_cast<char *>(TSUserArgGet(ssl_vc, idx));
       if (buf) {
-        TSDebug(PLUGIN_NAME, "Successfully retrieve vconn arg #%d: %s", idx, buf);
+        Dbg(dbg_ctl, "Successfully retrieve vconn arg #%d: %s", idx, buf);
         TSfree(buf);
       } else {
-        TSDebug(PLUGIN_NAME, "Failed to retrieve vconn arg #%d", idx);
+        Dbg(dbg_ctl, "Failed to retrieve vconn arg #%d", idx);
       }
       idx++;
     }
   } break;
   default: {
-    TSDebug(PLUGIN_NAME, "Unexpected event %d", event);
+    Dbg(dbg_ctl, "Unexpected event %d", event);
     break;
   }
   }
@@ -87,7 +88,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(PLUGIN_NAME, "Initializing plugin.");
+  Dbg(dbg_ctl, "Initializing plugin.");
   TSPluginRegistrationInfo info;
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Oath";

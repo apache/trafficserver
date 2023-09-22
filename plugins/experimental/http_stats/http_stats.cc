@@ -43,10 +43,12 @@
 
 constexpr char PLUGIN[] = "http_stats";
 
-#define VDEBUG(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+static DbgCtl dbg_ctl{PLUGIN};
+
+#define VDEBUG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 
 #if DEBUG
-#define VERROR(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+#define VERROR(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #else
 #define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN, __FUNCTION__, ##__VA_ARGS__)
 #endif
@@ -720,7 +722,7 @@ json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *na
     APPEND_STAT_JSON(fmtr, name, "%s", datum->rec_string);
     break;
   default:
-    TSDebug(PLUGIN, "unknown type for %s: %d", name, data_type);
+    Dbg(dbg_ctl, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
@@ -744,7 +746,7 @@ csv_out_stat(TSRecordType rec_type, void *edata, int registered, const char *nam
     APPEND_STAT_CSV(fmtr, name, "%s", datum->rec_string);
     break;
   default:
-    TSDebug(PLUGIN, "unknown type for %s: %d", name, data_type);
+    Dbg(dbg_ctl, "unknown type for %s: %d", name, data_type);
     break;
   }
 }

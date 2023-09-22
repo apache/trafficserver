@@ -3329,7 +3329,7 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.show_location INT 1
 
    Annotates diagnostic messages with the source code location. Set to 1 to enable
-   for Debug() messages only. Set to 2 to enable for all messages.
+   for Dbg() messages only. Set to 2 to enable for all messages.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
    :reloadable:
@@ -3337,10 +3337,6 @@ Diagnostic Logging Configuration
    When set to 1, enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
    When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
-
-   When set to 3, enables logging for diagnostic messages whose log level is `diag` or `debug`, except those
-   output by deprecated functions such as `TSDebug()` and `TSDebugSpecific()`.  Using the value 3 will have less
-   of a negative impact on proxy throughput than using the value 1.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
@@ -3363,9 +3359,6 @@ Diagnostic Logging Configuration
    privileges    Privilege elevation
    ssl           TLS termination and certificate processing
    ============  =====================================================
-
-   |TS| plugins will typically log debug messages using the :c:func:`TSDbg`
-   API, passing the plugin name as the debug tag.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.throttling_interval_msec INT 0
    :reloadable:

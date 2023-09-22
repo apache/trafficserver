@@ -325,7 +325,7 @@ ts_lua_hmac_md5(lua_State *L)
 
   key_bin = tsapi::malloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
-    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
   }
   if (ts_lua_hex_to_bin(key_bin, key, klen) == nullptr) {
@@ -380,7 +380,7 @@ ts_lua_hmac_sha1(lua_State *L)
 
   key_bin = tsapi::malloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
-    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
   }
   if (ts_lua_hex_to_bin(key_bin, key, klen) == nullptr) {
@@ -435,7 +435,7 @@ ts_lua_hmac_sha256(lua_State *L)
 
   key_bin = tsapi::malloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
-    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
   }
   if (ts_lua_hex_to_bin(key_bin, key, klen) == nullptr) {

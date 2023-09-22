@@ -76,12 +76,12 @@ cont_check_cacheable(TSHttpTxn txnp)
     TSError("[%s] Couldn't get cache status of object", PLUGIN_NAME);
     return false;
   }
-  TSDebug(PLUGIN_NAME, "lookup status: %s", getCacheLookupResultName(static_cast<TSCacheLookupResult>(lookupStatus)));
+  Dbg(dbg_ctl, "lookup status: %s", getCacheLookupResultName(static_cast<TSCacheLookupResult>(lookupStatus)));
   bool ret = false;
   if (TS_CACHE_LOOKUP_MISS == lookupStatus || TS_CACHE_LOOKUP_HIT_STALE == lookupStatus) {
     bool const nostore = TSHttpTxnServerRespNoStoreGet(txnp);
 
-    TSDebug(PLUGIN_NAME, "is nostore set %d", nostore);
+    Dbg(dbg_ctl, "is nostore set %d", nostore);
     if (!nostore) {
       TSMBuffer request;
       TSMLoc req_hdr;
@@ -89,7 +89,7 @@ cont_check_cacheable(TSHttpTxn txnp)
         BgFetchData *data = new BgFetchData();
         // Initialize the data structure (can fail) and acquire a privileged lock on the URL
         if (data->initialize(request, req_hdr, txnp) && data->acquireUrl()) {
-          TSDebug(PLUGIN_NAME, "scheduling background fetch");
+          Dbg(dbg_ctl, "scheduling background fetch");
           data->schedule();
           ret = true;
         } else {
@@ -115,14 +115,14 @@ cont_handle_cache(TSCont contp, TSEvent event, void *edata)
     bool const requested = cont_check_cacheable(txnp);
     if (requested) // Made a background fetch request, do not cache the response
     {
-      TSDebug(PLUGIN_NAME, "setting no store");
+      Dbg(dbg_ctl, "setting no store");
       TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
       TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_MISS);
     }
 
   } else {
     TSError("[%s] Unknown event for this plugin %d", PLUGIN_NAME, event);
-    TSDebug(PLUGIN_NAME, "unknown event for this plugin %d", event);
+    Dbg(dbg_ctl, "unknown event for this plugin %d", event);
   }
 
   // Reenable and continue with the state machine.
@@ -139,7 +139,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "cache fill remap is successfully initialized");
+  Dbg(dbg_ctl, "cache fill remap is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -172,7 +172,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   }
   TSCont const cont = static_cast<TSCont>(ih);
   TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
-  TSDebug(PLUGIN_NAME, "TSRemapDoRemap() added hook");
+  Dbg(dbg_ctl, "TSRemapDoRemap() added hook");
 
   return TSREMAP_NO_REMAP;
 }

@@ -49,7 +49,7 @@ interceptTransferData(ServerIntercept *intercept, ServerConnection *server_conn)
   }
 
   if (consumed) {
-    TSDebug(PLUGIN_NAME, "[%s] Read %ld bytes from server and writing it to client side.", __FUNCTION__, consumed);
+    Dbg(dbg_ctl, "[%s] Read %ld bytes from server and writing it to client side.", __FUNCTION__, consumed);
     TSIOBufferReaderConsume(server_conn->readio.reader, consumed);
   }
   TSVIONDoneSet(server_conn->readio.vio, TSVIONDoneGet(server_conn->readio.vio) + consumed);
@@ -66,7 +66,7 @@ interceptTransferData(ServerIntercept *intercept, ServerConnection *server_conn)
 static int
 handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "[%s]:  event( %d )\tEventName: %s\tContp: %p ", __FUNCTION__, event, TSHttpEventNameLookup(event), contp);
+  Dbg(dbg_ctl, "[%s]:  event( %d )\tEventName: %s\tContp: %p ", __FUNCTION__, event, TSHttpEventNameLookup(event), contp);
   ServerConnectionInfo *conn_info     = (ServerConnectionInfo *)TSContDataGet(contp);
   Server *server                      = conn_info->server;
   ServerConnection *server_connection = conn_info->server_connection;
@@ -76,7 +76,7 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
     TSStatIntIncrement(InterceptGlobal::phpConnCount, 1);
     server_connection->vc_ = (TSVConn)edata;
     server_connection->setState(ServerConnection::READY);
-    TSDebug(PLUGIN_NAME, "%s: New Connection success, %p", __FUNCTION__, server_connection);
+    Dbg(dbg_ctl, "%s: New Connection success, %p", __FUNCTION__, server_connection);
     ServerIntercept *intercept = server->getIntercept(server_connection->requestId());
     if (intercept)
       server_connection->createFCGIClient(intercept);
@@ -104,8 +104,8 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
   } break;
 
   case TS_EVENT_VCONN_READ_COMPLETE: {
-    TSDebug(PLUGIN_NAME, "[%s]: ResponseComplete...Sending Response to client stream. _request_id: %d", __FUNCTION__,
-            server_connection->requestId());
+    Dbg(dbg_ctl, "[%s]: ResponseComplete...Sending Response to client stream. _request_id: %d", __FUNCTION__,
+        server_connection->requestId());
     ServerIntercept *intercept = server->getIntercept(server_connection->requestId());
     server_connection->setState(ServerConnection::COMPLETE);
     intercept->setResponseOutputComplete();
@@ -127,9 +127,8 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_VCONN_EOS: {
     ServerIntercept *intercept = server->getIntercept(server_connection->requestId());
     if (!server_connection->writeio.readEnable) {
-      TSDebug(PLUGIN_NAME, "[%s]: EOS Request Failed. _request_id: %d, connection: %p,maxConn: %d, requestCount: %d", __FUNCTION__,
-              server_connection->requestId(), server_connection, server_connection->maxRequests(),
-              server_connection->requestCount());
+      Dbg(dbg_ctl, "[%s]: EOS Request Failed. _request_id: %d, connection: %p,maxConn: %d, requestCount: %d", __FUNCTION__,
+          server_connection->requestId(), server_connection, server_connection->maxRequests(), server_connection->requestCount());
 
       server->reConnect(server_connection->requestId());
       server_connection->setState(ServerConnection::CLOSED);
@@ -139,8 +138,8 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
 
     if (server_connection->getState() != ServerConnection::COMPLETE)
       if (intercept && !intercept->getOutputCompleteState()) {
-        TSDebug(PLUGIN_NAME, "[%s]: EOS intercept->setResponseOutputComplete, _request_id: %d, connection: %p", __FUNCTION__,
-                server_connection->requestId(), server_connection);
+        Dbg(dbg_ctl, "[%s]: EOS intercept->setResponseOutputComplete, _request_id: %d, connection: %p", __FUNCTION__,
+            server_connection->requestId(), server_connection);
         Transaction &transaction = utils::internal::getTransaction(intercept->_txn);
         transaction.error("Internal server error");
       }
@@ -152,7 +151,7 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
     TSVConnAbort(server_connection->vc_, 1);
     ServerIntercept *intercept = server->getIntercept(server_connection->requestId());
     if (intercept) {
-      TSDebug(PLUGIN_NAME, "[%s]:ERROR  intercept->setResponseOutputComplete", __FUNCTION__);
+      Dbg(dbg_ctl, "[%s]:ERROR  intercept->setResponseOutputComplete", __FUNCTION__);
       server_connection->setState(ServerConnection::CLOSED);
       Transaction &transaction = utils::internal::getTransaction(intercept->_txn);
       transaction.setStatusCode(HTTP_STATUS_BAD_GATEWAY);
@@ -192,21 +191,21 @@ Server::setupThreadLocalStorage()
     if ((threadData = static_cast<ThreadData *>(pthread_getspecific(InterceptGlobal::threadKey))) == nullptr) {
       threadData = new ThreadData(this);
       if (pthread_setspecific(InterceptGlobal::threadKey, threadData)) {
-        TSDebug(PLUGIN_NAME, "[Server:%s] Unable to set threadData to the key", __FUNCTION__);
+        Dbg(dbg_ctl, "[Server:%s] Unable to set threadData to the key", __FUNCTION__);
         pthread_key_delete(InterceptGlobal::threadKey);
         InterceptGlobal::threadKey = 0;
         return false;
       }
 
       TSStatIntIncrement(InterceptGlobal::threadCount, 1);
-      TSDebug(PLUGIN_NAME, "[Server:%s] Data is set for this thread [threadData]%p [threadID]%lu", __FUNCTION__, threadData,
-              pthread_self());
+      Dbg(dbg_ctl, "[Server:%s] Data is set for this thread [threadData]%p [threadID]%lu", __FUNCTION__, threadData,
+          pthread_self());
     }
 
     return true;
   }
 
-  TSDebug(PLUGIN_NAME, "[Server:%s] Could not create key", __FUNCTION__);
+  Dbg(dbg_ctl, "[Server:%s] Could not create key", __FUNCTION__);
   return false;
 }
 
@@ -247,9 +246,9 @@ Server::removeIntercept(uint request_id)
 
     _intercept_list.erase(itr);
     TSMutexUnlock(_intecept_mutex);
-    TSDebug(PLUGIN_NAME, "[Server:%s] ReqQueueLength:%d ,request_id: %d,ServerConn: %p ,max_requests: %d, req_count: %d ",
-            __FUNCTION__, tdata->getRequestQueue()->getSize(), serv_conn->requestId(), serv_conn, serv_conn->maxRequests(),
-            serv_conn->requestCount());
+    Dbg(dbg_ctl, "[Server:%s] ReqQueueLength:%d ,request_id: %d,ServerConn: %p ,max_requests: %d, req_count: %d ", __FUNCTION__,
+        tdata->getRequestQueue()->getSize(), serv_conn->requestId(), serv_conn, serv_conn->maxRequests(),
+        serv_conn->requestCount());
 
     serv_conn->releaseFCGIClient();
     serv_conn->setRequestId(0);
@@ -280,8 +279,7 @@ Server::writeRequestHeader(uint request_id)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "[Server::%s] : Write Request Header: _request_id: %d,ServerConn: %p", __FUNCTION__, request_id,
-          server_conn);
+  Dbg(dbg_ctl, "[Server::%s] : Write Request Header: _request_id: %d,ServerConn: %p", __FUNCTION__, request_id, server_conn);
 
   FCGIClientRequest *fcgiRequest = server_conn->fcgiRequest();
   unsigned char *clientReq;
@@ -302,7 +300,7 @@ Server::writeRequestBody(uint request_id, const string &data)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "[Server::%s] : Write Request Body: request_id: %d,Server_conn: %p", __FUNCTION__, request_id, server_conn);
+  Dbg(dbg_ctl, "[Server::%s] : Write Request Body: request_id: %d,Server_conn: %p", __FUNCTION__, request_id, server_conn);
   FCGIClientRequest *fcgiRequest = server_conn->fcgiRequest();
   // TODO: possibly move all this as one function in server_connection
   unsigned char *clientReq;
@@ -323,8 +321,7 @@ Server::writeRequestBodyComplete(uint request_id)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "[Server::%s] : Write Request Complete: request_id: %d,Server_conn: %p", __FUNCTION__, request_id,
-          server_conn);
+  Dbg(dbg_ctl, "[Server::%s] : Write Request Complete: request_id: %d,Server_conn: %p", __FUNCTION__, request_id, server_conn);
   FCGIClientRequest *fcgiRequest = server_conn->fcgiRequest();
   // TODO: possibly move all this as one function in server_connection
   unsigned char *clientReq;
@@ -348,7 +345,7 @@ Server::connect(ServerIntercept *intercept)
       initiateBackendConnection(intercept, conn);
       return 0;
     }
-    TSDebug(PLUGIN_NAME, "[Server:%s] : Added to RequestQueue. QueueSize: %d", __FUNCTION__, tdata->getRequestQueue()->getSize());
+    Dbg(dbg_ctl, "[Server:%s] : Added to RequestQueue. QueueSize: %d", __FUNCTION__, tdata->getRequestQueue()->getSize());
     tdata->getRequestQueue()->addToQueue(intercept);
     return 0;
   }
@@ -364,7 +361,7 @@ Server::reConnect(uint request_id)
     _intercept_list.erase(request_id);
     TSMutexUnlock(_intecept_mutex);
     connect(intercept);
-    TSDebug(PLUGIN_NAME, "[Server:%s]: Initiating reconnection...", __FUNCTION__);
+    Dbg(dbg_ctl, "[Server:%s]: Initiating reconnection...", __FUNCTION__);
   }
 }
 
@@ -382,9 +379,9 @@ Server::initiateBackendConnection(ServerIntercept *intercept, ServerConnection *
   _intercept_list[request_id] = std::make_tuple(intercept, conn);
   TSMutexUnlock(_intecept_mutex);
 
-  TSDebug(PLUGIN_NAME, "[Server: %s] ServerConn: %p,_request_id: %d", __FUNCTION__, conn, request_id);
+  Dbg(dbg_ctl, "[Server: %s] ServerConn: %p,_request_id: %d", __FUNCTION__, conn, request_id);
   if (conn->getState() != ServerConnection::READY) {
-    TSDebug(PLUGIN_NAME, "[Server: %s] Setting up a new php Connection..", __FUNCTION__);
+    Dbg(dbg_ctl, "[Server: %s] Setting up a new php Connection..", __FUNCTION__);
     conn->createConnection();
     return;
   }

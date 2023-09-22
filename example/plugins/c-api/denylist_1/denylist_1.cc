@@ -32,6 +32,7 @@
 #define MAX_NSITES 500
 #define RETRY_TIME 10
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 static char *sites[MAX_NSITES];
 static int nsites;
 static TSMutex sites_mutex;
@@ -99,7 +100,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all denylisted sites. */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
+    Dbg(dbg_ctl, "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
@@ -111,7 +112,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
       if (ts_log) {
         TSTextLogObjectWrite(ts_log, "denylisting site: %s", sites[i]);
       } else {
-        TSDebug(PLUGIN_NAME, "denylisting site: %s", sites[i]);
+        Dbg(dbg_ctl, "denylisting site: %s", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -274,7 +275,7 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
-        TSDebug(PLUGIN_NAME, "This event was unexpected: %d", event);
+        Dbg(dbg_ctl, "This event was unexpected: %d", event);
         break;
       }
     } else {
@@ -324,7 +325,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   /* create an TSTextLogObject to log denied requests to */
   error = TSTextLogObjectCreate("denylist", TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
   if (!ts_log || error == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "error while creating log");
+    Dbg(dbg_ctl, "error while creating log");
   }
 
   sites_mutex = TSMutexCreate();

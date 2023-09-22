@@ -36,6 +36,12 @@
 #include <string>
 #include "lulu.h"
 
+namespace geoip_acl_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace geoip_acl_ns;
+
 #if HAVE_GEOIP_H
 #include <GeoIP.h>
 using GeoDBHandle = GeoIP *;

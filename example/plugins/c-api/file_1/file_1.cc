@@ -38,6 +38,11 @@
 
 #define PLUGIN_NAME "file_1"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -60,7 +65,7 @@ TSPluginInit(int argc, const char *argv[])
     }
 
     while (TSfgets(filep, buf, 4096)) {
-      TSDebug(PLUGIN_NAME, "%s", buf);
+      Dbg(dbg_ctl, "%s", buf);
     }
 
     TSfclose(filep);

@@ -52,7 +52,7 @@ InterceptIOChannel::read(TSVConn vc, TSCont contp)
       TSError("[InterceptIOChannel:%s] ERROR While reading from server", __FUNCTION__);
       return;
     }
-    TSDebug(PLUGIN_NAME, "[InterceptIOChannel:%s] ReadIO.vio :%p ", __FUNCTION__, this->vio);
+    Dbg(dbg_ctl, "[InterceptIOChannel:%s] ReadIO.vio :%p ", __FUNCTION__, this->vio);
   }
 }
 
@@ -104,7 +104,7 @@ InterceptIOChannel::phpWrite(TSVConn vc, TSCont contp, unsigned char *buf, int d
   }
 
   this->readEnable = true;
-  TSDebug(PLUGIN_NAME, "[%s] Done: %ld \tnBytes: %ld", __FUNCTION__, TSVIONDoneGet(this->vio), TSVIONBytesGet(this->vio));
+  Dbg(dbg_ctl, "[%s] Done: %ld \tnBytes: %ld", __FUNCTION__, TSVIONDoneGet(this->vio), TSVIONBytesGet(this->vio));
 }
 
 ServerConnection::ServerConnection(Server *server, TSEventFunc funcp)
@@ -125,8 +125,8 @@ ServerConnection::ServerConnection(Server *server, TSEventFunc funcp)
 
 ServerConnection::~ServerConnection()
 {
-  TSDebug(PLUGIN_NAME, "Destroying server Connection Obj.ServerConn: %p ,request_id: %d,max_requests: %d, req_count: %d ", this,
-          _requestId, _max_requests, _req_count);
+  Dbg(dbg_ctl, "Destroying server Connection Obj.ServerConn: %p ,request_id: %d,max_requests: %d, req_count: %d ", this, _requestId,
+      _max_requests, _req_count);
 
   if (vc_) {
     TSVConnClose(vc_);
@@ -161,9 +161,8 @@ void
 ServerConnection::releaseFCGIClient()
 {
   if (_state == COMPLETE) {
-    TSDebug(PLUGIN_NAME,
-            "[ServerConnection:%s] Release FCGI resource of ServerConn: %p ,request_id: %d,max_requests: %d, req_count: %d ",
-            __FUNCTION__, this, _requestId, _max_requests, _req_count);
+    Dbg(dbg_ctl, "[ServerConnection:%s] Release FCGI resource of ServerConn: %p ,request_id: %d,max_requests: %d, req_count: %d ",
+        __FUNCTION__, this, _requestId, _max_requests, _req_count);
     delete _fcgiRequest;
     _fcgiRequest = nullptr;
     _state       = READY;

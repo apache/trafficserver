@@ -7448,40 +7448,6 @@ tsapi::c::TSStatFindName(const char *name, int *idp)
   }
 }
 
-/**************************   Tracing API   ****************************/
-// returns 1 or 0 to indicate whether TS is being run with a debug tag.
-int
-tsapi::c::TSIsDebugTagSet(const char *t)
-{
-  return diags()->on_for_TSDebug(t);
-}
-
-void
-tsapi::c::TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
-{
-  if ((debug_flag && diags()->on_for_TSDebug()) || diags()->on_for_TSDebug(tag)) {
-    va_list ap;
-
-    va_start(ap, format_str);
-    diags()->print_va(tag, DL_Diag, nullptr, format_str, ap);
-    va_end(ap);
-  }
-}
-
-// Plugins would use TSDebug just as the TS internal uses Debug
-// e.g. TSDebug("plugin-cool", "Snoopy is a cool guy even after %d requests.", num_reqs);
-void
-tsapi::c::TSDebug(const char *tag, const char *format_str, ...)
-{
-  if (diags()->on_for_TSDebug() && diags()->tag_activated(tag)) {
-    va_list ap;
-
-    va_start(ap, format_str);
-    diags()->print_va(tag, DL_Diag, nullptr, format_str, ap);
-    va_end(ap);
-  }
-}
-
 /**************************   Logging API   ****************************/
 
 TSReturnCode

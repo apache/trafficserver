@@ -103,7 +103,7 @@ The Traffic Server API adheres to the following naming conventions:
   :data:`TS_MIME_FIELD_ACCEPT`.
 
 * The names of defined types are mixed-case. For example, :type:`TSHttpSsn`
-  and :func:`TSHttpTxn`. :func:`TSDebug`
+  and :func:`TSHttpTxn`. :func:`TSContCreate`
 
 * Function names are mixed-case. For example, :func:`TSUrlCreate`
   and :func:`TSContDestroy`.

@@ -74,6 +74,11 @@ that might be sent to it:
 
 .. code-block:: c
 
+   namespace
+   {
+   DbgCtl dbg_ctl{"denylist_plugin"};
+   }
+
    static int
    denylist_plugin (TSCont contp, TSEvent event, void *edata)
    {
@@ -86,7 +91,7 @@ that might be sent to it:
             handle_response (txnp);
             return 0;
          default:
-            TSDebug ("denylist_plugin", "This event was unexpected: %d", );
+            Dbg (dbg_ctl, "This event was unexpected: %d", int(event) );
             break;
       }
       return 0;

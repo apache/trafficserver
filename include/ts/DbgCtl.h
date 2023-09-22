@@ -40,11 +40,11 @@ public:
 
   // As instance with no tag will always be off.
   //
-  DbgCtl() : _ptr{&_No_tag_dummy} {}
+  DbgCtl() : _ptr{&_No_tag_dummy()} {}
 
   ~DbgCtl()
   {
-    if (_ptr != &_No_tag_dummy) {
+    if (_ptr != &_No_tag_dummy()) {
       _rm_reference();
     }
   }
@@ -119,7 +119,12 @@ private:
 
   _TagData const *_ptr;
 
-  static const _TagData _No_tag_dummy;
+  static const _TagData &
+  _No_tag_dummy()
+  {
+    static DbgCtl::_TagData const ntd{nullptr, false};
+    return ntd;
+  }
 
   static const _TagData *_new_reference(char const *tag);
 
@@ -143,4 +148,15 @@ private:
     if ((CTL).on()) {               \
       DbgPrint((CTL), __VA_ARGS__); \
     }                               \
+  } while (false)
+
+// Same as Dbg above, but this allows a positive override of the DbgCtl, if FLAG is true.
+//
+#define SpecificDbg(FLAG, CTL, ...)   \
+  do {                                \
+    if (DbgCtl::global_on()) {        \
+      if ((FLAG) || ((CTL).on())) {   \
+        DbgPrint((CTL), __VA_ARGS__); \
+      }                               \
+    }                                 \
   } while (false)

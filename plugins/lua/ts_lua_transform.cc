@@ -40,7 +40,7 @@ ts_lua_client_entry(TSCont contp, TSEvent ev, void *edata)
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] received TS_EVENT_VCONN_WRITE_COMPLETE", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] received TS_EVENT_VCONN_WRITE_COMPLETE", __FUNCTION__);
     break;
 
   case TS_LUA_EVENT_COROUTINE_CONT:
@@ -80,13 +80,12 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
 
   empty_input = 0;
   if (!TSVIOBufferGet(input_vio)) {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] no input VIO and output VIO", __FUNCTION__);
     empty_input = 1;
   } else { // input VIO exists
     input_wm_bytes = TSIOBufferWaterMarkGet(TSVIOBufferGet(input_vio));
     if (transform_ctx->upstream_watermark_bytes >= 0 && transform_ctx->upstream_watermark_bytes != input_wm_bytes) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] Setting input_vio watermark to %" PRId64 " bytes", __FUNCTION__,
-              transform_ctx->upstream_watermark_bytes);
+      Dbg(dbg_ctl, "[%s] Setting input_vio watermark to %" PRId64 " bytes", __FUNCTION__, transform_ctx->upstream_watermark_bytes);
       TSIOBufferWaterMarkSet(TSVIOBufferGet(input_vio), transform_ctx->upstream_watermark_bytes);
     }
   }
@@ -311,19 +310,18 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
   empty_input = 0;
   if (!TSVIOBufferGet(input_vio)) {
     if (transform_ctx->output.vio) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
+      Dbg(dbg_ctl, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
       TSVIONBytesSet(transform_ctx->output.vio, transform_ctx->total);
       TSVIOReenable(transform_ctx->output.vio);
       return 0;
     } else {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
+      Dbg(dbg_ctl, "[%s] no input VIO and output VIO", __FUNCTION__);
       empty_input = 1;
     }
   } else { // input VIO exists
     input_wm_bytes = TSIOBufferWaterMarkGet(TSVIOBufferGet(input_vio));
     if (transform_ctx->upstream_watermark_bytes >= 0 && transform_ctx->upstream_watermark_bytes != input_wm_bytes) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] Setting input_vio watermark to %" PRId64 " bytes", __FUNCTION__,
-              transform_ctx->upstream_watermark_bytes);
+      Dbg(dbg_ctl, "[%s] Setting input_vio watermark to %" PRId64 " bytes", __FUNCTION__, transform_ctx->upstream_watermark_bytes);
       TSIOBufferWaterMarkSet(TSVIOBufferGet(input_vio), transform_ctx->upstream_watermark_bytes);
     }
   }

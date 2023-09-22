@@ -48,6 +48,8 @@ using namespace swoc::literals;
 
 #define DEBUG_TAG "combo_handler"
 
+static DbgCtl dbg_ctl{DEBUG_TAG};
+
 // Because STL vs. C library leads to ugly casting, fix it once.
 inline int
 length(std::string const &str)
@@ -70,15 +72,15 @@ static vector<string> HEADER_ALLOWLIST;
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
 static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 
-#define LOG_ERROR(fmt, args...)                                                               \
-  do {                                                                                        \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);            \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define LOG_ERROR(fmt, args...)                                                         \
+  do {                                                                                  \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);      \
+    Dbg(dbg_ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define LOG_DEBUG(fmt, args...)                                                               \
-  do {                                                                                        \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define LOG_DEBUG(fmt, args...)                                                         \
+  do {                                                                                  \
+    Dbg(dbg_ctl, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
 using StringList = list<string>;
@@ -372,7 +374,7 @@ TSPluginInit(int argc, const char *argv[])
           TSError("[%s] %s must be a positive number", DEBUG_TAG, longopts[longindex].name);
         } else {
           MaxFileCount = n;
-          TSDebug(DEBUG_TAG, "Max files set to %u", MaxFileCount);
+          Dbg(dbg_ctl, "Max files set to %u", MaxFileCount);
         }
         break;
       }
@@ -445,7 +447,6 @@ TSPluginInit(int argc, const char *argv[])
     LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
-  Utils::init(&TSDebug, &TSError);
   LOG_DEBUG("Plugin started");
 }
 
@@ -1243,7 +1244,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
-  TSDebug(DEBUG_TAG, "%s plugin's remap part is initialized", DEBUG_TAG);
+  Dbg(dbg_ctl, "%s plugin's remap part is initialized", DEBUG_TAG);
 
   return TS_SUCCESS;
 }
@@ -1253,7 +1254,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   *ih = nullptr;
 
-  TSDebug(DEBUG_TAG, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
+  Dbg(dbg_ctl, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
   return TS_SUCCESS;
 }
 

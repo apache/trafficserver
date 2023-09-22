@@ -48,6 +48,8 @@ struct config_t {
 
 namespace
 {
+DbgCtl dbg_ctl{DEBUG_TAG};
+
 void
 stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
@@ -62,16 +64,16 @@ stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSM
     if (TS_ERROR == TSStatFindName(name, &stat_id)) {
       stat_id = TSStatCreate(name, TS_RECORDDATATYPE_INT, persist_type, TS_STAT_SYNC_SUM);
       if (stat_id == TS_ERROR) {
-        TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
+        Dbg(dbg_ctl, "Error creating stat_name: %s", name);
       } else {
-        TSDebug(DEBUG_TAG, "Created stat_name: %s stat_id: %d", name, stat_id);
+        Dbg(dbg_ctl, "Created stat_name: %s stat_id: %d", name, stat_id);
       }
     }
     TSMutexUnlock(create_mutex);
 
     if (stat_id >= 0) {
       hash.emplace(name, stat_id);
-      TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
+      Dbg(dbg_ctl, "Cached stat_name: %s stat_id: %d", name, stat_id);
     }
   } else {
     stat_id = hash.at(name);
@@ -80,7 +82,7 @@ stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSM
   if (likely(stat_id >= 0)) {
     TSStatIntIncrement(stat_id, amount);
   } else {
-    TSDebug(DEBUG_TAG, "stat error! stat_name: %s stat_id: %d", name, stat_id);
+    Dbg(dbg_ctl, "stat error! stat_name: %s stat_id: %d", name, stat_id);
   }
 }
 
@@ -133,7 +135,7 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   void *const txnd       = reinterpret_cast<void *>(0x01);
   TSUserArgSet(txn, config->txn_slot, txnd);
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-  TSDebug(DEBUG_TAG, "Post Remap Handler Finished");
+  Dbg(dbg_ctl, "Post Remap Handler Finished");
   return 0;
 }
 
@@ -205,11 +207,11 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
       stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
     }
   } else {
-    TSDebug(DEBUG_TAG, "skipping unsuccessfully remapped transaction");
+    Dbg(dbg_ctl, "skipping unsuccessfully remapped transaction");
   }
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-  TSDebug(DEBUG_TAG, "Handler Finished");
+  Dbg(dbg_ctl, "Handler Finished");
   return 0;
 }
 
@@ -228,7 +230,7 @@ TSPluginInit(int argc, const char *argv[])
 
     return;
   } else {
-    TSDebug(DEBUG_TAG, "Plugin registration succeeded");
+    Dbg(dbg_ctl, "Plugin registration succeeded");
   }
 
   auto config                 = new config_t;
@@ -242,10 +244,10 @@ TSPluginInit(int argc, const char *argv[])
       std::string_view const arg(argv[ii]);
       if (arg == "-P" || arg == "--post-remap-host") {
         config->uri_type = REMAP;
-        TSDebug(DEBUG_TAG, "Using post remap hostname");
+        Dbg(dbg_ctl, "Using post remap hostname");
       } else if (arg == "-p" || arg == "--persistent") {
         config->persist_type = TS_STAT_PERSISTENT;
-        TSDebug(DEBUG_TAG, "Using persistent stats");
+        Dbg(dbg_ctl, "Using persistent stats");
       }
     }
   }
@@ -262,5 +264,5 @@ TSPluginInit(int argc, const char *argv[])
   TSContDataSet(global_cont, static_cast<void *>(config));
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, global_cont);
 
-  TSDebug(DEBUG_TAG, "Init complete");
+  Dbg(dbg_ctl, "Init complete");
 }

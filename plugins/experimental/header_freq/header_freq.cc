@@ -52,6 +52,12 @@ const char *ctl_tag              = PLUGIN_NAME;
 const char CONTROL_MSG_LOG[]     = "log"; // log all data
 const size_t CONTROL_MSG_LOG_LEN = sizeof(CONTROL_MSG_LOG) - 1;
 
+namespace
+{
+  DbgCtl dbg_ctl{DEBUG_TAG_HOOK};
+  DbgCtl dbg_ctl_init{DEBUG_TAG_INIT};
+} // namespace
+
 void
 Log_Data(std::ostream &ss)
 {
@@ -119,7 +125,7 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsign
   TSMLoc hdr, next_hdr;
   hdr           = TSMimeHdrFieldGet(bufp, hdr_loc, 0);
   int n_headers = TSMimeHdrFieldsCount(bufp, hdr_loc);
-  TSDebug(DEBUG_TAG_HOOK, "%d headers found", n_headers);
+  Dbg(dbg_ctl, "%d headers found", n_headers);
 
   // iterate through all headers
   for (int i = 0; i < n_headers && nullptr != hdr; ++i) {
@@ -157,7 +163,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: // count client headers
   {
-    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_READ_REQUEST_HDR");
+    Dbg(dbg_ctl, "event TS_EVENT_HTTP_READ_REQUEST_HDR");
     txnp = reinterpret_cast<TSHttpTxn>(edata);
     // get the client request so we can loop through the headers
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
@@ -171,7 +177,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   } break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // count origin headers
   {
-    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_SEND_RESPONSE_HDR");
+    Dbg(dbg_ctl, "event TS_EVENT_HTTP_SEND_RESPONSE_HDR");
     // get the response so we can loop through the headers
     txnp = reinterpret_cast<TSHttpTxn>(edata);
     if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
@@ -191,7 +197,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
       // identify the command
       if (msgp->data_size >= CONTROL_MSG_LOG_LEN &&
           0 == strncasecmp(CONTROL_MSG_LOG, static_cast<const char *>(msgp->data), CONTROL_MSG_LOG_LEN)) {
-        TSDebug(DEBUG_TAG_HOOK, "Scheduled execution of '%s' command", CONTROL_MSG_LOG);
+        Dbg(dbg_ctl, "Scheduled execution of '%s' command", CONTROL_MSG_LOG);
         TSCont c = TSContCreate(CB_Command_Log, TSMutexCreate());
         TSContDataSet(c, new std::string(static_cast<const char *>(msgp->data), msgp->data_size));
         TSContScheduleOnPool(c, 0, TS_THREAD_POOL_TASK);
@@ -217,7 +223,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(DEBUG_TAG_INIT, "initializing plugin");
+  Dbg(dbg_ctl_init, "initializing plugin");
 
   TSPluginRegistrationInfo info = {PLUGIN_NAME, VENDOR_NAME, SUPPORT_EMAIL};
 

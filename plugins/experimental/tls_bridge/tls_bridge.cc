@@ -38,6 +38,8 @@ const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
 constexpr TextView CONFIG_FILE_ARG{"--file"};
 const std::string TS_CONFIG_DIR{TSConfigDirGet()};
 
+DbgCtl dbg_ctl{PLUGIN_TAG};
+
 }; // namespace
 
 /* ------------------------------------------------------------------------------------ */
@@ -306,7 +308,7 @@ Bridge::net_accept(TSVConn vc)
   char buff[1024];
   int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, int(_peer.size()), _peer.data());
 
-  TSDebug(PLUGIN_TAG, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
+  Dbg(dbg_ctl, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
   // UA side intercepted.
   _ua.init(vc);
   _ua.do_read(_self_cont, INT64_MAX);
@@ -327,7 +329,7 @@ Bridge::read_ready(TSVIO vio)
 {
   using swoc::TextView;
 
-  TSDebug(PLUGIN_TAG, "READ READY");
+  Dbg(dbg_ctl, "READ READY");
   if (vio == _out._read._vio) {
     switch (_out_resp_state) {
     case PRE:
@@ -392,7 +394,7 @@ Bridge::check_outbound_OK()
         _out_response_code = c ? c : static_cast<TSHttpStatus>(519);
         _out.consume(block.data() - raw.data());
         zret = true;
-        TSDebug(PLUGIN_TAG, "Outbound status %d", c);
+        Dbg(dbg_ctl, "Outbound status %d", c);
       }
     }
   }
@@ -423,7 +425,7 @@ Bridge::check_outbound_terminal()
           _out_terminal_pos = 4;
           _out_resp_state   = READY;
           zret              = true;
-          TSDebug(PLUGIN_TAG, "Outbound ready");
+          Dbg(dbg_ctl, "Outbound ready");
         } else if (_out_terminal_pos == 1) {
           _out_terminal_pos = 2;
         } else {
@@ -450,7 +452,7 @@ Bridge::flow_to_ua()
     TSAssert(n == avail);
 
     _out.consume(n);
-    TSDebug(PLUGIN_TAG, "Wrote %" PRId64 " bytes to UA", n);
+    Dbg(dbg_ctl, "Wrote %" PRId64 " bytes to UA", n);
     TSVIOReenable(_ua._write._vio);
     TSVIOReenable(_out._read._vio);
   }
@@ -466,7 +468,7 @@ Bridge::flow_to_outbound()
     TSAssert(n == avail);
 
     _ua.consume(n);
-    TSDebug(PLUGIN_TAG, "Wrote %" PRId64 " bytes to upstream", n);
+    Dbg(dbg_ctl, "Wrote %" PRId64 " bytes to upstream", n);
     TSVIOReenable(_out._write._vio);
     TSVIOReenable(_ua._read._vio);
   }
@@ -478,11 +480,11 @@ Bridge::eos(TSVIO vio)
   if (nullptr == vio) {
     // Generic close for some non-EOS reason.
   } else if (vio == _out._write._vio || vio == _out._read._vio) {
-    TSDebug(PLUGIN_TAG, "EOS upstream");
+    Dbg(dbg_ctl, "EOS upstream");
   } else if (vio == _ua._write._vio || vio == _ua._read._vio) {
-    TSDebug(PLUGIN_TAG, "EOS user agent");
+    Dbg(dbg_ctl, "EOS user agent");
   } else {
-    TSDebug(PLUGIN_TAG, "EOS from unknown VIO [%p]", vio);
+    Dbg(dbg_ctl, "EOS from unknown VIO [%p]", vio);
   }
   _out.do_close();
   _ua.do_close();
@@ -522,7 +524,7 @@ Bridge::update_ua_response()
     Hdr_Remove_Field(mbuf, hdr_loc, {TS_MIME_FIELD_PROXY_CONNECTION, TS_MIME_LEN_PROXY_CONNECTION});
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr_loc);
   } else {
-    TSDebug(PLUGIN_TAG, "Failed to retrieve client response");
+    Dbg(dbg_ctl, "Failed to retrieve client response");
   }
 }
 
@@ -627,18 +629,18 @@ CB_Exec(TSCont contp, TSEvent ev_idx, void *data)
     ctx->eos(static_cast<TSVIO>(data));
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    TSDebug(PLUGIN_TAG, "SEND_RESPONSE_HDR");
+    Dbg(dbg_ctl, "SEND_RESPONSE_HDR");
     ctx->send_response_cb();
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    TSDebug(PLUGIN_TAG, "TXN_CLOSE: cleanup");
+    Dbg(dbg_ctl, "TXN_CLOSE: cleanup");
     ctx->eos(nullptr); // no specific VIO, close up everything.
     delete ctx;
     TSContDataSet(contp, nullptr); // Not sure if necessary, it's cheap, let's be safe.
     TSContDestroy(contp);
     break;
   default:
-    TSDebug(PLUGIN_TAG, "Event %d", ev_idx);
+    Dbg(dbg_ctl, "Event %d", ev_idx);
     break;
   }
   return TS_EVENT_CONTINUE;
@@ -665,8 +667,8 @@ CB_Read_Request_Hdr(TSCont contp, TSEvent ev_idx, void *data)
           auto actor = TSContCreate(CB_Exec, TSContMutexGet(reinterpret_cast<TSCont>(txn)));
           auto ctx   = new Bridge(actor, txn, peer);
 
-          TSDebug(PLUGIN_TAG, "Intercepting transaction %" PRIu64 " to '%.*s' via '%.*s'", TSHttpTxnIdGet(txn), host_len, host_name,
-                  static_cast<int>(peer.size()), peer.data());
+          Dbg(dbg_ctl, "Intercepting transaction %" PRIu64 " to '%.*s' via '%.*s'", TSHttpTxnIdGet(txn), host_len, host_name,
+              static_cast<int>(peer.size()), peer.data());
 
           TSContDataSet(actor, ctx);
           // Need to play games with the response, delaying it until upstream connection is done.

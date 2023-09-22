@@ -26,6 +26,12 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
+namespace inliner_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace inliner_ns;
+
 namespace ats
 {
 namespace cache
@@ -54,13 +60,13 @@ namespace cache
       self->out_ = io::IO::write(self->vconnection_, c, self->content_.size());
       break;
     case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
-      TSDebug(PLUGIN_TAG, "write failed");
+      Dbg(dbg_ctl, "write failed");
       delete self;
       TSContDataSet(c, nullptr);
       TSContDestroy(c);
       break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(PLUGIN_TAG, "write completed");
+      Dbg(dbg_ctl, "write completed");
       assert(self->vconnection_ != nullptr);
       TSVConnClose(self->vconnection_);
       delete self;

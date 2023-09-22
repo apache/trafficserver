@@ -25,7 +25,6 @@
 
 #include <string>
 #include <map>
-#include "ComponentBase.h"
 #include "StringHash.h"
 #include "DocNode.h"
 #include "EsiParser.h"
@@ -35,7 +34,7 @@
 #include "SpecialIncludeHandler.h"
 #include "HandlerManager.h"
 
-class EsiProcessor : private EsiLib::ComponentBase
+class EsiProcessor
 {
 public:
   enum UsePackedNodeResult {
@@ -45,9 +44,7 @@ public:
     PROCESS_FAILURE,
   };
 
-  EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
-               EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func, HttpDataFetcher &fetcher,
-               EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr);
+  EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr);
 
   /** Initializes the processor with the context of the request to be processed */
   bool start();
@@ -180,4 +177,6 @@ private:
     stop();
     _curr_state = ERRORED;
   }
+
+  void *_cont_addr;
 };

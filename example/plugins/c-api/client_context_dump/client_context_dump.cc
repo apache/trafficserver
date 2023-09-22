@@ -36,6 +36,11 @@
 #define PLUGIN_NAME "client_context_dump"
 TSTextLogObject context_dump_log;
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 char *
 asn1_string_extract(ASN1_STRING *s)
 {
@@ -131,8 +136,8 @@ dump_context(const char *ca_path, const char *ck_path)
         length = BIO_get_mem_data(time_bio, &data);
         time_s = std::string(data, length);
         BIO_free(time_bio);
-        TSDebug(PLUGIN_NAME, "LookupName: %s:%s, Subject: %s. SAN: %s. Serial: %s. NotAfter: %s.", ca_path, ck_path,
-                subject_s.c_str(), san_s.c_str(), serial_s.c_str(), time_s.c_str());
+        Dbg(dbg_ctl, "LookupName: %s:%s, Subject: %s. SAN: %s. Serial: %s. NotAfter: %s.", ca_path, ck_path, subject_s.c_str(),
+            san_s.c_str(), serial_s.c_str(), time_s.c_str());
         TSTextLogObjectWrite(context_dump_log, "LookupName: %s:%s, Subject: %s. SAN: %s. Serial: %s. NotAfter: %s.", ca_path,
                              ck_path, subject_s.c_str(), san_s.c_str(), serial_s.c_str(), time_s.c_str());
       }
@@ -185,6 +190,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Failed to create log file", PLUGIN_NAME);
     return;
   }
-  TSDebug(PLUGIN_NAME, "Initialized.");
+  Dbg(dbg_ctl, "Initialized.");
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(CB_context_dump, nullptr));
 }

@@ -39,7 +39,7 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
       std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
       (void)contp; // Ugly, but silences some compilers.
-      TSDebug(PLUGIN_NAME, "SNI=%s: Enabling queued VC after %ldms", key.data(), static_cast<long>(delay.count()));
+      Dbg(dbg_ctl, "SNI=%s: Enabling queued VC after %ldms", key.data(), static_cast<long>(delay.count()));
       TSVConnReenable(vc);
       limiter->incrementMetric(RATE_LIMITER_METRIC_RESUMED);
     }
@@ -54,7 +54,7 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
         std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
         (void)contp;
-        TSDebug(PLUGIN_NAME, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
+        Dbg(dbg_ctl, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
         TSVConnReenableEx(vc, TS_EVENT_ERROR);
         limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
       }
@@ -72,8 +72,8 @@ SniSelector::insert(std::string_view sni, SniRateLimiter *limiter)
 {
   if (_limiters.find(sni) == _limiters.end()) {
     _limiters[sni] = limiter;
-    TSDebug(PLUGIN_NAME, "Added global limiter for SNI=%s (limit=%u, queue=%u, max_age=%ldms)", sni.data(), limiter->limit,
-            limiter->max_queue, static_cast<long>(limiter->max_age.count()));
+    Dbg(dbg_ctl, "Added global limiter for SNI=%s (limit=%u, queue=%u, max_age=%ldms)", sni.data(), limiter->limit,
+        limiter->max_queue, static_cast<long>(limiter->max_age.count()));
 
     limiter->initializeMetrics(RATE_LIMITER_TYPE_SNI);
 

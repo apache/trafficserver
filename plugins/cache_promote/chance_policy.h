@@ -29,7 +29,7 @@ public:
   bool
   doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
-    TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
+    DBG("ChancePolicy::doPromote(%f)", getSample());
     incrementStat(_promoted_id, 1);
 
     return true;

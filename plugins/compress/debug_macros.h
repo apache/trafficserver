@@ -27,30 +27,35 @@
 
 #define TAG "compress"
 
-#define debug(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSDebug(TAG, "DEBUG: [%s:%d] [%s] " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+namespace compress_ns
+{
+extern DbgCtl dbg_ctl;
+}
+
+#define debug(fmt, args...)                                                                          \
+  do {                                                                                               \
+    Dbg(compress_ns::dbg_ctl, "DEBUG: [%s:%d] [%s] " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define info(fmt, args...)              \
-  do {                                  \
-    TSDebug(TAG, "INFO: " fmt, ##args); \
+#define info(fmt, args...)                           \
+  do {                                               \
+    Dbg(compress_ns::dbg_ctl, "INFO: " fmt, ##args); \
   } while (0)
 
-#define warning(fmt, args...)              \
-  do {                                     \
-    TSDebug(TAG, "WARNING: " fmt, ##args); \
+#define warning(fmt, args...)                           \
+  do {                                                  \
+    Dbg(compress_ns::dbg_ctl, "WARNING: " fmt, ##args); \
   } while (0)
 
-#define error(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);      \
-    TSDebug(TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define error(fmt, args...)                                                                          \
+  do {                                                                                               \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);                   \
+    Dbg(compress_ns::dbg_ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define fatal(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);      \
-    TSDebug(TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
-    exit(-1);                                                                           \
+#define fatal(fmt, args...)                                                                          \
+  do {                                                                                               \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);                   \
+    Dbg(compress_ns::dbg_ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+    exit(-1);                                                                                        \
   } while (0)

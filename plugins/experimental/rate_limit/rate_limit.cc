@@ -71,7 +71,7 @@ TSPluginInit(int argc, const char *argv[])
       ++argv;
 
       size_t num_sni = gSNISelector->factory(argv[0] + 4, argc, argv);
-      TSDebug(PLUGIN_NAME, "Finished loading %zu SNIs", num_sni);
+      Dbg(dbg_ctl, "Finished loading %zu SNIs", num_sni);
 
       gSNISelector->setupQueueCont(); // Start the queue processing continuation if needed
     } else if (!strncasecmp(argv[1], "HOST=", 5)) {
@@ -94,7 +94,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  Dbg(dbg_ctl, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -121,8 +121,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit,
-          limiter->max_queue, static_cast<long>(limiter->max_age.count()), limiter->error);
+  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit, limiter->max_queue,
+      static_cast<long>(limiter->max_age.count()), limiter->error);
 
   return TS_SUCCESS;
 }
@@ -141,14 +141,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
         TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
         limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-        TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
+        Dbg(dbg_ctl, "Rejecting request, we're at capacity and queue is full");
       } else {
         limiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
-        TSDebug(PLUGIN_NAME, "Adding rate limiting hook, we are at capacity");
+        Dbg(dbg_ctl, "Adding rate limiting hook, we are at capacity");
       }
     } else {
       limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
-      TSDebug(PLUGIN_NAME, "Adding txn-close hook, we're not at capacity");
+      Dbg(dbg_ctl, "Adding txn-close hook, we're not at capacity");
     }
   }
 

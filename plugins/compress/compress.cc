@@ -54,6 +54,11 @@ using namespace Gzip;
 // and '9' is 'Best compression'. Testing has proved level '6'
 // to be about the best level to use in an HTTP Server.
 
+namespace compress_ns
+{
+DbgCtl dbg_ctl{TAG};
+}
+
 const int ZLIB_COMPRESSION_LEVEL = 6;
 const char *dictionary           = nullptr;
 

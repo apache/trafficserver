@@ -121,8 +121,8 @@ create_lua_vms()
     if (TS_SUCCESS == TSMgmtIntCreate(TS_RECORDTYPE_CONFIG, ts_lua_mgmt_state_str, TS_LUA_MAX_STATE_COUNT,
                                       TS_RECORDUPDATE_RESTART_TS, TS_RECORDCHECK_INT, ts_lua_mgmt_state_regex,
                                       TS_RECORDACCESS_READ_ONLY)) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] registered config string %s: with default [%d]", __FUNCTION__, ts_lua_mgmt_state_str,
-              TS_LUA_MAX_STATE_COUNT);
+      Dbg(dbg_ctl, "[%s] registered config string %s: with default [%d]", __FUNCTION__, ts_lua_mgmt_state_str,
+          TS_LUA_MAX_STATE_COUNT);
     } else {
       TSError("[%s][%s] failed to register %s", TS_LUA_DEBUG_TAG, __FUNCTION__, ts_lua_mgmt_state_str);
     }
@@ -133,11 +133,11 @@ create_lua_vms()
     TSMgmtInt mgmt_state = 0;
 
     if (TS_SUCCESS != TSMgmtIntGet(ts_lua_mgmt_state_str, &mgmt_state)) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting max state to default: %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
+      Dbg(dbg_ctl, "[%s] setting max state to default: %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
       ts_lua_max_state_count = TS_LUA_MAX_STATE_COUNT;
     } else {
       ts_lua_max_state_count = (int)mgmt_state;
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, ts_lua_max_state_count);
+      Dbg(dbg_ctl, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, ts_lua_max_state_count);
     }
 
     if (ts_lua_max_state_count < 1) {
@@ -268,11 +268,11 @@ lifecycleHandler(TSCont contp, TSEvent event, void *edata)
   size_t const reset_tag_len = strlen(reset_tag);
 
   if (reset_tag_len <= msgp->data_size && 0 == strncasecmp(reset_tag, msgstr, reset_tag_len)) {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, reset_tag);
+    Dbg(dbg_ctl, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, reset_tag);
     state = Reset;
     fprintf(stderr, "[%s] %s (%s) resetting per state gc_kb_max and threads_max\n", timebuf, TS_LUA_DEBUG_TAG, labelstr);
   } else {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, print_tag);
+    Dbg(dbg_ctl, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, print_tag);
   }
 
   for (int index = 0; index < ts_lua_max_state_count; ++index) {
@@ -325,7 +325,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
       // start the stats management
       if (nullptr != plugin_stats) {
-        TSDebug(TS_LUA_DEBUG_TAG, "Starting up stats management continuation");
+        Dbg(dbg_ctl, "Starting up stats management continuation");
         TSCont const scontp = TSContCreate(statsHandler, TSMutexCreate());
         TSContDataSet(scontp, plugin_stats);
         TSContScheduleOnPool(scontp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
@@ -364,7 +364,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     switch (opt) {
     case 's':
       states = atoi(optarg);
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting number of lua VMs [%d]", __FUNCTION__, states);
+      Dbg(dbg_ctl, "[%s] setting number of lua VMs [%d]", __FUNCTION__, states);
       // set state
       break;
     case 'i':
@@ -411,7 +411,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   // check to make sure it is a lua file and there is no parameter for the lua file
   if (fn && (argc - optind < 2)) {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] checking if script has been registered", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] checking if script has been registered", __FUNCTION__);
 
     // we only need to check the first lua VM for script registration
     TSMutexLock(ts_lua_main_ctx_array[0].mutexp);
@@ -420,7 +420,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   if (!conf) {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] creating new conf instance", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] creating new conf instance", __FUNCTION__);
 
     conf = tsapi::malloc<ts_lua_instance_conf>();
     if (!conf) {
@@ -436,7 +436,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     conf->ref_count = 1;
     conf->ljgc      = ljgc;
 
-    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , creating new instance...", conf->ref_count);
+    Dbg(dbg_ctl, "Reference Count = %d , creating new instance...", conf->ref_count);
 
     if (fn) {
       snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", script);
@@ -461,7 +461,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
   } else {
     conf->ref_count++;
-    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , reference existing instance...", conf->ref_count);
+    Dbg(dbg_ctl, "Reference Count = %d , reference existing instance...", conf->ref_count);
   }
 
   *ih = conf;
@@ -477,10 +477,10 @@ TSRemapDeleteInstance(void *ih)
   ts_lua_del_instance(static_cast<ts_lua_instance_conf *>(ih));
   ((ts_lua_instance_conf *)ih)->ref_count--;
   if (((ts_lua_instance_conf *)ih)->ref_count == 0) {
-    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
+    Dbg(dbg_ctl, "Reference Count = %d , freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
     TSfree(ih);
   } else {
-    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , not freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
+    Dbg(dbg_ctl, "Reference Count = %d , not freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
   }
   return;
 }
@@ -552,10 +552,10 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   lua_pop(L, 1);
 
   if (http_ctx->has_hook) {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
     TSHttpTxnHookAdd(rh, TS_HTTP_TXN_CLOSE_HOOK, contp);
   } else {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no txn hook -> release resources now", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] no txn hook -> release resources now", __FUNCTION__);
     ts_lua_destroy_http_ctx(http_ctx);
   }
 
@@ -567,21 +567,21 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 void
 TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 {
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] os response function and type - %d", __FUNCTION__, os_response_type);
+  Dbg(dbg_ctl, "[%s] os response function and type - %d", __FUNCTION__, os_response_type);
   ts_lua_remap_plugin_init(ih, rh, nullptr);
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] remap function", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] remap function", __FUNCTION__);
   return ts_lua_remap_plugin_init(ih, rh, rri);
 }
 
 static int
 configHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] calling configuration handler", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] calling configuration handler", __FUNCTION__);
   ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
   ts_lua_reload_module(conf, ts_lua_g_main_ctx_array, conf->states);
   return 0;
@@ -611,7 +611,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   main_ctx = static_cast<decltype(main_ctx)>(pthread_getspecific(lua_g_state_key));
   if (main_ctx == nullptr) {
     req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
+    Dbg(dbg_ctl, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
     main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
     pthread_setspecific(lua_g_state_key, main_ctx);
   }
@@ -725,10 +725,10 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   if (http_ctx->has_hook) {
     // add a hook to release resources for context
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
   } else {
-    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no txn hook -> release resources now", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] no txn hook -> release resources now", __FUNCTION__);
     ts_lua_destroy_http_ctx(http_ctx);
   }
 
@@ -800,7 +800,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'j':
       jit = atoi(optarg);
       if (jit == 0) {
-        TSDebug(TS_LUA_DEBUG_TAG, "[%s] disable JIT mode", __FUNCTION__);
+        Dbg(dbg_ctl, "[%s] disable JIT mode", __FUNCTION__);
         for (int index = 0; index < ts_lua_max_state_count; ++index) {
           ts_lua_main_ctx *const main_ctx = (ts_lua_g_main_ctx_array + index);
           lua_State *const lstate         = main_ctx->lua;
@@ -812,7 +812,7 @@ TSPluginInit(int argc, const char *argv[])
       break;
     case 'r':
       reload = 1;
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] enable global plugin reload [%d]", __FUNCTION__, reload);
+      Dbg(dbg_ctl, "[%s] enable global plugin reload [%d]", __FUNCTION__, reload);
       break;
     }
 
@@ -879,77 +879,77 @@ TSPluginInit(int argc, const char *argv[])
   lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "send_request_hdr_hook added");
+    Dbg(dbg_ctl, "send_request_hdr_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_READ_RESPONSE);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_response_hdr_hook added");
+    Dbg(dbg_ctl, "read_response_hdr_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "send_response_hdr_hook added");
+    Dbg(dbg_ctl, "send_response_hdr_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "cache_lookup_complete_hook added");
+    Dbg(dbg_ctl, "cache_lookup_complete_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_READ_REQUEST);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
+    Dbg(dbg_ctl, "read_request_hdr_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_START);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "txn_start_hook added");
+    Dbg(dbg_ctl, "txn_start_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_PRE_REMAP);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "pre_remap_hook added");
+    Dbg(dbg_ctl, "pre_remap_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "post_remap_hook added");
+    Dbg(dbg_ctl, "post_remap_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "os_dns_hook added");
+    Dbg(dbg_ctl, "os_dns_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_READ_CACHE);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_cache_hdr_hook added");
+    Dbg(dbg_ctl, "read_cache_hdr_hook added");
   }
   lua_pop(l, 1);
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_CLOSE);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "txn_close_hook added");
+    Dbg(dbg_ctl, "txn_close_hook added");
   }
   lua_pop(l, 1);
 

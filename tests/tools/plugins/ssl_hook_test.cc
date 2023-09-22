@@ -35,6 +35,7 @@
 #define PN  "ssl_hook_test"
 #define PCP "[" PN " Plugin] "
 
+static DbgCtl dbg_ctl{PN};
 static bool was_conn_closed;
 
 int
@@ -46,7 +47,7 @@ ReenableSSL(TSCont cont, TSEvent event, void *edata)
   }
 
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(TSContDataGet(cont));
-  TSDebug(PN, "Callback reenable ssl_vc=%p", ssl_vc);
+  Dbg(dbg_ctl, "Callback reenable ssl_vc=%p", ssl_vc);
   TSVConnReenable(ssl_vc);
   TSContDestroy(cont);
   return TS_SUCCESS;
@@ -59,7 +60,7 @@ CB_Pre_Accept(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Pre accept callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
+  Dbg(dbg_ctl, "Pre accept callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -73,7 +74,7 @@ CB_Pre_Accept_Delay(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Pre accept delay callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
+  Dbg(dbg_ctl, "Pre accept delay callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -93,8 +94,8 @@ CB_out_start(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Outbound start callback %d %p - event is %s", count, ssl_vc,
-          event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
+  Dbg(dbg_ctl, "Outbound start callback %d %p - event is %s", count, ssl_vc,
+      event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -108,8 +109,8 @@ CB_out_start_delay(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Outbound delay start callback %d %p - event is %s", count, ssl_vc,
-          event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
+  Dbg(dbg_ctl, "Outbound delay start callback %d %p - event is %s", count, ssl_vc,
+      event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -129,7 +130,7 @@ CB_close(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Close callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_CLOSE ? "good" : "bad");
+  Dbg(dbg_ctl, "Close callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_CLOSE ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -146,8 +147,8 @@ CB_out_close(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Outbound close callback %d %p - event is %s", count, ssl_vc,
-          event == TS_EVENT_VCONN_OUTBOUND_CLOSE ? "good" : "bad");
+  Dbg(dbg_ctl, "Outbound close callback %d %p - event is %s", count, ssl_vc,
+      event == TS_EVENT_VCONN_OUTBOUND_CLOSE ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -160,7 +161,7 @@ CB_Client_Hello_Immediate(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -174,7 +175,7 @@ CB_Client_Hello(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -194,7 +195,7 @@ CB_SNI(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "SNI callback %d %p", count, ssl_vc);
+  Dbg(dbg_ctl, "SNI callback %d %p", count, ssl_vc);
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -208,7 +209,7 @@ CB_Cert_Immediate(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Cert callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p", count, ssl_vc);
 
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
@@ -221,7 +222,7 @@ CB_Cert(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Cert callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p", count, ssl_vc);
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -306,8 +307,8 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int client_hello_count, int 
   TSCont cb = nullptr; // pre-accept callback continuation
   int i;
 
-  TSDebug(PN, "Setup callbacks pa=%d client_hello=%d client_hello_imm=%d sni=%d cert=%d cert_imm=%d pa_delay=%d", preaccept_count,
-          client_hello_count, client_hello_count_immediate, sni_count, cert_count, cert_count_immediate, preaccept_count_delay);
+  Dbg(dbg_ctl, "Setup callbacks pa=%d client_hello=%d client_hello_imm=%d sni=%d cert=%d cert_imm=%d pa_delay=%d", preaccept_count,
+      client_hello_count, client_hello_count_immediate, sni_count, cert_count, cert_count_immediate, preaccept_count_delay);
   for (i = 0; i < preaccept_count; i++) {
     cb = TSContCreate(&CB_Pre_Accept, nullptr);
     TSContDataSet(cb, (void *)static_cast<intptr_t>(i));

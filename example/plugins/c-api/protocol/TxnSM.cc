@@ -75,7 +75,7 @@ main_handler(TSCont contp, TSEvent event, void *data)
   TxnSM *txn_sm                  = (TxnSM *)TSContDataGet(contp);
   TxnSMHandler q_current_handler = txn_sm->q_current_handler;
 
-  TSDebug(PLUGIN_NAME, "main_handler (contp %p event %d)", contp, event);
+  Dbg(dbg_ctl, "main_handler (contp %p event %d)", contp, event);
 
   /* handle common cases errors */
   if (event == TS_EVENT_ERROR) {
@@ -88,7 +88,7 @@ main_handler(TSCont contp, TSEvent event, void *data)
     }
   }
 
-  TSDebug(PLUGIN_NAME, "current_handler (%p)", q_current_handler);
+  Dbg(dbg_ctl, "current_handler (%p)", q_current_handler);
 
   return (*q_current_handler)(contp, event, data);
 }
@@ -192,7 +192,7 @@ state_interface_with_client(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_interface_with_client");
+  Dbg(dbg_ctl, "enter state_interface_with_client");
 
   txn_sm->q_pending_action = nullptr;
 
@@ -213,7 +213,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_read_request_from_client");
+  Dbg(dbg_ctl, "enter state_read_request_from_client");
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
@@ -238,7 +238,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
         }
 
         /* Start to do cache lookup */
-        TSDebug(PLUGIN_NAME, "Key material: file name is %s*****", txn_sm->q_file_name);
+        Dbg(dbg_ctl, "Key material: file name is %s*****", txn_sm->q_file_name);
         txn_sm->q_key = CacheKeyCreate(txn_sm->q_file_name);
 
         set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
@@ -268,11 +268,11 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
   int64_t response_size;
   int ret_val;
 
-  TSDebug(PLUGIN_NAME, "enter state_handle_cache_lookup");
+  Dbg(dbg_ctl, "enter state_handle_cache_lookup");
 
   switch (event) {
   case TS_EVENT_CACHE_OPEN_READ:
-    TSDebug(PLUGIN_NAME, "cache hit!!!");
+    Dbg(dbg_ctl, "cache hit!!!");
     /* Cache hit. */
 
     /* Write log */
@@ -313,7 +313,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 
   case TS_EVENT_CACHE_OPEN_READ_FAILED:
     /* Cache miss or error, open cache write_vc. */
-    TSDebug(PLUGIN_NAME, "cache miss or error!!!");
+    Dbg(dbg_ctl, "cache miss or error!!!");
     /* Write log */
     ret_val = TSTextLogObjectWrite(protocol_plugin_log, "%s %s %d \n", txn_sm->q_file_name, txn_sm->q_server_name, 0);
 
@@ -341,8 +341,8 @@ load_buffer_cache_data(TxnSM *txn_sm)
      server response buffer */
   int rdr_avail = TSIOBufferReaderAvail(txn_sm->q_cache_read_buffer_reader);
 
-  TSDebug(PLUGIN_NAME, "entering buffer_cache_data");
-  TSDebug(PLUGIN_NAME, "loading %d bytes to buffer reader", rdr_avail);
+  Dbg(dbg_ctl, "entering buffer_cache_data");
+  Dbg(dbg_ctl, "loading %d bytes to buffer reader", rdr_avail);
 
   TSAssert(rdr_avail > 0);
 
@@ -363,7 +363,7 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUS
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_handle_cache_read_response");
+  Dbg(dbg_ctl, "enter state_handle_cache_read_response");
 
   txn_sm->q_pending_action = nullptr;
 
@@ -413,7 +413,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_handle_cache_prepare_for_write");
+  Dbg(dbg_ctl, "enter state_handle_cache_prepare_for_write");
 
   txn_sm->q_pending_action = nullptr;
 
@@ -437,7 +437,7 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_build_and_send_request");
+  Dbg(dbg_ctl, "enter state_build_and_send_request");
 
   txn_sm->q_pending_action = nullptr;
 
@@ -467,7 +467,7 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
   txn_sm->q_pending_action = TSHostLookup(contp, txn_sm->q_server_name, strlen(txn_sm->q_server_name));
 
   TSAssert(txn_sm->q_pending_action);
-  TSDebug(PLUGIN_NAME, "initiating host lookup");
+  Dbg(dbg_ctl, "initiating host lookup");
 
   return TS_SUCCESS;
 }
@@ -478,7 +478,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_dns_lookup");
+  Dbg(dbg_ctl, "enter state_dns_lookup");
 
   /* Can't find the server IP. */
   if (event != TS_EVENT_HOST_LOOKUP || !host_info) {
@@ -511,7 +511,7 @@ state_connect_to_server(TSCont contp, TSEvent event, TSVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_connect_to_server");
+  Dbg(dbg_ctl, "enter state_connect_to_server");
 
   /* TSNetConnect failed. */
   if (event != TS_EVENT_NET_CONNECT) {
@@ -537,7 +537,7 @@ state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_send_request_to_server");
+  Dbg(dbg_ctl, "enter state_send_request_to_server");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
@@ -562,7 +562,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_interface_with_server");
+  Dbg(dbg_ctl, "enter state_interface_with_server");
 
   txn_sm->q_pending_action = nullptr;
 
@@ -580,7 +580,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 
   /* all data of the response come in. */
   case TS_EVENT_VCONN_EOS:
-    TSDebug(PLUGIN_NAME, "get server eos");
+    Dbg(dbg_ctl, "get server eos");
     /* There is no more use of server_vc, close it. */
     if (txn_sm->q_server_vc) {
       TSVConnClose(txn_sm->q_server_vc);
@@ -620,8 +620,8 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else { /* not done with writing into cache */
 
-      TSDebug(PLUGIN_NAME, "cache_response_length is %d, server response length is %d", txn_sm->q_cache_response_length,
-              txn_sm->q_server_response_length);
+      Dbg(dbg_ctl, "cache_response_length is %d, server response length is %d", txn_sm->q_cache_response_length,
+          txn_sm->q_server_response_length);
       TSVIOReenable(txn_sm->q_cache_write_vio);
     }
 
@@ -644,7 +644,7 @@ state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vi
   TxnSM *txn_sm  = (TxnSM *)TSContDataGet(contp);
   int bytes_read = 0;
 
-  TSDebug(PLUGIN_NAME, "enter state_read_response_from_server");
+  Dbg(dbg_ctl, "enter state_read_response_from_server");
 
   bytes_read = TSIOBufferReaderAvail(txn_sm->q_cache_response_buffer_reader);
 
@@ -667,7 +667,7 @@ state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vi
   }
 
   txn_sm->q_server_response_length += bytes_read;
-  TSDebug(PLUGIN_NAME, "bytes read is %d, total response length is %d", bytes_read, txn_sm->q_server_response_length);
+  Dbg(dbg_ctl, "bytes read is %d, total response length is %d", bytes_read, txn_sm->q_server_response_length);
 
   return TS_SUCCESS;
 }
@@ -679,7 +679,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_write_to_cache");
+  Dbg(dbg_ctl, "enter state_write_to_cache");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
@@ -687,7 +687,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
     return TS_SUCCESS;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(PLUGIN_NAME, "nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    Dbg(dbg_ctl, "nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
     /* Since the first write is through TSVConnWrite, which already consume
        the data in cache_buffer_reader, don't consume it again. */
     if (txn_sm->q_cache_response_length > 0 && txn_sm->q_block_bytes_read > 0) {
@@ -698,15 +698,15 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 
     /* If not all data have been read in, we have to reenable the read_vio */
     if (txn_sm->q_server_vc != nullptr) {
-      TSDebug(PLUGIN_NAME, "re-enable server_read_vio");
+      Dbg(dbg_ctl, "re-enable server_read_vio");
       TSVIOReenable(txn_sm->q_server_read_vio);
       return TS_SUCCESS;
     }
 
     if (txn_sm->q_cache_response_length >= txn_sm->q_server_response_length) {
       /* Write is complete, close the cache_vc. */
-      TSDebug(PLUGIN_NAME, "close cache_vc, cache_response_length is %d, server_response_length is %d",
-              txn_sm->q_cache_response_length, txn_sm->q_server_response_length);
+      Dbg(dbg_ctl, "close cache_vc, cache_response_length is %d, server_response_length is %d", txn_sm->q_cache_response_length,
+          txn_sm->q_server_response_length);
       TSVConnClose(txn_sm->q_cache_vc);
       txn_sm->q_cache_vc        = nullptr;
       txn_sm->q_cache_write_vio = nullptr;
@@ -717,7 +717,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else { /* not done with writing into cache */
 
-      TSDebug(PLUGIN_NAME, "re-enable cache_write_vio");
+      Dbg(dbg_ctl, "re-enable cache_write_vio");
       TSVIOReenable(txn_sm->q_cache_write_vio);
     }
     return TS_SUCCESS;
@@ -737,18 +737,18 @@ state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_send_response_to_client");
+  Dbg(dbg_ctl, "enter state_send_response_to_client");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
-    TSDebug(PLUGIN_NAME, " . wr ready");
-    TSDebug(PLUGIN_NAME, "write_ready: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    Dbg(dbg_ctl, " . wr ready");
+    Dbg(dbg_ctl, "write_ready: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
     TSVIOReenable(txn_sm->q_client_write_vio);
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(PLUGIN_NAME, " . wr complete");
-    TSDebug(PLUGIN_NAME, "write_complete: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    Dbg(dbg_ctl, " . wr complete");
+    Dbg(dbg_ctl, "write_complete: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
     /* Finished sending all data to client, close client_vc. */
     if (txn_sm->q_client_vc) {
       TSVConnClose(txn_sm->q_client_vc);
@@ -760,11 +760,11 @@ state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
     return state_done(contp, TS_EVENT_NONE, nullptr);
 
   default:
-    TSDebug(PLUGIN_NAME, " . default handler");
+    Dbg(dbg_ctl, " . default handler");
     return prepare_to_die(contp);
   }
 
-  TSDebug(PLUGIN_NAME, "leaving send_response_to_client");
+  Dbg(dbg_ctl, "leaving send_response_to_client");
 
   return TS_SUCCESS;
 }
@@ -776,7 +776,7 @@ prepare_to_die(TSCont contp)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter prepare_to_die");
+  Dbg(dbg_ctl, "enter prepare_to_die");
   if (txn_sm->q_client_vc) {
     TSVConnAbort(txn_sm->q_client_vc, 1);
     txn_sm->q_client_vc = nullptr;
@@ -806,13 +806,13 @@ state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug(PLUGIN_NAME, "enter state_done");
+  Dbg(dbg_ctl, "enter state_done");
 
   if (txn_sm->q_pending_action && !TSActionDone(txn_sm->q_pending_action)) {
-    TSDebug(PLUGIN_NAME, "cancelling pending action %p", txn_sm->q_pending_action);
+    Dbg(dbg_ctl, "cancelling pending action %p", txn_sm->q_pending_action);
     TSActionCancel(txn_sm->q_pending_action);
   } else if (txn_sm->q_pending_action) {
-    TSDebug(PLUGIN_NAME, "action is done %p", txn_sm->q_pending_action);
+    Dbg(dbg_ctl, "action is done %p", txn_sm->q_pending_action);
   }
 
   txn_sm->q_pending_action = nullptr;
@@ -898,12 +898,12 @@ send_response_to_client(TSCont contp)
   TxnSM *txn_sm;
   int response_len;
 
-  TSDebug(PLUGIN_NAME, "enter send_response_to_client");
+  Dbg(dbg_ctl, "enter send_response_to_client");
 
   txn_sm       = (TxnSM *)TSContDataGet(contp);
   response_len = TSIOBufferReaderAvail(txn_sm->q_client_response_buffer_reader);
 
-  TSDebug(PLUGIN_NAME, " . resp_len is %d", response_len);
+  Dbg(dbg_ctl, " . resp_len is %d", response_len);
 
   set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
   txn_sm->q_client_write_vio = TSVConnWrite(txn_sm->q_client_vc, contp, txn_sm->q_client_response_buffer_reader, response_len);

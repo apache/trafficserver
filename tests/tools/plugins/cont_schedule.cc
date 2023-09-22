@@ -29,6 +29,11 @@ static const char DEBUG_TAG_SCHD[] = "TSContSchedule_test.schedule";
 static const char DEBUG_TAG_HDL[]  = "TSContSchedule_test.handler";
 static const char DEBUG_TAG_CHK[]  = "TSContSchedule_test.check";
 
+static DbgCtl dbg_ctl_init{DEBUG_TAG_INIT};
+static DbgCtl dbg_ctl_schd{DEBUG_TAG_SCHD};
+static DbgCtl dbg_ctl_hdl{DEBUG_TAG_HDL};
+static DbgCtl dbg_ctl_chk{DEBUG_TAG_CHK};
+
 // plugin registration info
 static char plugin_name[]   = "TSContSchedule_test";
 static char vendor_name[]   = "apache";
@@ -52,16 +57,16 @@ static int
 TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
 {
   // This runs on ET_NET threads.
-  TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnPool handler 1 thread [%p]", TSThreadSelf());
+  Dbg(dbg_ctl_hdl, "TSContScheduleOnPool handler 1 thread [%p]", TSThreadSelf());
   if (thread_1 == nullptr) {
     // First time here, record thread id.
     thread_1 = TSEventThreadSelf();
   } else {
     // Second time here, we should be on a different thread since affinity was cleared.
     if (thread_1 != TSEventThreadSelf()) {
-      TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
+      Dbg(dbg_ctl_chk, "pass [should not be the same thread]");
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
+      Dbg(dbg_ctl_chk, "fail [on the same thread]");
     }
   }
   return 0;
@@ -71,7 +76,7 @@ static int
 TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
 {
   // This runs on ET_TASK threads.
-  TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnPool handler 2 thread [%p]", TSThreadSelf());
+  Dbg(dbg_ctl_hdl, "TSContScheduleOnPool handler 2 thread [%p]", TSThreadSelf());
   if (thread_2 == nullptr) {
     // First time here, record thread id.
     thread_2 = TSEventThreadSelf();
@@ -80,9 +85,9 @@ TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
       // Second time there, we should be on the same thread even though affinity was cleared,
       // reason being plugin is running on ET_TASK threads, and we were scheduled on ET_TASK
       // threads as well, so the thread the plugin is on is used and set to affinity.
-      TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
+      Dbg(dbg_ctl_chk, "pass [should be the same thread]");
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
+      Dbg(dbg_ctl_chk, "fail [not the same thread]");
     }
   }
   return 0;
@@ -95,10 +100,10 @@ TSContScheduleOnPool_test()
   contp_2 = TSContCreate(TSContScheduleOnPool_handler_2, TSMutexCreate());
 
   if (contp_1 == nullptr || contp_2 == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
     abort();
   } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
 
     TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
     TSContThreadAffinityClear(contp_1);
@@ -115,20 +120,20 @@ TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
 {
   // Mostly same as TSContScheduleOnPool_handler_1, no need to set affinity
   // since we are scheduling directly on to a thread.
-  TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnThread handler 1 thread [%p]", TSThreadSelf());
+  Dbg(dbg_ctl_hdl, "TSContScheduleOnThread handler 1 thread [%p]", TSThreadSelf());
   if (thread_1 == nullptr) {
     thread_1 = TSEventThreadSelf();
 
-    TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
+    Dbg(dbg_ctl_hdl, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnThread(contp_2, 0, thread_1);
     TSContScheduleOnThread(contp_2, 0, thread_1);
   } else if (thread_2 == nullptr) {
-    TSDebug(DEBUG_TAG_CHK, "fail [schedule delay not applied]");
+    Dbg(dbg_ctl_chk, "fail [schedule delay not applied]");
   } else {
     if (thread_2 != TSEventThreadSelf()) {
-      TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
+      Dbg(dbg_ctl_chk, "pass [should not be the same thread]");
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
+      Dbg(dbg_ctl_chk, "fail [on the same thread]");
     }
   }
   return 0;
@@ -137,13 +142,13 @@ TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
 static int
 TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnThread handler 2 thread [%p]", TSThreadSelf());
+  Dbg(dbg_ctl_hdl, "TSContScheduleOnThread handler 2 thread [%p]", TSThreadSelf());
   if (thread_2 == nullptr) {
     thread_2 = TSEventThreadSelf();
   } else if (thread_2 == TSEventThreadSelf()) {
-    TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
+    Dbg(dbg_ctl_chk, "pass [should be the same thread]");
   } else {
-    TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
+    Dbg(dbg_ctl_chk, "fail [not the same thread]");
   }
   return 0;
 }
@@ -155,10 +160,10 @@ TSContScheduleOnThread_test()
   contp_2 = TSContCreate(TSContScheduleOnThread_handler_2, TSMutexCreate());
 
   if (contp_1 == nullptr || contp_2 == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
     abort();
   } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
     TSContThreadAffinityClear(contp_1);
     TSContScheduleOnPool(contp_1, 200, TS_THREAD_POOL_NET);
@@ -168,26 +173,26 @@ TSContScheduleOnThread_test()
 static int
 TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(DEBUG_TAG_HDL, "TSContThreadAffinity handler thread [%p]", TSThreadSelf());
+  Dbg(dbg_ctl_hdl, "TSContThreadAffinity handler thread [%p]", TSThreadSelf());
 
   thread_1 = TSEventThreadSelf();
 
   if (TSContThreadAffinityGet(contp) != nullptr) {
-    TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is not null]");
+    Dbg(dbg_ctl_chk, "pass [affinity thread is not null]");
     TSContThreadAffinityClear(contp);
     if (TSContThreadAffinityGet(contp) == nullptr) {
-      TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is cleared]");
+      Dbg(dbg_ctl_chk, "pass [affinity thread is cleared]");
       TSContThreadAffinitySet(contp, TSEventThreadSelf());
       if (TSContThreadAffinityGet(contp) == thread_1) {
-        TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is set]");
+        Dbg(dbg_ctl_chk, "pass [affinity thread is set]");
       } else {
-        TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not set]");
+        Dbg(dbg_ctl_chk, "fail [affinity thread is not set]");
       }
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not cleared]");
+      Dbg(dbg_ctl_chk, "fail [affinity thread is not cleared]");
     }
   } else {
-    TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is null]");
+    Dbg(dbg_ctl_chk, "fail [affinity thread is null]");
   }
 
   return 0;
@@ -199,10 +204,10 @@ TSContThreadAffinity_test()
   TSCont contp = TSContCreate(TSContThreadAffinity_handler, TSMutexCreate());
 
   if (contp == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
     abort();
   } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
   }
 }
@@ -234,13 +239,13 @@ TSPluginInit(int argc, const char *argv[])
   if (argc == 2) {
     int len = strlen(argv[1]);
     if (len == 4 && strncmp(argv[1], "pool", 4) == 0) {
-      TSDebug(DEBUG_TAG_INIT, "initializing plugin for testing TSContScheduleOnPool");
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnPool");
       test_flag = 1;
     } else if (len == 6 && strncmp(argv[1], "thread", 6) == 0) {
-      TSDebug(DEBUG_TAG_INIT, "initializing plugin for testing TSContScheduleOnThread");
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnThread");
       test_flag = 2;
     } else if (len == 8 && strncmp(argv[1], "affinity", 8) == 0) {
-      TSDebug(DEBUG_TAG_INIT, "initializing plugin for testing TSContThreadAffinity");
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContThreadAffinity");
       test_flag = 3;
     } else {
       goto Lerror;
@@ -256,7 +261,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = support_email;
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSDebug(DEBUG_TAG_INIT, "[%s] plugin registration failed", plugin_name);
+    Dbg(dbg_ctl_init, "[%s] plugin registration failed", plugin_name);
     abort();
   }
 
@@ -265,6 +270,6 @@ TSPluginInit(int argc, const char *argv[])
   return;
 
 Lerror:
-  TSDebug(DEBUG_TAG_INIT, "[%s] plugin invalid argument", plugin_name);
+  Dbg(dbg_ctl_init, "[%s] plugin invalid argument", plugin_name);
   abort();
 }

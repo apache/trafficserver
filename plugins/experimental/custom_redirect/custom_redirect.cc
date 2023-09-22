@@ -34,6 +34,8 @@
 #include <cstring>
 #include <cstdlib>
 
+static DbgCtl dbg_ctl{"[custom_redirect]"};
+
 static char *redirect_url_header   = nullptr;
 static int redirect_url_header_len = 0;
 static int return_code             = TS_HTTP_STATUS_NONE;
@@ -93,13 +95,13 @@ plugin_main_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
     TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-    TSDebug("[custom_redirect1]", "MAIN_HANDLER::TS_HTTP_READ_RESPONSE_HDR_HOOK");
+    Dbg(dbg_ctl, "MAIN_HANDLER::TS_HTTP_READ_RESPONSE_HDR_HOOK");
     handle_response(txnp, contp);
     break;
   }
 
   default: {
-    TSDebug("[custom_redirect]", "default event");
+    Dbg(dbg_ctl, "default event");
     break;
   }
   }

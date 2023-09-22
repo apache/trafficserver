@@ -45,7 +45,7 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
-  TSDebug(PLUGIN_NAME, "[%s] Retrieving status code to add to span attributes", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Retrieving status code to add to span attributes", __FUNCTION__);
   auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
 
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
@@ -68,7 +68,7 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   retval = 1;
 
 lReturn:
-  TSDebug(PLUGIN_NAME, "[%s] Cleaning up after close hook handler", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Cleaning up after close hook handler", __FUNCTION__);
   req_data->Destruct(req_data);
   delete req_data;
 
@@ -117,7 +117,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
-  TSDebug(PLUGIN_NAME, "[%s] Reading information from request", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Reading information from request", __FUNCTION__);
   if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
     TSError("[otel_tracer][%s] cannot retrieve client request", __FUNCTION__);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -229,7 +229,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   // TODO: add remote ip, port to attributes
 
   // create parent context
-  TSDebug(PLUGIN_NAME, "[%s] Creating parent context from incoming request headers", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Creating parent context from incoming request headers", __FUNCTION__);
   std::map<std::string, std::string> parent_headers;
   if (b3_len != 0) {
     parent_headers[std::string{b3_key}] = b3_str;
@@ -245,7 +245,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   // create trace span and activate
-  TSDebug(PLUGIN_NAME, "[%s] Create span with a name, attributes, parent context and activate it", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Create span with a name, attributes, parent context and activate it", __FUNCTION__);
   auto span = get_tracer("ats")->StartSpan(
     get_span_name(path_str), get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str),
     get_span_options(parent_headers));
@@ -254,13 +254,13 @@ read_request(TSHttpTxn txnp, TSCont contp)
 
   std::map<std::string, std::string> trace_headers = get_trace_headers();
   // insert headers to request
-  TSDebug(PLUGIN_NAME, "[%s] Insert trace headers to upstream request", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Insert trace headers to upstream request", __FUNCTION__);
   for (auto &p : trace_headers) {
     set_request_header(buf, hdr_loc, p.first.c_str(), p.first.size(), p.second.c_str(), p.second.size());
   }
 
   // pass the span
-  TSDebug(PLUGIN_NAME, "[%s] Add close hook to add status code to span attribute", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Add close hook to add status code to span attribute", __FUNCTION__);
   TSCont close_txn_contp = TSContCreate(close_txn, nullptr);
   if (!close_txn_contp) {
     TSError("[otel_tracer][%s] Could not create continuation", __FUNCTION__);
@@ -272,7 +272,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   // clean up
-  TSDebug(PLUGIN_NAME, "[%s] Cleanig up", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] Cleanig up", __FUNCTION__);
   if (target != nullptr) {
     TSfree(target);
   }
@@ -373,6 +373,6 @@ error:
   TSError("[%s] Plugin not initialized", PLUGIN_NAME);
 
 done:
-  TSDebug(PLUGIN_NAME, "Plugin initialized");
+  Dbg(dbg_ctl, "Plugin initialized");
   return;
 }
