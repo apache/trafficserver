@@ -131,6 +131,9 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_member = &NetHandler::global_config.default_inactivity_timeout;
     Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.additional_accepts"sv) {
+    updated_member = &NetHandler::global_config.additional_accepts;
+    Debug("net_queue", "proxy.config.net.additional_accepts updated to %" PRId64, data.rec_int);
   }
 
   if (updated_member) {
@@ -166,6 +169,7 @@ NetHandler::init_for_process()
   REC_ReadConfigInt32(global_config.transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+  REC_ReadConfigInt32(global_config.additional_accepts, "proxy.config.net.additional_accepts");
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
@@ -173,6 +177,7 @@ NetHandler::init_for_process()
   RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.additional_accepts", update_nethandler_config, nullptr);
 
   Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
   Debug("net_queue", "proxy.config.net.max_requests_in updated to %d", global_config.max_requests_in);
@@ -182,6 +187,7 @@ NetHandler::init_for_process()
   Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
         global_config.keep_alive_no_activity_timeout_in);
   Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
+  Debug("net_queue", "proxy.config.net.additional_accepts updated to %d", global_config.additional_accepts);
 }
 
 //
@@ -569,4 +575,11 @@ NetHandler::remove_from_active_queue(NetEvent *ne)
     active_queue.remove(ne);
     --active_queue_size;
   }
+}
+
+int
+NetHandler::get_additional_accepts()
+{
+  int config_value = config.additional_accepts + 1;
+  return (config_value > 0 ? config_value : INT32_MAX - 1);
 }
