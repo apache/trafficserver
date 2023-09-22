@@ -84,8 +84,6 @@ public:
   IpEndpoint from; // what address came from
   IpEndpoint to;   // what address to send to
 
-  int from_size;
-
   LINK(UDPPacket, link);
   // Factory (static) methods
 
