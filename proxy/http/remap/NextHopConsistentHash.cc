@@ -406,7 +406,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         // for retry.
         if (!pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           _now == 0 ? _now = time(nullptr) : _now = now;
-          if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+          if ((pRec->failedAt.load() + retry_time) < _now) {
             nextHopRetry       = true;
             result.last_parent = pRec->host_index;
             result.last_lookup = pRec->group_index;
