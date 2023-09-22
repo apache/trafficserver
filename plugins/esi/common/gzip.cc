@@ -105,7 +105,8 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
     }
   }
   if (!in_data_size) {
-    zstrm.avail_in = 0; // required for the "finish" loop as no data has been given so far
+    zstrm.avail_in  = 0; // required for the "finish" loop as no data has been given so far
+    zstrm.total_out = 0; // required for the "finish" loop
   }
   if (deflate_result == Z_OK) {
     deflate_result = runDeflateLoop(zstrm, Z_FINISH, cdata);
