@@ -374,6 +374,11 @@ check_symbol_exists(HMAC_CTX_new "openssl/hmac.h" HAVE_HMAC_CTX_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
+check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
+check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_evp_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)
+check_symbol_exists(SSL_read_early_data "openssl/ssl.h" TS_HAS_TLS_EARLY_DATA)
+check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
+check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(
     SSL_CTX_set_keylog_callback
     "openssl/ssl.h"
@@ -388,6 +393,8 @@ check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
+
+set(HAVE_SSL_READ_EARLY_DATA ${TS_HAS_TLS_EARLY_DATA})
 
 set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)

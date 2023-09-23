@@ -198,6 +198,14 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_TLS_ASYNC
 #cmakedefine01 TS_USE_TPROXY
 
+#cmakedefine01 TS_HAS_VERIFY_CERT_STORE
+#cmakedefine01 TS_HAS_TLS_SESSION_TICKET
+#cmakedefine01 TS_HAS_TLS_EARLY_DATA
+// TODO(cmcfarlen): Verify use of below in iocore/net/SSLNetVConnection (redunant)
+#cmakedefine01 HAVE_SSL_READ_EARLY_DATA
+#cmakedefine HAVE_SSL_SET_MAX_EARLY_DATA
+#cmakedefine01 TS_USE_TLS_SET_CIPHERSUITES
+
 #define TS_BUILD_CANONICAL_HOST "@CMAKE_HOST@"
 
 #cmakedefine YAMLCPP_LIB_VERSION "@YAMLCPP_LIB_VERSION@"
