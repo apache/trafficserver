@@ -15,15 +15,15 @@ jobs:
       id: build
       uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
       with:
-        oss-fuzz-project-name: 'example'
+        oss-fuzz-project-name: 'trafficserver'
         language: c++
         sanitizer: ${{ matrix.sanitizer }}
     - name: Run Fuzzers (${{ matrix.sanitizer }})
       uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
       with:
-        oss-fuzz-project-name: 'example'
+        oss-fuzz-project-name: 'trafficserver'
         language: c++
-        fuzz-seconds: 600
+        fuzz-seconds: 300
         sanitizer: ${{ matrix.sanitizer }}
         output-sarif: true
     - name: Upload Crash
