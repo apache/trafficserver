@@ -1070,24 +1070,36 @@ allow-plain
    Control the scope of server session re-use if it is enabled by
    :ts:cv:`proxy.config.http.server_session_sharing.match`. Valid values are:
 
-   ========== =================================================================
-   Value      Description
-   ========== =================================================================
-   ``global`` Re-use sessions from a global pool of all server sessions.
-   ``thread`` Re-use sessions from a per-thread pool.
-   ``hybrid`` Try to work as a global pool, but release server sessions to the
-              per-thread pool if there is lock contention on the global pool.
-   ========== =================================================================
+   ================= ==========================================================
+   Value             Description
+   ================= ==========================================================
+   ``global``        Re-use sessions from a global pool of all server sessions.
+   ``thread``        Re-use sessions from a per-thread pool.
+   ``hybrid``        Try to work as a global pool, but release server sessions
+                     to the per-thread pool if there is lock contention on the
+                     global pool.
+   ``global_locked`` Similar to global, except that the session pool is
+                     managed by a blocking mutex.
+   ================= ==========================================================
 
 
-   Setting :ts:cv:`proxy.config.http.server_session_sharing.pool` to global can reduce
-   the number of connections to origin for some traffic loads.  However, if many
-   execute threads are active, the thread contention on the global pool can reduce the
-   lifetime of connections to origin and reduce effective origin connection reuse.
+   Setting :ts:cv:`proxy.config.http.server_session_sharing.pool`
+   to global can reduce the number of connections to origin for some
+   traffic loads.  However, if many execute threads are active, the thread
+   contention on the global pool can reduce the lifetime of connections
+   to origin and reduce effective origin connection reuse.
 
-   For a hybrid pool, the operation starts as the global pool, but sessons are returned
-   to the local thread pool if the global pool lock is not acquired rather than just
-   closing the origin connection as is the case in standard global mode.
+   For a hybrid pool, the operation starts as the global pool, but sessons
+   are returned to the local thread pool if the global pool lock is not
+   acquired rather than just closing the origin connection as is the
+   case in standard global mode.
+
+   For a ``global_locked`` pool connections are managed by a blocking
+   mutex instead of the normal try mutex.  Under extreme transaction
+   loads the connection pool starvation may result in most transactions
+   bypassing the connection pool resulting in runaway upstream
+   connections.  This option will avoid this condition at the cost of
+   latency and ttfb (time to first byte) performance).
 
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:

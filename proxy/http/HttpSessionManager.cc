@@ -378,12 +378,40 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
   }
 
   //  If you didn't get a match, and the global pool is an option go there.
-  if (retval != HSM_DONE && (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type() ||
-                             TS_SERVER_SESSION_SHARING_POOL_HYBRID == this->get_pool_type())) {
-    retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
+  if (retval != HSM_DONE) {
+    if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type() ||
+        TS_SERVER_SESSION_SHARING_POOL_HYBRID == this->get_pool_type()) {
+      retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
+    } else if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED == this->get_pool_type())
+      retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED);
   }
+
   return retval;
 }
+
+namespace
+{
+
+// Scoped lock of the session pool based on pool type
+// (global_locked vs everything else)
+inline bool
+lockSessionPool(Ptr<ProxyMutex> &mutex, EThread *const ethread, TSServerSessionSharingPoolType const pool_type,
+                MutexLock *const mlock, MutexTryLock *const tlock)
+{
+  bool locked = false;
+  if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED == pool_type) {
+    SCOPED_MUTEX_LOCK(lock, mutex, ethread);
+    *mlock = std::move(lock);
+    locked = true;
+  } else {
+    MUTEX_TRY_LOCK(lock, mutex, ethread);
+    *tlock = std::move(lock);
+    locked = tlock->is_locked();
+  }
+  return locked;
+}
+
+} // namespace
 
 HSMresult_t
 HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
@@ -400,8 +428,12 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     EThread *ethread = this_ethread();
     Ptr<ProxyMutex> pool_mutex =
       (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
-    MUTEX_TRY_LOCK(lock, pool_mutex, ethread);
-    if (lock.is_locked()) {
+
+    MutexLock mlock;
+    MutexTryLock tlock;
+    bool const locked = lockSessionPool(pool_mutex, ethread, pool_type, &mlock, &tlock);
+
+    if (locked) {
       if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
         retval = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         Debug("http_ss", "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
@@ -471,8 +503,12 @@ HttpSessionManager::release_session(PoolableSession *to_release)
   bool released_p = true;
 
   // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
-  MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
-  if (lock.is_locked()) {
+
+  MutexLock mlock;
+  MutexTryLock tlock;
+  bool const locked = lockSessionPool(pool->mutex, ethread, this->get_pool_type(), &mlock, &tlock);
+
+  if (locked) {
     pool->releaseSession(to_release);
   } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
     // Try again with the thread pool

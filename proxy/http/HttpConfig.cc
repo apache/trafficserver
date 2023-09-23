@@ -163,9 +163,10 @@ http_config_enum_mask_read(const char *name, MgmtByte &value)
 }
 
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
-  {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
-  {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"},
-  {TS_SERVER_SESSION_SHARING_POOL_HYBRID, "hybrid"}
+  {TS_SERVER_SESSION_SHARING_POOL_GLOBAL,        "global"       },
+  {TS_SERVER_SESSION_SHARING_POOL_THREAD,        "thread"       },
+  {TS_SERVER_SESSION_SHARING_POOL_HYBRID,        "hybrid"       },
+  {TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED, "global_locked"},
 };
 
 int HttpConfig::m_id = 0;
