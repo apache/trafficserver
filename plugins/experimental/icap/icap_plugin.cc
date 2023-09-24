@@ -60,7 +60,7 @@ struct TransformData {
   State state = State::BEGIN;
   const TSHttpTxn txn;
 
-  int64_t server_reply_content_length;
+  int64_t server_reply_content_length = 0;
 
   TSIOBuffer input_buf          = nullptr;
   TSIOBufferReader input_reader = nullptr;
