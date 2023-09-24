@@ -39,8 +39,8 @@ namespace ct
 {
 class CacheScan
 {
-  Stripe *stripe;
-  url_matcher *u_matcher;
+  Stripe *stripe         = nullptr;
+  url_matcher *u_matcher = nullptr;
 
 public:
   CacheScan(Stripe *str, swoc::file::path const &path) : stripe(str)
