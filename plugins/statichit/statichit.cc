@@ -134,7 +134,7 @@ struct StaticHitConfig {
   bool disableExact = false;
   bool isDirectory  = false;
 
-  TSCont cont;
+  TSCont cont = nullptr;
 };
 
 struct StaticHitRequest;
