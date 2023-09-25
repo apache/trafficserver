@@ -346,6 +346,12 @@ bwformat(BufferWriter &w, Spec const &spec, IPRange const &range) {
 }
 
 BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, IPRangeView const &rv) {
+  return rv.is(AF_INET) ? bwformat(w, spec, rv.ip4()) :
+         rv.is(AF_INET6) ? bwformat(w, spec, rv.ip6()) : w.write("*-*"_tv);
+}
+
+BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IP4Net const &net) {
   bwformat(w, spec, net.min());
   w.write('/');
