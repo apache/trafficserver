@@ -33,9 +33,7 @@
 #include <cstring>
 #include <cerrno>
 #include <tscore/ink_config.h>
-#if TS_HAS_JEMALLOC
-#include <jemalloc/jemalloc.h>
-#endif
+#include <tscore/ink_memory.h>
 
 #define PLUGIN_NAME "memory_profile"
 
