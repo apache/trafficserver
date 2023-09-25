@@ -23,6 +23,8 @@
 #include <string>
 #include <optional>
 
+#include "tsutil/ts_errata.h"
+
 #include <yaml-cpp/yaml.h>
 
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
@@ -40,22 +42,17 @@ const std::string JSONRPC_VERSION{"2.0"};
 class RPCHandlerResponse
 {
 public:
-  YAML::Node result; //!< The response from the registered handler.
-  ts::Errata errata; //!< The  error response from the registered handler.
+  YAML::Node result;   //!< The response from the registered handler.
+  swoc::Errata errata; //!< The  error response from the registered handler.
 };
 
 struct RPCResponseInfo {
   RPCResponseInfo(std::string const &id_) : id{id_} {} // Convenient
   RPCResponseInfo() = default;
 
-  struct Error {
-    std::error_code ec;
-    ts::Errata data;
-  };
-
   std::string id; //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
                   //!< will not pass the validation)
-  Error error;    //!< Error code and details.
+  swoc::Errata error;            //!< Error code and details.
   RPCHandlerResponse callResult; //!< the actual handler's response
 };
 

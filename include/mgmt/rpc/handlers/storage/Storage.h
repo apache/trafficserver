@@ -24,6 +24,6 @@
 
 namespace rpc::handlers::storage
 {
-ts::Rv<YAML::Node> set_storage_offline(std::string_view const &id, YAML::Node const &params);
-ts::Rv<YAML::Node> get_storage_status(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> set_storage_offline(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> get_storage_status(std::string_view const &id, YAML::Node const &params);
 } // namespace rpc::handlers::storage

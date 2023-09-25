@@ -60,16 +60,19 @@ struct JsonRpcUnitTest : rpc::JsonRPCManager {
 };
 
 enum class TestErrors { ERR1 = 9999, ERR2 };
-inline ts::Rv<YAML::Node>
+static const std::error_code ERR1{ts::make_errno_code(9999)};
+static const std::error_code ERR2{ts::make_errno_code(10000)};
+
+inline swoc::Rv<YAML::Node>
 test_callback_ok_or_error(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
 
   // play with the req.id if needed.
   if (YAML::Node n = params["return_error"]) {
     auto yesOrNo = n.as<std::string>();
     if (yesOrNo == "yes") {
-      resp.errata().push(ErratId, static_cast<int>(TestErrors::ERR1), "Just an error message to add more meaning to the failure");
+      resp = swoc::Errata(ERR1, "Just an error message to add more meaning to the failure");
     } else {
       resp.result()["ran"] = "ok";
     }
@@ -334,12 +337,12 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
     {
       return rpc.add_method_handler(
         "member_function",
-        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return test(id, req); });
+        [this](std::string_view const &id, const YAML::Node &req) -> swoc::Rv<YAML::Node> { return test(id, req); });
     }
-    ts::Rv<YAML::Node>
+    swoc::Rv<YAML::Node>
     test(std::string_view const &id, const YAML::Node &req)
     {
-      ts::Rv<YAML::Node> resp;
+      swoc::Rv<YAML::Node> resp;
       resp.result() = "grand!";
       return resp;
     }
@@ -379,10 +382,10 @@ TEST_CASE("Test Dispatcher rpc method", "[dispatcher]")
           R"({"jsonrpc": "2.0", "result": {"methods": ["get_service_descriptor", "show_registered_handlers"]}, "id": "AbC"})");
 }
 
-[[maybe_unused]] static ts::Rv<YAML::Node>
+[[maybe_unused]] static swoc::Rv<YAML::Node>
 subtract(std::string_view const &id, YAML::Node const &numbers)
 {
-  ts::Rv<YAML::Node> res;
+  swoc::Rv<YAML::Node> res;
 
   if (numbers.Type() == YAML::NodeType::Sequence) {
     auto it   = numbers.begin();
@@ -402,10 +405,10 @@ subtract(std::string_view const &id, YAML::Node const &numbers)
   return res;
 }
 
-[[maybe_unused]] static ts::Rv<YAML::Node>
+[[maybe_unused]] static swoc::Rv<YAML::Node>
 sum(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> res;
+  swoc::Rv<YAML::Node> res;
   int total{0};
   for (auto n : params) {
     total += n.as<int>();
@@ -414,10 +417,10 @@ sum(std::string_view const &id, YAML::Node const &params)
   return res;
 }
 
-[[maybe_unused]] static ts::Rv<YAML::Node>
+[[maybe_unused]] static swoc::Rv<YAML::Node>
 get_data(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> res;
+  swoc::Rv<YAML::Node> res;
   res.result().push_back("hello");
   res.result().push_back("5");
   return res;
@@ -555,10 +558,10 @@ TEST_CASE("Handle un-handle handler's error", "[throw]")
   JsonRpcUnitTest rpc;
   SECTION("Basic exception thrown")
   {
-    REQUIRE(
-      rpc.add_method_handler("oops_i_did_it_again", [](std::string_view const &id, const YAML::Node &params) -> ts::Rv<YAML::Node> {
-        throw std::runtime_error("Oops, I did it again");
-      }));
+    REQUIRE(rpc.add_method_handler("oops_i_did_it_again",
+                                   [](std::string_view const &id, const YAML::Node &params) -> swoc::Rv<YAML::Node> {
+                                     throw std::runtime_error("Oops, I did it again");
+                                   }));
     const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "oops_i_did_it_again", "id": "1"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution"}, "id": "1"})";
     REQUIRE(*resp == expected);
@@ -570,10 +573,10 @@ TEST_CASE("Call registered method with no ID", "[no-id]")
   JsonRpcUnitTest rpc;
   SECTION("Basic test, no id on method call")
   {
-    REQUIRE(
-      rpc.add_method_handler("call_me_with_no_id", [](std::string_view const &id, const YAML::Node &params) -> ts::Rv<YAML::Node> {
-        throw std::runtime_error("Oops, I did it again");
-      }));
+    REQUIRE(rpc.add_method_handler("call_me_with_no_id",
+                                   [](std::string_view const &id, const YAML::Node &params) -> swoc::Rv<YAML::Node> {
+                                     throw std::runtime_error("Oops, I did it again");
+                                   }));
     const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_no_id"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})";
     REQUIRE(*resp == expected);

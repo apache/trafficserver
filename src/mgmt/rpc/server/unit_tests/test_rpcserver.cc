@@ -45,7 +45,7 @@
 #include "tscore/Layout.h"
 #include "iocore/utils/diags.i"
 
-#define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
+#define DEFINE_JSONRPC_PROTO_FUNCTION(fn) swoc::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 
 namespace fs = swoc::file;
 
@@ -127,7 +127,7 @@ RPCServerTestListener::~RPCServerTestListener() {}
 
 DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   int dur{1};
   try {
     dur = params["duration"].as<int>();
@@ -309,7 +309,7 @@ random_string(std::string::size_type length)
 
 DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   resp.result()["size"] = params["msg"].as<std::string>().size();
   return resp;
 }

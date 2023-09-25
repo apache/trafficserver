@@ -102,10 +102,10 @@ namespace
   }
 } // namespace
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 set_config_records(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
 
   // we need the type and the update type for now.
   using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT>;
@@ -115,7 +115,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     try {
       info = kv.as<SetRecordCmdInfo>();
     } catch (YAML::Exception const &ex) {
-      resp.errata().push({err::RecordError::RECORD_NOT_FOUND});
+      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND}).assign(ERRATA_ERROR);
       continue;
     }
 
@@ -139,7 +139,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // make sure if exist. If not, we stop it and do not keep forward.
     if (ret != REC_ERR_OKAY) {
-      resp.errata().push({err::RecordError::RECORD_NOT_FOUND});
+      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND}).assign(ERRATA_ERROR);
       continue;
     }
 
@@ -148,7 +148,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // run the check only if we have something to check against it.
     if (pattern != nullptr && utils::recordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
-      resp.errata().push({err::RecordError::VALIDITY_CHECK_ERROR});
+      resp.errata().assign({err::RecordError::VALIDITY_CHECK_ERROR}).assign(ERRATA_ERROR);
       continue;
     }
 
@@ -173,7 +173,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
       updatedRecord[utils::RECORD_UPDATE_TYPE_KEY] = std::to_string(updateType);
       resp.result().push_back(updatedRecord);
     } else {
-      resp.errata().push({err::RecordError::GENERAL_ERROR});
+      resp.errata().note(std::error_code{err::RecordError::GENERAL_ERROR});
       continue;
     }
   }
@@ -181,17 +181,17 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
   return resp;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 reload_config(std::string_view const &id, YAML::Node const &params)
 {
   ts::Metrics &metrics    = ts::Metrics::instance();
   static auto reconf_time = metrics.lookup("proxy.process.proxy.reconfigure_time");
   static auto reconf_req  = metrics.lookup("proxy.process.proxy.reconfigure_required");
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   Debug("RPC", "invoke plugin callbacks");
   // if there is any error, report it back.
-  if (auto err = FileManager::instance().rereadConfig(); err.size()) {
-    resp = err;
+  if (auto err = FileManager::instance().rereadConfig(); !err.empty()) {
+    resp.note(err);
   }
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
