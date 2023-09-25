@@ -27,11 +27,10 @@
 #include <fstream>
 
 #include "swoc/swoc_file.h"
+#include "tscpp/util/ts_bw_format.h"
 
 #include "yaml-cpp/yaml.h"
-#include "tscore/Errata.h"
 #include "tscore/Layout.h"
-#include "tscpp/util/ts_bw_format.h"
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 
 namespace

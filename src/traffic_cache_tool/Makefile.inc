@@ -36,5 +36,6 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
 traffic_cache_tool_traffic_cache_tool_LDFLAGS = $(AM_LDFLAGS) @SWOC_LDFLAGS@
 
 traffic_cache_tool_traffic_cache_tool_LDADD = \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
     $(top_builddir)/src/tscore/libtscore.a \
     @SWOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@

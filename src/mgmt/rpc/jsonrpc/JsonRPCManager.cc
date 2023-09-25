@@ -27,6 +27,7 @@
 #include <condition_variable>
 
 #include <swoc/swoc_meta.h>
+
 #include "mgmt/rpc/jsonrpc/json/YAMLCodec.h"
 
 namespace
@@ -57,15 +58,15 @@ RPCRegistryInfo core_ats_rpc_service_provider_handle = {
 // plugin rpc handling variables.
 std::mutex g_rpcHandlingMutex;
 std::condition_variable g_rpcHandlingCompletion;
-ts::Rv<YAML::Node> g_rpcHandlerResponseData;
+swoc::Rv<YAML::Node> g_rpcHandlerResponseData;
 bool g_rpcHandlerProcessingCompleted{false};
 
 // --- Helpers
-std::pair<ts::Errata, error::RPCErrorCode>
+swoc::Errata
 check_for_blockers(Context const &ctx, TSRPCHandlerOptions const &options)
 {
-  if (auto err = ctx.get_auth().is_blocked(options); !err.isOK()) {
-    return {err, error::RPCErrorCode::Unauthorized};
+  if (auto err = ctx.get_auth().is_blocked(options); !err.is_ok()) {
+    return std::move(err.assign(std::error_code(unsigned(error::RPCErrorCode::Unauthorized), std::generic_category())));
   }
   return {};
 }
@@ -80,7 +81,7 @@ JsonRPCManager::Dispatcher::register_service_descriptor_handler()
 {
   if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
         "show_registered_handlers",
-        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
+        [this](std::string_view const &id, const YAML::Node &req) -> swoc::Rv<YAML::Node> {
           return show_registered_handlers(id, req);
         },
         &core_ats_rpc_service_provider_handle, {{NON_RESTRICTED_API}})) {
@@ -89,7 +90,9 @@ JsonRPCManager::Dispatcher::register_service_descriptor_handler()
 
   if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
         "get_service_descriptor",
-        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return get_service_descriptor(id, req); },
+        [this](std::string_view const &id, const YAML::Node &req) -> swoc::Rv<YAML::Node> {
+          return get_service_descriptor(id, req);
+        },
         &core_ats_rpc_service_provider_handle, {{NON_RESTRICTED_API}})) {
     Warning("Handler already registered.");
   }
@@ -103,15 +106,14 @@ JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo c
 
   if (ec) {
     specs::RPCResponseInfo resp{request.id};
-    resp.error.ec = ec;
+    resp.error.assign(ec);
     return resp;
   }
 
   // We have got a valid handler, we will now check if the context holds any restriction for this handler to be called.
-  if (auto &&[errata, ec] = check_for_blockers(ctx, handler.get_options()); !errata.isOK()) {
+  if (auto errata = check_for_blockers(ctx, handler.get_options()); !errata.is_ok()) {
     specs::RPCResponseInfo resp{request.id};
-    resp.error.ec   = ec;
-    resp.error.data = errata;
+    resp.error.assign(ec);
     return resp;
   }
 
@@ -152,17 +154,17 @@ JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::In
   specs::RPCResponseInfo response{request.id};
 
   try {
-    auto const &rv = handler.invoke(request);
+    auto rv = handler.invoke(request);
 
-    if (rv.isOK()) {
+    if (rv.is_ok()) {
       response.callResult.result = rv.result();
     } else {
       // if we have some errors to log, then include it.
-      response.callResult.errata = rv.errata();
+      response.callResult.errata = std::move(rv.errata());
     }
   } catch (std::exception const &e) {
     Debug(logTag, "Oops, something happened during the callback invocation: %s", e.what());
-    response.error.ec = error::RPCErrorCode::ExecutionError;
+    response.error.assign(std::error_code(unsigned(error::RPCErrorCode::ExecutionError), std::generic_category()));
   }
 
   return response;
@@ -215,7 +217,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
     // particular request, as they would need to be converted back in a proper error response.
     if (ec) {
       specs::RPCResponseInfo resp;
-      resp.error.ec = ec;
+      resp.error.assign(ec);
       return Encoder::encode(resp);
     }
 
@@ -238,7 +240,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
       } else {
         // If the request was marked as an error(decode error), we still need to send the error back, so we save it.
         specs::RPCResponseInfo resp{req.id};
-        resp.error.ec = decode_error;
+        resp.error.assign(decode_error);
         response.add_message(std::move(resp));
       }
     }
@@ -255,15 +257,15 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
     ec = error::RPCErrorCode::INTERNAL_ERROR;
   }
   specs::RPCResponseInfo resp;
-  resp.error.ec = ec;
+  resp.error.assign(ec);
   return {Encoder::encode(resp)};
 }
 
 // ---------------------------- InternalHandler ---------------------------------
-inline ts::Rv<YAML::Node>
+inline swoc::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const &request) const
 {
-  ts::Rv<YAML::Node> ret;
+  swoc::Rv<YAML::Node> ret;
   std::visit(swoc::meta::vary{[](std::monostate) -> void { /* no op */ },
                               [&request](Notification const &handler) -> void {
                                 // Notification handler call. Ignore response, there is no completion cv check in here basically
@@ -284,11 +286,11 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                 std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
                                 g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
                                 g_rpcHandlerProcessingCompleted = false;
-                                // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
+                                // seems to be done, set the response. As the response data is a swoc::Rv this will handle both,
                                 // error and non error cases.
-                                ret = g_rpcHandlerResponseData;
+                                ret = std::move(g_rpcHandlerResponseData);
                                 // clean up the shared data.
-                                g_rpcHandlerResponseData.clear();
+                                //                                g_rpcHandlerResponseData.clear(); // moved so no cleanup?
                                 lock.unlock();
                               }},
              this->_func);
@@ -310,10 +312,10 @@ JsonRPCManager::Dispatcher::InternalHandler::is_method() const
   return false;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, const YAML::Node &)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   std::lock_guard<std::mutex> lock(_mutex);
   for (auto const &[name, handler] : _handlers) {
     std::string const &key = handler.is_method() ? RPC_SERVICE_METHODS_KEY : RPC_SERVICE_NOTIFICATIONS_KEY;
@@ -324,7 +326,7 @@ JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, c
 
 // -----------------------------------------------------------------------------
 // This jsonrpc handler can provides a service descriptor for the RPC
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, const YAML::Node &)
 {
   YAML::Node rpcService;

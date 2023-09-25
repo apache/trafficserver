@@ -204,7 +204,7 @@ namespace rpc::handlers::records
 {
 namespace err = rpc::handlers::errors;
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 lookup_records(std::string_view const &id, YAML::Node const &params)
 {
   // TODO: we may want to deal with our own object instead of a node here.
@@ -247,19 +247,20 @@ lookup_records(std::string_view const &id, YAML::Node const &params)
   return resp;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 clear_all_metrics_records(std::string_view const &id, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   if (RecResetStatRecord(RECT_NULL, true) != REC_ERR_OKAY) {
-    return ts::Errata{rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR};
+    return {swoc::Errata(std::error_code{unsigned(rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR), std::generic_category()},
+                         "Failed to clear stats")};
   }
 
   return resp;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 clear_metrics_records(std::string_view const &id, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;

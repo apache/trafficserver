@@ -48,6 +48,7 @@
 
 using swoc::MemSpan;
 using swoc::Errata;
+using ts::make_errno_code;
 
 using ts::Bytes;
 using ts::Megabytes;

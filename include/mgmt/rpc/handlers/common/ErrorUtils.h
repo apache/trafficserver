@@ -24,7 +24,7 @@
 #include <system_error>
 #include <string_view>
 
-#include "tscore/Errata.h"
+#include "tscpp//util/ts_errata.h"
 #include "tscpp/util/ts_bw.h"
 
 namespace rpc::handlers::errors
@@ -37,7 +37,7 @@ namespace rpc::handlers::errors
 // With this we try to avoid error codes collision. You can also use same error Code for all your
 // errors.
 enum Codes : unsigned int {
-  CONFIGURATION = 1,
+  CONFIGURATION = 999, // go past @c errno
   METRIC        = 1000,
   RECORD        = 2000,
   SERVER        = 3000,
@@ -47,19 +47,16 @@ enum Codes : unsigned int {
   GENERIC = 30000
 };
 
-static constexpr int ERRATA_DEFAULT_ID{1};
-
 template <typename... Args>
-static inline ts::Errata
+static inline swoc::Errata
 make_errata(int code, std::string_view fmt, Args &&...args)
 {
-  std::string text;
-  return ts::Errata{}.push(ERRATA_DEFAULT_ID, code, swoc::bwprint(text, fmt, std::forward<Args>(args)...));
+  return swoc::Errata(std::error_code(code, std::generic_category()), fmt, std::forward<Args>(args)...);
 }
 
-static inline ts::Errata
+static inline swoc::Errata
 make_errata(int code, std::string_view text)
 {
-  return ts::Errata{}.push(ERRATA_DEFAULT_ID, code, text);
+  return swoc::Errata(std::error_code(code, std::generic_category()), std::string(text));
 }
 } // namespace rpc::handlers::errors

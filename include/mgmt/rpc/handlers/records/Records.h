@@ -22,7 +22,7 @@
 
 #include <string_view>
 #include <yaml-cpp/yaml.h>
-#include "tscore/Errata.h"
+#include "tscpp/util/ts_errata.h"
 
 namespace rpc::handlers::records
 {
@@ -34,27 +34,27 @@ namespace rpc::handlers::records
 /// lead the search.
 /// @param id JSONRPC client's id.
 /// @param params lookup_records query structure.
-/// @return ts::Rv<YAML::Node> A node or an error. If ok, the node will hold the @c "recordList" sequence with the findings. In case
-/// of any missed search, ie: when paseed types didn't match the found record(s), the particular error will be added to the @c
+/// @return swoc::Rv<YAML::Node> A node or an error. If ok, the node will hold the @c "recordList" sequence with the findings. In
+/// case of any missed search, ie: when paseed types didn't match the found record(s), the particular error will be added to the @c
 /// "errorList" field.
 ///
-ts::Rv<YAML::Node> lookup_records(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> lookup_records(std::string_view const &id, YAML::Node const &params);
 
 ///
 /// @brief A RPC function handler that clear all the metrics.
 ///
 /// @param id JSONRPC client's id.
 /// @param params Nothing, this will be ignored.
-/// @return ts::Rv<YAML::Node> An empty YAML::Node or the proper Errata with the tracked error.
+/// @return swoc::Rv<YAML::Node> An empty YAML::Node or the proper Errata with the tracked error.
 ///
-ts::Rv<YAML::Node> clear_all_metrics_records(std::string_view const &id, YAML::Node const &);
+swoc::Rv<YAML::Node> clear_all_metrics_records(std::string_view const &id, YAML::Node const &);
 
 ///
 /// @brief A RPC  function  handler that clear a specific set of metrics.
 /// The @c "errorList" field will only be set if there is any error cleaning a specific metric.
 /// @param id JSONRPC client's id.
 /// @param params A list of records to update. @see RequestRecordElement
-/// @return ts::Rv<YAML::Node> A YAML::Node or the proper Errata with the tracked error.
+/// @return swoc::Rv<YAML::Node> A YAML::Node or the proper Errata with the tracked error.
 ///
-ts::Rv<YAML::Node> clear_metrics_records(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> clear_metrics_records(std::string_view const &id, YAML::Node const &params);
 } // namespace rpc::handlers::records

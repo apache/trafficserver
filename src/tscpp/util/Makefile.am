@@ -30,7 +30,7 @@ libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_V
 libtscpputil_la_LIBADD = @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 libtscpputil_la_SOURCES = \
-	ts_diags.cc ts_bwf.cc ts_ip.cc YamlCfg.cc ts_unit_parser.cc
+	ts_diags.cc ts_bwf.cc ts_errata.cc ts_ip.cc YamlCfg.cc ts_unit_parser.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2 @SWOC_INCLUDES@

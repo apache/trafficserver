@@ -1440,4 +1440,5 @@ get(swoc::Rv<R> const &rv) {
   throw std::domain_error("Errata index value out of bounds");
 }
 /// @endcond
+
 }} // namespace swoc::SWOC_VERSION_NS

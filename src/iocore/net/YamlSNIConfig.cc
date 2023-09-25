@@ -38,6 +38,7 @@
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 
+#include "iocore/net/YamlSNIConfig.h"
 #include "SNIActionPerformer.h"
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
@@ -47,7 +48,6 @@
 #include "swoc/bwf_fwd.h"
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
-#include "tscore/Errata.h"
 #include "tscore/ink_assert.h"
 
 #include "records/RecCore.h"
@@ -76,32 +76,32 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
 
 } // namespace
 
-ts::Errata
+swoc::Errata
 YamlSNIConfig::loader(const std::string &cfgFilename)
 {
   try {
     YAML::Node config = YAML::LoadFile(cfgFilename);
     if (config.IsNull()) {
-      return ts::Errata();
+      return {};
     }
 
     if (!config["sni"]) {
-      return ts::Errata::Message(1, 1, "expected a toplevel 'sni' node");
+      return swoc::Errata("expected a toplevel 'sni' node");
     }
 
     config = config["sni"];
     if (!config.IsSequence()) {
-      return ts::Errata::Message(1, 1, "expected sequence");
+      return swoc::Errata("expected sequence");
     }
 
     for (auto it = config.begin(); it != config.end(); ++it) {
       items.push_back(it->as<YamlSNIConfig::Item>());
     }
   } catch (std::exception &ex) {
-    return ts::Errata::Message(1, 1, ex.what());
+    return swoc::Errata("exception - {}", ex.what());
   }
 
-  return ts::Errata();
+  return swoc::Errata();
 }
 
 void

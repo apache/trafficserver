@@ -21,7 +21,7 @@
 
 #include <system_error>
 
-#include <tscore/Errata.h>
+#include <tscpp/util/ts_errata.h>
 
 #include "mgmt/rpc/config/JsonRPCConfig.h"
 

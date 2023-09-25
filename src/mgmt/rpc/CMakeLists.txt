@@ -51,7 +51,7 @@ target_link_libraries(
 
 if(BUILD_TESTING)
   add_executable(test_jsonrpc jsonrpc/unit_tests/unit_test_main.cc jsonrpc/unit_tests/test_basic_protocol.cc)
-  target_link_libraries(test_jsonrpc ts::tsapicore catch2::catch2 ts::jsonrpc_protocol libswoc)
+  target_link_libraries(test_jsonrpc ts::tsapicore catch2::catch2 ts::jsonrpc_protocol tscpputil libswoc)
   add_test(NAME test_jsonrpc COMMAND test_jsonrpc)
 
   add_executable(

@@ -15,7 +15,14 @@
 #
 #######################
 
-add_library(tscpputil SHARED ts_bwf.cc ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc Regex.cc)
+
+add_library(tscpputil SHARED
+        ts_bwf.cc
+        ts_ip.cc
+        ts_diags.cc
+	ts_errata.cc
+        YamlCfg.cc
+        ts_unit_parser.cc Regex.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
 target_link_libraries(tscpputil PUBLIC PCRE::PCRE libswoc yaml-cpp::yaml-cpp)
 set(TSCPPUTIL_PUBLIC_HEADERS

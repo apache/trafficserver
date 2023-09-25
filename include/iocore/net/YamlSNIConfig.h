@@ -32,8 +32,7 @@
 #include "iocore/net/SSLTypes.h"
 
 #include "tscpp/util/ts_ip.h"
-
-#include "tscore/Errata.h"
+#include "tscpp/util/ts_errata.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
@@ -129,7 +128,7 @@ struct YamlSNIConfig {
     void populate_sni_actions(action_vector_t &actions);
   };
 
-  ts::Errata loader(const std::string &cfgFilename);
+  swoc::Errata loader(const std::string &cfgFilename);
 
   std::vector<YamlSNIConfig::Item> items;
 };

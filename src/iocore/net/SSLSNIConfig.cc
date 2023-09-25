@@ -306,8 +306,8 @@ SNIConfigParams::initialize(std::string const &sni_filename)
   }
 
   YamlSNIConfig yaml_sni_tmp;
-  ts::Errata zret = yaml_sni_tmp.loader(sni_filename);
-  if (!zret.isOK()) {
+  auto zret = yaml_sni_tmp.loader(sni_filename);
+  if (!zret.is_ok()) {
     std::stringstream errMsg;
     errMsg << zret;
     if (TSSystemState::is_initializing()) {

@@ -17,5 +17,5 @@
 
 add_executable(traffic_cache_tool CacheDefs.cc CacheTool.cc CacheScan.cc)
 
-target_link_libraries(traffic_cache_tool PRIVATE tscpputil ts::tscore libswoc ts::tsapicore)
+target_link_libraries(traffic_cache_tool PRIVATE tscpputil ts::tscore tscpputil libswoc ts::tsapicore)
 install(TARGETS traffic_cache_tool)
