@@ -63,6 +63,29 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[0].load() == 42);
   }
 
+  SECTION("Span allocation")
+  {
+    ts::Metrics::IdType span_id;
+    auto fooid = m.newMetric("foo"); // To see that span_id gets to 2
+    auto span  = m.newMetricSpan(17, &span_id);
+
+    REQUIRE(span.size() == 17);
+    REQUIRE(fooid == 1);
+    REQUIRE(span_id == 2);
+
+    m.rename(span_id + 0, "span.0");
+    m.rename(span_id + 1, "span.1");
+    m.rename(span_id + 2, "span.2");
+    REQUIRE(m.name(fooid) == "foo");
+    REQUIRE(m.name(span_id + 0) == "span.0");
+    REQUIRE(m.name(span_id + 1) == "span.1");
+    REQUIRE(m.name(span_id + 2) == "span.2");
+    m.rename(fooid, "foo-new");
+    REQUIRE(m.name(fooid) == "foo-new");
+    REQUIRE(m.lookup("foo") == ts::Metrics::NOT_FOUND);
+    REQUIRE(m.lookup("foo-new") == fooid);
+  }
+
   SECTION("lookup")
   {
     auto nm = m.lookupPtr("notametric");
