@@ -115,8 +115,10 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
     }
     default: {
       if (c <= '\x1f') {
+        auto const original_flags = jsonfile.flags();
         write_buffered_context(buf, prevIdx, idx, jsonfile);
         jsonfile << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
+        jsonfile.flags(original_flags);
       }
       break;
       // else: The character does not need to be escaped. Do not call
