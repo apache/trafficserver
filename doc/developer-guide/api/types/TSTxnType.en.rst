@@ -34,7 +34,7 @@ Synopsis
 
    .. c:enumerator:: TS_TXN_TYPE_HTTP
 
-      A HTTP transaction.
+      A HTTP transaction. This includes CONNECT method requests which will create a tunnel.
 
    .. c:enumerator:: TS_TXN_TYPE_EXPLICIT_TUNNEL
 
