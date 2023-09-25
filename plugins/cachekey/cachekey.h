@@ -80,12 +80,12 @@ private:
                      void (*fun)(const ConfigHeaders &config, const String &name_s, const String &value_s, T &captures));
 
   /* Information from the request */
-  TSHttpTxn _txn;      /**< @brief transaction handle */
-  TSMBuffer _buf;      /**< @brief marshal buffer */
-  TSMLoc _url;         /**< @brief URI handle */
-  TSMLoc _hdrs;        /**< @brief headers handle */
-  bool _valid = false; /**< @brief shows if the constructor discovered the input correctly */
-  bool _remap = false; /**< @brief shows if the input URI was from remap info */
+  TSHttpTxn _txn = nullptr; /**< @brief transaction handle */
+  TSMBuffer _buf = nullptr; /**< @brief marshal buffer */
+  TSMLoc _url    = nullptr; /**< @brief URI handle */
+  TSMLoc _hdrs   = nullptr; /**< @brief headers handle */
+  bool _valid    = false;   /**< @brief shows if the constructor discovered the input correctly */
+  bool _remap    = false;   /**< @brief shows if the input URI was from remap info */
 
   String _key;                          /**< @brief cache key */
   String _separator;                    /**< @brief a separator used to separate the cache key elements extracted from the URI */
