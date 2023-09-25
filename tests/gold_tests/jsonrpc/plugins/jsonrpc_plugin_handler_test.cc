@@ -163,7 +163,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
   // Basic stuffs here.
   // We open the file if exist, we update/add the host in the structure. For simplicity we do not delete anything.
-  fs::path sandbox  = fs::current_path();
+  fs::path sandbox  = fs::current_path() / "runtime";
   fs::path dumpFile = sandbox / "my_test_plugin_dump.yaml";
   bool newFile{false};
   if (!fs::exists(dumpFile)) {
