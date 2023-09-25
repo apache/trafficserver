@@ -91,8 +91,11 @@ struct InterceptIOChannel {
   read(TSVConn vc, TSCont contp)
   {
     TSReleaseAssert(this->vio == nullptr);
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
+
+    this->iobuf = TSIOBufferCreate();
+    TSReleaseAssert(this->iobuf);
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    TSReleaseAssert(this->reader);
 
     this->vio = TSVConnRead(vc, contp, this->iobuf, INT64_MAX);
   }
@@ -101,8 +104,10 @@ struct InterceptIOChannel {
   write(TSVConn vc, TSCont contp)
   {
     TSReleaseAssert(this->vio == nullptr);
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
+    this->iobuf = TSIOBufferCreate();
+    TSReleaseAssert(this->iobuf);
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    TSReleaseAssert(this->reader);
 
     this->vio = TSVConnWrite(vc, contp, this->reader, INT64_MAX);
   }
@@ -205,9 +210,9 @@ union argument_type {
 static TSCont
 InterceptContCreate(TSEventFunc hook, TSMutex mutexp, void *data)
 {
-  TSCont contp;
+  TSCont contp = TSContCreate(hook, mutexp);
+  TSReleaseAssert(contp);
 
-  TSReleaseAssert((contp = TSContCreate(hook, mutexp)));
   TSContDataSet(contp, data);
   return contp;
 }
