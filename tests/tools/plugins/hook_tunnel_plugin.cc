@@ -30,17 +30,20 @@ static int stat_http_req     = 0; // number of TS_HTTP_READ_REQUEST_HDR hooks ca
 static int stat_error        = 0;
 static int stat_test_done    = 0;
 
+static const char PLUGIN_TAG[] = PLUGIN_NAME;
+static DbgCtl plugin_ctl{PLUGIN_TAG};
+
 static int
 tunnelStart(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txnp   = reinterpret_cast<TSHttpTxn>(edata);
   TSTxnType retval = TSHttpTxnTypeGet(txnp);
-  TSDebug(PLUGIN_NAME, "tunnelStart event=%d type=%d", event, retval);
+  Dbg(plugin_ctl, "tunnelStart event=%d type=%d", event, retval);
 
   TSStatIntIncrement(stat_tunnel_start, 1);
   if (retval != TS_TXN_TYPE_EXPLICIT_TUNNEL || event != TS_EVENT_HTTP_TUNNEL_START) {
     TSStatIntIncrement(stat_error, 1);
-    TSDebug(PLUGIN_NAME, "tunnelStart unexpected type");
+    Dbg(plugin_ctl, "tunnelStart unexpected type");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     return TS_SUCCESS;
   }
@@ -53,7 +56,7 @@ transactionStart(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txnp   = reinterpret_cast<TSHttpTxn>(edata);
   TSTxnType retval = TSHttpTxnTypeGet(txnp);
-  TSDebug(PLUGIN_NAME, "transactionStart event=%d type=%d", event, retval);
+  Dbg(plugin_ctl, "transactionStart event=%d type=%d", event, retval);
 
   TSStatIntIncrement(stat_http_req, 1);
   if (retval != TS_TXN_TYPE_HTTP || event != TS_EVENT_HTTP_READ_REQUEST_HDR) {
@@ -67,7 +70,7 @@ transactionStart(TSCont cont, TSEvent event, void *edata)
 static int
 handleMsg(TSCont cont, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "handleMsg event=%d", event);
+  Dbg(plugin_ctl, "handleMsg event=%d", event);
   TSStatIntIncrement(stat_test_done, 1);
   return TS_SUCCESS;
 }
