@@ -414,25 +414,31 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
       Dbg(dbg_ctl, "session_aio_handler(): No valid ssnData. Abort.");
       return TS_ERROR;
     }
-    char *buf = TSAIOBufGet(cb);
-    const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
+    char *buf         = TSAIOBufGet(cb);
+    bool free_ssnData = false;
+    {
+      const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
 
-    // Free the allocated buffer and update aio_count
-    if (buf) {
-      TSfree(buf);
-      if (--ssnData->aio_count == 0 && ssnData->ssn_closed) {
-        // check for ssn close, if closed, do clean up
-        TSContDataSet(contp, nullptr);
-        close(ssnData->log_fd);
-        std::error_code ec;
-        swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
-        if (!ec) {
-          disk_usage += swoc::file::file_size(st);
-          Dbg(dbg_ctl, "Finish a session with log file of %" PRIuMAX " bytes", swoc::file::file_size(st));
+      // Free the allocated buffer and update aio_count
+      if (buf) {
+        TSfree(buf);
+        if (--ssnData->aio_count == 0 && ssnData->ssn_closed) {
+          // check for ssn close, if closed, do clean up
+          TSContDataSet(contp, nullptr);
+          close(ssnData->log_fd);
+          std::error_code ec;
+          swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
+          if (!ec) {
+            disk_usage += swoc::file::file_size(st);
+            Dbg(dbg_ctl, "Finish a session with log file of %" PRIuMAX " bytes", swoc::file::file_size(st));
+          }
+          // We have to free ssnData outside of holding the lock whose lifetime is managed by ssnData.
+          free_ssnData = true;
         }
-        delete ssnData;
-        return TS_SUCCESS;
       }
+    } // Release ssnData->disk_io_mutex.
+    if (free_ssnData) {
+      delete ssnData;
     }
     return TS_SUCCESS;
   }
