@@ -2188,6 +2188,11 @@ CacheVC::handleReadDone(int event, Event *e)
   } else if (is_io_in_progress()) {
     return EVENT_CONT;
   }
+  if (DISK_BAD(vol->disk)) {
+    io.aio_result = -1;
+    Warning("Canceling cache read: disk %s is bad.", vol->hash_text.get());
+    goto Ldone;
+  }
   {
     MUTEX_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
