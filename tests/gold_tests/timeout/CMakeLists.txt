@@ -15,5 +15,5 @@
 #
 #######################
 
-add_autest_plugin(ssl-delay-server ssl-delay-server.cc)
+add_executable(ssl-delay-server ssl-delay-server.cc)
 target_link_libraries(ssl-delay-server PRIVATE OpenSSL::SSL)

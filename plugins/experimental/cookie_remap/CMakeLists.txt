@@ -21,6 +21,7 @@ add_atsplugin(cookie_remap
     cookie_remap.cc
     cookiejar.cc
     strip.cc
+    hash.cc
 )
 
 target_link_libraries(cookie_remap
