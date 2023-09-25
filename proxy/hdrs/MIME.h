@@ -917,6 +917,7 @@ int mime_field_length_get(MIMEField *field);
 int mime_format_int(char *buf, int32_t val, size_t buf_len);
 int mime_format_uint(char *buf, uint32_t val, size_t buf_len);
 int mime_format_int64(char *buf, int64_t val, size_t buf_len);
+int mime_format_uint64(char *buf, uint64_t val, size_t buf_len);
 
 void mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
 void mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
@@ -1856,6 +1857,8 @@ MIMEHdr::set_age(time_t value)
     if (sizeof(time_t) > 4) {
       value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
     } else {
+      // Only on systems where time_t is 32 bits
+      // coverity[Y2K38_SAFETY]
       value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
     }
   }
