@@ -319,6 +319,8 @@ HttpDebugNames::get_event_name(int event)
     return "TS_EVENT_HTTP_PRE_REMAP";
   case TS_EVENT_HTTP_POST_REMAP:
     return "TS_EVENT_HTTP_POST_REMAP";
+  case TS_EVENT_HTTP_TUNNEL_START:
+    return "TS_EVENT_HTTP_TUNNEL_START";
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
     return "TS_EVENT_LIFECYCLE_PORTS_INITIALIZED";
   case TS_EVENT_LIFECYCLE_PORTS_READY:
@@ -449,6 +451,9 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
     return ("SM_ACTION_API_READ_REQUEST_HDR");
 
+  case HttpTransact::SM_ACTION_API_TUNNEL_START:
+    return ("SM_ACTION_API_TUNNEL_START");
+
   case HttpTransact::SM_ACTION_API_OS_DNS:
     return ("SM_ACTION_API_OS_DNS");
 
@@ -553,6 +558,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
   switch (t) {
   case TS_HTTP_READ_REQUEST_HDR_HOOK:
     return "TS_HTTP_READ_REQUEST_HDR_HOOK";
+  case TS_HTTP_TUNNEL_START_HOOK:
+    return "TS_HTTP_TUNNEL_START_HOOK";
   case TS_HTTP_OS_DNS_HOOK:
     return "TS_HTTP_OS_DNS_HOOK";
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:

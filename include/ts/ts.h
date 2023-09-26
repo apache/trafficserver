@@ -2825,6 +2825,16 @@ namespace c
   /* IP addr parsing. This is a candidate for deprecation in v10.0.0, in favor of libswoc */
   TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
+  /**
+   * Return information about the type of the transaction. Is it a tunnel transaction or fully parsed?
+   * If tunneled is it due to parse failures and TR_PASS or is it due to an explicit configuration.
+   *
+   * @param[in] txnp The Transaction for which the type should be retrieved.
+   *
+   * @return enun value of type TSTxnType
+   */
+  TSTxnType TSHttpTxnTypeGet(TSHttpTxn txnp);
+
 } // end namespace c
 
 template <typename T>
