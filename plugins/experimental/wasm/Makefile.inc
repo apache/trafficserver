@@ -20,6 +20,10 @@ experimental_wasm_wasm_la_CPPFLAGS = -I$(srcdir)/experimental/wasm/lib -I$(srcdi
 
 if HAS_WAMR
 experimental_wasm_wasm_la_CPPFLAGS += -DWAMR
+else
+  if HAS_WASMTIME
+  experimental_wasm_wasm_la_CPPFLAGS += -DWASMTIME
+  endif
 endif
 
 if HAS_WASMEDGE
@@ -32,6 +36,10 @@ experimental_wasm_wasm_la_LIBADD =
 
 if HAS_WAMR
 experimental_wasm_wasm_la_LIBADD += $(WAMR_LIBS)
+else
+  if HAS_WASMTIME
+  experimental_wasm_wasm_la_LIBADD += $(WASMTIME_LIBS)
+  endif
 endif
 
 if HAS_WASMEDGE
@@ -86,4 +94,11 @@ experimental_wasm_wasm_la_SOURCES += \
     experimental/wasm/lib/src/wamr/wamr.cc \
     experimetnal/wasm/lib/src/wamr/types.h \
     experimental/wasm/lib/include/proxy-wasm/wamr.h
+else
+  if HAS_WASMTIME
+  experimental_wasm_wasm_la_SOURCES += \
+      experimental/wasm/lib/src/wasmtime/wasmtime.cc \
+      experimetnal/wasm/lib/src/wasmtime/types.h \
+      experimental/wasm/lib/include/proxy-wasm/wasmtime.h
+  endif
 endif

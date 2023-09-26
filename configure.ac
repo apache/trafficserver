@@ -1867,7 +1867,7 @@ AC_CHECK_HEADERS([wasm_c_api.h], [
 AM_CONDITIONAL([HAS_WAMR], [test "x${has_wamr}" = "x1" ])
 AC_LANG_POP([C++])
 
-# Checking if wamedge is available
+# Checking if wasmedge is available
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS([wasmedge/wasmedge.h], [
   AC_CHECK_LIB([wasmedge], [main], [
@@ -1881,6 +1881,22 @@ AC_CHECK_HEADERS([wasmedge/wasmedge.h], [
 ])
 
 AM_CONDITIONAL([HAS_WASMEDGE], [test "x${has_wasmedge}" = "x1" ])
+AC_LANG_POP([C++])
+
+# Checking if wasmtime is available
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([include/wasm.h], [
+  AC_CHECK_LIB([wasmtime], [main], [
+    AC_SUBST([WASMTIME_LIBS], [" -lwasmtime "])
+    AC_SUBST(has_wasmtime, 1)
+    has_wasm=1
+  ], [
+    AC_SUBST([WASMTIME_LIBS], [""])
+    AC_SUBST(has_wasmtime, 0)
+  ])
+])
+
+AM_CONDITIONAL([HAS_WASMTIME], [test "x${has_wasmtime}" = "x1" ])
 AC_LANG_POP([C++])
 
 # check for wasm
