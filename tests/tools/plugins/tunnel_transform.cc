@@ -28,6 +28,8 @@
 #include "ts/ts.h"
 
 #define PLUGIN_NAME "tunnel_transform"
+static const char PLUGIN_TAG[] = PLUGIN_NAME;
+static DbgCtl plugin_ctl{PLUGIN_TAG};
 
 static int stat_ua_bytes_sent = 0; // number of bytes seen by the transform from UA to OS
 static int stat_os_bytes_sent = 0; // number of bytes seen by the transform from OS to UA
@@ -73,7 +75,7 @@ handle_transform(TSCont contp, bool forward)
   MyData *data;
   int64_t towrite;
 
-  TSDebug(PLUGIN_NAME, "Entering handle_transform()");
+  Dbg(plugin_ctl, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
 
   output_conn = TSTransformOutputVConnGet(contp);
@@ -96,7 +98,7 @@ handle_transform(TSCont contp, bool forward)
     data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-    TSDebug(PLUGIN_NAME, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
+    Dbg(plugin_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
     TSContDataSet(contp, data);
   }
@@ -122,14 +124,14 @@ handle_transform(TSCont contp, bool forward)
    * to write to the output connection.
    */
   towrite = TSVIONTodoGet(input_vio);
-  TSDebug(PLUGIN_NAME, "\ttoWrite is %" PRId64 "", towrite);
+  Dbg(plugin_ctl, "\ttoWrite is %" PRId64 "", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
-    TSDebug(PLUGIN_NAME, "\tavail is %" PRId64 "", avail);
+    Dbg(plugin_ctl, "\tavail is %" PRId64 "", avail);
     if (towrite > avail) {
       towrite = avail;
     }
@@ -195,10 +197,10 @@ null_transform(TSCont contp, TSEvent event, void *edata, bool forward)
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
    */
-  TSDebug(PLUGIN_NAME, "Entering null_transform()");
+  Dbg(plugin_ctl, "Entering null_transform()");
 
   if (TSVConnClosedGet(contp)) {
-    TSDebug(PLUGIN_NAME, "\tVConn is closed");
+    Dbg(plugin_ctl, "\tVConn is closed");
     my_data_destroy(static_cast<MyData *>(TSContDataGet(contp)));
     TSContDestroy(contp);
     return 0;
@@ -209,7 +211,7 @@ null_transform(TSCont contp, TSEvent event, void *edata, bool forward)
 
       TSStatIntIncrement(stat_error, 1);
 
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_ERROR");
+      Dbg(plugin_ctl, "\tEvent is TS_EVENT_ERROR");
       /* Get the write VIO for the write operation that was
        * performed on ourself. This VIO contains the continuation of
        * our parent transformation. This is the input VIO.
@@ -222,7 +224,7 @@ null_transform(TSCont contp, TSEvent event, void *edata, bool forward)
       TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
+      Dbg(plugin_ctl, "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
@@ -236,11 +238,11 @@ null_transform(TSCont contp, TSEvent event, void *edata, bool forward)
      * we'll attempt to transform more data.
      */
     case TS_EVENT_VCONN_WRITE_READY:
-      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
+      Dbg(plugin_ctl, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
       handle_transform(contp, forward);
       break;
     default:
-      TSDebug(PLUGIN_NAME, "\t(event is %d)", event);
+      Dbg(plugin_ctl, "\t(event is %d)", event);
       handle_transform(contp, forward);
       break;
     }
@@ -264,7 +266,7 @@ reverse_null_transform(TSCont contp, TSEvent event, void *edata)
 static void
 transform_add(TSHttpTxn txnp)
 {
-  TSDebug(PLUGIN_NAME, "Entering transform_add()");
+  Dbg(plugin_ctl, "Entering transform_add()");
   TSVConn connp     = TSTransformCreate(forward_null_transform, txnp);
   TSVConn rev_connp = TSTransformCreate(reverse_null_transform, txnp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, connp);
@@ -276,10 +278,10 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
-  TSDebug(PLUGIN_NAME, "Entering transform_plugin()");
+  Dbg(plugin_ctl, "Entering transform_plugin()");
   switch (event) {
   case TS_EVENT_HTTP_TUNNEL_START:
-    TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_HTTP_TUNNEL_START");
+    Dbg(plugin_ctl, "\tEvent is TS_EVENT_HTTP_TUNNEL_START");
     transform_add(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -293,7 +295,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 static int
 handleMsg(TSCont cont, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "handleMsg event=%d", event);
+  Dbg(plugin_ctl, "handleMsg event=%d", event);
   TSStatIntIncrement(stat_test_done, 1);
   return TS_SUCCESS;
 }
