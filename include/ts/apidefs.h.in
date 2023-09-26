@@ -1493,7 +1493,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
   struct TSRPCHandlerOptions {
     struct Auth {
       int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
-    } auth;
+    } auth{1};
   };
 
   /// Configuration field info related to a parsed YAML node.
