@@ -33,7 +33,12 @@ namespace ats
 namespace inliner
 {
   Handler::Handler(const TSIOBufferReader r, ats::io::IOSinkPointer &&i)
-    : ioSink_(i), sink_(ioSink_->branch()), sink2_(sink_->branch()), reader_(TSIOBufferReaderClone(r)), counter_(0), abort_(false)
+    : ioSink_(std::move(i)),
+      sink_(ioSink_->branch()),
+      sink2_(sink_->branch()),
+      reader_(TSIOBufferReaderClone(r)),
+      counter_(0),
+      abort_(false)
   {
     assert(ioSink_);
     assert(sink_);
