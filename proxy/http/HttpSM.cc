@@ -5137,10 +5137,7 @@ HttpSM::get_outbound_sni() const
   if (_ua.get_txn()) {
     if (auto *netvc = _ua.get_txn()->get_netvc(); netvc) {
       if (auto *snis = netvc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
-        netvc->options.outbound_sni_policy = snis->hints_from_sni.outbound_sni_policy.value();
-      }
-      if (netvc->options.outbound_sni_policy) {
-        policy.assign(netvc->options.outbound_sni_policy.get(), swoc::TextView::npos);
+        policy.assign(snis->hints_from_sni.outbound_sni_policy->data(), swoc::TextView::npos);
       }
     }
   }
