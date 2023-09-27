@@ -114,6 +114,8 @@ plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error
   if (!init) {
     error.assign("unable to find TSPluginInit function in '").append(path).append("': ").append(dlerror());
     Error("%s", error.c_str());
+    dlclose(handle);
+    handle = nullptr;
     return false;
   }
 

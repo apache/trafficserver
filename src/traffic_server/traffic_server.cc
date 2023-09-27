@@ -977,6 +977,11 @@ enum class plugin_type_t {
 
 /** Attempt to load a plugin shared object file.
  *
+ * Note that this function is only used to load plugins for the purpose of
+ * verifying that they are valid plugins. It is not used to load plugins for
+ * normal operation. Any loaded plugin will be closed immediately after loading
+ * it.
+ *
  * @param[in] plugin_type The type of plugin for which to create a PluginInfo.
  * @param[in] plugin_path The path to the plugin's shared object file.
  * @param[out] error Some description of why the plugin failed to load if
@@ -985,12 +990,18 @@ enum class plugin_type_t {
  * @return True if the plugin loaded successfully, false otherwise.
  */
 static bool
-load_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string &error)
+try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string &error)
 {
   switch (plugin_type) {
   case plugin_type_t::GLOBAL: {
-    void *handle, *initptr;
-    return plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
+    void *handle             = nullptr;
+    void *initptr            = nullptr;
+    bool const plugin_loaded = plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
+    if (handle != nullptr) {
+      dlclose(handle);
+      handle = nullptr;
+    }
+    return plugin_loaded;
   }
   case plugin_type_t::REMAP: {
     auto temporary_directory = fs::temp_directory_path();
@@ -1044,7 +1055,7 @@ verify_plugin_helper(char *args, plugin_type_t plugin_type)
 
   auto ret = CMD_OK;
   std::string error;
-  if (load_plugin(plugin_type, plugin_path, error)) {
+  if (try_loading_plugin(plugin_type, plugin_path, error)) {
     fprintf(stderr, "NOTE: verifying plugin '%s' Success\n", plugin_filename);
   } else {
     fprintf(stderr, "ERROR: verifying plugin '%s' Fail: %s\n", plugin_filename, error.c_str());
