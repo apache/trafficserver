@@ -4124,9 +4124,8 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer *c)
   // Figure out if this the request or response transform
   // : use post_transform_info.entry because post_transform_info.vc
   // is not set to NULL after the post transform is done.
-  if (post_transform_info.entry) {
+  if (post_transform_info.entry && post_transform_info.entry->vc == c->vc) {
     i = &post_transform_info;
-    ink_assert(c->vc == i->entry->vc);
   } else {
     i = &transform_info;
     ink_assert(c->vc == i->vc);
