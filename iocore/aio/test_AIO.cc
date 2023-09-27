@@ -220,8 +220,14 @@ dump_summary()
   printf("-----------------\n");
   printf("IO_URING results\n");
   printf("-----------------\n");
-  printf("submissions: %lu\n", Metrics::read(aio_rsb.io_uring_submitted);
-  printf("completions: %lu\n", Metrics::read(aio_rsb.io_uring_completed);
+
+  auto &m = Metrics::getInstance();
+
+  Metrics::IntType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
+  Metrics::IntType *submitted = m.lookup(m.lookup("proxy.process.io_uring.submitted"));
+
+  printf("submissions: %lu\n", Metrics::read(submitted));
+  printf("completions: %lu\n", Metrics::read(completed));
 #endif
 
   if (delete_disks) {

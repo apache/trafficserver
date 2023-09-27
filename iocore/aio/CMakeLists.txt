@@ -33,3 +33,6 @@ target_link_libraries(aio
         ts::inkevent
         ts::tscore
 )
+if(TS_USE_LINUX_IO_URING)
+target_link_libraries(aio PUBLIC ts::inkuring)
+endif()
