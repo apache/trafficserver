@@ -152,49 +152,49 @@ ink_hrtime_from_timeval(const struct timeval *tv)
 static inline ink_hrtime
 ink_hrtime_to_years(ink_hrtime t)
 {
-  return ((t / HRTIME_YEAR));
+  return (t / HRTIME_YEAR);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_weeks(ink_hrtime t)
 {
-  return ((t / HRTIME_WEEK));
+  return (t / HRTIME_WEEK);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_days(ink_hrtime t)
 {
-  return ((t / HRTIME_DAY));
+  return (t / HRTIME_DAY);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_mins(ink_hrtime t)
 {
-  return ((t / HRTIME_MINUTE));
+  return (t / HRTIME_MINUTE);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_sec(ink_hrtime t)
 {
-  return ((t / HRTIME_SECOND));
+  return (t / HRTIME_SECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_msec(ink_hrtime t)
 {
-  return ((t / HRTIME_MSECOND));
+  return (t / HRTIME_MSECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_usec(ink_hrtime t)
 {
-  return ((t / HRTIME_USECOND));
+  return (t / HRTIME_USECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_nsec(ink_hrtime t)
 {
-  return ((t / HRTIME_NSECOND));
+  return (t / HRTIME_NSECOND);
 }
 
 static inline struct timespec
