@@ -241,8 +241,9 @@ inline void
 Ptr<T>::clear()
 {
   if (m_ptr) {
-    if (!m_ptr->refcount_dec())
+    if (!m_ptr->refcount_dec()) {
       m_ptr->free();
+    }
     m_ptr = nullptr;
   }
 }

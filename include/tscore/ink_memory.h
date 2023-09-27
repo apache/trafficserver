@@ -112,12 +112,13 @@ static inline size_t __attribute__((const)) ats_pagesize()
 {
   static size_t page_size;
 
-  if (page_size)
+  if (page_size) {
     return page_size;
+  }
 
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
   long ret  = sysconf(_SC_PAGESIZE);
-  page_size = (size_t)((ret > -1) ? ret : 8192);
+  page_size = static_cast<size_t>((ret > -1) ? ret : 8192);
 #elif defined(HAVE_GETPAGESIZE)
   page_size = (size_t)getpagesize();
 #else
@@ -592,10 +593,12 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
   size_t rn        = strlen(rhs);
   const char *rptr = rhs; // May need to be modified.
 
-  if (ln && lhs[ln - 1] == '/')
+  if (ln && lhs[ln - 1] == '/') {
     --ln; // drop trailing separator.
-  if (rn && *rptr == '/')
+  }
+  if (rn && *rptr == '/') {
     --rn, ++rptr; // drop leading separator.
+  }
 
   ats_scoped_str x(ln + rn + 2);
 

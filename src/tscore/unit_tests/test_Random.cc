@@ -41,12 +41,12 @@ TEST_CASE("test random", "[libts][random]")
     ts::Random::random();
   }
   auto diff = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start);
-  std::cout << std::endl << (double)diff.count() / 1000000 << " ns per Random::random()" << std::endl;
+  std::cout << std::endl << static_cast<double>(diff.count()) / 1000000 << " ns per Random::random()" << std::endl;
 
   start = std::chrono::high_resolution_clock::now();
   for (auto i = 0; i < 1000000; ++i) {
     x.random();
   }
   diff = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start);
-  std::cout << (double)diff.count() / 1000000 << " ns per InkRand::random()" << std::endl;
+  std::cout << static_cast<double>(diff.count()) / 1000000 << " ns per InkRand::random()" << std::endl;
 }

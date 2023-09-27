@@ -65,10 +65,11 @@ public:
   set_flag(enum flags flag_bit, bool value)
   {
     if (flag_bit >= 0 && flag_bit < LAST_FLAG) {
-      if (value)
+      if (value) {
         raw_flags |= (1 << flag_bit);
-      else
+      } else {
         raw_flags &= ~(1 << flag_bit);
+      }
     }
   }
   bool

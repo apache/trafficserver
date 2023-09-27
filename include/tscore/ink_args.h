@@ -43,7 +43,7 @@ Process arguments
 struct ArgumentDescription;
 class AppVersionInfo;
 
-typedef void ArgumentFunction(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions, const char *arg);
+using ArgumentFunction = void(const ArgumentDescription *, unsigned int, const char *);
 
 struct ArgumentDescription {
   const char *name;

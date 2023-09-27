@@ -65,17 +65,17 @@ public:
   /// Number of bits to split each base range in to span buckets.
   static constexpr raw_type N_SPAN_BITS = S;
   /// Number of buckets per span.
-  static constexpr raw_type N_SPAN_BUCKETS = raw_type(1) << N_SPAN_BITS;
+  static constexpr raw_type N_SPAN_BUCKETS = static_cast<raw_type>(1) << N_SPAN_BITS;
   /// Mask to extract the local bucket index from a sample.
-  static constexpr raw_type SPAN_MASK = (raw_type(1) << N_SPAN_BITS) - 1;
+  static constexpr raw_type SPAN_MASK = (static_cast<raw_type>(1) << N_SPAN_BITS) - 1;
   /// Initial mask to find the MSB in the sample.
-  static constexpr raw_type MSB_MASK = raw_type(1) << (N_RANGE_BITS + N_SPAN_BITS - 1);
+  static constexpr raw_type MSB_MASK = static_cast<raw_type>(1) << (N_RANGE_BITS + N_SPAN_BITS - 1);
   /// Total number of buckets - 1 for overflow and an extra range for less than @c UNDERFLOW_BOUND
   static constexpr raw_type N_BUCKETS = ((N_RANGE_BITS + 1) * N_SPAN_BUCKETS) + 1;
   /// Samples less than this go in the underflow range.
-  static constexpr raw_type UNDERFLOW_BOUND = raw_type(1) << N_SPAN_BITS;
+  static constexpr raw_type UNDERFLOW_BOUND = static_cast<raw_type>(1) << N_SPAN_BITS;
   /// Sample equal or greater than this  go in the overflow bucket.
-  static constexpr raw_type OVERFLOW_BOUND = raw_type(1) << (N_RANGE_BITS + N_SPAN_BITS + 1);
+  static constexpr raw_type OVERFLOW_BOUND = static_cast<raw_type>(1) << (N_RANGE_BITS + N_SPAN_BITS + 1);
 
   /** Add @sample to the histogram.
    *

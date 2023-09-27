@@ -47,13 +47,13 @@
   0 // change this to 1 to enable debug messages
     // TODO find a way to enable this from autotools
 
-typedef enum {
+enum LogLogPriorityLevel {
   LL_Debug = 0, // process does not die
   LL_Note,      // process does not die
   LL_Warning,   // process does not die
   LL_Error,     // process does not die
   LL_Fatal,     // causes process termination
-} LogLogPriorityLevel;
+};
 
 #define log_log_trace(...)                         \
   do {                                             \

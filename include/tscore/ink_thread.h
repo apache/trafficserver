@@ -54,9 +54,9 @@
 #define INK_MUTEX_INIT       PTHREAD_MUTEX_INITIALIZER
 #define INK_THREAD_STACK_MIN PTHREAD_STACK_MIN
 
-typedef pthread_t ink_thread;
-typedef pthread_cond_t ink_cond;
-typedef pthread_key_t ink_thread_key;
+using ink_thread     = pthread_t;
+using ink_cond       = pthread_cond_t;
+using ink_thread_key = pthread_key_t;
 
 // Darwin has a sem_init stub that returns ENOSYS. Rather than bodge around doing runtime
 // detection, just emulate on Darwin.
@@ -90,7 +90,7 @@ struct ink_semaphore {
  ******************************************************************/
 
 #ifdef POSIX_THREAD_10031c
-typedef struct timespec ink_timestruc;
+using ink_timestruc = struct timespec;
 #else
 typedef timestruc_t ink_timestruc;
 #endif
@@ -173,7 +173,7 @@ ink_thread_null()
   // The implementation of ink_thread (the alias of pthread_t) is different on platforms
   // - e.g. `struct pthread *` on Unix and `unsigned long int` on Linux
   // NOLINTNEXTLINE(modernize-use-nullptr)
-  return (ink_thread)0;
+  return static_cast<ink_thread>(0);
 }
 
 static inline int
@@ -241,8 +241,9 @@ static inline int
 ink_cond_timedwait(ink_cond *cp, ink_mutex *mp, ink_timestruc *t)
 {
   int err;
-  while (EINTR == (err = pthread_cond_timedwait(cp, mp, t)))
+  while (EINTR == (err = pthread_cond_timedwait(cp, mp, t))) {
     ;
+  }
 #if defined(freebsd) || defined(openbsd)
   ink_assert((err == 0) || (err == ETIMEDOUT));
 #else

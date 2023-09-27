@@ -357,8 +357,9 @@ template <class C, class L>
 inline void
 DLL<C, L>::push(C *e)
 {
-  if (head)
+  if (head) {
     prev(head) = e;
+  }
   next(e) = head;
   head    = e;
 }
@@ -367,14 +368,18 @@ template <class C, class L>
 inline void
 DLL<C, L>::remove(C *e)
 {
-  if (!head)
+  if (!head) {
     return;
-  if (e == head)
+  }
+  if (e == head) {
     head = next(e);
-  if (prev(e))
+  }
+  if (prev(e)) {
     next(prev(e)) = next(e);
-  if (next(e))
+  }
+  if (next(e)) {
     prev(next(e)) = prev(e);
+  }
   prev(e) = nullptr;
   next(e) = nullptr;
 }
@@ -386,12 +391,14 @@ DLL<C, L>::pop()
   C *ret = head;
   if (ret) {
     head = next(ret);
-    if (head)
+    if (head) {
       prev(head) = nullptr;
+    }
     next(ret) = nullptr;
     return ret;
-  } else
+  } else {
     return nullptr;
+  }
 }
 
 template <class C, class L>
@@ -405,8 +412,9 @@ DLL<C, L>::insert(C *e, C *after)
   prev(e)     = after;
   next(e)     = next(after);
   next(after) = e;
-  if (next(e))
+  if (next(e)) {
     prev(next(e)) = e;
+  }
 }
 
 template <class C, class L>
@@ -566,8 +574,9 @@ inline void
 Queue<C, L>::push(C *e)
 {
   DLL<C, L>::push(e);
-  if (!tail)
+  if (!tail) {
     tail = head;
+  }
 }
 
 template <class C, class L>
@@ -575,8 +584,9 @@ inline C *
 Queue<C, L>::pop()
 {
   C *ret = DLL<C, L>::pop();
-  if (!head)
+  if (!head) {
     tail = nullptr;
+  }
   return ret;
 }
 
@@ -585,18 +595,20 @@ inline void
 Queue<C, L>::insert(C *e, C *after)
 {
   DLL<C, L>::insert(e, after);
-  if (!tail)
+  if (!tail) {
     tail = head;
-  else if (tail == after)
+  } else if (tail == after) {
     tail = e;
+  }
 }
 
 template <class C, class L>
 inline void
 Queue<C, L>::remove(C *e)
 {
-  if (tail == e)
+  if (tail == e) {
     tail = (C *)this->prev(e);
+  }
   DLL<C, L>::remove(e);
 }
 
@@ -605,9 +617,11 @@ inline void
 Queue<C, L>::append(DLL<C, L> q)
 {
   C *qtail = q.head;
-  if (qtail)
-    while (this->next(qtail))
+  if (qtail) {
+    while (this->next(qtail)) {
       qtail = this->next(qtail);
+    }
+  }
   if (!head) {
     head = q.head;
     tail = qtail;
@@ -640,18 +654,20 @@ template <class C, class L>
 inline void
 Queue<C, L>::enqueue(C *e)
 {
-  if (tail)
+  if (tail) {
     insert(e, tail);
-  else
+  } else {
     push(e);
+  }
 }
 
 template <class C, class L>
 inline void
 Queue<C, L>::in_or_enqueue(C *e)
 {
-  if (!this->in(e))
+  if (!this->in(e)) {
     enqueue(e);
+  }
 }
 
 template <class C, class L>
@@ -671,8 +687,9 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
   void
   sort()
   {
-    if (!head)
+    if (!head) {
       return;
+    }
     bool clean = false;
     while (!clean) {
       clean = true;
@@ -683,28 +700,33 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
         if (*n < *v) {
           clean = false;
           // swap 'em
-          if (head == v)
+          if (head == v) {
             head = n;
-          if (tail == n)
+          }
+          if (tail == n) {
             tail = v;
+          }
           // fix prev (p)
           C *p = this->prev(v);
           if (p) {
             this->next(p) = n;
             this->prev(n) = p;
-          } else
+          } else {
             this->prev(n) = nullptr;
+          }
           // fix follow (f)
           if (f) {
             this->prev(f) = v;
             this->next(v) = f;
-          } else
+          } else {
             this->next(v) = nullptr;
+          }
           // fix interior
           this->prev(v) = n;
           this->next(n) = v;
-        } else
+        } else {
           v = n;
+        }
         n = f;
       }
     }
@@ -744,8 +766,9 @@ inline C *
 CountQueue<C, L>::pop()
 {
   C *ret = Queue<C, L>::pop();
-  if (ret)
+  if (ret) {
     size--;
+  }
   return ret;
 }
 
@@ -824,10 +847,11 @@ template <class C, class A = DefaultAlloc> struct List {
   C
   first()
   {
-    if (head)
+    if (head) {
       return head->car;
-    else
+    } else {
       return 0;
+    }
   }
   C
   car()
@@ -837,10 +861,11 @@ template <class C, class A = DefaultAlloc> struct List {
   ConsCell<C, A> *
   rest()
   {
-    if (head)
+    if (head) {
       return head->cdr;
-    else
+    } else {
       return 0;
+    }
   }
   ConsCell<C, A> *
   cdr()
