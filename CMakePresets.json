@@ -97,8 +97,15 @@
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/boringssl",
         "quiche_ROOT": "/opt/quiche",
-        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche"
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+        "ENABLE_QUICHE": true
       }
+    },
+    {
+      "name": "ci-fedora-autest",
+      "displayName": "CI Fedora Quiche Autest",
+      "description": "CI Pipeline config for Fedora Linux (autest build)",
+      "inherits": ["ci-fedora", "autest"]
     }
   ],
   "buildPresets": [
