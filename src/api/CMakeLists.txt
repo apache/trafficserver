@@ -17,13 +17,18 @@
 
 add_library(tsapi SHARED
 	InkAPI.cc
-	InkContInternal.cc
 	InkIOCoreAPI.cc
 )
 add_library(ts::tsapi ALIAS tsapi)
 target_link_libraries(tsapi PRIVATE ts::tscore)
 
-add_library(tsapicore STATIC Metrics.cc FetchSM.cc)
+add_library(tsapicore STATIC
+  Metrics.cc
+  ConfigUpdateCbTable.cc
+  InkContInternal.cc
+  InkVConnInternal.cc
+  FetchSM.cc
+)
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
 

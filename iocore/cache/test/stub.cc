@@ -21,22 +21,9 @@
   limitations under the License.
  */
 
-#include <string_view>
-
-#include "HttpSessionManager.h"
-#include "HttpBodyFactory.h"
-#include "DiagsConfig.h"
-#include "ts/InkAPIPrivateIOCore.h"
-
 #include "tscore/I_Version.h"
 
 AppVersionInfo appVersionInfo;
-
-void
-initialize_thread_for_http_sessions(EThread *, int)
-{
-  ink_assert(false);
-}
 
 #include "api/InkAPIInternal.h"
 void
@@ -92,124 +79,10 @@ HttpHookState::getNext()
   return nullptr;
 }
 
-void
-ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
-{
-  ink_release_assert(false);
-}
-
 HttpAPIHooks *http_global_hooks        = nullptr;
 SslAPIHooks *ssl_hooks                 = nullptr;
 LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
-
-void
-HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
-                          const unsigned int reason)
-{
-}
-
-HostStatRec *
-HostStatus::getHostStatus(const std::string_view name)
-{
-  return nullptr;
-}
-
-HostStatus::HostStatus() {}
-
-HostStatus::~HostStatus() {}
-
-void
-INKVConnInternal::do_io_close(int error)
-{
-}
-
-void
-INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
-{
-}
-
-VIO *
-INKVConnInternal::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  return nullptr;
-}
-
-VIO *
-INKVConnInternal::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  return nullptr;
-}
-
-void
-INKVConnInternal::destroy()
-{
-}
-
-void
-INKVConnInternal::free()
-{
-}
-
-void
-INKVConnInternal::clear()
-{
-}
-
-void
-INKVConnInternal::reenable(VIO * /* vio ATS_UNUSED */)
-{
-}
-
-bool
-INKVConnInternal::get_data(int id, void *data)
-{
-  return false;
-}
-
-bool
-INKVConnInternal::set_data(int id, void *data)
-{
-  return false;
-}
-
-void
-INKVConnInternal::do_io_transform(VConnection *vc)
-{
-}
-
-void
-INKContInternal::handle_event_count(int event)
-{
-}
-
-void
-INKVConnInternal::retry(unsigned int delay)
-{
-}
-
-INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection(reinterpret_cast<ProxyMutex *>(mutexp)) {}
-
-INKContInternal::INKContInternal() : DummyVConnection(nullptr) {}
-
-void
-INKContInternal::destroy()
-{
-}
-
-void
-INKContInternal::clear()
-{
-}
-
-void
-INKContInternal::free()
-{
-}
-
-INKVConnInternal::INKVConnInternal() : INKContInternal() {}
-
-INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
 
 #include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
