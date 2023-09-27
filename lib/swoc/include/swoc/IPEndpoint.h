@@ -26,10 +26,6 @@ class IPSrv;
 class IP4Srv;
 class IP6Srv;
 
-namespace detail {
-extern void *const pseudo_nullptr;
-}
-
 /** A union to hold @c sockaddr compliant IP address structures.
 
     This class contains a number of static methods to perform operations on external @c sockaddr
@@ -202,22 +198,42 @@ union IPEndpoint {
   /// @return @c true if this is a loopback address, @c false if not.
   bool is_loopback() const;
 
-  /// Port in network order.
-  in_port_t &network_order_port();
-
-  /// Port in network order.
+  /** Port in network order.
+   *
+   * @return The port or 0 if not a valid IP address.
+   */
   in_port_t network_order_port() const;
 
-  /// Port in host horder.
+  /** Port in host order.
+   *
+   * @return The port or 0 if not a valid IP address.
+   */
   in_port_t host_order_port() const;
 
-  /// Port in network order from @a sockaddr.
+  /// Test for valid IP address.
+  /// @param sa The socket address.
+  /// @return @c true if @a sa contains a valid IP address, @c false if not.
+  /// @a sa can be @c nullptr in which case @c false is returned.
+  static bool is_valid(sockaddr const *sa);
+
+  /// Direct access to port.
+  /// @return Refernec to the port in the socket address.
+  /// @note If @a sa is not a valid IP address an assertion is thrown.
+  /// @a is_valid
   static in_port_t &port(sockaddr *sa);
 
-  /// Port in network order from @a sockaddr.
-  static in_port_t port(sockaddr const *sa);
+  /** Port in network order.
+   *
+   * @param sa The socket address.
+   * @return The port or 0 if @a sa is not a valid IP address.
+   */
+  static in_port_t network_order_port(sockaddr const *sa);
 
-  /// Port in host order directly from a @c sockaddr
+  /** Port in host order.
+   *
+   * @param sa The socket address.
+   * @return The port or 0 if @a sa is not a valid IP address.
+   */
   static in_port_t host_order_port(sockaddr const *sa);
 
   /// Automatic conversion to @c sockaddr.
@@ -337,19 +353,19 @@ IPEndpoint::ip6() const {
   return this->is_ip6() ? &sa6 : nullptr;
 }
 
-inline in_port_t &
-IPEndpoint::network_order_port() {
-  return self_type::port(&sa);
-}
-
 inline in_port_t
 IPEndpoint::network_order_port() const {
-  return self_type::port(&sa);
+  return this->is_valid() ? this->port(const_cast<sockaddr*>(&sa)) : 0;
 }
 
 inline in_port_t
 IPEndpoint::host_order_port() const {
   return ntohs(this->network_order_port());
+}
+
+inline bool
+IPEndpoint::is_valid(sockaddr const *sa) {
+  return sa && (sa->sa_family == AF_INET || sa->sa_family == AF_INET6);
 }
 
 inline in_port_t &
@@ -361,17 +377,17 @@ IPEndpoint::port(sockaddr *sa) {
       return reinterpret_cast<sockaddr_in6 *>(sa)->sin6_port;
   }
   // Force a failure upstream by returning a null reference.
-  throw std::domain_error("sockaddr is not a valid IP address");
+  throw std::domain_error("sockaddr does not contain a valid IP address");
 }
 
 inline in_port_t
-IPEndpoint::port(sockaddr const *sa) {
-  return self_type::port(const_cast<sockaddr *>(sa));
+IPEndpoint::network_order_port(sockaddr const *sa) {
+  return self_type::is_valid(sa) ? self_type::port(const_cast<sockaddr*>(sa)) : 0;
 }
 
 inline in_port_t
 IPEndpoint::host_order_port(sockaddr const *sa) {
-  return ntohs(self_type::port(sa));
+  return self_type::is_valid(sa) ? ntohs(self_type::port(const_cast<sockaddr*>(sa))) : 0;
 }
 
 inline swoc::MemSpan<void const>
