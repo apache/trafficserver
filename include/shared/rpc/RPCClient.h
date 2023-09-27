@@ -52,7 +52,7 @@ public:
   std::string
   invoke(std::string_view req)
   {
-    std::string text; // for error messages.
+    std::string err_text; // for error messages.
     std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
     swoc::FixedBufferWriter bw{buf.get(), BUFFER_SIZE};
     try {
@@ -64,23 +64,22 @@ public:
           _client.disconnect();
           return {bw.data(), bw.size()};
         }
-        case IPCSocketClient::ReadStatus::BUFFER_FULL: {
-          throw std::runtime_error(
-            swoc::bwprint(text, "Buffer full, not enough space to read the response. Buffer size: {}", BUFFER_SIZE));
-        } break;
+        case IPCSocketClient::ReadStatus::BUFFER_FULL:
+          swoc::bwprint(err_text, "Buffer full, not enough space to read the response. Buffer size: {}", BUFFER_SIZE);
+          break;
         default:
-          throw std::runtime_error("Something happened, we can't read the response");
+          err_text = "Something happened, we can't read the response";
           break;
         }
       } else {
-        throw std::runtime_error(swoc::bwprint(text, "Node seems not available: {}", std ::strerror(errno)));
+        swoc::bwprint(err_text, "Node seems not available: {}", std ::strerror(errno));
       }
     } catch (std::exception const &ex) {
-      _client.disconnect();
-      throw std::runtime_error(swoc::bwprint(text, "RPC Node Error: {}", ex.what()));
+      swoc::bwprint(err_text, "RPC Node Error: {}", ex.what());
     }
-
-    return {};
+    _client.disconnect();
+    // If we've got this far, then there must be an error to report back.
+    throw std::runtime_error(err_text);
   }
 
   /// @brief Invoke the rpc node passing the JSONRPC objects.
