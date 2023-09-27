@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <ctime>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -41,10 +41,10 @@ namespace
 DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
-typedef struct {
+struct secure_link_info {
   char *secret;
   uint8_t strict;
-} secure_link_info;
+};
 
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
@@ -56,7 +56,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   struct sockaddr_in *in;
   const char *qh, *ph, *ip;
   unsigned char md[MD5_DIGEST_LENGTH];
-  secure_link_info *sli = (secure_link_info *)ih;
+  secure_link_info *sli = static_cast<secure_link_info *>(ih);
   char *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
   char *s, *ptr, *saveptr = nullptr, *val, hash[32] = "";
 
@@ -175,7 +175,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
   (void)errbuf;
   (void)errbuf_size;
 
-  sli         = (secure_link_info *)TSmalloc(sizeof(secure_link_info));
+  sli         = static_cast<secure_link_info *>(TSmalloc(sizeof(secure_link_info)));
   sli->secret = nullptr;
   sli->strict = 0;
 
@@ -209,7 +209,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
 void
 TSRemapDeleteInstance(void *ih)
 {
-  secure_link_info *sli = (secure_link_info *)ih;
+  secure_link_info *sli = static_cast<secure_link_info *>(ih);
 
   TSfree(sli->secret);
   TSfree(sli);

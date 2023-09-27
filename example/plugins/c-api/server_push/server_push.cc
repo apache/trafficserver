@@ -31,9 +31,9 @@
  *
  *
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -72,17 +72,17 @@ server_push_plugin(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    ssnp = (TSHttpSsn)edata;
+    ssnp = static_cast<TSHttpSsn>(edata);
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
     TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     if (should_push(txnp)) {
       TSHttpTxnServerPush(txnp, url, strlen(url));
     }

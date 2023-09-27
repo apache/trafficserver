@@ -41,8 +41,8 @@
   limitations under the License.
 */
 
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 
 #include <netinet/in.h>
 
@@ -63,7 +63,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 #define STATE_READ        5
 #define STATE_BYPASS      6
 
-typedef struct {
+struct TransformData {
   int state;
   TSHttpTxn txn;
 
@@ -80,7 +80,7 @@ typedef struct {
   TSVIO server_vio;
 
   int content_length;
-} TransformData;
+};
 
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
@@ -95,7 +95,7 @@ transform_create(TSHttpTxn txnp)
 
   contp = TSTransformCreate(transform_handler, txnp);
 
-  data                 = (TransformData *)TSmalloc(sizeof(TransformData));
+  data                 = static_cast<TransformData *>(TSmalloc(sizeof(TransformData)));
   data->state          = STATE_BUFFER;
   data->txn            = txnp;
   data->input_buf      = nullptr;
@@ -169,7 +169,7 @@ transform_connect(TSCont contp, TransformData *data)
       temp       = TSIOBufferCreate();
       tempReader = TSIOBufferReaderAlloc(temp);
 
-      TSIOBufferWrite(temp, (const char *)&content_length, sizeof(int));
+      TSIOBufferWrite(temp, reinterpret_cast<const char *>(&content_length), sizeof(int));
       TSIOBufferCopy(temp, data->input_reader, content_length, 0);
 
       TSIOBufferReaderFree(data->input_reader);
@@ -189,7 +189,7 @@ transform_connect(TSCont contp, TransformData *data)
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port        = server_port;
   Dbg(dbg_ctl, "net connect.");
-  action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
+  action = TSNetConnect(contp, reinterpret_cast<struct sockaddr const *>(&ip_addr));
 
   if (!TSActionDone(action)) {
     data->pending_action = action;
@@ -240,7 +240,7 @@ transform_read(TSCont contp, TransformData *data)
   data->input_reader = nullptr;
 
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
-  data->output_vc  = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc  = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
   if (data->output_vc == nullptr) {
     TSError("[%s] TSTransformOutputVConnGet returns null", PLUGIN_NAME);
   } else {
@@ -271,7 +271,7 @@ transform_bypass(TSCont contp, TransformData *data)
   }
 
   TSIOBufferReaderConsume(data->input_reader, sizeof(int));
-  data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
   if (data->output_vc == nullptr) {
     TSError("[%s] TSTransformOutputVConnGet returns null", PLUGIN_NAME);
   } else {
@@ -361,7 +361,7 @@ transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *
     Dbg(dbg_ctl, "connected");
 
     data->pending_action = nullptr;
-    data->server_vc      = (TSVConn)edata;
+    data->server_vc      = static_cast<TSVConn>(edata);
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
     Dbg(dbg_ctl, "connect failed");
@@ -413,7 +413,7 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
         TSIOBufferBlock blk = TSIOBufferReaderStart(data->output_reader);
-        char *buf           = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+        char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, data->output_reader, &avail));
         int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
 
         memcpy(buf_ptr, buf, read_ndone);
@@ -421,7 +421,7 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
           TSIOBufferReaderConsume(data->output_reader, read_ndone);
           read_nbytes -= read_ndone;
           /* move ptr frwd by read_ndone bytes */
-          buf_ptr = (char *)buf_ptr + read_ndone;
+          buf_ptr = static_cast<char *>(buf_ptr) + read_ndone;
         }
       }
       return transform_read(contp, data);
@@ -508,7 +508,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
     TransformData *data;
     int val = 0;
 
-    data = (TransformData *)TSContDataGet(contp);
+    data = static_cast<TransformData *>(TSContDataGet(contp));
     if (data == nullptr) {
       TSError("[%s] Didn't get Continuation's Data, ignoring event", PLUGIN_NAME);
       return 0;
@@ -599,7 +599,7 @@ server_response_ok(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

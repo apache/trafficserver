@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -47,19 +47,18 @@ enum calling_func {
   READ_BLOCKLIST,
 };
 
-typedef struct contp_data {
+struct cdata {
   calling_func cf;
 
   TSHttpTxn txnp;
-
-} cdata;
+};
 
 static void
 destroy_continuation(TSHttpTxn txnp, TSCont contp)
 {
   cdata *cd = nullptr;
 
-  cd = (cdata *)TSContDataGet(contp);
+  cd = static_cast<cdata *>(TSContDataGet(contp));
   if (cd != nullptr) {
     TSfree(cd);
   }
@@ -162,7 +161,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     goto done;
   }
 
-  buf = (char *)TSmalloc(4096);
+  buf = static_cast<char *>(TSmalloc(4096));
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
   snprintf(buf, 4096, "You are forbidden from accessing \"%s\"\n", url_str);
@@ -233,12 +232,12 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     handle_txn_start(contp, txnp);
     return 0;
   case TS_EVENT_HTTP_OS_DNS:
     if (contp != global_contp) {
-      cd     = (cdata *)TSContDataGet(contp);
+      cd     = static_cast<cdata *>(TSContDataGet(contp));
       cd->cf = HANDLE_DNS;
       handle_dns(cd->txnp, contp);
       return 0;
@@ -246,14 +245,14 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
       break;
     }
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     if (contp != global_contp) {
       destroy_continuation(txnp, contp);
     }
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (contp != global_contp) {
-      cd     = (cdata *)TSContDataGet(contp);
+      cd     = static_cast<cdata *>(TSContDataGet(contp));
       cd->cf = HANDLE_RESPONSE;
       handle_response(cd->txnp, contp);
       return 0;
@@ -266,7 +265,7 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
        edata. We need to decide, in which function did the MutexLock
        failed and call that function again */
     if (contp != global_contp) {
-      cd = (cdata *)TSContDataGet(contp);
+      cd = static_cast<cdata *>(TSContDataGet(contp));
       switch (cd->cf) {
       case HANDLE_DNS:
         handle_dns(cd->txnp, contp);
@@ -294,9 +293,9 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
   TSCont txn_contp;
   cdata *cd;
 
-  txn_contp = TSContCreate((TSEventFunc)denylist_plugin, TSMutexCreate());
+  txn_contp = TSContCreate(static_cast<TSEventFunc>(denylist_plugin), TSMutexCreate());
   /* create the data that'll be associated with the continuation */
-  cd = (cdata *)TSmalloc(sizeof(cdata));
+  cd = static_cast<cdata *>(TSmalloc(sizeof(cdata)));
   TSContDataSet(txn_contp, cd);
 
   cd->txnp = txnp;

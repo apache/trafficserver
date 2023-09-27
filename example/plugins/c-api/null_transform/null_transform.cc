@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "ts/ts.h"
 
@@ -34,18 +34,18 @@ namespace
 DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
-typedef struct {
+struct MyData {
   TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
-} MyData;
+};
 
 static MyData *
 my_data_alloc()
 {
   MyData *data;
 
-  data                = (MyData *)TSmalloc(sizeof(MyData));
+  data                = static_cast<MyData *>(TSmalloc(sizeof(MyData)));
   data->output_vio    = nullptr;
   data->output_buffer = nullptr;
   data->output_reader = nullptr;
@@ -279,7 +279,7 @@ transform_add(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   Dbg(dbg_ctl, "Entering transform_plugin()");
   switch (event) {

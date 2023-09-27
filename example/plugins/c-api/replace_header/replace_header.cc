@@ -32,9 +32,9 @@
  *
  *
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -83,7 +83,7 @@ done:
 static int
 replace_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

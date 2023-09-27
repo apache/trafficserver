@@ -25,9 +25,9 @@
  *                    of response body content
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <ts/ts.h>
 
 #define PLUGIN_NAME "lifecycle"
@@ -51,7 +51,7 @@ CallbackHandler(TSCont, TSEvent id, void *data)
     Dbg(dbg_ctl, "Cache ready");
     break;
   case TS_EVENT_LIFECYCLE_MSG: {
-    TSPluginMsg *msg = (TSPluginMsg *)data;
+    TSPluginMsg *msg = static_cast<TSPluginMsg *>(data);
     Dbg(dbg_ctl, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (msg->data_size == 0) {
       Dbg(dbg_ctl, "Message data is not available");
