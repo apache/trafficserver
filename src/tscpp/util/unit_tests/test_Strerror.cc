@@ -23,8 +23,8 @@
 
 #include <catch.hpp>
 
-#include <string.h>
-#include <errno.h>
+#include <cstring>
+#include <cerrno>
 #include <tscpp/util/Strerror.h>
 
 TEST_CASE("Strerror", "[STE]")

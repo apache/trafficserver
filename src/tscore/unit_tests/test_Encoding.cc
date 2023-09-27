@@ -52,7 +52,7 @@ TEST_CASE("Encoding pure escapify url", "[pure_esc_url]")
 
   int n = sizeof(input) / sizeof(input[0]);
   for (int i = 0; i < n; ++i) {
-    Encoding::pure_escapify_url(NULL, input[i], std::strlen(input[i]), &output_len, output, 128);
+    Encoding::pure_escapify_url(nullptr, input[i], std::strlen(input[i]), &output_len, output, 128);
     CHECK(std::string_view(output) == expected[i]);
   }
 }
@@ -76,7 +76,7 @@ TEST_CASE("Encoding escapify url", "[esc_url]")
 
   int n = sizeof(input) / sizeof(input[0]);
   for (int i = 0; i < n; ++i) {
-    Encoding::escapify_url(NULL, input[i], std::strlen(input[i]), &output_len, output, 128);
+    Encoding::escapify_url(nullptr, input[i], std::strlen(input[i]), &output_len, output, 128);
     CHECK(std::string_view(output) == expected[i]);
   }
 }

@@ -37,8 +37,12 @@ TEST_CASE("AtomicBit Atomic test")
   // test the atomicity and isolation of operations
   uint32_t bit_storage = 0;
 
-  auto job_set   = [&bit_storage](int idx) { AtomicBit{(uint8_t *)&bit_storage + (idx / 8), (uint8_t)(1 << (idx % 8))} = 1; };
-  auto job_clear = [&bit_storage](int idx) { AtomicBit{(uint8_t *)&bit_storage + (idx / 8), (uint8_t)(1 << (idx % 8))} = 0; };
+  auto job_set = [&bit_storage](int idx) {
+    AtomicBit{reinterpret_cast<uint8_t *>(&bit_storage) + (idx / 8), static_cast<uint8_t>(1 << (idx % 8))} = true;
+  };
+  auto job_clear = [&bit_storage](int idx) {
+    AtomicBit{reinterpret_cast<uint8_t *>(&bit_storage) + (idx / 8), static_cast<uint8_t>(1 << (idx % 8))} = false;
+  };
 
   std::thread jobs[32];
 
@@ -46,8 +50,8 @@ TEST_CASE("AtomicBit Atomic test")
   for (int i = 0; i < 32; i++) {
     jobs[i] = std::thread(job_set, i);
   }
-  for (int i = 0; i < 32; i++) {
-    jobs[i].join();
+  for (auto &job : jobs) {
+    job.join();
   }
   REQUIRE(bit_storage == 0xffffffff);
 
@@ -55,8 +59,8 @@ TEST_CASE("AtomicBit Atomic test")
   for (int i = 0; i < 32; i++) {
     jobs[i] = std::thread(job_clear, i);
   }
-  for (int i = 0; i < 32; i++) {
-    jobs[i].join();
+  for (auto &job : jobs) {
+    job.join();
   }
   REQUIRE(bit_storage == 0);
 }
@@ -161,7 +165,7 @@ TEST_CASE("Extendible Memory Allocations", "")
   //    0   1   2   3   4   5   6
   //[ EA*,  a,  b,EC*,  c, EA, EC]
   //
-  uint16_t *mem = (uint16_t *)&x;
+  uint16_t *mem = reinterpret_cast<uint16_t *>(&x);
   CHECK(memDelta(&x, &x.a) == w * 1);
   CHECK(memDelta(&x, &x.b) == w * 2);
   CHECK(memDelta(&x, &x.c) == w * 4);
@@ -260,7 +264,7 @@ DerivedExtalloc()
 void
 DerivedExtFree(void *ptr)
 {
-  delete (Derived *)ptr;
+  delete static_cast<Derived *>(ptr);
 }
 
 ExtFieldContext
@@ -387,7 +391,7 @@ TEST_CASE("Extendible", "")
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
 
     AtomicBit bitref = ext::set(ref, bit_a);
-    bitref           = 1;
+    bitref           = true;
     CHECK(bitref == true);
     bitref = true;
     CHECK(bitref == true);
@@ -426,9 +430,9 @@ TEST_CASE("Extendible", "")
     REQUIRE_THAT(ext::toString(ref), Contains("bit_b: 0"));
     REQUIRE_THAT(ext::toString(ref), Contains("bit_c: 0"));
 
-    ext::set(ref, bit_a) = 1;
-    ext::set(ref, bit_b) = 0;
-    ext::set(ref, bit_c) = 1;
+    ext::set(ref, bit_a) = true;
+    ext::set(ref, bit_b) = false;
+    ext::set(ref, bit_c) = true;
     CHECK(ext::get(ref, bit_a) == true);
     CHECK(ext::get(ref, bit_b) == false);
     CHECK(ext::get(ref, bit_c) == true);
@@ -497,14 +501,14 @@ TEST_CASE("Extendible C API")
     REQUIRE(d != nullptr);
 
     ExtFieldContext cf_a = DerivedExtfieldFind("cf_a");
-    uint8_t *data8       = (uint8_t *)ExtFieldPtr(d, cf_a);
+    uint8_t *data8       = static_cast<uint8_t *>(ExtFieldPtr(d, cf_a));
 
     CHECK(data8[0] == 0);
     ink_atomic_increment(&data8[0], 1);
     data8[1] = 5;
     data8[2] = 7;
 
-    uint32_t *data32 = (uint32_t *)ExtFieldPtr(d, cf_a);
+    uint32_t *data32 = static_cast<uint32_t *>(ExtFieldPtr(d, cf_a));
     CHECK(*data32 == 0x00070501);
     DerivedExtFree(d);
   }

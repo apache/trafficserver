@@ -47,7 +47,7 @@ JeMiNodumpAllocator::alloc(extent_hooks_t *extent, void *new_addr, size_t size, 
   if (result != nullptr) {
     // Seems like we don't really care if the advice went through
     // in the original code, so just keeping it the same here.
-    ats_madvise((caddr_t)result, size, MADV_DONTDUMP);
+    ats_madvise(static_cast<caddr_t>(result), size, MADV_DONTDUMP);
   }
 
   return result;

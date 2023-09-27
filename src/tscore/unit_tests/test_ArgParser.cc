@@ -52,7 +52,7 @@ TEST_CASE("Parsing test", "[parse]")
   ts::Arguments parsed_data;
 
   // first run of arguments
-  const char *argv1[] = {"traffic_blabla", "init", "a", "--initoption", "--globalx", "x", "y", NULL};
+  const char *argv1[] = {"traffic_blabla", "init", "a", "--initoption", "--globalx", "x", "y", nullptr};
   parsed_data         = parser.parse(argv1);
 
   REQUIRE(parsed_data.get("init") == true);
@@ -74,7 +74,7 @@ TEST_CASE("Parsing test", "[parse]")
 
   // second run of arguments
   const char *argv2[] = {"traffic_blabla",    "init",         "i",  "subinit", "a",  "b",
-                         "--initoption2=abc", "--subinitopt", "-y", "y1",      "y2", NULL};
+                         "--initoption2=abc", "--subinitopt", "-y", "y1",      "y2", nullptr};
 
   parsed_data = parser.parse(argv2);
   REQUIRE(parsed_data.get("init") == true);
@@ -90,7 +90,7 @@ TEST_CASE("Parsing test", "[parse]")
 
   // third run of arguments
   const char *argv3[] = {"traffic_blabla", "-x",           "abc",          "xyz",          "remove", "subremove",
-                         "subsubremove",   "--globalz=z1", "--globalz=z2", "--globalz=z3", NULL};
+                         "subsubremove",   "--globalz=z1", "--globalz=z2", "--globalz=z3", nullptr};
 
   parsed_data = parser.parse(argv3);
   REQUIRE(parsed_data.has_action() == false);
@@ -131,7 +131,7 @@ TEST_CASE("Invoke test", "[invoke]")
 
   ts::Arguments parsed_data;
 
-  const char *argv1[] = {"traffic_blabla", "func", NULL};
+  const char *argv1[] = {"traffic_blabla", "func", nullptr};
 
   parsed_data = parser2.parse(argv1);
   REQUIRE(parsed_data.has_action() == true);
@@ -139,7 +139,7 @@ TEST_CASE("Invoke test", "[invoke]")
   REQUIRE(global == 0);
   REQUIRE(parser2.get_error() == "error");
 
-  const char *argv2[] = {"traffic_blabla", "func2", NULL};
+  const char *argv2[] = {"traffic_blabla", "func2", nullptr};
 
   parsed_data = parser2.parse(argv2);
   parsed_data.invoke();
