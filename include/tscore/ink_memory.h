@@ -122,7 +122,7 @@ static inline size_t __attribute__((const)) ats_pagesize()
 #elif defined(HAVE_GETPAGESIZE)
   page_size = (size_t)getpagesize();
 #else
-  page_size = (size_t)8192;
+  page_size = static_cast<size_t>(8192);
 #endif
 
   return page_size;
