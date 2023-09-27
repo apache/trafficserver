@@ -131,7 +131,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
       { // lock guard
         std::lock_guard<std::mutex> lock(h->_mutex);
-        if ((h->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+        if ((h->failedAt.load() + retry_time) < _now) {
           new_fail_count = h->failCount = 1;
           h->failedAt                   = _now;
         } else {
