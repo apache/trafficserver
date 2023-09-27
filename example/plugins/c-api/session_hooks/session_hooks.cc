@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
 
@@ -65,13 +65,13 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
 
-    ssnp = (TSHttpSsn)edata;
+    ssnp = static_cast<TSHttpSsn>(edata);
     handle_session(ssnp, contp);
     TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
 
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     txn_handler(txnp, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;

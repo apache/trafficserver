@@ -36,9 +36,9 @@
  *
  */
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
+#include <climits>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -47,12 +47,12 @@
 
 #define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 
-typedef struct {
+struct MyData {
   TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
   int append_needed;
-} MyData;
+};
 
 static TSIOBuffer append_buffer;
 static TSIOBufferReader append_buffer_reader;
@@ -63,7 +63,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *)TSmalloc(sizeof(MyData));
+  data = static_cast<MyData *>(TSmalloc(sizeof(MyData)));
   TSReleaseAssert(data);
 
   data->output_vio    = nullptr;
@@ -291,7 +291,7 @@ transform_add(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

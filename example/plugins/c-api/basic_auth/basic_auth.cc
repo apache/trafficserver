@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <unistd.h>
 
@@ -46,7 +46,7 @@ base64_decode(const char *input)
     ;
   }
 
-  output = obuf = (char *)TSmalloc((len * 6) / 8 + 3);
+  output = obuf = static_cast<char *>(TSmalloc((len * 6) / 8 + 3));
 
   while (len > 0) {
     *output++  = decode(0) << 2 | decode(1) >> 4;
@@ -193,7 +193,7 @@ done:
 static int
 auth_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -236,8 +236,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   for (i = '0'; i <= '9'; i++) {
     base64_codes[i] = cc++;
   }
-  base64_codes[unsigned('+')] = cc++;
-  base64_codes[unsigned('/')] = cc++;
+  base64_codes[static_cast<unsigned>('+')] = cc++;
+  base64_codes[static_cast<unsigned>('/')] = cc++;
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(auth_plugin, nullptr));
 }

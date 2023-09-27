@@ -30,8 +30,8 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <ts/ts.h>
 
 #define PLUGIN_NAME "denylist_0"
@@ -132,7 +132,7 @@ done:
 static int
 denylist_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -162,7 +162,7 @@ TSPluginInit(int argc, const char *argv[])
 
   nsites = argc - 1;
   if (nsites > 0) {
-    sites = (char **)TSmalloc(sizeof(char *) * nsites);
+    sites = static_cast<char **>(TSmalloc(sizeof(char *) * nsites));
 
     for (int i = 0; i < nsites; i++) {
       sites[i] = TSstrdup(argv[i + 1]);

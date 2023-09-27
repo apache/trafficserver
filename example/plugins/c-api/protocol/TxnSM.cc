@@ -72,7 +72,7 @@ TSCacheKey CacheKeyCreate(char *file_name);
 int
 main_handler(TSCont contp, TSEvent event, void *data)
 {
-  TxnSM *txn_sm                  = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm                  = static_cast<TxnSM *>(TSContDataGet(contp));
   TxnSMHandler q_current_handler = txn_sm->q_current_handler;
 
   Dbg(dbg_ctl, "main_handler (contp %p event %d)", contp, event);
@@ -82,7 +82,7 @@ main_handler(TSCont contp, TSEvent event, void *data)
     return prepare_to_die(contp);
   }
 
-  if (q_current_handler != (TxnSMHandler)&state_interface_with_server) {
+  if (q_current_handler != reinterpret_cast<TxnSMHandler>(&state_interface_with_server)) {
     if (event == TS_EVENT_VCONN_EOS) {
       return prepare_to_die(contp);
     }
@@ -100,7 +100,7 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
   TSCont contp;
   TxnSM *txn_sm;
 
-  txn_sm = (TxnSM *)TSmalloc(sizeof(TxnSM));
+  txn_sm = static_cast<TxnSM *>(TSmalloc(sizeof(TxnSM)));
 
   txn_sm->q_mutex          = pmutex;
   txn_sm->q_pending_action = nullptr;
@@ -126,7 +126,7 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
   txn_sm->q_server_request_buffer_reader = nullptr;
 
   /* Char buffers to store client request and server response. */
-  txn_sm->q_client_request = (char *)TSmalloc(sizeof(char) * (MAX_REQUEST_LENGTH + 1));
+  txn_sm->q_client_request = static_cast<char *>(TSmalloc(sizeof(char) * (MAX_REQUEST_LENGTH + 1)));
   memset(txn_sm->q_client_request, '\0', (sizeof(char) * (MAX_REQUEST_LENGTH + 1)));
   txn_sm->q_server_response          = nullptr;
   txn_sm->q_server_response_length   = 0;
@@ -136,8 +136,8 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
   txn_sm->q_cache_read_buffer        = nullptr;
   txn_sm->q_cache_read_buffer_reader = nullptr;
 
-  txn_sm->q_server_name = (char *)TSmalloc(sizeof(char) * (MAX_SERVER_NAME_LENGTH + 1));
-  txn_sm->q_file_name   = (char *)TSmalloc(sizeof(char) * (MAX_FILE_NAME_LENGTH + 1));
+  txn_sm->q_server_name = static_cast<char *>(TSmalloc(sizeof(char) * (MAX_SERVER_NAME_LENGTH + 1)));
+  txn_sm->q_file_name   = static_cast<char *>(TSmalloc(sizeof(char) * (MAX_FILE_NAME_LENGTH + 1)));
 
   txn_sm->q_key   = nullptr;
   txn_sm->q_magic = TXN_SM_ALIVE;
@@ -154,7 +154,7 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
 int
 state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   if (!txn_sm->q_client_vc) {
     return prepare_to_die(contp);
@@ -190,7 +190,7 @@ state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
 int
 state_interface_with_client(TSCont contp, TSEvent event, TSVIO vio)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_interface_with_client");
 
@@ -211,7 +211,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 {
   int bytes_read;
 
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_read_request_from_client");
 
@@ -226,7 +226,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 
       /* Check if the request is fully read, if so, do cache lookup. */
       if (strstr(txn_sm->q_client_request, "\r\n\r\n") != nullptr) {
-        temp_buf = (char *)TSmalloc(sizeof(char) * (strlen(txn_sm->q_client_request) + 1));
+        temp_buf = static_cast<char *>(TSmalloc(sizeof(char) * (strlen(txn_sm->q_client_request) + 1)));
         memcpy(temp_buf, txn_sm->q_client_request, strlen(txn_sm->q_client_request));
         temp_buf[strlen(txn_sm->q_client_request)] = '\0';
 
@@ -264,7 +264,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 int
 state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
   int64_t response_size;
   int ret_val;
 
@@ -361,7 +361,7 @@ load_buffer_cache_data(TxnSM *txn_sm)
 int
 state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_handle_cache_read_response");
 
@@ -411,7 +411,7 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUS
 int
 state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_handle_cache_prepare_for_write");
 
@@ -435,7 +435,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
 int
 state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_build_and_send_request");
 
@@ -476,7 +476,7 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
 int
 state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_dns_lookup");
 
@@ -509,7 +509,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
 int
 state_connect_to_server(TSCont contp, TSEvent event, TSVConn vc)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_connect_to_server");
 
@@ -535,7 +535,7 @@ state_connect_to_server(TSCont contp, TSEvent event, TSVConn vc)
 int
 state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_send_request_to_server");
 
@@ -560,7 +560,7 @@ state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_interface_with_server");
 
@@ -641,7 +641,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
-  TxnSM *txn_sm  = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm  = static_cast<TxnSM *>(TSContDataGet(contp));
   int bytes_read = 0;
 
   Dbg(dbg_ctl, "enter state_read_response_from_server");
@@ -677,7 +677,7 @@ state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vi
 int
 state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_write_to_cache");
 
@@ -735,7 +735,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_send_response_to_client");
 
@@ -774,7 +774,7 @@ state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
 int
 prepare_to_die(TSCont contp)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter prepare_to_die");
   if (txn_sm->q_client_vc) {
@@ -804,7 +804,7 @@ prepare_to_die(TSCont contp)
 int
 state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
 
   Dbg(dbg_ctl, "enter state_done");
 
@@ -900,7 +900,7 @@ send_response_to_client(TSCont contp)
 
   Dbg(dbg_ctl, "enter send_response_to_client");
 
-  txn_sm       = (TxnSM *)TSContDataGet(contp);
+  txn_sm       = static_cast<TxnSM *>(TSContDataGet(contp));
   response_len = TSIOBufferReaderAvail(txn_sm->q_client_response_buffer_reader);
 
   Dbg(dbg_ctl, " . resp_len is %d", response_len);
@@ -925,7 +925,7 @@ get_info_from_buffer(TSIOBufferReader the_reader)
 
   read_avail = TSIOBufferReaderAvail(the_reader);
 
-  info = (char *)TSmalloc(sizeof(char) * read_avail);
+  info = static_cast<char *>(TSmalloc(sizeof(char) * read_avail));
   if (info == nullptr) {
     return nullptr;
   }
@@ -934,7 +934,7 @@ get_info_from_buffer(TSIOBufferReader the_reader)
   /* Read the data out of the reader */
   while (read_avail > 0) {
     TSIOBufferBlock blk = TSIOBufferReaderStart(the_reader);
-    char *buf           = (char *)TSIOBufferBlockReadStart(blk, the_reader, &read_done);
+    char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, the_reader, &read_done));
     memcpy(info, buf, read_done);
     if (read_done > 0) {
       TSIOBufferReaderConsume(the_reader, read_done);

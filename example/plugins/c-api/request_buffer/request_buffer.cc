@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_assert.h"
@@ -49,7 +49,7 @@ request_body_get(TSHttpTxn txnp, int *len)
     return nullptr;
   }
 
-  ret = (char *)TSmalloc(sizeof(char) * read_avail);
+  ret = static_cast<char *>(TSmalloc(sizeof(char) * read_avail));
 
   int64_t consumed      = 0;
   int64_t data_len      = 0;
@@ -63,7 +63,7 @@ request_body_get(TSHttpTxn txnp, int *len)
   }
   TSIOBufferReaderFree(post_buffer_reader);
 
-  *len = (int)consumed;
+  *len = static_cast<int>(consumed);
   return ret;
 }
 
@@ -71,7 +71,7 @@ static int
 request_buffer_plugin(TSCont contp, TSEvent event, void *edata)
 {
   Dbg(dbg_ctl, "request_buffer_plugin starting, event[%d]", event);
-  TSHttpTxn txnp = (TSHttpTxn)(edata);
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE) {
     int len    = 0;
     char *body = request_body_get(txnp, &len);
@@ -96,7 +96,7 @@ is_post_request(TSHttpTxn txnp)
   }
   int method_len     = 0;
   const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
-  if (method_len != (int)strlen(TS_HTTP_METHOD_POST) || strncasecmp(method, TS_HTTP_METHOD_POST, method_len) != 0) {
+  if (method_len != static_cast<int>(strlen(TS_HTTP_METHOD_POST)) || strncasecmp(method, TS_HTTP_METHOD_POST, method_len) != 0) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
     return false;
   }
@@ -108,7 +108,7 @@ static int
 global_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   Dbg(dbg_ctl, "transform_plugin starting");
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

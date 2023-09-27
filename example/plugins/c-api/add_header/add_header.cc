@@ -32,9 +32,9 @@
  *          ith MIME header to be added to the client request
  */
 
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -108,7 +108,7 @@ done:
 static int
 add_header_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -138,7 +138,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (argc < 2) {
-    TSError("[%s] Usage: %s \"name1: value1\" \"name2: value2\" ...>", PLUGIN_NAME, argv[0]);
+    TSError(R"([%s] Usage: %s "name1: value1" "name2: value2" ...>)", PLUGIN_NAME, argv[0]);
     goto error;
   }
 

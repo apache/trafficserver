@@ -23,8 +23,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -34,7 +34,7 @@
 static void *
 reenable_txn(void *data)
 {
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return nullptr;
 }

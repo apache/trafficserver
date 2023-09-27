@@ -32,8 +32,8 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <unistd.h>
 #include <netinet/in.h>
@@ -216,7 +216,7 @@ done:
 static int
 redirect_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -241,7 +241,7 @@ redirect_plugin(TSCont contp, TSEvent event, void *edata)
  */
 
 void
-init_stats(void)
+init_stats()
 {
   /* noncoupled: */
   redirect_count_connect =

@@ -33,7 +33,7 @@
  *
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <ts/ts.h>
 
 #define PLUGIN_NAME "file_1"

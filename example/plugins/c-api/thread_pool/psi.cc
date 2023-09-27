@@ -31,10 +31,10 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cstring>
 #include <sys/param.h>
 
 #include "ts/ts.h"
@@ -58,18 +58,18 @@
 
 #define MIME_FIELD_XPSI "X-Psi"
 
-typedef enum {
+enum PluginState {
   STATE_READ_DATA = 1,
   STATE_READ_PSI  = 2,
   STATE_DUMP_PSI  = 3,
-} PluginState;
+};
 
-typedef enum {
+enum ParseState {
   PARSE_SEARCH,
   PARSE_EXTRACT,
-} ParseState;
+};
 
-typedef struct {
+struct ContData {
   unsigned int magic;
   TSVIO output_vio;
   TSIOBuffer output_buffer;
@@ -85,18 +85,18 @@ typedef struct {
 
   PluginState state;
   int transform_bytes;
-} ContData;
+};
 
-typedef struct {
+struct TryLockData {
   TSCont contp;
   TSEvent event;
-} TryLockData;
+};
 
-typedef enum {
+enum StrOperationResult {
   STR_SUCCESS,
   STR_PARTIAL,
   STR_FAIL,
-} StrOperationResult;
+};
 
 extern Queue job_queue;
 
@@ -124,7 +124,7 @@ cont_data_alloc()
 {
   ContData *data;
 
-  data                = (ContData *)TSmalloc(sizeof(ContData));
+  data                = static_cast<ContData *>(TSmalloc(sizeof(ContData)));
   data->magic         = MAGIC_ALIVE;
   data->output_vio    = nullptr;
   data->output_buffer = nullptr;
@@ -931,7 +931,7 @@ transform_add(TSHttpTxn txnp)
 static int
 read_response_handler(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -988,7 +988,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   init_queue(&job_queue);
 
   for (i = 0; i < NB_THREADS; i++) {
-    char *thread_name = (char *)TSmalloc(64);
+    char *thread_name = static_cast<char *>(TSmalloc(64));
     snprintf(thread_name, 64, "Thread[%d]", i);
     if (!TSThreadCreate(thread_loop, thread_name)) {
       TSError("[%s] Failed creating threads", PLUGIN_NAME);
