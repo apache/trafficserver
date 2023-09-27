@@ -132,24 +132,23 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     }
 
     NH_Debug(NH_DEBUG_TAG,
-             "[%" PRIu64 "] Selected a parent, %s,  failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64
+             "[%" PRIu64 "] Selected a parent, %s,  failCount (failedAt: %" PRIdMAX " failCount: %d), FailThreshold: %" PRIu64
              ", request_info->xact_start: %ld",
-             sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount.load(), fail_threshold,
+             sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold,
              request_info.xact_start);
     // check if 'cur_host' is available, mark it up if it is.
     if ((cur_host->failedAt == 0) || (cur_host->failCount.load() < fail_threshold)) {
       if (cur_host->available.load() && host_stat == TS_HOST_STATUS_UP) {
         NH_Debug(NH_DEBUG_TAG,
-                 "[%" PRIu64
-                 "] Selecting a parent, %s,  due to little failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64,
-                 sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
+                 "[%" PRIu64 "] Selecting a parent, %s,  due to little failCount (failedAt: %" PRIdMAX
+                 " failCount: %d), FailThreshold: %" PRIu64,
+                 sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
         parentUp = true;
       }
     } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
-      if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
-          host_stat == TS_HOST_STATUS_UP) {
+      if (((result->wrap_around) || (cur_host->failedAt + retry_time) < _now) && host_stat == TS_HOST_STATUS_UP) {
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
