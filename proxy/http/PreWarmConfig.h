@@ -31,10 +31,9 @@ struct PreWarmConfigParams : public ConfigInfo {
   PreWarmConfigParams &operator=(const HttpConfigParams &) = delete;
 
   // Config Params
-  int8_t enabled         = 0;
-  int8_t algorithm       = 0;
-  int64_t event_period   = 0;
-  int64_t max_stats_size = 0;
+  int8_t enabled       = 0;
+  int8_t algorithm     = 0;
+  int64_t event_period = 0;
 };
 
 class PreWarmConfig

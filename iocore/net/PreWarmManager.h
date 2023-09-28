@@ -32,8 +32,8 @@
 #include "NetTimeout.h"
 #include "Milestones.h"
 
+#include "api/Metrics.h"
 #include "records/I_RecHttp.h"
-#include "records/DynamicStats.h"
 
 #include <map>
 #include <unordered_map>
@@ -136,7 +136,7 @@ enum class Stat {
   LAST_ENTRY,
 };
 
-using StatsIds          = std::array<int, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
+using StatsIds          = std::array<ts::Metrics::IntType *, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
 using SPtrConstStatsIds = std::shared_ptr<const StatsIds>;
 using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, DstHash, DstKeyEqual>;
 
@@ -247,7 +247,7 @@ class PreWarmQueue : public Continuation
 {
 public:
   PreWarmQueue();
-  ~PreWarmQueue();
+  ~PreWarmQueue() override;
 
   // States
   int state_init(int event, void *data);
@@ -322,11 +322,6 @@ public:
   // References
   const PreWarm::ParsedSNIConf &get_parsed_conf() const;
   const PreWarm::StatsIdMap &get_stats_id_map() const;
-
-  ////
-  // Variables
-  //
-  DynamicStats stats;
 
 private:
   void _parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNIConfigParams *sni_conf) const;

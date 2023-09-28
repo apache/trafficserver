@@ -4227,10 +4227,6 @@ SNI Routing
 
    Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
 
-.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.max_stats_size INT 100
-
-   Max size of :ref:`dynamic stats for Pre-warming TLS Tunnel <pre-warming-tls-tunnel-stats>`.
-
 .. ts:cv:: CONFIG proxy.config.tunnel.prewarm.algorithm INT 2
 
    Version of pre-warming algorithm.

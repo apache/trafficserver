@@ -950,8 +950,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.tunnel.prewarm.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.tunnel.prewarm.max_stats_size", RECD_INT, "100", RECU_RESTART_TS, RR_NULL, RECC_INT, "[5-65536]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.tunnel.prewarm.event_period", RECD_INT, "1000", RECU_DYNAMIC, RR_NULL, RECC_INT, "[10-3600000]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.tunnel.prewarm.algorithm", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_INT, "[1-2]", RECA_NULL}
