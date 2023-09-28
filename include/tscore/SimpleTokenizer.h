@@ -246,14 +246,16 @@ private:
         // CONSIDER_NULL_FIELDS flag is not set
         //
         if (!(_mode & CONSIDER_NULL_FIELDS)) {
-          while (_data[--end] == delimiter)
-            ;
+          while (_data[--end] == delimiter) {
+            // do nothing
+          }
           ++end;
         }
 
         if (!(_mode & KEEP_WHITESPACE_RIGHT)) {
-          while (isspace(_data[--end]))
-            ;
+          while (isspace(_data[--end])) {
+            // do nothing
+          }
           ++end;
         }
 

@@ -806,12 +806,13 @@ ats_ip_addr_cmp(sockaddr const *lhs, ///< Left hand operand.
     if (AF_INET == rtype) {
       in_addr_t la = ntohl(ats_ip4_cast(lhs)->sin_addr.s_addr);
       in_addr_t ra = ntohl(ats_ip4_cast(rhs)->sin_addr.s_addr);
-      if (la < ra)
+      if (la < ra) {
         zret = -1;
-      else if (la > ra)
+      } else if (la > ra) {
         zret = 1;
-      else
+      } else {
         zret = 0;
+      }
     } else if (AF_INET6 == rtype) { // IPv4 < IPv6
       zret = -1;
     } else { // IP > not IP
@@ -877,10 +878,11 @@ ats_ip_addr_port_eq(sockaddr const *lhs, sockaddr const *rhs)
 {
   bool zret = false;
   if (lhs->sa_family == rhs->sa_family && ats_ip_port_cast(lhs) == ats_ip_port_cast(rhs)) {
-    if (AF_INET == lhs->sa_family)
+    if (AF_INET == lhs->sa_family) {
       zret = ats_ip4_cast(lhs)->sin_addr.s_addr == ats_ip4_cast(rhs)->sin_addr.s_addr;
-    else if (AF_INET6 == lhs->sa_family)
+    } else if (AF_INET6 == lhs->sa_family) {
       zret = 0 == memcmp(&ats_ip6_cast(lhs)->sin6_addr, &ats_ip6_cast(rhs)->sin6_addr, sizeof(in6_addr));
+    }
   }
   return zret;
 }

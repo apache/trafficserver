@@ -80,5 +80,5 @@ private:
 inline int
 ink_rand_r(uint32_t *p)
 {
-  return (((*p) = (*p) * 1103515245 + 12345) % ((uint32_t)0x7fffffff + 1));
+  return (((*p) = (*p) * 1103515245 + 12345) % (static_cast<uint32_t>(0x7fffffff) + 1));
 }

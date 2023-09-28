@@ -528,9 +528,10 @@ template <typename T>
 void
 IntrusivePtr<T>::set(T *obj)
 {
-  m_obj = obj;          /* update to new object */
-  if (nullptr != m_obj) /* if a real object, bump the ref count */
+  m_obj = obj;            /* update to new object */
+  if (nullptr != m_obj) { /* if a real object, bump the ref count */
     ++(m_obj->m_intrusive_pointer_reference_count);
+  }
 }
 
 template <typename T>
@@ -552,8 +553,9 @@ IntrusivePtr<T>::release()
     auto &cp = m_obj->m_intrusive_pointer_reference_count;
     // If the client is using this method, they're doing something funky
     // so be extra careful with the reference count.
-    if (cp > 0)
+    if (cp > 0) {
       --cp;
+    }
     m_obj = nullptr;
   }
   return zret;

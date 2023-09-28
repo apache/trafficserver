@@ -122,8 +122,9 @@ const char *parseConfigLine(char *line, matcher_line *p_line, const matcher_tags
 static inline void
 LowerCaseStr(char *str)
 {
-  if (!str)
+  if (!str) {
     return;
+  }
   while (*str != '\0') {
     *str = ParseRules::ink_tolower(*str);
     str++;

@@ -28,7 +28,7 @@
 
 #pragma once
 
-typedef void (*signal_handler_t)(int signo, siginfo_t *info, void *ctx);
+using signal_handler_t = void (*)(int, siginfo_t *, void *);
 
 // Default crash signal handler that dumps a stack trace and exits.
 void signal_crash_handler(int, siginfo_t *, void *);

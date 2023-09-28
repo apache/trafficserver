@@ -74,7 +74,7 @@ struct Str {
   void
   dump(FILE *fp = stderr)
   {
-    fprintf(fp, "Str [\"%.*s\", len %d]\n", (int)len, str, (int)len);
+    fprintf(fp, "Str [\"%.*s\", len %d]\n", static_cast<int>(len), str, static_cast<int>(len));
   }
 };
 

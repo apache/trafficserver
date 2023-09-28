@@ -329,10 +329,10 @@ ink_code_incr_MMH_final(uint8_t *presult, MMH_CTX *ctx)
   // final phase
   uint32_t *b = reinterpret_cast<uint32_t *>(presult);
   uint64_t d  = ((static_cast<uint64_t>(1)) << 32) + 15;
-  uint32_t b0 = uint32_t(ctx->state[0] % d);
-  uint32_t b1 = uint32_t(ctx->state[1] % d);
-  uint32_t b2 = uint32_t(ctx->state[2] % d);
-  uint32_t b3 = uint32_t(ctx->state[3] % d);
+  uint32_t b0 = static_cast<uint32_t>(ctx->state[0] % d);
+  uint32_t b1 = static_cast<uint32_t>(ctx->state[1] % d);
+  uint32_t b2 = static_cast<uint32_t>(ctx->state[2] % d);
+  uint32_t b3 = static_cast<uint32_t>(ctx->state[3] % d);
   // scramble the bits, losslessly (reversibly)
   b[0] = b0;
   b[1] = b1 ^ (b0 >> 24) ^ (b0 << 8);

@@ -147,7 +147,7 @@ struct ifafilt;
 #endif
 
 #if defined(__linux__)
-typedef unsigned int in_addr_t;
+using in_addr_t = unsigned int;
 #endif
 
 #ifdef HAVE_SYS_SYSINFO_H

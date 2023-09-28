@@ -88,8 +88,8 @@ union head_p {
   typedef int64_t version_type;
   typedef __int128_t data_type;
 #else
-  typedef int64_t version_type;
-  typedef int64_t data_type;
+  using version_type = int64_t;
+  using data_type    = int64_t;
 #endif
 
   struct {
@@ -192,8 +192,8 @@ struct _InkFreeList {
   int advice;
 };
 
-typedef struct ink_freelist_ops InkFreeListOps;
-typedef struct _InkFreeList InkFreeList;
+using InkFreeListOps = struct ink_freelist_ops;
+using InkFreeList    = struct _InkFreeList;
 
 const InkFreeListOps *ink_freelist_malloc_ops();
 const InkFreeListOps *ink_freelist_freelist_ops();

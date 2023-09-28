@@ -327,7 +327,7 @@ public:
     ink_mutex_acquire(&trackerLock);
     std::map<void *, const void *>::iterator it = reverse_lookup.find(ptr);
     if (it != reverse_lookup.end()) {
-      tracker.increment((const void *)it->second, (int64_t)sizeof(C) * -1, nullptr);
+      tracker.increment(static_cast<const void *>(it->second), (int64_t)sizeof(C) * -1, nullptr);
       reverse_lookup.erase(it);
     }
     ink_mutex_release(&trackerLock);
