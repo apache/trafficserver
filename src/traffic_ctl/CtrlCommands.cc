@@ -56,7 +56,7 @@ parse_format(ts::Arguments *args)
   BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::NOT_SET};
 
   if (auto data = args->get("format"); data) {
-    StringToOutputFormatMap::const_iterator search = _Fmt_str_to_enum.find({data.value()});
+    StringToOutputFormatMap::const_iterator search = _Fmt_str_to_enum.find(data.value());
     if (search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
     }
