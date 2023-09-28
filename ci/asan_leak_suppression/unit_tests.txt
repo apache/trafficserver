@@ -6,3 +6,5 @@ leak:CRYPTO_realloc
 leak:ConsCell
 # PR#10295
 leak:pcre_jit_stack_alloc
+# PR#10541
+leak:test_http_hdr_print_and_copy_aux
