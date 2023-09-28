@@ -151,6 +151,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :hidden:
 
    Access Control <access_control.en>
+   Block Errors <block_errors.en>
    Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
@@ -186,6 +187,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.
+
+:doc:`Block Errors <block_errors.en>`
+   Blocks or downgrades new connections when the server receives too many errors from an IP address.
 
 :doc:`Certifier <certifier.en>`
    Manages and/or generates certificates for incoming HTTPS requests.
