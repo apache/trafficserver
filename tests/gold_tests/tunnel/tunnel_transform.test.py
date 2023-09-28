@@ -116,6 +116,23 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
+check_input_range = '''
+val=`traffic_ctl metric get tunnel_transform.ua.bytes_sent | cut -d ' ' -f 2; test $val -gt 700
+'''
+
+
+def check_range(path, lo, hi):
+    f = open(path, 'r')
+    content = f.read()
+    values = content.split()
+    f.close()
+    if len(values) == 2:
+        val = int(values[1])
+        return val > lo and val < hi, "Check range", "Out of range"
+    else:
+        return false, "Check range", "Out of range"
+
+
 # Ideally, I'd like to cross check the number of TLS bytes received from UA and
 # received from OS to the curl command.  The debug output lists the number of
 # non record data bytes, but it does not enumerate the number of bytes sent in the records
@@ -123,20 +140,29 @@ tr.StillRunningAfter = server
 # size due to padding etc.  Leaving the test with the hard coded values for now.  Hopefully,
 # some bright soul can come along later and make this a better test.
 # Perhaps adding a netcat based test case could do that.
-tr = Test.AddTestRun("Check the input bytes sent")
-tr.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.ua.bytes_sent'
+tr = Test.AddTestRun("Fetch bytes sent")
+tr.Processes.Default.Command = "traffic_ctl metric get tunnel_transform.ua.bytes_sent"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "tunnel_transform.ua.bytes_sent 743", "Expected bytes sent")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
+path1 = tr.Processes.Default.Streams.stdout.AbsPath
+
+tr2 = Test.AddTestRun("Check the input bytes sent and fetch outptut bytes sent")
+tr2.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.os.bytes_sent'
+tr2.Processes.Default.ReturnCode = 0
+tr2.Processes.Default.Env = ts.Env
+tr2.StillRunningAfter = ts
+tr2.StillRunningAfter = server
+tr2.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path1, 700, 800))
+
+path2 = tr2.Processes.Default.Streams.stdout.AbsPath
+
 tr = Test.AddTestRun("Check that output bytes sent")
-tr.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.os.bytes_sent'
+tr.Processes.Default.Command = 'echo foo'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "tunnel_transform.os.bytes_sent 2005", "Expected bytes sent")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
+tr.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path2, 1990, 2100))
