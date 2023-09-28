@@ -639,7 +639,7 @@ CacheVC::openReadReadDone(int event, Event *e)
       }
     }
     // fall through for truncated documents
-  Lerror : {
+  Lerror: {
     // Keep the lock on vol->mutex, for dir_delete.
     char tmpstring[CRYPTO_HEX_SIZE];
     if (request.valid()) {
@@ -819,7 +819,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     return EVENT_CONT;
   }
-Lread : {
+Lread: {
   if (vio.ndone >= static_cast<int64_t>(doc_len)) {
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);

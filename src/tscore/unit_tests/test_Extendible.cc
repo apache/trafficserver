@@ -94,18 +94,8 @@ public:
   uint16_t c = {3};
 
   // operator[]
-  template <typename F>
-  decltype(auto)
-  operator[](F field) const
-  {
-    return ext::get(*this, field);
-  }
-  template <typename F>
-  decltype(auto)
-  operator[](F field)
-  {
-    return ext::set(*this, field);
-  }
+  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
+  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
 };
 
 ext::FieldId<C, std::atomic<uint16_t>> ext_c_1;
@@ -228,18 +218,8 @@ struct Derived : Extendible<Derived> {
   string m_str;
 
   // operator[] for shorthand
-  template <typename F>
-  decltype(auto)
-  operator[](F field) const
-  {
-    return ext::get(*this, field);
-  }
-  template <typename F>
-  decltype(auto)
-  operator[](F field)
-  {
-    return ext::set(*this, field);
-  }
+  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
+  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
 
   static const string
   testFormat()

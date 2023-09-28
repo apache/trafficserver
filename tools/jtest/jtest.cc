@@ -2081,7 +2081,7 @@ find_href_start(const char *tag, char *base, int len)
   char *start = base;
   char *end   = base + len;
 
-Lagain : {
+Lagain: {
   start = strncasestr(start, tag, len);
   if ((start == nullptr) || (end - start < 6)) {
     return nullptr;

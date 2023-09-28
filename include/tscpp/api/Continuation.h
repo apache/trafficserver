@@ -100,7 +100,11 @@ public:
     return *this;
   }
 
-  explicit operator bool() const { return _cont != nullptr; }
+  explicit
+  operator bool() const
+  {
+    return _cont != nullptr;
+  }
 
   int
   call(TSEvent event, void *edata = nullptr)

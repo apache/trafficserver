@@ -158,7 +158,7 @@ union head_p {
 #endif
 
 #define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v) & 0x7FFFLL) << 48))
 #elif defined(__aarch64__)
 /* Layout of FREELIST_POINTER
  *
@@ -177,7 +177,7 @@ union head_p {
 #endif
 
 #define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v)&0x7FFLL) << 52))
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v) & 0x7FFLL) << 52))
 #else
 #error "unsupported processor"
 #endif

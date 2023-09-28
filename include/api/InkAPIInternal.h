@@ -279,7 +279,11 @@ class TSSslHookInternalID
 public:
   explicit constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
 
-  constexpr operator int() const { return _id; }
+  constexpr
+  operator int() const
+  {
+    return _id;
+  }
 
   static const int NUM = TS_SSL_LAST_HOOK - TS_SSL_FIRST_HOOK + 1;
 

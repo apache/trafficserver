@@ -1539,7 +1539,7 @@ CacheVC::openWriteOverwrite(int event, Event *e)
     first_buf     = buf;
     goto Ldone;
   }
-Lcollision : {
+Lcollision: {
   CACHE_TRY_LOCK(lock, vol->mutex, this_ethread());
   if (!lock.is_locked()) {
     VC_LOCK_RETRY_EVENT();
