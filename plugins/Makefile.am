@@ -70,6 +70,7 @@ include xdebug/Makefile.inc
 if BUILD_EXPERIMENTAL_PLUGINS
 
 include experimental/access_control/Makefile.inc
+include experimental/block_errors/Makefile.inc
 include experimental/cache_fill/Makefile.inc
 include experimental/cert_reporting_tool/Makefile.inc
 include experimental/cookie_remap/Makefile.inc
