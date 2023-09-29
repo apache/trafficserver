@@ -238,7 +238,11 @@ public:
   QUICConnectionId();
   QUICConnectionId(const uint8_t *buf, uint8_t len);
 
-  explicit operator bool() const { return true; }
+  explicit
+  operator bool() const
+  {
+    return true;
+  }
   /**
    * Note that this returns a kind of hash code so we can use a ConnectionId as a key for a hashtable.
    */
@@ -513,7 +517,11 @@ class QUICPathValidationData
 public:
   QUICPathValidationData(const uint8_t *data) { memcpy(this->_data, data, sizeof(this->_data)); }
 
-  inline operator const uint8_t *() const { return this->_data; }
+  inline
+  operator const uint8_t *() const
+  {
+    return this->_data;
+  }
 
 private:
   uint8_t _data[8];

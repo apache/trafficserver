@@ -263,7 +263,7 @@ struct ts_imp_res_state {
 #ifdef sun
   unsigned pfcode; /*%< RES_PRF_ flags - see below. */
 #else
-  u_long pfcode;  /*%< RES_PRF_ flags - see below. */
+  u_long pfcode; /*%< RES_PRF_ flags - see below. */
 #endif
   unsigned ndots : 4; /*%< threshold for initial abs. query */
   unsigned nsort : 4; /*%< number of elements in sort_list[] */

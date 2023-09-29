@@ -38,7 +38,7 @@ constexpr int MAX_THREADS_IN_EACH_TYPE = 3071;
 #ifdef TS_MAX_NUMBER_EVENT_THREADS
 constexpr int MAX_EVENT_THREADS = TS_MAX_NUMBER_EVENT_THREADS;
 #else
-constexpr int MAX_EVENT_THREADS        = 4096;
+constexpr int MAX_EVENT_THREADS = 4096;
 #endif
 
 class EThread;

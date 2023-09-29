@@ -247,7 +247,7 @@ struct DNSHandler : public Continuation {
   bool
   query_id_in_use(uint16_t qid)
   {
-    return (qid_in_flight[(uint16_t)(qid) >> 6] & (uint64_t)(0x1ULL << ((uint16_t)(qid)&0x3F))) != 0;
+    return (qid_in_flight[(uint16_t)(qid) >> 6] & (uint64_t)(0x1ULL << ((uint16_t)(qid) & 0x3F))) != 0;
   };
 
   DNSHandler();

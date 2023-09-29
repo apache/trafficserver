@@ -1619,7 +1619,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   ink_assert(ink_aio_read(&io));
   return EVENT_CONT;
 
-Ldone : {
+Ldone: {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
     SET_HANDLER(&Vol::handle_recover_write_dir);
@@ -2354,7 +2354,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   return EVENT_CONT;
 
-LramHit : {
+LramHit: {
   f.doc_from_ram_cache = true;
   io.aio_result        = io.aiocb.aio_nbytes;
   Doc *doc             = reinterpret_cast<Doc *>(buf->data());

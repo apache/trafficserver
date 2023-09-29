@@ -53,7 +53,11 @@ public:
     RETRY_SOURCE_CONNECTION_ID,
   };
 
-  explicit operator bool() const { return true; }
+  explicit
+  operator bool() const
+  {
+    return true;
+  }
   bool
   operator==(const QUICTransportParameterId &x) const
   {

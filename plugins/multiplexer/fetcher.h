@@ -201,7 +201,7 @@ template <class T> struct HttpTransaction {
 
     case TS_EVENT_VCONN_READ_READY:
       Dbg(dbg_ctl, "HttpTransaction: Read");
-    here : {
+    here: {
       assert(self->in_ != NULL);
       assert(self->in_->reader != NULL);
       assert(self->in_->vio != NULL);
