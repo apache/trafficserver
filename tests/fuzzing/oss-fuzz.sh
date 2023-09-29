@@ -39,6 +39,6 @@ cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
 
 if [[ $SANITIZER = undefined ]]
 then
-    rm $OUT/fuzz_http
-    rm $OUT/fuzz_hpack
+    rm -f $OUT/fuzz_http
+    rm -f $OUT/fuzz_hpack
 fi
