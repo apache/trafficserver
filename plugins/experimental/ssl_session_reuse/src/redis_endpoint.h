@@ -28,7 +28,7 @@
 
 #include "globals.h"
 
-using RedisEndpoint = struct redis_endpoint {
+struct RedisEndpoint {
   std::string m_hostname;
   int m_port;
 
@@ -36,7 +36,7 @@ using RedisEndpoint = struct redis_endpoint {
   redis_endpoint(const std::string &endpoint_spec);
 };
 
-using RedisEndpointCompare = struct redis_endpoint_compare {
+struct RedisEndpointCompare {
   bool
   operator()(const RedisEndpoint &lhs, const RedisEndpoint &rhs) const
   {

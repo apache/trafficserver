@@ -53,13 +53,13 @@ extern DbgCtl dbg_ctl;
 }
 using namespace maxmind_acl_ns;
 
-using plugin_regex = struct {
+struct plugin_regex {
   std::string _regex_s;
   pcre *_rex;
   pcre_extra *_extra;
 };
 
-using ipstate = enum { ALLOW_IP, DENY_IP, UNKNOWN_IP };
+enum ipstate { ALLOW_IP, DENY_IP, UNKNOWN_IP };
 
 // Base class for all ACLs
 class Acl

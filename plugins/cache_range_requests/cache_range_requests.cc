@@ -45,7 +45,7 @@ namespace
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
-using parent_select_mode_t = enum parent_select_mode {
+enum parent_select_mode_t {
   PS_DEFAULT,      // Default ATS parent selection mode
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };

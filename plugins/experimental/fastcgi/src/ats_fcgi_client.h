@@ -47,7 +47,7 @@ namespace ats_plugin
 {
 using namespace atscppapi;
 
-using FCGI_State = enum {
+enum FCGI_State {
   fcgi_state_version = 0,
   fcgi_state_type,
   fcgi_state_request_id_hi,

@@ -45,13 +45,13 @@
  * Definition of the legal "magic" values used in a packet.
  * See section 3.1 Magic byte
  */
-using protocol_binary_magic = enum { PROTOCOL_BINARY_REQ = 0x80, PROTOCOL_BINARY_RES = 0x81 };
+enum protocol_binary_magic { PROTOCOL_BINARY_REQ = 0x80, PROTOCOL_BINARY_RES = 0x81 };
 
 /**
  * Definition of the valid response status numbers.
  * See section 3.2 Response Status
  */
-using protocol_binary_response_status = enum {
+enum protocol_binary_response_status {
   PROTOCOL_BINARY_RESPONSE_SUCCESS         = 0x00,
   PROTOCOL_BINARY_RESPONSE_KEY_ENOENT      = 0x01,
   PROTOCOL_BINARY_RESPONSE_KEY_EEXISTS     = 0x02,
@@ -69,7 +69,7 @@ using protocol_binary_response_status = enum {
  * Definition of the different command opcodes.
  * See section 3.3 Command Opcodes
  */
-using protocol_binary_command = enum {
+enum protocol_binary_command {
   PROTOCOL_BINARY_CMD_GET        = 0x00,
   PROTOCOL_BINARY_CMD_SET        = 0x01,
   PROTOCOL_BINARY_CMD_ADD        = 0x02,
@@ -127,13 +127,13 @@ using protocol_binary_command = enum {
  * Definition of the data types in the packet
  * See section 3.4 Data Types
  */
-using protocol_binary_datatypes = enum { PROTOCOL_BINARY_RAW_BYTES = 0x00 };
+enum protocol_binary_datatypes { PROTOCOL_BINARY_RAW_BYTES = 0x00 };
 
 /**
  * Definition of the header structure for a request packet.
  * See section 2
  */
-using protocol_binary_request_header = union {
+union protocol_binary_request_header {
   struct {
     uint8_t magic;
     uint8_t opcode;
@@ -152,7 +152,7 @@ using protocol_binary_request_header = union {
  * Definition of the header structure for a response packet.
  * See section 2
  */
-using protocol_binary_response_header = union {
+union protocol_binary_response_header {
   struct {
     uint8_t magic;
     uint8_t opcode;
@@ -170,7 +170,7 @@ using protocol_binary_response_header = union {
 /**
  * Definition of a request-packet containing no extras
  */
-using protocol_binary_request_no_extras = union {
+union protocol_binary_request_no_extras {
   struct {
     protocol_binary_request_header header;
   } message;
@@ -180,7 +180,7 @@ using protocol_binary_request_no_extras = union {
 /**
  * Definition of a response-packet containing no extras
  */
-using protocol_binary_response_no_extras = union {
+union protocol_binary_response_no_extras {
   struct {
     protocol_binary_response_header header;
   } message;
@@ -201,7 +201,7 @@ using protocol_binary_request_getkq = protocol_binary_request_no_extras;
  * getkq.
  * See section 4
  */
-using protocol_binary_response_get = union {
+union protocol_binary_response_get {
   struct {
     protocol_binary_response_header header;
     struct {
@@ -233,7 +233,7 @@ using protocol_binary_response_delete = protocol_binary_response_no_extras;
  * Please note that the expiration field is optional, so remember to see
  * check the header.bodysize to see if it is present.
  */
-using protocol_binary_request_flush = union {
+union protocol_binary_request_flush {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -253,7 +253,7 @@ using protocol_binary_response_flush = protocol_binary_response_no_extras;
  * Definition of the packet used by set, add and replace
  * See section 4
  */
-using protocol_binary_request_set = union {
+union protocol_binary_request_set {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -291,7 +291,7 @@ using protocol_binary_response_noop = protocol_binary_response_no_extras;
  * command.
  * See section 4
  */
-using protocol_binary_request_incr = union {
+union protocol_binary_request_incr {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -309,7 +309,7 @@ using protocol_binary_request_decr = protocol_binary_request_incr;
  * command.
  * See section 4
  */
-using protocol_binary_response_incr = union {
+union protocol_binary_response_incr {
   struct {
     protocol_binary_response_header header;
     struct {
@@ -378,7 +378,7 @@ using protocol_binary_response_stats = protocol_binary_response_no_extras;
  * this header for use in other projects.  Range operations are
  * not expected to be implemented in the memcached server itself.
  */
-using protocol_binary_request_rangeop = union {
+union protocol_binary_request_rangeop {
   struct {
     protocol_binary_response_header header;
     struct {

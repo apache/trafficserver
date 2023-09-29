@@ -34,11 +34,11 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 // Sanity check max rate at 100Gbps
 #define MAX_PACING_RATE 100000000000
 
-using fq_pacing_cfg_t = struct fq_pacing_config {
+struct fq_pacing_cfg_t {
   unsigned long pacing_rate;
 };
 
-using fq_pacing_cont_t = struct fq_pacing_cont {
+struct fq_pacing_cont_t {
   int client_fd;
 };
 

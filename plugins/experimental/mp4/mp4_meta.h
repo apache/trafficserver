@@ -64,7 +64,7 @@
   ((u_char *)(p))[6] = (u_char)((n) >> 8);            \
   ((u_char *)(p))[7] = (u_char)(n)
 
-using TSMp4AtomID = enum {
+enum TSMp4AtomID {
   MP4_TRAK_ATOM = 0,
   MP4_TKHD_ATOM,
   MP4_MDIA_ATOM,
@@ -94,18 +94,18 @@ using TSMp4AtomID = enum {
   MP4_LAST_ATOM = MP4_CO64_DATA
 };
 
-using mp4_atom_header = struct {
+struct mp4_atom_header {
   u_char size[4];
   u_char name[4];
 };
 
-using mp4_atom_header64 = struct {
+struct mp4_atom_header64 {
   u_char size[4];
   u_char name[4];
   u_char size64[8];
 };
 
-using mp4_mvhd_atom = struct {
+struct mp4_mvhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -127,7 +127,7 @@ using mp4_mvhd_atom = struct {
   u_char next_track_id[4];
 };
 
-using mp4_mvhd64_atom = struct {
+struct mp4_mvhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -149,7 +149,7 @@ using mp4_mvhd64_atom = struct {
   u_char next_track_id[4];
 };
 
-using mp4_tkhd_atom = struct {
+struct mp4_tkhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -169,7 +169,7 @@ using mp4_tkhd_atom = struct {
   u_char height[4];
 };
 
-using mp4_tkhd64_atom = struct {
+struct mp4_tkhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -189,7 +189,7 @@ using mp4_tkhd64_atom = struct {
   u_char height[4];
 };
 
-using mp4_mdhd_atom = struct {
+struct mp4_mdhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -202,7 +202,7 @@ using mp4_mdhd_atom = struct {
   u_char quality[2];
 };
 
-using mp4_mdhd64_atom = struct {
+struct mp4_mdhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -215,7 +215,7 @@ using mp4_mdhd64_atom = struct {
   u_char quality[2];
 };
 
-using mp4_stsd_atom = struct {
+struct mp4_stsd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -226,7 +226,7 @@ using mp4_stsd_atom = struct {
   u_char media_name[4];
 };
 
-using mp4_stts_atom = struct {
+struct mp4_stts_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -234,12 +234,12 @@ using mp4_stts_atom = struct {
   u_char entries[4];
 };
 
-using mp4_stts_entry = struct {
+struct mp4_stts_entry {
   u_char count[4];
   u_char duration[4];
 };
 
-using mp4_stss_atom = struct {
+struct mp4_stss_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -247,7 +247,7 @@ using mp4_stss_atom = struct {
   u_char entries[4];
 };
 
-using mp4_ctts_atom = struct {
+struct mp4_ctts_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -255,12 +255,12 @@ using mp4_ctts_atom = struct {
   u_char entries[4];
 };
 
-using mp4_ctts_entry = struct {
+struct mp4_ctts_entry {
   u_char count[4];
   u_char offset[4];
 };
 
-using mp4_stsc_atom = struct {
+struct mp4_stsc_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -268,13 +268,13 @@ using mp4_stsc_atom = struct {
   u_char entries[4];
 };
 
-using mp4_stsc_entry = struct {
+struct mp4_stsc_entry {
   u_char chunk[4];
   u_char samples[4];
   u_char id[4];
 };
 
-using mp4_stsz_atom = struct {
+struct mp4_stsz_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -283,7 +283,7 @@ using mp4_stsz_atom = struct {
   u_char entries[4];
 };
 
-using mp4_stco_atom = struct {
+struct mp4_stco_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -291,7 +291,7 @@ using mp4_stco_atom = struct {
   u_char entries[4];
 };
 
-using mp4_co64_atom = struct {
+struct mp4_co64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -302,7 +302,7 @@ using mp4_co64_atom = struct {
 class Mp4Meta;
 using Mp4AtomHandler = int (Mp4Meta::*)(int64_t, int64_t);
 
-using mp4_atom_handler = struct {
+struct mp4_atom_handler {
   const char *name;
   Mp4AtomHandler handler;
 };

@@ -31,7 +31,7 @@
 #pragma once
 namespace ats_plugin
 {
-using FcgiConfigKey = enum {
+enum FcgiConfigKey {
   fcgiEnabled,
   fcgiHostname,
   fcgiServerIp,
@@ -44,7 +44,7 @@ using FcgiConfigKey = enum {
   fcgiMaxRequests,
   fcgiRequestQueueSize
 };
-using FcgiParamKey = enum {
+enum FcgiParamKey {
   gatewayInterface,
   serverSoftware,
   queryString,

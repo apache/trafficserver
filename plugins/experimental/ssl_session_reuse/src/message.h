@@ -28,7 +28,7 @@
 
 #include "redis_endpoint.h"
 
-using Message = struct message {
+struct Message {
   std::string channel;
   std::string data;
   bool cleanup;

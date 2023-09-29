@@ -111,7 +111,7 @@ public:
       if (threadKey == 0) {
         // setup thread local storage
         while (!gServer->setupThreadLocalStorage()) {
-          ;
+          // do nothing
         }
       }
       gServer->connect(intercept);
