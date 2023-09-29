@@ -140,8 +140,9 @@ public:
   SubmitProfile(const Profile &profile)
   {
     // Ignore if not enabled
-    if (!this->record_enabled_)
+    if (!this->record_enabled_) {
       return;
+    }
     std::unique_lock<std::mutex> lock(this->profiles_mutex_);
     this->profiles_.push_back(profile);
   }
@@ -176,8 +177,9 @@ public:
   set_record_enabled(bool enabled)
   {
     this->record_enabled_ = enabled;
-    if (!this->record_enabled_)
+    if (!this->record_enabled_) {
       this->Clear();
+    }
   }
 
 private:

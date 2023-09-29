@@ -74,9 +74,9 @@ struct FCGIRecordList {
 
   FCGIRecordList() : content(nullptr), state(FCGI_State::fcgi_state_version), length(0), offset(0)
   {
-    header = (FCGI_Header *)TSmalloc(sizeof(FCGI_Header));
+    header = static_cast<FCGI_Header *>(TSmalloc(sizeof(FCGI_Header)));
     memset(header, 0, sizeof(FCGI_Header));
-    endBody = (FCGI_EndRequestBody *)TSmalloc(sizeof(FCGI_EndRequestBody));
+    endBody = static_cast<FCGI_EndRequestBody *>(TSmalloc(sizeof(FCGI_EndRequestBody)));
     memset(endBody, 0, sizeof(FCGI_EndRequestBody));
   };
 

@@ -24,9 +24,9 @@
 #include <cjose/cjose.h>
 #include <jansson.h>
 
-#include <string.h>
+#include <cstring>
 #include <search.h>
-#include <errno.h>
+#include <cerrno>
 
 #define JSONError(err) PluginError("json-err: %s:%d:%d: %s", (err).source, (err).line, (err).column, (err).text)
 
@@ -51,7 +51,7 @@ cjose_jwk_t **
 find_keys(struct config *cfg, const char *issuer)
 {
   ENTRY *entry;
-  if (!hsearch_r((ENTRY){.key = (char *)issuer, .data = nullptr}, FIND, &entry, cfg->issuers) || !entry) {
+  if (!hsearch_r((ENTRY){.key = const_cast<char *>(issuer), .data = nullptr}, FIND, &entry, cfg->issuers) || !entry) {
     PluginDebug("Unable to locate any keys at %p for issuer %s in %p->%p", entry, issuer, cfg, cfg->issuers);
     return nullptr;
   }

@@ -42,5 +42,6 @@ mark_timer(struct timer *t)
   if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now)) {
     return 0;
   }
-  return (now.tv_sec - t->start.tv_sec) * (int64_t)1000000000 - (int64_t)t->start.tv_nsec + (int64_t)now.tv_nsec;
+  return (now.tv_sec - t->start.tv_sec) * static_cast<int64_t>(1000000000) - static_cast<int64_t>(t->start.tv_nsec) +
+         static_cast<int64_t>(now.tv_nsec);
 }

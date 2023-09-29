@@ -125,7 +125,7 @@ int
 MCAccept::main_event(int event, void *data)
 {
   if (event == NET_EVENT_ACCEPT) {
-    NetVConnection *netvc = (NetVConnection *)data;
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
     MC *mc                = theMCAllocator.alloc();
     if (!mutex->thread_holding) {
       mc->new_connection(netvc, netvc->thread);

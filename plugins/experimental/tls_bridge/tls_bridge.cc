@@ -123,8 +123,8 @@ BridgeConfig::load_pair(std::string_view rxp, std::string_view service, swoc::fi
     if (ln) {
       snprintf(buff, sizeof(buff), " on line %d", ln);
     }
-    TSError("[%s] Failed to compile regular expression '%.*s' in %s%s", PLUGIN_NAME, int(rxp.size()), rxp.data(), src.c_str(),
-            buff);
+    TSError("[%s] Failed to compile regular expression '%.*s' in %s%s", PLUGIN_NAME, static_cast<int>(rxp.size()), rxp.data(),
+            src.c_str(), buff);
   }
 }
 
@@ -136,7 +136,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
   for (int i = 0; i < argc; i += 2) {
     if (argv[i] == CONFIG_FILE_ARG) {
       if (i + 1 >= argc) {
-        TSError("[%s] Invalid '%.*s' argument - no file name found.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
+        TSError("[%s] Invalid '%.*s' argument - no file name found.", PLUGIN_NAME, static_cast<int>(CONFIG_FILE_ARG.size()),
                 CONFIG_FILE_ARG.data());
       } else {
         swoc::file::path fp(argv[i + 1]);
@@ -147,8 +147,8 @@ BridgeConfig::load_config(int argc, const char *argv[])
         // bulk load the file.
         std::string content{swoc::file::load(fp, ec)};
         if (ec) {
-          TSError("[%s] Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
-                  CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());
+          TSError("[%s] Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_NAME,
+                  static_cast<int>(CONFIG_FILE_ARG.size()), CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());
 
         } else {
           // walk the lines.
@@ -306,7 +306,7 @@ void
 Bridge::net_accept(TSVConn vc)
 {
   char buff[1024];
-  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, int(_peer.size()), _peer.data());
+  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
 
   Dbg(dbg_ctl, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
   // UA side intercepted.

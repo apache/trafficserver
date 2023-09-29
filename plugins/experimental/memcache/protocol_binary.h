@@ -45,13 +45,13 @@
  * Definition of the legal "magic" values used in a packet.
  * See section 3.1 Magic byte
  */
-typedef enum { PROTOCOL_BINARY_REQ = 0x80, PROTOCOL_BINARY_RES = 0x81 } protocol_binary_magic;
+using protocol_binary_magic = enum { PROTOCOL_BINARY_REQ = 0x80, PROTOCOL_BINARY_RES = 0x81 };
 
 /**
  * Definition of the valid response status numbers.
  * See section 3.2 Response Status
  */
-typedef enum {
+using protocol_binary_response_status = enum {
   PROTOCOL_BINARY_RESPONSE_SUCCESS         = 0x00,
   PROTOCOL_BINARY_RESPONSE_KEY_ENOENT      = 0x01,
   PROTOCOL_BINARY_RESPONSE_KEY_EEXISTS     = 0x02,
@@ -63,13 +63,13 @@ typedef enum {
   PROTOCOL_BINARY_RESPONSE_AUTH_CONTINUE   = 0x21,
   PROTOCOL_BINARY_RESPONSE_UNKNOWN_COMMAND = 0x81,
   PROTOCOL_BINARY_RESPONSE_ENOMEM          = 0x82
-} protocol_binary_response_status;
+};
 
 /**
  * Definition of the different command opcodes.
  * See section 3.3 Command Opcodes
  */
-typedef enum {
+using protocol_binary_command = enum {
   PROTOCOL_BINARY_CMD_GET        = 0x00,
   PROTOCOL_BINARY_CMD_SET        = 0x01,
   PROTOCOL_BINARY_CMD_ADD        = 0x02,
@@ -121,19 +121,19 @@ typedef enum {
   PROTOCOL_BINARY_CMD_RDECRQ    = 0x3c
   /* End Range operations */
 
-} protocol_binary_command;
+};
 
 /**
  * Definition of the data types in the packet
  * See section 3.4 Data Types
  */
-typedef enum { PROTOCOL_BINARY_RAW_BYTES = 0x00 } protocol_binary_datatypes;
+using protocol_binary_datatypes = enum { PROTOCOL_BINARY_RAW_BYTES = 0x00 };
 
 /**
  * Definition of the header structure for a request packet.
  * See section 2
  */
-typedef union {
+using protocol_binary_request_header = union {
   struct {
     uint8_t magic;
     uint8_t opcode;
@@ -146,13 +146,13 @@ typedef union {
     uint64_t cas;
   } request;
   uint8_t bytes[24];
-} protocol_binary_request_header;
+};
 
 /**
  * Definition of the header structure for a response packet.
  * See section 2
  */
-typedef union {
+using protocol_binary_response_header = union {
   struct {
     uint8_t magic;
     uint8_t opcode;
@@ -165,43 +165,43 @@ typedef union {
     uint64_t cas;
   } response;
   uint8_t bytes[24];
-} protocol_binary_response_header;
+};
 
 /**
  * Definition of a request-packet containing no extras
  */
-typedef union {
+using protocol_binary_request_no_extras = union {
   struct {
     protocol_binary_request_header header;
   } message;
   uint8_t bytes[sizeof(protocol_binary_request_header)];
-} protocol_binary_request_no_extras;
+};
 
 /**
  * Definition of a response-packet containing no extras
  */
-typedef union {
+using protocol_binary_response_no_extras = union {
   struct {
     protocol_binary_response_header header;
   } message;
   uint8_t bytes[sizeof(protocol_binary_response_header)];
-} protocol_binary_response_no_extras;
+};
 
 /**
  * Definition of the packet used by the get, getq, getk and getkq command.
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_get;
-typedef protocol_binary_request_no_extras protocol_binary_request_getq;
-typedef protocol_binary_request_no_extras protocol_binary_request_getk;
-typedef protocol_binary_request_no_extras protocol_binary_request_getkq;
+using protocol_binary_request_get   = protocol_binary_request_no_extras;
+using protocol_binary_request_getq  = protocol_binary_request_no_extras;
+using protocol_binary_request_getk  = protocol_binary_request_no_extras;
+using protocol_binary_request_getkq = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned from a successful get, getq, getk and
  * getkq.
  * See section 4
  */
-typedef union {
+using protocol_binary_response_get = union {
   struct {
     protocol_binary_response_header header;
     struct {
@@ -209,23 +209,23 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_response_header) + 4];
-} protocol_binary_response_get;
+};
 
-typedef protocol_binary_response_get protocol_binary_response_getq;
-typedef protocol_binary_response_get protocol_binary_response_getk;
-typedef protocol_binary_response_get protocol_binary_response_getkq;
+using protocol_binary_response_getq  = protocol_binary_response_get;
+using protocol_binary_response_getk  = protocol_binary_response_get;
+using protocol_binary_response_getkq = protocol_binary_response_get;
 
 /**
  * Definition of the packet used by the delete command
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_delete;
+using protocol_binary_request_delete = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned by the delete command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_delete;
+using protocol_binary_response_delete = protocol_binary_response_no_extras;
 
 /**
  * Definition of the packet used by the flush command
@@ -233,7 +233,7 @@ typedef protocol_binary_response_no_extras protocol_binary_response_delete;
  * Please note that the expiration field is optional, so remember to see
  * check the header.bodysize to see if it is present.
  */
-typedef union {
+using protocol_binary_request_flush = union {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -241,19 +241,19 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_request_header) + 4];
-} protocol_binary_request_flush;
+};
 
 /**
  * Definition of the packet returned by the flush command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_flush;
+using protocol_binary_response_flush = protocol_binary_response_no_extras;
 
 /**
  * Definition of the packet used by set, add and replace
  * See section 4
  */
-typedef union {
+using protocol_binary_request_set = union {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -262,36 +262,36 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_request_header) + 8];
-} protocol_binary_request_set;
-typedef protocol_binary_request_set protocol_binary_request_add;
-typedef protocol_binary_request_set protocol_binary_request_replace;
+};
+using protocol_binary_request_add     = protocol_binary_request_set;
+using protocol_binary_request_replace = protocol_binary_request_set;
 
 /**
  * Definition of the packet returned by set, add and replace
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_set;
-typedef protocol_binary_response_no_extras protocol_binary_response_add;
-typedef protocol_binary_response_no_extras protocol_binary_response_replace;
+using protocol_binary_response_set     = protocol_binary_response_no_extras;
+using protocol_binary_response_add     = protocol_binary_response_no_extras;
+using protocol_binary_response_replace = protocol_binary_response_no_extras;
 
 /**
  * Definition of the noop packet
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_noop;
+using protocol_binary_request_noop = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned by the noop command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_noop;
+using protocol_binary_response_noop = protocol_binary_response_no_extras;
 
 /**
  * Definition of the structure used by the increment and decrement
  * command.
  * See section 4
  */
-typedef union {
+using protocol_binary_request_incr = union {
   struct {
     protocol_binary_request_header header;
     struct {
@@ -301,15 +301,15 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_request_header) + 20];
-} protocol_binary_request_incr;
-typedef protocol_binary_request_incr protocol_binary_request_decr;
+};
+using protocol_binary_request_decr = protocol_binary_request_incr;
 
 /**
  * Definition of the response from an incr or decr command
  * command.
  * See section 4
  */
-typedef union {
+using protocol_binary_response_incr = union {
   struct {
     protocol_binary_response_header header;
     struct {
@@ -317,58 +317,58 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_response_header) + 8];
-} protocol_binary_response_incr;
-typedef protocol_binary_response_incr protocol_binary_response_decr;
+};
+using protocol_binary_response_decr = protocol_binary_response_incr;
 
 /**
  * Definition of the quit
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_quit;
+using protocol_binary_request_quit = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned by the quit command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_quit;
+using protocol_binary_response_quit = protocol_binary_response_no_extras;
 
 /**
  * Definition of the packet used by append and prepend command
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_append;
-typedef protocol_binary_request_no_extras protocol_binary_request_prepend;
+using protocol_binary_request_append  = protocol_binary_request_no_extras;
+using protocol_binary_request_prepend = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned from a successful append or prepend
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_append;
-typedef protocol_binary_response_no_extras protocol_binary_response_prepend;
+using protocol_binary_response_append  = protocol_binary_response_no_extras;
+using protocol_binary_response_prepend = protocol_binary_response_no_extras;
 
 /**
  * Definition of the packet used by the version command
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_version;
+using protocol_binary_request_version = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned from a successful version command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_version;
+using protocol_binary_response_version = protocol_binary_response_no_extras;
 
 /**
  * Definition of the packet used by the stats command.
  * See section 4
  */
-typedef protocol_binary_request_no_extras protocol_binary_request_stats;
+using protocol_binary_request_stats = protocol_binary_request_no_extras;
 
 /**
  * Definition of the packet returned from a successful stats command
  * See section 4
  */
-typedef protocol_binary_response_no_extras protocol_binary_response_stats;
+using protocol_binary_response_stats = protocol_binary_response_no_extras;
 
 /**
  * Definition of a request for a range operation.
@@ -378,7 +378,7 @@ typedef protocol_binary_response_no_extras protocol_binary_response_stats;
  * this header for use in other projects.  Range operations are
  * not expected to be implemented in the memcached server itself.
  */
-typedef union {
+using protocol_binary_request_rangeop = union {
   struct {
     protocol_binary_response_header header;
     struct {
@@ -389,18 +389,18 @@ typedef union {
     } body;
   } message;
   uint8_t bytes[sizeof(protocol_binary_request_header) + 4];
-} protocol_binary_request_rangeop;
+};
 
-typedef protocol_binary_request_rangeop protocol_binary_request_rget;
-typedef protocol_binary_request_rangeop protocol_binary_request_rset;
-typedef protocol_binary_request_rangeop protocol_binary_request_rsetq;
-typedef protocol_binary_request_rangeop protocol_binary_request_rappend;
-typedef protocol_binary_request_rangeop protocol_binary_request_rappendq;
-typedef protocol_binary_request_rangeop protocol_binary_request_rprepend;
-typedef protocol_binary_request_rangeop protocol_binary_request_rprependq;
-typedef protocol_binary_request_rangeop protocol_binary_request_rdelete;
-typedef protocol_binary_request_rangeop protocol_binary_request_rdeleteq;
-typedef protocol_binary_request_rangeop protocol_binary_request_rincr;
-typedef protocol_binary_request_rangeop protocol_binary_request_rincrq;
-typedef protocol_binary_request_rangeop protocol_binary_request_rdecr;
-typedef protocol_binary_request_rangeop protocol_binary_request_rdecrq;
+using protocol_binary_request_rget      = protocol_binary_request_rangeop;
+using protocol_binary_request_rset      = protocol_binary_request_rangeop;
+using protocol_binary_request_rsetq     = protocol_binary_request_rangeop;
+using protocol_binary_request_rappend   = protocol_binary_request_rangeop;
+using protocol_binary_request_rappendq  = protocol_binary_request_rangeop;
+using protocol_binary_request_rprepend  = protocol_binary_request_rangeop;
+using protocol_binary_request_rprependq = protocol_binary_request_rangeop;
+using protocol_binary_request_rdelete   = protocol_binary_request_rangeop;
+using protocol_binary_request_rdeleteq  = protocol_binary_request_rangeop;
+using protocol_binary_request_rincr     = protocol_binary_request_rangeop;
+using protocol_binary_request_rincrq    = protocol_binary_request_rangeop;
+using protocol_binary_request_rdecr     = protocol_binary_request_rangeop;
+using protocol_binary_request_rdecrq    = protocol_binary_request_rangeop;

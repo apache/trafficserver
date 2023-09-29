@@ -14,9 +14,9 @@
   limitations under the License.
 */
 
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <vector>
 #include <string_view>
@@ -308,7 +308,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
 static int
 plugin_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

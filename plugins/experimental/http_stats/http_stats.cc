@@ -599,8 +599,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 {
   static const struct option longopt[] = {
     {"csv",              no_argument,       nullptr, 'c' },
-    {"integer-counters", no_argument,       NULL,    'i' },
-    {"wrap-counters",    no_argument,       NULL,    'w' },
+    {"integer-counters", no_argument,       nullptr, 'i' },
+    {"wrap-counters",    no_argument,       nullptr, 'w' },
     {"max-age",          required_argument, nullptr, 'a' },
     {nullptr,            no_argument,       nullptr, '\0'}
   };
@@ -755,12 +755,12 @@ std::string
 HTTPStatsFormatter::output()
 {
   if (csv) {
-    TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, this);
+    TSRecordDump(static_cast<TSRecordType>(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, this);
     APPEND_STAT_CSV(this, "version", "%s", TSTrafficServerVersionGet());
   } else {
     APPEND(buf, "{ \"global\": {\n");
 
-    TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, this);
+    TSRecordDump(static_cast<TSRecordType>(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, this);
 
     APPEND(buf, "\"server\": \"");
     APPEND(buf, TSTrafficServerVersionGet());

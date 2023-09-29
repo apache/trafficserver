@@ -83,12 +83,12 @@ parseArgs(int argc, char **argv)
   CmdConfigs options;
   int c;
   constexpr struct option long_options[] = {
-    {"help",      no_argument,       NULL, 'h'},
-    {"buckets",   required_argument, NULL, 'b'},
-    {"perma",     required_argument, NULL, 'p'},
-    {"size",      required_argument, NULL, 's'},
-    {"threshold", required_argument, NULL, 't'},
-    {NULL,        0,                 NULL, 0  }
+    {"help",      no_argument,       nullptr, 'h'},
+    {"buckets",   required_argument, nullptr, 'b'},
+    {"perma",     required_argument, nullptr, 'p'},
+    {"size",      required_argument, nullptr, 's'},
+    {"threshold", required_argument, nullptr, 't'},
+    {nullptr,     0,                 nullptr, 0  }
   };
 
   // Make sure the optional values have been set
@@ -97,12 +97,13 @@ parseArgs(int argc, char **argv)
   options.end_permablock   = 0;
   options.incr_permablock  = 1;
 
-  while (1) {
+  while (true) {
     int ix = 0;
 
     c = getopt_long(argc, argv, "b:f:p:s:t:h?", long_options, &ix);
-    if (c == -1)
+    if (c == -1) {
       break;
+    }
 
     switch (c) {
     case 'h':
@@ -143,7 +144,7 @@ parseArgs(int argc, char **argv)
 // Returns a tuple with the number of good requests and bad requests, respectively.
 //
 std::tuple<uint32_t, uint32_t>
-loadFile(std::string fname, IpMap &all_ips, IpList &ips)
+loadFile(const std::string &fname, IpMap &all_ips, IpList &ips)
 {
   std::ifstream infile(fname);
 

@@ -22,9 +22,9 @@
 #include "normalize.h"
 #include <jansson.h>
 #include <cjose/cjose.h>
-#include <math.h>
-#include <time.h>
-#include <string.h>
+#include <cmath>
+#include <ctime>
+#include <cstring>
 
 double
 parse_number(json_t *num)
@@ -82,12 +82,12 @@ jwt_delete(struct jwt *jwt)
 }
 
 double
-now(void)
+now()
 {
   struct timespec t;
 
   if (!clock_gettime(CLOCK_REALTIME, &t)) {
-    return (double)t.tv_sec + 1.0e-9 * (double)t.tv_nsec;
+    return static_cast<double>(t.tv_sec) + 1.0e-9 * static_cast<double>(t.tv_nsec);
   }
   return NAN;
 }
@@ -210,7 +210,7 @@ jwt_check_uri(const char *cdniuc, const char *uri)
   int uri_ct  = strlen(uri);
   int buff_ct = uri_ct + 2;
   int err;
-  char *normal_uri = (char *)TSmalloc(buff_ct);
+  char *normal_uri = static_cast<char *>(TSmalloc(buff_ct));
   memset(normal_uri, 0, buff_ct);
 
   err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
@@ -304,7 +304,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
 
   int buff_ct = uri_ct + 2;
   int normal_err;
-  char *normal_uri = (char *)TSmalloc(buff_ct);
+  char *normal_uri = static_cast<char *>(TSmalloc(buff_ct));
   memset(normal_uri, 0, buff_ct);
 
   normal_err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
@@ -317,7 +317,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
     char *path_string      = nullptr;
     size_t path_size       = normal_size + 1;
 
-    path_string = (char *)TSmalloc(path_size);
+    path_string = static_cast<char *>(TSmalloc(path_size));
     memset(path_string, 0, path_size);
     PluginDebug("Renewing JWT. Stripped URI: %s", uri);
 

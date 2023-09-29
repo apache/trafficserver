@@ -26,7 +26,7 @@
 class TxnRateLimiter : public RateLimiter<TSHttpTxn>
 {
 public:
-  ~TxnRateLimiter()
+  ~TxnRateLimiter() override
   {
     if (_action) {
       TSActionCancel(_action);

@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-#include <errno.h>
+#include <cerrno>
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/remap_version.h>
@@ -34,13 +34,13 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 // Sanity check max rate at 100Gbps
 #define MAX_PACING_RATE 100000000000
 
-typedef struct fq_pacing_config {
+using fq_pacing_cfg_t = struct fq_pacing_config {
   unsigned long pacing_rate;
-} fq_pacing_cfg_t;
+};
 
-typedef struct fq_pacing_cont {
+using fq_pacing_cont_t = struct fq_pacing_cont {
   int client_fd;
-} fq_pacing_cont_t;
+};
 
 // Copied from ts/ink_sock.cc since that function is not exposed to plugins
 int
@@ -56,7 +56,7 @@ safe_setsockopt(int s, int level, int optname, char *optval, int optlevel)
 static int
 fq_is_default_qdisc()
 {
-  TSFile f       = 0;
+  TSFile f       = nullptr;
   ssize_t s      = 0;
   char buffer[5] = {};
   int rc         = 0;
@@ -164,14 +164,14 @@ TSRemapDeleteInstance(void *instance)
   TSError("[fq_pacing] Cleaning up...");
 
   if (instance != nullptr) {
-    TSfree((fq_pacing_cfg_t *)instance);
+    TSfree(static_cast<fq_pacing_cfg_t *>(instance));
   }
 }
 
 static int
 reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   auto txn_data  = static_cast<fq_pacing_cont_t *>(TSContDataGet(contp));
 
 #ifdef SO_MAX_PACING_RATE
@@ -179,7 +179,8 @@ reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
   if (txn_data->client_fd > 0) {
     Dbg(dbg_ctl, "Disabling SO_MAX_PACING_RATE for client_fd=%d", txn_data->client_fd);
     int res = 0;
-    res     = safe_setsockopt(txn_data->client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&pacing_off, sizeof(pacing_off));
+    res     = safe_setsockopt(txn_data->client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, reinterpret_cast<char *>(&pacing_off),
+                              sizeof(pacing_off));
     // EBADF indicates possible client abort
     if ((res < 0) && (errno != EBADF)) {
       TSError("[fq_pacing] Error disabling SO_MAX_PACING_RATE, errno=%d", errno);
@@ -207,10 +208,11 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
 #ifdef SO_MAX_PACING_RATE
-  fq_pacing_cfg_t *cfg = (fq_pacing_cfg_t *)instance;
+  fq_pacing_cfg_t *cfg = static_cast<fq_pacing_cfg_t *>(instance);
   int res              = 0;
 
-  res = safe_setsockopt(client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&cfg->pacing_rate, sizeof(cfg->pacing_rate));
+  res = safe_setsockopt(client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, reinterpret_cast<char *>(&cfg->pacing_rate),
+                        sizeof(cfg->pacing_rate));
   if ((res < 0)) {
     TSError("[fq_pacing] Error setting SO_MAX_PACING_RATE, errno=%d", errno);
   }

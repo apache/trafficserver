@@ -189,7 +189,7 @@ public:
 
     for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {
       size_t const metricsz = metric_prefix.length() + strlen(suffixes[i]) + 2; // padding for dot+terminator
-      char *const metric    = (char *)TSmalloc(metricsz);
+      char *const metric    = static_cast<char *>(TSmalloc(metricsz));
       snprintf(metric, metricsz, "%s.%s", metric_prefix.data(), suffixes[i]);
 
       _metrics[i] = TS_ERROR;

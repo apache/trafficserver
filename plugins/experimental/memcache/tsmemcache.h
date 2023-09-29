@@ -71,7 +71,7 @@ struct MCCacheHeader {
   char *
   key()
   {
-    return ((char *)this) + sizeof(MCCacheHeader);
+    return (reinterpret_cast<char *>(this)) + sizeof(MCCacheHeader);
   }
   int
   len()
@@ -214,7 +214,7 @@ static inline char *
 xutoa(uint32_t i, char *e)
 {
   do {
-    *--e = (char)(i % 10 + 48);
+    *--e = static_cast<char>(i % 10 + 48);
   } while ((i /= 10) > 0);
   return e;
 }
@@ -223,7 +223,7 @@ static inline char *
 xutoa(uint64_t i, char *e)
 {
   do {
-    *--e = (char)(i % 10 + 48);
+    *--e = static_cast<char>(i % 10 + 48);
   } while ((i /= 10) > 0);
   return e;
 }

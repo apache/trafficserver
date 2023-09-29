@@ -139,8 +139,9 @@ ServerConnection::~ServerConnection()
   _req_count    = 0;
   TSContDestroy(_contp);
   _contp = nullptr;
-  if (_fcgiRequest != nullptr)
+  if (_fcgiRequest != nullptr) {
     delete _fcgiRequest;
+  }
   delete _sConnInfo;
 }
 
@@ -190,5 +191,5 @@ ServerConnection::createConnection()
   _sConnInfo = new ServerConnectionInfo(_server, this);
   TSContDataSet(_contp, _sConnInfo);
   // TODO: Need to handle return value of NetConnect
-  TSNetConnect(_contp, (struct sockaddr const *)&ip_addr);
+  TSNetConnect(_contp, reinterpret_cast<struct sockaddr const *>(&ip_addr));
 }

@@ -62,8 +62,9 @@ public:
   getValue(const std::string &category, const std::string &key, _T &value)
   {
     std::string strvalue;
-    if (!getValue(category, key, strvalue))
+    if (!getValue(category, key, strvalue)) {
       return false;
+    }
     value = fromstring(strvalue);
     return true;
   }
@@ -73,8 +74,9 @@ public:
   returnValue(const std::string &category, const std::string &key, _T default_value)
   {
     std::string strvalue;
-    if (!getValue(category, key, strvalue))
+    if (!getValue(category, key, strvalue)) {
       return default_value;
+    }
     return fromstring(strvalue);
   }
 

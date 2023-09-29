@@ -155,12 +155,12 @@ class InterceptPluginData
 public:
   InterceptPluginData()
     : active_hash_map(nullptr),
-      mutex(0),
+      mutex(nullptr),
       seq_id(0),
       txn_slot(0),
       global_config(nullptr),
       last_gc_time(0),
-      read_while_writer(0),
+      read_while_writer(false),
       tol_global_hook_reqs(0),
       tol_remap_hook_reqs(0),
       tol_non_cacheable_reqs(0),

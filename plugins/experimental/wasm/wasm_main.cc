@@ -262,8 +262,8 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
   TSVIO input_vio;
   ats_wasm::TransformInfo *ti;
 
-  event = (int)ev;
-  ti    = (ats_wasm::TransformInfo *)TSContDataGet(contp);
+  event = static_cast<int>(ev);
+  ti    = static_cast<ats_wasm::TransformInfo *>(TSContDataGet(contp));
 
   Dbg(ats_wasm::dbg_ctl, "[%s] begin transform entry", __FUNCTION__);
   if (TSVConnClosedGet(contp)) {

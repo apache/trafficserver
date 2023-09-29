@@ -74,7 +74,7 @@ public:
     return "";
   }
 
-  virtual void
+  void
   Set(nostd::string_view key, nostd::string_view value) noexcept override
   {
     headers_.insert(std::pair<std::string, std::string>(std::string(key), std::string(value)));
@@ -112,7 +112,7 @@ struct ExtraRequestData {
 };
 
 void
-InitTracer(std::string url, std::string service_name, double rate)
+InitTracer(const std::string &url, const std::string &service_name, double rate)
 {
   otlp::OtlpHttpExporterOptions opts;
 

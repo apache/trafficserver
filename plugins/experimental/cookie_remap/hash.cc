@@ -17,8 +17,8 @@
 */
 
 #include "hash.h"
-#include <string.h>
-#include <ctype.h>
+#include <cstring>
+#include <cctype>
 
 ////////////////////////////////////////////////////////////////////////////////
 //        Implementation of the Fowler–Noll–Vo hash function                  //
@@ -102,7 +102,7 @@ hash_fnv32_buf(const char *buf, size_t len)
 
   for (val = FNV1_32_INIT; len > 0; --len) {
     val *= FNV_32_PRIME;
-    val ^= (uint32_t)(*buf);
+    val ^= static_cast<uint32_t>(*buf);
     ++buf;
   }
 

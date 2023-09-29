@@ -18,10 +18,10 @@
 
 #include "normalize.h"
 #include "common.h"
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include <cstring>
+#include <cctype>
+
+#include <cstdio>
 
 /* Remove Dot Algorithm outlined in RFC3986 section 5.2.4
  * Function writes normalizes path and writes to ret_buffer */
@@ -159,7 +159,7 @@ percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower)
       int hexVal = 0;
       char decodeChar;
       sscanf(encodedVal, "%2x", &hexVal);
-      decodeChar = (char)hexVal;
+      decodeChar = static_cast<char>(hexVal);
       /* If encoded value is a reserved char, leave encoded*/
       if (strchr(reserved_string, decodeChar)) {
         decoded_uri[i - offset]     = uri[i];
