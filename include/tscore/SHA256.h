@@ -46,7 +46,7 @@ public:
     EVP_DigestInit_ex(_ctx, EVP_sha256(), nullptr);
 #endif
   }
-  ~SHA256Context()
+  ~SHA256Context() override
   {
 #if HAVE_SHA256_INIT
     // _sha256ctx does not need to be freed

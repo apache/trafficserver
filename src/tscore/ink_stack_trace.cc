@@ -91,8 +91,9 @@ void
 ink_stack_trace_dump()
 {
   const char msg[] = "ink_stack_trace_dump not implemented on this operating system\n";
-  if (write(STDERR_FILENO, msg, sizeof(msg) - 1) == -1)
+  if (write(STDERR_FILENO, msg, sizeof(msg) - 1) == -1) {
     return;
+  }
 }
 
 const void *

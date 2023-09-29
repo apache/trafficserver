@@ -45,10 +45,10 @@
 #define PLUGIN_NAME "intercept"
 #define PORT        60000
 
-#define VDEBUG(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
+#define VDEBUG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 
 #if DEBUG
-#define VERROR(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
+#define VERROR(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #else
 #define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN_NAME, __FUNCTION__, ##__VA_ARGS__)
 #endif
@@ -56,6 +56,8 @@
 #define VIODEBUG(vio, fmt, ...)                                                                                              \
   VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
          TSVIOVConnGet(vio), ##__VA_ARGS__)
+
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static TSCont TxnHook;
 static TSCont InterceptHook;
@@ -89,8 +91,11 @@ struct InterceptIOChannel {
   read(TSVConn vc, TSCont contp)
   {
     TSReleaseAssert(this->vio == nullptr);
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
+
+    this->iobuf = TSIOBufferCreate();
+    TSReleaseAssert(this->iobuf);
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    TSReleaseAssert(this->reader);
 
     this->vio = TSVConnRead(vc, contp, this->iobuf, INT64_MAX);
   }
@@ -99,8 +104,10 @@ struct InterceptIOChannel {
   write(TSVConn vc, TSCont contp)
   {
     TSReleaseAssert(this->vio == nullptr);
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
+    this->iobuf = TSIOBufferCreate();
+    TSReleaseAssert(this->iobuf);
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    TSReleaseAssert(this->reader);
 
     this->vio = TSVConnWrite(vc, contp, this->reader, INT64_MAX);
   }
@@ -203,9 +210,9 @@ union argument_type {
 static TSCont
 InterceptContCreate(TSEventFunc hook, TSMutex mutexp, void *data)
 {
-  TSCont contp;
+  TSCont contp = TSContCreate(hook, mutexp);
+  TSReleaseAssert(contp);
 
-  TSReleaseAssert((contp = TSContCreate(hook, mutexp)));
   TSContDataSet(contp, data);
   return contp;
 }

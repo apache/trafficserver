@@ -61,14 +61,13 @@ init_ssl_params(const std::string &conf)
 
   if (ssl_param.key_update_interval > STEK_MAX_LIFETIME) {
     ssl_param.key_update_interval = STEK_MAX_LIFETIME;
-    TSDebug(PLUGIN, "KeyUpdateInterval too high, resetting session ticket key rotation to %d seconds.",
-            ssl_param.key_update_interval);
+    Dbg(dbg_ctl, "KeyUpdateInterval too high, resetting session ticket key rotation to %d seconds.", ssl_param.key_update_interval);
   }
 
-  TSDebug(PLUGIN, "init_ssl_params: I %s been configured to initially be stek_master.",
-          ((ssl_param.stek_master) ? "HAVE" : "HAVE NOT"));
-  TSDebug(PLUGIN, "init_ssl_params: Rotation interval (ssl_param.key_update_interval) set to %d", ssl_param.key_update_interval);
-  TSDebug(PLUGIN, "init_ssl_params: cluster_name set to %s", ssl_param.cluster_name.c_str());
+  Dbg(dbg_ctl, "init_ssl_params: I %s been configured to initially be stek_master.",
+      ((ssl_param.stek_master) ? "HAVE" : "HAVE NOT"));
+  Dbg(dbg_ctl, "init_ssl_params: Rotation interval (ssl_param.key_update_interval) set to %d", ssl_param.key_update_interval);
+  Dbg(dbg_ctl, "init_ssl_params: cluster_name set to %s", ssl_param.cluster_name.c_str());
 
   ssl_param.pub = new RedisPublisher(conf);
   if ((!ssl_param.pub) || (!ssl_param.pub->is_good())) {

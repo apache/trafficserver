@@ -47,8 +47,7 @@
 #include "tscore/Diags.h"
 #include "ts/ts.h"
 
-int tsapi::c::diags_on_for_plugins = 0;
-int DiagsConfigState::_enabled[2]  = {0, 0};
+int DiagsConfigState::_enabled[2] = {0, 0};
 
 using namespace swoc::literals;
 
@@ -62,7 +61,6 @@ DiagsConfigState::enabled(DiagsTagType dtt, int new_value)
 
   if (DiagsTagType_Debug == dtt) {
     DbgCtl::_config_mode.store(new_value, std::memory_order_relaxed);
-    diags_on_for_plugins = (1 & new_value) != 0;
   }
 }
 

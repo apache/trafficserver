@@ -180,8 +180,8 @@ public:
     lookup_table.insert(make_pair("ka_total", LookupItem("KA Total", "proxy.process.net.dynamic_keep_alive_timeout_in_total", 2)));
     lookup_table.insert(make_pair("ka_count", LookupItem("KA Count", "proxy.process.net.dynamic_keep_alive_timeout_in_count", 2)));
 
-    lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count_stat", 2)));
-    lookup_table.insert(make_pair("conn_fail", LookupItem("Conn Fail", "proxy.process.http.err_connect_fail_count_stat", 2)));
+    lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count", 2)));
+    lookup_table.insert(make_pair("conn_fail", LookupItem("Conn Fail", "proxy.process.http.err_connect_fail_count", 2)));
     lookup_table.insert(make_pair("abort", LookupItem("Abort", "proxy.process.http.transaction_counts.errors.aborts", 2)));
     lookup_table.insert(
       make_pair("t_conn_fail", LookupItem("Conn Fail", "proxy.process.http.transaction_counts.errors.connect_failed", 2)));

@@ -26,15 +26,14 @@
 #include <string>
 #include <cstdlib>
 
-#include "ComponentBase.h"
 #include "Variables.h"
 
 namespace EsiLib
 {
-class Expression : private ComponentBase
+class Expression
 {
 public:
-  Expression(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func, Variables &variables);
+  Expression(Variables &variables);
 
   /** substitutes variables (if any) in given expression */
   const std::string &expand(const char *expr, int expr_len = -1);
@@ -56,7 +55,7 @@ public:
     return evaluate(expr.data(), expr.size());
   }
 
-  ~Expression() override{};
+  ~Expression(){};
 
 private:
   static const std::string EMPTY_STRING;

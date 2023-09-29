@@ -78,18 +78,6 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   ink_strlcpy(content_language_out_buf, "en", content_language_buf_size);
   ink_strlcpy(content_type_out_buf, "text/html", content_type_buf_size);
 
-  ///////////////////////////////////////////////
-  // if suppressing this response, return NULL //
-  ///////////////////////////////////////////////
-  if (is_response_suppressed(context)) {
-    if (enable_logging) {
-      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
-    }
-    return nullptr;
-  }
-
-  lock();
-
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
   ///////////////////////////////////////////////////////////////////
@@ -109,6 +97,19 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       }
     }
   }
+
+  ///////////////////////////////////////////////
+  // if suppressing this response, return NULL //
+  ///////////////////////////////////////////////
+  if (is_response_suppressed(context)) {
+    if (enable_logging) {
+      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
+    }
+    return nullptr;
+  }
+
+  lock(); // body factory lock
+
   //////////////////////////////////////////////////////////////////////////////////
   // if language-targeting activated, get client Accept-Language & Accept-Charset //
   //////////////////////////////////////////////////////////////////////////////////

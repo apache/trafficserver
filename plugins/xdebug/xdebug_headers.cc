@@ -28,6 +28,11 @@
 
 #define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 
+namespace
+{
+DbgCtl dbg_ctl_hdrs{DEBUG_TAG_LOG_HEADERS};
+}
+
 class EscapeCharForJson
 {
 public:
@@ -112,7 +117,7 @@ private:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// Dump a header on stderr, useful together with TSDebug().
+// Dump a header on stderr, useful together with Dbg().
 void
 print_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
 {
@@ -147,16 +152,16 @@ print_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &
   TSIOBufferReaderFree(reader);
   TSIOBufferDestroy(output_buffer);
 
-  TSDebug(DEBUG_TAG_LOG_HEADERS, "%.*s", static_cast<int>(ss.tellp()), ss.str().data());
+  Dbg(dbg_ctl_hdrs, "%.*s", static_cast<int>(ss.tellp()), ss.str().data());
 }
 
 void
 log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, char const *type_msg)
 {
-  if (TSIsDebugTagSet(DEBUG_TAG_LOG_HEADERS)) {
+  if (dbg_ctl_hdrs.on()) {
     std::stringstream output;
     print_headers(txn, bufp, hdr_loc, output);
-    TSDebug(DEBUG_TAG_LOG_HEADERS, "\n=============\n %s headers are... \n %s", type_msg, output.str().c_str());
+    Dbg(dbg_ctl_hdrs, "\n=============\n %s headers are... \n %s", type_msg, output.str().c_str());
   }
 }
 

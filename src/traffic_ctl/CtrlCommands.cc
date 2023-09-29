@@ -39,7 +39,8 @@ namespace
 /// We use yamlcpp as codec implementation.
 using Codec = yamlcpp_json_emitter;
 
-const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
+using StringToOutputFormatMap                  = std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat>;
+const StringToOutputFormatMap _Fmt_str_to_enum = {
   {"json", BasePrinter::Options::OutputFormat::JSON},
   {"rpc",  BasePrinter::Options::OutputFormat::RPC }
 };
@@ -55,8 +56,8 @@ parse_format(ts::Arguments *args)
   BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::NOT_SET};
 
   if (auto data = args->get("format"); data) {
-    swoc::TextView fmt{data.value()};
-    if (auto search = _Fmt_str_to_enum.find(fmt); search != std::end(_Fmt_str_to_enum)) {
+    StringToOutputFormatMap::const_iterator search = _Fmt_str_to_enum.find(data.value());
+    if (search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
     }
   }

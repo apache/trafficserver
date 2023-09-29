@@ -51,12 +51,13 @@ include(AutoOptionHelpers)
 auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
 auto_option(JEMALLOC
     FEATURE_VAR TS_HAS_JEMALLOC
+    DEFAULT OFF
     PACKAGE_DEPENDS jemalloc
 )
 auto_option(MIMALLOC
     FEATURE_VAR TS_HAS_MIMALLOC
-    PACKAGE_DEPENDS mimalloc
     DEFAULT OFF
+    PACKAGE_DEPENDS mimalloc
 )
 auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
@@ -67,6 +68,7 @@ option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
+option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist allocator (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
@@ -146,29 +148,49 @@ include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckSymbolExists)
+include(CheckTypeSize)
+include(CheckSourceCompiles)
+include(CheckStructHasMember)
 
+CHECK_INCLUDE_FILE(alloca.h HAVE_ALLOCA_H)
+CHECK_INCLUDE_FILE(cpio.h HAVE_CPIO_H)
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(float.h HAVE_FLOAT_H)
 CHECK_INCLUDE_FILE(stdlib.h HAVE_STDLIB_H)
 CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
+CHECK_INCLUDE_FILE(ifaddrs.h HAVE_IFADDRS_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILE(string.h HAVE_STRING_H)
 CHECK_INCLUDE_FILE(linux/major.h HAVE_LINUX_MAJOR_H)
+CHECK_INCLUDE_FILE(malloc.h HAVE_MALLOC_H)
+CHECK_INCLUDE_FILE(mcheck.h HAVE_MCHECK_H)
+CHECK_INCLUDE_FILE(machine/endian.h HAVE_MACHINE_ENDIAN_H)
+CHECK_INCLUDE_FILE(sys/byteorder.h HAVE_SYS_BYTEORDER_H)
 CHECK_INCLUDE_FILE(sys/disk.h HAVE_SYS_DISK_H)
 CHECK_INCLUDE_FILE(sys/disklabel.h HAVE_SYS_DISKLABEL_H)
+CHECK_INCLUDE_FILE(sys/endian.h HAVE_SYS_ENDIAN_H)
 CHECK_INCLUDE_FILE(sys/ioctl.h HAVE_SYS_IOCTL_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
+CHECK_INCLUDE_FILE(sys/sockio.h HAVE_SYS_SOCKIO_H)
 CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
+CHECK_INCLUDE_FILE(sys/statfs.h HAVE_SYS_STATFS_H)
 CHECK_INCLUDE_FILE(sys/statvfs.h HAVE_SYS_STATVFS_H)
 CHECK_INCLUDE_FILE(sys/uio.h HAVE_SYS_UIO_H)
+CHECK_INCLUDE_FILE(sys/sysinfo.h HAVE_SYS_SYSINFO_H)
 CHECK_INCLUDE_FILE(sys/sysmacros.h HAVE_SYS_SYSMACROS_H)
+CHECK_INCLUDE_FILE(sys/systeminfo.h HAVE_SYS_SYSTEMINFO_H)
+CHECK_INCLUDE_FILE(sys/sysctl.h HAVE_SYS_SYSCTL_H)
 CHECK_INCLUDE_FILE(sys/mman.h HAVE_SYS_MMAN_H)
 CHECK_INCLUDE_FILE(sys/mount.h HAVE_SYS_MOUNT_H)
 CHECK_INCLUDE_FILE(sys/param.h HAVE_SYS_PARAM_H)
+CHECK_INCLUDE_FILE(sysexits.h HAVE_SYSEXITS_H)
+CHECK_INCLUDE_FILE(stropts.h HAVE_STROPTS_H)
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
+CHECK_INCLUDE_FILE(values.h HAVE_VALUES_H)
 CHECK_INCLUDE_FILE(netinet/in.h HAVE_NETINET_IN_H)
 CHECK_INCLUDE_FILE(netinet/in_systm.h HAVE_NETINET_IN_SYSTM_H)
 CHECK_INCLUDE_FILE(netinet/tcp.h HAVE_NETINET_TCP_H)
+CHECK_INCLUDE_FILE(netinet/ip.h HAVE_NETINET_IP_H)
 CHECK_INCLUDE_FILE(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
 CHECK_INCLUDE_FILE(arpa/inet.h HAVE_ARPA_INET_H)
@@ -229,7 +251,7 @@ if(TS_HAS_JEMALLOC AND TS_HAS_MIMALLOC)
 endif()
 
 if(TS_HAS_JEMALLOC)
-    link_libraries(jemalloc)
+    link_libraries(jemalloc::jemalloc)
 elseif(TS_HAS_MIMALLOC)
     link_libraries(mimalloc)
 endif()
@@ -258,6 +280,7 @@ if(ENABLE_ASAN)
     add_link_options(-fsanitize=address)
 endif()
 
+set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 find_package(ZLIB REQUIRED)
 
 # ncurses is used in traffic_top
@@ -266,6 +289,10 @@ set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})
 set(HAVE_NCURSES_H ${CURSES_HAVE_NCURSES_H})
 set(HAVE_NCURSES_CURSES_H ${CURSES_HAVE_NCURSES_CURSES_H})
 set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
+
+# curl is used in traffic_top
+find_package(CURL)
+set(HAVE_CURL ${CURL_FOUND})
 
 include(Check128BitCas)
 include(ConfigureTransparentProxy)
@@ -287,16 +314,51 @@ check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
 set(CMAKE_REQUIRED_LIBRARIES uring)
 check_symbol_exists(io_uring_queue_init "liburing.h" HAVE_IOURING)
 unset(CMAKE_REQUIRED_LIBRARIES)
+check_symbol_exists(getpagesize unistd.h HAVE_GETPAGESIZE)
+check_symbol_exists(getpeereid unistd.h HAVE_GETPEEREID)
+check_symbol_exists(getpeerucred unistd.h HAVE_GETPEERUCRED)
 check_symbol_exists(getresuid unistd.h HAVE_GETRESUID)
 check_symbol_exists(getresgid unistd.h HAVE_GETRESGID)
+check_symbol_exists(malloc_usable_size malloc.h HAVE_MALLOC_USABLE_SIZE)
+check_symbol_exists(mcheck_pedantic mcheck.h HAVE_MCHECK_PEDANTIC)
+check_symbol_exists(posix_fadvise fcntl.h HAVE_POSIX_FADVISE)
+check_symbol_exists(posix_fallocate fcntl.h HAVE_POSIX_FALLOCATE)
+check_symbol_exists(posix_madvise sys/mman.h HAVE_POSIX_MADVISE)
 check_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
 check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
+check_symbol_exists(sysconf unistd.h HAVE_SYSCONF)
+check_symbol_exists(recvmmsg sys/socket.h HAVE_RECVMMSG)
+check_symbol_exists(sendmmsg sys/socket.h HAVE_SENDMMSG)
+check_symbol_exists(strlcat string.h HAVE_STRLCAT)
+check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
+check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
+if(TS_USE_HWLOC)
+  check_source_compiles(C
+    "#include <hwloc.h>
+    int main() { return HWLOC_OBJ_PU; }" HAVE_HWLOC_OBJ_PU)
+endif()
 
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
 if (HAVE_IOURING AND USE_IOURING)
     message(STATUS "Using io_uring")
     set(TS_USE_LINUX_IO_URING 1)
 endif(HAVE_IOURING AND USE_IOURING)
+
+check_symbol_exists(pthread_getname_np pthread.h HAVE_PTHREAD_GETNAME_NP)
+check_symbol_exists(pthread_get_name_np pthread.h HAVE_PTHREAD_GET_NAME_NP)
+
+check_source_compiles(C
+  "#include <pthread.h>
+  void main() { pthread_setname_np(\"name\"); }" HAVE_PTHREAD_SETNAME_NP_1)
+check_source_compiles(C
+  "#include <pthread.h>
+  void main() { pthread_setname_np(0, \"name\"); }" HAVE_PTHREAD_SETNAME_NP_2)
+check_source_compiles(C
+  "#include <pthread.h>
+  void main() { pthread_set_name_np(\"name\"); }" HAVE_PTHREAD_SET_NAME_NP_1)
+check_source_compiles(C
+  "#include <pthread.h>
+  void main() { pthread_set_name_np(0, \"name\"); }" HAVE_PTHREAD_SET_NAME_NP_2)
 
 # Check ssl functionality
 list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
@@ -315,6 +377,11 @@ check_symbol_exists(HMAC_CTX_new "openssl/hmac.h" HAVE_HMAC_CTX_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
+check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
+check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_evp_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)
+check_symbol_exists(SSL_read_early_data "openssl/ssl.h" TS_HAS_TLS_EARLY_DATA)
+check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
+check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(
     SSL_CTX_set_keylog_callback
     "openssl/ssl.h"
@@ -325,7 +392,23 @@ check_symbol_exists(
     "openssl/ssl.h"
     HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
 )
+check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
+check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
+check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
+
+set(HAVE_SSL_READ_EARLY_DATA ${TS_HAS_TLS_EARLY_DATA})
+
+set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
+check_type_size("struct tcp_info" STRUCT_TCP_INFO)
+unset(CMAKE_REQUIRED_INCLUDES)
+
+check_struct_has_member("struct tcp_info" tcpi_data_segs_out "linux/tcp.h" HAVE_STRUCT_LINUX_TCP_INFO)
+check_struct_has_member("struct sockaddr" sa_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
+check_struct_has_member("struct sockaddr_in" sin_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_IN_SIN_LEN)
+check_struct_has_member("struct sockaddr_in6" sin6_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN)
+check_struct_has_member("struct stat" st_mtimespec "sys/stat.h" HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
+check_struct_has_member("struct stat" st_mtim "sys/stat.h" HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
 
 if(ENABLE_DOCS OR ENABLE_AUTEST)
     find_package(Python3 REQUIRED)

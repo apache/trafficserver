@@ -31,7 +31,6 @@ PreWarmConfigParams::PreWarmConfigParams()
 {
   // RECU_RESTART_TS
   REC_EstablishStaticConfigByte(enabled, "proxy.config.tunnel.prewarm.enabled");
-  REC_EstablishStaticConfigInteger(max_stats_size, "proxy.config.tunnel.prewarm.max_stats_size");
 
   // RECU_DYNAMIC
   REC_ReadConfigInteger(event_period, "proxy.config.tunnel.prewarm.event_period");

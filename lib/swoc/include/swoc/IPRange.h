@@ -1801,7 +1801,7 @@ inline IPRange::IPRange(string_view const &text) {
 inline IPRange::IPRange(IPRangeView const& view) {
   if (AF_INET == view._family) {
     *this = *view._raw._4;
-  } else if (AF_INET6 == _family) {
+  } else if (AF_INET6 == view._family) {
     *this = *view._raw._6;
   }
 }

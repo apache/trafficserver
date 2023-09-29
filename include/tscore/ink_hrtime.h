@@ -36,7 +36,7 @@
 #include <cstdint>
 #include <sys/time.h>
 #include <cstdlib>
-typedef int64_t ink_hrtime;
+using ink_hrtime = int64_t;
 
 int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
 char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width = 0,
@@ -152,49 +152,49 @@ ink_hrtime_from_timeval(const struct timeval *tv)
 static inline ink_hrtime
 ink_hrtime_to_years(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_YEAR));
+  return (t / HRTIME_YEAR);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_weeks(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_WEEK));
+  return (t / HRTIME_WEEK);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_days(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_DAY));
+  return (t / HRTIME_DAY);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_mins(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_MINUTE));
+  return (t / HRTIME_MINUTE);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_sec(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_SECOND));
+  return (t / HRTIME_SECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_msec(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_MSECOND));
+  return (t / HRTIME_MSECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_usec(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_USECOND));
+  return (t / HRTIME_USECOND);
 }
 
 static inline ink_hrtime
 ink_hrtime_to_nsec(ink_hrtime t)
 {
-  return ((ink_hrtime)(t / HRTIME_NSECOND));
+  return (t / HRTIME_NSECOND);
 }
 
 static inline struct timespec
@@ -249,13 +249,13 @@ ink_gettimeofday()
 static inline int
 ink_time()
 {
-  return (int)ink_hrtime_to_sec(ink_get_hrtime());
+  return static_cast<int>(ink_hrtime_to_sec(ink_get_hrtime()));
 }
 
 static inline int
 ink_hrtime_diff_msec(ink_hrtime t1, ink_hrtime t2)
 {
-  return (int)ink_hrtime_to_msec(t1 - t2);
+  return static_cast<int>(ink_hrtime_to_msec(t1 - t2));
 }
 
 static inline ink_hrtime

@@ -476,6 +476,18 @@ Thread Variables
 Network
 =======
 
+.. ts:cv:: CONFIG proxy.config.net.additional_accepts INT -1
+   :reloadable:
+
+   This config addresses an issue that can sometimes happen if threads are caught in
+   a net accept while loop, become busy exclusviely accepting connections, and are prevented
+   from doing other work. This can cause an increase in latency and average event
+   loop time. When set to 0, a thread accepts only 1 connection per event loop.
+   When set to any other positive integer x, a thread will accept up to x+1 connections
+   per event loop. When set to -1 (default), a thread will accept connections as long
+   as there are connections waiting in its listening queue.is equivalent to "accept all",
+   and setting to 0 is equivalent to "accept one".
+
 .. ts:cv:: CONFIG proxy.config.net.connections_throttle INT 30000
 
    The total number of client and origin server connections that the server
@@ -697,6 +709,7 @@ HTTP Engine
    tr-out                      Outbound transparent.
    tr-pass                     Pass through enabled.
    mptcp                       Multipath TCP.
+   allow-plain                 Allow failback to non-TLS for TLS ports
    =========== =============== ========================================
 
 *number*
@@ -720,6 +733,8 @@ ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
 
    Not compatible with: ``blind`` and ``quic``.
+
+   ``allow-plain`` allows a failback to non SSL for such ports.
 
 quic
    Require QUIC termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
@@ -778,6 +793,10 @@ mptcp
    Enable Multipath TCP on this proxy port.
 
    Requires custom Linux kernel available at https://multipath-tcp.org.
+
+allow-plain
+   For TLS ports, will fall back to non-TLS processing if the TLS handshake fails. Incompatible with
+   quic ports.
 
 .. topic:: Example
 
@@ -1051,24 +1070,36 @@ mptcp
    Control the scope of server session re-use if it is enabled by
    :ts:cv:`proxy.config.http.server_session_sharing.match`. Valid values are:
 
-   ========== =================================================================
-   Value      Description
-   ========== =================================================================
-   ``global`` Re-use sessions from a global pool of all server sessions.
-   ``thread`` Re-use sessions from a per-thread pool.
-   ``hybrid`` Try to work as a global pool, but release server sessions to the
-              per-thread pool if there is lock contention on the global pool.
-   ========== =================================================================
+   ================= ==========================================================
+   Value             Description
+   ================= ==========================================================
+   ``global``        Re-use sessions from a global pool of all server sessions.
+   ``thread``        Re-use sessions from a per-thread pool.
+   ``hybrid``        Try to work as a global pool, but release server sessions
+                     to the per-thread pool if there is lock contention on the
+                     global pool.
+   ``global_locked`` Similar to global, except that the session pool is
+                     managed by a blocking mutex.
+   ================= ==========================================================
 
 
-   Setting :ts:cv:`proxy.config.http.server_session_sharing.pool` to global can reduce
-   the number of connections to origin for some traffic loads.  However, if many
-   execute threads are active, the thread contention on the global pool can reduce the
-   lifetime of connections to origin and reduce effective origin connection reuse.
+   Setting :ts:cv:`proxy.config.http.server_session_sharing.pool`
+   to global can reduce the number of connections to origin for some
+   traffic loads.  However, if many execute threads are active, the thread
+   contention on the global pool can reduce the lifetime of connections
+   to origin and reduce effective origin connection reuse.
 
-   For a hybrid pool, the operation starts as the global pool, but sessons are returned
-   to the local thread pool if the global pool lock is not acquired rather than just
-   closing the origin connection as is the case in standard global mode.
+   For a hybrid pool, the operation starts as the global pool, but sessons
+   are returned to the local thread pool if the global pool lock is not
+   acquired rather than just closing the origin connection as is the
+   case in standard global mode.
+
+   For a ``global_locked`` pool connections are managed by a blocking
+   mutex instead of the normal try mutex.  Under extreme transaction
+   loads the connection pool starvation may result in most transactions
+   bypassing the connection pool resulting in runaway upstream
+   connections.  This option will avoid this condition at the cost of
+   latency and ttfb (time to first byte) performance).
 
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:
@@ -3322,7 +3353,7 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.show_location INT 1
 
    Annotates diagnostic messages with the source code location. Set to 1 to enable
-   for Debug() messages only. Set to 2 to enable for all messages.
+   for Dbg() messages only. Set to 2 to enable for all messages.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
    :reloadable:
@@ -3330,10 +3361,6 @@ Diagnostic Logging Configuration
    When set to 1, enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
    When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
-
-   When set to 3, enables logging for diagnostic messages whose log level is `diag` or `debug`, except those
-   output by deprecated functions such as `TSDebug()` and `TSDebugSpecific()`.  Using the value 3 will have less
-   of a negative impact on proxy throughput than using the value 1.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
@@ -3356,9 +3383,6 @@ Diagnostic Logging Configuration
    privileges    Privilege elevation
    ssl           TLS termination and certificate processing
    ============  =====================================================
-
-   |TS| plugins will typically log debug messages using the :c:func:`TSDbg`
-   API, passing the plugin name as the debug tag.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.throttling_interval_msec INT 0
    :reloadable:
@@ -4202,10 +4226,6 @@ SNI Routing
 .. ts:cv:: CONFIG proxy.config.tunnel.prewarm INT 0
 
    Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
-
-.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.max_stats_size INT 100
-
-   Max size of :ref:`dynamic stats for Pre-warming TLS Tunnel <pre-warming-tls-tunnel-stats>`.
 
 .. ts:cv:: CONFIG proxy.config.tunnel.prewarm.algorithm INT 2
 

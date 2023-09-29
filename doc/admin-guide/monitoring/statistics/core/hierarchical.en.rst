@@ -26,10 +26,6 @@ Hierarchical Cache
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.node.http.parent_proxy_total_response_bytes integer
-   :type: counter
-   :units: bytes
-
 .. ts:stat:: global proxy.process.http.current_parent_proxy_connections integer
    :type: counter
 
@@ -47,4 +43,3 @@ Hierarchical Cache
 
 .. ts:stat:: global proxy.process.http.total_parent_proxy_connections integer
    :type: counter
-

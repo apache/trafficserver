@@ -36,7 +36,7 @@
 class HttpDataFetcherImpl : public HttpDataFetcher
 {
 public:
-  HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, const char *debug_tag);
+  HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, char const *dbg_tag);
 
   void useHeader(const EsiLib::HttpHeader &header);
 
@@ -103,7 +103,6 @@ public:
 
 private:
   TSCont _contp;
-  char _debug_tag[64];
 
   using CallbackObjectList = std::list<FetchedDataProcessor *>;
 
@@ -149,6 +148,8 @@ private:
   inline void _release(RequestData &req_data);
 
   struct sockaddr_storage _client_addr;
+
+  DbgCtl _dbg_ctl;
 };
 
 inline void

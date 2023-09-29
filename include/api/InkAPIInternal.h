@@ -353,7 +353,7 @@ public:
   enum ScopeTag { GLOBAL, SSN, TXN };
 
   /// Default Constructor
-  HttpHookState();
+  HttpHookState() = default;
 
   /// Initialize the hook state to track up to 3 sources of hooks.
   /// The argument order to this method is used to break priority ties (callbacks from earlier args are invoked earlier)
@@ -370,9 +370,9 @@ public:
 protected:
   /// Track the state of one scope of hooks.
   struct Scope {
-    APIHook const *_c;      ///< Current hook (candidate for invocation).
-    APIHook const *_p;      ///< Previous hook (already invoked).
-    APIHooks const *_hooks; ///< Reference to the real hook list
+    APIHook const *_c      = nullptr; ///< Current hook (candidate for invocation).
+    APIHook const *_p      = nullptr; ///< Previous hook (already invoked).
+    APIHooks const *_hooks = nullptr; ///< Reference to the real hook list
 
     /// Initialize the scope.
     void init(HttpAPIHooks const *scope, TSHttpHookID id);
@@ -385,10 +385,10 @@ protected:
   };
 
 private:
-  TSHttpHookID _id;
-  Scope _global; ///< Chain from global hooks.
-  Scope _ssn;    ///< Chain from session hooks.
-  Scope _txn;    ///< Chain from transaction hooks.
+  TSHttpHookID _id = TS_HTTP_LAST_HOOK; ///< Hook ID.
+  Scope _global;                        ///< Chain from global hooks.
+  Scope _ssn;                           ///< Chain from session hooks.
+  Scope _txn;                           ///< Chain from transaction hooks.
 };
 
 inline TSHttpHookID

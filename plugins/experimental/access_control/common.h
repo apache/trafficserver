@@ -54,16 +54,24 @@ void PrintToStdErr(const char *fmt, ...);
 #else /* ACCESS_CONTROL_UNIT_TEST */
 #include "ts/ts.h"
 
-#define AccessControlDebug(fmt, ...)                                                      \
-  do {                                                                                    \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+#define AccessControlDebug(fmt, ...)                                              \
+  do {                                                                            \
+    Dbg(dbg_ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 
-#define AccessControlError(fmt, ...)                                                      \
-  do {                                                                                    \
-    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                                     \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+#define AccessControlError(fmt, ...)                                              \
+  do {                                                                            \
+    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                             \
+    Dbg(dbg_ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
+
+namespace access_control_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace access_control_ns;
+
 #endif /* ACCESS_CONTROL_UNIT_TEST */
 
 int string2int(const StringView &s);
+time_t string2time(const StringView &s);

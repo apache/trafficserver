@@ -26,7 +26,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+  Dbg(dbg_ctl, "remap plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -45,7 +45,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "created remap instance with configuration %s", argv[2]);
+  Dbg(dbg_ctl, "created remap instance with configuration %s", argv[2]);
   return TS_SUCCESS;
 }
 
@@ -65,11 +65,11 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   if (nullptr == ih) {
-    TSDebug(PLUGIN_NAME, "No ACLs configured");
+    Dbg(dbg_ctl, "No ACLs configured");
   } else {
     Acl *a = static_cast<Acl *>(ih);
     if (!a->eval(rri, rh)) {
-      TSDebug(PLUGIN_NAME, "denying request");
+      Dbg(dbg_ctl, "denying request");
       TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN);
       a->send_html(rh);
     }

@@ -24,7 +24,9 @@
 #include <netinet/in.h>
 #include <memory>
 
-#define AuthLogDebug(fmt, ...) TSDebug("authproxy", "%s: " fmt, __func__, ##__VA_ARGS__)
+extern DbgCtl Auth_dbg_ctl;
+
+#define AuthLogDebug(fmt, ...) Dbg(Auth_dbg_ctl, "%s: " fmt, __func__, ##__VA_ARGS__)
 #define AuthLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
 
 template <typename T>

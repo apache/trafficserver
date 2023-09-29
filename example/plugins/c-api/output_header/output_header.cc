@@ -31,14 +31,19 @@
  *   Note: tested on Solaris only.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "output_header"
+
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
@@ -58,7 +63,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   int64_t output_len;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "couldn't retrieve client request header");
+    Dbg(dbg_ctl, "couldn't retrieve client request header");
     TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     goto done;
   }
@@ -68,11 +73,11 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* This will print  just MIMEFields and not
      the http request line */
-  TSDebug(PLUGIN_NAME, "Printing the hdrs ... ");
+  Dbg(dbg_ctl, "Printing the hdrs ... ");
   TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "non-fatal: error releasing MLoc");
+    Dbg(dbg_ctl, "non-fatal: error releasing MLoc");
     TSError("[%s] non-fatal: Couldn't release MLoc", PLUGIN_NAME);
   }
 
@@ -84,7 +89,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *)TSmalloc(total_avail + 1);
+  output_string = static_cast<char *>(TSmalloc(total_avail + 1));
   output_len    = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -124,7 +129,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
-  TSDebug(PLUGIN_NAME, "%s", output_string);
+  Dbg(dbg_ctl, "%s", output_string);
 
   TSfree(output_string);
 
@@ -135,7 +140,7 @@ done:
 static int
 hdr_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:

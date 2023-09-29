@@ -54,6 +54,8 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Range const &r
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPRange const &range);
 
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPRangeView const &range);
+
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPNet const &net);
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Net const &net);
@@ -108,4 +110,5 @@ operator<<(ostream &s, swoc::IPRange const &Range) {
   swoc::LocalBufferWriter<swoc::IP_STREAM_SIZE> w;
   return s << bwformat(w, swoc::bwf::Spec::DEFAULT, Range);
 }
+
 } // namespace std

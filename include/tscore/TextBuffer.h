@@ -94,7 +94,7 @@ public:
   size_t
   spaceUsed() const
   {
-    return (size_t)(nextAdd - bufferStart);
+    return static_cast<size_t>(nextAdd - bufferStart);
   };
 
   bool

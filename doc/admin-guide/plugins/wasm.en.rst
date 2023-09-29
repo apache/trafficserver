@@ -50,7 +50,9 @@ so.
 Compiling the Plugin
 ====================
 
-* The plugin requires either WAMR or WasmEdge
+* The plugin requires either WAMR, Wasmtime or WasmEdge.
+
+* Please note that WAMR and Wasmtime have conflict with each other and the plugin can only be compiled with one of them. If both are installed, WAMR will take priority.
 
 **Compile and install WAMR (CMake is required)**
 
@@ -66,6 +68,23 @@ Compiling the Plugin
   cmake .. -DWAMR_BUILD_INTERP=1 -DWAMR_BUILD_FAST_INTERP=1 -DWAMR_BUILD_JIT=0 -DWAMR_BUILD_AOT=0 -DWAMR_BUILD_SIMD=0 -DWAMR_BUILD_MULTI_MODULE=1 -DWAMR_BUILD_LIBC_WASI=0 -DWAMR_BUILD_TAIL_CALL=1 -DWAMR_DISABLE_HW_BOUND_CHECK=1 -DWAMR_BUILD_BULK_MEMORY=1 -DWAMR_BUILD_WASM_CACHE=0
   make
   sudo make install
+
+**Compile and install Wasmtime (Rust is required)**
+
+::
+
+  git clone https://github.com/bytecodealliance/wasmtime.git
+  cd wasmtime/
+  git checkout release-9.0.0
+  git submodule update --init
+  cargo build
+  cargo build --release --manifest-path crates/c-api/Cargo.toml
+  sudo cp target/release/libwasmtime.so /usr/local/lib
+  wget https://github.com/WebAssembly/wasm-c-api/archive/c9d31284651b975f05ac27cee0bab1377560b87e.tar.gz
+  tar zxvf c9d31284651b975f05ac27cee0bab1377560b87e.tar.gz
+  cd wasm-c-api-c9d31284651b975f05ac27cee0bab1377560b87e/
+  sudo mkdir /usr/local/include/include/
+  sudo cp include/wasm.h /usr/local/include/include/
 
 **Install WasmEdge**
 
@@ -96,15 +115,14 @@ Follow the C++, Rust and TinyGo examples in the examples directory. Instructions
 generated wasm modules with the plugin.
 
 Runtime can be chosen by changing the ``runtime`` field inside the yaml configuration file for the plugin.
-``ats.wasm.runtime.wamr`` is for WAMR while ``ats.wasm.runtime.wasmedge`` is for WasmEdge.
+``ats.wasm.runtime.wamr`` is for WAMR. ``ats.wasm.runtime.wasmtime`` is Wasmtime while ``ats.wasm.runtime.wasmedge`` is for WasmEdge.
 
 The plugin can also take more than one yaml file as arguments and can thus load more than one wasm modules.
 
 TODO
 ====
 
-* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime later.
-* Need to support L4 lifecycle handler functions
+* Currently only the WAMR, Wasmtime and WasmEdge runtime is supported. We should also support V8.
 
 Limitations
 ===========
@@ -115,4 +133,5 @@ The plugin will not support the following functionality as specified in Proxy-Wa
 * Getting and setting HTTP/2 frame meta data
 * Support asynchronous request call in the start handler function of the plugin lifecycle
 * Support on Grpc lifecycle handler functions
+* Support for L4 lifecycle handler functions
 

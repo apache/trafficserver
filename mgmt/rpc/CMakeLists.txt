@@ -32,6 +32,10 @@ add_library(jsonrpc_protocol STATIC
 )
 add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
 
+# Some plugins link against ts::jsonrpc_protocol and therefore need it to be compiled as
+# position independent.
+set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 target_link_libraries(jsonrpc_protocol
     PUBLIC
         ts::tscore

@@ -64,6 +64,7 @@ libinkcache_a_SOURCES += \
 endif
 
 TESTS = $(check_PROGRAMS)
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
 test_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -104,6 +105,7 @@ test_LDADD = \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
 	@SWOC_LIBS@ \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \

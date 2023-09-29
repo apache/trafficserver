@@ -180,7 +180,8 @@ ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)
 void
 ConfigSetPrinter::write_output(YAML::Node const &result)
 {
-  static const std::unordered_map<std::string, std::string> Update_Type_To_String_Message = {
+  using TypeToStringMap                                      = std::unordered_map<std::string, std::string>;
+  static const TypeToStringMap Update_Type_To_String_Message = {
     {"0", "Set {}"                                                                                          }, // UNDEFINED
     {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
     {"2", "Set {}, restart required"                                                                        }, // RESTART_TS
@@ -190,8 +191,8 @@ ConfigSetPrinter::write_output(YAML::Node const &result)
   try {
     auto const &response = result.as<ConfigSetRecordResponse>();
     for (auto &&updatedRec : response.data) {
-      if (auto search = Update_Type_To_String_Message.find(updatedRec.updateType);
-          search != std::end(Update_Type_To_String_Message)) {
+      TypeToStringMap::const_iterator search = Update_Type_To_String_Message.find(updatedRec.updateType);
+      if (search != std::end(Update_Type_To_String_Message)) {
         std::cout << swoc::bwprint(text, search->second, updatedRec.recName) << '\n';
       } else {
         std::cout << "Oops we don't know how to handle the update status for '" << updatedRec.recName << "' ["
@@ -214,13 +215,13 @@ ConfigStatusPrinter::write_output(YAML::Node const &result)
       recordName = recordInfo.name;
       if (recordName == "proxy.process.version.server.long") {
         std::cout << "Version: " << recordInfo.currentValue << "\n";
-      } else if (recordName == "proxy.node.restarts.proxy.start_time") {
+      } else if (recordName == "proxy.process.proxy.start_time") {
         std::cout << swoc::bwprint(text, "{}: {}\n", "Started at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
-      } else if (recordName == "proxy.node.config.reconfigure_time") {
+      } else if (recordName == "proxy.process.proxy.reconfigure_time") {
         std::cout << swoc::bwprint(text, "{}: {}\n", "Reconfigured at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
-      } else if (recordName == "proxy.node.config.reconfigure_required") {
+      } else if (recordName == "proxy.process.proxy.reconfigure_required") {
         std::cout << "Reconfigure required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
-      } else if (recordName == "proxy.node.config.restart_required.proxy") {
+      } else if (recordName == "proxy.process.proxy.restart_required") {
         std::cout << "Restart required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
       }
     }

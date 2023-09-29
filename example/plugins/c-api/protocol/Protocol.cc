@@ -24,9 +24,14 @@
 #include "Protocol.h"
 #include "TxnSM.h"
 #include "tscore/ink_defs.h"
-#include <math.h>
+#include <cmath>
 
 #define RETRY_TIME 10
+
+namespace protocol_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+};
 
 /* global variable */
 TSTextLogObject protocol_plugin_log;
@@ -52,14 +57,14 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
     /* Create a new mutex for the TxnSM, which is going
        to handle the incoming request. */
     pmutex = TSMutexCreate();
-    txn_sm = TxnSMCreate(pmutex, (TSVConn)edata, server_port);
+    txn_sm = TxnSMCreate(pmutex, static_cast<TSVConn>(edata), server_port);
 
     /* This is no reason for not grabbing the lock.
        So skip the routine which handle LockTry failure case. */
 
     // check if grabbing the lock is successful
     if (TSMutexLockTry(pmutex) != TS_SUCCESS) {
-      TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
+      Dbg(dbg_ctl, "Unable to get lock. Will retry after some time");
       TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
       break;
     }
@@ -130,13 +135,13 @@ TSPluginInit(int argc, const char *argv[])
   server_port = 4666;
 
   if (argc < 3) {
-    TSDebug(PLUGIN_NAME, "Usage: protocol.so <accept_port> <server_port>. Using default ports accept=%d server=%d", accept_port,
-            server_port);
+    Dbg(dbg_ctl, "Usage: protocol.so <accept_port> <server_port>. Using default ports accept=%d server=%d", accept_port,
+        server_port);
   } else {
     tmp = strtol(argv[1], &end, 10);
     if (*end == '\0') {
       accept_port = tmp;
-      TSDebug(PLUGIN_NAME, "using accept_port %d", accept_port);
+      Dbg(dbg_ctl, "using accept_port %d", accept_port);
     } else {
       TSError("[%s] Wrong argument for accept_port, using default port %d", PLUGIN_NAME, accept_port);
     }
@@ -144,7 +149,7 @@ TSPluginInit(int argc, const char *argv[])
     tmp = strtol(argv[2], &end, 10);
     if (*end == '\0') {
       server_port = tmp;
-      TSDebug(PLUGIN_NAME, "using server_port %d", server_port);
+      Dbg(dbg_ctl, "using server_port %d", server_port);
     } else {
       TSError("[%s] Wrong argument for server_port, using default port %d", PLUGIN_NAME, server_port);
     }

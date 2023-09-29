@@ -25,7 +25,7 @@
 
 #include "Protocol.h"
 
-typedef int (*TxnSMHandler)(TSCont contp, TSEvent event, void *data);
+using TxnSMHandler = int (*)(TSCont, TSEvent, void *);
 
 TSCont TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port);
 
@@ -34,7 +34,7 @@ TSCont TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port);
 #define TXN_SM_ZERO  0x00001111
 
 /* The Txn State Machine */
-typedef struct _TxnSM {
+struct TxnSM {
   unsigned int q_magic;
 
   TSMutex q_mutex;
@@ -76,5 +76,4 @@ typedef struct _TxnSM {
   TSVIO q_cache_write_vio;
   TSIOBuffer q_cache_read_buffer;
   TSIOBufferReader q_cache_read_buffer_reader;
-
-} TxnSM;
+};

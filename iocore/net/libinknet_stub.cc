@@ -23,10 +23,6 @@
 
 class EThread;
 class Continuation;
-void
-initialize_thread_for_http_sessions(EThread *, int)
-{
-}
 
 #include "P_UnixNet.h"
 #include "P_DNSConnection.h"
@@ -105,12 +101,6 @@ APIHooks::head() const
 {
   ink_assert(false);
   return nullptr;
-}
-
-void
-ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
-{
-  ink_release_assert(false);
 }
 
 #include "ControlMatcher.h"

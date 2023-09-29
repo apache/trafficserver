@@ -35,6 +35,12 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
+namespace inliner_ns
+{
+DbgCtl dbg_ctl{PLUGIN_TAG};
+}
+using namespace inliner_ns;
+
 // disable timeout for now
 const size_t timeout = 0;
 
@@ -98,7 +104,7 @@ int
 inliner_transform(TSCont c, TSEvent e, void *)
 {
   if (TSVConnClosedGet(c)) {
-    TSDebug(PLUGIN_TAG, "connection closed");
+    Dbg(dbg_ctl, "connection closed");
     MyData *const data = static_cast<MyData *>(TSContDataGet(c));
     if (data != nullptr) {
       TSContDataSet(c, nullptr);

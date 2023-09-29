@@ -39,14 +39,16 @@ using namespace atscppapi;
 namespace
 {
 GlobalPlugin *plugin;
-}
+
+DbgCtl dbg_ctl{PLUGIN_NAME};
+} // namespace
 
 class RedoCacheLookupPlugin : public GlobalPlugin
 {
 public:
   RedoCacheLookupPlugin(const char *fallback) : fallback(fallback)
   {
-    TSDebug(PLUGIN_NAME, "registering transaction hooks");
+    Dbg(dbg_ctl, "registering transaction hooks");
     RedoCacheLookupPlugin::registerHook(HOOK_CACHE_LOOKUP_COMPLETE);
   }
 
@@ -57,7 +59,7 @@ public:
 
     if (status == Transaction::CacheStatus::CACHE_LOOKUP_NONE || status == Transaction::CacheStatus::CACHE_LOOKUP_SKIPED ||
         status == Transaction::CacheStatus::CACHE_LOOKUP_MISS) {
-      TSDebug(PLUGIN_NAME, "rewinding to check for fallback url: %s", fallback);
+      Dbg(dbg_ctl, "rewinding to check for fallback url: %s", fallback);
       TSHttpTxn txnp = static_cast<TSHttpTxn>(transaction.getAtsHandle());
       TSHttpTxnRedoCacheLookup(txnp, fallback, strlen(fallback));
     }
@@ -72,7 +74,7 @@ private:
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(PLUGIN_NAME, "Init");
+  Dbg(dbg_ctl, "Init");
   if (!RegisterGlobalPlugin("RedoCacheLookupPlugin", PLUGIN_NAME, "dev@trafficserver.apache.org")) {
     return;
   }
@@ -96,18 +98,18 @@ TSPluginInit(int argc, const char *argv[])
     case '?':
       break;
     default:
-      TSDebug(PLUGIN_NAME, "Unexpected option: %i", opt);
+      Dbg(dbg_ctl, "Unexpected option: %i", opt);
       TSError("[%s] Unexpected options error.", PLUGIN_NAME);
       return;
     }
   }
 
   if (nullptr == fallback) {
-    TSDebug(PLUGIN_NAME, "Missing fallback option.");
+    Dbg(dbg_ctl, "Missing fallback option.");
     TSError("[%s] Missing fallback option", PLUGIN_NAME);
     return;
   }
-  TSDebug(PLUGIN_NAME, "Initialized with fallback: %s", fallback);
+  Dbg(dbg_ctl, "Initialized with fallback: %s", fallback);
 
   plugin = new RedoCacheLookupPlugin(fallback);
 }

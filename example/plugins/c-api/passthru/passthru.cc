@@ -37,9 +37,14 @@
 
 #define PLUGIN_NAME "passthru"
 
-#define PassthruSessionDebug(sp, fmt, ...)                 \
-  do {                                                     \
-    TSDebug(PLUGIN_NAME, "sp=%p " fmt, sp, ##__VA_ARGS__); \
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
+#define PassthruSessionDebug(sp, fmt, ...)         \
+  do {                                             \
+    Dbg(dbg_ctl, "sp=%p " fmt, sp, ##__VA_ARGS__); \
   } while (0)
 
 static int PassthruSessionEvent(TSCont cont, TSEvent event, void *edata);
@@ -307,7 +312,7 @@ PassthruListen()
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "listening on port '%s'", ports);
+  Dbg(dbg_ctl, "listening on port '%s'", ports);
   TSfree(ports);
 
   cont = TSContCreate(PassthruAccept, nullptr);

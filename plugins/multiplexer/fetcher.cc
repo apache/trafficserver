@@ -50,7 +50,7 @@ HttpParser::parse(io::IO &io)
     TSIOBufferReaderConsume(io.reader, iterator - begin);
 
     if (parsed_) {
-      TSDebug(PLUGIN_TAG, "HttpParser: response parsing is complete (%u response status code)", statusCode());
+      Dbg(dbg_ctl, "HttpParser: response parsing is complete (%u response status code)", statusCode());
       assert(parser_ != nullptr);
       destroyParser();
       return true;
@@ -62,3 +62,8 @@ HttpParser::parse(io::IO &io)
 }
 
 } // namespace ats
+
+namespace multiplexer_ns
+{
+DbgCtl dbg_ctl{PLUGIN_TAG};
+}

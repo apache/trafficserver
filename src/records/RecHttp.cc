@@ -191,6 +191,7 @@ const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
 const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
 const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
 const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
+const char *const HttpProxyPort::OPT_ALLOW_PLAIN             = "allow-plain";
 const char *const HttpProxyPort::OPT_SSL                     = "ssl";
 const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
@@ -450,6 +451,8 @@ HttpProxyPort::processOptions(const char *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
+    } else if (0 == strcasecmp(OPT_ALLOW_PLAIN, item)) {
+      m_allow_plain = true;
     } else if (0 == strcasecmp(OPT_MPTCP, item)) {
       if (mptcp_supported()) {
         m_mptcp = true;
@@ -498,6 +501,17 @@ HttpProxyPort::processOptions(const char *opts)
   if (m_transparent_passthrough && !m_inbound_transparent_p) {
     Warning("Port descriptor '%s' has transparent pass-through enabled without inbound transparency, this will be ignored.", opts);
     m_transparent_passthrough = false;
+  }
+
+  // Make sure QUIC is not enabled with incompatible options
+  if (this->isQUIC()) {
+    if (this->m_allow_plain) {
+      Warning("allow_plain incompatible with QUIC");
+      zret = false;
+    } else if (this->m_inbound_transparent_p || this->m_outbound_transparent_p) {
+      Warning("transparent mode not supported with QUIC");
+      zret = false;
+    }
   }
 
   // Set the default session protocols.
@@ -653,6 +667,10 @@ HttpProxyPort::print(char *out, size_t n)
 
   if (m_transparent_passthrough) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_PASSTHROUGH);
+  }
+
+  if (m_allow_plain) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_ALLOW_PLAIN);
   }
 
   /* Don't print the IP resolution preferences if the port is outbound

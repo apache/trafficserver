@@ -498,22 +498,22 @@ ts_lua_http_timeout_set(lua_State *L)
 
   switch (conf) {
   case TS_LUA_TIMEOUT_ACTIVE:
-    TSDebug(TS_LUA_DEBUG_TAG, "setting active timeout");
+    Dbg(dbg_ctl, "setting active timeout");
     TSHttpTxnActiveTimeoutSet(http_ctx->txnp, value);
     break;
 
   case TS_LUA_TIMEOUT_CONNECT:
-    TSDebug(TS_LUA_DEBUG_TAG, "setting connect timeout");
+    Dbg(dbg_ctl, "setting connect timeout");
     TSHttpTxnConnectTimeoutSet(http_ctx->txnp, value);
     break;
 
   case TS_LUA_TIMEOUT_DNS:
-    TSDebug(TS_LUA_DEBUG_TAG, "setting dns timeout");
+    Dbg(dbg_ctl, "setting dns timeout");
     TSHttpTxnDNSTimeoutSet(http_ctx->txnp, value);
     break;
 
   case TS_LUA_TIMEOUT_NO_ACTIVITY:
-    TSDebug(TS_LUA_DEBUG_TAG, "setting no activity timeout");
+    Dbg(dbg_ctl, "setting no activity timeout");
     TSHttpTxnNoActivityTimeoutSet(http_ctx->txnp, value);
     break;
 
@@ -535,7 +535,7 @@ ts_lua_http_client_packet_mark_set(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "client packet mark set");
+  Dbg(dbg_ctl, "client packet mark set");
   TSHttpTxnClientPacketMarkSet(http_ctx->txnp, value);
 
   return 0;
@@ -551,7 +551,7 @@ ts_lua_http_server_packet_mark_set(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "server packet mark set");
+  Dbg(dbg_ctl, "server packet mark set");
   TSHttpTxnServerPacketMarkSet(http_ctx->txnp, value);
 
   return 0;
@@ -568,7 +568,7 @@ ts_lua_http_enable_redirect(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "enable redirect");
+  Dbg(dbg_ctl, "enable redirect");
   TSHttpTxnConfigIntSet(http_ctx->txnp, TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS, value);
 
   return 0;
@@ -584,7 +584,7 @@ ts_lua_http_set_debug(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "set debug");
+  Dbg(dbg_ctl, "set debug");
   TSHttpTxnCntlSet(http_ctx->txnp, TS_HTTP_CNTL_TXN_DEBUG, (value != 0));
 
   return 0;
@@ -600,7 +600,7 @@ ts_lua_http_client_packet_dscp_set(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "client packet dscp set");
+  Dbg(dbg_ctl, "client packet dscp set");
   TSHttpTxnClientPacketDscpSet(http_ctx->txnp, value);
 
   return 0;
@@ -616,7 +616,7 @@ ts_lua_http_server_packet_dscp_set(lua_State *L)
 
   value = luaL_checkinteger(L, 1);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "server packet dscp set");
+  Dbg(dbg_ctl, "server packet dscp set");
   TSHttpTxnServerPacketDscpSet(http_ctx->txnp, value);
 
   return 0;

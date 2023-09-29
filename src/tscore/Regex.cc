@@ -132,7 +132,7 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 {
   int rv;
 
-  rv = pcre_exec(regex, regex_extra, str.data(), int(str.size()), 0, 0, ovector, ovecsize);
+  rv = pcre_exec(regex, regex_extra, str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
   return rv > 0;
 }
 

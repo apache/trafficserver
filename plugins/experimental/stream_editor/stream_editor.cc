@@ -99,11 +99,18 @@
 #include <string>
 #include <cstdio>
 #include <stdexcept>
+#include <memory>
 #include "ts/ts.h"
 
 struct edit_t;
 using editset_t = std::set<edit_t>;
 using edit_p    = editset_t::const_iterator;
+
+namespace
+{
+DbgCtl dbg_ctl{"[stream-editor]"};
+DbgCtl dbg_ctl_no_brackets{"stream-editor"};
+} // namespace
 
 struct edit_t {
   const size_t start;
@@ -142,8 +149,8 @@ struct edit_t {
         edits.insert(*this);
         return true;
       } catch (const edit_t &conflicted) {
-        TSDebug("stream-editor", "Conflicting edits [%ld-%ld] vs [%ld-%ld]", start, start + bytes, conflicted.start,
-                conflicted.start + conflicted.bytes);
+        Dbg(dbg_ctl_no_brackets, "Conflicting edits [%ld-%ld] vs [%ld-%ld]", start, start + bytes, conflicted.start,
+            conflicted.start + conflicted.bytes);
         if (priority < conflicted.priority) {
           /* we win conflict and oust our enemy */
           edits.erase(conflicted);
@@ -548,15 +555,16 @@ public:
     }
   }
 };
-using ruleset_t = std::vector<rule_t>;
-using rule_p    = ruleset_t::const_iterator;
+using ruleset_t    = std::vector<rule_t>;
+using rule_p       = ruleset_t::const_iterator;
+using ruleset_up_t = std::unique_ptr<ruleset_t>;
 
-using contdata_t = struct contdata_t {
+struct contdata_t {
   TSCont cont             = nullptr;
   TSIOBuffer out_buf      = nullptr;
   TSIOBufferReader out_rd = nullptr;
   TSVIO out_vio           = nullptr;
-  ruleset_t rules;
+  ruleset_up_t rules;
   std::string contbuf;
   size_t contbuf_sz = 0;
   int64_t bytes_in  = 0;
@@ -617,7 +625,7 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   editset_t edits;
 
-  for (const auto &rule : contdata->rules) {
+  for (const auto &rule : *(contdata->rules)) {
     rule.apply(buf, buflen, edits);
   }
 
@@ -761,8 +769,8 @@ static int
 streamedit_setup(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txn        = static_cast<TSHttpTxn>(edata);
-  ruleset_t *rules_in  = static_cast<ruleset_t *>(TSContDataGet(contp));
   contdata_t *contdata = nullptr;
+  auto rules_in{static_cast<ruleset_t *>(TSContDataGet(contp))};
 
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));
 
@@ -772,7 +780,7 @@ streamedit_setup(TSCont contp, TSEvent event, void *edata)
       if (contdata == nullptr) {
         contdata = new contdata_t();
       }
-      contdata->rules.push_back(r);
+      contdata->rules->push_back(r);
       contdata->set_cont_size(r.cont_size());
     }
   }
@@ -798,7 +806,7 @@ streamedit_setup(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-read_conf(const char *filename, ruleset_t *&in, ruleset_t *&out)
+read_conf(const char *filename, ruleset_up_t &in, ruleset_up_t &out)
 {
   char buf[MAX_CONFIG_LINE];
   FILE *file = fopen(filename, "r");
@@ -810,13 +818,13 @@ read_conf(const char *filename, ruleset_t *&in, ruleset_t *&out)
   while (fgets(buf, MAX_CONFIG_LINE, file) != nullptr) {
     try {
       if (!strncasecmp(buf, "[in]", 4)) {
-        if (in == nullptr) {
-          in = new ruleset_t();
+        if (!in) {
+          in.reset(new ruleset_t);
         }
         in->push_back(rule_t(buf));
       } else if (!strncasecmp(buf, "[out]", 5)) {
-        if (out == nullptr) {
-          out = new ruleset_t();
+        if (!out) {
+          out.reset(new ruleset_t);
         }
         out->push_back(rule_t(buf));
       }
@@ -832,8 +840,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSCont inputcont, outputcont;
-  ruleset_t *rewrites_in  = nullptr;
-  ruleset_t *rewrites_out = nullptr;
+  ruleset_up_t rewrites_in;
+  ruleset_up_t rewrites_out;
 
   info.plugin_name   = (char *)"stream-editor";
   info.vendor_name   = (char *)"Apache Software Foundation";
@@ -849,29 +857,29 @@ TSPluginInit(int argc, const char *argv[])
     read_conf(*++argv, rewrites_in, rewrites_out);
   }
 
-  if (rewrites_in != nullptr) {
-    TSDebug("[stream-editor]", "initializing input filtering");
+  if (rewrites_in) {
+    Dbg(dbg_ctl, "initializing input filtering");
     inputcont = TSContCreate(streamedit_setup, nullptr);
     if (inputcont == nullptr) {
       TSError("[stream-editor] failed to initialize input filtering!");
     } else {
-      TSContDataSet(inputcont, rewrites_in);
+      TSContDataSet(inputcont, rewrites_in.release());
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, inputcont);
     }
   } else {
-    TSDebug("[stream-editor]", "no input filter rules, skipping filter");
+    Dbg(dbg_ctl, "no input filter rules, skipping filter");
   }
 
-  if (rewrites_out != nullptr) {
-    TSDebug("[stream-editor]", "initializing output filtering");
+  if (rewrites_out) {
+    Dbg(dbg_ctl, "initializing output filtering");
     outputcont = TSContCreate(streamedit_setup, nullptr);
     if (outputcont == nullptr) {
       TSError("[stream-editor] failed to initialize output filtering!");
     } else {
-      TSContDataSet(outputcont, rewrites_out);
+      TSContDataSet(outputcont, rewrites_out.release());
       TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, outputcont);
     }
   } else {
-    TSDebug("[stream-editor]", "no output filter rules, skipping filter");
+    Dbg(dbg_ctl, "no output filter rules, skipping filter");
   }
 }

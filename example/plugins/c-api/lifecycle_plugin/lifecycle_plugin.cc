@@ -25,37 +25,42 @@
  *                    of response body content
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <ts/ts.h>
 
 #define PLUGIN_NAME "lifecycle"
+
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 int
 CallbackHandler(TSCont, TSEvent id, void *data)
 {
   switch (id) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
-    TSDebug(PLUGIN_NAME, "Proxy ports initialized");
+    Dbg(dbg_ctl, "Proxy ports initialized");
     break;
   case TS_EVENT_LIFECYCLE_PORTS_READY:
-    TSDebug(PLUGIN_NAME, "Proxy ports active");
+    Dbg(dbg_ctl, "Proxy ports active");
     break;
   case TS_EVENT_LIFECYCLE_CACHE_READY:
-    TSDebug(PLUGIN_NAME, "Cache ready");
+    Dbg(dbg_ctl, "Cache ready");
     break;
   case TS_EVENT_LIFECYCLE_MSG: {
-    TSPluginMsg *msg = (TSPluginMsg *)data;
-    TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
+    TSPluginMsg *msg = static_cast<TSPluginMsg *>(data);
+    Dbg(dbg_ctl, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (msg->data_size == 0) {
-      TSDebug(PLUGIN_NAME, "Message data is not available");
+      Dbg(dbg_ctl, "Message data is not available");
     }
 
     break;
   }
   default:
-    TSDebug(PLUGIN_NAME, "Unexpected event %d", id);
+    Dbg(dbg_ctl, "Unexpected event %d", id);
     break;
   }
   return TS_EVENT_NONE;
@@ -84,7 +89,7 @@ TSPluginInit(int argc, const char *argv[])
   TSLifecycleHookAdd(TS_LIFECYCLE_CACHE_READY_HOOK, cb);
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, cb);
 
-  TSDebug(PLUGIN_NAME, "online");
+  Dbg(dbg_ctl, "online");
 
   return;
 

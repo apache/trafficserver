@@ -44,6 +44,11 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
     /* Initial cache key facility from the requested URL. */
     CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), type, rri);
 
+    /* Don't use cachekey if not initialized properly */
+    if (!cachekey.isValid()) {
+      continue;
+    }
+
     /* Append custom prefix or the host:port */
     if (!config->prefixToBeRemoved()) {
       cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri, config->canonicalPrefix());

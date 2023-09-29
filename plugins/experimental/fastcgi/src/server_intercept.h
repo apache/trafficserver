@@ -61,7 +61,7 @@ public:
     serverDataBuffered  = false;
     inputCompleteState  = false;
     outputCompleteState = false;
-    TSDebug(PLUGIN_NAME, "ServerIntercept : Added Server intercept");
+    Dbg(dbg_ctl, "ServerIntercept : Added Server intercept");
   }
 
   ~ServerIntercept() override;

@@ -178,8 +178,6 @@ transactionContFunc(TSCont, TSEvent event, void *eventData)
 
   Dbg(dbg_ctl, "Transaction: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
-  TSDebug(PIName, "Should not see this, enabled set to 3");
-
   Dbg(off_dbg_ctl, "Should not see this, tag does not match regular expression");
 
   switch (event) {
@@ -256,6 +254,10 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   Dbg(dbg_ctl, "TSRemapInit()");
+
+  SpecificDbg(true, off_dbg_ctl, "Should see this");
+  SpecificDbg(false, dbg_ctl, "Should see this");
+  SpecificDbg(false, off_dbg_ctl, "Should NOT see this");
 
   TSReleaseAssert(api_info != nullptr);
   TSReleaseAssert(api_info->size == sizeof(TSRemapInterface));

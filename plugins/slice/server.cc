@@ -92,7 +92,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 {
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
 
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (dbg_ctl.on()) {
     DEBUG_LOG("First header\n%s", header.toString().c_str());
   }
 
@@ -247,7 +247,7 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   bool const logToError = conf->canLogError();
 
   // always write block stitch errors while in debug mode
-  if (!logToError && !TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (!logToError && !dbg_ctl.on()) {
     return;
   }
 
@@ -354,7 +354,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 {
   // block response header
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (dbg_ctl.on()) {
     DEBUG_LOG("Next Header:\n%s", header.toString().c_str());
   }
 

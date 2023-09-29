@@ -108,19 +108,19 @@ Arena::str_alloc(size_t len)
     tmp  /= 128;
   }
 
-  mem = (unsigned char *)alloc(size, 1);
+  mem = static_cast<unsigned char *>(alloc(size, 1));
 
   mem += (size - len - 1);
   p    = mem - 1;
   tmp  = len;
 
   while (tmp >= 128) {
-    *p--  = (unsigned char)(255 - (tmp % 128));
+    *p--  = static_cast<unsigned char>(255 - (tmp % 128));
     tmp  /= 128;
   }
-  *p = (unsigned char)tmp;
+  *p = static_cast<unsigned char>(tmp);
 
-  return (char *)mem;
+  return reinterpret_cast<char *>(mem);
 }
 
 /*-------------------------------------------------------------------------
@@ -132,7 +132,7 @@ Arena::str_free(char *str)
   unsigned char *p, *s, *e;
   size_t len;
 
-  e = (unsigned char *)str;
+  e = reinterpret_cast<unsigned char *>(str);
   s = e - 1;
 
   while (*s >= 128) {

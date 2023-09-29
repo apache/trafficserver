@@ -32,6 +32,7 @@ check_PROGRAMS = test_jsonrpc test_jsonrpcserver
 
 
 TESTS = $(check_PROGRAMS)
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
 ###########################################################################################
 # Protocol library only, no transport.

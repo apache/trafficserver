@@ -56,7 +56,7 @@ ssl_new_session(TSSslSessionID &sid)
   char session_data[SSL_SESSION_MAX_DER];
   const auto buffer_length = TSSslSessionGetBuffer(&sid, session_data, &session_ret_len);
   if (buffer_length == 0) {
-    TSDebug(PLUGIN, "Failed to find a session buffer.");
+    Dbg(dbg_ctl, "Failed to find a session buffer.");
     return 0;
   } else if (buffer_length > session_ret_len) {
     TSError("Session data is too large. Its size is: %d but our max buffer size is: %d.", buffer_length, SSL_SESSION_MAX_DER);
@@ -72,8 +72,8 @@ ssl_new_session(TSSslSessionID &sid)
 
   ssl_param.pub->publish(redis_channel, encrypted_data);
 
-  TSDebug(PLUGIN, "Create new session id: %s encoded: %s channel: %s", encoded_id.c_str(), encrypted_data.c_str(),
-          redis_channel.c_str());
+  Dbg(dbg_ctl, "Create new session id: %s encoded: %s channel: %s", encoded_id.c_str(), encrypted_data.c_str(),
+      redis_channel.c_str());
 
   return 0;
 }
@@ -91,7 +91,7 @@ ssl_del_session(TSSslSessionID &sid)
 
   int ret = encode_id(sid.bytes, sid.len, encoded_id);
   if (!ret) {
-    TSDebug(PLUGIN, "Session is deleted. id: %s", encoded_id.c_str());
+    Dbg(dbg_ctl, "Session is deleted. id: %s", encoded_id.c_str());
   }
 
   return 0;
@@ -100,7 +100,7 @@ ssl_del_session(TSSslSessionID &sid)
 int
 SSL_session_callback(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN, "SSL_session_callback event: %d", event);
+  Dbg(dbg_ctl, "SSL_session_callback event: %d", event);
   TSSslSessionID *sessionid = reinterpret_cast<TSSslSessionID *>(edata);
 
   switch (event) {

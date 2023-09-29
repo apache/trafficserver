@@ -28,7 +28,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include "print_funcs.h"
 #include "Variables.h"
 #include "Expression.h"
 #include "Utils.h"
@@ -49,24 +48,11 @@ addToHeaderList(const char *strings[], HttpHeaderList &headers)
   }
 }
 
-string gFakeDebugLog;
-
-void
-fakeDebug(const char *tag, const char *fmt, ...)
-{
-  static const int LINE_SIZE = 1024;
-  char buf[LINE_SIZE];
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(buf, LINE_SIZE, fmt, ap);
-  printf("Debug (%s): %s\n", tag, buf);
-  va_end(ap);
-  gFakeDebugLog.append(buf);
-}
+extern void enableFakeDebugLog();
+extern string gFakeDebugLog;
 
 TEST_CASE("esi vars test")
 {
-  Utils::init(&Debug, &Error);
   Utils::HeaderValueList allowlistCookies;
 
   SECTION("Test 1")
@@ -76,7 +62,8 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("c3");
     allowlistCookies.push_back("c4");
     allowlistCookies.push_back("c5");
-    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
     const char *strings[] = {"Cookie",
                              "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
                              "Host",
@@ -144,7 +131,7 @@ TEST_CASE("esi vars test")
     esi_vars.populate(headers);
     esi_vars.populate("a=b&c=d&e=f");
 
-    Expression esi_expr("vars_test", &Debug, &Error, esi_vars);
+    Expression esi_expr(esi_vars);
     REQUIRE(esi_expr.expand(nullptr) == "");
     REQUIRE(esi_expr.expand("") == "");
     REQUIRE(esi_expr.expand("blah") == "blah");
@@ -301,8 +288,9 @@ TEST_CASE("esi vars test")
 
   SECTION("Test 2")
   {
-    gFakeDebugLog.assign("");
-    Variables esi_vars("vars_test", &fakeDebug, &Error, allowlistCookies);
+    enableFakeDebugLog();
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
@@ -340,14 +328,15 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("t4");
     allowlistCookies.push_back("t5");
     allowlistCookies.push_back("c1");
-    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "age=21; grade=-5; avg=4.3; t1=\" \"; t2=0.0", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "t3=-0; t4=0; t5=6", -1));
 
-    Expression esi_expr("vars_test", &Debug, &Error, esi_vars);
+    Expression esi_expr(esi_vars);
     REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) >= -9"));
     REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 9"));
     REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) < 22"));
@@ -383,7 +372,8 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("F");
     allowlistCookies.push_back("a");
     allowlistCookies.push_back("c");
-    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
     string cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
                       "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
                       "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
@@ -425,7 +415,8 @@ TEST_CASE("esi vars test")
 
   SECTION("Test 5")
   {
-    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
     esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
@@ -442,7 +433,8 @@ TEST_CASE("esi vars test")
   SECTION("Test 6")
   {
     allowlistCookies.push_back("*");
-    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
+    int dummy;
+    Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "age=21; grade=-5; avg=4.3; t1=\" \"; t2=0.0", -1));

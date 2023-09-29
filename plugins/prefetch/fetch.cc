@@ -33,6 +33,11 @@
 #include "fetch.h"
 #include "headers.h"
 
+namespace
+{
+DbgCtl dbg_ctl_log{PLUGIN_NAME "_log"};
+}
+
 const char *
 getPrefetchMetricsNames(int metric)
 {
@@ -637,7 +642,7 @@ BgFetch::logAndMetricUpdate(TSEvent event) const
     break;
   }
 
-  if (TSIsDebugTagSet(PLUGIN_NAME "_log")) {
+  if (dbg_ctl_log.on()) {
     TSHRTime now   = TShrtime();
     double elapsed = static_cast<double>(now - _startTime) / 1000000.0;
 
@@ -667,7 +672,7 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+    if (dbg_ctl.on()) {
       char buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&fetch->client_ip);
 

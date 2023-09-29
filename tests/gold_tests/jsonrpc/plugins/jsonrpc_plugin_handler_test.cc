@@ -38,6 +38,8 @@ namespace
 {
 constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
 
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 const std::string MY_YAML_VERSION{"0.8.0"};
 const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
 } // namespace
@@ -47,7 +49,7 @@ namespace
 void
 test_join_hosts_method(const char *id, TSYaml p)
 {
-  TSDebug(PLUGIN_NAME, "Got a call! id: %s", id);
+  Dbg(dbg_ctl, "Got a call! id: %s", id);
   YAML::Node params = *reinterpret_cast<YAML::Node *>(p);
 
   // This handler errors.
@@ -77,7 +79,7 @@ test_join_hosts_method(const char *id, TSYaml p)
     // All done. Notify the RPC manager.
     TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
   } catch (YAML::Exception const &ex) {
-    TSDebug(PLUGIN_NAME, "Oops, something went wrong: %s", ex.what());
+    Dbg(dbg_ctl, "Oops, something went wrong: %s", ex.what());
     std::string descr{ex.what()};
     TSRPCHandlerError(UNKNOWN_ERROR, descr.c_str(), descr.size());
   }
@@ -87,7 +89,7 @@ test_join_hosts_method(const char *id, TSYaml p)
 void
 test_join_hosts_notification(TSYaml p)
 {
-  TSDebug(PLUGIN_NAME, "Got a call!");
+  Dbg(dbg_ctl, "Got a call!");
   try {
     YAML::Node params = *reinterpret_cast<YAML::Node *>(p);
 
@@ -96,14 +98,14 @@ test_join_hosts_notification(TSYaml p)
       hosts = hosts.as<std::vector<std::string>>();
     }
     if (0 == hosts.size()) {
-      TSDebug(PLUGIN_NAME, "No hosts field provided. Nothing we can do. No response back.");
+      Dbg(dbg_ctl, "No hosts field provided. Nothing we can do. No response back.");
       return;
     }
     std::string join;
     std::for_each(std ::begin(hosts), std::end(hosts), [&join](auto &&s) { join += s; });
-    TSDebug(PLUGIN_NAME, "Notification properly handled: %s", join.c_str());
+    Dbg(dbg_ctl, "Notification properly handled: %s", join.c_str());
   } catch (YAML::Exception const &ex) {
-    TSDebug(PLUGIN_NAME, "Oops, something went wrong: %s", ex.what());
+    Dbg(dbg_ctl, "Oops, something went wrong: %s", ex.what());
   }
 }
 } // namespace
@@ -120,7 +122,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 {
   namespace fs = swoc::file;
 
-  TSDebug(PLUGIN_NAME, "Working on the update now");
+  Dbg(dbg_ctl, "Working on the update now");
   YAML::Node params = *static_cast<YAML::Node *>(TSContDataGet(contp));
 
   // This handler errors.
@@ -161,7 +163,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
   // Basic stuffs here.
   // We open the file if exist, we update/add the host in the structure. For simplicity we do not delete anything.
-  fs::path sandbox  = fs::current_path();
+  fs::path sandbox  = fs::current_path() / "runtime";
   fs::path dumpFile = sandbox / "my_test_plugin_dump.yaml";
   bool newFile{false};
   if (!fs::exists(dumpFile)) {
@@ -232,7 +234,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
   // clean up the temp file if possible.
   if (fs::remove(tmpFile, ec); ec) {
-    TSDebug(PLUGIN_NAME, "Temp file could not be removed: %s", tmpFile.c_str());
+    Dbg(dbg_ctl, "Temp file could not be removed: %s", tmpFile.c_str());
   }
 
   // make the response. For complex structures YAML::convert<T>::encode() would be the preferred way.
@@ -285,18 +287,18 @@ TSPluginInit(int argc, const char *argv[])
   std::string method_name{"test_join_hosts_method"};
   if (TSRPCRegisterMethodHandler(method_name.c_str(), method_name.size(), test_join_hosts_method, rpcRegistrationInfo, &opt) ==
       TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
+    Dbg(dbg_ctl, "%s failed to register", method_name.c_str());
   } else {
-    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
+    Dbg(dbg_ctl, "%s successfully registered", method_name.c_str());
   }
 
   // TASK thread.
   method_name = "test_io_on_et_task";
   if (TSRPCRegisterMethodHandler(method_name.c_str(), method_name.size(), test_io_on_et_task, rpcRegistrationInfo, &opt) ==
       TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
+    Dbg(dbg_ctl, "%s failed to register", method_name.c_str());
   } else {
-    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
+    Dbg(dbg_ctl, "%s successfully registered", method_name.c_str());
   }
 
   // Notification
@@ -304,10 +306,10 @@ TSPluginInit(int argc, const char *argv[])
   method_name = "test_join_hosts_notification";
   if (TSRPCRegisterNotificationHandler(method_name.c_str(), method_name.size(), test_join_hosts_notification, rpcRegistrationInfo,
                                        &nOpt) == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
+    Dbg(dbg_ctl, "%s failed to register", method_name.c_str());
   } else {
-    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
+    Dbg(dbg_ctl, "%s successfully registered", method_name.c_str());
   }
 
-  TSDebug(PLUGIN_NAME, "Test Plugin Initialized.");
+  Dbg(dbg_ctl, "Test Plugin Initialized.");
 }

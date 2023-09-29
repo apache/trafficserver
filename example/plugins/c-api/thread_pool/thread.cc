@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <pthread.h>
 #include "ts/ts.h"
 

@@ -24,6 +24,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <unordered_map>
 #include <tuple>
 #include <mutex>
@@ -32,6 +33,8 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+
+#include "swoc/MemSpan.h"
 
 #include "tscore/ink_assert.h"
 
@@ -43,8 +46,9 @@ private:
   using self_type = Metrics;
 
 public:
-  using IntType = std::atomic<int64_t>;
-  using IdType  = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
+  using IntType     = std::atomic<int64_t>;
+  using IdType      = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
+  using SpanIntType = swoc::MemSpan<IntType>;
 
   static constexpr uint16_t METRICS_MAX_BLOBS = 8192;
   static constexpr uint16_t METRICS_MAX_SIZE  = 2048;                               // For a total of 16M metrics
@@ -76,7 +80,7 @@ public:
   {
     _blobs[0] = new MetricStorage();
     ink_release_assert(_blobs[0]);
-    ink_release_assert(0 == newMetric("proxy.node.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+    ink_release_assert(0 == newMetric("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
   }
 
   // Singleton
@@ -85,8 +89,19 @@ public:
   // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
   IdType newMetric(const std::string_view name);
+  SpanIntType newMetricSpan(size_t size, IdType *id = nullptr);
   IdType lookup(const std::string_view name) const;
   IntType *lookup(IdType id, std::string_view *name = nullptr) const;
+
+  std::optional<IntType *>
+  lookupPtr(const std::string_view name) const
+  {
+    IdType id = lookup(name);
+    if (id != NOT_FOUND) {
+      return lookup(id);
+    }
+    return std::nullopt;
+  }
 
   // A bit of a convenience, since we use the ptr to the atomic frequently in the core
   IntType *
@@ -94,6 +109,8 @@ public:
   {
     return lookup(newMetric(name));
   }
+
+  bool rename(IdType id, const std::string_view name);
 
   IntType &
   operator[](IdType id)

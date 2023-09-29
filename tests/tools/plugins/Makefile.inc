@@ -14,9 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-noinst_LTLIBRARIES += tools/plugins/cert_update.la
-tools_plugins_cert_update_la_SOURCES = tools/plugins/cert_update.cc
-
 noinst_LTLIBRARIES += tools/plugins/conf_remap_stripped.la
 tools_plugins_conf_remap_stripped_la_SOURCES = tools/plugins/conf_remap_stripped.cc
 
@@ -66,6 +63,9 @@ tools_plugins_ssl_verify_test_la_SOURCES = tools/plugins/ssl_verify_test.cc
 
 noinst_LTLIBRARIES += tools/plugins/ssntxnorder_verify.la
 tools_plugins_ssntxnorder_verify_la_SOURCES = tools/plugins/ssntxnorder_verify.cc
+
+noinst_LTLIBRARIES += tools/plugins/hook_tunnel_plugin.la
+tools_plugins_hook_tunnel_plugin_la_SOURCES = tools/plugins/hook_tunnel_plugin.cc
 
 noinst_LTLIBRARIES += tools/plugins/test_cppapi.la
 tools_plugins_test_cppapi_la_SOURCES = tools/plugins/test_cppapi.cc

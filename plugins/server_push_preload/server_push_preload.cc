@@ -43,6 +43,8 @@ namespace
 {
 GlobalPlugin *globalPlugin;
 RemapPlugin *remapPlugin;
+
+DbgCtl dbg_ctl{PLUGIN_NAME};
 } // namespace
 
 class ServerPushTransaction : public TransactionPlugin
@@ -80,12 +82,12 @@ public:
       for (header_field_value_iterator hit = field.begin(); hit != field.end(); ++hit) {
         const string &link = *hit;
 
-        TSDebug(PLUGIN_NAME, "Parsing link header: %s", link.c_str());
+        Dbg(dbg_ctl, "Parsing link header: %s", link.c_str());
         smatch matches;
 
         if (regex_search(link, matches, linkRegexp)) {
           string url = matches[1].str();
-          TSDebug(PLUGIN_NAME, "Found link header match: %s", url.c_str());
+          Dbg(dbg_ctl, "Found link header match: %s", url.c_str());
 
           set<string> params = split(matches[2].str(), ';');
           auto preload       = params.find(PRELOAD_PARAM);
@@ -95,7 +97,7 @@ public:
 
           auto noPush = params.find(NOPUSH_OPTION);
           if (noPush != params.end()) {
-            TSDebug(PLUGIN_NAME, "Skipping nopush link: %s", link.c_str());
+            Dbg(dbg_ctl, "Skipping nopush link: %s", link.c_str());
             continue;
           }
 
@@ -110,10 +112,10 @@ public:
             linkUrl.setPort(clientUrl.getPort());
           }
           string lu = linkUrl.getUrlString();
-          TSDebug(PLUGIN_NAME, "Push preloaded content: %s", lu.c_str());
+          Dbg(dbg_ctl, "Push preloaded content: %s", lu.c_str());
           TSHttpTxnServerPush(txnp, lu.c_str(), lu.length());
         } else {
-          TSDebug(PLUGIN_NAME, "No match found for link header: %s", link.c_str());
+          Dbg(dbg_ctl, "No match found for link header: %s", link.c_str());
         }
       }
     }
@@ -163,7 +165,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  TSDebug(PLUGIN_NAME, "Init");
+  Dbg(dbg_ctl, "Init");
   if (!RegisterGlobalPlugin("ServerPushPreloadPlugin", PLUGIN_NAME, "dev@trafficserver.apache.org")) {
     return;
   }
@@ -174,7 +176,7 @@ TSReturnCode
 TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
                    int errbuf_size ATSCPPAPI_UNUSED)
 {
-  TSDebug(PLUGIN_NAME, "New Instance");
+  Dbg(dbg_ctl, "New Instance");
   remapPlugin = new ServerPushRemap(instance_handle);
   return TS_SUCCESS;
 }

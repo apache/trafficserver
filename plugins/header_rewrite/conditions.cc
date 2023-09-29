@@ -70,7 +70,7 @@ ConditionStatus::initialize_hooks()
 bool
 ConditionStatus::eval(const Resources &res)
 {
-  TSDebug(PLUGIN_NAME, "Evaluating STATUS()");
+  Dbg(pi_dbg_ctl, "Evaluating STATUS()");
   return static_cast<MatcherType *>(_matcher)->test(res.resp_status);
 }
 
@@ -78,7 +78,7 @@ void
 ConditionStatus::append_value(std::string &s, const Resources &res)
 {
   s += std::to_string(res.resp_status);
-  TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
+  Dbg(pi_dbg_ctl, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
 
 // ConditionMethod
@@ -100,7 +100,7 @@ ConditionMethod::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating METHOD()");
+  Dbg(pi_dbg_ctl, "Evaluating METHOD()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
@@ -117,7 +117,7 @@ ConditionMethod::append_value(std::string &s, const Resources &res)
 
   if (bufp && hdr_loc) {
     const char *value = TSHttpHdrMethodGet(bufp, hdr_loc, &len);
-    TSDebug(PLUGIN_NAME, "Appending METHOD(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
+    Dbg(pi_dbg_ctl, "Appending METHOD(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
     s.append(value, len);
   }
 }
@@ -141,7 +141,7 @@ ConditionRandom::initialize(Parser &p)
 bool
 ConditionRandom::eval(const Resources & /* res ATS_UNUSED */)
 {
-  TSDebug(PLUGIN_NAME, "Evaluating RANDOM()");
+  Dbg(pi_dbg_ctl, "Evaluating RANDOM()");
   return static_cast<const MatcherType *>(_matcher)->test(rand_r(&_seed) % _max);
 }
 
@@ -152,7 +152,7 @@ ConditionRandom::append_value(std::string &s, const Resources & /* res ATS_UNUSE
 
   oss << rand_r(&_seed) % _max;
   s += oss.str();
-  TSDebug(PLUGIN_NAME, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
+  Dbg(pi_dbg_ctl, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
 }
 
 // ConditionAccess: access(file)
@@ -194,7 +194,7 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
     _next = tv.tv_sec; // I hope this is an atomic "set"...
     _last = check;     // This sure ought to be
   }
-  TSDebug(PLUGIN_NAME, "Evaluating ACCESS(%s) -> %d", _qualifier.c_str(), _last);
+  Dbg(pi_dbg_ctl, "Evaluating ACCESS(%s) -> %d", _qualifier.c_str(), _last);
 
   return _last;
 }
@@ -234,13 +234,13 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
     TSMLoc field_loc;
 
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier_wks ? _qualifier_wks : _qualifier.c_str(), _qualifier.size());
-    TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
+    Dbg(pi_dbg_ctl, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
       const char *value     = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
       TSMLoc next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
 
-      TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
+      Dbg(pi_dbg_ctl, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
       // multiple headers with the same name must be semantically the same as one value which is comma separated
       if (next_field_loc) {
@@ -258,7 +258,7 @@ ConditionHeader::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating HEADER()");
+  Dbg(pi_dbg_ctl, "Evaluating HEADER()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
@@ -279,7 +279,7 @@ ConditionUrl::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{URL:%s}", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{URL:%s}", q.c_str());
   _url_qual = parse_url_qualifier(q);
 }
 
@@ -291,7 +291,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
 
   if (_type == CLIENT) {
     // CLIENT always uses the pristine URL
-    TSDebug(PLUGIN_NAME, "   Using the pristine url");
+    Dbg(pi_dbg_ctl, "   Using the pristine url");
     if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url) != TS_SUCCESS) {
       TSError("[%s] Error getting the pristine URL", PLUGIN_NAME);
       return;
@@ -300,13 +300,13 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     // called at the remap hook
     bufp = res._rri->requestBufp;
     if (_type == URL) {
-      TSDebug(PLUGIN_NAME, "   Using the request url");
+      Dbg(pi_dbg_ctl, "   Using the request url");
       url = res._rri->requestUrl;
     } else if (_type == FROM) {
-      TSDebug(PLUGIN_NAME, "   Using the from url");
+      Dbg(pi_dbg_ctl, "   Using the from url");
       url = res._rri->mapFromUrl;
     } else if (_type == TO) {
-      TSDebug(PLUGIN_NAME, "   Using the to url");
+      Dbg(pi_dbg_ctl, "   Using the to url");
       url = res._rri->mapToUrl;
     } else {
       TSError("[%s] Invalid option value", PLUGIN_NAME);
@@ -333,39 +333,39 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
   case URL_QUAL_HOST:
     q_str = TSUrlHostGet(bufp, url, &i);
     s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   Host to match is: %.*s", i, q_str);
+    Dbg(pi_dbg_ctl, "   Host to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_PORT:
     i = TSUrlPortGet(bufp, url);
     s.append(std::to_string(i));
-    TSDebug(PLUGIN_NAME, "   Port to match is: %d", i);
+    Dbg(pi_dbg_ctl, "   Port to match is: %d", i);
     break;
   case URL_QUAL_PATH:
     q_str = TSUrlPathGet(bufp, url, &i);
     s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   Path to match is: %.*s", i, q_str);
+    Dbg(pi_dbg_ctl, "   Path to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_QUERY:
     q_str = TSUrlHttpQueryGet(bufp, url, &i);
     s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   Query parameters to match is: %.*s", i, q_str);
+    Dbg(pi_dbg_ctl, "   Query parameters to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_MATRIX:
     q_str = TSUrlHttpParamsGet(bufp, url, &i);
     s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   Matrix parameters to match is: %.*s", i, q_str);
+    Dbg(pi_dbg_ctl, "   Matrix parameters to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_SCHEME:
     q_str = TSUrlSchemeGet(bufp, url, &i);
     s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   Scheme to match is: %.*s", i, q_str);
+    Dbg(pi_dbg_ctl, "   Scheme to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_URL:
   case URL_QUAL_NONE: {
     // TSUrlStringGet returns an allocated char * we must free
     char *non_const_q_str = TSUrlStringGet(bufp, url, &i);
     s.append(non_const_q_str, i);
-    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, non_const_q_str);
+    Dbg(pi_dbg_ctl, "   URL to match is: %.*s", i, non_const_q_str);
     TSfree(non_const_q_str);
     break;
   }
@@ -397,7 +397,7 @@ ConditionDBM::initialize(Parser &p)
     _file = _qualifier.substr(0, pos);
     //_dbm = mdbm_open(_file.c_str(), O_RDONLY, 0, 0, 0);
     // if (NULL != _dbm) {
-    //   TSDebug(PLUGIN_NAME, "Opened DBM file %s", _file.c_str());
+    //   Dbg(pi_dbg_ctl, "Opened DBM file %s", _file.c_str());
     //   _key.set_value(_qualifier.substr(pos + 1));
     // } else {
     //   TSError("[%s] Failed to open DBM file: %s", PLUGIN_NAME, _file.c_str());
@@ -420,7 +420,7 @@ ConditionDBM::append_value(std::string & /* s ATS_UNUSED */, const Resources & /
   // if (key.size() > 0) {
   //   datum k, v;
 
-  //   TSDebug(PLUGIN_NAME, "Looking up DBM(\"%s\")", key.c_str());
+  //   Dbg(pi_dbg_ctl, "Looking up DBM(\"%s\")", key.c_str());
   //   k.dptr = const_cast<char*>(key.c_str());
   //   k.dsize = key.size();
 
@@ -428,7 +428,7 @@ ConditionDBM::append_value(std::string & /* s ATS_UNUSED */, const Resources & /
   //   //v = mdbm_fetch(_dbm, k);
   //   TSMutexUnlock(_mutex);
   //   if (v.dsize > 0) {
-  //     TSDebug(PLUGIN_NAME, "Appending DBM(%.*s) to evaluation value -> %.*s", k.dsize, k.dptr, v.dsize, v.dptr);
+  //     Dbg(pi_dbg_ctl, "Appending DBM(%.*s) to evaluation value -> %.*s", k.dsize, k.dptr, v.dsize, v.dptr);
   //     s.append(v.dptr, v.dsize);
   //   }
   // }
@@ -440,7 +440,7 @@ ConditionDBM::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating DBM()");
+  Dbg(pi_dbg_ctl, "Evaluating DBM()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
@@ -496,7 +496,7 @@ ConditionCookie::append_value(std::string &s, const Resources &res)
     goto out_release_field;
   }
 
-  TSDebug(PLUGIN_NAME, "Appending COOKIE(%s) to evaluation value -> %.*s", cookie_name, cookie_value_len, cookie_value);
+  Dbg(pi_dbg_ctl, "Appending COOKIE(%s) to evaluation value -> %.*s", cookie_name, cookie_value_len, cookie_value);
   s.append(cookie_value, cookie_value_len);
 
 // Unwind
@@ -510,7 +510,7 @@ ConditionCookie::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating COOKIE()");
+  Dbg(pi_dbg_ctl, "Evaluating COOKIE()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
@@ -521,7 +521,7 @@ ConditionInternalTxn::eval(const Resources &res)
 {
   bool ret = (0 != TSHttpTxnIsInternal(res.txnp));
 
-  TSDebug(PLUGIN_NAME, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
+  Dbg(pi_dbg_ctl, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
   return ret;
 }
 
@@ -548,7 +548,7 @@ ConditionIp::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{IP:%s} qualifier", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{IP:%s} qualifier", q.c_str());
 
   if (q == "CLIENT") {
     _ip_qual = IP_QUAL_CLIENT;
@@ -595,7 +595,7 @@ ConditionIp::eval(const Resources &res)
     append_value(s, res);
     bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 
-    TSDebug(PLUGIN_NAME, "Evaluating IP(): %s - rval: %d", s.c_str(), rval);
+    Dbg(pi_dbg_ctl, "Evaluating IP(): %s - rval: %d", s.c_str(), rval);
 
     return rval;
   }
@@ -618,7 +618,7 @@ ConditionIp::append_value(std::string &s, const Resources &res)
     ip_set = (nullptr != getIP(TSHttpTxnServerAddrGet(res.txnp), ip));
     break;
   case IP_QUAL_OUTBOUND:
-    TSDebug(PLUGIN_NAME, "Requesting output ip");
+    Dbg(pi_dbg_ctl, "Requesting output ip");
     ip_set = (nullptr != getIP(TSHttpTxnOutgoingAddrGet(res.txnp), ip));
     break;
   }
@@ -648,11 +648,11 @@ ConditionTransactCount::eval(const Resources &res)
   if (ssn) {
     int n = TSHttpSsnTransactionCount(ssn);
 
-    TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT()");
+    Dbg(pi_dbg_ctl, "Evaluating TXN-COUNT()");
     return static_cast<MatcherType *>(_matcher)->test(n);
   }
 
-  TSDebug(PLUGIN_NAME, "\tNo session found, returning false");
+  Dbg(pi_dbg_ctl, "\tNo session found, returning false");
   return false;
 }
 
@@ -667,7 +667,7 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
     int length = ink_fast_itoa(count, value, sizeof(value));
 
     if (length > 0) {
-      TSDebug(PLUGIN_NAME, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+      Dbg(pi_dbg_ctl, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
       s.append(value, length);
     }
   }
@@ -735,7 +735,7 @@ ConditionNow::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{NOW:%s} qualifier", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{NOW:%s} qualifier", q.c_str());
 
   if (q == "EPOCH") {
     _now_qual = NOW_QUAL_EPOCH;
@@ -765,7 +765,7 @@ ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED *
 
   oss << get_now_qualified(_now_qual);
   s += oss.str();
-  TSDebug(PLUGIN_NAME, "Appending NOW() to evaluation value -> %s", s.c_str());
+  Dbg(pi_dbg_ctl, "Appending NOW() to evaluation value -> %s", s.c_str());
 }
 
 bool
@@ -773,7 +773,7 @@ ConditionNow::eval(const Resources &res)
 {
   int64_t now = get_now_qualified(_now_qual);
 
-  TSDebug(PLUGIN_NAME, "Evaluating NOW()");
+  Dbg(pi_dbg_ctl, "Evaluating NOW()");
   return static_cast<const MatcherType *>(_matcher)->test(now);
 }
 
@@ -815,7 +815,7 @@ ConditionGeo::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{GEO:%s} qualifier", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{GEO:%s} qualifier", q.c_str());
 
   if (q == "COUNTRY") {
     _geo_qual = GEO_QUAL_COUNTRY;
@@ -845,7 +845,7 @@ ConditionGeo::append_value(std::string &s, const Resources &res)
     oss << get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
   }
   s += oss.str();
-  TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
+  Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
 
 bool
@@ -853,7 +853,7 @@ ConditionGeo::eval(const Resources &res)
 {
   bool ret = false;
 
-  TSDebug(PLUGIN_NAME, "Evaluating GEO()");
+  Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
     int64_t geo = get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
 
@@ -896,7 +896,7 @@ ConditionId::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{ID:%s} qualifier", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{ID:%s} qualifier", q.c_str());
 
   if (q == "UNIQUE") {
     _id_qual = ID_QUAL_UNIQUE;
@@ -934,7 +934,7 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
     }
   } break;
   }
-  TSDebug(PLUGIN_NAME, "Appending ID() to evaluation value -> %s", s.c_str());
+  Dbg(pi_dbg_ctl, "Appending ID() to evaluation value -> %s", s.c_str());
 }
 
 bool
@@ -943,7 +943,7 @@ ConditionId::eval(const Resources &res)
   if (_id_qual == ID_QUAL_REQUEST) {
     uint64_t id = TSHttpTxnIdGet(res.txnp);
 
-    TSDebug(PLUGIN_NAME, "Evaluating GEO() -> %" PRIu64, id);
+    Dbg(pi_dbg_ctl, "Evaluating GEO() -> %" PRIu64, id);
     return static_cast<const Matchers<uint64_t> *>(_matcher)->test(id);
   } else {
     std::string s;
@@ -951,7 +951,7 @@ ConditionId::eval(const Resources &res)
     append_value(s, res);
     bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 
-    TSDebug(PLUGIN_NAME, "Evaluating ID(): %s - rval: %d", s.c_str(), rval);
+    Dbg(pi_dbg_ctl, "Evaluating ID(): %s - rval: %d", s.c_str(), rval);
     return rval;
   }
 }
@@ -976,7 +976,7 @@ ConditionCidr::set_qualifier(const std::string &q)
 
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{CIDR:%s} qualifier", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{CIDR:%s} qualifier", q.c_str());
   cidr = strtol(q.c_str(), &endp, 10);
   if (cidr >= 0 && cidr <= 32) {
     _v4_mask.s_addr = UINT32_MAX >> (32 - cidr);
@@ -1007,7 +1007,7 @@ ConditionCidr::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating CIDR()");
+  Dbg(pi_dbg_ctl, "Evaluating CIDR()");
 
   return static_cast<MatcherType *>(_matcher)->test(s);
 }
@@ -1082,7 +1082,7 @@ ConditionInbound::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
-  TSDebug(PLUGIN_NAME, "\tParsing %%{%s:%s} qualifier", TAG, q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{%s:%s} qualifier", TAG, q.c_str());
 
   if (q == "LOCAL-ADDR") {
     _net_qual = NET_QUAL_LOCAL_ADDR;
@@ -1140,7 +1140,7 @@ ConditionInbound::eval(const Resources &res)
     append_value(s, res);
     bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 
-    TSDebug(PLUGIN_NAME, "Evaluating %s(): %s - rval: %d", TAG, s.c_str(), rval);
+    Dbg(pi_dbg_ctl, "Evaluating %s(): %s - rval: %d", TAG, s.c_str(), rval);
 
     return rval;
   }
@@ -1215,7 +1215,7 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
 
 ConditionStringLiteral::ConditionStringLiteral(const std::string &v)
 {
-  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStringLiteral");
+  Dbg(dbg_ctl, "Calling CTOR for ConditionStringLiteral");
   _literal = v;
 }
 
@@ -1223,13 +1223,13 @@ void
 ConditionStringLiteral::append_value(std::string &s, const Resources &res)
 {
   s += _literal;
-  TSDebug(PLUGIN_NAME, "Appending '%s' to evaluation value", _literal.c_str());
+  Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", _literal.c_str());
 }
 
 bool
 ConditionStringLiteral::eval(const Resources &res)
 {
-  TSDebug(PLUGIN_NAME, "Evaluating StringLiteral");
+  Dbg(pi_dbg_ctl, "Evaluating StringLiteral");
 
   return static_cast<const MatcherType *>(_matcher)->test(_literal);
 }
@@ -1251,7 +1251,7 @@ ConditionSessionTransactCount::eval(const Resources &res)
 {
   int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
 
-  TSDebug(PLUGIN_NAME, "Evaluating SSN-TXN-COUNT()");
+  Dbg(pi_dbg_ctl, "Evaluating SSN-TXN-COUNT()");
   return static_cast<MatcherType *>(_matcher)->test(val);
 }
 
@@ -1263,7 +1263,7 @@ ConditionSessionTransactCount::append_value(std::string &s, Resources const &res
   int const length = ink_fast_itoa(count, value, sizeof(value));
 
   if (length > 0) {
-    TSDebug(PLUGIN_NAME, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+    Dbg(pi_dbg_ctl, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
     s.append(value, length);
   }
 }
@@ -1272,7 +1272,7 @@ void
 ConditionTcpInfo::initialize(Parser &p)
 {
   Condition::initialize(p);
-  TSDebug(PLUGIN_NAME, "Initializing TCP Info");
+  Dbg(pi_dbg_ctl, "Initializing TCP Info");
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
 
@@ -1296,7 +1296,7 @@ ConditionTcpInfo::eval(const Resources &res)
   append_value(s, res);
   bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 
-  TSDebug(PLUGIN_NAME, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
+  Dbg(pi_dbg_ctl, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
 
   return rval;
 }
@@ -1306,7 +1306,7 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (TSHttpTxnIsInternal(res.txnp)) {
-    TSDebug(PLUGIN_NAME, "No TCP-INFO available for internal transactions");
+    Dbg(pi_dbg_ctl, "No TCP-INFO available for internal transactions");
     return;
   }
   TSReturnCode tsSsn;
@@ -1315,10 +1315,10 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   socklen_t tcp_info_len = sizeof(info);
   tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
   if (tsSsn != TS_SUCCESS || fd <= 0) {
-    TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
+    Dbg(pi_dbg_ctl, "error getting the client socket fd from ssn");
   }
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
-    TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+    Dbg(pi_dbg_ctl, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
   }
 
   if (tsSsn == TS_SUCCESS) {
@@ -1355,7 +1355,7 @@ ConditionCache::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating CACHE()");
+  Dbg(pi_dbg_ctl, "Evaluating CACHE()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
@@ -1373,14 +1373,14 @@ ConditionCache::append_value(std::string &s, const Resources &res)
     "skipped"    // TS_CACHE_LOOKUP_SKIPPED
   };
 
-  TSDebug(PLUGIN_NAME, "Appending CACHE() to evaluation value -> %s", s.c_str());
+  Dbg(pi_dbg_ctl, "Appending CACHE() to evaluation value -> %s", s.c_str());
 
   if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR || status < 0 || status >= 4) {
-    TSDebug(PLUGIN_NAME, "Cache Status Invalid: %d", status);
+    Dbg(pi_dbg_ctl, "Cache Status Invalid: %d", status);
 
     s += "none";
   } else {
-    TSDebug(PLUGIN_NAME, "Cache Status Valid: %d", status);
+    Dbg(pi_dbg_ctl, "Cache Status Valid: %d", status);
 
     s += names[status];
   }
@@ -1401,7 +1401,7 @@ void
 ConditionNextHop::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
-  TSDebug(PLUGIN_NAME, "\tParsing %%{NEXT-HOP:%s}", q.c_str());
+  Dbg(pi_dbg_ctl, "\tParsing %%{NEXT-HOP:%s}", q.c_str());
   _next_hop_qual = parse_next_hop_qualifier(q);
 }
 
@@ -1412,15 +1412,15 @@ ConditionNextHop::append_value(std::string &s, const Resources &res)
   case NEXT_HOP_HOST: {
     char const *const name = TSHttpTxnNextHopNameGet(res.txnp);
     if (nullptr != name) {
-      TSDebug(PLUGIN_NAME, "Appending '%s' to evaluation value", name);
+      Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", name);
       s.append(name);
     } else {
-      TSDebug(PLUGIN_NAME, "NextHopName is empty");
+      Dbg(pi_dbg_ctl, "NextHopName is empty");
     }
   } break;
   case NEXT_HOP_PORT: {
     int const port = TSHttpTxnNextHopPortGet(res.txnp);
-    TSDebug(PLUGIN_NAME, "Appending '%d' to evaluation value", port);
+    Dbg(pi_dbg_ctl, "Appending '%d' to evaluation value", port);
     s.append(std::to_string(port));
   } break;
   default:

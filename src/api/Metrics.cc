@@ -122,6 +122,55 @@ Metrics::name(Metrics::IdType id) const
   return result;
 }
 
+Metrics::SpanIntType
+Metrics::newMetricSpan(size_t size, IdType *id)
+{
+  ink_release_assert(size <= Metrics::METRICS_MAX_SIZE);
+  std::lock_guard<std::mutex> lock(_mutex);
+
+  if (_cur_off + size > Metrics::METRICS_MAX_SIZE) {
+    _addBlob();
+  }
+
+  Metrics::IdType span_start        = _makeId(_cur_blob, _cur_off);
+  Metrics::MetricStorage *blob      = _blobs[_cur_blob];
+  Metrics::AtomicContainer &atomics = std::get<1>(*blob);
+  auto span                         = Metrics::SpanIntType(&atomics[_cur_off], size);
+
+  std::fill(span.begin(), span.end(), 0);
+
+  if (id) {
+    *id = span_start;
+  }
+
+  _cur_off += size;
+
+  return span;
+}
+
+bool
+Metrics::rename(Metrics::IdType id, std::string_view name)
+{
+  auto [blob_ix, offset]       = _splitID(id);
+  Metrics::MetricStorage *blob = _blobs[blob_ix];
+
+  // We can only rename metrics that are already allocated
+  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+    return false;
+  }
+
+  std::string &cur = std::get<0>(std::get<0>(*blob)[offset]);
+
+  std::lock_guard<std::mutex> lock(_mutex);
+  if (cur.length() > 0) {
+    _lookups.erase(cur);
+  }
+  cur = name;
+  _lookups.emplace(cur, id);
+
+  return true;
+}
+
 // Iterator implementation
 void
 Metrics::iterator::next()

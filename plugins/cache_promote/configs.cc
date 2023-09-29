@@ -66,7 +66,7 @@ PromotionConfig::factory(int argc, char *argv[])
         return false;
       }
       if (_policy) {
-        TSDebug(PLUGIN_NAME, "created remap with cache promotion policy = %s", _policy->policyName());
+        DBG("created remap with cache promotion policy = %s", _policy->policyName());
       }
     } else if (opt == 'e') {
       if (optarg == nullptr) {
@@ -75,7 +75,7 @@ PromotionConfig::factory(int argc, char *argv[])
       } else {
         if (_policy && _policy->stats_add(optarg)) {
           _policy->_stats_enabled = true;
-          TSDebug(PLUGIN_NAME, "stats collection is enabled");
+          DBG("stats collection is enabled");
         }
       }
     } else {
@@ -85,7 +85,7 @@ PromotionConfig::factory(int argc, char *argv[])
           _policy->setSample(optarg);
         } else if (opt == 'i') {
           _policy->setInternalEnabled(true);
-          TSDebug(PLUGIN_NAME, "internal_enabled set to true");
+          DBG("internal_enabled set to true");
         } else {
           if (!_policy->parseOption(opt, optarg)) {
             TSError("[%s] The specified policy (%s) does not support the -%c option; skipping this argument", PLUGIN_NAME,

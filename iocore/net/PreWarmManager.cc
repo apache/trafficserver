@@ -29,6 +29,7 @@
 #include "P_VConnection.h"
 #include "I_NetProcessor.h"
 
+#include "api/Metrics.h"
 #include "tscore/ink_time.h"
 #include "tscpp/util/PostScript.h"
 
@@ -83,21 +84,16 @@ parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 //
 constexpr std::string_view STAT_NAME_PREFIX = "proxy.process.tunnel.prewarm"sv;
 
-struct StatEntry {
-  std::string_view name;
-  RecRawStatSyncCb cb;
-};
-
 // the order is the same as PreWarm::Stat
 // clang-format off
-constexpr StatEntry STAT_ENTRIES[] = {
-  {"current_init"sv, RecRawStatSyncSum},
-  {"current_open"sv, RecRawStatSyncSum},
-  {"total_hit"sv, RecRawStatSyncSum},
-  {"total_miss"sv, RecRawStatSyncSum},
-  {"total_handshake_time"sv, RecRawStatSyncSum},
-  {"total_handshake_count"sv, RecRawStatSyncSum},
-  {"total_retry"sv, RecRawStatSyncSum},
+constexpr std::string_view STAT_ENTRIES[] = {
+  "current_init"sv,
+  "current_open"sv,
+  "total_hit"sv,
+  "total_miss"sv,
+  "total_handshake_time"sv,
+  "total_handshake_count"sv,
+  "total_retry"sv,
 };
 // clang-format on
 
@@ -140,7 +136,8 @@ PreWarmSM::retry()
 
   ink_hrtime delay = HRTIME_SECONDS(1 << _retry_counter);
   ++_retry_counter;
-  prewarmManager.stats.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::RETRY)), 1);
+
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::RETRY)));
 
   EThread *ethread = this_ethread();
   _retry_event     = ethread->schedule_in_local(this, delay, EVENT_IMMEDIATE);
@@ -630,8 +627,8 @@ PreWarmSM::_record_handshake_time()
     return;
   }
 
-  prewarmManager.stats.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_TIME)), duration);
-  prewarmManager.stats.increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_COUNT)), 1);
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_TIME)), duration);
+  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_COUNT)), 1);
 }
 
 ////
@@ -704,10 +701,10 @@ PreWarmQueue::state_running(int event, void *data)
             dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
             (int)info.open_list->size());
 
-      prewarmManager.stats.set_sum(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
-      prewarmManager.stats.set_sum(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), info.open_list->size());
-      prewarmManager.stats.increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::HIT)), info.stat.hit);
-      prewarmManager.stats.increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::MISS)), info.stat.miss);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), info.open_list->size());
+      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::HIT)), info.stat.hit);
+      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::MISS)), info.stat.miss);
 
       // clear PreWarmQueue::Stat
       info.stat.miss = 0;
@@ -901,7 +898,6 @@ PreWarmQueue::_reconfigure()
   const PreWarm::StatsIdMap &new_stats_id_map = prewarmManager.get_stats_id_map();
 
   Map new_map;
-
   for (auto &entry : new_conf_list) {
     const PreWarm::SPtrConstDst &dst = entry.first;
     PreWarm::SPtrConstConf conf      = entry.second;
@@ -930,8 +926,8 @@ PreWarmQueue::_reconfigure()
   // free unexisting entries
   for (auto &[dst, info] : _map) {
     if (auto entry = new_conf_list.find(dst); entry == new_conf_list.end()) {
-      prewarmManager.stats.set_sum(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), 0);
-      prewarmManager.stats.set_sum(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), 0);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), 0);
+      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), 0);
 
       _make_queue_empty(info.init_list);
       delete info.init_list;
@@ -1029,10 +1025,6 @@ PreWarmManager::reconfigure()
   }
 
   if (is_prewarm_enabled) {
-    if (!stats.is_allocated()) {
-      stats.init(prewarm_conf->max_stats_size);
-    }
-
     _parsed_conf.clear();
     _parse_sni_conf(_parsed_conf, sni_conf);
     _register_stats(_parsed_conf);
@@ -1134,6 +1126,8 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 {
   int stats_counter = 0;
 
+  ts::Metrics &intm = ts::Metrics::getInstance();
+
   for (auto &entry : parsed_conf) {
     const PreWarm::SPtrConstDst &dst = entry.first;
 
@@ -1145,26 +1139,28 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
         std::string_view alpn_name = alpn_name_for_stat(dst->alpn_index);
 
         snprintf(name, sizeof(name), "%s.%.*s:%d.tls.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, alpn_name.data(), STAT_ENTRIES[j].name.data());
+                 dst->host.data(), dst->port, alpn_name.data(), STAT_ENTRIES[j].data());
       } else {
         snprintf(name, sizeof(name), "%s.%.*s:%d.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp",
-                 STAT_ENTRIES[j].name.data());
+                 dst->host.data(), dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp", STAT_ENTRIES[j].data());
       }
 
-      int stats_id = stats.find(name);
-      if (stats_id < 0) {
-        stats_id = stats.create(RECT_PROCESS, name, RECD_INT, STAT_ENTRIES[j].cb);
+      ts::Metrics::IdType stats_id = intm.lookup(name);
+      ts::Metrics::IntType *metric = nullptr;
 
-        if (stats_id < 0) {
-          // proxy.config.tunnel.prewarm.max_stats_size is enough?
+      if (stats_id == ts::Metrics::NOT_FOUND) {
+        metric = intm.newMetricPtr(name);
+
+        if (metric == nullptr) {
           Error("couldn't register stat name=%s", name);
         } else {
           ++stats_counter;
         }
+      } else {
+        metric = intm.lookup(stats_id);
       }
 
-      ids[j] = stats_id;
+      ids[j] = metric;
 
       Debug("v_prewarm_init", "stat id=%d name=%s", stats_id, name);
     }

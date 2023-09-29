@@ -43,6 +43,8 @@ using IpRange      = std::pair<IpAddr, IpAddr>;
 using IpRangeQueue = std::deque<IpRange>;
 IpRangeQueue ClientBlindTunnelIp;
 
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 void
 Parse_Addr_String(std::string_view const &text, IpRange &range)
 {
@@ -87,9 +89,9 @@ CB_Pre_Accept(TSCont, TSEvent event, void *edata)
     TSVConnTunnel(ssl_vc);
   }
 
-  TSDebug(PLUGIN_NAME, "Pre accept callback %p - event is %s, target address %s, client address %s%s", ssl_vc,
-          event == TS_EVENT_VCONN_START ? "good" : "bad", ip.toString(buff, sizeof(buff)), ip_client.toString(buff2, sizeof(buff2)),
-          proxy_tunnel ? "" : " blind tunneled");
+  Dbg(dbg_ctl, "Pre accept callback %p - event is %s, target address %s, client address %s%s", ssl_vc,
+      event == TS_EVENT_VCONN_START ? "good" : "bad", ip.toString(buff, sizeof(buff)), ip_client.toString(buff2, sizeof(buff2)),
+      proxy_tunnel ? "" : " blind tunneled");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -133,7 +135,7 @@ TSPluginInit(int argc, const char *argv[])
   if (!success) {
     TSError(PCP "not initialized");
   }
-  TSDebug(PLUGIN_NAME, "Plugin %s", success ? "online" : "offline");
+  Dbg(dbg_ctl, "Plugin %s", success ? "online" : "offline");
 
   return;
 }

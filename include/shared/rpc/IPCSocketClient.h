@@ -45,8 +45,7 @@ struct IPCSocketClient {
   enum class ReadStatus { NO_ERROR = 0, BUFFER_FULL, STREAM_ERROR, UNKNOWN };
   using self_reference = IPCSocketClient &;
 
-  IPCSocketClient(std::string path) : _path{std::move(path)} {}
-  IPCSocketClient() : _path{"/tmp/jsonrpc20.sock"} {}
+  IPCSocketClient(std::string path = "/tmp/jsonrpc20.sock") : _path{std::move(path)} { memset(&_server, 0, sizeof(_server)); }
 
   ~IPCSocketClient() { this->disconnect(); }
 

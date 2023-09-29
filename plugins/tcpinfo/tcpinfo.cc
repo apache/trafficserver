@@ -68,6 +68,8 @@ static const char *tcpi_headers[] = {"timestamp event client server rtt",
 #endif
 };
 
+static DbgCtl dbg_ctl{"tcpinfo"};
+
 struct Config {
   int sample             = 1000;
   unsigned int log_level = 1;
@@ -117,16 +119,16 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
   TSReleaseAssert(config->log != nullptr);
 
   if (ssnp != nullptr && (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS || fd <= 0)) {
-    TSDebug("tcpinfo", "error getting the client socket fd from ssn");
+    Dbg(dbg_ctl, "error getting the client socket fd from ssn");
     return;
   }
   if (ssnp == nullptr) {
-    TSDebug("tcpinfo", "ssn is not specified");
+    Dbg(dbg_ctl, "ssn is not specified");
     return;
   }
 
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
-    TSDebug("tcpinfo", "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+    Dbg(dbg_ctl, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
     return;
   }
 
@@ -218,7 +220,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     return 0;
   }
 
-  TSDebug("tcpinfo", "logging hook called for %s (%s) with log object %p", TSHttpEventNameLookup(event), event_name, config->log);
+  Dbg(dbg_ctl, "logging hook called for %s (%s) with log object %p", TSHttpEventNameLookup(event), event_name, config->log);
 
   if (config->log == nullptr) {
     goto done;
@@ -233,11 +235,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   if (config->sample < 1000) {
     // coverity[dont_call]
     random = rand() % 1000;
-    TSDebug("tcpinfo", "random: %d, config->sample: %d", random, config->sample);
+    Dbg(dbg_ctl, "random: %d, config->sample: %d", random, config->sample);
   }
 
   if (random < config->sample) {
-    TSDebug("tcpinfo", "sampling TCP metrics for %s event", event_name);
+    Dbg(dbg_ctl, "sampling TCP metrics for %s event", event_name);
     log_tcp_info(config, event_name, ssnp);
   }
 
@@ -424,11 +426,11 @@ init:
   TSError("[tcpinfo] TCP metrics are not supported on this platform");
 #endif
 
-  TSDebug("tcpinfo", "sample: %d", config->sample);
-  TSDebug("tcpinfo", "log filename: %s", filename);
-  TSDebug("tcpinfo", "log_level: %u", config->log_level);
-  TSDebug("tcpinfo", "rolling_enabled: %d", rolling_enabled);
-  TSDebug("tcpinfo", "hook mask: 0x%x", hooks);
+  Dbg(dbg_ctl, "sample: %d", config->sample);
+  Dbg(dbg_ctl, "log filename: %s", filename);
+  Dbg(dbg_ctl, "log_level: %u", config->log_level);
+  Dbg(dbg_ctl, "rolling_enabled: %d", rolling_enabled);
+  Dbg(dbg_ctl, "hook mask: 0x%x", hooks);
 
   if (TSTextLogObjectCreate(filename, TS_LOG_MODE_ADD_TIMESTAMP, &config->log) != TS_SUCCESS) {
     TSError("[tcpinfo] failed to create log file '%s'", filename);
@@ -437,7 +439,7 @@ init:
   if (rolling_enabled == -1) {
     // The user either did not provide a value or the value they provided was
     // invalid.
-    TSDebug("tcpinfo", "Using system default value of proxy.config.log.rolling_enabled ");
+    Dbg(dbg_ctl, "Using system default value of proxy.config.log.rolling_enabled ");
   } else {
     if (TSTextLogObjectRollingEnabledSet(config->log, rolling_enabled) != TS_SUCCESS) {
       TSError("[tcpinfo] failed to enable log file rolling to: '%d'", rolling_enabled);
@@ -455,21 +457,21 @@ init:
 
   if (hooks & TCPI_HOOK_SSN_START) {
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the start of the TCP connection");
+    Dbg(dbg_ctl, "added hook to the start of the TCP connection");
   }
 
   if (hooks & TCPI_HOOK_TXN_START) {
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the start of the transaction");
+    Dbg(dbg_ctl, "added hook to the start of the transaction");
   }
 
   if (hooks & TCPI_HOOK_SEND_RESPONSE) {
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the sending of the headers");
+    Dbg(dbg_ctl, "added hook to the sending of the headers");
   }
 
   if (hooks & TCPI_HOOK_TXN_CLOSE) {
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the close of the transaction");
+    Dbg(dbg_ctl, "added hook to the close of the transaction");
   }
 }

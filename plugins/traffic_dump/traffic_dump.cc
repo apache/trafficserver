@@ -31,6 +31,8 @@
 
 namespace traffic_dump
 {
+DbgCtl dbg_ctl{debug_tag};
+
 /// Handle LIFECYCLE_MSG from traffic_ctl.
 static int
 global_message_handler(TSCont contp, TSEvent event, void *edata)
@@ -45,24 +47,24 @@ global_message_handler(TSCont contp, TSEvent event, void *edata)
       tag.remove_prefix(PLUGIN_PREFIX.size());
       if (tag == "sample" && msg->data_size) {
         const auto new_sample_size = static_cast<int64_t>(strtol(static_cast<char const *>(msg->data), nullptr, 0));
-        TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change sample size to %" PRId64 "bytes", new_sample_size);
+        Dbg(dbg_ctl, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change sample size to %" PRId64 "bytes", new_sample_size);
         SessionData::set_sample_pool_size(new_sample_size);
       } else if (tag == "reset") {
-        TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to reset disk usage counter");
+        Dbg(dbg_ctl, "TS_EVENT_LIFECYCLE_MSG: Received Msg to reset disk usage counter");
         SessionData::reset_disk_usage();
       } else if (tag == "unlimit") {
-        TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to disable disk usage limit enforcement");
+        Dbg(dbg_ctl, "TS_EVENT_LIFECYCLE_MSG: Received Msg to disable disk usage limit enforcement");
         SessionData::disable_disk_limit_enforcement();
       } else if (tag == "limit" && msg->data_size) {
         const auto new_max_disk_usage = static_cast<int64_t>(strtol(static_cast<char const *>(msg->data), nullptr, 0));
-        TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change max disk usage to %" PRId64 "bytes", new_max_disk_usage);
+        Dbg(dbg_ctl, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change max disk usage to %" PRId64 "bytes", new_max_disk_usage);
         SessionData::set_max_disk_usage(new_max_disk_usage);
       }
     }
     return TS_SUCCESS;
   }
   default:
-    TSDebug(debug_tag, "session_aio_handler(): unhandled events %d", event);
+    Dbg(dbg_ctl, "session_aio_handler(): unhandled events %d", event);
     return TS_ERROR;
   }
 }
@@ -72,7 +74,7 @@ global_message_handler(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, char const *argv[])
 {
-  TSDebug(traffic_dump::debug_tag, "initializing plugin");
+  Dbg(traffic_dump::dbg_ctl, "initializing plugin");
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = "traffic_dump";
@@ -163,7 +165,7 @@ TSPluginInit(int argc, char const *argv[])
       break;
 
     default:
-      TSDebug(traffic_dump::debug_tag, "Unexpected options.");
+      Dbg(traffic_dump::dbg_ctl, "Unexpected options.");
       TSError("[%s] Unexpected options error.", traffic_dump::debug_tag);
       return;
     }

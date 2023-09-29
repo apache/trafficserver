@@ -36,5 +36,10 @@
 #undef LOG_ERROR
 #endif
 
-#define LOG_DEBUG(fmt, ...) TS_DEBUG("atscppapi", fmt, ##__VA_ARGS__)
+namespace atscppapi
+{
+extern DbgCtl dbg_ctl;
+}
+
+#define LOG_DEBUG(fmt, ...) Dbg(atscppapi::dbg_ctl, fmt, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...) TS_ERROR("atscppapi", fmt, ##__VA_ARGS__)

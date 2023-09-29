@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -32,6 +32,7 @@
 #define MAX_NSITES 500
 #define RETRY_TIME 10
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 static char *sites[MAX_NSITES];
 static int nsites;
 static TSMutex sites_mutex;
@@ -46,19 +47,18 @@ enum calling_func {
   READ_BLOCKLIST,
 };
 
-typedef struct contp_data {
+struct cdata {
   calling_func cf;
 
   TSHttpTxn txnp;
-
-} cdata;
+};
 
 static void
 destroy_continuation(TSHttpTxn txnp, TSCont contp)
 {
   cdata *cd = nullptr;
 
-  cd = (cdata *)TSContDataGet(contp);
+  cd = static_cast<cdata *>(TSContDataGet(contp));
   if (cd != nullptr) {
     TSfree(cd);
   }
@@ -99,7 +99,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all denylisted sites. */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
+    Dbg(dbg_ctl, "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSContScheduleOnPool(contp, RETRY_TIME, TS_THREAD_POOL_NET);
@@ -111,7 +111,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
       if (ts_log) {
         TSTextLogObjectWrite(ts_log, "denylisting site: %s", sites[i]);
       } else {
-        TSDebug(PLUGIN_NAME, "denylisting site: %s", sites[i]);
+        Dbg(dbg_ctl, "denylisting site: %s", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -161,7 +161,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     goto done;
   }
 
-  buf = (char *)TSmalloc(4096);
+  buf = static_cast<char *>(TSmalloc(4096));
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
   snprintf(buf, 4096, "You are forbidden from accessing \"%s\"\n", url_str);
@@ -232,12 +232,12 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     handle_txn_start(contp, txnp);
     return 0;
   case TS_EVENT_HTTP_OS_DNS:
     if (contp != global_contp) {
-      cd     = (cdata *)TSContDataGet(contp);
+      cd     = static_cast<cdata *>(TSContDataGet(contp));
       cd->cf = HANDLE_DNS;
       handle_dns(cd->txnp, contp);
       return 0;
@@ -245,14 +245,14 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
       break;
     }
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     if (contp != global_contp) {
       destroy_continuation(txnp, contp);
     }
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (contp != global_contp) {
-      cd     = (cdata *)TSContDataGet(contp);
+      cd     = static_cast<cdata *>(TSContDataGet(contp));
       cd->cf = HANDLE_RESPONSE;
       handle_response(cd->txnp, contp);
       return 0;
@@ -265,7 +265,7 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
        edata. We need to decide, in which function did the MutexLock
        failed and call that function again */
     if (contp != global_contp) {
-      cd = (cdata *)TSContDataGet(contp);
+      cd = static_cast<cdata *>(TSContDataGet(contp));
       switch (cd->cf) {
       case HANDLE_DNS:
         handle_dns(cd->txnp, contp);
@@ -274,7 +274,7 @@ denylist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
-        TSDebug(PLUGIN_NAME, "This event was unexpected: %d", event);
+        Dbg(dbg_ctl, "This event was unexpected: %d", event);
         break;
       }
     } else {
@@ -293,9 +293,9 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
   TSCont txn_contp;
   cdata *cd;
 
-  txn_contp = TSContCreate((TSEventFunc)denylist_plugin, TSMutexCreate());
+  txn_contp = TSContCreate(static_cast<TSEventFunc>(denylist_plugin), TSMutexCreate());
   /* create the data that'll be associated with the continuation */
-  cd = (cdata *)TSmalloc(sizeof(cdata));
+  cd = static_cast<cdata *>(TSmalloc(sizeof(cdata)));
   TSContDataSet(txn_contp, cd);
 
   cd->txnp = txnp;
@@ -324,7 +324,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   /* create an TSTextLogObject to log denied requests to */
   error = TSTextLogObjectCreate("denylist", TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
   if (!ts_log || error == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "error while creating log");
+    Dbg(dbg_ctl, "error while creating log");
   }
 
   sites_mutex = TSMutexCreate();

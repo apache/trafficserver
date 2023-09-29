@@ -29,4 +29,11 @@ PrintToStdErr(const char *fmt, ...)
   va_end(args);
 }
 
+#else
+
+namespace uri_signing_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 #endif

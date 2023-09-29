@@ -204,13 +204,13 @@ SessionData::init(std::string_view log_directory, bool enforce_disk_limit, int64
   if (!ip_filter.empty()) {
     client_ip_filter.emplace();
     if (client_ip_filter->load(ip_filter)) {
-      TSDebug(debug_tag, "Problems parsing IP filter address argument: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
+      Dbg(dbg_ctl, "Problems parsing IP filter address argument: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
       TSError("[%s] Problems parsing IP filter address argument: %.*s", debug_tag, static_cast<int>(ip_filter.size()),
               ip_filter.data());
       client_ip_filter = std::nullopt;
       return false;
     } else {
-      TSDebug(debug_tag, "Filtering to only dump connections with ip: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
+      Dbg(dbg_ctl, "Filtering to only dump connections with ip: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
     }
   }
 
@@ -223,12 +223,12 @@ SessionData::init(std::string_view log_directory, bool enforce_disk_limit, int64
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssncont);
   TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, ssncont);
 
-  TSDebug(debug_tag, "Initialized with log directory: %s", SessionData::log_directory.c_str());
+  Dbg(dbg_ctl, "Initialized with log directory: %s", SessionData::log_directory.c_str());
   if (!SessionData::enforce_disk_limit) {
-    TSDebug(debug_tag, "Initialized with sample pool size of %" PRId64 " bytes and unlimited disk utilization", sample_size);
+    Dbg(dbg_ctl, "Initialized with sample pool size of %" PRId64 " bytes and unlimited disk utilization", sample_size);
   } else {
-    TSDebug(debug_tag, "Initialized with sample pool size of %" PRId64 " bytes and disk limit of %" PRId64 " bytes", sample_size,
-            max_disk_usage);
+    Dbg(dbg_ctl, "Initialized with sample pool size of %" PRId64 " bytes and disk limit of %" PRId64 " bytes", sample_size,
+        max_disk_usage);
   }
   return true;
 }
@@ -241,7 +241,7 @@ SessionData::init(std::string_view log_directory, bool enforce_disk_limit, int64
     return false;
   }
   SessionData::sni_filter = sni_filter;
-  TSDebug(debug_tag, "Filtering to only dump connections with SNI: %s", SessionData::sni_filter.c_str());
+  Dbg(dbg_ctl, "Filtering to only dump connections with SNI: %s", SessionData::sni_filter.c_str());
   return true;
 }
 
@@ -390,11 +390,11 @@ SessionData::is_filtered_out(const sockaddr *session_client_ip)
     return false;
   }
   if (session_client_ip == nullptr) {
-    TSDebug(debug_tag, "Found no client IP address for session. Abort.");
+    Dbg(dbg_ctl, "Found no client IP address for session. Abort.");
     return true;
   }
   if (session_client_ip->sa_family != AF_INET && session_client_ip->sa_family != AF_INET6) {
-    TSDebug(debug_tag, "IP family is not v4 nor v6. Abort.");
+    Dbg(dbg_ctl, "IP family is not v4 nor v6. Abort.");
     return true;
   }
 
@@ -411,33 +411,39 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
     TSAIOCallback cb     = static_cast<TSAIOCallback>(edata);
     SessionData *ssnData = static_cast<SessionData *>(TSContDataGet(contp));
     if (!ssnData) {
-      TSDebug(debug_tag, "session_aio_handler(): No valid ssnData. Abort.");
+      Dbg(dbg_ctl, "session_aio_handler(): No valid ssnData. Abort.");
       return TS_ERROR;
     }
-    char *buf = TSAIOBufGet(cb);
-    const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
+    char *buf         = TSAIOBufGet(cb);
+    bool free_ssnData = false;
+    {
+      const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
 
-    // Free the allocated buffer and update aio_count
-    if (buf) {
-      TSfree(buf);
-      if (--ssnData->aio_count == 0 && ssnData->ssn_closed) {
-        // check for ssn close, if closed, do clean up
-        TSContDataSet(contp, nullptr);
-        close(ssnData->log_fd);
-        std::error_code ec;
-        swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
-        if (!ec) {
-          disk_usage += swoc::file::file_size(st);
-          TSDebug(debug_tag, "Finish a session with log file of %" PRIuMAX " bytes", swoc::file::file_size(st));
+      // Free the allocated buffer and update aio_count
+      if (buf) {
+        TSfree(buf);
+        if (--ssnData->aio_count == 0 && ssnData->ssn_closed) {
+          // check for ssn close, if closed, do clean up
+          TSContDataSet(contp, nullptr);
+          close(ssnData->log_fd);
+          std::error_code ec;
+          swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
+          if (!ec) {
+            disk_usage += swoc::file::file_size(st);
+            Dbg(dbg_ctl, "Finish a session with log file of %" PRIuMAX " bytes", swoc::file::file_size(st));
+          }
+          // We have to free ssnData outside of holding the lock whose lifetime is managed by ssnData.
+          free_ssnData = true;
         }
-        delete ssnData;
-        return TS_SUCCESS;
       }
+    } // Release ssnData->disk_io_mutex.
+    if (free_ssnData) {
+      delete ssnData;
     }
     return TS_SUCCESS;
   }
   default:
-    TSDebug(debug_tag, "session_aio_handler(): unhandled events %d", event);
+    Dbg(dbg_ctl, "session_aio_handler(): unhandled events %d", event);
     return TS_ERROR;
   }
   return TS_SUCCESS;
@@ -463,32 +469,32 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
       TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
       SSL *ssl_obj             = reinterpret_cast<SSL *>(ssl_conn);
       if (ssl_obj == nullptr) {
-        TSDebug(debug_tag, "global_session_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
+        Dbg(dbg_ctl, "global_session_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
         break;
       }
       char const *sni_ptr = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
       if (sni_ptr == nullptr) {
-        TSDebug(debug_tag, "global_session_handler(): Ignore HTTPS session with non-existent SNI.");
+        Dbg(dbg_ctl, "global_session_handler(): Ignore HTTPS session with non-existent SNI.");
         break;
       } else {
         const std::string_view sni{sni_ptr};
         if (sni != sni_filter) {
-          TSDebug(debug_tag, "global_session_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni_ptr);
+          Dbg(dbg_ctl, "global_session_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni_ptr);
           break;
         }
       }
     }
     const auto this_session_count = session_counter++;
     if (this_session_count % sample_pool_size != 0) {
-      TSDebug(debug_tag, "Ignore session %" PRId64 " per the random sampling mechanism", id);
+      Dbg(dbg_ctl, "Ignore session %" PRId64 " per the random sampling mechanism", id);
       break;
     } else if (enforce_disk_limit && disk_usage >= max_disk_usage) {
-      TSDebug(debug_tag, "Ignore session %" PRId64 " due to disk usage %" PRId64 " bytes", id, disk_usage.load());
+      Dbg(dbg_ctl, "Ignore session %" PRId64 " due to disk usage %" PRId64 " bytes", id, disk_usage.load());
       break;
     } else {
       const sockaddr *client_ip = TSHttpSsnClientAddrGet(ssnp);
       if (SessionData::is_filtered_out(client_ip)) {
-        TSDebug(debug_tag, "Ignore session %" PRId64 " per the client's IP filter", id);
+        Dbg(dbg_ctl, "Ignore session %" PRId64 " per the client's IP filter", id);
         break;
       }
     }
@@ -521,7 +527,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     } else if (AF_INET6 == client_ip->sa_family) {
       inet_ntop(AF_INET6, &(reinterpret_cast<sockaddr_in6 const *>(client_ip)->sin6_addr), client_str, INET6_ADDRSTRLEN);
     } else {
-      TSDebug(debug_tag, "global_session_handler(): Unknown address family.");
+      Dbg(dbg_ctl, "global_session_handler(): Unknown address family.");
       snprintf(client_str, INET6_ADDRSTRLEN, "unknown");
     }
 
@@ -535,14 +541,14 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
       std::error_code ec;
       swoc::file::status(log_p, ec);
       if (ec && mkdir(log_p.c_str(), 0755) == -1) {
-        TSDebug(debug_tag, "global_session_handler(): Failed to create dir %s", log_p.c_str());
+        Dbg(dbg_ctl, "global_session_handler(): Failed to create dir %s", log_p.c_str());
         TSError("[%s] Failed to create dir %s", debug_tag, log_p.c_str());
       }
 
       // Try to open log files for AIO
       ssnData->log_fd = open(log_f.c_str(), O_RDWR | O_CREAT, S_IRWXU);
       if (ssnData->log_fd < 0) {
-        TSDebug(debug_tag, "global_session_handler(): Failed to open log files %s. Abort.", log_f.c_str());
+        Dbg(dbg_ctl, "global_session_handler(): Failed to open log files %s. Abort.", log_f.c_str());
         TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
         return TS_EVENT_HTTP_CONTINUE;
       }
@@ -558,12 +564,12 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SSN_CLOSE: {
     // Write session and close the log file.
     int64_t id = TSHttpSsnIdGet(ssnp);
-    TSDebug(debug_tag, "global_session_handler(): Closing session %" PRId64 "...", id);
+    Dbg(dbg_ctl, "global_session_handler(): Closing session %" PRId64 "...", id);
     // Retrieve SessionData
     SessionData *ssnData = static_cast<SessionData *>(TSUserArgGet(ssnp, session_arg_index));
     // If no valid ssnData, continue transaction as if nothing happened
     if (!ssnData) {
-      TSDebug(debug_tag, "global_session_handler(): [TS_EVENT_HTTP_SSN_CLOSE] No ssnData found. Abort.");
+      Dbg(dbg_ctl, "global_session_handler(): [TS_EVENT_HTTP_SSN_CLOSE] No ssnData found. Abort.");
       TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
       return TS_SUCCESS;
     }

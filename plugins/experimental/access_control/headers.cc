@@ -176,7 +176,7 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
 /**
  * @brief Dump a header on stderr
  *
- * Useful together with TSDebug().
+ * Useful together with Dbg().
  *
  * @param bufp request's buffer
  * @param hdrLoc request's header location

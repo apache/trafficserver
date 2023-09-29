@@ -165,7 +165,7 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
     }
   } break;
   case TS_EVENT_VCONN_WRITE_COMPLETE: {
-    if (TSIsDebugTagSet(PLUGIN_NAME) && reader_avail_more_than(data->m_upstream.m_read.m_reader, 0)) {
+    if (dbg_ctl.on() && reader_avail_more_than(data->m_upstream.m_read.m_reader, 0)) {
       int64_t const left = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
       DEBUG_LOG("%p WRITE_COMPLETE called with %" PRId64 " bytes left", data, left);
     }

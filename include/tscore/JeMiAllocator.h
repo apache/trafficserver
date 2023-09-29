@@ -32,7 +32,11 @@
 #include <mutex>
 
 #if TS_HAS_JEMALLOC
+#if __has_include(<jemalloc/jemalloc.h>)
 #include <jemalloc/jemalloc.h>
+#else
+#include <jemalloc.h>
+#endif
 #if (JEMALLOC_VERSION_MAJOR == 0)
 #error jemalloc has bogus version
 #endif

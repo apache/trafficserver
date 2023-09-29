@@ -17,6 +17,7 @@
  */
 
 #include "../sslheaders.h"
+#include <ts/ts.h>
 #include <cstdio>
 #include <cstdarg>
 #include <openssl/ssl.h>
@@ -28,7 +29,7 @@
 // Mock TS API functions.
 
 void
-TSDebug(const char *tag, const char *fmt, ...)
+DbgCtl::print(const char *tag, char const * /* file */, char const * /* function */, int /* line */, const char *fmt, ...)
 {
   va_list args;
 

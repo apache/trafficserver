@@ -21,11 +21,16 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "session_hooks"
+
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 static int transaction_count_stat;
 static int session_count_stat;
@@ -37,7 +42,7 @@ txn_handler(TSHttpTxn txnp, TSCont contp)
 
   TSStatIntIncrement(transaction_count_stat, 1);
   num_txns = TSStatIntGet(transaction_count_stat);
-  TSDebug(PLUGIN_NAME, "The number of transactions is %" PRId64, num_txns);
+  Dbg(dbg_ctl, "The number of transactions is %" PRId64, num_txns);
 }
 
 static void
@@ -47,7 +52,7 @@ handle_session(TSHttpSsn ssnp, TSCont contp)
 
   TSStatIntIncrement(session_count_stat, 1);
   num_ssn = TSStatIntGet(session_count_stat);
-  TSDebug(PLUGIN_NAME, "The number of sessions is %" PRId64, num_ssn);
+  Dbg(dbg_ctl, "The number of sessions is %" PRId64, num_ssn);
   TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
 }
 
@@ -60,19 +65,19 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
 
-    ssnp = (TSHttpSsn)edata;
+    ssnp = static_cast<TSHttpSsn>(edata);
     handle_session(ssnp, contp);
     TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
 
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     txn_handler(txnp, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
 
   default:
-    TSDebug(PLUGIN_NAME, "In the default case: event = %d", event);
+    Dbg(dbg_ctl, "In the default case: event = %d", event);
     break;
   }
   return 0;

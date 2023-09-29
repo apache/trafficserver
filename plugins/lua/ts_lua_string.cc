@@ -51,7 +51,7 @@ u_char *
 ts_lua_hex_to_bin(u_char *dst, u_char *src, size_t len)
 {
   if (len % 2 != 0) {
-    TSDebug(TS_LUA_DEBUG_TAG, "ts_lua_hex_to_bin(): not an even number of hex digits");
+    Dbg(dbg_ctl, "ts_lua_hex_to_bin(): not an even number of hex digits");
     return nullptr;
   }
 
@@ -59,7 +59,7 @@ ts_lua_hex_to_bin(u_char *dst, u_char *src, size_t len)
     unsigned char a = hex_to_int(src[x]);
     unsigned char b = hex_to_int(src[x + 1]);
     if (a == 255 || b == 255) {
-      TSDebug(TS_LUA_DEBUG_TAG, "ts_lua_hex_to_bin(): failure in hex to binary conversion");
+      Dbg(dbg_ctl, "ts_lua_hex_to_bin(): failure in hex to binary conversion");
       return nullptr;
     }
     unsigned char result = (a << 4) + b;

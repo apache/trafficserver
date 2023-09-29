@@ -31,6 +31,11 @@
 
 #define PLUGIN_NAME "cert_update"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 // Plugin Message Continuation
 int
 CB_cert_update(TSCont, TSEvent, void *edata)
@@ -45,25 +50,25 @@ CB_cert_update(TSCont, TSEvent, void *edata)
     tag.remove_prefix(PLUGIN_PREFIX.size());
     if (tag == "server") {
       server_cert_path = static_cast<const char *>(msg->data);
-      TSDebug(PLUGIN_NAME, "Received Msg to update server cert with %s", server_cert_path);
+      Dbg(dbg_ctl, "Received Msg to update server cert with %s", server_cert_path);
     } else if (tag == "client") {
       client_cert_path = static_cast<const char *>(msg->data);
-      TSDebug(PLUGIN_NAME, "Received Msg to update client cert with %s", client_cert_path);
+      Dbg(dbg_ctl, "Received Msg to update client cert with %s", client_cert_path);
     }
   }
 
   if (server_cert_path) {
     if (TS_SUCCESS == TSSslServerCertUpdate(server_cert_path, nullptr)) {
-      TSDebug(PLUGIN_NAME, "Successfully updated server cert with %s", server_cert_path);
+      Dbg(dbg_ctl, "Successfully updated server cert with %s", server_cert_path);
     } else {
-      TSDebug(PLUGIN_NAME, "Failed to update server cert with %s", server_cert_path);
+      Dbg(dbg_ctl, "Failed to update server cert with %s", server_cert_path);
     }
   }
   if (client_cert_path) {
     if (TS_SUCCESS == TSSslClientCertUpdate(client_cert_path, nullptr)) {
-      TSDebug(PLUGIN_NAME, "Successfully updated client cert with %s", client_cert_path);
+      Dbg(dbg_ctl, "Successfully updated client cert with %s", client_cert_path);
     } else {
-      TSDebug(PLUGIN_NAME, "Failed to update client cert with %s", client_cert_path);
+      Dbg(dbg_ctl, "Failed to update client cert with %s", client_cert_path);
     }
   }
   return TS_SUCCESS;
@@ -81,6 +86,6 @@ TSPluginInit(int argc, const char *argv[])
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
-  TSDebug(PLUGIN_NAME, "Initialized.");
+  Dbg(dbg_ctl, "Initialized.");
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(CB_cert_update, nullptr));
 }

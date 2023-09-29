@@ -32,8 +32,8 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <unistd.h>
 #include <netinet/in.h>
@@ -43,6 +43,32 @@
 
 #define PLUGIN_NAME "redirect_1"
 #define STAT_PREFIX "plugin." PLUGIN_NAME "."
+
+// This plugin illustrates how to write a plugin that can be compiled to run with either ATS10 or an older ATS version.
+
+#if TS_VERSION_MAJOR >= 10
+
+namespace
+{
+DbgCtl dbg_ctl_redirect{"redirect"};
+DbgCtl dbg_ctl_general{PLUGIN_NAME};
+DbgCtl dbg_ctl_demo{PLUGIN_NAME ".demo"};
+DbgCtl dbg_ctl_init{PLUGIN_NAME ".init"};
+} // namespace
+
+#define DBG_REDIRECT_ON  (dbg_ctl_redirect.on())
+#define DBG_GENERAL(...) Dbg(dbg_ctl_general, __VA_ARGS__)
+#define DBG_DEMO_ON      (dbg_ctl_demo.on())
+#define DBG_INIT(...)    Dbg(dbg_ctl_init, __VA_ARGS__)
+
+#else
+
+#define DBG_REDIRECT_ON  (TSIsDebugTagSet("redirect"))
+#define DBG_GENERAL(...) Dbg(dbg_ctl, __VA_ARGS__)
+#define DBG_DEMO_ON      (TSIsDebugTagSet(PLUGIN_NAME ".demo"))
+#define DBG_INIT(...)    TSDebug(PLUGIN_NAME ".init", __VA_ARGS__)
+
+#endif
 
 static in_addr_t ip_deny;
 
@@ -78,7 +104,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 
   const char *host;
 
-  if (TSIsDebugTagSet("redirect")) {
+  if (DBG_REDIRECT_ON) {
     struct sockaddr const *addr = TSHttpTxnClientAddrGet(txnp);
 
     if (addr) {
@@ -93,7 +119,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
         char clientstring[INET6_ADDRSTRLEN];
 
         if (nullptr != inet_ntop(addr->sa_family, addr, clientstring, addr_size)) {
-          TSDebug(PLUGIN_NAME, "clientip is %s and block_ip is %s", clientstring, block_ip);
+          DBG_GENERAL("clientip is %s and block_ip is %s", clientstring, block_ip);
         }
       }
     }
@@ -190,7 +216,7 @@ done:
 static int
 redirect_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -215,7 +241,7 @@ redirect_plugin(TSCont contp, TSEvent event, void *edata)
  */
 
 void
-init_stats(void)
+init_stats()
 {
   /* noncoupled: */
   redirect_count_connect =
@@ -318,11 +344,11 @@ TSPluginInit(int argc, const char *argv[])
 
   ip_deny = inet_addr(block_ip);
 
-  TSDebug(PLUGIN_NAME, "initializing stats");
+  DBG_GENERAL("initializing stats");
   init_stats();
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(redirect_plugin, nullptr));
 
-  TSDebug(PLUGIN_NAME ".init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s", block_ip, url_redirect, uri_redirect);
+  DBG_INIT("block_ip is %s, url_redirect is %s, and uri_redirect is %s", block_ip, url_redirect, uri_redirect);
 
   /*
    *  Demonstrate another tracing function.  This can be used to
@@ -330,9 +356,9 @@ TSPluginInit(int argc, const char *argv[])
    *  be done in debug mode.
    */
 
-  if (TSIsDebugTagSet(PLUGIN_NAME ".demo")) {
-    TSDebug(PLUGIN_NAME ".init", "The redirect_demo tag is set");
+  if (DBG_DEMO_ON) {
+    DBG_INIT("The redirect_demo tag is set");
   } else {
-    TSDebug(PLUGIN_NAME ".init", "The redirect_demo tag is not set");
+    DBG_INIT("The redirect_demo tag is not set");
   }
 }

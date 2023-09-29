@@ -23,17 +23,16 @@
 
 #pragma once
 
-#include "ComponentBase.h"
 #include <zlib.h>
 #include <string>
 #include <string_view>
 
-class EsiGzip : private EsiLib::ComponentBase
+class EsiGzip
 {
 public:
-  EsiGzip(const char *debug_tag, EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func);
+  EsiGzip();
 
-  ~EsiGzip() override;
+  ~EsiGzip();
 
   /** Compress the provided content.
    *

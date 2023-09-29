@@ -92,7 +92,7 @@ BgBlockFetch::fetch(Data *const data)
   m_stream.setupVioWrite(m_cont, hlen);
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, m_stream.m_write.m_iobuf);
 
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
+  if (dbg_ctl.on()) {
     std::string const headerstr(header.toString());
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }

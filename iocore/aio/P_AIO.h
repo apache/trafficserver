@@ -137,11 +137,6 @@ struct AIOStatsBlock {
   Metrics::IntType *kb_read;
   Metrics::IntType *write_count;
   Metrics::IntType *kb_write;
-
-#if TS_USE_LINUX_IO_URING
-  Metrics::IntType *io_uring_submitted;
-  Metrics::IntType *io_uring_completed;
-#endif
 };
 
 extern AIOStatsBlock aio_rsb;

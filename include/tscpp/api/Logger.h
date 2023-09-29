@@ -30,6 +30,7 @@
 
 #include <string>
 #include "tscpp/api/noncopyable.h"
+#include "ts/ts.h"
 
 #if !defined(ATSCPPAPI_PRINTFLIKE)
 #if defined(__GNUC__) || defined(__clang__)
@@ -84,15 +85,6 @@ namespace c
 {
   /**
    * We forward declare this because if we didn't we end up writing our
-   * own version to do the vsnprintf just to call TSDebug and have it do
-   * an unnecessary vsnprintf.
-   *
-   * @private
-   */
-  void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
-
-  /**
-   * We forward declare this because if we didn't we end up writing our
    * own version to do the vsnprintf just to call TSError and have it do
    * an unnecessary vsnprintf.
    *
@@ -110,23 +102,14 @@ namespace c
 #define LINE_NO       STRINGIFY(__LINE__)
 
 /**
- * A helper macro to get access to the Diag messages available in traffic server. These can be enabled
- * via traffic_server -T "tag.*" or since this macro includes the file can you further refine to an
- * individual file or even a particular line! This can also be enabled via records.yaml.
- */
-#define TS_DEBUG(tag, fmt, ...)                                                        \
-  do {                                                                                 \
-    TSDebug(tag "." __FILE__ ":" LINE_NO, "[%s()] " fmt, __FUNCTION__, ##__VA_ARGS__); \
-  } while (false)
-
-/**
  * A helper macro to get access to the error.log messages available in traffic server. This
  * will also output a DEBUG message visible via traffic_server -T "tag.*", or by enabling the
  * tag in records.yaml.
  */
 #define TS_ERROR(tag, fmt, ...)                                                               \
   do {                                                                                        \
-    TS_DEBUG(tag, "[ERROR] " fmt, ##__VA_ARGS__);                                             \
+    DbgCtl dc{tag};                                                                           \
+    Dbg(dc, "[ERROR] " fmt, ##__VA_ARGS__);                                                   \
     TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 

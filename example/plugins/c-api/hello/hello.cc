@@ -21,11 +21,16 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/ts.h"
 
 #define PLUGIN_NAME "hello"
+
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -40,5 +45,5 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
-  TSDebug(PLUGIN_NAME, "Hello World!");
+  Dbg(dbg_ctl, "Hello World!");
 }

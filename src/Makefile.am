@@ -30,6 +30,10 @@ SUBDIRS += wccp
 include traffic_wccp/Makefile.inc
 endif
 
+if BUILD_CRIPTS
+SUBDIRS += cripts
+endif
+
 include traffic_cache_tool/Makefile.inc
 include traffic_via/Makefile.inc
 include traffic_top/Makefile.inc

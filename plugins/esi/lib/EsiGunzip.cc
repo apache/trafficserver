@@ -23,14 +23,14 @@
 
 #include "EsiGunzip.h"
 #include "gzip.h"
+#include <ts/ts.h>
 #include <cctype>
 #include <cstdint>
 
 using std::string;
 using namespace EsiLib;
 
-EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
+EsiGunzip::EsiGunzip() : _downstream_length(0), _total_data_length(0)
 {
   _init    = false;
   _success = true;
@@ -44,7 +44,7 @@ EsiGunzip::stream_finish()
 {
   if (_init) {
     if (inflateEnd(&_zstrm) != Z_OK) {
-      _errorLog("[%s] inflateEnd failed!", __FUNCTION__);
+      TSError("[%s] inflateEnd failed!", __FUNCTION__);
       _success = false;
     }
     _init = false;
@@ -66,7 +66,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
     _zstrm.avail_in = 0;
 
     if (inflateInit2(&_zstrm, MAX_WBITS + 16) != Z_OK) {
-      _errorLog("[%s] inflateInit2 failed!", __FUNCTION__);
+      TSError("[%s] inflateInit2 failed!", __FUNCTION__);
       _success = false;
       return false;
     }
@@ -91,11 +91,11 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
         curr_buf_size = BUF_SIZE - _zstrm.avail_out;
       }
       if (curr_buf_size > BUF_SIZE) {
-        _errorLog("[%s] buf too large", __FUNCTION__);
+        TSError("[%s] buf too large", __FUNCTION__);
         break;
       }
       if (curr_buf_size < 1) {
-        _errorLog("[%s] buf below zero", __FUNCTION__);
+        TSError("[%s] buf below zero", __FUNCTION__);
         break;
       }
 

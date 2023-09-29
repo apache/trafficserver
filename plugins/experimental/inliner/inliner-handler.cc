@@ -33,7 +33,12 @@ namespace ats
 namespace inliner
 {
   Handler::Handler(const TSIOBufferReader r, ats::io::IOSinkPointer &&i)
-    : ioSink_(i), sink_(ioSink_->branch()), sink2_(sink_->branch()), reader_(TSIOBufferReaderClone(r)), counter_(0), abort_(false)
+    : ioSink_(std::move(i)),
+      sink_(ioSink_->branch()),
+      sink2_(sink_->branch()),
+      reader_(TSIOBufferReaderClone(r)),
+      counter_(0),
+      abort_(false)
   {
     assert(ioSink_);
     assert(sink_);
@@ -61,7 +66,6 @@ namespace inliner
   {
     assert(s > 0);
     assert(sink2_);
-    // TSDebug(PLUGIN_TAG, "size: %lu, offset: %lu, sum: %lu", s, o, (s + o));
     *sink2_ << ats::io::ReaderSize(reader_, s, o);
     return s;
   }

@@ -34,6 +34,8 @@
 
 namespace
 {
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 static void
 debug_certificate(const char *msg, X509_NAME *name)
 {
@@ -52,7 +54,7 @@ debug_certificate(const char *msg, X509_NAME *name)
     long len;
     char *ptr;
     len = BIO_get_mem_data(bio, &ptr);
-    TSDebug(PLUGIN_NAME, "%s %.*s", msg, static_cast<int>(len), ptr);
+    Dbg(dbg_ctl, "%s %.*s", msg, static_cast<int>(len), ptr);
   }
 
   BIO_free(bio);
@@ -69,7 +71,7 @@ CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
 #else
   X509 *cert = SSL_get_peer_certificate(ssl);
 #endif
-  TSDebug(PLUGIN_NAME, "plugin verify_cert verifying client certificate");
+  Dbg(dbg_ctl, "plugin verify_cert verifying client certificate");
   if (cert) {
     debug_certificate("client certificate subject CN is %s", X509_get_subject_name(cert));
     debug_certificate("client certificate issuer CN is %s", X509_get_issuer_name(cert));
@@ -106,7 +108,7 @@ TSPluginInit(int argc, const char *argv[])
   if (!success) {
     TSError(PCP "not initialized");
   }
-  TSDebug(PLUGIN_NAME, "Plugin %s", success ? "online" : "offline");
+  Dbg(dbg_ctl, "Plugin %s", success ? "online" : "offline");
 
   return;
 }

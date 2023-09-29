@@ -41,6 +41,7 @@ target_link_libraries(test_http
         ts::proxy
         inkdns # transitive
         ts::inknet
+        ts::jsonrpc_protocol
 )
 
 add_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)

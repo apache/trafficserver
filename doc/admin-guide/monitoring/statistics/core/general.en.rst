@@ -26,35 +26,19 @@ General
 
    Human-readable version number string for the currently running |TS| instance.
 
-.. ts:stat:: global proxy.node.config.reconfigure_required integer
+.. ts:stat:: global proxy.process.proxy.reconfigure_required integer
    :type: flag
 
-.. ts:stat:: global proxy.node.config.reconfigure_time integer
+.. ts:stat:: global proxy.process.proxy.reconfigure_time integer
 
-.. ts:stat:: global proxy.node.config.restart_required.proxy integer
+.. ts:stat:: global proxy.process.proxy.restart_required integer
    :type: flag
 
-.. ts:stat:: global proxy.node.hostname_FQ string ats-host.example.com
-
-   Fully-qualified domain name for the host on which |TS| is running.
-
-.. ts:stat:: global proxy.node.hostname string ats-host
-
-   The hostname only, without domain, for the host on which |TS| is running.
-
-.. ts:stat:: global proxy.node.proxy_running integer
-   :type: flag
-
-   Indicates whether any form of HTTP proxying is currently enabled in the
-   running instance of |TS|.
-
-.. ts:stat:: global proxy.node.restarts.proxy.cache_ready_time integer
+.. ts:stat:: global proxy.process.proxy.cache_ready_time integer
    :type: gauge
    :units: seconds
 
-.. ts:stat:: global proxy.node.restarts.proxy.restart_count integer
-.. ts:stat:: global proxy.node.restarts.proxy.start_time integer
-.. ts:stat:: global proxy.node.restarts.proxy.stop_time integer
+.. ts:stat:: global proxy.process.proxy.start_time integer
 .. ts:stat:: global proxy.process.user_agent_total_bytes integer
 .. ts:stat:: global proxy.process.http.tunnels integer
 .. ts:stat:: global proxy.process.update.fails integer

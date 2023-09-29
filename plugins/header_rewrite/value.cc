@@ -32,7 +32,7 @@
 
 Value::~Value()
 {
-  TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Value");
+  Dbg(dbg_ctl, "Calling DTOR for Value");
   for (auto &_cond_val : _cond_vals) {
     delete _cond_val;
   }

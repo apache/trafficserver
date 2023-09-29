@@ -31,17 +31,17 @@ A simple linked list queue.
 #include "tscore/ink_mutex.h"
 #include "tscore/ink_thread.h"
 
-typedef struct llqrec_s {
-  struct llqrec_s *next;
+struct LLQrec {
+  struct LLQrec *next;
   void *data;
-} LLQrec;
+};
 
-typedef struct llq_s {
+struct LLQ {
   LLQrec *head, *tail, *free;
   uint64_t len, highwater;
   ink_mutex mux;
   ink_semaphore sema;
-} LLQ;
+};
 
 LLQ *create_queue();
 int enqueue(LLQ *q, void *data);

@@ -102,13 +102,13 @@ message_handler(TSCont contp, TSEvent event, void *edata)
 {
   if (event == TS_EVENT_LIFECYCLE_MSG) {
     TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-    TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
+    Dbg(dbg_ctl, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
       if (msg->data_size) {
         if (strncmp(reinterpret_cast<char *>(const_cast<void *>(msg->data)), "reload", msg->data_size) == 0) {
           // TODO: If in the middle of generating a new STEK, maybe block until new STEK has been generated?
           //       Not a big problem since new STEK is only generated once every few hours.
-          TSDebug(PLUGIN_NAME, "Reloading configurations...");
+          Dbg(dbg_ctl, "Reloading configurations...");
           if (load_config_from_file() == 0) {
             stek_share_server.config_reloading = true;
             stek_share_server.raft_launcher.shutdown();
@@ -116,13 +116,13 @@ message_handler(TSCont contp, TSEvent event, void *edata)
             auto config = get_scoped_config();
             if (init_raft(nuraft::cs_new<STEKShareSM>(), config) == 0) {
               backup_config(config);
-              TSDebug(PLUGIN_NAME, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
+              Dbg(dbg_ctl, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
             } else {
               TSError("[%s] Raft initialization failed with new config, retrying with old config.", PLUGIN_NAME);
               auto config_old = get_scoped_config(true);
               restore_config(config_old);
               if (init_raft(nuraft::cs_new<STEKShareSM>(), config_old) == 0) {
-                TSDebug(PLUGIN_NAME, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
+                Dbg(dbg_ctl, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
               } else {
                 TSEmergency("[%s] Raft initialization failed with old config.", PLUGIN_NAME);
               }
@@ -147,7 +147,7 @@ cert_verification(const std::string &sn)
 {
   auto config = get_scoped_config();
   if (!config->cert_verify_str.empty() && sn.compare(config->cert_verify_str) != 0) {
-    TSDebug(PLUGIN_NAME, "Cert incorrect, expecting: %s, got: %s", config->cert_verify_str.c_str(), sn.c_str());
+    Dbg(dbg_ctl, "Cert incorrect, expecting: %s, got: %s", config->cert_verify_str.c_str(), sn.c_str());
     return false;
   }
   return true;
@@ -198,7 +198,7 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<Plugin
 
   std::shared_lock lock(stek_share_server.raft_mutex);
   if (!stek_share_server.raft_instance) {
-    TSDebug(PLUGIN_NAME, "Failed to initialize launcher.");
+    Dbg(dbg_ctl, "Failed to initialize launcher.");
     return -1;
   }
 
@@ -214,10 +214,10 @@ load_config_from_file()
   try {
     server_conf = YAML::LoadFile(conf_file_path);
   } catch (YAML::BadFile &e) {
-    TSDebug(PLUGIN_NAME, "Cannot load configuration file: %s.", e.what());
+    Dbg(dbg_ctl, "Cannot load configuration file: %s.", e.what());
     return -1;
   } catch (std::exception &e) {
-    TSDebug(PLUGIN_NAME, "Unknown error while loading configuration file: %s.", e.what());
+    Dbg(dbg_ctl, "Unknown error while loading configuration file: %s.", e.what());
     return -1;
   }
 
@@ -225,11 +225,11 @@ load_config_from_file()
   if (server_conf["server_id"]) {
     new_config->server_id = server_conf["server_id"].as<int>();
     if (new_config->server_id < 1) {
-      TSDebug(PLUGIN_NAME, "Wrong server id (must be >= 1): %d", new_config->server_id);
+      Dbg(dbg_ctl, "Wrong server id (must be >= 1): %d", new_config->server_id);
       return -1;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server id in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server id in the configuration file.");
     return -1;
   }
 
@@ -237,14 +237,14 @@ load_config_from_file()
   if (server_conf["address"]) {
     new_config->address = server_conf["address"].as<std::string>();
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server address in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server address in the configuration file.");
     return -1;
   }
 
   if (server_conf["port"]) {
     new_config->port = server_conf["port"].as<int>();
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server port in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server port in the configuration file.");
     return -1;
   }
 
@@ -281,7 +281,7 @@ load_config_from_file()
   if (server_conf["key_update_interval"]) {
     new_config->key_update_interval = std::chrono::seconds(server_conf["key_update_interval"].as<int>());
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server key update interval in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server key update interval in the configuration file.");
     return -1;
   }
 
@@ -290,10 +290,10 @@ load_config_from_file()
     try {
       server_list = YAML::LoadFile(server_conf["server_list_file"].as<std::string>());
     } catch (YAML::BadFile &e) {
-      TSDebug(PLUGIN_NAME, "Cannot load server list file: %s.", e.what());
+      Dbg(dbg_ctl, "Cannot load server list file: %s.", e.what());
       return -1;
     } catch (std::exception &e) {
-      TSDebug(PLUGIN_NAME, "Unknown error while loading server list file: %s.", e.what());
+      Dbg(dbg_ctl, "Unknown error while loading server list file: %s.", e.what());
       return -1;
     }
 
@@ -309,13 +309,13 @@ load_config_from_file()
         new_config->server_list[server_id]  = endpoint;
         cluster_list_str                   += "\n  " + std::to_string(server_id) + ", " + endpoint;
       } else {
-        TSDebug(PLUGIN_NAME, "Wrong server list format.");
+        Dbg(dbg_ctl, "Wrong server list format.");
         return -1;
       }
     }
-    TSDebug(PLUGIN_NAME, "%s", cluster_list_str.c_str());
+    Dbg(dbg_ctl, "%s", cluster_list_str.c_str());
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server list file in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server list file in the configuration file.");
     return -1;
   }
 
@@ -323,21 +323,21 @@ load_config_from_file()
   if (server_conf["root_cert_file"]) {
     new_config->root_cert_file = server_conf["root_cert_file"].as<std::string>();
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify root ca file in the configuration file.");
+    Dbg(dbg_ctl, "Must specify root ca file in the configuration file.");
     return -1;
   }
 
   if (server_conf["server_cert_file"]) {
     new_config->server_cert_file = server_conf["server_cert_file"].as<std::string>();
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server cert file in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server cert file in the configuration file.");
     return -1;
   }
 
   if (server_conf["server_key_file"]) {
     new_config->server_key_file = server_conf["server_key_file"].as<std::string>();
   } else {
-    TSDebug(PLUGIN_NAME, "Must specify server key file in the configuration file.");
+    Dbg(dbg_ctl, "Must specify server key file in the configuration file.");
     return -1;
   }
 
@@ -357,10 +357,10 @@ handle_result(raft_result &result, nuraft::ptr<std::exception> &err)
   if (result.get_result_code() != nuraft::cmd_result_code::OK) {
     // Something went wrong.
     // This means committing this log failed, but the log itself is still in the log store.
-    TSDebug(PLUGIN_NAME, "Replication failed: %d", result.get_result_code());
+    Dbg(dbg_ctl, "Replication failed: %d", result.get_result_code());
     return;
   }
-  TSDebug(PLUGIN_NAME, "Replication succeeded.");
+  Dbg(dbg_ctl, "Replication succeeded.");
 }
 
 void
@@ -377,7 +377,7 @@ append_log(const void *data, int data_len)
 
   if (!ret->get_accepted()) {
     // Log append rejected, usually because this node is not a leader.
-    TSDebug(PLUGIN_NAME, "Replication failed: %d", ret->get_result_code());
+    Dbg(dbg_ctl, "Replication failed: %d", ret->get_result_code());
     return;
   }
 
@@ -410,7 +410,7 @@ print_status()
   status_str                        += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance->get_leader());
   status_str += "\n  Raft log range: " + std::to_string(ls->start_index()) + " - " + std::to_string((ls->next_slot() - 1));
   status_str += "\n  Last committed index: " + std::to_string(stek_share_server.raft_instance->get_committed_log_idx());
-  TSDebug(PLUGIN_NAME, "%s", status_str.c_str());
+  Dbg(dbg_ctl, "%s", status_str.c_str());
 }
 
 static void *
@@ -420,25 +420,25 @@ stek_updater(void *arg)
   ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
   ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
 
-  TSDebug(PLUGIN_NAME, "Starting STEK updater thread: %lu", ::pthread_self());
+  Dbg(dbg_ctl, "Starting STEK updater thread: %lu", ::pthread_self());
 
   while (!plugin_threads.is_shut_down()) {
     ssl_ticket_key_t curr_stek;
     std::chrono::time_point<std::chrono::system_clock> init_key_time;
 
     // Initial key to use before syncing up.
-    TSDebug(PLUGIN_NAME, "Generating initial STEK...");
+    Dbg(dbg_ctl, "Generating initial STEK...");
     if (generate_new_stek(&curr_stek, 0 /* fast start */) == 0) {
-      TSDebug(PLUGIN_NAME, "Generate initial STEK succeeded: %s",
-              hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
+      Dbg(dbg_ctl, "Generate initial STEK succeeded: %s",
+          hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
 
       std::memcpy(&stek_share_server.ticket_keys[0], &curr_stek, SSL_TICKET_KEY_SIZE);
 
-      TSDebug(PLUGIN_NAME, "Updating SSL Ticket Key...");
+      Dbg(dbg_ctl, "Updating SSL Ticket Key...");
       if (TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys), SSL_TICKET_KEY_SIZE) == TS_ERROR) {
-        TSDebug(PLUGIN_NAME, "Update SSL Ticket Key failed.");
+        Dbg(dbg_ctl, "Update SSL Ticket Key failed.");
       } else {
-        TSDebug(PLUGIN_NAME, "Update SSL Ticket Key succeeded.");
+        Dbg(dbg_ctl, "Update SSL Ticket Key succeeded.");
         init_key_time = std::chrono::system_clock::now();
       }
     } else {
@@ -465,30 +465,30 @@ stek_updater(void *arg)
             std::chrono::system_clock::now() - init_key_time < config->key_update_interval) {
           // If we got here after starting up, that means the initial key is still valid and we can send it to everyone else.
           stek_share_server.last_updated = init_key_time;
-          TSDebug(PLUGIN_NAME, "Using initial STEK: %s",
-                  hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
+          Dbg(dbg_ctl, "Using initial STEK: %s",
+              hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
           append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
 
         } else if (std::chrono::system_clock::now() - stek_share_server.last_updated >= config->key_update_interval) {
           // Generate a new key as the last one has expired.
           // Move the old key from ticket_keys_[0] to ticket_keys_[1], then put the new key in ticket_keys_[0].
-          TSDebug(PLUGIN_NAME, "Generating new STEK...");
+          Dbg(dbg_ctl, "Generating new STEK...");
           if (generate_new_stek(&curr_stek, 1) == 0) {
-            TSDebug(PLUGIN_NAME, "Generate new STEK succeeded: %s",
-                    hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
+            Dbg(dbg_ctl, "Generate new STEK succeeded: %s",
+                hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
 
             std::memcpy(&stek_share_server.ticket_keys[1], &stek_share_server.ticket_keys[0], SSL_TICKET_KEY_SIZE);
             std::memcpy(&stek_share_server.ticket_keys[0], &curr_stek, SSL_TICKET_KEY_SIZE);
 
-            TSDebug(PLUGIN_NAME, "Updating SSL Ticket Key...");
+            Dbg(dbg_ctl, "Updating SSL Ticket Key...");
             if (TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys), SSL_TICKET_KEY_SIZE * 2) ==
                 TS_ERROR) {
-              TSDebug(PLUGIN_NAME, "Update SSL Ticket Key failed.");
+              Dbg(dbg_ctl, "Update SSL Ticket Key failed.");
             } else {
               stek_share_server.last_updated = std::chrono::system_clock::now();
-              TSDebug(PLUGIN_NAME, "Update SSL Ticket Key succeeded.");
-              TSDebug(PLUGIN_NAME, "Using new STEK: %s",
-                      hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
+              Dbg(dbg_ctl, "Update SSL Ticket Key succeeded.");
+              Dbg(dbg_ctl, "Using new STEK: %s",
+                  hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
               append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
             }
           } else {
@@ -506,19 +506,19 @@ stek_updater(void *arg)
         // Check whether we received a new key.
         // TODO: retry updating STEK when failed
         if (sm->received_stek(&curr_stek)) {
-          TSDebug(PLUGIN_NAME, "Received new STEK: %s",
-                  hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
+          Dbg(dbg_ctl, "Received new STEK: %s",
+              hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
 
           // Move the old key from ticket_keys_[0] to ticket_keys_[1], then put the new key in ticket_keys_[0].
           std::memcpy(&stek_share_server.ticket_keys[1], &stek_share_server.ticket_keys[0], SSL_TICKET_KEY_SIZE);
           std::memcpy(&stek_share_server.ticket_keys[0], &curr_stek, SSL_TICKET_KEY_SIZE);
 
-          TSDebug(PLUGIN_NAME, "Updating SSL Ticket Key...");
+          Dbg(dbg_ctl, "Updating SSL Ticket Key...");
           if (TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys), SSL_TICKET_KEY_SIZE * 2) == TS_ERROR) {
-            TSDebug(PLUGIN_NAME, "Update SSL Ticket Key failed.");
+            Dbg(dbg_ctl, "Update SSL Ticket Key failed.");
           } else {
             stek_share_server.last_updated = std::chrono::system_clock::now();
-            TSDebug(PLUGIN_NAME, "Update SSL Ticket Key succeeded.");
+            Dbg(dbg_ctl, "Update SSL Ticket Key succeeded.");
           }
         }
       }
@@ -536,7 +536,7 @@ stek_updater(void *arg)
     stek_share_server.config_reloading = false;
   }
 
-  TSDebug(PLUGIN_NAME, "Stopping STEK updater thread: %lu", ::pthread_self());
+  Dbg(dbg_ctl, "Stopping STEK updater thread: %lu", ::pthread_self());
 
   return nullptr;
 }
@@ -567,7 +567,7 @@ TSPluginInit(int argc, const char *argv[])
       auto config = get_scoped_config();
       if (init_raft(nuraft::cs_new<STEKShareSM>(), config) == 0) {
         backup_config(config);
-        TSDebug(PLUGIN_NAME, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
+        Dbg(dbg_ctl, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
         TSThreadCreate(stek_updater, nullptr);
       } else {
         TSError("[%s] Raft initialization failed.", PLUGIN_NAME);

@@ -701,15 +701,18 @@ Span::load()
   auto fs = swoc::file::status(_path, ec);
 
   if (!swoc::file::is_readable(_path)) {
-    zret = Errata(make_errno_code(EPERM), R"("{}" is not readable.)", _path);
-  } else if (swoc::file::is_char_device(fs) || swoc::file::is_block_device(fs)) {
-    zret = this->loadDevice();
-  } else if (swoc::file::is_dir(fs)) {
-    zret.note("Directory support not yet available");
-  } else {
-    zret = Errata(make_errno_code(EBADF), R"("{}" is not a valid file type)", _path);
+    return Errata(make_errno_code(EPERM), R"("{}" is not readable.)", _path);
   }
-  return zret;
+
+  if (swoc::file::is_char_device(fs) || swoc::file::is_block_device(fs)) {
+    return this->loadDevice();
+  }
+
+  if (swoc::file::is_dir(fs)) {
+    return Errata("Directory support not yet available");
+  }
+
+  return Errata(make_errno_code(EBADF), R"("{}" is not a valid file type)", _path);
 }
 
 Errata

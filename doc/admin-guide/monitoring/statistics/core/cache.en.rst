@@ -22,11 +22,6 @@
 Cache
 *****
 
-.. ts:stat:: global proxy.node.cache.contents.num_docs integer
-   :ungathered:
-
-   Represents the number of documents currently residing in the cache.
-
 .. ts:stat:: global proxy.process.cache_total_hits counter
 
    Represents the total number of cache lookups which have been satisfied by

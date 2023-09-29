@@ -20,8 +20,3 @@ find_package(Threads)
 add_executable(ssl-post ssl-post.c)
 
 target_link_libraries(ssl-post PRIVATE OpenSSL::SSL Threads::Threads)
-
-set_target_properties(ssl-post
-    PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)

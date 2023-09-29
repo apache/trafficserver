@@ -158,7 +158,7 @@ private:
   FileManager();
 
   ink_mutex accessLock; // Protects bindings hashtable
-  ConfigUpdateCbTable *_pluginCallbackList;
+  ConfigUpdateCbTable *_pluginCallbackList{nullptr};
 
   std::mutex _callbacksMutex;
   std::mutex _accessMutex;

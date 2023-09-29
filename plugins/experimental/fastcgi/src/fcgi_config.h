@@ -165,7 +165,7 @@ public:
       tol_remap_hook_reqs(0),
       tol_non_cacheable_reqs(0),
       tol_got_passed_reqs(0){
-        // TSDebug(PLUGIN_NAME, "FCGIPluginData Initialised.");
+        // Dbg(dbg_ctl, "FCGIPluginData Initialised.");
       };
   ~InterceptPluginData();
   FcgiPluginConfig *getGlobalConfigObj();

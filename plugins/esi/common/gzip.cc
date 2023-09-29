@@ -25,6 +25,7 @@
 
 #include "gzip.h"
 #include <zlib.h>
+#include <ts/ts.h>
 
 #include "Utils.h"
 
@@ -82,7 +83,7 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
   zstrm.zfree  = Z_NULL;
   zstrm.opaque = Z_NULL;
   if (deflateInit2(&zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    Utils::ERROR_LOG("[%s] deflateInit2 failed!", __FUNCTION__);
+    TSError("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
   }
 
@@ -104,14 +105,15 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
     }
   }
   if (!in_data_size) {
-    zstrm.avail_in = 0; // required for the "finish" loop as no data has been given so far
+    zstrm.avail_in  = 0; // required for the "finish" loop as no data has been given so far
+    zstrm.total_out = 0; // required for the "finish" loop
   }
   if (deflate_result == Z_OK) {
     deflate_result = runDeflateLoop(zstrm, Z_FINISH, cdata);
   }
   deflateEnd(&zstrm);
   if (deflate_result != Z_STREAM_END) {
-    Utils::ERROR_LOG("[%s] Failure while deflating; error code %d", __FUNCTION__, deflate_result);
+    TSError("[%s] Failure while deflating; error code %d", __FUNCTION__, deflate_result);
     return false;
   }
   cdata[0] = MAGIC_BYTE_1;
@@ -127,11 +129,11 @@ bool
 EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
 {
   if (!data || (data_len <= (GZIP_HEADER_SIZE + GZIP_TRAILER_SIZE))) {
-    Utils::ERROR_LOG("[%s] Invalid arguments: 0x%p, %d", __FUNCTION__, data, data_len);
+    TSError("[%s] Invalid arguments: 0x%p, %d", __FUNCTION__, data, data_len);
     return false;
   }
   if ((data[0] != MAGIC_BYTE_1) || (data[1] != MAGIC_BYTE_2) || (data[2] != Z_DEFLATED)) {
-    Utils::ERROR_LOG("[%s] Header check failed!", __FUNCTION__);
+    TSError("[%s] Header check failed!", __FUNCTION__);
     return false;
   }
   data     += GZIP_HEADER_SIZE;
@@ -144,7 +146,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   zstrm.next_in  = nullptr;
   zstrm.avail_in = 0;
   if (inflateInit2(&zstrm, -MAX_WBITS) != Z_OK) {
-    Utils::ERROR_LOG("[%s] inflateInit2 failed!", __FUNCTION__);
+    TSError("[%s] inflateInit2 failed!", __FUNCTION__);
     return false;
   }
   zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
@@ -165,11 +167,11 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
       curr_buf_size = BUF_SIZE - zstrm.avail_out;
     }
     if (curr_buf_size > BUF_SIZE) {
-      Utils::ERROR_LOG("[%s] buf too large", __FUNCTION__);
+      TSError("[%s] buf too large", __FUNCTION__);
       break;
     }
     if (curr_buf_size < 1) {
-      Utils::ERROR_LOG("[%s] buf below zero", __FUNCTION__);
+      TSError("[%s] buf below zero", __FUNCTION__);
       break;
     }
     unzipped_data_size += curr_buf_size;
@@ -187,7 +189,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   } while (zstrm.avail_in > 0);
   inflateEnd(&zstrm);
   if (inflate_result != Z_STREAM_END) {
-    Utils::ERROR_LOG("[%s] Failure while inflating; error code %d", __FUNCTION__, inflate_result);
+    TSError("[%s] Failure while inflating; error code %d", __FUNCTION__, inflate_result);
     return false;
   }
   int32_t orig_size;
@@ -195,8 +197,8 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   extract(data + data_len, orig_crc);
   extract(data + data_len + 4, orig_size);
   if ((crc != orig_crc) || (unzipped_data_size != orig_size)) {
-    Utils::ERROR_LOG("[%s] CRC/size error. Expecting (CRC, size) (0x%x, 0x%x); computed (0x%x, 0x%x)", __FUNCTION__, orig_crc,
-                     orig_size, crc, unzipped_data_size);
+    TSError("[%s] CRC/size error. Expecting (CRC, size) (0x%x, 0x%x); computed (0x%x, 0x%x)", __FUNCTION__, orig_crc, orig_size,
+            unsigned(crc), unzipped_data_size);
     return false;
   }
   return true;

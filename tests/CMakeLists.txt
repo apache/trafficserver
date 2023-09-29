@@ -15,8 +15,8 @@
 #
 #######################
 
-function(ADD_AUTEST_PLUGIN _NAME _SOURCES)
-    add_library(${_NAME} MODULE ${_SOURCES})
+function(ADD_AUTEST_PLUGIN _NAME)
+    add_library(${_NAME} MODULE ${ARGN})
     set_target_properties(${_NAME} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
         PREFIX ""

@@ -69,6 +69,8 @@ TSPluginInit(int argc, const char *argv[])
 
   atexit(unloadlibs);
 
+  static DbgCtl dbg_ctl{"libloader"};
+
   for (i = 1; i < argc; ++i) {
     const char *lib = argv[i];
     void *handle    = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
@@ -77,7 +79,7 @@ TSPluginInit(int argc, const char *argv[])
       l->handle = handle;
       l->next   = libs;
       libs      = l;
-      TSDebug("libloader", " loaded %s", lib);
+      Dbg(dbg_ctl, " loaded %s", lib);
     } else {
       TSError("[libloader] failed to load %s: %s\n", lib, dlerror());
     }

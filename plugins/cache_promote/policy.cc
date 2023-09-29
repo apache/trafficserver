@@ -26,9 +26,9 @@ PromotionPolicy::doSample() const
     double r = ts::Random::drandom();
 
     if (_sample > r) {
-      TSDebug(PLUGIN_NAME, "checking sampling, is %f > %f? Yes!", _sample, r);
+      DBG("checking sampling, is %f > %f? Yes!", _sample, r);
     } else {
-      TSDebug(PLUGIN_NAME, "checking sampling, is %f > %f? No!", _sample, r);
+      DBG("checking sampling, is %f > %f? No!", _sample, r);
       return false;
     }
   }
@@ -48,9 +48,9 @@ PromotionPolicy::create_stat(std::string_view name, std::string_view remap_ident
   if (TS_ERROR == TSStatFindName(stat_name.data(), &stat_id)) {
     stat_id = TSStatCreate(stat_name.data(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (TS_ERROR == stat_id) {
-      TSDebug(PLUGIN_NAME, "error creating stat_name: %s", stat_name.data());
+      DBG("error creating stat_name: %s", stat_name.data());
     } else {
-      TSDebug(PLUGIN_NAME, "created stat_name: %s, stat_id: %d", stat_name.data(), stat_id);
+      DBG("created stat_name: %s, stat_id: %d", stat_name.data(), stat_id);
     }
   }
 

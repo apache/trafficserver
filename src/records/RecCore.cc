@@ -489,11 +489,11 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err              = REC_ERR_FAIL;
-  ts::Metrics &api_metrics = ts::Metrics::getInstance();
-  auto it                  = api_metrics.find(name);
+  RecErrT err       = REC_ERR_FAIL;
+  ts::Metrics &intm = ts::Metrics::getInstance();
+  auto it           = intm.find(name);
 
-  if (it != api_metrics.end()) {
+  if (it != intm.end()) {
     RecRecord r;
     auto &&[name, val] = *it;
 
@@ -536,18 +536,18 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     return REC_ERR_FAIL;
   }
 
-  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
-    RecRecord r;
+  // First find the new metrics, this is a bit of a hack, beacuse we still use the old
+  // librecords callback with a "pseudo" record.
+  RecRecord tmp;
 
-    r.rec_type  = RECT_PLUGIN;
-    r.data_type = RECD_INT;
+  tmp.rec_type  = RECT_ALL;
+  tmp.data_type = RECD_INT;
 
-    for (auto &&[name, val] : ts::Metrics::getInstance()) {
-      if (regex.match(name.data()) >= 0) {
-        r.name         = name.data();
-        r.data.rec_int = val;
-        callback(&r, data);
-      }
+  for (auto &&[name, val] : ts::Metrics::getInstance()) {
+    if (regex.match(name.data()) >= 0) {
+      tmp.name         = name.data();
+      tmp.data.rec_int = val;
+      callback(&tmp, data);
     }
   }
 
@@ -1093,14 +1093,13 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
       rec_mutex_release(&(r->lock));
     }
   }
-  // Also dump the new ts::Metrics if asked for
-  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
-    RecData datum;
 
-    for (auto &&[name, val] : ts::Metrics::getInstance()) {
-      datum.rec_int = val;
-      callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
-    }
+  // Dump all new metrics as well (no "type" for them)
+  RecData datum;
+
+  for (auto &&[name, val] : ts::Metrics::getInstance()) {
+    datum.rec_int = val;
+    callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
   }
 }
 
@@ -1135,14 +1134,6 @@ REC_ConfigReadFloat(const char *name)
 {
   RecFloat t = 0;
   RecGetRecordFloat(name, &t);
-  return t;
-}
-
-RecCounter
-REC_ConfigReadCounter(const char *name)
-{
-  RecCounter t = 0;
-  RecGetRecordCounter(name, &t);
   return t;
 }
 

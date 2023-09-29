@@ -64,11 +64,11 @@ global_handler(TSCont continuation, TSEvent event, void *data)
     return 0;
 
   default:
-    return 0;
+    TSError("[%s] global_handler: unexpected event: %d\n", plugin_name, event);
+    break;
   }
 
   TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
-
   return 0;
 }
 

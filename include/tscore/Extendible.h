@@ -368,7 +368,7 @@ namespace details
   bool
   fieldGet(const void *fld_ptr, FieldId<Derived_t, bool> const &field)
   {
-    return bool((*static_cast<const uint8_t *>(fld_ptr)) & field.desc->mask);
+    return static_cast<bool>((*static_cast<const uint8_t *>(fld_ptr)) & field.desc->mask);
   }
 
   template <typename Derived_t>
@@ -611,7 +611,7 @@ Extendible<Derived_t>::initFields(uintptr_t start_ptr)
   ink_assert(ext_loc == 0);
   start_ptr = ROUNDUP(start_ptr, schema.alloc_align); // pad the previous struct, so that our fields are memaligned correctly
   ink_assert(start_ptr - uintptr_t(this) < UINT16_MAX);
-  ext_loc = uint16_t(start_ptr - uintptr_t(this)); // store the offset to be used by ext::get and ext::set
+  ext_loc = static_cast<uint16_t>(start_ptr - uintptr_t(this)); // store the offset to be used by ext::get and ext::set
   ink_assert(ext_loc > 0);
   schema.callConstructor(start_ptr);    // construct all fields
   return start_ptr + schema.alloc_size; // return the end of the extendible data

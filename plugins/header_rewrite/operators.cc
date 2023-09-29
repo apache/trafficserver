@@ -50,23 +50,23 @@ OperatorSetConfig::exec(const Resources &res) const
     switch (_type) {
     case TS_RECORDDATATYPE_INT:
       if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.txnp, _key, _value.get_int_value())) {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
       } else {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%d", _config.c_str(), _value.get_int_value());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%d", _config.c_str(), _value.get_int_value());
       }
       break;
     case TS_RECORDDATATYPE_FLOAT:
       if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.txnp, _key, _value.get_float_value())) {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
       } else {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%f", _config.c_str(), _value.get_float_value());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%f", _config.c_str(), _value.get_float_value());
       }
       break;
     case TS_RECORDDATATYPE_STRING:
       if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.txnp, _key, _value.get_value().c_str(), _value.size())) {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
       } else {
-        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%s", _config.c_str(), _value.get_value().c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetConfig::exec() invocation failed on %s=%s", _config.c_str(), _value.get_value().c_str());
       }
       break;
     default:
@@ -124,7 +124,7 @@ OperatorSetStatus::exec(const Resources &res) const
     break;
   }
 
-  TSDebug(PLUGIN_NAME, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
+  Dbg(pi_dbg_ctl, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
 }
 
 // OperatorSetStatusReason
@@ -153,7 +153,7 @@ OperatorSetStatusReason::exec(const Resources &res) const
 
     _reason.append_value(reason, res);
     if (reason.size() > 0) {
-      TSDebug(PLUGIN_NAME, "Setting Status Reason to %s", reason.c_str());
+      Dbg(pi_dbg_ctl, "Setting Status Reason to %s", reason.c_str());
       TSHttpHdrReasonSet(res.bufp, res.hdr_loc, reason.c_str(), reason.size());
     }
   }
@@ -197,7 +197,7 @@ OperatorSetDestination::exec(const Resources &res) const
     } else {
       bufp = res.bufp;
       if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
-        TSDebug(PLUGIN_NAME, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
         return;
       }
     }
@@ -207,35 +207,35 @@ OperatorSetDestination::exec(const Resources &res) const
     case URL_QUAL_HOST:
       _value.append_value(value, res);
       if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination HOST to an empty value, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination HOST to an empty value, skipping");
       } else {
         const_cast<Resources &>(res).changed_url = true;
         TSUrlHostSet(bufp, url_m_loc, value.c_str(), value.size());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with HOST: %s", value.c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with HOST: %s", value.c_str());
       }
       break;
 
     case URL_QUAL_PATH:
       _value.append_value(value, res);
       if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination PATH to an empty value, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination PATH to an empty value, skipping");
       } else {
         const_cast<Resources &>(res).changed_url = true;
         TSUrlPathSet(bufp, url_m_loc, value.c_str(), value.size());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with PATH: %s", value.c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with PATH: %s", value.c_str());
       }
       break;
 
     case URL_QUAL_QUERY:
       _value.append_value(value, res);
       if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination QUERY to an empty value, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination QUERY to an empty value, skipping");
       } else {
         // 1.6.4--Support for preserving QSA in case of set-destination
         if (get_oper_modifiers() & OPER_QSA) {
           int query_len     = 0;
           const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
-          TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
+          Dbg(pi_dbg_ctl, "QSA mode, append original query string: %.*s", query_len, query);
           // std::string connector = (value.find("?") == std::string::npos)? "?" : "&";
           value.append("&");
           value.append(query, query_len);
@@ -243,51 +243,51 @@ OperatorSetDestination::exec(const Resources &res) const
 
         const_cast<Resources &>(res).changed_url = true;
         TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with QUERY: %s", value.c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with QUERY: %s", value.c_str());
       }
       break;
 
     case URL_QUAL_PORT:
       if (_value.get_int_value() <= 0 || _value.get_int_value() > 0xFFFF) {
-        TSDebug(PLUGIN_NAME, "Would set destination PORT to an invalid range, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination PORT to an invalid range, skipping");
       } else {
         const_cast<Resources &>(res).changed_url = true;
         TSUrlPortSet(bufp, url_m_loc, _value.get_int_value());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with PORT: %d", _value.get_int_value());
+        Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with PORT: %d", _value.get_int_value());
       }
       break;
     case URL_QUAL_URL:
       _value.append_value(value, res);
       if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination URL to an empty value, skipping");
       } else {
         const char *start = value.c_str();
         const char *end   = start + value.size();
         TSMLoc new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
-          TSDebug(PLUGIN_NAME, "Set destination URL to %s", value.c_str());
+          Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
-          TSDebug(PLUGIN_NAME, "Failed to set URL %s", value.c_str());
+          Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
         }
       }
       break;
     case URL_QUAL_SCHEME:
       _value.append_value(value, res);
       if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
+        Dbg(pi_dbg_ctl, "Would set destination SCHEME to an empty value, skipping");
       } else {
         TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
+        Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
     default:
-      TSDebug(PLUGIN_NAME, "Set destination %i has no handler", _url_qual);
+      Dbg(pi_dbg_ctl, "Set destination %i has no handler", _url_qual);
       break;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!",
-            res.bufp, res.hdr_loc, res._rri);
+    Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+        res.hdr_loc, res._rri);
   }
 }
 
@@ -307,7 +307,7 @@ OperatorRMDestination::exec(const Resources &res) const
     } else {
       bufp = res.bufp;
       if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
-        TSDebug(PLUGIN_NAME, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
         return;
       }
     }
@@ -317,25 +317,25 @@ OperatorRMDestination::exec(const Resources &res) const
     case URL_QUAL_PATH:
       const_cast<Resources &>(res).changed_url = true;
       TSUrlPathSet(bufp, url_m_loc, value.c_str(), value.size());
-      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PATH");
+      Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting PATH");
       break;
     case URL_QUAL_QUERY:
       const_cast<Resources &>(res).changed_url = true;
       TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
-      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting QUERY");
+      Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting QUERY");
       break;
     case URL_QUAL_PORT:
       const_cast<Resources &>(res).changed_url = true;
       TSUrlPortSet(bufp, url_m_loc, 0);
-      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PORT");
+      Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting PORT");
       break;
     default:
-      TSDebug(PLUGIN_NAME, "RM Destination %i has no handler", _url_qual);
+      Dbg(pi_dbg_ctl, "RM Destination %i has no handler", _url_qual);
       break;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
-            res.hdr_loc, res._rri);
+    Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+        res.hdr_loc, res._rri);
   }
 }
 
@@ -366,7 +366,7 @@ EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus s
   static std::string header("Location");
   if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
     if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, location.c_str(), location.size())) {
-      TSDebug(PLUGIN_NAME, "   Adding header %s", header.c_str());
+      Dbg(pi_dbg_ctl, "   Adding header %s", header.c_str());
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
     }
     const char *reason = TSHttpHdrReasonLookup(status);
@@ -400,7 +400,7 @@ cont_add_location(TSCont contp, TSEvent event, void *edata)
     if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
       EditRedirectResponse(txnp, osd->get_location(), status, bufp, hdr_loc);
     } else {
-      TSDebug(PLUGIN_NAME, "Could not retrieve the response header");
+      Dbg(pi_dbg_ctl, "Could not retrieve the response header");
     }
 
   } break;
@@ -425,9 +425,9 @@ OperatorSetRedirect::exec(const Resources &res) const
     bool remap = false;
     if (nullptr != res._rri) {
       remap = true;
-      TSDebug(PLUGIN_NAME, "OperatorSetRedirect:exec() invoked from remap plugin");
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect:exec() invoked from remap plugin");
     } else {
-      TSDebug(PLUGIN_NAME, "OperatorSetRedirect:exec() not invoked from remap plugin");
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect:exec() not invoked from remap plugin");
     }
 
     TSMBuffer bufp;
@@ -440,7 +440,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       // Handle when not called from remap plugin.
       bufp = res.client_bufp;
       if (TS_SUCCESS != TSHttpHdrUrlGet(res.client_bufp, res.client_hdr_loc, &url_loc)) {
-        TSDebug(PLUGIN_NAME, "Could not get client URL");
+        Dbg(pi_dbg_ctl, "Could not get client URL");
       }
     }
 
@@ -451,7 +451,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       int path_len     = 0;
       const char *path = TSUrlPathGet(bufp, url_loc, &path_len);
       if (path_len > 0) {
-        TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
+        Dbg(pi_dbg_ctl, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
         value.insert(pos_path, path, path_len);
       }
     }
@@ -461,7 +461,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
-      TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
+      Dbg(pi_dbg_ctl, "QSA mode, append original query string: %.*s", query_len, query);
       std::string connector = (value.find('?') == std::string::npos) ? "?" : "&";
       value.append(connector);
       value.append(query, query_len);
@@ -473,7 +473,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     if (remap) {
       // Set new location.
       if (TS_PARSE_ERROR == TSUrlParse(bufp, url_loc, &start, end)) {
-        TSDebug(PLUGIN_NAME, "Could not set Location field value to: %s", value.c_str());
+        Dbg(pi_dbg_ctl, "Could not set Location field value to: %s", value.c_str());
       }
       // Set the new status.
       TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
@@ -498,8 +498,8 @@ OperatorSetRedirect::exec(const Resources &res) const
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
       EditRedirectResponse(res.txnp, value, status, res.bufp, res.hdr_loc);
     }
-    TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
-            _status.get_int_value());
+    Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
+        _status.get_int_value());
   }
 }
 
@@ -530,22 +530,22 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
 {
   switch (_type) {
   case TO_OUT_ACTIVE:
-    TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(active, %d)", _timeout.get_int_value());
+    Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(active, %d)", _timeout.get_int_value());
     TSHttpTxnActiveTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_INACTIVE:
-    TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(inactive, %d)", _timeout.get_int_value());
+    Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(inactive, %d)", _timeout.get_int_value());
     TSHttpTxnNoActivityTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_CONNECT:
-    TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(connect, %d)", _timeout.get_int_value());
+    Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(connect, %d)", _timeout.get_int_value());
     TSHttpTxnConnectTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
 
   case TO_OUT_DNS:
-    TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(dns, %d)", _timeout.get_int_value());
+    Dbg(pi_dbg_ctl, "OperatorSetTimeoutOut::exec(dns, %d)", _timeout.get_int_value());
     TSHttpTxnDNSTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
   default:
@@ -569,7 +569,7 @@ OperatorSkipRemap::initialize(Parser &p)
 void
 OperatorSkipRemap::exec(const Resources &res) const
 {
-  TSDebug(PLUGIN_NAME, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
+  Dbg(pi_dbg_ctl, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
   TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
 }
 
@@ -580,10 +580,10 @@ OperatorRMHeader::exec(const Resources &res) const
   TSMLoc field_loc, tmp;
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on %s", _header.c_str());
+    Dbg(pi_dbg_ctl, "OperatorRMHeader::exec() invoked on %s", _header.c_str());
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
     while (field_loc) {
-      TSDebug(PLUGIN_NAME, "   Deleting header %s", _header.c_str());
+      Dbg(pi_dbg_ctl, "   Deleting header %s", _header.c_str());
       tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
       TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
       TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -610,17 +610,17 @@ OperatorAddHeader::exec(const Resources &res) const
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
-    TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
+    Dbg(pi_dbg_ctl, "Would set header %s to an empty value, skipping", _header.c_str());
     return;
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
+    Dbg(pi_dbg_ctl, "OperatorAddHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
     TSMLoc field_loc;
 
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-        TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
+        Dbg(pi_dbg_ctl, "   Adding header %s", _header.c_str());
         TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
       }
       TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -646,20 +646,20 @@ OperatorSetHeader::exec(const Resources &res) const
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
-    TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
+    Dbg(pi_dbg_ctl, "Would set header %s to an empty value, skipping", _header.c_str());
     return;
   }
 
   if (res.bufp && res.hdr_loc) {
     TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header_wks ? _header_wks : _header.c_str(), _header.size());
 
-    TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
+    Dbg(pi_dbg_ctl, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
     if (!field_loc) {
       // No existing header, so create one
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-          TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
+          Dbg(pi_dbg_ctl, "   Adding header %s", _header.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -673,7 +673,7 @@ OperatorSetHeader::exec(const Resources &res) const
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-            TSDebug(PLUGIN_NAME, "   Overwriting header %s", _header.c_str());
+            Dbg(pi_dbg_ctl, "   Overwriting header %s", _header.c_str());
           }
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
@@ -732,9 +732,9 @@ OperatorCounter::initialize(Parser &p)
       TSError("[%s] TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
       return;
     }
-    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) created counter with id: %d", _counter_name.c_str(), _counter);
+    Dbg(pi_dbg_ctl, "OperatorCounter::initialize(%s) created counter with id: %d", _counter_name.c_str(), _counter);
   } else {
-    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
+    Dbg(pi_dbg_ctl, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
   }
 }
 
@@ -746,7 +746,7 @@ OperatorCounter::exec(const Resources & /* ATS_UNUSED res */) const
     return;
   }
 
-  TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on %s", _counter_name.c_str());
+  Dbg(pi_dbg_ctl, "OperatorCounter::exec() invoked on %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);
 }
 
@@ -755,13 +755,13 @@ void
 OperatorRMCookie::exec(const Resources &res) const
 {
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec() invoked on cookie %s", _cookie.c_str());
+    Dbg(pi_dbg_ctl, "OperatorRMCookie::exec() invoked on cookie %s", _cookie.c_str());
     TSMLoc field_loc;
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
     if (nullptr == field_loc) {
-      TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, no cookie");
+      Dbg(pi_dbg_ctl, "OperatorRMCookie::exec, no cookie");
       return;
     }
 
@@ -771,11 +771,11 @@ OperatorRMCookie::exec(const Resources &res) const
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_DEL, _cookie)) {
       if (updated_cookie.empty()) {
         if (TS_SUCCESS == TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc)) {
-          TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, empty cookie deleted");
+          Dbg(pi_dbg_ctl, "OperatorRMCookie::exec, empty cookie deleted");
         }
       } else if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(),
                                                             updated_cookie.size())) {
-        TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
+        Dbg(pi_dbg_ctl, "OperatorRMCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
       }
     }
     TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -798,17 +798,17 @@ OperatorAddCookie::exec(const Resources &res) const
   _value.append_value(value, res);
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec() invoked on cookie %s", _cookie.c_str());
+    Dbg(pi_dbg_ctl, "OperatorAddCookie::exec() invoked on cookie %s", _cookie.c_str());
     TSMLoc field_loc;
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
     if (nullptr == field_loc) {
-      TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec, no cookie");
+      Dbg(pi_dbg_ctl, "OperatorAddCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
         value = _cookie + '=' + value;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-          TSDebug(PLUGIN_NAME, "Adding cookie %s", _cookie.c_str());
+          Dbg(pi_dbg_ctl, "Adding cookie %s", _cookie.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -822,7 +822,7 @@ OperatorAddCookie::exec(const Resources &res) const
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_ADD, _cookie, value) &&
         TS_SUCCESS ==
           TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(), updated_cookie.size())) {
-      TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
+      Dbg(pi_dbg_ctl, "OperatorAddCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
     }
   }
 }
@@ -843,17 +843,17 @@ OperatorSetCookie::exec(const Resources &res) const
   _value.append_value(value, res);
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec() invoked on cookie %s", _cookie.c_str());
+    Dbg(pi_dbg_ctl, "OperatorSetCookie::exec() invoked on cookie %s", _cookie.c_str());
     TSMLoc field_loc;
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
     if (nullptr == field_loc) {
-      TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec, no cookie");
+      Dbg(pi_dbg_ctl, "OperatorSetCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
         value = _cookie + "=" + value;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-          TSDebug(PLUGIN_NAME, "Adding cookie %s", _cookie.c_str());
+          Dbg(pi_dbg_ctl, "Adding cookie %s", _cookie.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -867,7 +867,7 @@ OperatorSetCookie::exec(const Resources &res) const
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_SET, _cookie, value) &&
         TS_SUCCESS ==
           TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(), updated_cookie.size())) {
-      TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
+      Dbg(pi_dbg_ctl, "OperatorSetCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
     }
     TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
@@ -879,7 +879,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
                                  const std::string &cookie_value)
 {
   if (0 == cookie_key.size()) {
-    TSDebug(PLUGIN_NAME, "CookieHelper::cookieModifyHelper, empty cookie_key");
+    Dbg(pi_dbg_ctl, "CookieHelper::cookieModifyHelper, empty cookie_key");
     return false;
   }
 
@@ -985,7 +985,7 @@ OperatorSetConnDSCP::exec(const Resources &res) const
 {
   if (res.txnp) {
     TSHttpTxnClientPacketDscpSet(res.txnp, _ds_value.get_int_value());
-    TSDebug(PLUGIN_NAME, "   Setting DSCP to %d", _ds_value.get_int_value());
+    Dbg(pi_dbg_ctl, "   Setting DSCP to %d", _ds_value.get_int_value());
   }
 }
 
@@ -1011,7 +1011,7 @@ OperatorSetConnMark::exec(const Resources &res) const
 {
   if (res.txnp) {
     TSHttpTxnClientPacketMarkSet(res.txnp, _ds_value.get_int_value());
-    TSDebug(PLUGIN_NAME, "   Setting MARK to %d", _ds_value.get_int_value());
+    Dbg(pi_dbg_ctl, "   Setting MARK to %d", _ds_value.get_int_value());
   }
 }
 
@@ -1097,9 +1097,9 @@ OperatorSetHttpCntl::exec(const Resources &res) const
 {
   if (_flag) {
     TSHttpTxnCntlSet(res.txnp, _cntl_qual, true);
-    TSDebug(PLUGIN_NAME, "   Turning ON %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+    Dbg(pi_dbg_ctl, "   Turning ON %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
   } else {
     TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
-    TSDebug(PLUGIN_NAME, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+    Dbg(pi_dbg_ctl, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
   }
 }

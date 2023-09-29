@@ -302,11 +302,9 @@ namespace io
         assert(data_->root_ != nullptr);
         const bool empty = data_->nodes_.empty();
         if (data_->first_ && empty) {
-          // TSDebug(PLUGIN_TAG, "flushing");
           assert(data_->root_);
           *data_->root_ << std::forward<T>(t);
         } else {
-          // TSDebug(PLUGIN_TAG, "buffering");
           BufferNode *buffer = nullptr;
           if (!empty) {
             buffer = dynamic_cast<BufferNode *>(data_->nodes_.back().get());

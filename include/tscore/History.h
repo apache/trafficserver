@@ -44,8 +44,8 @@ public:
   {
     int pos                 = history_pos++ % Count;
     history[pos].location   = location;
-    history[pos].event      = (unsigned short)event;
-    history[pos].reentrancy = (short)reentrant;
+    history[pos].event      = static_cast<unsigned short>(event);
+    history[pos].reentrancy = static_cast<short>(reentrant);
   }
 
   void

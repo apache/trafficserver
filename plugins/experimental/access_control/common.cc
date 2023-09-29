@@ -34,15 +34,34 @@ PrintToStdErr(const char *fmt, ...)
   vfprintf(stderr, fmt, args);
   va_end(args);
 }
+#else
+
+namespace access_control_ns
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 #endif /* ACCESS_CONTROL_UNIT_TEST */
 
 int
 string2int(const StringView &s)
 {
+  int t = 0;
+  try {
+    t = std::stoi(String(s));
+  } catch (...) {
+    /* Failed to convert return impossible value */
+    return 0;
+  }
+  return t;
+}
+
+time_t
+string2time(const StringView &s)
+{
   time_t t = 0;
   try {
-    t = static_cast<time_t>(std::stoi(String(s)));
+    t = static_cast<time_t>(std::stol(String(s)));
   } catch (...) {
     /* Failed to convert return impossible value */
     return 0;

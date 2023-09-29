@@ -400,6 +400,19 @@ AC_MSG_RESULT([$enable_wccp])
 TS_ARG_ENABLE_VAR([has],[wccp])
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
+#
+# Cripts
+#
+AC_MSG_CHECKING([whether to enable Cripts support])
+AC_ARG_ENABLE([cripts],
+  [AS_HELP_STRING([--enable-cripts],[enable Cripts])],
+  [],
+  [enable_cripts=no]
+)
+AC_MSG_RESULT([$enable_cripts])
+TS_ARG_ENABLE_VAR([has],[cripts])
+AM_CONDITIONAL([BUILD_CRIPTS], [test 0 -ne $has_cripts])
+
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -1440,8 +1453,13 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library, configure --with-pcre=DIR])
 fi
 
+TS_CHECK_PCRE2
+
 # Check for optional brotli library
 TS_CHECK_BROTLI
+
+# Check for optional fmt library
+TS_CHECK_FMT
 
 # Check for optional luajit library
 TS_CHECK_LUAJIT
@@ -1849,7 +1867,7 @@ AC_CHECK_HEADERS([wasm_c_api.h], [
 AM_CONDITIONAL([HAS_WAMR], [test "x${has_wamr}" = "x1" ])
 AC_LANG_POP([C++])
 
-# Checking if wamedge is available
+# Checking if wasmedge is available
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS([wasmedge/wasmedge.h], [
   AC_CHECK_LIB([wasmedge], [main], [
@@ -1863,6 +1881,22 @@ AC_CHECK_HEADERS([wasmedge/wasmedge.h], [
 ])
 
 AM_CONDITIONAL([HAS_WASMEDGE], [test "x${has_wasmedge}" = "x1" ])
+AC_LANG_POP([C++])
+
+# Checking if wasmtime is available
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([include/wasm.h], [
+  AC_CHECK_LIB([wasmtime], [main], [
+    AC_SUBST([WASMTIME_LIBS], [" -lwasmtime "])
+    AC_SUBST(has_wasmtime, 1)
+    has_wasm=1
+  ], [
+    AC_SUBST([WASMTIME_LIBS], [""])
+    AC_SUBST(has_wasmtime, 0)
+  ])
+])
+
+AM_CONDITIONAL([HAS_WASMTIME], [test "x${has_wasmtime}" = "x1" ])
 AC_LANG_POP([C++])
 
 # check for wasm
@@ -2371,6 +2405,7 @@ AC_CONFIG_FILES([
   lib/Makefile
   src/tscpp/api/Makefile
   src/wccp/Makefile
+  src/cripts/Makefile
   lib/fastlz/Makefile
   lib/swoc/Makefile
   lib/yamlcpp/Makefile

@@ -171,7 +171,7 @@ STEK_encrypt(struct ssl_ticket_key_t *stek, const char *key, int key_length, cha
                               stek_len, ret_encrypted, encrypted_size, &encrypted_len)) == 0) {
     *ret_len = encrypted_len;
   } else {
-    TSDebug(PLUGIN, "STEK_encrypt calling encrypt_encode64 failed, error: %d", ret);
+    Dbg(dbg_ctl, "STEK_encrypt calling encrypt_encode64 failed, error: %d", ret);
   }
   return ret;
 }
@@ -183,7 +183,7 @@ STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length,
     return -1;
   }
 
-  TSDebug(PLUGIN, "STEK_decrypt: requested to decrypt %lu bytes", encrypted_data.length());
+  Dbg(dbg_ctl, "STEK_decrypt: requested to decrypt %lu bytes", encrypted_data.length());
 
   int ret                  = -1;
   size_t decrypted_size    = DECODED_LEN(encrypted_data.length()) + EVP_MAX_BLOCK_LENGTH * 2;
@@ -193,7 +193,7 @@ STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length,
   std::memset(decrypted, 0, decrypted_size);
   if ((ret = decrypt_decode64(reinterpret_cast<const unsigned char *>(key), key_length, encrypted_data.c_str(),
                               encrypted_data.length(), decrypted, decrypted_size, &decrypted_len)) != 0) {
-    TSDebug(PLUGIN, "STEK_decrypt calling decrypt_decode64 failed, error: %d", ret);
+    Dbg(dbg_ctl, "STEK_decrypt calling decrypt_decode64 failed, error: %d", ret);
     goto Cleanup;
   }
 
@@ -262,12 +262,12 @@ STEK_Update_Setter_Thread(void *arg)
 
   if (stek_master_setter_running) {
     /* Sanity check triggered.  Already running...don't do another. */
-    TSDebug(PLUGIN, "Faulty STEK-master launch. Internal error. Moving on...");
+    Dbg(dbg_ctl, "Faulty STEK-master launch. Internal error. Moving on...");
     return nullptr;
   }
 
   stek_master_setter_running = true;
-  TSDebug(PLUGIN, "Will now act as the STEK rotator for POD.");
+  Dbg(dbg_ctl, "Will now act as the STEK rotator for POD.");
 
   while (!plugin_threads.shutdown) {
     try {
@@ -281,7 +281,7 @@ STEK_Update_Setter_Thread(void *arg)
       } else {
         //  Everything good. will sleep for normal rotation time period and then repeat
         startProblem = 0;
-        TSDebug(PLUGIN, "New POD STEK created and sent to network.");
+        Dbg(dbg_ctl, "New POD STEK created and sent to network.");
 
         sleepInterval = ssl_param.key_update_interval;
       }
@@ -301,13 +301,13 @@ STEK_Update_Setter_Thread(void *arg)
         goto done_master_setter;
       }
     } catch (...) {
-      TSDebug(PLUGIN, "STEK_Update_Setter_Thread exception");
+      Dbg(dbg_ctl, "STEK_Update_Setter_Thread exception");
       goto done_master_setter;
     }
   } // while(forever)
 
 done_master_setter:
-  TSDebug(PLUGIN, "Yielding STEK-Master rotation responsibility to another node in POD.");
+  Dbg(dbg_ctl, "Yielding STEK-Master rotation responsibility to another node in POD.");
   memset(&newKey, 0, sizeof(struct ssl_ticket_key_t));
   stek_master_setter_running = false;
   return nullptr;
@@ -351,7 +351,7 @@ STEK_Update_Checker_Thread(void *arg)
    * that something is up with our STEK master, and nominate a new STEK master.
    */
 
-  TSDebug(PLUGIN, "Starting STEK_Update_Checker_Thread.");
+  Dbg(dbg_ctl, "Starting STEK_Update_Checker_Thread.");
 
   lastChangeTime = lastWarningTime = time(&currentTime); // init to current to suppress a startup warning.
   int check_count                  = 0;                  // Keep track of how many times we've checked whether we got a new STEK.
@@ -362,7 +362,7 @@ STEK_Update_Checker_Thread(void *arg)
         // Launch a request for the master to resend you the ticket key
         std::string redis_channel = ssl_param.cluster_name + "." + STEK_ID_RESEND;
         ssl_param.pub->publish(redis_channel, ""); // send it
-        TSDebug(PLUGIN, "Request for ticket.");
+        Dbg(dbg_ctl, "Request for ticket.");
       }
       time(&currentTime);
       time_t sleepUntil;
@@ -402,12 +402,12 @@ STEK_Update_Checker_Thread(void *arg)
 
         /* Time to nominate a new stek master for pod key rotation... */
         if (!stek_master_setter_running) {
-          TSDebug(PLUGIN, "Will nominate a new STEK-master thread now for pod key rotation.");
+          Dbg(dbg_ctl, "Will nominate a new STEK-master thread now for pod key rotation.");
           TSThreadCreate(STEK_Update_Setter_Thread, nullptr);
         }
       }
     } catch (...) {
-      TSDebug(PLUGIN, "STEK_Update_Checker_Thread exception");
+      Dbg(dbg_ctl, "STEK_Update_Checker_Thread exception");
       break;
     }
   } // while(forever)

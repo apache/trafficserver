@@ -178,10 +178,11 @@ ts_lua_debug(lua_State *L)
   if (lua_gettop(L) == 2) {
     msg  = luaL_checklstring(L, 2, &msg_len);
     flag = luaL_checklstring(L, 1, &flag_len);
-    TSDebug(flag, "%.*s", (int)msg_len, msg);
+    DbgCtl dc{flag};
+    Dbg(dc, "%.*s", (int)msg_len, msg);
   } else {
     msg = luaL_checklstring(L, 1, &msg_len);
-    TSDebug(TS_LUA_DEBUG_TAG, "%.*s", (int)msg_len, msg);
+    Dbg(dbg_ctl, "%.*s", (int)msg_len, msg);
   }
 
   return 0;
@@ -196,9 +197,9 @@ ts_lua_is_debug_tag_set(lua_State *L)
 
   if (lua_gettop(L) == 1) {
     flag = luaL_checklstring(L, 1, &flag_len);
-    stat = TSIsDebugTagSet(flag);
+    stat = DbgCtl{flag}.on();
   } else {
-    stat = TSIsDebugTagSet(TS_LUA_DEBUG_TAG);
+    stat = dbg_ctl.on();
   }
 
   if (0 == stat) {
@@ -351,10 +352,10 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   ts_lua_main_ctx *main_ctx;
 
   event = (int)ev;
-  TSDebug(TS_LUA_DEBUG_TAG, "getting actx and other info");
+  Dbg(dbg_ctl, "getting actx and other info");
   actx = (ts_lua_http_ctx *)TSContDataGet(contp);
 
-  TSDebug(TS_LUA_DEBUG_TAG, "getting http_Ctx");
+  Dbg(dbg_ctl, "getting http_Ctx");
   ci  = &actx->cinfo;
   crt = &ci->routine;
 
@@ -365,11 +366,11 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   ts_lua_set_cont_info(L, ci);
 
   if (event == TS_LUA_EVENT_COROUTINE_CONT) {
-    TSDebug(TS_LUA_DEBUG_TAG, "event is coroutine_cont");
+    Dbg(dbg_ctl, "event is coroutine_cont");
     n   = (intptr_t)edata;
     ret = lua_resume(L, n);
   } else {
-    TSDebug(TS_LUA_DEBUG_TAG, "event is not coroutine_cont");
+    Dbg(dbg_ctl, "event is not coroutine_cont");
     n   = lua_gettop(L);
     ret = lua_resume(L, n - 1);
   }

@@ -28,6 +28,10 @@
 #include "include/proxy-wasm/wasmedge.h"
 #endif
 
+#ifdef WASMTIME
+#include "include/proxy-wasm/wasmtime.h"
+#endif
+
 #include <getopt.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -62,7 +66,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 
   ats_wasm::Context *c;
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] transform handler begins", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] transform handler begins", __FUNCTION__);
   c = ti->context;
 
   output_conn = TSTransformOutputVConnGet(contp);
@@ -70,15 +74,15 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 
   empty_input = false;
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] cheking input VIO", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] checking input VIO", __FUNCTION__);
   if (!TSVIOBufferGet(input_vio)) {
     if (ti->output_vio) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
       TSVIONBytesSet(ti->output_vio, ti->total);
       TSVIOReenable(ti->output_vio);
       return 0;
     } else {
-      TSDebug(WASM_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] no input VIO and output VIO", __FUNCTION__);
       empty_input = true;
     }
   }
@@ -87,7 +91,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
     input_reader = TSVIOReaderGet(input_vio);
   }
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] creating buffer and reader", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] creating buffer and reader", __FUNCTION__);
   if (!ti->output_buffer) {
     ti->output_buffer = TSIOBufferCreate();
     ti->output_reader = TSIOBufferReaderAlloc(ti->output_buffer);
@@ -104,7 +108,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
     ti->downstream_bytes = INT64_MAX;
   }
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] init variables inside handler", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] init variables inside handler", __FUNCTION__);
   if (!empty_input) {
     input_avail   = TSIOBufferReaderAvail(input_reader);
     upstream_done = TSVIONDoneGet(input_vio);
@@ -139,14 +143,14 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
   }
 
   do {
-    TSDebug(WASM_DEBUG_TAG, "[%s] inside transform handler loop", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] inside transform handler loop", __FUNCTION__);
     proxy_wasm::FilterDataStatus status = proxy_wasm::FilterDataStatus::Continue;
 
     if (towrite == 0 && !empty_input) {
       break;
     }
 
-    TSDebug(WASM_DEBUG_TAG, "[%s] retrieving text and calling the wasm handler function", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] retrieving text and calling the wasm handler function", __FUNCTION__);
     if (!empty_input) {
       blk   = TSIOBufferReaderStart(ti->reserved_reader);
       start = TSIOBufferBlockReadStart(blk, ti->reserved_reader, &blk_len);
@@ -186,7 +190,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
       }
     }
 
-    TSDebug(WASM_DEBUG_TAG, "[%s] retrieving returns from wasm handler function and pass back to ATS", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] retrieving returns from wasm handler function and pass back to ATS", __FUNCTION__);
     if ((status == proxy_wasm::FilterDataStatus::Continue) ||
         ((status == proxy_wasm::FilterDataStatus::StopIterationAndBuffer ||
           status == proxy_wasm::FilterDataStatus::StopIterationAndWatermark) &&
@@ -261,30 +265,30 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
   event = (int)ev;
   ti    = (ats_wasm::TransformInfo *)TSContDataGet(contp);
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] begin transform entry", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] begin transform entry", __FUNCTION__);
   if (TSVConnClosedGet(contp)) {
     delete ti;
     TSContDestroy(contp);
     return 0;
   }
 
-  TSDebug(WASM_DEBUG_TAG, "[%s] checking event inside transform entry", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] checking event inside transform entry", __FUNCTION__);
   switch (event) {
   case TS_EVENT_ERROR:
-    TSDebug(WASM_DEBUG_TAG, "[%s] event error", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] event error", __FUNCTION__);
     input_vio = TSVConnWriteVIOGet(contp);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     break;
 
   // we should handle TS_EVENT_VCONN_EOS similarly here if we support setting EOS from wasm module
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write complete", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] event vconn write complete", __FUNCTION__);
     TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
     break;
 
   case TS_EVENT_VCONN_WRITE_READY:
   default:
-    TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write ready/default", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] event vconn write ready/default", __FUNCTION__);
     transform_handler(contp, ti);
     break;
   }
@@ -296,7 +300,7 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
 static int
 schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 {
-  TSDebug(WASM_DEBUG_TAG, "[%s] Inside schedule_handler", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] Inside schedule_handler", __FUNCTION__);
 
   auto *c = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
 
@@ -319,11 +323,11 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
       auto *wasm               = static_cast<ats_wasm::Wasm *>(c->wasm());
       uint32_t root_context_id = c->id();
       if (wasm->existsTimerPeriod(root_context_id)) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] reschedule continuation", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] reschedule continuation", __FUNCTION__);
         std::chrono::milliseconds period = wasm->getTimerPeriod(root_context_id);
         TSContScheduleOnPool(contp, static_cast<TSHRTime>(period.count()), TS_THREAD_POOL_NET);
       } else {
-        TSDebug(WASM_DEBUG_TAG, "[%s] can't find period for root context id: %d", __FUNCTION__, root_context_id);
+        Dbg(ats_wasm::dbg_ctl, "[%s] can't find period for root context id: %d", __FUNCTION__, root_context_id);
       }
       break;
     }
@@ -335,30 +339,30 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
     old_wasm->removeTimerPeriod(root_context_id);
 
     if (old_wasm->readyShutdown()) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] starting WasmBase Shutdown", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] starting WasmBase Shutdown", __FUNCTION__);
       old_wasm->startShutdown();
       if (!old_wasm->readyDelete()) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
       } else {
-        TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] remove wasm from deleted_configs", __FUNCTION__);
         bool advance = true;
         for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
           advance = true;
-          TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
+          Dbg(ats_wasm::dbg_ctl, "[%s] looping through deleted_configs", __FUNCTION__);
           std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
           temp                                = wbp;
           if (wbp.get() == old_wasm) {
-            TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
+            Dbg(ats_wasm::dbg_ctl, "[%s] found matching WasmBase", __FUNCTION__);
             it      = wasm_config->deleted_configs.erase(it);
             advance = false;
           }
         }
       }
     } else {
-      TSDebug(WASM_DEBUG_TAG, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
     }
 
-    TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has changed. thus not scheduling", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] config wasm has changed. thus not scheduling", __FUNCTION__);
   }
 
   TSMutexUnlock(old_wasm->mutex());
@@ -453,33 +457,33 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
     }
 
     if (found) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has not changed", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] config wasm has not changed", __FUNCTION__);
     } else {
       if (old_wasm->readyShutdown()) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] starting WasmBase Shutdown", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] starting WasmBase Shutdown", __FUNCTION__);
         old_wasm->startShutdown();
         if (!old_wasm->readyDelete()) {
-          TSDebug(WASM_DEBUG_TAG, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
+          Dbg(ats_wasm::dbg_ctl, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
         } else {
-          TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
+          Dbg(ats_wasm::dbg_ctl, "[%s] remove wasm from deleted_configs", __FUNCTION__);
           bool advance = true;
           for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
             advance = true;
-            TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
+            Dbg(ats_wasm::dbg_ctl, "[%s] looping through deleted_configs", __FUNCTION__);
             std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
             temp                                = wbp;
             if (wbp.get() == old_wasm) {
-              TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
+              Dbg(ats_wasm::dbg_ctl, "[%s] found matching WasmBase", __FUNCTION__);
               it      = wasm_config->deleted_configs.erase(it);
               advance = false;
             }
           }
         }
       } else {
-        TSDebug(WASM_DEBUG_TAG, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
       }
 
-      TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has changed", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] config wasm has changed", __FUNCTION__);
     }
 
     delete context;
@@ -496,7 +500,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
 
   // check if we have reenable transaction already or not
   if ((context == nullptr) || (!context->isTxnReenable())) {
-    TSDebug(WASM_DEBUG_TAG, "[%s] no context or not yet reenabled transaction", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] no context or not yet reenabled transaction", __FUNCTION__);
 
     if (result == 0) {
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -504,24 +508,24 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
         context->setTxnReenable();
       }
     } else if (result < 0) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] abnormal event, continue with error", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] abnormal event, continue with error", __FUNCTION__);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       if (context != nullptr) {
         context->setTxnReenable();
       }
     } else {
       if (context->isLocalReply()) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, continue with error due to local reply", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] abnormal return, continue with error due to local reply", __FUNCTION__);
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
         if (context != nullptr) {
           context->setTxnReenable();
         }
       } else {
-        TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, no continue, context id: %d", __FUNCTION__, context->id());
+        Dbg(ats_wasm::dbg_ctl, "[%s] abnormal return, no continue, context id: %d", __FUNCTION__, context->id());
       }
     }
   } else {
-    TSDebug(WASM_DEBUG_TAG, "[%s] transaction already reenabled", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] transaction already reenabled", __FUNCTION__);
   }
   return 0;
 }
@@ -553,7 +557,7 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
     TSContDataSet(txn_contp, context);
 
     // create transform items
-    TSDebug(WASM_DEBUG_TAG, "[%s] creating transform info, continuation and hook", __FUNCTION__);
+    Dbg(ats_wasm::dbg_ctl, "[%s] creating transform info, continuation and hook", __FUNCTION__);
     ats_wasm::TransformInfo *reqbody_ti  = new ats_wasm::TransformInfo();
     reqbody_ti->request                  = true;
     reqbody_ti->context                  = context;
@@ -771,6 +775,19 @@ read_configuration()
       TSError("[wasm][%s] wasm unable to use WAMR runtime", __FUNCTION__);
       return false;
 #endif
+    } else if (runtime == "ats.wasm.runtime.wasmtime") {
+#ifdef WASMTIME
+      wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWasmtimeVm(), // VM
+                                              vm_id,                          // vm_id
+                                              vm_configuration,               // vm_configuration
+                                              "",                             // vm_key,
+                                              envs,                           // envs
+                                              cap_maps                        // allowed capabilities
+      );
+#else
+      TSError("[wasm][%s] wasm unable to use Wasmtime runtime", __FUNCTION__);
+      return false;
+#endif
     } else {
       TSError("[wasm][%s] wasm unable to use %s runtime", __FUNCTION__, runtime.c_str());
       return false;
@@ -834,18 +851,18 @@ read_configuration()
     std::shared_ptr<proxy_wasm::PluginBase> old_plugin = it->second;
 
     if (old_wasm != nullptr) {
-      TSDebug(WASM_DEBUG_TAG, "[%s] previous WasmBase exists", __FUNCTION__);
+      Dbg(ats_wasm::dbg_ctl, "[%s] previous WasmBase exists", __FUNCTION__);
       TSMutexLock(old_wasm->mutex());
       if (old_wasm->readyShutdown()) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] starting WasmBase Shutdown", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] starting WasmBase Shutdown", __FUNCTION__);
         old_wasm->startShutdown();
         if (!old_wasm->readyDelete()) {
-          TSDebug(WASM_DEBUG_TAG, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
+          Dbg(ats_wasm::dbg_ctl, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
           auto deleted_config = std::make_pair(old_wasm, old_plugin);
           wasm_config->deleted_configs.push_front(deleted_config);
         }
       } else {
-        TSDebug(WASM_DEBUG_TAG, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
+        Dbg(ats_wasm::dbg_ctl, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
         auto deleted_config = std::make_pair(old_wasm, old_plugin);
         wasm_config->deleted_configs.push_front(deleted_config);
       }
@@ -860,9 +877,9 @@ read_configuration()
 static int
 config_handler(TSCont /*contp*/, TSEvent /*event*/, void * /*data*/)
 {
-  TSDebug(WASM_DEBUG_TAG, "[%s] configuration reloading", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] configuration reloading", __FUNCTION__);
   read_configuration();
-  TSDebug(WASM_DEBUG_TAG, "[%s] configuration reloading ends", __FUNCTION__);
+  Dbg(ats_wasm::dbg_ctl, "[%s] configuration reloading ends", __FUNCTION__);
   return 0;
 }
 

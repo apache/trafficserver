@@ -237,9 +237,9 @@ RPC method registration and implementation examples
             }
 
             if (TSRPCRegisterMethodHandler("join_strings", my_join_string_handler, rpcRegistrationInfo) == TS_ERROR) {
-                TSDebug(PLUGIN_NAME, "%s failed to register", rpcCallName.c_str());
+                Dbg(dbg_ctl, "%s failed to register", rpcCallName.c_str());
             } else {
-                TSDebug(PLUGIN_NAME, "%s successfully registered", rpcCallName.c_str());
+                Dbg(dbg_ctl, "%s successfully registered", rpcCallName.c_str());
             }
         }
 
@@ -292,9 +292,9 @@ RPC method registration and implementation examples
             }
 
             if (TSRPCRegisterMethodHandler("merge_yaml_file", merge_yaml_file, rpcRegistrationInfo) == TS_ERROR) {
-                TSDebug(PLUGIN_NAME, "%s failed to register", rpcCallName.c_str());
+                Dbg(dbg_ctl, "%s failed to register", rpcCallName.c_str());
             } else {
-                TSDebug(PLUGIN_NAME, "%s successfully registered", rpcCallName.c_str());
+                Dbg(dbg_ctl, "%s successfully registered", rpcCallName.c_str());
             }
         }
 

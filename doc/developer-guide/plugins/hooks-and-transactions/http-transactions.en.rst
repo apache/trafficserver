@@ -49,7 +49,10 @@ transaction and associate data to the transaction.
 
     #include <ts/ts.h>
 
-    char const DBG_TAG[] = "txn";
+    namespace
+    {
+    DbgCtl dbg_ctl{"txn"};
+    }
 
     /* Structure to be associated to txns */
     struct TxnData {
@@ -86,7 +89,7 @@ transaction and associate data to the transaction.
 
        case TS_EVENT_HTTP_TXN_CLOSE:
           /* Print txn data values */
-          TSDebug(DBG_TAG, "Txn data i=%d f=%f s=%s", txn_data->i, txn_data->f, txn_data->s);
+          Dbg(dbg_ctl, "Txn data i=%d f=%f s=%s", txn_data->i, txn_data->f, txn_data->s);
 
           /* Then destroy the txn cont and its data */
           delete txn_data;

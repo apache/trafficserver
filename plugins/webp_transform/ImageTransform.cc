@@ -91,7 +91,7 @@ public:
 
     transaction.getServerResponse().getHeaders()["Vary"] = "Accept"; // to have a separate cache entry
 
-    TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
+    Dbg(webp_dbg_ctl, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
     transaction.resume();
   }
 

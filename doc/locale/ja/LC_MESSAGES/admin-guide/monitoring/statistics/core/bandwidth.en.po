@@ -38,13 +38,6 @@ msgid ""
 "cache hits, over the previous 10 seconds,"
 msgstr ""
 
-#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:54
-msgid ""
-"The difference of :ts:stat:`proxy.process.user_agent_total_bytes` and :ts:stat:"
-"`proxy.process.origin_server_total_bytes`, divided by :ts:stat:`proxy.node."
-"user_agent_total_bytes`."
-msgstr ""
-
 #: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:58
 msgid ""
 "Represents the ratio of bytes served to user agents which were satisfied by "

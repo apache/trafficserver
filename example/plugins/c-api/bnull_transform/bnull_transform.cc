@@ -34,7 +34,7 @@
 
 /* set tab stops to four. */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -45,19 +45,19 @@
 #define STATE_BUFFER_DATA 0
 #define STATE_OUTPUT_DATA 1
 
-typedef struct {
+struct MyData {
   int state;
   TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
-} MyData;
+};
 
 static MyData *
 my_data_alloc()
 {
   MyData *data;
 
-  data                = (MyData *)TSmalloc(sizeof(MyData));
+  data                = static_cast<MyData *>(TSmalloc(sizeof(MyData)));
   data->state         = STATE_BUFFER_DATA;
   data->output_vio    = nullptr;
   data->output_buffer = nullptr;
@@ -182,7 +182,7 @@ handle_transform(TSCont contp)
      private data structure pointer is null, then we'll create it
      and initialize its internals. */
 
-  data = (MyData *)TSContDataGet(contp);
+  data = static_cast<MyData *>(TSContDataGet(contp));
   if (!data) {
     data = my_data_alloc();
     TSContDataSet(contp, data);
@@ -210,7 +210,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
      call to TSVConnClose. */
 
   if (TSVConnClosedGet(contp)) {
-    my_data_destroy((MyData *)TSContDataGet(contp));
+    my_data_destroy(static_cast<MyData *>(TSContDataGet(contp)));
     TSContDestroy(contp);
   } else {
     switch (event) {
@@ -282,7 +282,7 @@ transform_add(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

@@ -15,6 +15,6 @@
 #
 #######################
 
-add_autest_plugin(smuggle-client smuggle-client.c)
+add_executable(smuggle-client smuggle-client.c)
 
 target_link_libraries(smuggle-client PRIVATE OpenSSL::SSL)

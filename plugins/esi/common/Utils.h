@@ -24,7 +24,6 @@
 #pragma once
 
 #include "DocNode.h"
-#include "ComponentBase.h"
 
 #include <cstring>
 #include <string>
@@ -36,12 +35,6 @@ namespace EsiLib
 {
 namespace Utils
 {
-  extern ComponentBase::Debug DEBUG_LOG;
-
-  extern ComponentBase::Error ERROR_LOG;
-
-  void init(ComponentBase::Debug debug_func, ComponentBase::Error error_func);
-
   // looks for the given attribute in given data; a terminator can
   // also be specified apart from the end_pos; attr_info will point
   // to data inside data string

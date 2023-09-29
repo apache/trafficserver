@@ -200,7 +200,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"net_threads",       'n', "Number of Net Threads",                                                                               "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr},
   {"udp_threads",       'U', "Number of UDP Threads",                                                                               "I",     &num_of_udp_threads,             "PROXY_UDP_THREADS",       nullptr},
   {"accept_thread",     'a', "Use an Accept Thread",                                                                                "T",     &num_accept_threads,             "PROXY_ACCEPT_THREAD",     nullptr},
-  {"accept_till_done",  'b', "Accept Till Done",                                                                                    "T",     &NetAccept::accept_till_done,    "PROXY_ACCEPT_TILL_DONE",  nullptr},
   {"httpport",          'p', "Port descriptor for HTTP Accept",                                                                     "S*",    &http_accept_port_descriptor,    "PROXY_HTTP_ACCEPT_PORT",  nullptr},
   {"disable_freelist",  'f', "Disable the freelist memory allocator",                                                               "T",     &cmd_disable_freelist,           "PROXY_DPRINTF_LEVEL",     nullptr},
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator",                                             "T",     &cmd_disable_pfreelist,
@@ -270,6 +269,9 @@ public:
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
+    ts::Metrics &intm    = ts::Metrics::getInstance();
+    static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
 
@@ -306,7 +308,7 @@ public:
 
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
-        RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
+        intm[drain_id] = 1;
         TSSystemState::drain(true);
         // Close listening sockets here only if TS is running standalone
         RecInt close_sockets = 0;
@@ -424,9 +426,11 @@ class MemoryLimit : public Continuation
 public:
   MemoryLimit() : Continuation(new_ProxyMutex())
   {
+    ts::Metrics &intm = ts::Metrics::getInstance();
+
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
-    RecRegisterStatInt(RECT_PROCESS, "proxy.process.traffic_server.memory.rss", static_cast<RecInt>(0), RECP_NON_PERSISTENT);
+    memory_rss = intm.newMetricPtr("proxy.process.traffic_server.memory.rss");
   }
 
   ~MemoryLimit() override { mutex = nullptr; }
@@ -446,7 +450,7 @@ public:
     _memory_limit = _memory_limit >> 10; // divide by 1024
 
     if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-      RecSetRecordInt("proxy.process.traffic_server.memory.rss", _usage.ru_maxrss << 10, REC_SOURCE_DEFAULT); // * 1024
+      ts::Metrics::write(memory_rss, _usage.ru_maxrss << 10); // * 1024
       Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
       if (_memory_limit > 0) {
         if (_usage.ru_maxrss > _memory_limit) {
@@ -474,6 +478,7 @@ public:
 private:
   int64_t _memory_limit = 0;
   struct rusage _usage;
+  ts::Metrics::IntType *memory_rss;
 };
 
 /** Gate the emission of the "Traffic Server is fuly initialized" log message.
@@ -799,8 +804,10 @@ CB_After_Cache_Init()
     emit_fully_initialized_message();
   }
 
-  time_t cache_ready_at = time(nullptr);
-  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at, REC_SOURCE_DEFAULT);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+  auto id           = intm.lookup("proxy.process.proxy.cache_ready_time");
+
+  intm[id].store(time(nullptr));
 
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
@@ -987,6 +994,11 @@ enum class plugin_type_t {
 
 /** Attempt to load a plugin shared object file.
  *
+ * Note that this function is only used to load plugins for the purpose of
+ * verifying that they are valid plugins. It is not used to load plugins for
+ * normal operation. Any loaded plugin will be closed immediately after loading
+ * it.
+ *
  * @param[in] plugin_type The type of plugin for which to create a PluginInfo.
  * @param[in] plugin_path The path to the plugin's shared object file.
  * @param[out] error Some description of why the plugin failed to load if
@@ -995,12 +1007,18 @@ enum class plugin_type_t {
  * @return True if the plugin loaded successfully, false otherwise.
  */
 static bool
-load_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string &error)
+try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string &error)
 {
   switch (plugin_type) {
   case plugin_type_t::GLOBAL: {
-    void *handle, *initptr;
-    return plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
+    void *handle             = nullptr;
+    void *initptr            = nullptr;
+    bool const plugin_loaded = plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
+    if (handle != nullptr) {
+      dlclose(handle);
+      handle = nullptr;
+    }
+    return plugin_loaded;
   }
   case plugin_type_t::REMAP: {
     auto temporary_directory  = fs::temp_directory_path();
@@ -1054,7 +1072,7 @@ verify_plugin_helper(char *args, plugin_type_t plugin_type)
 
   auto ret = CMD_OK;
   std::string error;
-  if (load_plugin(plugin_type, plugin_path, error)) {
+  if (try_loading_plugin(plugin_type, plugin_path, error)) {
     fprintf(stderr, "NOTE: verifying plugin '%s' Success\n", plugin_filename);
   } else {
     fprintf(stderr, "ERROR: verifying plugin '%s' Fail: %s\n", plugin_filename, error.c_str());
@@ -1836,12 +1854,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   syslog_log_configure();
 
   // Register stats
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 1, RECP_NON_PERSISTENT);
-  RecSetRecordInt("proxy.node.restarts.proxy.start_time", time(nullptr), REC_SOURCE_DEFAULT);
+  ts::Metrics &intm = ts::Metrics::getInstance();
+  int32_t id;
+
+  id       = intm.newMetric("proxy.process.proxy.reconfigure_time");
+  intm[id] = time(nullptr);
+  id       = intm.newMetric("proxy.process.proxy.start_time");
+  intm[id] = time(nullptr);
+  // These all gets initialied to 0
+  intm.newMetric("proxy.process.proxy.reconfigure_required");
+  intm.newMetric("proxy.process.proxy.restart_required");
+  intm.newMetric("proxy.process.proxy.draining");
+  // This gets updated later (in the callback)
+  intm.newMetric("proxy.process.proxy.cache_ready_time");
 
   // init huge pages
   int enabled;

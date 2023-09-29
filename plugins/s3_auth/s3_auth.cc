@@ -59,6 +59,8 @@
 static const char PLUGIN_NAME[] = "s3_auth";
 static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 /**
  * @brief Rebase a relative path onto the configuration directory.
  */
@@ -93,7 +95,7 @@ loadRegionMap(StringMap &m, const String &filename)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "loading region mapping from '%s'", path.c_str());
+  Dbg(dbg_ctl, "loading region mapping from '%s'", path.c_str());
 
   m[""] = ""; /* set a default just in case if the user does not specify it */
 
@@ -120,21 +122,21 @@ loadRegionMap(StringMap &m, const String &filename)
     String region(trimWhiteSpaces(String(line, d + 1, String::npos)));
 
     if (region.empty()) {
-      TSDebug(PLUGIN_NAME, "<s3-region> in '%s' cannot be empty (skipped), expected format: '%s'", line.c_str(), EXPECTED_FORMAT);
+      Dbg(dbg_ctl, "<s3-region> in '%s' cannot be empty (skipped), expected format: '%s'", line.c_str(), EXPECTED_FORMAT);
       continue;
     }
 
     if (entrypoint.empty()) {
-      TSDebug(PLUGIN_NAME, "added default region %s", region.c_str());
+      Dbg(dbg_ctl, "added default region %s", region.c_str());
     } else {
-      TSDebug(PLUGIN_NAME, "added entry-point:%s, region:%s", entrypoint.c_str(), region.c_str());
+      Dbg(dbg_ctl, "added entry-point:%s, region:%s", entrypoint.c_str(), region.c_str());
     }
 
     m[entrypoint] = region;
   }
 
   if (m.at("").empty()) {
-    TSDebug(PLUGIN_NAME, "default region was not defined");
+    Dbg(dbg_ctl, "default region was not defined");
   }
 
   ifstr.close();
@@ -233,16 +235,16 @@ public:
     /* Optional parameters, issue warning if v2 parameters are used with v4 and vice-versa (wrong parameters are ignored anyways) */
     if (2 == _version) {
       if (_v4includeHeaders_modified && !_v4includeHeaders.empty()) {
-        TSDebug("[%s] headers are not being signed with AWS auth v2, included headers parameter ignored", PLUGIN_NAME);
+        Dbg(dbg_ctl, "headers are not being signed with AWS auth v2, included headers parameter ignored");
       }
       if (_v4excludeHeaders_modified && !_v4excludeHeaders.empty()) {
-        TSDebug("[%s] headers are not being signed with AWS auth v2, excluded headers parameter ignored", PLUGIN_NAME);
+        Dbg(dbg_ctl, "headers are not being signed with AWS auth v2, excluded headers parameter ignored");
       }
       if (_region_map_modified && !_region_map.empty()) {
-        TSDebug("[%s] region map is not used with AWS auth v2, parameter ignored", PLUGIN_NAME);
+        Dbg(dbg_ctl, "region map is not used with AWS auth v2, parameter ignored");
       }
       if (nullptr != _token || _token_len > 0) {
-        TSDebug("[%s] session token support with AWS auth v2 is not implemented, parameter ignored", PLUGIN_NAME);
+        Dbg(dbg_ctl, "session token support with AWS auth v2 is not implemented, parameter ignored");
       }
     } else {
       /* 4 == _version */
@@ -613,7 +615,7 @@ ConfigCache::get(const char *fname)
     unsigned update_status = it->second.update_status;
     if (tv.tv_sec > (it->second.load_time + _ttl)) {
       if (!(update_status & 1) && it->second.update_status.compare_exchange_strong(update_status, update_status + 1)) {
-        TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
+        Dbg(dbg_ctl, "Configuration from %s is stale, reloading", config_fname.c_str());
         s3 = new S3Config(false); // false == this config does not get the continuation
 
         if (s3->parse_config(config_fname)) {
@@ -642,14 +644,14 @@ ConfigCache::get(const char *fname)
         s3 = it->second.config;
       }
     } else {
-      TSDebug(PLUGIN_NAME, "Configuration from %s is fresh, reusing", config_fname.c_str());
+      Dbg(dbg_ctl, "Configuration from %s is fresh, reusing", config_fname.c_str());
       s3 = it->second.config;
     }
   } else {
     // Create a new cached file.
     s3 = new S3Config(false); // false == this config does not get the continuation
 
-    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
+    Dbg(dbg_ctl, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
     if (s3->parse_config(config_fname)) {
       s3->set_conf_fname(fname);
       _cache.emplace(config_fname, _ConfigData(s3, tv.tv_sec));
@@ -742,7 +744,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
   }
 
   if (ret) {
-    TSDebug(PLUGIN_NAME, "Set the header %.*s: %.*s", header_len, header, val_len, val);
+    Dbg(dbg_ctl, "Set the header %.*s: %.*s", header_len, header, val_len, val);
   }
 
   return ret;
@@ -894,19 +896,19 @@ S3Request::authorizeV2(S3Config *s3)
   }
 
   // For debugging, lets produce some nice output
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
-    TSDebug(PLUGIN_NAME, "Signature string is:");
+  if (dbg_ctl.on()) {
+    Dbg(dbg_ctl, "Signature string is:");
     // ToDo: This should include the Content-MD5 and Content-Type (for POST)
-    TSDebug(PLUGIN_NAME, "%.*s", method_len, method);
+    Dbg(dbg_ctl, "%.*s", method_len, method);
     if (con_md5) {
-      TSDebug(PLUGIN_NAME, "%.*s", con_md5_len, con_md5);
+      Dbg(dbg_ctl, "%.*s", con_md5_len, con_md5);
     }
 
     if (con_type) {
-      TSDebug(PLUGIN_NAME, "%.*s", con_type_len, con_type);
+      Dbg(dbg_ctl, "%.*s", con_type_len, con_type);
     }
 
-    TSDebug(PLUGIN_NAME, "%.*s", date_len, date);
+    Dbg(dbg_ctl, "%.*s", date_len, date);
 
     const size_t left_size   = 1024;
     char left[left_size + 1] = "/";
@@ -925,7 +927,7 @@ S3Request::authorizeV2(S3Config *s3)
       str_concat(&left[loff], (left_size - loff), param, param_len);
     }
 
-    TSDebug(PLUGIN_NAME, "%s", left);
+    Dbg(dbg_ctl, "%s", left);
   }
 
 // Produce the SHA1 MAC digest
@@ -1012,16 +1014,16 @@ event_handler(TSCont cont, TSEvent event, void *edata)
       }
 
       if (TS_HTTP_STATUS_OK == status) {
-        TSDebug(PLUGIN_NAME, "Successfully signed the AWS S3 URL");
+        Dbg(dbg_ctl, "Successfully signed the AWS S3 URL");
       } else {
-        TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
+        Dbg(dbg_ctl, "Failed to sign the AWS S3 URL, status = %d", status);
         TSHttpTxnStatusSet(txnp, status);
         enable_event = TS_EVENT_HTTP_ERROR;
       }
       break;
     default:
       TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
-      TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+      Dbg(dbg_ctl, "unknown event for this plugin");
       break;
     }
     // Most get S3Request out of scope in case the later plugins invalidate the TSAPI
@@ -1050,7 +1052,7 @@ cal_reload_delay(long time_diff)
 int
 config_reloader(TSCont cont, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "reloading configs");
+  Dbg(dbg_ctl, "reloading configs");
   S3Config *s3          = static_cast<S3Config *>(TSContDataGet(cont));
   S3Config *file_config = gConfCache.get(s3->conf_fname());
 
@@ -1066,18 +1068,18 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
   }
 
   if (s3->expiration() == 0) {
-    TSDebug(PLUGIN_NAME, "disabling auto config reload");
+    Dbg(dbg_ctl, "disabling auto config reload");
   } else {
     // auto reload is scheduled to be 5 minutes before the expiration time to get some headroom
     long time_diff = s3->expiration() -
                      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (time_diff > 0) {
       long delay = cal_reload_delay(time_diff);
-      TSDebug(PLUGIN_NAME, "scheduling config reload with %ld seconds delay", delay);
+      Dbg(dbg_ctl, "scheduling config reload with %ld seconds delay", delay);
       s3->reset_conf_reload_count();
       s3->schedule_conf_reload(delay);
     } else {
-      TSDebug(PLUGIN_NAME, "config expiration time is in the past, re-checking in 1 minute");
+      Dbg(dbg_ctl, "config expiration time is in the past, re-checking in 1 minute");
       if (s3->incr_conf_reload_count() == 10) {
         TSError("[%s] tried to reload config automatically but failed, please try manual reloading the config", PLUGIN_NAME);
       }
@@ -1095,7 +1097,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  Dbg(dbg_ctl, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -1182,25 +1184,24 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   if (s3->expiration() == 0) {
-    TSDebug(PLUGIN_NAME, "disabling auto config reload");
+    Dbg(dbg_ctl, "disabling auto config reload");
   } else {
     // auto reload is scheduled to be 5 minutes before the expiration time to get some headroom
     long time_diff = s3->expiration() -
                      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (time_diff > 0) {
       long delay = cal_reload_delay(time_diff);
-      TSDebug(PLUGIN_NAME, "scheduling config reload with %ld seconds delay", delay);
+      Dbg(dbg_ctl, "scheduling config reload with %ld seconds delay", delay);
       s3->reset_conf_reload_count();
       s3->schedule_conf_reload(delay);
     } else {
-      TSDebug(PLUGIN_NAME, "config expiration time is in the past, re-checking in 1 minute");
+      Dbg(dbg_ctl, "config expiration time is in the past, re-checking in 1 minute");
       s3->schedule_conf_reload(60);
     }
   }
 
   *ih = static_cast<void *>(s3);
-  TSDebug(PLUGIN_NAME, "New rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no",
-          s3->version());
+  Dbg(dbg_ctl, "New rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no", s3->version());
 
   return TS_SUCCESS;
 }
@@ -1229,7 +1230,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
     // configs via a TXN argument.
     s3->schedule(txnp);
   } else {
-    TSDebug(PLUGIN_NAME, "Remap context is invalid");
+    Dbg(dbg_ctl, "Remap context is invalid");
     TSError("[%s] No remap context available, check code / config", PLUGIN_NAME);
     TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
   }

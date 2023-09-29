@@ -125,19 +125,19 @@ public:
   time_t
   getExpiration() const
   {
-    return string2int(_expiration);
+    return string2time(_expiration);
   }
 
   time_t
   getNotBefore() const
   {
-    return string2int(_notBefore);
+    return string2time(_notBefore);
   }
 
   time_t
   getIssuedAt() const
   {
-    return string2int(_issuedAt);
+    return string2time(_issuedAt);
   }
 
   StringView

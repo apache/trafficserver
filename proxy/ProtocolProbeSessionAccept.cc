@@ -170,8 +170,14 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc          = static_cast<NetVConnection *>(data);
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
+    ProtocolProbeTrampoline *probe;
+    UnixNetVConnection *unix_netvc = dynamic_cast<UnixNetVConnection *>(netvc);
+    if (unix_netvc != nullptr && unix_netvc->read.vio.get_writer() != nullptr) {
+      probe = new ProtocolProbeTrampoline(this, netvc->mutex, unix_netvc->read.vio.get_writer(), unix_netvc->read.vio.get_reader());
+    } else {
+      probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
+    }
 
     // The connection has completed, set the accept inactivity timeout here to watch over the difference between the
     // connection set up and the first transaction..

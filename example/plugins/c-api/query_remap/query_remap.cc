@@ -21,9 +21,9 @@
   limitations under the License.
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdint>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -31,21 +31,26 @@
 
 #define PLUGIN_NAME "query_remap"
 
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
+
 /* function prototypes */
 uint32_t hash_fnv32(char *buf, size_t len);
 
-typedef struct _query_remap_info {
+struct query_remap_info {
   char *param_name;
   size_t param_len;
   char **hosts;
   int num_hosts;
-} query_remap_info;
+};
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   /* Called at TS startup. Nothing needed for this plugin */
-  TSDebug(PLUGIN_NAME, "remap plugin initialized");
+  Dbg(dbg_ctl, "remap plugin initialized");
   return TS_SUCCESS;
 }
 
@@ -54,7 +59,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
 {
   /* Called for each remap rule using this plugin. The parameters are parsed here */
   int i;
-  TSDebug(PLUGIN_NAME, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
+  Dbg(dbg_ctl, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
 
   if (argc < 4) {
     TSError("[%s] Missing parameters", PLUGIN_NAME);
@@ -68,22 +73,22 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
        2: query param to hash
        3,4,... : server hostnames
   */
-  query_remap_info *qri = (query_remap_info *)TSmalloc(sizeof(query_remap_info));
+  query_remap_info *qri = static_cast<query_remap_info *>(TSmalloc(sizeof(query_remap_info)));
 
   qri->param_name = TSstrdup(argv[2]);
   qri->param_len  = strlen(qri->param_name);
   qri->num_hosts  = argc - 3;
-  qri->hosts      = (char **)TSmalloc(qri->num_hosts * sizeof(char *));
+  qri->hosts      = static_cast<char **>(TSmalloc(qri->num_hosts * sizeof(char *)));
 
-  TSDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts", qri->param_name, qri->num_hosts);
+  Dbg(dbg_ctl, " - Hash using query parameter [%s] with %d hosts", qri->param_name, qri->num_hosts);
 
   for (i = 0; i < qri->num_hosts; ++i) {
     qri->hosts[i] = TSstrdup(argv[i + 3]);
-    TSDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
+    Dbg(dbg_ctl, " - Host %d: %s", i, qri->hosts[i]);
   }
 
   *ih = (void *)qri;
-  TSDebug(PLUGIN_NAME, "created instance %p", *ih);
+  Dbg(dbg_ctl, "created instance %p", *ih);
   return TS_SUCCESS;
 }
 
@@ -91,10 +96,10 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   /* Release instance memory allocated in TSRemapNewInstance */
-  TSDebug(PLUGIN_NAME, "deleting instance %p", ih);
+  Dbg(dbg_ctl, "deleting instance %p", ih);
 
   if (ih) {
-    query_remap_info *qri = (query_remap_info *)ih;
+    query_remap_info *qri = static_cast<query_remap_info *>(ih);
     if (qri->param_name) {
       TSfree(qri->param_name);
     }
@@ -111,7 +116,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
-  query_remap_info *qri = (query_remap_info *)ih;
+  query_remap_info *qri = static_cast<query_remap_info *>(ih);
 
   if (!qri || !rri) {
     TSError("[%s] null private data or RRI", PLUGIN_NAME);
@@ -132,12 +137,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
     /* parse query parameters */
     for (key = strtok_r(q, "&", &s); key != nullptr;) {
       char *val = strchr(key, '=');
-      if (val && (size_t)(val - key) == qri->param_len && !strncmp(key, qri->param_name, qri->param_len)) {
+      if (val && static_cast<size_t>(val - key) == qri->param_len && !strncmp(key, qri->param_name, qri->param_len)) {
         ++val;
         /* the param key matched the configured param_name
            hash the param value to pick a host */
-        hostidx = hash_fnv32(val, strlen(val)) % (uint32_t)qri->num_hosts;
-        TSDebug(PLUGIN_NAME, "modifying host based on %s", key);
+        hostidx = hash_fnv32(val, strlen(val)) % static_cast<uint32_t>(qri->num_hosts);
+        Dbg(dbg_ctl, "modifying host based on %s", key);
         break;
       }
       key = strtok_r(nullptr, "&", &s);
@@ -147,20 +152,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 
     if (hostidx >= 0) {
       int req_host_len;
-      /* TODO: Perhaps use TSIsDebugTagSet() before calling TSUrlHostGet()... */
+      /* TODO: Perhaps use dbg_ctl.on() before calling TSUrlHostGet()... */
       const char *req_host = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &req_host_len);
 
       if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, qri->hosts[hostidx], strlen(qri->hosts[hostidx])) != TS_SUCCESS) {
-        TSDebug(PLUGIN_NAME, "Failed to modify the Host in request URL");
+        Dbg(dbg_ctl, "Failed to modify the Host in request URL");
         return TSREMAP_NO_REMAP;
       }
-      TSDebug(PLUGIN_NAME, "host changed from [%.*s] to [%s]", req_host_len, req_host, qri->hosts[hostidx]);
+      Dbg(dbg_ctl, "host changed from [%.*s] to [%s]", req_host_len, req_host, qri->hosts[hostidx]);
       return TSREMAP_DID_REMAP; /* host has been modified */
     }
   }
 
   /* the request was not modified, TS will use the toURL from the remap rule */
-  TSDebug(PLUGIN_NAME, "request not modified");
+  Dbg(dbg_ctl, "request not modified");
   return TSREMAP_NO_REMAP;
 }
 
@@ -169,11 +174,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 uint32_t
 hash_fnv32(char *buf, size_t len)
 {
-  uint32_t hval = (uint32_t)0x811c9dc5; /* FNV1_32_INIT */
+  uint32_t hval = static_cast<uint32_t>(0x811c9dc5); /* FNV1_32_INIT */
 
   for (; len > 0; --len) {
-    hval *= (uint32_t)0x01000193; /* FNV_32_PRIME */
-    hval ^= (uint32_t)*buf++;
+    hval *= static_cast<uint32_t>(0x01000193); /* FNV_32_PRIME */
+    hval ^= static_cast<uint32_t>(*buf++);
   }
 
   return hval;

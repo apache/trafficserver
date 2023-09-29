@@ -50,6 +50,7 @@
 #define n2s(c, s) ((s = (((unsigned int)(c[0])) << 8) | (((unsigned int)(c[1])))), c += 2)
 
 const char *PLUGIN_NAME = "ja3_fingerprint";
+static DbgCtl dbg_ctl{PLUGIN_NAME};
 static TSTextLogObject pluginlog;
 static int ja3_idx    = -1;
 static int enable_raw = 0;
@@ -136,7 +137,7 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 static std::string
 custom_get_ja3(SSL *s)
 {
-  TSDebug(PLUGIN_NAME, "Entering custom_get_ja3()...");
+  Dbg(dbg_ctl, "Entering custom_get_ja3()...");
   std::string ja3;
   const unsigned char *p, *d;
   int i, j, len;
@@ -209,7 +210,7 @@ custom_get_ja3(SSL *s)
 
   // Append eclist and ecpflist
   ja3 += "," + eclist + "," + ecpflist;
-  TSDebug(PLUGIN_NAME, "ja3 string: %s", ja3.c_str());
+  Dbg(dbg_ctl, "ja3 string: %s", ja3.c_str());
   return ja3;
 }
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -312,7 +313,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     getIP(TSNetVConnRemoteAddrGet(ssl_vc), data->ip_addr);
 
     TSUserArgSet(ssl_vc, ja3_idx, static_cast<void *>(data));
-    TSDebug(PLUGIN_NAME, "client_hello_ja3_handler(): JA3: %s", data->ja3_string.c_str());
+    Dbg(dbg_ctl, "client_hello_ja3_handler(): JA3: %s", data->ja3_string.c_str());
 
     // MD5 hash
     unsigned char digest[MD5_DIGEST_LENGTH];
@@ -323,7 +324,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     for (int i = 0; i < 16; i++) {
       snprintf(&(data->md5_string[i * 2]), sizeof(data->md5_string) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
     }
-    TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5_string);
+    Dbg(dbg_ctl, "Fingerprint: %s", data->md5_string);
     break;
   }
   case TS_EVENT_VCONN_CLOSE: {
@@ -331,7 +332,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     ja3_data *data = static_cast<ja3_data *>(TSUserArgGet(ssl_vc, ja3_idx));
 
     if (data == nullptr) {
-      TSDebug(PLUGIN_NAME, "client_hello_ja3_handler(): Failed to retrieve ja3 data at VCONN_CLOSE.");
+      Dbg(dbg_ctl, "client_hello_ja3_handler(): Failed to retrieve ja3 data at VCONN_CLOSE.");
       return TS_ERROR;
     }
 
@@ -341,7 +342,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     break;
   }
   default: {
-    TSDebug(PLUGIN_NAME, "client_hello_ja3_handler(): Unexpected event.");
+    Dbg(dbg_ctl, "client_hello_ja3_handler(): Unexpected event.");
     break;
   }
   }
@@ -357,7 +358,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
   TSVConn vconn  = nullptr;
   if ((txnp = static_cast<TSHttpTxn>(edata)) == nullptr || (ssnp = TSHttpTxnSsnGet(txnp)) == nullptr ||
       (vconn = TSHttpSsnClientVConnGet(ssnp)) == nullptr) {
-    TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): Failure to retrieve txn/ssn/vconn object.");
+    Dbg(dbg_ctl, "req_hdr_ja3_handler(): Failure to retrieve txn/ssn/vconn object.");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
@@ -369,7 +370,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
     ja3_remap_info *info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
     bool raw_flag        = info ? info->raw : enable_raw;
     bool log_flag        = info ? info->log : enable_log;
-    TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): Found ja3 string.");
+    Dbg(dbg_ctl, "req_hdr_ja3_handler(): Found ja3 string.");
 
     // Get handle to headers
     TSMBuffer bufp;
@@ -391,7 +392,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
                            static_cast<int>(data->ja3_string.size()), data->ja3_string.data(), 32, data->md5_string);
     }
   } else {
-    TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");
+    Dbg(dbg_ctl, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");
   }
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
@@ -410,25 +411,25 @@ read_config_option(int argc, const char *argv[], int &raw, int &log)
   while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
     switch (opt) {
     case '?':
-      TSDebug(PLUGIN_NAME, "read_config_option(): Unrecognized command arguments.");
+      Dbg(dbg_ctl, "read_config_option(): Unrecognized command arguments.");
     case 0:
     case -1:
       break;
     default:
-      TSDebug(PLUGIN_NAME, "read_config_option(): Unexpected options error.");
+      Dbg(dbg_ctl, "read_config_option(): Unexpected options error.");
       return false;
     }
   }
 
-  TSDebug(PLUGIN_NAME, "read_config_option(): ja3 raw is %s", (raw == 1) ? "enabled" : "disabled");
-  TSDebug(PLUGIN_NAME, "read_config_option(): ja3 logging is %s", (log == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "read_config_option(): ja3 raw is %s", (raw == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "read_config_option(): ja3 logging is %s", (log == 1) ? "enabled" : "disabled");
   return true;
 }
 
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSDebug(PLUGIN_NAME, "Initializing plugin");
+  Dbg(dbg_ctl, "Initializing plugin");
 
   TSPluginRegistrationInfo info;
 
@@ -446,7 +447,7 @@ TSPluginInit(int argc, const char *argv[])
   } else {
     if (enable_log && !pluginlog) {
       TSAssert(TS_SUCCESS == TSTextLogObjectCreate(PLUGIN_NAME, TS_LOG_MODE_ADD_TIMESTAMP, &pluginlog));
-      TSDebug(PLUGIN_NAME, "log object created successfully");
+      Dbg(dbg_ctl, "log object created successfully");
     }
     // SNI handler
     TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
@@ -469,7 +470,7 @@ TSPluginInit(int argc, const char *argv[])
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  TSDebug(PLUGIN_NAME, "JA3 Remap Plugin initializing..");
+  Dbg(dbg_ctl, "JA3 Remap Plugin initializing..");
 
   // Check if there is config conflict as both global and remap plugin
   if (ja3_idx >= 0) {
@@ -495,18 +496,18 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  TSDebug(PLUGIN_NAME, "New instance for client matching %s to %s", argv[0], argv[1]);
+  Dbg(dbg_ctl, "New instance for client matching %s to %s", argv[0], argv[1]);
   std::unique_ptr<ja3_remap_info> pri{new ja3_remap_info};
 
   // Parse parameters
   if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), pri->raw, pri->log)) {
-    TSDebug(PLUGIN_NAME, "TSRemapNewInstance(): Bad arguments");
+    Dbg(dbg_ctl, "TSRemapNewInstance(): Bad arguments");
     return TS_ERROR;
   }
 
   if (pri->log && !pluginlog) {
     TSAssert(TS_SUCCESS == TSTextLogObjectCreate(PLUGIN_NAME, TS_LOG_MODE_ADD_TIMESTAMP, &pluginlog));
-    TSDebug(PLUGIN_NAME, "log object created successfully");
+    Dbg(dbg_ctl, "log object created successfully");
   }
 
   // Create continuation

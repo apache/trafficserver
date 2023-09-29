@@ -714,6 +714,9 @@ static const RecordElement RecordsConfig[] =
   //# Net Subsystem
   //#
   //##############################################################################
+
+  {RECT_CONFIG, "proxy.config.net.additional_accepts", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_INT, "^-1|[0-9]+$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.net.connections_throttle", RECD_INT, "30000", RECU_RESTART_TS, RR_REQUIRED, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.listen_backlog", RECD_INT, "-1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -946,8 +949,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.tunnel.activity_check_period", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.tunnel.prewarm.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.tunnel.prewarm.max_stats_size", RECD_INT, "100", RECU_RESTART_TS, RR_NULL, RECC_INT, "[5-65536]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.tunnel.prewarm.event_period", RECD_INT, "1000", RECU_DYNAMIC, RR_NULL, RECC_INT, "[10-3600000]", RECA_NULL}
   ,
@@ -1240,31 +1241,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.plugin.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
 
-  //##############################################################################
-  //#
-  //# Local Manager Specific Records File
-  //#
-  //# <RECORD-TYPE> <NAME> <TYPE> <VALUE (till end of line)>
-  //#
-  //# *NOTE*: All NODE Records must be placed continuously!
-  //#
-  //# Add NODE       Records Here
-  //##############################################################################
-  {RECT_NODE, "proxy.node.hostname_FQ", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.hostname", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  //#
-  //# Restart Stats
-  //#
-  {RECT_NODE, "proxy.node.restarts.proxy.start_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.cache_ready_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.stop_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_NODE, "proxy.node.restarts.proxy.restart_count", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   //#
   //# SSL parent proxying info
   //#

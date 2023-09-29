@@ -309,11 +309,15 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         // that we plan on reading the entire file so the kernel can do
         // some fancy optimizations.
         if (!follow_flag) {
-          posix_fadvise(in_fd, 0, 0, POSIX_FADV_WILLNEED);
+          if (posix_fadvise(in_fd, 0, 0, POSIX_FADV_WILLNEED) != 0) {
+            fprintf(stderr, "Error while trying to advise kernel about file access pattern: %s\n", strerror(errno));
+          }
         }
 
         // We're always reading the file sequentially so this will always help
-        posix_fadvise(in_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+        if (posix_fadvise(in_fd, 0, 0, POSIX_FADV_SEQUENTIAL) != 0) {
+          fprintf(stderr, "Error while trying to advise kernel about file access pattern: %s\n", strerror(errno));
+        }
 #endif
         if (auto_filenames) {
           // change .blog to .log
@@ -377,7 +381,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 #if HAVE_POSIX_FADVISE
       // Now that we're done reading a potentially large log file, we can tell the kernel that it's OK to evict
       // the associated log file pages from cache
-      posix_fadvise(in_fd, 0, 0, POSIX_FADV_DONTNEED);
+      if (posix_fadvise(in_fd, 0, 0, POSIX_FADV_DONTNEED) != 0) {
+        fprintf(stderr, "Error while trying to advise kernel about file access pattern: %s\n", strerror(errno));
+      }
 #endif
     }
   } else {

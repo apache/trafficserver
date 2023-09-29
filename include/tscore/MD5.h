@@ -46,7 +46,7 @@ public:
     EVP_DigestInit_ex(_ctx, EVP_md5(), nullptr);
 #endif
   }
-  ~MD5Context()
+  ~MD5Context() override
   {
 #if HAVE_MD5_INIT
     // _md5ctx does not need to be freed

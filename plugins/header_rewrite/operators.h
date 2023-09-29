@@ -35,7 +35,7 @@
 class OperatorSetConfig : public Operator
 {
 public:
-  OperatorSetConfig() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConfig"); }
+  OperatorSetConfig() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetConfig"); }
 
   // noncopyable
   OperatorSetConfig(const OperatorSetConfig &) = delete;
@@ -57,7 +57,7 @@ private:
 class OperatorSetStatus : public Operator
 {
 public:
-  OperatorSetStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
+  OperatorSetStatus() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetStatus"); }
 
   // noncopyable
   OperatorSetStatus(const OperatorSetStatus &) = delete;
@@ -78,7 +78,7 @@ private:
 class OperatorSetStatusReason : public Operator
 {
 public:
-  OperatorSetStatusReason() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatusReason"); }
+  OperatorSetStatusReason() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetStatusReason"); }
 
   // noncopyable
   OperatorSetStatusReason(const OperatorSetStatusReason &) = delete;
@@ -97,7 +97,7 @@ private:
 class OperatorSetDestination : public Operator
 {
 public:
-  OperatorSetDestination() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetDestination"); }
+  OperatorSetDestination() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetDestination"); }
 
   // noncopyable
   OperatorSetDestination(const OperatorSetDestination &) = delete;
@@ -117,7 +117,7 @@ private:
 class OperatorRMDestination : public Operator
 {
 public:
-  OperatorRMDestination() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMDestination"); }
+  OperatorRMDestination() { Dbg(dbg_ctl, "Calling CTOR for OperatorRMDestination"); }
 
   // noncopyable
   OperatorRMDestination(const OperatorRMDestination &) = delete;
@@ -135,7 +135,7 @@ private:
 class OperatorSetRedirect : public Operator
 {
 public:
-  OperatorSetRedirect() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetRedirect"); }
+  OperatorSetRedirect() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetRedirect"); }
 
   // noncopyable
   OperatorSetRedirect(const OperatorSetRedirect &) = delete;
@@ -166,7 +166,7 @@ private:
 class OperatorNoOp : public Operator
 {
 public:
-  OperatorNoOp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorNoOp"); }
+  OperatorNoOp() { Dbg(dbg_ctl, "Calling CTOR for OperatorNoOp"); }
 
   // noncopyable
   OperatorNoOp(const OperatorNoOp &)   = delete;
@@ -179,7 +179,7 @@ protected:
 class OperatorSetTimeoutOut : public Operator
 {
 public:
-  OperatorSetTimeoutOut() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetTimeoutOut"); }
+  OperatorSetTimeoutOut() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetTimeoutOut"); }
 
   // noncopyable
   OperatorSetTimeoutOut(const OperatorSetTimeoutOut &) = delete;
@@ -206,7 +206,7 @@ private:
 class OperatorSkipRemap : public Operator
 {
 public:
-  OperatorSkipRemap() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSkipRemap"); }
+  OperatorSkipRemap() { Dbg(dbg_ctl, "Calling CTOR for OperatorSkipRemap"); }
 
   // noncopyable
   OperatorSkipRemap(const OperatorSkipRemap &) = delete;
@@ -225,7 +225,7 @@ private:
 class OperatorRMHeader : public OperatorHeaders
 {
 public:
-  OperatorRMHeader() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader"); }
+  OperatorRMHeader() { Dbg(dbg_ctl, "Calling CTOR for OperatorRMHeader"); }
 
   // noncopyable
   OperatorRMHeader(const OperatorRMHeader &) = delete;
@@ -238,7 +238,7 @@ protected:
 class OperatorAddHeader : public OperatorHeaders
 {
 public:
-  OperatorAddHeader() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddHeader"); }
+  OperatorAddHeader() { Dbg(dbg_ctl, "Calling CTOR for OperatorAddHeader"); }
 
   // noncopyable
   OperatorAddHeader(const OperatorAddHeader &) = delete;
@@ -256,7 +256,7 @@ private:
 class OperatorSetHeader : public OperatorHeaders
 {
 public:
-  OperatorSetHeader() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetHeader"); }
+  OperatorSetHeader() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetHeader"); }
 
   // noncopyable
   OperatorSetHeader(const OperatorSetHeader &) = delete;
@@ -274,7 +274,7 @@ private:
 class OperatorCounter : public Operator
 {
 public:
-  OperatorCounter() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCounter"); }
+  OperatorCounter() { Dbg(dbg_ctl, "Calling CTOR for OperatorCounter"); }
 
   // noncopyable
   OperatorCounter(const OperatorCounter &) = delete;
@@ -293,7 +293,7 @@ private:
 class OperatorRMCookie : public OperatorCookies
 {
 public:
-  OperatorRMCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMCookie"); }
+  OperatorRMCookie() { Dbg(dbg_ctl, "Calling CTOR for OperatorRMCookie"); }
 
   // noncopyable
   OperatorRMCookie(const OperatorRMCookie &) = delete;
@@ -306,7 +306,7 @@ protected:
 class OperatorAddCookie : public OperatorCookies
 {
 public:
-  OperatorAddCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddCookie"); }
+  OperatorAddCookie() { Dbg(dbg_ctl, "Calling CTOR for OperatorAddCookie"); }
 
   // noncopyable
   OperatorAddCookie(const OperatorAddCookie &) = delete;
@@ -324,7 +324,7 @@ private:
 class OperatorSetCookie : public OperatorCookies
 {
 public:
-  OperatorSetCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetCookie"); }
+  OperatorSetCookie() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetCookie"); }
 
   // noncopyable
   OperatorSetCookie(const OperatorSetCookie &) = delete;
@@ -354,7 +354,7 @@ bool cookieModifyHelper(const char *cookies, const size_t cookies_len, std::stri
 class OperatorSetConnDSCP : public Operator
 {
 public:
-  OperatorSetConnDSCP() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConnDSCP"); }
+  OperatorSetConnDSCP() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetConnDSCP"); }
 
   // noncopyable
   OperatorSetConnDSCP(const OperatorSetConnDSCP &) = delete;
@@ -373,7 +373,7 @@ private:
 class OperatorSetConnMark : public Operator
 {
 public:
-  OperatorSetConnMark() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConnMark"); }
+  OperatorSetConnMark() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetConnMark"); }
 
   // noncopyable
   OperatorSetConnMark(const OperatorSetConnMark &) = delete;
@@ -392,7 +392,7 @@ private:
 class OperatorSetDebug : public Operator
 {
 public:
-  OperatorSetDebug() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetDebug"); }
+  OperatorSetDebug() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetDebug"); }
 
   // noncopyable
   OperatorSetDebug(const OperatorSetDebug &) = delete;
@@ -408,7 +408,7 @@ protected:
 class OperatorSetBody : public Operator
 {
 public:
-  OperatorSetBody() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetBody"); }
+  OperatorSetBody() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetBody"); }
 
   // noncopyable
   OperatorSetBody(const OperatorSetBody &) = delete;
@@ -427,7 +427,7 @@ private:
 class OperatorSetHttpCntl : public Operator
 {
 public:
-  OperatorSetHttpCntl() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetHttpCntl"); }
+  OperatorSetHttpCntl() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetHttpCntl"); }
 
   // noncopyable
   OperatorSetHttpCntl(const OperatorSetHttpCntl &) = delete;

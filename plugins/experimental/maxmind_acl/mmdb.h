@@ -47,6 +47,12 @@
 #define PLUGIN_NAME  "maxmind_acl"
 #define CONFIG_TMOUT 60000
 
+namespace maxmind_acl_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace maxmind_acl_ns;
+
 typedef struct {
   std::string _regex_s;
   pcre *_rex;
@@ -59,7 +65,7 @@ using ipstate = enum { ALLOW_IP, DENY_IP, UNKNOWN_IP };
 class Acl
 {
 public:
-  Acl() {}
+  Acl() { memset(&_mmdb, 0, sizeof(_mmdb)); }
   ~Acl()
   {
     if (db_loaded) {

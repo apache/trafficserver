@@ -37,6 +37,7 @@ server.addResponse(session_file, request_get, response)
 server.addResponse(session_file, request_delete, response)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.show_location': 0,
     'proxy.config.diags.debug.tags': 'header.*',
     'proxy.config.http.insert_response_via_str': 0,
 })

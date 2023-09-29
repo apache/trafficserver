@@ -45,6 +45,12 @@
 
 #define VERSION "&version=1"
 
+namespace inliner_ns
+{
+extern DbgCtl dbg_ctl;
+}
+using namespace inliner_ns;
+
 namespace ats
 {
 bool
@@ -111,7 +117,7 @@ namespace inliner
         contentType_ = "image/png";
       } else {
         // TODO(dmorilha): check png signature code.
-        TSDebug(PLUGIN_TAG, "Invalid signature for: %s", url_.c_str());
+        Dbg(dbg_ctl, "Invalid signature for: %s", url_.c_str());
       }
 
       if (contentType_ != "image/gif" && contentType_ != "image/jpeg" && contentType_ != "image/jpg" &&
@@ -134,7 +140,7 @@ namespace inliner
           output.resize(size + s);
         }
 
-        TSDebug(PLUGIN_TAG, "%s (%s) %lu %lu", url_.c_str(), contentType_.c_str(), content_.size(), output.size());
+        Dbg(dbg_ctl, "%s (%s) %lu %lu", url_.c_str(), contentType_.c_str(), content_.size(), output.size());
 
         cache::write(url_ + VERSION, std::move(output));
       }
@@ -158,7 +164,7 @@ namespace inliner
           std::stringstream ss(contentLengthValue);
           uint32_t contentLength = 0;
           ss >> contentLength;
-          TSDebug(PLUGIN_TAG, "Content-Length: %i", contentLength);
+          Dbg(dbg_ctl, "Content-Length: %i", contentLength);
           content_.reserve(contentLength);
         }
       }
@@ -167,13 +173,13 @@ namespace inliner
     void
     timeout() const
     {
-      TSDebug(PLUGIN_TAG, "Fetch timeout");
+      Dbg(dbg_ctl, "Fetch timeout");
     }
 
     void
     error() const
     {
-      TSDebug(PLUGIN_TAG, "Fetch error");
+      Dbg(dbg_ctl, "Fetch error");
     }
   };
 
@@ -272,7 +278,7 @@ namespace inliner
     {
       assert(v != nullptr);
 
-      TSDebug(PLUGIN_TAG, "cache hit for %s (%" PRId64 " bytes)", src_.c_str(), TSVConnCacheObjectSizeGet(v));
+      Dbg(dbg_ctl, "cache hit for %s (%" PRId64 " bytes)", src_.c_str(), TSVConnCacheObjectSizeGet(v));
 
       assert(sink_);
 
@@ -326,11 +332,12 @@ namespace inliner
       request             += std::string(b1, i);
       request             += "\r\n\r\n";
 
-      ats::io::IO *const io = new io::IO();
+      auto io{std::make_unique<io::IO>()};
 
-      TSDebug(PLUGIN_TAG, "request:\n%s", request.c_str());
+      Dbg(dbg_ctl, "request:\n%s", request.c_str());
 
-      ats::get(io, io->copy(request), AnotherClass(src_));
+      auto size{io->copy(request)};
+      ats::get(std::move(io), size, AnotherClass(src_));
     }
   };
 

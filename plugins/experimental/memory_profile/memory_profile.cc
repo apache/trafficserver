@@ -33,11 +33,14 @@
 #include <cstring>
 #include <cerrno>
 #include <tscore/ink_config.h>
-#if TS_HAS_JEMALLOC
-#include <jemalloc/jemalloc.h>
-#endif
+#include <tscore/ink_memory.h>
 
 #define PLUGIN_NAME "memory_profile"
+
+namespace
+{
+DbgCtl dbg_ctl{PLUGIN_NAME};
+}
 
 int
 CallbackHandler(TSCont cont, TSEvent id, void *data)
@@ -46,7 +49,7 @@ CallbackHandler(TSCont cont, TSEvent id, void *data)
 
   if (id == TS_EVENT_LIFECYCLE_MSG) {
     TSPluginMsg *msg = static_cast<TSPluginMsg *>(data);
-    TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
+    Dbg(dbg_ctl, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
 #if TS_HAS_JEMALLOC
       if (msg->data_size) {
@@ -55,27 +58,27 @@ CallbackHandler(TSCont cont, TSEvent id, void *data)
           if ((retval = mallctl("prof.dump", nullptr, nullptr, nullptr, 0)) != 0) {
             TSError("mallctl(prof.dump) failed retval=%d errno=%d", retval, errno);
           }
-          TSDebug(PLUGIN_NAME, "mallctl(prof.dump) retval=%d errno=%d", retval, errno);
+          Dbg(dbg_ctl, "mallctl(prof.dump) retval=%d errno=%d", retval, errno);
         } else if (strncmp(static_cast<const char *>(msg->data), "activate", msg->data_size) == 0) {
           bool active = true;
 
           if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
             TSError("mallctl(prof.active) on failed retval=%d errno=%d", retval, errno);
           }
-          TSDebug(PLUGIN_NAME, "mallctl(prof.active) on retval=%d errno=%d", retval, errno);
+          Dbg(dbg_ctl, "mallctl(prof.active) on retval=%d errno=%d", retval, errno);
         } else if (strncmp(static_cast<const char *>(msg->data), "deactivate", msg->data_size) == 0) {
           bool active = false;
 
           if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
             TSError("mallctl(prof.active) off failed retval=%d errno=%d", retval, errno);
           }
-          TSDebug(PLUGIN_NAME, "mallctl(prof.active) off retval=%d errno=%d", retval, errno);
+          Dbg(dbg_ctl, "mallctl(prof.active) off retval=%d errno=%d", retval, errno);
         } else if (strncmp(static_cast<const char *>(msg->data), "stats", msg->data_size) == 0) {
           malloc_stats_print(nullptr, nullptr, nullptr);
-          TSDebug(PLUGIN_NAME, "stats");
+          Dbg(dbg_ctl, "stats");
         } else {
           TSError("Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
-          TSDebug(PLUGIN_NAME, "Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
+          Dbg(dbg_ctl, "Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
         }
       }
 #else
@@ -108,7 +111,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, cb);
 
-  TSDebug(PLUGIN_NAME, "online");
+  Dbg(dbg_ctl, "online");
 
   return;
 

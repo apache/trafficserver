@@ -32,7 +32,7 @@
 #include "tscore/ink_error.h"
 #include <pthread.h>
 
-typedef pthread_rwlock_t ink_rwlock;
+using ink_rwlock = pthread_rwlock_t;
 
 void ink_rwlock_init(ink_rwlock *rw);
 void ink_rwlock_destroy(ink_rwlock *rw);

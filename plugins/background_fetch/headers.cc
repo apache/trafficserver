@@ -93,7 +93,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// Dump a header on stderr, useful together with TSDebug().
+// Dump a header on stderr, useful together with Dbg().
 void
 dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 {
@@ -113,7 +113,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   do {
     const char *block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
     if (block_avail > 0) {
-      TSDebug(PLUGIN_NAME, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
+      Dbg(Bg_dbg_ctl, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
     }
     TSIOBufferReaderConsume(reader, block_avail);
     block = TSIOBufferReaderStart(reader);

@@ -36,6 +36,8 @@
 
 namespace
 {
+DbgCtl dbg_ctl{PLUGIN_NAME};
+
 /**
    Somewhat nonsensically exercise some scenarios of proxying
    and blind tunneling from the SNI callback plugin
@@ -58,7 +60,7 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
     if (servername_len >= facebook_name_len) {
       const char *server_ptr = servername + (servername_len - facebook_name_len);
       if (strcmp(server_ptr, "facebook.com") == 0) {
-        TSDebug(PLUGIN_NAME, "Blind tunnel from SNI callback");
+        Dbg(dbg_ctl, "Blind tunnel from SNI callback");
         TSVConnTunnel(ssl_vc);
         // Don't reenable to ensure that we break out of the
         // SSL handshake processing
@@ -67,14 +69,14 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
     }
     // If the name is yahoo, look for a context for safelyfiled and use that here
     if (strcmp("www.yahoo.com", servername) == 0) {
-      TSDebug(PLUGIN_NAME, "SNI name is yahoo ssl obj is %p", sslobj);
+      Dbg(dbg_ctl, "SNI name is yahoo ssl obj is %p", sslobj);
       if (sslobj) {
         TSSslContext ctxobj = TSSslContextFindByName("safelyfiled.com");
         if (ctxobj != nullptr) {
-          TSDebug(PLUGIN_NAME, "Found cert for safelyfiled");
+          Dbg(dbg_ctl, "Found cert for safelyfiled");
           SSL_CTX *ctx = reinterpret_cast<SSL_CTX *>(ctxobj);
           SSL_set_SSL_CTX(ssl, ctx);
-          TSDebug(PLUGIN_NAME, "SNI plugin cb: replace SSL CTX");
+          Dbg(dbg_ctl, "SNI plugin cb: replace SSL CTX");
         }
       }
     }
@@ -113,7 +115,7 @@ TSPluginInit(int argc, const char *argv[])
   if (!success) {
     TSError(PCP "not initialized");
   }
-  TSDebug(PLUGIN_NAME, "Plugin %s", success ? "online" : "offline");
+  Dbg(dbg_ctl, "Plugin %s", success ? "online" : "offline");
 
   return;
 }

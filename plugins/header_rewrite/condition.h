@@ -47,11 +47,11 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition"); }
+  Condition() { Dbg(dbg_ctl, "Calling CTOR for Condition"); }
 
   ~Condition() override
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
+    Dbg(dbg_ctl, "Calling DTOR for Condition");
     delete _matcher;
   }
 
