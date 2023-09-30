@@ -18,14 +18,16 @@
 add_executable(traffic_logstats logstats.cc)
 target_link_libraries(traffic_logstats PRIVATE ts::logging ts::hdrs ts::tscore ts::tsapicore ts::records ts::diagsconfig ts::inkevent libswoc)
 
-add_test(
-  NAME test_logstats_json
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_logstats_json ${CMAKE_SOURCE_DIR}/src
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
+if(BUILD_TESTING)
+  add_test(
+    NAME test_logstats_json
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_logstats_json ${CMAKE_SOURCE_DIR}/src
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+  )
 
-add_test(
-  NAME test_logstats_summary
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_logstats_summary ${CMAKE_SOURCE_DIR}/src
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
+  add_test(
+    NAME test_logstats_summary
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_logstats_summary ${CMAKE_SOURCE_DIR}/src
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+  )
+endif()

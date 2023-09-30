@@ -136,50 +136,52 @@ if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
     target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
-add_executable(test_tscore
-        unit_tests/test_AcidPtr.cc
-        unit_tests/test_ArgParser.cc
-        unit_tests/test_CryptoHash.cc
-        unit_tests/test_Errata.cc
-        unit_tests/test_Extendible.cc
-        unit_tests/test_Encoding.cc
-        unit_tests/test_HKDF.cc
-        unit_tests/test_Histogram.cc
-        unit_tests/test_History.cc
-        unit_tests/test_IntrusivePtr.cc
-        unit_tests/test_List.cc
-        unit_tests/test_MMH.cc
-        unit_tests/test_ParseRules.cc
-        unit_tests/test_PluginUserArgs.cc
-        unit_tests/test_PriorityQueue.cc
-        unit_tests/test_Ptr.cc
-        unit_tests/test_Random.cc
-        unit_tests/test_Regex.cc
-        unit_tests/test_Throttler.cc
-        unit_tests/test_Tokenizer.cc
-        unit_tests/test_Version.cc
-        unit_tests/test_arena.cc
-        unit_tests/test_ink_inet.cc
-        unit_tests/test_ink_memory.cc
-        unit_tests/test_ink_string.cc
-        unit_tests/test_layout.cc
-        unit_tests/test_scoped_resource.cc
-        unit_tests/unit_test_main.cc
-)
-target_link_libraries(test_tscore
-    PRIVATE
-        libswoc
-        ts::tscore
-        yaml-cpp::yaml-cpp
-        resolv
-        ts::tscpputil
-        OpenSSL::Crypto
-        OpenSSL::SSL
-        catch2::catch2
-)
-if(TS_USE_HWLOC)
-    target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
-endif()
-target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include)
+if(BUILD_TESTING)
+        add_executable(test_tscore
+                unit_tests/test_AcidPtr.cc
+                unit_tests/test_ArgParser.cc
+                unit_tests/test_CryptoHash.cc
+                unit_tests/test_Errata.cc
+                unit_tests/test_Extendible.cc
+                unit_tests/test_Encoding.cc
+                unit_tests/test_HKDF.cc
+                unit_tests/test_Histogram.cc
+                unit_tests/test_History.cc
+                unit_tests/test_IntrusivePtr.cc
+                unit_tests/test_List.cc
+                unit_tests/test_MMH.cc
+                unit_tests/test_ParseRules.cc
+                unit_tests/test_PluginUserArgs.cc
+                unit_tests/test_PriorityQueue.cc
+                unit_tests/test_Ptr.cc
+                unit_tests/test_Random.cc
+                unit_tests/test_Regex.cc
+                unit_tests/test_Throttler.cc
+                unit_tests/test_Tokenizer.cc
+                unit_tests/test_Version.cc
+                unit_tests/test_arena.cc
+                unit_tests/test_ink_inet.cc
+                unit_tests/test_ink_memory.cc
+                unit_tests/test_ink_string.cc
+                unit_tests/test_layout.cc
+                unit_tests/test_scoped_resource.cc
+                unit_tests/unit_test_main.cc
+        )
+        target_link_libraries(test_tscore
+            PRIVATE
+                libswoc
+                ts::tscore
+                yaml-cpp::yaml-cpp
+                resolv
+                ts::tscpputil
+                OpenSSL::Crypto
+                OpenSSL::SSL
+                catch2::catch2
+        )
+        if(TS_USE_HWLOC)
+            target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
+        endif()
+        target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
+        add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
+endif()

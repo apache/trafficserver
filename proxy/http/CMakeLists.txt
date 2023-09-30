@@ -77,15 +77,16 @@ endif()
 
 add_subdirectory(remap)
 
-add_executable(test_proxy_http
-  unit_tests/unit_test_main.cc
-  unit_tests/test_ForwardedConfig.cc
-  unit_tests/test_error_page_selection.cc
-  unit_tests/test_PreWarm.cc
-  ForwardedConfig.cc
-  HttpBodyFactory.cc
+if(BUILD_TESTING)
+  add_executable(test_proxy_http
+    unit_tests/unit_test_main.cc
+    unit_tests/test_ForwardedConfig.cc
+    unit_tests/test_error_page_selection.cc
+    unit_tests/test_PreWarm.cc
+    ForwardedConfig.cc
+    HttpBodyFactory.cc
 )
-target_include_directories(test_proxy_http PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
-add_test(NAME test_proxy_http COMMAND test_proxy_http)
-
+  target_include_directories(test_proxy_http PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
+  add_test(NAME test_proxy_http COMMAND test_proxy_http)
+endif(BUILD_TESTING)

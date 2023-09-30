@@ -46,49 +46,51 @@ target_link_libraries(http2
         ts::inkutils
 )
 
-add_executable(test_http2
-  HTTP2.cc
-  Http2Frame.cc
-  HPACK.cc
-  unit_tests/main.cc
-  unit_tests/test_HTTP2.cc
-  unit_tests/test_Http2Frame.cc
-  unit_tests/test_HpackIndexingTable.cc
-)
-target_include_directories(test_http2 PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${PROXY_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/iocore/utils
-)
-target_link_libraries(test_http2 PRIVATE catch2::catch2 records tscore hdrs inkevent)
-add_test(NAME test_http2 COMMAND test_http2)
+if(BUILD_TESTING)
+  add_executable(test_http2
+    HTTP2.cc
+    Http2Frame.cc
+    HPACK.cc
+    unit_tests/main.cc
+    unit_tests/test_HTTP2.cc
+    unit_tests/test_Http2Frame.cc
+    unit_tests/test_HpackIndexingTable.cc
+  )
+  target_include_directories(test_http2 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROXY_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/iocore/utils
+  )
+  target_link_libraries(test_http2 PRIVATE catch2::catch2 records tscore hdrs inkevent)
+  add_test(NAME test_http2 COMMAND test_http2)
 
-add_executable(test_Http2DependencyTree
-  unit_tests/test_Http2DependencyTree.cc
-)
-target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc)
-target_include_directories(test_Http2DependencyTree PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/proxy/hdrs
-)
-add_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
+  add_executable(test_Http2DependencyTree
+    unit_tests/test_Http2DependencyTree.cc
+  )
+  target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc)
+  target_include_directories(test_Http2DependencyTree PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/proxy/hdrs
+  )
+  add_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
 
-add_executable(test_Http2FrequencyCounter
-  Http2FrequencyCounter.cc
-  unit_tests/test_Http2FrequencyCounter.cc
-)
-target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc)
-target_include_directories(test_Http2FrequencyCounter PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/proxy/hdrs
-)
-add_test(NAME test_Http2FrequencyCounter COMMAND test_Http2FrequencyCounter)
+  add_executable(test_Http2FrequencyCounter
+    Http2FrequencyCounter.cc
+    unit_tests/test_Http2FrequencyCounter.cc
+  )
+  target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc)
+  target_include_directories(test_Http2FrequencyCounter PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/proxy/hdrs
+  )
+  add_test(NAME test_Http2FrequencyCounter COMMAND test_Http2FrequencyCounter)
 
-add_executable(test_HPACK
-  test_HPACK.cc
-  HPACK.cc
-)
-target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)
-add_test(NAME test_HPACK
-  COMMAND test_HPACK -i ${CMAKE_CURRENT_SOURCE_DIR}/hpack-tests -o ./results
-)
+  add_executable(test_HPACK
+    test_HPACK.cc
+    HPACK.cc
+  )
+  target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)
+  add_test(NAME test_HPACK
+    COMMAND test_HPACK -i ${CMAKE_CURRENT_SOURCE_DIR}/hpack-tests -o ./results
+  )
+endif()

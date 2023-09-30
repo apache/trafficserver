@@ -49,14 +49,16 @@ target_link_libraries(records
         ts::tsapicore
 )
 
-add_executable(test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc)
-target_link_libraries(test_records PRIVATE records catch2::catch2 tscore libswoc)
-add_test(NAME test_records COMMAND test_records)
+if(BUILD_TESTING)
+  add_executable(test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc)
+  target_link_libraries(test_records PRIVATE records catch2::catch2 tscore libswoc)
+  add_test(NAME test_records COMMAND test_records)
 
-add_executable(test_records_on_eventsystem
-  unit_tests/unit_test_main_on_eventsystem.cc
-  unit_tests/test_DynamicStats.cc
-)
-target_include_directories(test_records_on_eventsystem PRIVATE ${CMAKE_SOURCE_DIR}/iocore/utils)
-target_link_libraries(test_records_on_eventsystem PRIVATE records catch2::catch2 tscore libswoc)
-add_test(NAME test_records_on_eventsystem COMMAND test_records_on_eventsystem)
+  add_executable(test_records_on_eventsystem
+    unit_tests/unit_test_main_on_eventsystem.cc
+    unit_tests/test_DynamicStats.cc
+  )
+  target_include_directories(test_records_on_eventsystem PRIVATE ${CMAKE_SOURCE_DIR}/iocore/utils)
+  target_link_libraries(test_records_on_eventsystem PRIVATE records catch2::catch2 tscore libswoc)
+  add_test(NAME test_records_on_eventsystem COMMAND test_records_on_eventsystem)
+endif()
