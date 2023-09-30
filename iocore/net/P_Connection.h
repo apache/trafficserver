@@ -49,8 +49,6 @@
 
 #pragma once
 
-#include "I_NetProcessor.h"
-
 #include "tscore/ink_platform.h"
 
 struct NetVCOptions;

@@ -40,15 +40,6 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/mgmt
 )
 
-target_link_libraries(tsapi
-    PUBLIC
-        ts::inkcache # transitive via ts/InkAPIPrivateIOCore
-        ts::tsapicore
-        ts::tscore
-    PRIVATE
-        ts::inkevent
-)
-
 install(TARGETS tsapi)
 
 if(APPLE)

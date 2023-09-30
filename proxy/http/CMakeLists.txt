@@ -64,6 +64,8 @@ target_link_libraries(http
         ts::tsapicore
         ts::tscore
     PRIVATE
+        ts::http2
+        ts::http_remap
         ts::inkcache
         ts::inkutils
 )
