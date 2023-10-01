@@ -388,6 +388,6 @@ Lerror:
     fd = NO_FD;
   }
 
-  Error("Could not bind or listen to port %d (error: %d)", ats_ip_port_host_order(&addr), res);
+  Fatal("Could not bind or listen to port %d (error: %d)", ats_ip_port_host_order(&addr), res);
   return res;
 }
