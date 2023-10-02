@@ -37,6 +37,7 @@ public:
   static void unbind(SSL *ssl);
 
   size_t get_early_data_len() const;
+  void update_early_data_config(SSL *ssl, uint32_t max_early_data, uint32_t recv_max_early_data);
 
 protected:
   void clear();

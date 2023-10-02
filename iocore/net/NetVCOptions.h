@@ -168,10 +168,6 @@ struct NetVCOptions {
    */
   ats_scoped_str sni_hostname;
 
-  /** Outbound sni policy which overrides proxy.ssl.client.sni_policy
-   */
-  ats_scoped_str outbound_sni_policy;
-
   /**
    * Client certificate to use in response to OS's certificate request
    */

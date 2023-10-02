@@ -302,7 +302,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
     snis->on_client_hello(s, al, arg);
-    int ret = snis->perform_sni_action();
+    int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return SSL_CLIENT_HELLO_ERROR;
     }
@@ -338,7 +338,7 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 
   if (snis) {
     snis->on_client_hello(client_hello);
-    int ret = snis->perform_sni_action();
+    int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return ssl_select_cert_error;
     }
@@ -457,7 +457,7 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
     snis->on_servername(ssl, al, arg);
 #if !TS_USE_HELLO_CB && !defined(OPENSSL_IS_BORINGSSL)
     // Only call the SNI actions here if not already performed in the HELLO_CB
-    int ret = snis->perform_sni_action();
+    int ret = snis->perform_sni_action(*ssl);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
