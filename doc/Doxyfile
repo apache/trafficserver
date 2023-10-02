@@ -749,7 +749,6 @@ INPUT                  = mainpage.doc \
                          ../include \
                          ../iocore \
                          ../src/records \
-                         ../mgmt \
                          ../proxy \
                          ../src
 
