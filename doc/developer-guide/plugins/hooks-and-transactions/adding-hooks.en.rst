@@ -157,8 +157,8 @@ values for ``TSHttpHookID`` are:
     was left open for keep alive has new data available.
 
 ``TS_HTTP_TUNNEL_START_HOOK``
-    Called when the transaction is processed as a tunnel. The tunnel can be
-    create due to an API call, a sni.yaml configuration, or a parse failure allowed due
+    Called when the transaction is processed as a tunnel. The tunnel can be created
+    due to an API call, a sni.yaml configuration, or a parse failure allowed due
     to tr-pass.  With this hook, a plugin can examine other information to
     determine whether the tunnel should be allowed or not.
 

@@ -31,11 +31,6 @@ server = Test.MakeOriginServer("server", ssl=True)
 server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: http-test\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-# expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
 request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n",
                          "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
@@ -44,10 +39,9 @@ response_tunnel_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCo
 
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'hook_tunnel_plugin.so'), ts)
+                                    'tunnel_transform.so'), ts)
 
 # add response to the server dictionary
-server.addResponse("sessionfile.log", request_header, response_header)
 server.addResponse("sessionfile.log", request_tunnel_header, response_tunnel_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 0,
@@ -62,11 +56,6 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-ts.Disk.remap_config.AddLine(
-    'map https://http-test:{0}/ https://127.0.0.1:{1}/'.format(
-        ts.Variables.ssl_port, server.Variables.SSL_Port)
-)
-
 ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: tunnel-test',
@@ -74,39 +63,16 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
-cmd_http = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "http-test:{0}:127.0.0.1" https://http-test:{0}/'.format(
-    ts.Variables.ssl_port)
 cmd_tunnel = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
     ts.Variables.ssl_port)
-cmd_connect = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "connect-proxy:{0}:127.0.0.1" -x http://connect-proxy:{0} --resolve "http-test:{1}:127.0.0.1"  https://http-test:{1}/'.format(
-    ts.Variables.port, ts.Variables.ssl_port)
-
-# Send the http request
-tr = Test.AddTestRun("send http request")
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_http
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
 
 # Send the tunnel request
 tr = Test.AddTestRun("send tunnel request")
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = cmd_tunnel
 tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
-
-# Send the connect request
-# while the connect method will set up a tunnel, it is processed in ATS as a
-# transaction rather than a blind tunnel directly. Plugs can differentiate on the
-# method to determine whether a connect tunnel will be set up
-tr = Test.AddTestRun("send connect request")
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_connect
-tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -127,7 +93,7 @@ tr.StillRunningAfter = server
 def make_done_stat_ready(tsenv):
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
-            "traffic_ctl metric get txn_type_verify.test.done",
+            "traffic_ctl metric get tunnel_transform.test.done",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -142,28 +108,61 @@ tr = Test.AddTestRun("Check type errors")
 server2.StartupTimeout = 60
 # Again, here the important thing is the ready function not the server2 process
 tr.Processes.Default.StartBefore(server2, ready=make_done_stat_ready(ts.Env))
-tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.error'
+tr.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.error'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    'txn_type_verify.error 0', 'incorrect statistic return, or possible error.')
+    'tunnel_transform.error 0', 'incorrect statistic return, or possible error.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun("Check for tunnel start")
-tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.tunnel.start'
+check_input_range = '''
+val=`traffic_ctl metric get tunnel_transform.ua.bytes_sent | cut -d ' ' -f 2; test $val -gt 700
+'''
+
+
+def check_range(path, lo, hi):
+    f = open(path, 'r')
+    content = f.read()
+    values = content.split()
+    f.close()
+    if len(values) == 2:
+        val = int(values[1])
+        return val > lo and val < hi, "Check range", "Out of range"
+    else:
+        return false, "Check range", "Out of range"
+
+
+# Ideally, I'd like to cross check the number of TLS bytes received from UA and
+# received from OS to the curl command.  The debug output lists the number of
+# non record data bytes, but it does not enumerate the number of bytes sent in the records
+# as far as I can tell.  The size of the data record will be different from that plain text
+# size due to padding etc.  Leaving the test with the hard coded values for now.  Hopefully,
+# some bright soul can come along later and make this a better test.
+# Perhaps adding a netcat based test case could do that.
+tr = Test.AddTestRun("Fetch bytes sent")
+tr.Processes.Default.Command = "traffic_ctl metric get tunnel_transform.ua.bytes_sent"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "txn_type_verify.tunnel.start 1", 'Should have a tunnel start.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun("Check for http request")
-tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.http.req'
+path1 = tr.Processes.Default.Streams.stdout.AbsPath
+
+tr2 = Test.AddTestRun("Check the input bytes sent and fetch outptut bytes sent")
+tr2.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.os.bytes_sent'
+tr2.Processes.Default.ReturnCode = 0
+tr2.Processes.Default.Env = ts.Env
+tr2.StillRunningAfter = ts
+tr2.StillRunningAfter = server
+tr2.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path1, 700, 800))
+
+path2 = tr2.Processes.Default.Streams.stdout.AbsPath
+
+tr = Test.AddTestRun("Check that output bytes sent")
+tr.Processes.Default.Command = 'echo foo'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "txn_type_verify.http.req 2", 'Should have two http requests.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
+tr.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path2, 1990, 2100))

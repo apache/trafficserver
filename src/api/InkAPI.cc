@@ -5489,12 +5489,15 @@ tsapi::c::TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
   const sockaddr *retval = nullptr;
+  NetVConnection *vc     = nullptr;
   ProxyTransaction *ssn  = sm->get_server_txn();
-  if (ssn != nullptr) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      retval = vc->get_local_addr();
-    }
+  if (ssn == nullptr) {
+    vc = sm->get_server_vc();
+  } else {
+    vc = ssn->get_netvc();
+  }
+  if (vc != nullptr) {
+    retval = vc->get_local_addr();
   }
   return retval;
 }

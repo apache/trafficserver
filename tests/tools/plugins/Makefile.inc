@@ -67,6 +67,9 @@ tools_plugins_ssntxnorder_verify_la_SOURCES = tools/plugins/ssntxnorder_verify.c
 noinst_LTLIBRARIES += tools/plugins/hook_tunnel_plugin.la
 tools_plugins_hook_tunnel_plugin_la_SOURCES = tools/plugins/hook_tunnel_plugin.cc
 
+noinst_LTLIBRARIES += tools/plugins/tunnel_transform.la
+tools_plugins_tunnel_transform_la_SOURCES = tools/plugins/tunnel_transform.cc
+
 noinst_LTLIBRARIES += tools/plugins/test_cppapi.la
 tools_plugins_test_cppapi_la_SOURCES = tools/plugins/test_cppapi.cc
 tools_plugins_test_cppapi_la_LDFLAGS = \

@@ -2975,7 +2975,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
   // Check to see if the client is still around
   HttpTunnelProducer *ua = (_ua.get_txn()) ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HT_HTTP_CLIENT);
 
-  if (ua && !ua->read_success) {
+  if (ua == nullptr || !ua->read_success) {
     // Client failed to send the body, it's gone.  Kill the
     // state machine
     terminate_sm = true;
@@ -4124,9 +4124,8 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer *c)
   // Figure out if this the request or response transform
   // : use post_transform_info.entry because post_transform_info.vc
   // is not set to NULL after the post transform is done.
-  if (post_transform_info.entry) {
+  if (post_transform_info.entry && post_transform_info.entry->vc == c->vc) {
     i = &post_transform_info;
-    ink_assert(c->vc == i->entry->vc);
   } else {
     i = &transform_info;
     ink_assert(c->vc == i->vc);
@@ -7264,17 +7263,46 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
+  this->do_transform_open();
+  this->do_post_transform_open();
+
   p_os =
     tunnel.add_producer(server_entry->vc, -1, r_to, &HttpSM::tunnel_handler_ssl_producer, HT_HTTP_SERVER, "http server - tunnel");
 
-  c_ua = tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
-                             "user agent - tunnel");
+  if (this->transform_info.vc != nullptr) {
+    HttpTunnelConsumer *c_trans = tunnel.add_consumer(transform_info.vc, server_entry->vc, &HttpSM::tunnel_handler_transform_write,
+                                                      HT_TRANSFORM, "server tunnel - transform");
+    MIOBuffer *trans_buf        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+    IOBufferReader *trans_to    = trans_buf->alloc_reader();
+    HttpTunnelProducer *p_trans = tunnel.add_producer(transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
+                                                      HT_TRANSFORM, "server tunnel - transform");
+    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
+                               "user agent - tunnel");
+    tunnel.chain(c_trans, p_trans);
+    transform_info.entry->in_tunnel = true;
+  } else {
+    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
+                               "user agent - tunnel");
+  }
 
   p_ua = tunnel.add_producer(_ua.get_entry()->vc, -1, r_from, &HttpSM::tunnel_handler_ssl_producer, HT_HTTP_CLIENT,
                              "user agent - tunnel");
 
-  c_os = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
-                             "http server - tunnel");
+  if (this->post_transform_info.vc != nullptr) {
+    HttpTunnelConsumer *c_trans = tunnel.add_consumer(
+      post_transform_info.vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM, "ua tunnel - transform");
+    MIOBuffer *trans_buf        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+    IOBufferReader *trans_to    = trans_buf->alloc_reader();
+    HttpTunnelProducer *p_trans = tunnel.add_producer(post_transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
+                                                      HT_TRANSFORM, "ua tunnel - transform");
+    c_os = tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
+                               "http server - tunnel");
+    tunnel.chain(c_trans, p_trans);
+    post_transform_info.entry->in_tunnel = true;
+  } else {
+    c_os = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
+                               "http server - tunnel");
+  }
 
   // Make the tunnel aware that the entries are bi-directional
   tunnel.chain(c_os, p_os);

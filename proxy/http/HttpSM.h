@@ -299,6 +299,15 @@ public:
   UrlRewrite *m_remap = nullptr;
 
   History<HISTORY_DEFAULT_SIZE> history;
+  NetVConnection *
+  get_server_vc()
+  {
+    if (server_entry != nullptr) {
+      return dynamic_cast<NetVConnection *>(server_entry->vc);
+    } else {
+      return nullptr;
+    }
+  }
 
   // _postbuf api
   int64_t postbuf_reader_avail();
