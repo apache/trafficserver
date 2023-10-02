@@ -16,8 +16,8 @@
 #######################
 
 include_directories(
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/rpc
+        ${CMAKE_SOURCE_DIR}/include/mgmt
+        ${CMAKE_SOURCE_DIR}/include/mgmt/rpc
         ${IOCORE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/lib
         ${CMAKE_SOURCE_DIR}/proxy/hdrs

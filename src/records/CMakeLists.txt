@@ -36,7 +36,7 @@ target_include_directories(records
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
     PRIVATE
-        "${CMAKE_SOURCE_DIR}/mgmt"
+        "${CMAKE_SOURCE_DIR}/include/mgmt"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 

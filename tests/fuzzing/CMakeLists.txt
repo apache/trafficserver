@@ -50,8 +50,8 @@ target_include_directories(fuzz_hpack PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/utils
 )
 target_include_directories(fuzz_json PRIVATE
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/rpc
+        ${CMAKE_SOURCE_DIR}/include/mgmt
+        ${CMAKE_SOURCE_DIR}/include/mgmt/rpc
         ${IOCORE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/lib
         ${CMAKE_SOURCE_DIR}/proxy/hdrs

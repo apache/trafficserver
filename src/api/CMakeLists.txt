@@ -40,7 +40,7 @@ set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 include_directories(
   ${IOCORE_INCLUDE_DIRS}
   ${PROXY_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/mgmt
+  ${CMAKE_SOURCE_DIR}/include/mgmt
 )
 
 install(TARGETS tsapi)

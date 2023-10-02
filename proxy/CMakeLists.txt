@@ -57,7 +57,7 @@ set(PROXY_INCLUDE_DIRS ${PROXY_INCLUDE_DIRS} PARENT_SCOPE)
 target_include_directories(proxy PUBLIC
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/include/mgmt
         )
 
 target_link_libraries(proxy

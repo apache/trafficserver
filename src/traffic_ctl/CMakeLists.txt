@@ -26,7 +26,7 @@ add_executable(traffic_ctl
 target_include_directories(traffic_ctl PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/include/mgmt
         )
 target_link_libraries(traffic_ctl
         ts::tscore
