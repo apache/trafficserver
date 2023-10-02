@@ -276,7 +276,7 @@ renew_copy_raw(json_t *new_json, const char *name, json_t *old_json)
 void
 renew_copy_real(json_t *new_json, const char *name, double old)
 {
-  if (!isnan(old)) {
+  if (!std::isnan(old)) {
     json_object_set_new(new_json, name, json_real(old));
   }
 }
