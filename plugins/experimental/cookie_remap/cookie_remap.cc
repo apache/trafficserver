@@ -887,6 +887,7 @@ build_op(op &o, OpMap const &q)
 
 error:
   Dbg(dbg_ctl, "error building operation");
+  delete sub;
   return false;
 }
 
