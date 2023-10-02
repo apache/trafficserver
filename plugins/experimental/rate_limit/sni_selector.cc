@@ -23,6 +23,62 @@
 #include "sni_selector.h"
 
 ///////////////////////////////////////////////////////////////////////////////
+// YAML parser for the global YAML configuration (via plugin.config)
+//
+bool
+SniSelector::yamlParser(std::string yaml_file)
+{
+  // Parsed the IP Reputations, so add those.
+  // ToDo: Obviously need the YAML values here ...
+  std::string iprep_name = "main";
+  uint32_t num_buckets   = 10;
+  uint32_t size          = 15;
+  uint32_t percentage    = 90;
+  std::chrono::seconds max_age(60);
+
+  if (nullptr != findIpRep(iprep_name)) {
+    TSError("[%s] Duplicate IP-Reputation names being added (%.*s)", PLUGIN_NAME, static_cast<int>(iprep_name.size()),
+            iprep_name.data());
+    return false;
+  }
+
+  auto iprep = new IpReputation::SieveLru(iprep_name, num_buckets, size, percentage, max_age);
+
+  std::chrono::seconds perma_max_age(1800);
+
+  iprep->initializePerma(100, 1, perma_max_age);
+  addIPReputation(iprep);
+
+  // ToDo: Add the IP lists
+
+  // ToDo: Iterate over all SNIs.
+  std::string sni = "hel.ogre.com";
+
+  if (nullptr != findSNI(sni)) {
+    TSError("[%s] Duplicate SNIs being added (%.*s)", PLUGIN_NAME, static_cast<int>(sni.size()), sni.data());
+    return false;
+  }
+
+  auto limiter = new SniRateLimiter(sni, this);
+  auto iprep2  = findIpRep("main");
+
+  TSReleaseAssert(limiter);
+
+  std::chrono::seconds queue_max_age(60);
+
+  limiter->initialize(5);
+  limiter->initializeQueue(0, queue_max_age);
+  limiter->initializeMetrics(RATE_LIMITER_TYPE_SNI, sni);
+  if (iprep2) {
+    limiter->addIPReputation(iprep2);
+  }
+
+  addLimiter(limiter);
+
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // This is the queue management continuation, which gets called periodically
 //
 static int
@@ -64,27 +120,8 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
   return TS_EVENT_NONE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// This is the queue management continuation, which gets called periodically
-//
-bool
-SniSelector::insert(std::string_view sni, SniRateLimiter *limiter)
-{
-  if (_limiters.find(sni) == _limiters.end()) {
-    _limiters[sni] = limiter;
-    Dbg(dbg_ctl, "Added global limiter for SNI=%s (limit=%u, queue=%u, max_age=%ldms)", sni.data(), limiter->limit,
-        limiter->max_queue, static_cast<long>(limiter->max_age.count()));
-
-    limiter->initializeMetrics(RATE_LIMITER_TYPE_SNI);
-
-    return true;
-  }
-
-  return false;
-}
-
 SniRateLimiter *
-SniSelector::find(std::string_view sni)
+SniSelector::findSNI(std::string_view sni)
 {
   if (sni.empty()) { // Likely shouldn't happen, but we can shortcircuit
     return nullptr;
@@ -98,35 +135,17 @@ SniSelector::find(std::string_view sni)
   return nullptr;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// This factory will create a number of SNI limiters based on the input string
-// given. The list of SNI's is comma separated. ToDo: This should go away when
-// we switch to a proper YAML parser, and we will only use the insert() above.
-//
-size_t
-SniSelector::factory(const char *sni_list, int argc, const char *argv[])
+IpReputation::SieveLru *
+SniSelector::findIpRep(std::string_view name)
 {
-  char *saveptr;
-  char *sni   = strdup(sni_list); // We make a copy of the sni list, to not touch the original string
-  char *token = strtok_r(sni, ",", &saveptr);
+  auto it = std::find_if(_reputations.begin(), _reputations.end(),
+                         [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
 
-  // Todo: We are repeating initializing here with the same configurations, but once we move this to
-  // YAML, and refactor this, it'll be better. And this is not particularly expensive.
-  while (nullptr != token) {
-    SniRateLimiter *limiter = new SniRateLimiter();
-    TSReleaseAssert(limiter);
-
-    limiter->initialize(argc, argv);
-    limiter->description = token;
-
-    _needs_queue_cont = (limiter->max_queue > 0);
-
-    insert(std::string_view(limiter->description), limiter);
-    token = strtok_r(nullptr, ",", &saveptr);
+  if (it != _reputations.end()) {
+    return *it;
   }
-  free(sni);
 
-  return _limiters.size();
+  return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

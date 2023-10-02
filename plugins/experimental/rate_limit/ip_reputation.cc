@@ -77,23 +77,20 @@ SieveLru::hasher(const std::string &ip, u_short family) // Mostly a convenience 
 
   return 0; // Probably can't happen, but have to return something
 }
-// Constructor, setting up the pre-sized LRU buckets etc.
-SieveLru::SieveLru(uint32_t num_buckets, uint32_t size) : _lock(TSMutexCreate())
-{
-  initialize(num_buckets, size);
-}
 
 // Initialize the Sieve LRU object
 void
-SieveLru::initialize(uint32_t num_buckets, uint32_t size)
+SieveLru::initialize(std::string_view name, uint32_t num_buckets, uint32_t size, uint32_t percentage, std::chrono::seconds max_age)
 {
   TSMutexLock(_lock);
   TSAssert(!_initialized);             // Don't allow it to be initialized more than once!
   TSReleaseAssert(size > num_buckets); // Otherwise we can't half the bucket sizes
 
-  _initialized = true;
+  _name        = name;
   _num_buckets = num_buckets;
   _size        = size;
+  _percentage  = percentage;
+  _max_age     = max_age;
 
   uint32_t cur_size = pow(2, 1 + _size - num_buckets);
 
@@ -108,6 +105,8 @@ SieveLru::initialize(uint32_t num_buckets, uint32_t size)
 
   _buckets[blockBucket()] = new SieveBucket(cur_size / 2); // Block LRU, same size as entry bucket
   _buckets[allowBucket()] = new SieveBucket(0);            // Allow LRU, this is unlimited
+
+  _initialized = true;
   TSMutexUnlock(_lock);
 }
 
@@ -143,7 +142,7 @@ SieveLru::increment(KeyClass key)
     auto &[map_key, map_item]              = *map_it;
     auto &[list_key, count, bucket, added] = *map_item;
     auto lru                               = _buckets[bucket];
-    auto max_age                           = (bucket == blockBucket() ? _perma_max_age : _max_age);
+    auto max_age                           = (bucket == blockBucket() ? _permablock_max_age : _max_age);
 
     // Check if the entry is older than max_age (if set), if so just move it to the entry bucket and restart
     // Yes, this will move likely abusive IPs but they will earn back a bad reputation; The goal here is to

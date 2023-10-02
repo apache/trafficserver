@@ -32,7 +32,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
-    limiter->release();
+    limiter->free();
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
     return TS_EVENT_CONTINUE;
@@ -118,7 +118,9 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
  // EOF
     {nullptr,                      no_argument,       nullptr, '\0'},
   };
-  optind = 1;
+  optind             = 1;
+  std::string prefix = RATE_LIMITER_METRIC_PREFIX;
+  std::string tag    = "";
 
   while (true) {
     int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
@@ -143,10 +145,10 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
       this->header = optarg;
       break;
     case 'p':
-      this->prefix = std::string(optarg);
+      prefix = optarg;
       break;
     case 't':
-      this->tag = std::string(optarg);
+      tag = optarg;
       break;
     }
     if (opt == -1) {
@@ -161,7 +163,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
 
-  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP);
+  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP, tag, prefix);
 
   return true;
 }

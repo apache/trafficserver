@@ -33,7 +33,7 @@
 // As a global plugin, things works a little different since we don't setup
 // per transaction or via remap.config.
 extern int gVCIdx;
-SniSelector *gSNISelector = nullptr;
+extern SniSelector *gSNISelector;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -53,37 +53,24 @@ TSPluginInit(int argc, const char *argv[])
     TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
   }
 
-  if (argc > 1) {
-    if (!strncasecmp(argv[1], "SNI=", 4)) {
-      if (gSNISelector == nullptr) {
-        TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
-        gSNISelector    = new SniSelector();
+  if (argc == 2) {
+    TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
+    gSNISelector    = new SniSelector();
 
-        TSReleaseAssert(sni_cont);
-        TSContDataSet(sni_cont, gSNISelector);
+    TSReleaseAssert(sni_cont);
 
-        TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
-        TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
-      }
+    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
+    TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
 
-      // Have to skip the first one, which is considered the 'program' name
-      --argc;
-      ++argv;
-
-      size_t num_sni = gSNISelector->factory(argv[0] + 4, argc, argv);
-      Dbg(dbg_ctl, "Finished loading %zu SNIs", num_sni);
-
+    if (gSNISelector->yamlParser(argv[1])) {
+      gSNISelector->acquire();        // Assure that we don't delete this until config reload
       gSNISelector->setupQueueCont(); // Start the queue processing continuation if needed
-    } else if (!strncasecmp(argv[1], "HOST=", 5)) {
-      // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
-      --argc; // Skip the "HOST" arg of course when parsing the real parameters
-      ++argv;
-      // TSCont host_cont = TSContCreate(globalHostCont, nullptr);
     } else {
-      TSError("[%s] unknown global limiter type: %s", PLUGIN_NAME, argv[1]);
+      delete gSNISelector;
+      TSError("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[0]);
     }
   } else {
-    TSError("[%s] Usage: rate_limit.so SNI|HOST [option arguments]", PLUGIN_NAME);
+    TSError("[%s] Usage: rate_limit.so <config.yaml>", PLUGIN_NAME);
   }
 }
 
@@ -109,8 +96,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 {
   TxnRateLimiter *limiter = new TxnRateLimiter();
 
-  // set the description based on the pristine remap URL prior to advancing the pointer below
-  limiter->description = getDescriptionFromUrl(argv[0]);
+  // set the name based on the pristine remap URL prior to advancing the pointer below
+  limiter->name = getDescriptionFromUrl(argv[0]);
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.

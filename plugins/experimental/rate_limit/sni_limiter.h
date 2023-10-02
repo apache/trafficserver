@@ -23,46 +23,34 @@
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 
+class SniSelector;
+
 ///////////////////////////////////////////////////////////////////////////////
-// SNI based limiters, for global (pligin.config) instance(s).
+// SNI based limiters, for global (plugin.config) instance(s).
 //
 class SniRateLimiter : public RateLimiter<TSVConn>
 {
 public:
-  SniRateLimiter() {}
-
-  SniRateLimiter(const SniRateLimiter &src)
-  {
-    limit     = src.limit;
-    max_queue = src.max_queue;
-    max_age   = src.max_age;
-    prefix    = src.prefix;
-    tag       = src.tag;
-  }
-
-  bool initialize(int argc, const char *argv[]);
-
-  // ToDo: this ought to go into some better global IP reputation pool / settings. Waiting for YAML...
-  IpReputation::SieveLru iprep;
-  uint32_t iprep_permablock_count     = 0; // "Hits" limit for blocking permanently
-  uint32_t iprep_permablock_threshold = 0; // Pressure threshold for permanent block
+  SniRateLimiter() = delete;
+  SniRateLimiter(std::string_view sni, SniSelector *sel) : selector(sel) { name = sni; }
 
   // Calculate the pressure, which is either a negative number (ignore), or a number 0-<buckets>.
   // 0 == block only perma-blocks.
   int32_t
   pressure() const
   {
-    int32_t p = ((active() / static_cast<float>(limit) * 100) - _iprep_percent) / (100 - _iprep_percent) * (_iprep_num_buckets + 1);
+    int32_t p = ((active() / static_cast<float>(limit) * 100) - iprep->percentage()) / (100 - iprep->percentage()) *
+                (iprep->numBuckets() + 1);
 
-    return (p >= static_cast<int32_t>(_iprep_num_buckets) ? _iprep_num_buckets : p);
+    return (p >= static_cast<int32_t>(iprep->numBuckets()) ? iprep->numBuckets() : p);
   }
 
-private:
-  // ToDo: These should be moved to global configurations to have one shared IP Reputation.
-  // today the configuration of this is so clunky, that there is no easy way to make it "global".
-  std::chrono::seconds _iprep_max_age       = std::chrono::seconds::zero(); // Max age in the SieveLRUs for regular buckets
-  std::chrono::seconds _iprep_perma_max_age = std::chrono::seconds::zero(); // Max age in the SieveLRUs for perma-block buckets
-  uint32_t _iprep_num_buckets               = 10;                           // Number of buckets. ToDo: leave this at 10 always
-  uint32_t _iprep_percent                   = 90;                           // At what percentage of limit we start blocking
-  uint32_t _iprep_size                      = 0;                            // Size of the biggest bucket; 15 == 2^15 == 32768
+  void
+  addIPReputation(IpReputation::SieveLru *iprep)
+  {
+    this->iprep = iprep;
+  }
+
+  SniSelector *selector         = nullptr; // The selector we belong to
+  IpReputation::SieveLru *iprep = nullptr; // IP reputation for this SNI (if any)
 };

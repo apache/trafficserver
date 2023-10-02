@@ -84,8 +84,14 @@ using HashMap = std::unordered_map<KeyClass, SieveBucket::iterator>; // The hash
 class SieveLru
 {
 public:
-  SieveLru() : _lock(TSMutexCreate()){}; // The uninitialized version
-  SieveLru(uint32_t num_buckets, uint32_t size);
+  SieveLru() = delete;
+
+  SieveLru(std::string_view name, uint32_t num_buckets, uint32_t size, uint32_t percentage, std::chrono::seconds max_age)
+    : _lock(TSMutexCreate())
+  {
+    initialize(name, num_buckets, size, percentage, max_age);
+  }
+
   ~SieveLru()
   {
     for (uint32_t i = 0; i <= _num_buckets + 1; ++i) { // Remember to delete the two special allow/block buckets too
@@ -93,7 +99,16 @@ public:
     }
   }
 
-  void initialize(uint32_t num_buckets = 10, uint32_t size = 15);
+  void initialize(std::string_view name, uint32_t num_buckets = 10, uint32_t size = 15, uint32_t percentage = 90,
+                  std::chrono::seconds max_age = std::chrono::seconds::zero());
+
+  void
+  initializePerma(uint32_t limit, uint32_t threshold, std::chrono::seconds max_age = std::chrono::seconds::zero())
+  {
+    _permablock_limit     = limit;
+    _permablock_threshold = threshold;
+    _permablock_max_age   = max_age;
+  }
 
   // Return value is the bucket (0 .. num_buckets) that the IP is in, and the
   // current count of "hits". The lookup version is similar, except it doesn't
@@ -190,7 +205,42 @@ public:
     return _initialized;
   }
 
-  // Aging getters and setters
+  const std::string &
+  name() const
+  {
+    return _name;
+  }
+
+  uint32_t
+  numBuckets() const
+  {
+    return _num_buckets;
+  }
+
+  uint32_t
+  size() const
+  {
+    return _size;
+  }
+
+  uint32_t
+  percentage() const
+  {
+    return _percentage;
+  }
+
+  uint32_t
+  permablock_count() const
+  {
+    return _permablock_limit;
+  }
+
+  uint32_t
+  permablock_threshold() const
+  {
+    return _permablock_threshold;
+  }
+
   std::chrono::seconds
   maxAge() const
   {
@@ -200,19 +250,7 @@ public:
   std::chrono::seconds
   permaMaxAge() const
   {
-    return _perma_max_age;
-  }
-
-  void
-  maxAge(std::chrono::seconds maxage)
-  {
-    _max_age = maxage;
-  }
-
-  void
-  permaMaxAge(std::chrono::seconds maxage)
-  {
-    _perma_max_age = maxage;
+    return _permablock_max_age;
   }
 
   // Debugging tool, dumps some info around the buckets
@@ -225,12 +263,18 @@ protected:
 private:
   HashMap _map;
   std::vector<SieveBucket *> _buckets;
-  uint32_t _num_buckets               = 10;                           // Leave this at 10 ...
-  uint32_t _size                      = 0;                            // Set this up to initialize
-  std::chrono::seconds _max_age       = std::chrono::seconds::zero(); // Aging time in the SieveLru (default off)
-  std::chrono::seconds _perma_max_age = std::chrono::seconds::zero(); // Aging time in the SieveLru for perma-blocks
-  bool _initialized                   = false;                        // If this has been properly initialized yet
-  TSMutex _lock;                                                      // The lock around all data access
+  std::string _name;
+  bool _initialized = false; // If this has been properly initialized yet
+  TSMutex _lock;             // The lock around all data access
+  // Standard options
+  uint32_t _num_buckets         = 10;                           // Leave this at 10 ...
+  uint32_t _size                = 0;                            // Set this up to initialize
+  uint32_t _percentage          = 90;                           // At what percentage of limit do we start blocking
+  std::chrono::seconds _max_age = std::chrono::seconds::zero(); // Aging time in the SieveLru (default off)
+  // Perma-block options
+  uint32_t _permablock_limit               = 0;                            // "Hits" limit for blocking permanently
+  uint32_t _permablock_threshold           = 0;                            // Pressure threshold for permanent block
+  std::chrono::seconds _permablock_max_age = std::chrono::seconds::zero(); // Aging time in the SieveLru for perma-blocks
 };
 
 } // namespace IpReputation
