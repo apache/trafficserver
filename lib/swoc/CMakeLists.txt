@@ -7,6 +7,7 @@ cmake_policy(SET CMP0087 NEW)
 # override "lib64" to be "lib" unless the user explicitly sets it.
 set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "directory for libraries" FORCE)
 include(GNUInstallDirs)
+include(CMakeDependentOption)
 
 cmake_dependent_option(LIBSWOC_INSTALL
     "Enable generation of libswoc install targets" ON

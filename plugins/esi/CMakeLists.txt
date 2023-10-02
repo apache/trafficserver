@@ -23,7 +23,7 @@ add_atsplugin(esi
     esi.cc
     serverIntercept.cc
 )
-target_link_libraries(esi PRIVATE esi-common esicore fetcher)
+target_link_libraries(esi PRIVATE esi-common esicore fetcher libswoc)
 target_include_directories(esi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_atsplugin(combo_handler
