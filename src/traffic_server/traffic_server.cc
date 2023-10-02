@@ -108,10 +108,10 @@ extern "C" int plock(int);
 #include "RpcAdminPubHandlers.h"
 
 // Json Rpc stuffs
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/server/RPCServer.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/server/RPCServer.h"
 
-#include "config/FileManager.h"
+#include "mgmt/config/FileManager.h"
 
 #if TS_USE_QUIC == 1
 #include "Http3.h"

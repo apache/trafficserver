@@ -32,7 +32,6 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/mgmt \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@HWLOC_INCLUDES@ \
@@ -83,10 +82,10 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_server.la \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
-	$(top_builddir)/mgmt/config/libconfigmanager.a \
-	$(top_builddir)/mgmt/rpc/librpcpublichandlers.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_server.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/src/mgmt/config/libconfigmanager.a \
+	$(top_builddir)/src/mgmt/rpc/librpcpublichandlers.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \

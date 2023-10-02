@@ -18,7 +18,7 @@ noinst_LTLIBRARIES += gold_tests/jsonrpc/plugins/jsonrpc_plugin_handler_test.la
 gold_tests_jsonrpc_plugins_jsonrpc_plugin_handler_test_la_SOURCES = gold_tests/jsonrpc/plugins/jsonrpc_plugin_handler_test.cc
 
 AM_CPPFLAGS += \
-    -I$(abs_top_srcdir)/mgmt \
+    -I$(abs_top_srcdir)/include/mgmt \
     @YAMLCPP_INCLUDES@
 
 gold_tests_jsonrpc_plugins_jsonrpc_plugin_handler_test_la_LDFLAGS = \

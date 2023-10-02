@@ -2409,9 +2409,9 @@ AC_CONFIG_FILES([
   lib/fastlz/Makefile
   lib/swoc/Makefile
   lib/yamlcpp/Makefile
-  mgmt/Makefile
-  mgmt/rpc/Makefile
-  mgmt/config/Makefile
+  src/mgmt/Makefile
+  src/mgmt/rpc/Makefile
+  src/mgmt/config/Makefile
   plugins/Makefile
   proxy/Makefile
   proxy/hdrs/Makefile

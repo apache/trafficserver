@@ -1,4 +1,6 @@
 #
+# Makefile.am for the config Management module.
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,34 +17,31 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+AM_CPPFLAGS += \
+    $(iocore_include_dirs) \
+    -I$(abs_top_srcdir)/iocore/utils \
+    -I$(abs_top_srcdir)/include \
+    -I$(abs_top_srcdir)/lib/ \
+    -I$(abs_top_srcdir)/include/mgmt \
+    -I$(abs_top_srcdir)/include/mgmt/config \
+    -I$(abs_top_srcdir)/proxy/ \
+    -I$(abs_top_srcdir)/proxy/http \
+    -I$(abs_top_srcdir)/proxy/hdrs \
+    $(TS_INCLUDES) @SWOC_INCLUDES@ \
+    @YAMLCPP_INCLUDES@
+
+# ^^ all the proxy is to include the PluginCallbacks.
+
+noinst_LIBRARIES = libconfigmanager.a
+
+TESTS = $(check_PROGRAMS)
+
+# Protocol library only, no transport.
+libconfigmanager_a_SOURCES = \
+	FileManager.cc \
+	AddConfigFilesHere.cc
+
 include $(top_srcdir)/mk/tidy.mk
-
-bin_PROGRAMS =
-check_PROGRAMS =
-TESTS =
-lib_LTLIBRARIES =
-noinst_PROGRAMS =
-
-SUBDIRS = tscpp/api api mgmt
-
-if BUILD_WCCP
-SUBDIRS += wccp
-include traffic_wccp/Makefile.inc
-endif
-
-if BUILD_CRIPTS
-SUBDIRS += cripts
-endif
-
-include traffic_cache_tool/Makefile.inc
-include traffic_via/Makefile.inc
-include traffic_top/Makefile.inc
-include traffic_server/Makefile.inc
-include traffic_logstats/Makefile.inc
-include traffic_crashlog/Makefile.inc
-include traffic_layout/Makefile.inc
-include traffic_logcat/Makefile.inc
-include traffic_ctl/Makefile.inc
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
