@@ -22,4 +22,5 @@ add_atsplugin(cert_reporting_tool cert_reporting_tool.cc)
 target_link_libraries(cert_reporting_tool
     PRIVATE
         OpenSSL::SSL
+        libswoc
 )
