@@ -32,8 +32,8 @@ struct RedisEndpoint {
   std::string m_hostname;
   int m_port;
 
-  redis_endpoint() : m_hostname(cDefaultRedisHost), m_port(cDefaultRedisPort) {}
-  redis_endpoint(const std::string &endpoint_spec);
+  RedisEndpoint() : m_hostname(cDefaultRedisHost), m_port(cDefaultRedisPort) {}
+  RedisEndpoint(const std::string &endpoint_spec);
 };
 
 struct RedisEndpointCompare {

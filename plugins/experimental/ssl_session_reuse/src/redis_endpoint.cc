@@ -24,7 +24,7 @@
 
 #include "redis_endpoint.h"
 
-redis_endpoint::redis_endpoint(const std::string &endpoint_spec)
+RedisEndpoint::RedisEndpoint(const std::string &endpoint_spec)
 {
   std::stringstream ss;
   size_t delim_pos(endpoint_spec.find(':'));
