@@ -23,4 +23,4 @@ add_atsplugin(cache_promote
         policy_manager.cc
 )
 
-target_link_libraries(cache_promote PRIVATE OpenSSL::Crypto)
+target_link_libraries(cache_promote PRIVATE OpenSSL::Crypto libswoc)

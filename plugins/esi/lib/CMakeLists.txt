@@ -25,7 +25,7 @@ add_library(esicore
         Stats.cc
         Variables.cc
 )
-target_link_libraries(esicore PUBLIC esi-common fetcher)
+target_link_libraries(esicore PUBLIC esi-common fetcher libswoc)
 target_include_directories(esicore
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"

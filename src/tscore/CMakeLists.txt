@@ -117,7 +117,7 @@ target_link_libraries(tscore
     PUBLIC
         OpenSSL::Crypto
         PCRE::PCRE
-    PRIVATE
+        libswoc
         yaml-cpp::yaml-cpp
 )
 

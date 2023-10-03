@@ -52,7 +52,7 @@ link_libraries(
         proxy
         inknet
         inkevent
-        yaml-cpp
+        yaml-cpp::yaml-cpp
         libswoc
         catch2::catch2
         jsonrpc_protocol

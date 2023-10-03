@@ -76,6 +76,7 @@ if(ENABLE_DISK_FAILURE_TESTS)
 endif()
 option(ENABLE_AUTEST "Setup autest (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
+option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -290,6 +291,12 @@ set(HAVE_NCURSES_H ${CURSES_HAVE_NCURSES_H})
 set(HAVE_NCURSES_CURSES_H ${CURSES_HAVE_NCURSES_CURSES_H})
 set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
 
+# find yaml-cpp if requested
+if(EXTERNAL_YAML_CPP)
+  message(STATUS "Looking for external yaml-cpp")
+  find_package(yaml-cpp "0.8.0" REQUIRED)
+endif()
+
 # curl is used in traffic_top
 find_package(CURL)
 set(HAVE_CURL ${CURL_FOUND})
@@ -447,7 +454,7 @@ if (HOST_OS STREQUAL "darwin")
 endif(HOST_OS STREQUAL "darwin")
 
 # Set the rpath for installed binaries
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib64")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
@@ -475,14 +482,12 @@ add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter -Wno-cast-function
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override>")
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
 
-include_directories(
-        ${CMAKE_SOURCE_DIR}/lib/swoc/include
-        ${YAML_CPP_SOURCE_DIR}/include
-)
-
-include(subproject_version)
-
-subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
+if(NOT EXTERNAL_YAML_CPP)
+  include(subproject_version)
+  subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
+else()
+  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
+endif()
 
 set(rel_cachedir var/trafficserver)
 
@@ -630,4 +635,5 @@ cmake_print_variables(TS_PKGSYSGROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
+
 print_auto_options_summary()

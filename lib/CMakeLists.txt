@@ -21,12 +21,14 @@
 add_compile_options(-Wno-shadow)
 set(BUILD_SHARED_LIBS 1)
 
-# Turning CLANG_FORMAT off causes yamlcpp to not add its format target which
-# otherwise conflicts with our format target.
-set(YAML_CPP_CLANG_FORMAT_EXE OFF)
-set(YAML_CPP_INSTALL ON)
-add_subdirectory(yamlcpp)
-set(YAML_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include PARENT_SCOPE)
+if(NOT TARGET yaml-cpp::yaml-cpp)
+  # Turning CLANG_FORMAT off causes yamlcpp to not add its format target which
+  # otherwise conflicts with our format target.
+  set(YAML_CPP_CLANG_FORMAT_EXE OFF)
+  set(YAML_CPP_INSTALL OFF)
+  add_subdirectory(yamlcpp)
+  install(TARGETS yaml-cpp)
+endif()
 
 add_subdirectory(fastlz)
 add_subdirectory(swoc)
@@ -35,4 +37,4 @@ set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
 add_library(catch2::catch2 INTERFACE IMPORTED GLOBAL)
 target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/catch2")
 
-install(TARGETS libswoc yaml-cpp fastlz)
+install(TARGETS libswoc fastlz)
