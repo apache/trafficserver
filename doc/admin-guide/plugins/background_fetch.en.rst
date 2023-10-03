@@ -89,6 +89,41 @@ below on the remap line::
 
    @plugin=background_fetch.so @pparam=<config-file>
 
+Dealing with origins that don't support range requests
+------------------------------------------------------
+
+The background fetch plugin will not properly work if an origin does
+not support range requests and returns a 200 instead of a 206.
+
+In this case header rewrites can be used to force the background fetch
+to trigger.
+
+given a remap.config line like::
+
+    map <source> <dest> \
+        ... \
+        @plugin=header_rewrite.so @pparam=hdr_rw_prev.config \
+        @plugin=background_fetch.config @pparam=bg_fetch.config \
+        @plugin=header_rewrite.so @pparam=hdr_rw_next.config \
+        ...
+
+hdr_rw_prev.config::
+
+    cond %{READ_RESPONSE_HDR_HOOK}
+    cond %{CLIENT-HEADER:Range} = "" [NOT]
+    cond %{STATUS} = 200
+    set-status 206
+    set-header @Was200 true
+
+hdr_rw_next.config::
+
+    cond %{READ_RESPONSE_HDR_HOOK}
+    cond %{HEADER:@Was200} = "" [NOT]
+    set-status 200
+
+Will cause a 200 parent/origin response from a client range request to trigger
+a background fetch.
+
 Future additions
 ----------------
 
