@@ -1053,7 +1053,9 @@ int
 config_reloader(TSCont cont, TSEvent event, void *edata)
 {
   Dbg(dbg_ctl, "reloading configs");
-  S3Config *s3          = static_cast<S3Config *>(TSContDataGet(cont));
+  S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
+  s3->check_current_action(edata);
+
   S3Config *file_config = gConfCache.get(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
@@ -1064,7 +1066,6 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
   {
     std::unique_lock lock(s3->reload_mutex);
     s3->copy_changes_from(file_config);
-    s3->check_current_action(edata);
   }
 
   if (s3->expiration() == 0) {
