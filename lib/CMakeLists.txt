@@ -27,6 +27,7 @@ if(NOT TARGET yaml-cpp::yaml-cpp)
   set(YAML_CPP_CLANG_FORMAT_EXE OFF)
   set(YAML_CPP_INSTALL ON)
   add_subdirectory(yamlcpp)
+  install(TARGETS yaml-cpp)
 endif()
 
 add_subdirectory(fastlz)
