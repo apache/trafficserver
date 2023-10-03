@@ -4097,23 +4097,23 @@ Client-Related Configuration
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
-   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
+   :ts:cv:`proxy.config.ssl.client.version.max`, and will be ignored if those new settings are used.
 
-   Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
+   Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, disabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
-   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
+   :ts:cv:`proxy.config.ssl.client.version.max`, and will be ignored if those new settings are used.
 
-   Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
+   Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, disabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
-   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
+   :ts:cv:`proxy.config.ssl.client.version.max`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
 
@@ -4121,7 +4121,7 @@ Client-Related Configuration
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
-   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
+   :ts:cv:`proxy.config.ssl.client.version.max`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
