@@ -42,6 +42,12 @@ The header files are located in the ``include/`` directory. There are several su
    data structures either directly or operationally. This is linked in to the ``traffic_server`` binary therefore
    has no explicit linkage when used in the core.
 
+"iocore"
+   Headers for I/O related core libraries. Theses can only be used inside |TS| itself.
+
+"mgmt"
+   Header files for JSONRPC server/management and tools.
+
 "api"
    Plugin API internal header files. These are header files for the internal ``tsapicore`` library (see below). Theses can only be used inside |TS| itself.
 
