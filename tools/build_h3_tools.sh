@@ -32,7 +32,7 @@ OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.2+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
-BASE=${BASE:-"/opt"}
+BASE=${BASE:-"/opt/ats_h3_tools"}
 OPENSSL_BASE=${OPENSSL_BASE:-"${BASE}/openssl-quic"}
 OPENSSL_PREFIX=${OPENSSL_PREFIX:-"${OPENSSL_BASE}-${OPENSSL_BRANCH}"}
 MAKE="make"
@@ -136,6 +136,7 @@ cmake \
 cmake --build build -j ${num_threads}
 sudo cmake --install build
 sudo chmod -R a+rX ${BASE}
+cd ..
 
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
