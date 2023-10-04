@@ -2342,15 +2342,15 @@ AC_SUBST([default_stack_size], [$with_default_stack_size])
 # use modular IOCORE
 #
 iocore_include_dirs="\
--I\$(abs_top_srcdir)/iocore/eventsystem \
--I\$(abs_top_srcdir)/iocore/io_uring \
--I\$(abs_top_srcdir)/iocore/net \
--I\$(abs_top_srcdir)/iocore/net/quic \
--I\$(abs_top_srcdir)/iocore/aio \
--I\$(abs_top_srcdir)/iocore/hostdb \
--I\$(abs_top_srcdir)/iocore/cache \
--I\$(abs_top_srcdir)/iocore/utils \
--I\$(abs_top_srcdir)/iocore/dns"
+-I\$(abs_top_srcdir)/include/iocore/eventsystem \
+-I\$(abs_top_srcdir)/include/iocore/io_uring \
+-I\$(abs_top_srcdir)/include/iocore/net \
+-I\$(abs_top_srcdir)/include/iocore/net/quic \
+-I\$(abs_top_srcdir)/include/iocore/aio \
+-I\$(abs_top_srcdir)/include/iocore/hostdb \
+-I\$(abs_top_srcdir)/include/iocore/cache \
+-I\$(abs_top_srcdir)/include/iocore/utils \
+-I\$(abs_top_srcdir)/include/iocore/dns"
 
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])
@@ -2392,16 +2392,16 @@ AC_CONFIG_FILES([
   include/tscpp/util/Makefile
   include/ts/apidefs.h
   include/tscore/ink_config.h
-  iocore/Makefile
-  iocore/aio/Makefile
-  iocore/io_uring/Makefile
-  iocore/cache/Makefile
-  iocore/dns/Makefile
-  iocore/eventsystem/Makefile
-  iocore/hostdb/Makefile
-  iocore/net/Makefile
-  iocore/net/quic/Makefile
-  iocore/utils/Makefile
+  src/iocore/Makefile
+  src/iocore/aio/Makefile
+  src/iocore/io_uring/Makefile
+  src/iocore/cache/Makefile
+  src/iocore/dns/Makefile
+  src/iocore/eventsystem/Makefile
+  src/iocore/hostdb/Makefile
+  src/iocore/net/Makefile
+  src/iocore/net/quic/Makefile
+  src/iocore/utils/Makefile
   lib/Makefile
   src/tscpp/api/Makefile
   src/wccp/Makefile

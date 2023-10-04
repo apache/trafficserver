@@ -19,7 +19,7 @@
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/include/iocore/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib/ \
 	-I$(abs_top_srcdir)/include/mgmt/rpc \
@@ -66,7 +66,7 @@ test_jsonrpc_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	@YAMLCPP_LIBS@ @SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @LIBCAP@
@@ -107,7 +107,7 @@ test_jsonrpcserver_LDADD = \
 	libjsonrpc_server.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

@@ -19,7 +19,7 @@
 
 AM_CPPFLAGS += \
     $(iocore_include_dirs) \
-    -I$(abs_top_srcdir)/iocore/utils \
+    -I$(abs_top_srcdir)/include/iocore/utils \
     -I$(abs_top_srcdir)/include \
     -I$(abs_top_srcdir)/lib/ \
     -I$(abs_top_srcdir)/include/mgmt \

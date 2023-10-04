@@ -41,7 +41,7 @@ traffic_top_traffic_top_SOURCES = \
 	shared/rpc/IPCSocketClient.cc
 
 traffic_top_traffic_top_LDADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@CURL_LIBS@ \

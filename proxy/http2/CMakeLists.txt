@@ -59,7 +59,7 @@ if(BUILD_TESTING)
   target_include_directories(test_http2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROXY_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/iocore/utils
+    ${CMAKE_SOURCE_DIR}/include/iocore/utils
   )
   target_link_libraries(test_http2 PRIVATE catch2::catch2 records tscore hdrs inkevent)
   add_test(NAME test_http2 COMMAND test_http2)

@@ -17,11 +17,11 @@
 experimental_memcache_tsmemcache_la_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I$(abs_top_srcdir)/proxy \
-    -I$(abs_top_srcdir)/iocore/aio \
-    -I$(abs_top_srcdir)/iocore/cache \
-    -I$(abs_top_srcdir)/iocore/eventsystem \
-    -I$(abs_top_srcdir)/iocore/net \
-    -I$(abs_top_srcdir)/iocore/utils \
+    -I$(abs_top_srcdir)/include/iocore/aio \
+    -I$(abs_top_srcdir)/include/iocore/cache \
+    -I$(abs_top_srcdir)/include/iocore/eventsystem \
+    -I$(abs_top_srcdir)/include/iocore/net \
+    -I$(abs_top_srcdir)/include/iocore/utils \
     -I$(abs_top_srcdir)/include \
     -I$(abs_top_srcdir)/lib
 

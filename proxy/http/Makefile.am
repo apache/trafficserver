@@ -104,9 +104,9 @@ test_proxy_http_SOURCES = \
 test_proxy_http_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/iocore/utils/libinkutils.a \
+	$(top_builddir)/src/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
@@ -148,30 +148,30 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/cache/libinkcache.a \
+	$(top_builddir)/src/iocore/utils/libinkutils.a \
+	$(top_builddir)/src/iocore/hostdb/libinkhostdb.a \
+	$(top_builddir)/src/iocore/dns/libinkdns.a \
+	$(top_builddir)/src/iocore/cache/libinkcache.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
-	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/src/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/libproxy.a \
-	$(top_builddir)/iocore/net/libinknet.a \
+	$(top_builddir)/src/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
 	-lz -llzma -lcrypto -lresolv -lssl \
 	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 
 if ENABLE_QUIC
 test_HttpTransact_LDADD += \
-	$(top_builddir)/iocore/net/quic/libquic.a
+	$(top_builddir)/src/iocore/net/quic/libquic.a
 endif
 
 test_HttpTransact_SOURCES = \
-	../../iocore/cache/test/stub.cc \
+	../../src/iocore/cache/test/stub.cc \
 	unit_tests/main.cc \
 	unit_tests/test_HttpTransact.cc
 

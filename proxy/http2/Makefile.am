@@ -71,7 +71,7 @@ test_libhttp2_LDADD = \
 	HTTP2.o \
 	Http2Frame.o \
 	HPACK.o \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
@@ -109,7 +109,7 @@ test_Http2DependencyTree_SOURCES = \
 	Http2DependencyTree.h
 
 test_Http2FrequencyCounter_LDADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
@@ -128,7 +128,7 @@ test_Http2FrequencyCounter_SOURCES = \
 test_HPACK_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \

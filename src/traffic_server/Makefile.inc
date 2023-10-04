@@ -67,19 +67,19 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
-	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/cache/libinkcache.a \
+	$(top_builddir)/src/iocore/utils/libinkutils.a \
+	$(top_builddir)/src/iocore/dns/libinkdns.a \
+	$(top_builddir)/src/iocore/hostdb/libinkhostdb.a \
+	$(top_builddir)/src/iocore/dns/libinkdns.a \
+	$(top_builddir)/src/iocore/cache/libinkcache.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
-	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/src/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/proxy/libproxy.a \
-	$(top_builddir)/iocore/net/libinknet.a \
+	$(top_builddir)/src/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/mgmt/rpc/libjsonrpc_server.la \
@@ -108,12 +108,12 @@ endif
 if ENABLE_QUIC
 traffic_server_traffic_server_LDADD += \
 	$(top_builddir)/proxy/http3/libhttp3.a \
-	$(top_builddir)/iocore/net/quic/libquic.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/net/quic/libquic.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(QUICHE_LIB)
 endif
 
 if ENABLE_IO_URING
 traffic_server_traffic_server_LDADD += \
-	$(top_builddir)/iocore/io_uring/libinkuring.a
+	$(top_builddir)/src/iocore/io_uring/libinkuring.a
 endif

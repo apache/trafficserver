@@ -21,8 +21,8 @@ include $(top_srcdir)/mk/tidy.mk
 check_PROGRAMS = test_librecords test_librecords_on_eventsystem
 
 AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/iocore/eventsystem \
-	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/include/iocore/eventsystem \
+	-I$(abs_top_srcdir)/include/iocore/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/ \
@@ -69,7 +69,7 @@ test_librecords_SOURCES = \
 
 test_librecords_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
@@ -84,7 +84,7 @@ test_librecords_on_eventsystem_SOURCES = \
 
 test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \

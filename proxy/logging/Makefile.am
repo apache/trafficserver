@@ -80,7 +80,7 @@ test_LogUtils_SOURCES = \
 	unit-tests/test_LogUtils.cc
 
 test_LogUtils_LDADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
@@ -97,7 +97,7 @@ test_RolledLogDeleter_SOURCES = \
 	unit-tests/test_RolledLogDeleter.cc
 
 test_RolledLogDeleter_LDADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

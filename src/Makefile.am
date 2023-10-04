@@ -23,7 +23,7 @@ TESTS =
 lib_LTLIBRARIES =
 noinst_PROGRAMS =
 
-SUBDIRS = tscpp/api api mgmt
+SUBDIRS = tscpp/api api mgmt iocore
 
 if BUILD_WCCP
 SUBDIRS += wccp

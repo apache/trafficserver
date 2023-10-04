@@ -36,7 +36,7 @@ traffic_crashlog_traffic_crashlog_SOURCES = \
 	traffic_crashlog/traffic_crashlog.h
 
 traffic_crashlog_traffic_crashlog_LDADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

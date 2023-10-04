@@ -47,7 +47,7 @@ benchmark_CPP_FLAGS = \
     @SWOC_INCLUDES@
 
 benchmark_LD_ADD = \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
