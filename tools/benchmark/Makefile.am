@@ -49,9 +49,11 @@ benchmark_CPP_FLAGS = \
 benchmark_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@HWLOC_LIBS@ \
     @LIBPCRE@ \
     @LIBCAP@ \

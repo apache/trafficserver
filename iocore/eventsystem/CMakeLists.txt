@@ -42,11 +42,13 @@ target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(inkevent
     PUBLIC
         ts::records
+    PRIVATE
+        tscpputil # transitive
+    PUBLIC
         ts::tscore
     PRIVATE
         libswoc
         resolv # transitive
-        tscpputil # transitive
         yaml-cpp::yaml-cpp # transitive
 )
 

@@ -66,9 +66,11 @@ test_CPP_FLAGS = \
 test_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)

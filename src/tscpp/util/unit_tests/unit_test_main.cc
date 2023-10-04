@@ -23,3 +23,34 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
+
+#include <cstdarg>
+#include <cstdlib>
+#include <tscore/Diags.h>
+
+// Stubs
+
+bool
+get_cont_flag(ContFlags::flags)
+{
+  return false;
+}
+
+void
+Diags::print_va(char const *, DiagsLevel, SourceLocation const *, char const *, va_list) const
+{
+}
+
+bool
+Diags::tag_activated(char const *, DiagsTagType) const
+{
+  return false;
+}
+
+void
+_ink_assert(char const *, char const *, int)
+{
+  std::exit(1);
+}
+
+Diags *DiagsPtr::_diags_ptr = nullptr;

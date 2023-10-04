@@ -30,7 +30,7 @@ libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_V
 libtscpputil_la_LIBADD = @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 libtscpputil_la_SOURCES = \
-	ts_diags.cc ts_bwf.cc ts_ip.cc YamlCfg.cc ts_unit_parser.cc
+	DbgCtl.cc ts_diags.cc ts_bwf.cc ts_ip.cc YamlCfg.cc ts_unit_parser.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2 @SWOC_INCLUDES@
@@ -38,7 +38,7 @@ test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = \
 	libtscpputil.la \
-	@SWOC_LIBS@
+  @SWOC_LIBS@
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_LocalBuffer.cc \

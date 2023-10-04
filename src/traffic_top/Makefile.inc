@@ -42,11 +42,13 @@ traffic_top_traffic_top_SOURCES = \
 
 traffic_top_traffic_top_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	@CURL_LIBS@ \
 	@CURSES_LIBS@ \
 	@HWLOC_LIBS@ \
 	@OPENSSL_LIBS@ \
-	@SWOC_LIBS@ @YAMLCPP_LIBS@
+	@SWOC_LIBS@ @YAMLCPP_LIBS@ \
+	@LIBPCRE@ \
+	@LIBCAP@
 endif

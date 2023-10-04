@@ -198,3 +198,26 @@ _ink_assert(const char *a, const char *f, int l)
 {
   throw InkAssertExcept();
 }
+
+// Stubs
+
+#include <tscore/Diags.h>
+
+bool
+get_cont_flag(ContFlags::flags)
+{
+  return false;
+}
+
+void
+Diags::print_va(char const *, DiagsLevel, SourceLocation const *, char const *, va_list) const
+{
+}
+
+bool
+Diags::tag_activated(char const *, DiagsTagType) const
+{
+  return false;
+}
+
+Diags *DiagsPtr::_diags_ptr = nullptr;

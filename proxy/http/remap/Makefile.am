@@ -68,10 +68,12 @@ libhttp_remap_a_SOURCES = \
 COMMON_PLUGINDSO_LDADDS = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
@@ -138,11 +140,13 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  @start_group@ \
   $(top_builddir)/src/tscore/libtscore.a \
-  $(top_builddir)/proxy/logging/liblogging.a \
+  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
+  $(top_builddir)/proxy/logging/liblogging.a \
   @SWOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @HWLOC_LIBS@ \
@@ -173,11 +177,13 @@ test_NextHopRoundRobin_LDADD = \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  @start_group@ \
   $(top_builddir)/src/tscore/libtscore.a \
+  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
   @SWOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @HWLOC_LIBS@ \
@@ -208,11 +214,13 @@ test_NextHopConsistentHash_LDADD = \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  @start_group@ \
   $(top_builddir)/src/tscore/libtscore.a \
+  $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
   @SWOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @HWLOC_LIBS@ \

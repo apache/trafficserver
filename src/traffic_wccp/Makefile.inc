@@ -38,6 +38,8 @@ traffic_wccp_traffic_wccp_SOURCES = \
 
 traffic_wccp_traffic_wccp_LDADD = \
 	$(top_builddir)/src/wccp/libwccp.a \
-	$(top_builddir)/src/tscore/libtscore.a \
+	@start_group@ \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  $(top_builddir)/src/tscore/libtscore.a \
+  @end_group@ \
 	@SWOC_LIBS@ @OPENSSL_LIBS@

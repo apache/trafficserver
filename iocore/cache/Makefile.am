@@ -89,7 +89,6 @@ test_LDADD = \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/iocore/dns/libinkdns.a \
@@ -100,11 +99,13 @@ test_LDADD = \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/api/libtsapicore.a \
-	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @start_group@ \
+	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
 	@SWOC_LIBS@ \
 	@HWLOC_LIBS@ \

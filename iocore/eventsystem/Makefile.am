@@ -98,9 +98,11 @@ test_LD_ADD = \
 	libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_EventSystem_SOURCES = unit_tests/test_EventSystem.cc

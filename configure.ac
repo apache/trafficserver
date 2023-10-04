@@ -147,6 +147,13 @@ AC_SUBST([build_person])
 AC_SUBST([build_group])
 AC_SUBST([build_number])
 
+#
+# It is an aututools error to put linker options in xxx_LDADD.  These allow you to
+# create groups with @start_group@ and @end_group@.
+#
+AC_SUBST([start_group], [-Wl,--start-group])
+AC_SUBST([end_group], [-Wl,--end-group])
+
 # -----------------------------------------------------------------------------
 # 2. SITE CONFIGURATION
 

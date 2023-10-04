@@ -53,8 +53,8 @@ experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \
 	@AM_LDFLAGS@ \
 	experimental/sslheaders/libsslhdr.la \
-	$(abs_top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@OPENSSL_LIBS@
+	$(abs_top_builddir)/src/tscore/libtscore.a \
+	@OPENSSL_LIBS@ @LIBPCRE@ @LIBCAP@
 
 # vim: ft=make ts=8 sw=8 et:

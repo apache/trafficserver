@@ -73,10 +73,12 @@ test_LDADD = \
   $(top_builddir)/iocore/net/TLSKeyLogger.o \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
+  @start_group@ \
+  $(top_builddir)/src/tscore/libtscore.a \
   $(top_builddir)/src/api/libtsapicore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/src/tscore/libtscore.a \
 	@LIBPCRE@ \
 	@LIBCAP@ \
   @OPENSSL_LIBS@ \

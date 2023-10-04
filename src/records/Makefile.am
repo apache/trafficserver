@@ -70,9 +70,11 @@ test_librecords_SOURCES = \
 test_librecords_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -85,9 +87,11 @@ test_librecords_on_eventsystem_SOURCES = \
 test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	@HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))

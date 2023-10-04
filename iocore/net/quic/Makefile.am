@@ -60,8 +60,10 @@ test_MTHashTable_CPPFLAGS = \
 
 test_MTHashTable_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @start_group@ \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+  @end_group@ \
 	$(LIBPCRE) \
 	$(LIBCAP) \
 	@SWOC_LIBS@ @OPENSSL_LIBS@
