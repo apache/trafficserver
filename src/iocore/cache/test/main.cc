@@ -79,8 +79,8 @@ populate_cache(const swoc::file::path &prefix)
   swoc::file::path src_path{TS_ABS_TOP_SRCDIR};
   std::error_code ec;
   ink_assert(cache_vols == 2);
-  swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver/cache.db", prefix / "var/trafficserver/", ec);
-  swoc::file::copy(src_path / "iocore/cache/test/var/trafficserver2/cache.db", prefix / "var/trafficserver2/", ec);
+  swoc::file::copy(src_path / "src/iocore/cache/test/var/trafficserver/cache.db", prefix / "var/trafficserver/", ec);
+  swoc::file::copy(src_path / "src/iocore/cache/test/var/trafficserver2/cache.db", prefix / "var/trafficserver2/", ec);
 }
 
 void
@@ -157,7 +157,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     thread->set_tail_handler(&uring_handler);
 #endif
 
-    std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/iocore/cache/test";
+    std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/src/iocore/cache/test";
     Layout::get()->sysconfdir = src_dir;
   }
 };

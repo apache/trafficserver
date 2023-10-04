@@ -110,7 +110,7 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_protocol.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@ \
 	@YAMLCPP_LIBS@ \
@@ -125,7 +125,7 @@ test_PreWarm_LDFLAGS = $(AM_LDFLAGS) @YAMLCPP_LDFLAGS@
 
 test_PreWarm_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_protocol.la \
 	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
@@ -161,7 +161,7 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_protocol.la \
 	-lz -llzma -lcrypto -lresolv -lssl \
 	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 

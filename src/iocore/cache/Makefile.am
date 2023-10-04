@@ -108,7 +108,7 @@ test_LDADD = \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/src/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/src/mgmt/rpc/libjsonrpc_protocol.la \
 	@SWOC_LIBS@ \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
