@@ -22,10 +22,10 @@ add_library(inkuring STATIC
 add_library(ts::inkuring ALIAS inkuring)
 
 include_directories(
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
+        ${CMAKE_SOURCE_DIR}/include/iocore/dns
+        ${CMAKE_SOURCE_DIR}/include/iocore/io_uring
+        ${CMAKE_SOURCE_DIR}/include/iocore/net
+        ${CMAKE_SOURCE_DIR}/include/iocore/cache
 )
 
 target_link_libraries(inkuring

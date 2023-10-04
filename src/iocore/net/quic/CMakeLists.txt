@@ -33,7 +33,7 @@ add_library(quic STATIC
 )
 add_library(ts::quic ALIAS quic)
 
-target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(quic PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/net/quic)
 
 target_link_libraries(quic
     PUBLIC
