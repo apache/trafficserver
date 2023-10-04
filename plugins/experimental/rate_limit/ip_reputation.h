@@ -31,7 +31,9 @@
 #include <chrono>
 #include <arpa/inet.h>
 
+#include <yaml-cpp/yaml.h>
 #include "ts/ts.h"
+#include "utilities.h"
 
 namespace IpReputation
 {
@@ -86,11 +88,7 @@ class SieveLru
 public:
   SieveLru() = delete;
 
-  SieveLru(std::string_view name, uint32_t num_buckets, uint32_t size, uint32_t percentage, std::chrono::seconds max_age)
-    : _lock(TSMutexCreate())
-  {
-    initialize(name, num_buckets, size, percentage, max_age);
-  }
+  SieveLru(std::string_view name) : _lock(TSMutexCreate()) { _name = name; }
 
   ~SieveLru()
   {
@@ -99,16 +97,7 @@ public:
     }
   }
 
-  void initialize(std::string_view name, uint32_t num_buckets = 10, uint32_t size = 15, uint32_t percentage = 90,
-                  std::chrono::seconds max_age = std::chrono::seconds::zero());
-
-  void
-  initializePerma(uint32_t limit, uint32_t threshold, std::chrono::seconds max_age = std::chrono::seconds::zero())
-  {
-    _permablock_limit     = limit;
-    _permablock_threshold = threshold;
-    _permablock_max_age   = max_age;
-  }
+  bool parseYaml(const YAML::Node &node);
 
   // Return value is the bucket (0 .. num_buckets) that the IP is in, and the
   // current count of "hits". The lookup version is similar, except it doesn't

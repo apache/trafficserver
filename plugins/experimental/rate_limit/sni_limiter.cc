@@ -28,6 +28,51 @@
 int gVCIdx                = -1;
 SniSelector *gSNISelector = nullptr;
 
+bool
+SniRateLimiter::parseYaml(const YAML::Node &node)
+{
+  if (node["limit"]) {
+    limit = node["limit"].as<uint32_t>();
+  } else {
+    // ToDo: Should we require the limit ?
+  }
+
+  if (node["ip-rep"]) {
+    std::string ipr_name = node["ip-rep"].as<std::string>();
+
+    if (!(iprep = selector->findIpRep(ipr_name))) {
+      TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, ipr_name.c_str(), name.c_str());
+      return false;
+    }
+  }
+
+  const YAML::Node &queue = node["queue"];
+
+  if (queue) {
+    if (queue["size"]) {
+      max_queue = queue["size"].as<uint32_t>();
+    }
+
+    if (queue["max_age"]) {
+      max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
+    }
+  }
+
+  const YAML::Node &metrics = node["metrics"];
+
+  if (metrics) {
+    std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
+    std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name;
+
+    Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name.c_str(), prefix.c_str(), tag.c_str());
+    initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
+  }
+
+  Dbg(dbg_ctl, "Loaded selector rule: %s(%u, %u, %lld)", name.c_str(), limit, max_queue, max_age.count());
+
+  return true;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // These continuations are "helpers" to the SNI limiter object. Putting them
 // outside the class implementation is just cleaner.

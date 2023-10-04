@@ -34,6 +34,8 @@ public:
   SniRateLimiter() = delete;
   SniRateLimiter(std::string_view sni, SniSelector *sel) : selector(sel) { name = sni; }
 
+  bool parseYaml(const YAML::Node &node);
+
   // Calculate the pressure, which is either a negative number (ignore), or a number 0-<buckets>.
   // 0 == block only perma-blocks.
   int32_t

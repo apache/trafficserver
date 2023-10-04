@@ -34,9 +34,7 @@ into a single rate limiter.
     This is still work in progress, in particularly the configuration and
     the IP reputation system needs some work. In particular:
 
-    * We need a proper YAML configuration overall, allowing us to configure
-      better per service controls as well as sharing resources between remap
-      rules or SNI.
+    * The remap configuration needs YAML support.
     * We need reloadable configurations.
     * The IP reputation currently only works with the global plugin settings.
     * There is no support for adding allow listed IPs to the IP reputation.
@@ -89,7 +87,7 @@ are available:
 .. option:: --maxage
 
    An optional ``max-age`` for how long a transaction can sit in the delay queue.
-   The value (default 0) is the age in milliseconds.
+   The value (default 0) is the age in seconds.
 
 .. option:: --prefix
 
@@ -110,9 +108,10 @@ As a global plugin, the rate limiting currently applies only for TLS enabled
 connections, based on the SNI from the TLS handshake. As a global plugin we
 also have the support of an IP reputation system, see below for configurations.
 
-The basic use is as::
+In addition, the global plugin must be configured via a reloadable YAML
+configuration file. The basic use is as::
 
-    rate_limit.so SNI=www1.example.com,www2.example.com --limit=2 --queue=2 --maxage=10000
+    rate_limit.so some_config.yaml
 
 .. Note::
 
@@ -122,43 +121,75 @@ The basic use is as::
     done using e.g. the ``conf_remap`` plugin,
     :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`.
 
-The following options are available:
 
-.. program:: rate-limit
+The YAML configuration can have the following format, where the varies sections
+and nodes are documented below::
+   selector:
+   - sni: test1.example.com
+     limit: 1000
+     queue:
+       size: 1000
+      max-age: 30
+     metrics:
+       tag: example.com
+       prefix: ddos
+     ip-rep: main
+   - sni: test2.example.com
+    limit: 100
 
-.. option:: --limit
+   ip-rep:
+     - name: main
+       buckets: 10
+       size: 15
+       percentage: 90
+       max-age: 300
+       perma-block:
+         limit: 100
+         threshold: 1
+         max-age: 1800
+
+For the top level `selector` node, the following options are available:
+
+.. option:: sni
+
+   The SNI to match for this rate limiter.
+
+.. option:: limit
 
    The maximum number of active client transactions.
 
-.. option:: --queue
+.. option:: ip-rep
 
-   When the limit (above) has been reached, all new connections are placed
-   on a FIFO queue. This option (optional) sets an upper bound on how many
-   queued transactions we will allow. When this threshold is reached, all
-   additional connections are immediately errored out in the TLS handshake.
+      The name of the IP reputation node to use for this rate limiter. If not
+      specified, the IP reputation system is not used for this rate limiter.
 
-   The queue is effectively disabled if this is set to ``0``, which implies
-   that when the transaction limit is reached, we immediately start serving
-   error responses.
+.. option:: queue
 
-   The default queue size is ``UINT_MAX``, which is essentially unlimited.
+   If enabled, when the limit (above) has been reached, all new connections
+   are placed on a FIFO queue. This option sets an upper bound on
+   how many queued transactions we will allow. When this threshold is reached,
+   all additional connections are immediately errored out in the TLS handshake.
 
-.. option:: --maxage
+   The queue option can include a `size` and a `max-age` option. The size is
+   default to ``UINT_MAX``, which is essentially unlimited. The max-age is
+   default to ``0``, which means no age limit.
 
-   An optional ``max-age`` for how long a transaction can sit in the delay queue.
-   The value (default 0) is the age in milliseconds.
+   No queue is enable without this configuration directive, but it can also be
+   disable explicitly if the size is set to ``0``.
 
-.. option:: --prefix
+.. option:: metrics
 
-   An optional metric prefix to use instead of the default (plugin.rate_limiter).
+      This is an optional node, which can be used to configure the metrics for
+      this rate limiter. If not specified, no metrics will be added.
 
-.. option:: --tag
+      The metrics node can include a `tag` and a `prefix` option. The tag is
+      default to the SNI, and the prefix is default to ``plugin.rate_limiter``.
 
-   An optional metric tag to use instead of the default. When a tag is not specified
-   the plugin will use the FQDN of the SNI associated with each rate limiter instance
-   created during plugin initialization.
+The ip-rep node is used to configure the IP reputation system, there can be
+zero, one or many IP reputation setups. Each setup is configured with a name,
+and the following options:
 
-.. option:: --iprep_buckets
+.. option:: buckets
 
    The number of LRU buckets to use for the IP reputation. A good number here
    is ``10``, which is the default, but can be configured. The reason for the different
@@ -166,7 +197,7 @@ The following options are available:
    few buckets will not be enough to keep such sorting, rendering the algorithm useless.
    To function in our setup, the number of buckets must be less than ``100``.
 
-.. option:: --iprep_bucketsize
+.. option:: size
 
    This is the size of the largest LRU bucket (the ``entry bucket``), ``15`` is a good
    value. This is a power of 2, so ``15`` means the largest LRU can hold ``32768`` entries.
@@ -175,32 +206,36 @@ The following options are available:
 
    The default here is ``0``, which means the IP reputation filter is not enabled!
 
-.. option:: --iprep_percentage
+.. option:: percentage
 
    This is the minimum percentage of the ``limit`` that the pressure must be at, before
    we start blocking IPs. The default is ``0.9`` which means ``90%`` of the limit.
 
-.. option:: --iprep_maxage
+.. option:: max-age
 
    This is used for aging out entries out of the LRU, the default is ``0`` which means
    no aging happens. Even with no aging, entries will eventually fall out of buckets
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
 
-.. option:: --iprep_permablock_limit
+In addition, there's an optional configuration for the permanently blocking buckets,
+`perma-block`. This is a special bucket, which is only used for IPs which have been
+blocked for a long time. The configuration for this bucket is:
+
+.. option:: limit
 
    The minimum number of hits an IP must reach to get moved to the permanent bucket.
    In this bucket, entries will stay for 2x
 
-.. option:: --iprep_permablock_pressure
+.. option:: threshold
 
    This option specifies from which bucket an IP is allowed to move from into the
    perma block bucket. A good value here is likely ``0`` or ``1``, which is very conservative.
 
-.. option:: --iprep_permablock_maxage
+.. option:: max-age
 
-   Similar to ``--iprep_maxage`` above, but only applies to the long term (`perma-block`)
-   bucket. Default is ``0``, which means no aging to this bucket is applied.
+   Like above, but only applies to the long term (`perma-block`) bucket. Default is
+   ``0``, which means no aging to this bucket is applied.
 
 Metrics
 -------

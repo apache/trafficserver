@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "tscore/ink_config.h"
+#include <yaml-cpp/yaml.h>
 
 #include <cstring>
 
@@ -28,52 +29,83 @@
 bool
 SniSelector::yamlParser(std::string yaml_file)
 {
-  // Parsed the IP Reputations, so add those.
-  // ToDo: Obviously need the YAML values here ...
-  std::string iprep_name = "main";
-  uint32_t num_buckets   = 10;
-  uint32_t size          = 15;
-  uint32_t percentage    = 90;
-  std::chrono::seconds max_age(60);
+  YAML::Node config;
 
-  if (nullptr != findIpRep(iprep_name)) {
-    TSError("[%s] Duplicate IP-Reputation names being added (%.*s)", PLUGIN_NAME, static_cast<int>(iprep_name.size()),
-            iprep_name.data());
+  try {
+    config = YAML::LoadFile(yaml_file);
+  } catch (YAML::BadFile &e) {
+    TSError("[%s] Cannot load configuration file: %s.", PLUGIN_NAME, e.what());
+    return false;
+  } catch (std::exception &e) {
+    TSError("[%s] Unknown error while loading configuration file: %s.", PLUGIN_NAME, e.what());
     return false;
   }
 
-  auto iprep = new IpReputation::SieveLru(iprep_name, num_buckets, size, percentage, max_age);
+  const YAML::Node &ipreps = config["ip-rep"];
 
-  std::chrono::seconds perma_max_age(1800);
+  if (ipreps && ipreps.IsSequence()) {
+    for (size_t i = 0; i < ipreps.size(); ++i) {
+      const YAML::Node &ipr = ipreps[i];
 
-  iprep->initializePerma(100, 1, perma_max_age);
-  addIPReputation(iprep);
+      if (ipr.IsMap() && ipr["name"]) {
+        std::string name = ipr["name"].as<std::string>();
 
-  // ToDo: Add the IP lists
+        if (nullptr != findIpRep(name)) {
+          TSError("[%s] Duplicate IP-Reputation names being added (%s)", PLUGIN_NAME, name.c_str());
+          return false;
+        }
 
-  // ToDo: Iterate over all SNIs.
-  std::string sni = "hel.ogre.com";
+        auto iprep = new IpReputation::SieveLru(name);
 
-  if (nullptr != findSNI(sni)) {
-    TSError("[%s] Duplicate SNIs being added (%.*s)", PLUGIN_NAME, static_cast<int>(sni.size()), sni.data());
-    return false;
+        if (iprep->parseYaml(ipr)) {
+          addIPReputation(iprep);
+        } else {
+          TSError("[%s] Failed to parse the ip-rep YAML node", PLUGIN_NAME);
+          delete iprep;
+          return false;
+        }
+      } else {
+        TSError("[%s] ip-rep node is not a map or without a name", PLUGIN_NAME);
+        return false;
+      }
+    }
   }
 
-  auto limiter = new SniRateLimiter(sni, this);
-  auto iprep2  = findIpRep("main");
+  // ToDo: Add the IP list YAML parsing
 
-  TSReleaseAssert(limiter);
+  // Parse all the SNI selectors
+  const YAML::Node &sel = config["selector"];
 
-  std::chrono::seconds queue_max_age(60);
+  if (sel && sel.IsSequence()) {
+    for (size_t i = 0; i < sel.size(); ++i) {
+      const YAML::Node &sni = sel[i];
 
-  limiter->initialize(5);
-  limiter->initializeQueue(0, queue_max_age);
-  limiter->initializeMetrics(RATE_LIMITER_TYPE_SNI, sni);
-  if (iprep2) {
-    limiter->addIPReputation(iprep2);
+      if (sni.IsMap() && sni["sni"]) {
+        // ToDo: Allow a sequence of names here
+        std::string name = sni["sni"].as<std::string>();
+
+        if (nullptr != findSNI(name)) {
+          TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, name.c_str());
+          return false;
+        }
+
+        auto limiter = new SniRateLimiter(name, this);
+
+        if (limiter->parseYaml(sni)) {
+          addLimiter(limiter);
+        } else {
+          TSError("[%s] Failed to parse the selector YAML node", PLUGIN_NAME);
+          delete limiter;
+          return false;
+        }
+      } else {
+        TSError("[%s] selector node is not a map or without a name", PLUGIN_NAME);
+        return false;
+      }
+    }
   }
 
-  addLimiter(limiter);
+  Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
 }
