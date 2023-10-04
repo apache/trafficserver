@@ -28,7 +28,7 @@
 #include "ts/ts.h"
 #include "utilities.h"
 
-constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{200}; // Examine the queue every 200ms
+constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{300}; // Examine the queue every 300ms
 using QueueTime                 = std::chrono::time_point<std::chrono::system_clock>;
 
 enum { RATE_LIMITER_TYPE_SNI = 0, RATE_LIMITER_TYPE_REMAP, RATE_LIMITER_TYPE_MAX };

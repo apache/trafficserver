@@ -18,10 +18,10 @@
 #include "tscore/ink_config.h"
 #include <yaml-cpp/yaml.h>
 
-#include <cstring>
-
 #include "sni_limiter.h"
 #include "sni_selector.h"
+
+std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////
 // YAML parser for the global YAML configuration (via plugin.config)
@@ -40,6 +40,9 @@ SniSelector::yamlParser(std::string yaml_file)
     TSError("[%s] Unknown error while loading configuration file: %s.", PLUGIN_NAME, e.what());
     return false;
   }
+
+  _yaml_file       = yaml_file;
+  _yaml_last_write = std::filesystem::last_write_time(_yaml_file);
 
   const YAML::Node &ipreps = config["ip-rep"];
 
@@ -80,7 +83,7 @@ SniSelector::yamlParser(std::string yaml_file)
     for (size_t i = 0; i < sel.size(); ++i) {
       const YAML::Node &sni = sel[i];
 
-      if (sni.IsMap() && sni["sni"]) {
+      if (sni.IsMap()) {
         // ToDo: Allow a sequence of names here
         std::string name = sni["sni"].as<std::string>();
 
@@ -93,6 +96,22 @@ SniSelector::yamlParser(std::string yaml_file)
 
         if (limiter->parseYaml(sni)) {
           addLimiter(limiter);
+
+          // Add aliases, if any
+          const YAML::Node &aliases = sni["aliases"];
+
+          if (aliases && aliases.IsSequence()) {
+            for (size_t j = 0; j < aliases.size(); ++j) {
+              std::string alias = aliases[j].as<std::string>();
+
+              if (nullptr != findSNI(alias)) {
+                TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, alias.c_str());
+                return false;
+              }
+              Dbg(dbg_ctl, "Adding alias: %s -> %s", alias.c_str(), name.c_str());
+              addAlias(alias, limiter);
+            }
+          }
         } else {
           TSError("[%s] Failed to parse the selector YAML node", PLUGIN_NAME);
           delete limiter;
@@ -114,37 +133,79 @@ SniSelector::yamlParser(std::string yaml_file)
 // This is the queue management continuation, which gets called periodically
 //
 static int
+sni_config_cont(TSCont cont, TSEvent event, void *edata)
+{
+  auto selector = SniSelector::instance(); // Also leases the instance
+  auto current  = std::filesystem::last_write_time(selector->yamlFile());
+  auto old_sel  = static_cast<SniSelector *>(TSContDataGet(cont));
+
+  // Delete the previous selector
+  if (old_sel) {
+    old_sel->release();
+    TSContDataSet(cont, nullptr);
+  }
+
+  if (current > selector->yamlLastWrite()) {
+    auto new_sel = new SniSelector();
+
+    if (new_sel->yamlParser(selector->yamlFile())) {
+      new_sel->acquire();
+      new_sel->setupQueueCont(); // Start the queue processing continuation if needed
+      SniSelector::swap(new_sel);
+      // Now, save the old selector in the cont data here, such that we do the final release next time
+      TSContDataSet(cont, selector);
+      Dbg(dbg_ctl, "Reloading YAML file: %s", new_sel->yamlFile().c_str());
+    } else {
+      delete new_sel;
+      TSError("[%s] Failed to reload YAML file: %s", PLUGIN_NAME, selector->yamlFile().c_str());
+    }
+  } else {
+    Dbg(dbg_ctl, "No change in YAML file: %s", selector->yamlFile().c_str());
+  }
+
+  selector->release();
+
+  return TS_EVENT_NONE;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// This is the queue management continuation, which gets called periodically
+//
+static int
 sni_queue_cont(TSCont cont, TSEvent event, void *edata)
 {
   SniSelector *selector = static_cast<SniSelector *>(TSContDataGet(cont));
 
-  for (const auto &[key, limiter] : selector->limiters()) {
-    QueueTime now = std::chrono::system_clock::now(); // Only do this once per limiter
+  for (const auto &[key, entry] : selector->limiters()) {
+    auto [owner, limiter] = entry;
+    QueueTime now         = std::chrono::system_clock::now(); // Only do this once per limiter
 
-    // Try to enable some queued VCs (if any) if there are slots available
-    while (limiter->size() > 0 && limiter->reserve()) {
-      auto [vc, contp, start_time]    = limiter->pop();
-      std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+    if (owner) { // Don't operate on the aliases
+      // Try to enable some queued VCs (if any) if there are slots available
+      while (limiter->size() > 0 && limiter->reserve()) {
+        auto [vc, contp, start_time]    = limiter->pop();
+        std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
-      (void)contp; // Ugly, but silences some compilers.
-      Dbg(dbg_ctl, "SNI=%s: Enabling queued VC after %ldms", key.data(), static_cast<long>(delay.count()));
-      TSVConnReenable(vc);
-      limiter->incrementMetric(RATE_LIMITER_METRIC_RESUMED);
-    }
+        (void)contp; // Ugly, but silences some compilers.
+        Dbg(dbg_ctl, "SNI=%s: Enabling queued VC after %ldms", key.data(), static_cast<long>(delay.count()));
+        TSVConnReenable(vc);
+        limiter->incrementMetric(RATE_LIMITER_METRIC_RESUMED);
+      }
 
-    // Kill any queued VCs if they are too old
-    if (limiter->size() > 0 && limiter->max_age > std::chrono::milliseconds::zero()) {
-      now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
+      // Kill any queued VCs if they are too old
+      if (limiter->size() > 0 && limiter->max_age > std::chrono::milliseconds::zero()) {
+        now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
 
-      while (limiter->size() > 0 && limiter->hasOldEntity(now)) {
-        // The oldest object on the queue is too old on the queue, so "kill" it.
-        auto [vc, contp, start_time]  = limiter->pop();
-        std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+        while (limiter->size() > 0 && limiter->hasOldEntity(now)) {
+          // The oldest object on the queue is too old on the queue, so "kill" it.
+          auto [vc, contp, start_time]  = limiter->pop();
+          std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
-        (void)contp;
-        Dbg(dbg_ctl, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
-        TSVConnReenableEx(vc, TS_EVENT_ERROR);
-        limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
+          (void)contp;
+          Dbg(dbg_ctl, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
+          TSVConnReenableEx(vc, TS_EVENT_ERROR);
+          limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
+        }
       }
     }
   }
@@ -152,23 +213,8 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
   return TS_EVENT_NONE;
 }
 
-SniRateLimiter *
-SniSelector::findSNI(std::string_view sni)
-{
-  if (sni.empty()) { // Likely shouldn't happen, but we can shortcircuit
-    return nullptr;
-  }
-
-  auto limiter = _limiters.find(sni);
-
-  if (limiter != _limiters.end()) {
-    return limiter->second;
-  }
-  return nullptr;
-}
-
 IpReputation::SieveLru *
-SniSelector::findIpRep(std::string_view name)
+SniSelector::findIpRep(const std::string &name)
 {
   auto it = std::find_if(_reputations.begin(), _reputations.end(),
                          [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
@@ -190,6 +236,26 @@ SniSelector::setupQueueCont()
     _queue_cont = TSContCreate(sni_queue_cont, TSMutexCreate());
     TSReleaseAssert(_queue_cont);
     TSContDataSet(_queue_cont, this);
-    _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
+    _queue_action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Startup of the SNI selector hooks and config reload continuation and instance
+//
+void
+SniSelector::startup()
+{
+  TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
+
+  TSReleaseAssert(sni_cont);
+
+  _instance.store(new SniSelector());
+  TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
+  TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
+
+  auto config_cont = TSContCreate(sni_config_cont, TSMutexCreate());
+
+  TSReleaseAssert(config_cont);
+  TSContScheduleEveryOnPool(config_cont, std::chrono::milliseconds{10000}.count(), TS_THREAD_POOL_TASK);
 }

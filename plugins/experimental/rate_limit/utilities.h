@@ -18,7 +18,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <chrono>
 #include <openssl/ssl.h>
 

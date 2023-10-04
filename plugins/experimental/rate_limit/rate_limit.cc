@@ -33,7 +33,6 @@
 // As a global plugin, things works a little different since we don't setup
 // per transaction or via remap.config.
 extern int gVCIdx;
-extern SniSelector *gSNISelector;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -54,20 +53,17 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (argc == 2) {
-    TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
-    gSNISelector    = new SniSelector();
+    // Make sure we start the global SNI selector before we do anything else.
+    // This selector can be replaced later, during configuration reload.
+    SniSelector::startup();
 
-    TSReleaseAssert(sni_cont);
+    auto selector = SniSelector::instance(); // Assure that we don't delete this until config reload
 
-    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
-    TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
-
-    if (gSNISelector->yamlParser(argv[1])) {
-      gSNISelector->acquire();        // Assure that we don't delete this until config reload
-      gSNISelector->setupQueueCont(); // Start the queue processing continuation if needed
+    if (selector->yamlParser(argv[1])) {
+      selector->setupQueueCont(); // Start the queue processing continuation if needed
     } else {
-      delete gSNISelector;
-      TSError("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[0]);
+      selector->release();
+      TSFatal("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[0]);
     }
   } else {
     TSError("[%s] Usage: rate_limit.so <config.yaml>", PLUGIN_NAME);

@@ -25,8 +25,7 @@
 #include "sni_limiter.h"
 
 // This holds the VC user arg index for the SNI limiters.
-int gVCIdx                = -1;
-SniSelector *gSNISelector = nullptr;
+int gVCIdx = -1;
 
 bool
 SniRateLimiter::parseYaml(const YAML::Node &node)
@@ -86,8 +85,8 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_SSL_CLIENT_HELLO: {
     int len;
     const char *server_name = TSVConnSslSniGet(vc, &len);
-    std::string_view sni_name(server_name, len);
-    SniSelector *selector   = gSNISelector->acquire();
+    const std::string sni_name(server_name, len);
+    SniSelector *selector   = SniSelector::instance();
     SniRateLimiter *limiter = selector->findSNI(sni_name);
 
     if (limiter) {
@@ -96,7 +95,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
         const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);
         int32_t pressure     = limiter->pressure();
 
-        Dbg(dbg_ctl, "CLIENT_HELLO on %.*s, pressure=%d", static_cast<int>(sni_name.length()), sni_name.data(), pressure);
+        Dbg(dbg_ctl, "CLIENT_HELLO on %s, pressure=%d", sni_name.c_str(), pressure);
 
         // Dbg(dbg_ctl, "IP Reputation: pressure is currently %d", pressure);
 

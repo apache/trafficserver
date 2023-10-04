@@ -21,39 +21,67 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <filesystem>
+#include <atomic>
 
 #include "ts/ts.h"
 #include "utilities.h"
 #include "sni_limiter.h"
 #include "ip_reputation.h"
 
-// This is the list of things (CIDR's) to exclude from blocking etc.
-// ToDo: This has to be finished
-class ListType
-{
-  const std::string_view
-  name() const
-  {
-    return _name;
-  }
-
-  std::string _name; // Name of the list
-};
-
 ///////////////////////////////////////////////////////////////////////////////
-// SNI based limiter selector, this will have one single instance globally.
+// SNI based limiter selector, this will have one singleton instance.
 //
 class SniSelector
 {
+  using self_type = SniSelector;
+
 public:
-  using Limiters      = std::unordered_map<std::string_view, SniRateLimiter *>;
-  using Lists         = std::vector<ListType *>;
+  using Limiters      = std::unordered_map<std::string, std::tuple<bool, SniRateLimiter *>>;
   using IPReputations = std::vector<IpReputation::SieveLru *>;
 
-  SniSelector()          = default;
-  virtual ~SniSelector() = default; // ToDo: This has to clean stuff up
+  SniSelector() = default;
 
-  bool yamlParser(const std::string yaml_file);
+  SniSelector(self_type &&)               = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
+
+  virtual ~SniSelector()
+  {
+    if (_queue_action) {
+      TSActionCancel(_queue_action);
+    }
+
+    if (_queue_cont) {
+      TSContDestroy(_queue_cont);
+    }
+
+    for (auto &iprep : _reputations) {
+      delete iprep;
+    }
+
+    for (auto &limiter : _limiters) {
+      auto &[owner, ptr] = limiter.second;
+
+      if (owner) {
+        delete ptr;
+      }
+    }
+  }
+
+  static void
+  swap(self_type *other)
+  {
+    _instance.exchange(other);
+  }
+
+  static SniSelector *
+  instance()
+  {
+    auto sel = _instance.load();
+    ++sel->_leases;
+    return sel;
+  }
 
   SniSelector *
   acquire()
@@ -76,6 +104,26 @@ public:
     return _limiters;
   }
 
+  SniRateLimiter *
+  findSNI(const std::string &sni)
+  {
+    auto iter = _limiters.find(sni);
+
+    return ((iter != _limiters.end()) ? std::get<1>(iter->second) : nullptr);
+  }
+
+  const std::string &
+  yamlFile() const
+  {
+    return _yaml_file;
+  }
+
+  std::filesystem::file_time_type
+  yamlLastWrite() const
+  {
+    return _yaml_last_write;
+  }
+
   void
   addIPReputation(IpReputation::SieveLru *iprep)
   {
@@ -86,20 +134,30 @@ public:
   addLimiter(SniRateLimiter *limiter)
   {
     _needs_queue_cont = (limiter->max_queue > 0);
-    _limiters.emplace(limiter->name, limiter);
+    _limiters.emplace(limiter->name, std::forward_as_tuple(true, limiter));
   }
-  void setupQueueCont();
 
-  IpReputation::SieveLru *findIpRep(std::string_view name);
-  SniRateLimiter *findSNI(std::string_view sni);
+  void
+  addAlias(std::string alias, SniRateLimiter *limiter)
+  {
+    _limiters.emplace(alias, std::forward_as_tuple(false, limiter));
+  }
+
+  void setupQueueCont();
+  bool yamlParser(const std::string yaml_file);
+  IpReputation::SieveLru *findIpRep(const std::string &name);
+
+  static void startup();
 
 private:
   std::string _yaml_file;
+  std::filesystem::file_time_type _yaml_last_write; // Last time the yaml file was written to
   bool _needs_queue_cont = false;
   TSCont _queue_cont     = nullptr;  // Continuation processing the queue periodically
-  TSAction _action       = nullptr;  // The action associated with the queue continuation, needed to shut it down
+  TSAction _queue_action = nullptr;  // The action associated with the queue continuation, needed to shut it down
   Limiters _limiters;                // The SNI limiters
   IPReputations _reputations;        // IP-Reputation rules
-  Lists _lists;                      // Exclude lists (things not to block)
-  std::atomic<uint32_t> _leases = 0; // Number of leases we have on the current selector
+  std::atomic<uint32_t> _leases = 0; // Number of leases we have on the current selector, start with one
+
+  static std::atomic<self_type *> _instance; // Holds the singleton instance, initialized in the .cc file
 };

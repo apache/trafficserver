@@ -47,8 +47,15 @@ using LruEntry = std::tuple<KeyClass, uint32_t, uint32_t, std::chrono::time_poin
 // certain size.
 class SieveBucket : public std::list<LruEntry>
 {
+  using self_type = SieveBucket;
+
 public:
   SieveBucket(uint32_t max_size) : _max_size(max_size) {}
+
+  SieveBucket()                           = delete;
+  SieveBucket(self_type &&)               = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
 
   bool
   full() const
@@ -85,15 +92,20 @@ using HashMap = std::unordered_map<KeyClass, SieveBucket::iterator>; // The hash
 // hashed value from the IP as the key (just like the hashed in cache_promote).
 class SieveLru
 {
-public:
-  SieveLru() = delete;
+  using self_type = SieveLru;
 
-  SieveLru(std::string_view name) : _lock(TSMutexCreate()) { _name = name; }
+public:
+  SieveLru(std::string &name) : _lock(TSMutexCreate()) { _name = name; }
+
+  SieveLru()                              = delete;
+  SieveLru(self_type &&)                  = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
 
   ~SieveLru()
   {
-    for (uint32_t i = 0; i <= _num_buckets + 1; ++i) { // Remember to delete the two special allow/block buckets too
-      delete _buckets[i];
+    for (auto &bucket : _buckets) {
+      delete bucket;
     }
   }
 
@@ -118,21 +130,9 @@ public:
   }
 
   uint32_t
-  allow(KeyClass key)
-  {
-    return move_bucket(key, allowBucket());
-  }
-
-  uint32_t
   block(const sockaddr *sock)
   {
     return move_bucket(hasher(sock), blockBucket());
-  }
-
-  uint32_t
-  allow(const sockaddr *sock)
-  {
-    return move_bucket(hasher(sock), allowBucket());
   }
 
   // Lookup the current state of an IP
@@ -153,7 +153,6 @@ public:
   //   entryBucket == the highest bucket, where new IPs enter (also the biggest bucket)
   //   lastBucket  == the last bucket, which is most likely to be abusive
   //   blockBucket == the bucket where we "permanently" block bad IPs
-  //   allowBucket == the bucket where we "permanently" allow good IPs (can not be blocked)
   uint32_t
   entryBucket() const
   {
@@ -170,12 +169,6 @@ public:
   blockBucket() const
   {
     return 0;
-  }
-
-  uint32_t
-  allowBucket() const
-  {
-    return _num_buckets + 1;
   }
 
   size_t

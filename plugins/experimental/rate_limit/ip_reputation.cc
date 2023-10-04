@@ -118,6 +118,18 @@ SieveLru::parseYaml(const YAML::Node &node)
     }
   }
 
+  uint32_t cur_size = pow(2, 1 + _size - _num_buckets);
+
+  _map.reserve(pow(2, _size + 1));    // Allow for all the sieve LRUs
+  _buckets.reserve(_num_buckets + 1); // One extra bucket, for the deny list
+
+  // Create the other buckets, in smaller and smaller sizes (power of 2)
+  for (uint32_t i = lastBucket(); i <= entryBucket(); ++i) {
+    _buckets[i]  = new SieveBucket(cur_size);
+    cur_size    *= 2;
+  }
+  _buckets[blockBucket()] = new SieveBucket(cur_size / 2); // Block LRU, same size as entry bucket
+
   Dbg(dbg_ctl, "Loaded IP-Reputation rule: %s(%u, %u, %u, %lld)", _name.c_str(), _num_buckets, _size, _percentage,
       _max_age.count());
   Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %lld)", _name.c_str(), _permablock_limit, _permablock_threshold,

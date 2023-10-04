@@ -30,9 +30,15 @@ class SniSelector;
 //
 class SniRateLimiter : public RateLimiter<TSVConn>
 {
+  using self_type = SniRateLimiter;
+
 public:
-  SniRateLimiter() = delete;
-  SniRateLimiter(std::string_view sni, SniSelector *sel) : selector(sel) { name = sni; }
+  SniRateLimiter()                        = delete;
+  SniRateLimiter(self_type &&)            = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
+
+  SniRateLimiter(std::string &sni, SniSelector *sel) : selector(sel) { name = sni; }
 
   bool parseYaml(const YAML::Node &node);
 

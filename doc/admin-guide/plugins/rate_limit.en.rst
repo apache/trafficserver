@@ -123,30 +123,33 @@ configuration file. The basic use is as::
 
 
 The YAML configuration can have the following format, where the varies sections
-and nodes are documented below::
-   selector:
-   - sni: test1.example.com
-     limit: 1000
-     queue:
-       size: 1000
-      max-age: 30
-     metrics:
-       tag: example.com
-       prefix: ddos
-     ip-rep: main
-   - sni: test2.example.com
-    limit: 100
+and nodes are documented below.
 
-   ip-rep:
-     - name: main
-       buckets: 10
-       size: 15
-       percentage: 90
-       max-age: 300
-       perma-block:
-         limit: 100
-         threshold: 1
-         max-age: 1800
+   .. code-block:: yaml
+
+      selector:
+         - sni: test1.example.com
+            limit: 1000
+            queue:
+               size: 1000
+               max-age: 30
+            metrics:
+               tag: example.com
+               prefix: ddos
+            ip-rep: main
+         - sni: test2.example.com
+            aliases: [test3.example.com, test4.example.com]
+            limit: 100
+      ip-rep:
+         - name: main
+            buckets: 10
+            size: 15
+            percentage: 90
+            max-age: 300
+            perma-block:
+               limit: 100
+               threshold: 1
+               max-age: 1800
 
 For the top level `selector` node, the following options are available:
 
@@ -157,6 +160,10 @@ For the top level `selector` node, the following options are available:
 .. option:: limit
 
    The maximum number of active client transactions.
+
+.. option:: aliases
+
+      A list of aliases for the SNI, which will also be matched by this rate limiter.
 
 .. option:: ip-rep
 
@@ -179,13 +186,13 @@ For the top level `selector` node, the following options are available:
 
 .. option:: metrics
 
-      This is an optional node, which can be used to configure the metrics for
-      this rate limiter. If not specified, no metrics will be added.
+   This is an optional node, which can be used to configure the metrics for
+   this rate limiter. If not specified, no metrics will be added.
 
-      The metrics node can include a `tag` and a `prefix` option. The tag is
-      default to the SNI, and the prefix is default to ``plugin.rate_limiter``.
+   The metrics node can include a `tag` and a `prefix` option. The tag is
+   default to the SNI, and the prefix is default to ``plugin.rate_limiter``.
 
-The ip-rep node is used to configure the IP reputation system, there can be
+The `ip-rep`` node is used to configure the IP reputation system, there can be
 zero, one or many IP reputation setups. Each setup is configured with a name,
 and the following options:
 
