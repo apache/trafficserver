@@ -18,8 +18,10 @@
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include/iocore/eventsystem \
+	-I$(abs_top_srcdir)/include/iocore/io_uring \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libinkuring.a
