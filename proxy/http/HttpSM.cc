@@ -2143,33 +2143,30 @@ void
 HttpSM::cancel_pending_server_connection()
 {
   EThread *ethread = this_ethread();
-  if (nullptr == ethread->connecting_pool) {
+  if (nullptr == ethread->connecting_pool || !t_state.current.server) {
     return; // No pending requests
   }
-  if (t_state.current.server) {
-    IpEndpoint ip;
-    ip.assign(&this->t_state.current.server->dst_addr.sa);
-    auto ip_iter = ethread->connecting_pool->m_ip_pool.find(ip);
-    while (ip_iter != ethread->connecting_pool->m_ip_pool.end() && ip_iter->first == ip) {
-      ConnectingEntry *connecting_entry = ip_iter->second;
-      // Found a match
-      // Look for our sm in the queue
-      auto entry = connecting_entry->connect_sms.find(this);
-      if (entry != connecting_entry->connect_sms.end()) {
-        connecting_entry->connect_sms.erase(entry);
-        if (connecting_entry->connect_sms.empty()) {
-          if (connecting_entry->netvc) {
-            connecting_entry->netvc->do_io_write(nullptr, 0, nullptr);
-            connecting_entry->netvc->do_io_close();
-          }
-          ethread->connecting_pool->m_ip_pool.erase(ip_iter);
-          delete connecting_entry;
-          break;
-        } else {
-          //  Leave the shared entry remaining alone
+  IpEndpoint ip;
+  ip.assign(&this->t_state.current.server->dst_addr.sa);
+  auto [iter_start, iter_end] = ethread->connecting_pool->m_ip_pool.equal_range(ip);
+  for (auto ip_iter = iter_start; ip_iter != iter_end; ++ip_iter) {
+    ConnectingEntry *connecting_entry = ip_iter->second;
+    // Found a match, look for our sm in the queue.
+    auto entry = connecting_entry->connect_sms.find(this);
+    if (entry != connecting_entry->connect_sms.end()) {
+      // Found the sm, remove it.
+      connecting_entry->connect_sms.erase(entry);
+      if (connecting_entry->connect_sms.empty()) {
+        if (connecting_entry->netvc) {
+          connecting_entry->netvc->do_io_write(nullptr, 0, nullptr);
+          connecting_entry->netvc->do_io_close();
         }
+        ethread->connecting_pool->m_ip_pool.erase(ip_iter);
+        delete connecting_entry;
+        break;
+      } else {
+        //  Leave the shared entry remaining alone
       }
-      ++ip_iter;
     }
   }
 }
@@ -2198,23 +2195,23 @@ HttpSM::add_to_existing_request()
 
   IpEndpoint ip;
   ip.assign(&s.current.server->dst_addr.sa);
-  auto ip_iter                       = ethread->connecting_pool->m_ip_pool.find(ip);
   std::string_view proposed_sni      = this->get_outbound_sni();
   std::string_view proposed_cert     = this->get_outbound_cert();
   std::string_view proposed_hostname = this->t_state.current.server->name;
-  while (!retval && ip_iter != ethread->connecting_pool->m_ip_pool.end() && ip_iter->first == ip) {
-    // Check that entry matches sni, hostname, and cert
+  auto [iter_start, iter_end]        = ethread->connecting_pool->m_ip_pool.equal_range(ip);
+
+  for (auto ip_iter = iter_start; ip_iter != iter_end; ++ip_iter) {
+    // Check that entry matches sni, hostname, and cert.
     if (proposed_hostname == ip_iter->second->hostname && proposed_sni == ip_iter->second->sni &&
         proposed_cert == ip_iter->second->cert_name && ip_iter->second->connect_sms.size() < 50) {
-      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-      // bytes are received back
+      // Pre-emptively set a server connect failure that will be cleared once a
+      // WRITE_READY is received from origin or bytes are received back.
       this->t_state.set_connect_fail(EIO);
       ip_iter->second->connect_sms.insert(this);
       Debug("http_connect", "Add entry to connection queue. size=%zd", ip_iter->second->connect_sms.size());
       retval = true;
       break;
     }
-    ++ip_iter;
   }
   return retval;
 }
