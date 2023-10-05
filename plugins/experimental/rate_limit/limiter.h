@@ -169,7 +169,7 @@ public:
   bool
   full() const
   {
-    return (_size == max_queue);
+    return (_size >= max_queue);
   }
 
   void
@@ -225,9 +225,9 @@ public:
   }
 
   // ToDo: Probably should be made private...
-  std::string name                  = "";         // The name/descr (e.g. SNI name) of this limiter
-  uint32_t limit                    = 100;        // Arbitrary default, probably should be a required config
-  uint32_t max_queue                = UINT32_MAX; // No queue limit, but if set will give an immediate error if at max
+  std::string name                  = "";                                // The name/descr (e.g. SNI name) of this limiter
+  uint32_t limit                    = 100;                               // Arbitrary default, probably should be a required config
+  uint32_t max_queue                = 0;                                 // No queue by default
   std::chrono::milliseconds max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
 
 private:

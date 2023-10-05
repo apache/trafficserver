@@ -60,6 +60,7 @@ public:
       delete iprep;
     }
 
+    delete _default;
     for (auto &limiter : _limiters) {
       auto &[owner, ptr] = limiter.second;
 
@@ -109,7 +110,7 @@ public:
   {
     auto iter = _limiters.find(sni);
 
-    return ((iter != _limiters.end()) ? std::get<1>(iter->second) : nullptr);
+    return ((iter != _limiters.end()) ? std::get<1>(iter->second) : _default);
   }
 
   const std::string &
@@ -153,11 +154,12 @@ private:
   std::string _yaml_file;
   std::filesystem::file_time_type _yaml_last_write; // Last time the yaml file was written to
   bool _needs_queue_cont = false;
-  TSCont _queue_cont     = nullptr;  // Continuation processing the queue periodically
-  TSAction _queue_action = nullptr;  // The action associated with the queue continuation, needed to shut it down
-  Limiters _limiters;                // The SNI limiters
-  IPReputations _reputations;        // IP-Reputation rules
-  std::atomic<uint32_t> _leases = 0; // Number of leases we have on the current selector, start with one
+  TSCont _queue_cont     = nullptr;   // Continuation processing the queue periodically
+  TSAction _queue_action = nullptr;   // The action associated with the queue continuation, needed to shut it down
+  Limiters _limiters;                 // The SNI limiters
+  SniRateLimiter *_default = nullptr; // Default limiter, if any
+  IPReputations _reputations;         // IP-Reputation rules
+  std::atomic<uint32_t> _leases = 0;  // Number of leases we have on the current selector, start with one
 
   static std::atomic<self_type *> _instance; // Holds the singleton instance, initialized in the .cc file
 };

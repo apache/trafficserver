@@ -23,3 +23,8 @@ experimental_rate_limit_rate_limit_la_SOURCES = \
     experimental/rate_limit/sni_selector.cc \
     experimental/rate_limit/ip_reputation.cc \
     experimental/rate_limit/utilities.cc
+
+experimental_rate_limit_rate_limit_la_LDFLAGS = \
+    $(AM_LDFLAGS)
+
+AM_CPPFLAGS += @YAMLCPP_INCLUDES@

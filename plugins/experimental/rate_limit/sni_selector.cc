@@ -95,7 +95,11 @@ SniSelector::yamlParser(std::string yaml_file)
         auto limiter = new SniRateLimiter(name, this);
 
         if (limiter->parseYaml(sni)) {
-          addLimiter(limiter);
+          if (name == "*") {
+            _default = limiter;
+          } else {
+            addLimiter(limiter);
+          }
 
           // Add aliases, if any
           const YAML::Node &aliases = sni["aliases"];

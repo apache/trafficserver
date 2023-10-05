@@ -130,10 +130,10 @@ SieveLru::parseYaml(const YAML::Node &node)
   }
   _buckets[blockBucket()] = new SieveBucket(cur_size / 2); // Block LRU, same size as entry bucket
 
-  Dbg(dbg_ctl, "Loaded IP-Reputation rule: %s(%u, %u, %u, %lld)", _name.c_str(), _num_buckets, _size, _percentage,
-      _max_age.count());
-  Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %lld)", _name.c_str(), _permablock_limit, _permablock_threshold,
-      _permablock_max_age.count());
+  Dbg(dbg_ctl, "Loaded IP-Reputation rule: %s(%u, %u, %u, %ld)", _name.c_str(), _num_buckets, _size, _percentage,
+      static_cast<long>(_max_age.count()));
+  Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %ld)", _name.c_str(), _permablock_limit, _permablock_threshold,
+      static_cast<long>(_permablock_max_age.count()));
 
   return true;
 }
