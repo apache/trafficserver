@@ -39,11 +39,29 @@ public:
   void setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook);
   bool initialize(int argc, const char *argv[]);
 
-  std::string header = "";  // Header to put the latency metrics in, e.g. @RateLimit-Delay
-  unsigned error     = 429; // Error code when we decide not to allow a txn to be processed (e.g. queue full)
-  unsigned retry     = 0;   // If > 0, we will also send a Retry-After: header with this retry value
+  const std::string &
+  header() const
+  {
+    return _header;
+  }
+
+  unsigned
+  error() const
+  {
+    return _error;
+  }
+
+  unsigned
+  retry() const
+  {
+    return _retry;
+  }
 
 private:
+  std::string _header = "";  // Header to put the latency metrics in, e.g. @RateLimit-Delay
+  unsigned _error     = 429; // Error code when we decide not to allow a txn to be processed (e.g. queue full)
+  unsigned _retry     = 0;   // If > 0, we will also send a Retry-After: header with this retry value
+
   TSCont _queue_cont = nullptr; // Continuation processing the queue periodically
   TSAction _action   = nullptr; // The action associated with the queue continuation, needed to shut it down
 };

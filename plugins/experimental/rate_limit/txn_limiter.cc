@@ -45,7 +45,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // This is only applicable when we set an error in remap
-    retryAfter(static_cast<TSHttpTxn>(edata), limiter->retry);
+    retryAfter(static_cast<TSHttpTxn>(edata), limiter->retry());
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
     limiter->incrementMetric(RATE_LIMITER_METRIC_REJECTED);
@@ -71,7 +71,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
     auto [txnp, contp, start_time]  = limiter->pop();
     std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
-    delayHeader(txnp, limiter->header, delay);
+    delayHeader(txnp, limiter->header(), delay);
     Dbg(dbg_ctl, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
@@ -80,7 +80,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
   }
 
   // Kill any queued txns if they are too old
-  if (limiter->size() > 0 && limiter->max_age > std::chrono::milliseconds::zero()) {
+  if (limiter->size() > 0 && limiter->max_age() > std::chrono::milliseconds::zero()) {
     now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
 
     while (limiter->size() > 0 && limiter->hasOldEntity(now)) {
@@ -88,9 +88,9 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
       auto [txnp, contp, start_time] = limiter->pop();
       std::chrono::milliseconds age  = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
-      delayHeader(txnp, limiter->header, age);
+      delayHeader(txnp, limiter->header(), age);
       Dbg(dbg_ctl, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
-      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
+      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
@@ -127,22 +127,22 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
 
     switch (opt) {
     case 'l':
-      this->limit = strtol(optarg, nullptr, 10);
+      this->_limit = strtol(optarg, nullptr, 10);
       break;
     case 'q':
-      this->max_queue = strtol(optarg, nullptr, 10);
+      this->_max_queue = strtol(optarg, nullptr, 10);
       break;
     case 'e':
-      this->error = strtol(optarg, nullptr, 10);
+      this->_error = strtol(optarg, nullptr, 10);
       break;
     case 'r':
-      this->retry = strtol(optarg, nullptr, 10);
+      this->_retry = strtol(optarg, nullptr, 10);
       break;
     case 'm':
-      this->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
+      this->_max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
       break;
     case 'h':
-      this->header = optarg;
+      this->_header = optarg;
       break;
     case 'p':
       prefix = optarg;
@@ -156,7 +156,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     }
   }
 
-  if (this->max_queue > 0) {
+  if (this->max_queue() > 0) {
     _queue_cont = TSContCreate(txn_queue_cont, TSMutexCreate());
     TSReleaseAssert(_queue_cont);
     TSContDataSet(_queue_cont, this);

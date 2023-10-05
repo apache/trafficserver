@@ -31,7 +31,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 // for logging, and other types of metrics.
 //
 void
-delayHeader(TSHttpTxn txnp, std::string &header, std::chrono::milliseconds delay)
+delayHeader(TSHttpTxn txnp, const std::string &header, std::chrono::milliseconds delay)
 {
   if (header.size() > 0) {
     TSMLoc hdr_loc   = nullptr;

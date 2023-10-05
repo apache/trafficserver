@@ -38,7 +38,7 @@ public:
   self_type &operator=(const self_type &) = delete;
   self_type &operator=(self_type &&)      = delete;
 
-  SniRateLimiter(std::string &sni, SniSelector *sel) : selector(sel) { name = sni; }
+  SniRateLimiter(std::string &sni, SniSelector *sel) : _selector(sel) { setName(sni); }
 
   bool parseYaml(const YAML::Node &node);
 
@@ -47,18 +47,31 @@ public:
   int32_t
   pressure() const
   {
-    int32_t p = ((active() / static_cast<float>(limit) * 100) - iprep->percentage()) / (100 - iprep->percentage()) *
-                (iprep->numBuckets() + 1);
+    int32_t p = ((active() / static_cast<float>(limit()) * 100) - _iprep->percentage()) / (100 - _iprep->percentage()) *
+                (_iprep->numBuckets() + 1);
 
-    return (p >= static_cast<int32_t>(iprep->numBuckets()) ? iprep->numBuckets() : p);
+    return (p >= static_cast<int32_t>(_iprep->numBuckets()) ? _iprep->numBuckets() : p);
   }
 
   void
   addIPReputation(IpReputation::SieveLru *iprep)
   {
-    this->iprep = iprep;
+    this->_iprep = iprep;
   }
 
-  SniSelector *selector         = nullptr; // The selector we belong to
-  IpReputation::SieveLru *iprep = nullptr; // IP reputation for this SNI (if any)
+  IpReputation::SieveLru *
+  iprep() const
+  {
+    return _iprep;
+  }
+
+  SniSelector *
+  selector() const
+  {
+    return _selector;
+  }
+
+private:
+  SniSelector *_selector         = nullptr; // The selector we belong to
+  IpReputation::SieveLru *_iprep = nullptr; // IP reputation for this SNI (if any)
 };

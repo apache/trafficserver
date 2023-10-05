@@ -95,7 +95,7 @@ SniSelector::yamlParser(std::string yaml_file)
         auto limiter = new SniRateLimiter(name, this);
 
         if (limiter->parseYaml(sni)) {
-          if (name == "*") {
+          if (name == "*" || name == "default") {
             _default = limiter;
           } else {
             addLimiter(limiter);
@@ -197,7 +197,7 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
       }
 
       // Kill any queued VCs if they are too old
-      if (limiter->size() > 0 && limiter->max_age > std::chrono::milliseconds::zero()) {
+      if (limiter->size() > 0 && limiter->max_age() > std::chrono::milliseconds::zero()) {
         now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
 
         while (limiter->size() > 0 && limiter->hasOldEntity(now)) {

@@ -134,8 +134,8 @@ public:
   void
   addLimiter(SniRateLimiter *limiter)
   {
-    _needs_queue_cont = (limiter->max_queue > 0);
-    _limiters.emplace(limiter->name, std::forward_as_tuple(true, limiter));
+    _needs_queue_cont = (limiter->max_queue() > 0);
+    _limiters.emplace(limiter->name(), std::forward_as_tuple(true, limiter));
   }
 
   void

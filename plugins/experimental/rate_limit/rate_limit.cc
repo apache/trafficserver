@@ -93,7 +93,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   TxnRateLimiter *limiter = new TxnRateLimiter();
 
   // set the name based on the pristine remap URL prior to advancing the pointer below
-  limiter->name = getDescriptionFromUrl(argv[0]);
+  limiter->setName(getDescriptionFromUrl(argv[0]));
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -104,8 +104,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit, limiter->max_queue,
-      static_cast<long>(limiter->max_age.count()), limiter->error);
+  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit(), limiter->max_queue(),
+      static_cast<long>(limiter->max_age().count()), limiter->error());
 
   return TS_SUCCESS;
 }
@@ -120,9 +120,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   if (limiter) {
     if (!limiter->reserve()) {
-      if (!limiter->max_queue || limiter->full()) {
+      if (!limiter->max_queue() || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
+        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
         limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
         Dbg(dbg_ctl, "Rejecting request, we're at capacity and queue is full");
       } else {

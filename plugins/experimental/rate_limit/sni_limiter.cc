@@ -31,7 +31,7 @@ bool
 SniRateLimiter::parseYaml(const YAML::Node &node)
 {
   if (node["limit"]) {
-    limit = node["limit"].as<uint32_t>();
+    _limit = node["limit"].as<uint32_t>();
   } else {
     // ToDo: Should we require the limit ?
   }
@@ -39,8 +39,8 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
   if (node["ip-rep"]) {
     std::string ipr_name = node["ip-rep"].as<std::string>();
 
-    if (!(iprep = selector->findIpRep(ipr_name))) {
-      TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, ipr_name.c_str(), name.c_str());
+    if (!(_iprep = _selector->findIpRep(ipr_name))) {
+      TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, ipr_name.c_str(), name().c_str());
       return false;
     }
   }
@@ -49,24 +49,24 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
 
   // If enabled, we default to UINT32_MAX, but the object default is still 0 (no queue)
   if (queue) {
-    max_queue = queue["size"] ? queue["size"].as<uint32_t>() : UINT32_MAX;
+    _max_queue = queue["size"] ? queue["size"].as<uint32_t>() : UINT32_MAX;
 
     if (queue["max_age"]) {
-      max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
+      _max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
     }
 
     const YAML::Node &metrics = node["metrics"];
 
     if (metrics) {
       std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
-      std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name;
+      std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
 
-      Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name.c_str(), prefix.c_str(), tag.c_str());
+      Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
       initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
     }
   }
 
-  Dbg(dbg_ctl, "Loaded selector rule: %s(%u, %u, %ld)", name.c_str(), limit, max_queue, static_cast<long>(max_age.count()));
+  Dbg(dbg_ctl, "Loaded selector rule: %s(%u, %u, %ld)", name().c_str(), limit(), max_queue(), static_cast<long>(max_age().count()));
 
   return true;
 }
@@ -90,7 +90,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
     if (limiter) {
       // Check if we have an IP reputation for this SNI, and if we should block
-      if (limiter->iprep && limiter->iprep->initialized()) {
+      if (limiter->iprep() && limiter->iprep()->initialized()) {
         const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);
         int32_t pressure     = limiter->pressure();
 
@@ -100,7 +100,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
         if (pressure >= 0) { // When pressure is < 0, we're not yet at a level of pressure to be concerned about
           char client_ip[INET6_ADDRSTRLEN] = "[unknown]";
-          auto [bucket, cur_cnt]           = limiter->iprep->increment(sock);
+          auto [bucket, cur_cnt]           = limiter->iprep()->increment(sock);
 
           // Get the client IP string if debug is enabled
           if (dbg_ctl.on()) {
@@ -111,10 +111,10 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
             }
           }
 
-          if (cur_cnt > limiter->iprep->permablock_count() &&
-              bucket <= limiter->iprep->permablock_threshold()) { // Mark for long-term blocking
+          if (cur_cnt > limiter->iprep()->permablock_count() &&
+              bucket <= limiter->iprep()->permablock_threshold()) { // Mark for long-term blocking
             Dbg(dbg_ctl, "Marking IP=%s for perma-blocking", client_ip);
-            bucket = limiter->iprep->block(sock);
+            bucket = limiter->iprep()->block(sock);
           }
 
           if (static_cast<uint32_t>(pressure) > bucket) { // Remember the perma-block bucket is always 0, and we are >=0 already
@@ -133,7 +133,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
       // If we passed the IP reputation filter, continue rate limiting these connections
       if (!limiter->reserve()) {
-        if (!limiter->max_queue || limiter->full()) {
+        if (!limiter->max_queue() || limiter->full()) {
           // We are running at limit, and the queue has reached max capacity, give back an error and be done.
           Dbg(dbg_ctl, "Rejecting connection, we're at capacity and queue is full");
           TSUserArgSet(vc, gVCIdx, nullptr);
@@ -166,7 +166,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
     if (limiter) {
       TSUserArgSet(vc, gVCIdx, nullptr);
       limiter->free();
-      limiter->selector->release(); // Release the selector, such that it can be deleted later
+      limiter->selector()->release(); // Release the selector, such that it can be deleted later
     }
     TSVConnReenable(vc);
     break;

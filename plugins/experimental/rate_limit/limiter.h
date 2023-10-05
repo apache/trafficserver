@@ -76,12 +76,6 @@ public:
   }
 
   void
-  initialize(uint32_t limit)
-  {
-    this->limit = limit;
-  }
-
-  void
   initializeMetrics(uint type, std::string tag, std::string prefix = RATE_LIMITER_METRIC_PREFIX)
   {
     TSReleaseAssert(type < RATE_LIMITER_TYPE_MAX);
@@ -92,8 +86,8 @@ public:
 
     if (!tag.empty()) {
       metric_prefix.append("." + tag);
-    } else if (!name.empty()) {
-      metric_prefix.append("." + name);
+    } else if (!name().empty()) {
+      metric_prefix.append("." + name());
     }
 
     for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {
@@ -129,12 +123,12 @@ public:
   bool
   reserve()
   {
-    TSReleaseAssert(_active <= limit);
+    TSReleaseAssert(_active <= limit());
     TSMutexLock(_active_lock);
-    if (_active < limit) {
+    if (_active < limit()) {
       ++_active;
       TSMutexUnlock(_active_lock); // Reduce the critical section, release early
-      Dbg(dbg_ctl, "Reserving a slot, active entities == %u", active());
+      Dbg(dbg_ctl, "Reserving a slot, active entities == %u", _active.load());
       return true;
     } else {
       TSMutexUnlock(_active_lock);
@@ -148,7 +142,7 @@ public:
     TSMutexLock(_active_lock);
     --_active;
     TSMutexUnlock(_active_lock);
-    Dbg(dbg_ctl, "Releasing a slot, active entities == %u", active());
+    Dbg(dbg_ctl, "Releasing a slot, active entities == %u", _active.load());
   }
 
   // Current size of the active_in connections
@@ -169,7 +163,7 @@ public:
   bool
   full() const
   {
-    return (_size >= max_queue);
+    return (_size >= max_queue());
   }
 
   void
@@ -217,18 +211,48 @@ public:
 
       std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item));
 
-      return (age >= max_age);
+      return (age >= max_age());
     } else {
       TSMutexUnlock(_queue_lock);
       return false;
     }
   }
 
-  // ToDo: Probably should be made private...
-  std::string name                  = "";                                // The name/descr (e.g. SNI name) of this limiter
-  uint32_t limit                    = 100;                               // Arbitrary default, probably should be a required config
-  uint32_t max_queue                = 0;                                 // No queue by default
-  std::chrono::milliseconds max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
+  const std::string &
+  name()
+  {
+    return _name;
+  }
+
+  uint32_t
+  limit() const
+  {
+    return _limit;
+  }
+
+  uint32_t
+  max_queue() const
+  {
+    return _max_queue;
+  }
+
+  std::chrono::milliseconds
+  max_age() const
+  {
+    return _max_age;
+  }
+
+  void
+  setName(const std::string &name)
+  {
+    _name = name;
+  }
+
+protected:
+  std::string _name                  = "_limiter_";                       // The name/descr (e.g. SNI name) of this limiter
+  uint32_t _limit                    = UINT32_MAX;                        // No limit unless specified ...
+  uint32_t _max_queue                = 0;                                 // No queue by default
+  std::chrono::milliseconds _max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
 
 private:
   std::atomic<uint32_t> _active = 0; // Current active number of txns. This has to always stay <= limit above
