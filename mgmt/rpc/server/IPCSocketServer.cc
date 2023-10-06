@@ -218,7 +218,7 @@ IPCSocketServer::run()
     }
 
     std::error_code ec;
-    if (auto fd = this->accept(ec); !ec) {
+    if (int fd = this->accept(ec); !ec) {
       Client client{fd};
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
@@ -270,7 +270,7 @@ IPCSocketServer::create_socket(std::error_code &ec)
 int
 IPCSocketServer::accept(std::error_code &ec) const
 {
-  int ret = {-1};
+  int ret{-1};
 
   for (int retries = 0; retries < _conf.maxRetriesOnTransientErrors; retries++) {
     ret = ::accept(_socket, 0, 0);
