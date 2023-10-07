@@ -67,7 +67,7 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
   ink_assert(false);
 }
 
-#include "InkAPIInternal.h"
+#include "api/InkAPIInternal.h"
 #include "ControlMatcher.h"
 char *
 HttpRequestData::get_string()

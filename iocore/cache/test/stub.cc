@@ -48,3 +48,38 @@ HttpHookState::getNext()
 }
 
 LifecycleAPIHooks *lifecycle_hooks = nullptr;
+
+namespace tsapi::c
+{
+TSVConn
+TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
+{
+  return TSVConn{};
+}
+
+int TS_MIME_LEN_CONTENT_LENGTH           = 0;
+const char *TS_MIME_FIELD_CONTENT_LENGTH = "";
+
+TSIOBufferBlock
+TSIOBufferReaderStart(TSIOBufferReader readerp)
+{
+  return TSIOBufferBlock{};
+}
+
+TSIOBufferBlock
+TSIOBufferBlockNext(TSIOBufferBlock blockp)
+{
+  return TSIOBufferBlock{};
+}
+
+const char *
+TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail)
+{
+  return "";
+}
+
+void
+TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
+{
+}
+} // namespace tsapi::c
