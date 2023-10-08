@@ -61,9 +61,9 @@ ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: bob.bar.com',
     '  verify_client: STRICT',
-    '- fqdn: bob.*.com',
+    '- fqdn: "*.foo.com"',
     '  verify_client: STRICT',
-    '- fqdn: "*bar.com"',
+    '- fqdn: "*.bar.com"',
     '  verify_client: NONE',
 ])
 

@@ -37,7 +37,7 @@
 TEST_CASE("Test SSLSNIConfig")
 {
   SNIConfigParams params;
-  params.initialize(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml");
+  REQUIRE(params.initialize(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml"));
 
   SECTION("The config does not match any SNIs for someport.com:577")
   {
@@ -104,5 +104,13 @@ TEST_CASE("Test SSLSNIConfig")
     auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 482)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
+  }
+
+  SECTION("Matching order")
+  {
+    std::string_view target = "foo.bar.com";
+    auto const &actions{params.get(target, 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 5); ///< three H2 config + early data + fqdn
   }
 }

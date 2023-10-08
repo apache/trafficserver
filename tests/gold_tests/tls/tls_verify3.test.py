@@ -86,10 +86,10 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: bob.bar.com',
     '  verify_server_policy: ENFORCED',
     '  verify_server_properties: ALL',
-    '- fqdn: bob.*.com',
+    '- fqdn: "*.foo.com"',
     '  verify_server_policy: ENFORCED',
     '  verify_server_properties: SIGNATURE',
-    "- fqdn: '*bar.com'",
+    "- fqdn: '*.bar.com'",
     '  verify_server_policy: DISABLED',
 ])
 
@@ -108,8 +108,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
-tr = Test.AddTestRun("my.foo.com Permissive-Test log failure")
-tr.Processes.Default.Command = "curl -v -k --resolve 'my.foo.com:{0}:127.0.0.1' https://my.foo.com:{0}".format(
+tr = Test.AddTestRun("my.random.com Permissive-Test log failure")
+tr.Processes.Default.Command = "curl -v -k --resolve 'my.random.com:{0}:127.0.0.1' https://my.random.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
@@ -146,5 +146,5 @@ tr3.StillRunningAfter = ts
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     r"WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"WARNING: Core server certificate verification failed for \(my.foo.com\). Action=Continue",
+    r"WARNING: Core server certificate verification failed for \(my.random.com\). Action=Continue",
     "Make sure default permissive action takes")

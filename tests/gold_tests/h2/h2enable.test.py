@@ -57,7 +57,7 @@ ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: bar.com',
     '  http2: on',
-    '- fqdn: bob.*.com',
+    '- fqdn: "*.foo.com"',
     '  http2: on',
 ])
 

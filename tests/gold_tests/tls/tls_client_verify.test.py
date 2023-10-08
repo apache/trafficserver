@@ -65,9 +65,9 @@ ts.Disk.sni_yaml.AddLines([
     '  verify_client: NONE',
     '- fqdn: "bob.com"',
     '  verify_client: STRICT',
-    '- fqdn: bob.*.com',
+    '- fqdn: "*.foo.com"',
     '  verify_client: NONE',
-    '- fqdn: "*bar.com"',
+    '- fqdn: "*.bar.com"',
     '  verify_client: STRICT',
 ])
 
@@ -205,10 +205,10 @@ tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bob.com:{0}:127
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
 
-tr = Test.AddTestRun("Connect to bob.com.com without cert, should succeed")
+tr = Test.AddTestRun("Connect to bob.foo.com without cert, should succeed")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bob.com.com:{0}:127.0.0.1' https://bob.com.com:{0}/case14".format(
+tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/case14".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 

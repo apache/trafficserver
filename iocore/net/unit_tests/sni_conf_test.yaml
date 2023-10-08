@@ -25,3 +25,14 @@ sni:
   inbound_port_ranges: 8080-65535
 - fqdn: oneport.com
   inbound_port_ranges: 433
+
+# order check
+- fqdn: foo.bar.com
+  http2: true
+  http2_buffer_water_mark: 256
+  http2_initial_window_size_in: 256
+- fqdn: "*.bar.com"
+  http2: true
+  http2_buffer_water_mark: 256
+- fqdn: foo.bar.com
+  http2: false
