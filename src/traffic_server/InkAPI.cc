@@ -8432,6 +8432,56 @@ TSHttpTxnIsInternal(TSHttpTxn txnp)
   return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
 }
 
+static void
+txn_error_get(TSHttpTxn txnp, bool client, bool sent, uint32_t &error_class, uint64_t &error_code)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm                                                = reinterpret_cast<HttpSM *>(txnp);
+  HttpTransact::ConnectionAttributes *connection_attributes = nullptr;
+
+  if (client == true) {
+    // client
+    connection_attributes = &sm->t_state.client_info;
+  } else {
+    // server
+    connection_attributes = &sm->t_state.server_info;
+  }
+
+  if (sent == true) {
+    // sent
+    error_code  = connection_attributes->tx_error_code.code;
+    error_class = static_cast<uint32_t>(connection_attributes->tx_error_code.cls);
+  } else {
+    // received
+    error_code  = connection_attributes->rx_error_code.code;
+    error_class = static_cast<uint32_t>(connection_attributes->rx_error_code.cls);
+  }
+}
+
+void
+TSHttpTxnClientReceivedErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code)
+{
+  txn_error_get(txnp, true, false, *error_class, *error_code);
+}
+
+void
+TSHttpTxnClientSentErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code)
+{
+  txn_error_get(txnp, true, true, *error_class, *error_code);
+}
+
+void
+TSHttpTxnServerReceivedErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code)
+{
+  txn_error_get(txnp, false, false, *error_class, *error_code);
+}
+
+void
+TSHttpTxnServerSentErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code)
+{
+  txn_error_get(txnp, false, true, *error_class, *error_code);
+}
+
 TSReturnCode
 TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 {
