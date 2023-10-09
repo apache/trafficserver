@@ -505,7 +505,7 @@ test_parse(url_parse_test_case const &test_case, bool parse_function)
   } else {
     heap->destroy();
     return;
-    //result = url.parse_no_host_check(test_case.input_uri.c_str(), test_case.input_uri.size());
+    // result = url.parse_no_host_check(test_case.input_uri.c_str(), test_case.input_uri.size());
   }
   bool expected_is_valid = test_case.is_valid;
 
