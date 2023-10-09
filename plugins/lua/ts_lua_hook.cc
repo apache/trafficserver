@@ -37,6 +37,7 @@ typedef enum {
   TS_LUA_RESPONSE_TRANSFORM,
   TS_LUA_REQUEST_CLIENT,
   TS_LUA_RESPONSE_CLIENT,
+  TS_LUA_HOOK_VCONN_START,
   TS_LUA_HOOK_LAST
 } TSLuaHookID;
 
@@ -56,6 +57,7 @@ char const *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
                                        "TS_LUA_RESPONSE_TRANSFORM",
                                        "TS_LUA_REQUEST_CLIENT",
                                        "TS_LUA_RESPONSE_CLIENT",
+                                       "TS_LUA_HOOK_VCONN_START",
                                        "TS_LUA_HOOK_LAST"};
 
 static int ts_lua_add_hook(lua_State *L);
@@ -257,6 +259,14 @@ ts_lua_add_hook(lua_State *L)
       }
     }
     break;
+
+  case TS_LUA_HOOK_VCONN_START:
+    if (http_ctx) {
+      TSError("[ts_lua][%s] VCONN_START handler can only be global", __FUNCTION__);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_VCONN_START);
+    }
 
   default:
     break;

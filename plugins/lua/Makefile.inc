@@ -26,6 +26,7 @@ lua_tslua_la_SOURCES = \
     lua/ts_lua_client_response.cc \
     lua/ts_lua_context.cc \
     lua/ts_lua_hook.cc \
+    lua/ts_lua_vconn.cc \
     lua/ts_lua_http.cc \
     lua/ts_lua_http_intercept.cc \
     lua/ts_lua_log.cc \

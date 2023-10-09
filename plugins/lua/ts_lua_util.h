@@ -46,16 +46,31 @@ void ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx);
 void ts_lua_set_http_ctx(lua_State *L, ts_lua_http_ctx *ctx);
 ts_lua_http_ctx *ts_lua_get_http_ctx(lua_State *L);
 
-#define GET_HTTP_CONTEXT(ctx, list)       \
-  ctx = ts_lua_get_http_ctx(list);        \
-  if (ctx == NULL) {                      \
-    TSError("[ts_lua] missing http_ctx"); \
-    return 0;                             \
+#define GET_HTTP_CONTEXT(ctx, list)                   \
+  ctx = ts_lua_get_http_ctx(list);                    \
+  if (ctx == NULL) {                                  \
+    TSError("[ts_lua] missing http_ctx");             \
+    TSReleaseAssert(!"Unexpected fetch of http_ctx"); \
+    return 0;                                         \
+  }
+
+#define GET_VCONN_CONTEXT(ctx, list)                   \
+  ctx = ts_lua_get_vconn_ctx(list);                    \
+  if (ctx == NULL) {                                   \
+    TSError("[ts_lua] missing vconn_ctx");             \
+    TSReleaseAssert(!"Unexpected fetch of vconn_ctx"); \
+    return 0;                                          \
   }
 
 ts_lua_http_ctx *ts_lua_create_http_ctx(ts_lua_main_ctx *mctx, ts_lua_instance_conf *conf);
 void ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx);
 void ts_lua_clear_http_ctx(ts_lua_http_ctx *http_ctx);
+
+void ts_lua_set_vconn_ctx(lua_State *L, ts_lua_vconn_ctx *ctx);
+ts_lua_vconn_ctx *ts_lua_get_vconn_ctx(lua_State *L);
+
+ts_lua_vconn_ctx *ts_lua_create_vconn_ctx(ts_lua_main_ctx *mctx, ts_lua_instance_conf *conf);
+void ts_lua_destroy_vconn_ctx(ts_lua_vconn_ctx *vconn_ctx);
 
 ts_lua_http_transform_ctx *ts_lua_create_http_transform_ctx(ts_lua_http_ctx *http_ctx, TSVConn connp);
 void ts_lua_destroy_http_transform_ctx(ts_lua_http_transform_ctx *transform_ctx);
