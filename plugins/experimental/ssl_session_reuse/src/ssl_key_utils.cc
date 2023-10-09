@@ -25,6 +25,8 @@
 #include <cstring>
 #include <mutex>
 #include <cassert>
+#include <thread>
+#include <chrono>
 #include <unistd.h>
 #include <sys/time.h>
 #include <openssl/rand.h>
@@ -51,6 +53,18 @@ static int channel_key_length = 0;
 static std::atomic<bool> stek_master_setter_running(false); /* stek master setter thread running */
 
 static std::atomic<bool> stek_initialized(false);
+
+using std::this_thread::sleep_for;
+using std::chrono::time_point_cast;
+using std::chrono::seconds;
+using std::chrono::system_clock;
+using TimePoint = std::chrono::time_point<system_clock, seconds>;
+
+TimePoint
+get_current_time()
+{
+  return time_point_cast<seconds>(system_clock::now());
+}
 
 bool
 isSTEKMaster()
@@ -313,7 +327,7 @@ done_master_setter:
   return nullptr;
 }
 
-time_t lastChangeTime = 0;
+TimePoint lastChangeTime;
 
 void
 STEK_update(const std::string &encrypted_stek)
@@ -329,7 +343,7 @@ STEK_update(const std::string &encrypted_stek)
       // Let TSAPI know about new ticket information
       stek_initialized = true;
       TSSslTicketKeyUpdate(reinterpret_cast<char *>(ssl_param.ticket_keys), sizeof(ssl_param.ticket_keys));
-      time(&lastChangeTime);
+      lastChangeTime = get_current_time();
       ssl_key_lock.unlock();
     }
   }
@@ -342,8 +356,8 @@ STEK_Update_Checker_Thread(void *arg)
   ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
   ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
 
-  time_t currentTime;
-  time_t lastWarningTime; // last time we put out a warning
+  TimePoint currentTime;
+  TimePoint lastWarningTime; // last time we put out a warning
 
   /* STEK_Update_Checker_Thread() - This thread runs forever, sleeping most
    * of the time, then checking and updating our Session-Ticket-Encryption-Key
@@ -353,8 +367,8 @@ STEK_Update_Checker_Thread(void *arg)
 
   Dbg(dbg_ctl, "Starting STEK_Update_Checker_Thread.");
 
-  lastChangeTime = lastWarningTime = time(&currentTime); // init to current to suppress a startup warning.
-  int check_count                  = 0;                  // Keep track of how many times we've checked whether we got a new STEK.
+  lastChangeTime = lastWarningTime = currentTime = get_current_time(); // init to current to suppress a startup warning.
+  int check_count                                = 0; // Keep track of how many times we've checked whether we got a new STEK.
 
   while (!plugin_threads.shutdown) {
     try {
@@ -364,19 +378,20 @@ STEK_Update_Checker_Thread(void *arg)
         ssl_param.pub->publish(redis_channel, ""); // send it
         Dbg(dbg_ctl, "Request for ticket.");
       }
-      time(&currentTime);
-      time_t sleepUntil;
+      currentTime = get_current_time();
+      seconds sleepFor{0};
       if (stek_initialized) {
         // Sleep until we are overdue for a key update
-        sleepUntil       = 2 * STEK_MAX_LIFETIME - (currentTime - lastChangeTime);
+        auto duration    = currentTime - lastChangeTime;
+        sleepFor         = seconds{2 * STEK_MAX_LIFETIME} - duration;
         stek_initialized = false;
         check_count      = 0;
       } else {
         // Wait for a while in hopes that the server gets back to us
-        sleepUntil = 30;
+        sleepFor = seconds{30};
         ++check_count;
       }
-      ::sleep(sleepUntil);
+      sleep_for(sleepFor);
 
       if (check_count == 0) {
         continue;
@@ -389,13 +404,13 @@ STEK_Update_Checker_Thread(void *arg)
        * STEK, we believe that the master has died, so "now, I am the master".
        * ...no problem we will recover POD STEK rotation now */
 
-      time(&currentTime);
-      if ((currentTime - lastChangeTime) > (2 * STEK_MAX_LIFETIME) || check_count > 10) {
+      currentTime = get_current_time();
+      if ((currentTime - lastChangeTime) > seconds{2 * STEK_MAX_LIFETIME} || check_count > 10) {
         // Yes we were way past due for a new STEK, and haven't received it.
-        if ((currentTime - lastWarningTime) > STEK_NOT_CHANGED_WARNING_INTERVAL) {
+        if ((currentTime - lastWarningTime) > seconds{STEK_NOT_CHANGED_WARNING_INTERVAL}) {
           // Yes it's time to put another warning in log file.
           TSError("Session Ticket Encryption Key not syncd in past %d hours.",
-                  static_cast<int>(((currentTime - lastChangeTime) / 3600)));
+                  static_cast<int>(((currentTime - lastChangeTime).count() / 3600)));
 
           lastWarningTime = currentTime;
         }
