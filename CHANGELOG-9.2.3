@@ -11,8 +11,17 @@ Changes with Apache Traffic Server 9.2.3
   #10257 - Python 3.12: Make autest regex strings raw strings
   #10266 - Python 3.12: add charset-nomalizer to tests/Pipfile
   #10285 - Fix slice head request memory issue
+  #10286 - Abort a read when the disk is known to be bad
   #10287 - Fix a crash due to bad disks
   #10304 - Preserve unmapped url regardless of need for remapping
+  #10324 - Add TSVConnFdGet api
   #10386 - Don't set port number as part of hostname
   #10389 - 9.2.x: Proxy Verfier Upgrade to v2.10.1
   #10391 - tls_verify4: Use traffic_manager for config reload
+  #10399 - Fix use-after-free issue
+  #10480 - Fix the SNI and HOST parsing properly
+  #10564 - Add an HTTP/2 related rate limiting
+  #10566 - s3_auth: Fix hash calculation
+  #10568 - Reallocate a buffer for H2 header block only if needed
+  #10571 - APIs to get the h2 error codes and a plugin to use them
+  #10573 - Add support for vconn start handler in lua plugin
