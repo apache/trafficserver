@@ -137,6 +137,7 @@ and nodes are documented below.
                tag: example.com
                prefix: ddos
             ip-rep: main
+            exclude: internal
          - sni: test2.example.com
             aliases: [test3.example.com, test4.example.com]
             limit: 100
@@ -150,6 +151,12 @@ and nodes are documented below.
                limit: 100
                threshold: 1
                max-age: 1800
+      lists:
+         - name: internal
+            cidr:
+               - 10.0.0.0/8
+               - 192.168.0.0/16
+
 
 For the top level `selector` node, the following options are available:
 
@@ -169,6 +176,11 @@ For the top level `selector` node, the following options are available:
 
       The name of the IP reputation node to use for this rate limiter. If not
       specified, the IP reputation system is not used for this rate limiter.
+
+.. option:: exclude
+
+      A list of IP CIDR ranges to exclude from any rate limiting. Any IP matching
+      this list will not be rate limited, even if the SNI matches.
 
 .. option:: queue
 
@@ -192,9 +204,24 @@ For the top level `selector` node, the following options are available:
    The metrics node can include a `tag` and a `prefix` option. The tag is
    default to the SNI, and the prefix is default to ``plugin.rate_limiter``.
 
+The `lists` node is used to configure IP lists, which can be used to exclude
+certain address ranges from the rate limiting. The following options are used:
+
+.. option:: name
+
+   The name of the IP reputation setup, used to refer to it from the rate limiters.
+
+.. option:: cidr
+
+   A list of CIDR ranges to add to this rule. The format is e.g. `10.0.0.0/8`.
+
 The `ip-rep`` node is used to configure the IP reputation system, there can be
 zero, one or many IP reputation setups. Each setup is configured with a name,
 and the following options:
+
+.. option:: name
+
+   The name of the IP reputation setup, used to refer to it from the rate limiters.
 
 .. option:: buckets
 

@@ -25,9 +25,10 @@
 #include <atomic>
 
 #include "ts/ts.h"
-#include "utilities.h"
 #include "sni_limiter.h"
+#include "utilities.h"
 #include "ip_reputation.h"
+#include "lists.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SNI based limiter selector, this will have one singleton instance.
@@ -39,6 +40,7 @@ class SniSelector
 public:
   using Limiters      = std::unordered_map<std::string, std::tuple<bool, SniRateLimiter *>>;
   using IPReputations = std::vector<IpReputation::SieveLru *>;
+  using Lists         = std::vector<List::IP *>;
 
   SniSelector() = default;
 
@@ -58,6 +60,10 @@ public:
 
     for (auto &iprep : _reputations) {
       delete iprep;
+    }
+
+    for (auto &list : _lists) {
+      delete list;
     }
 
     delete _default;
@@ -106,11 +112,24 @@ public:
   }
 
   SniRateLimiter *
-  findSNI(const std::string &sni)
+  findLimiter(const std::string &sni)
   {
     auto iter = _limiters.find(sni);
 
     return ((iter != _limiters.end()) ? std::get<1>(iter->second) : _default);
+  }
+
+  void
+  addLimiter(SniRateLimiter *limiter)
+  {
+    _needs_queue_cont |= (limiter->max_queue() > 0);
+    _limiters.emplace(limiter->name(), std::forward_as_tuple(true, limiter));
+  }
+
+  void
+  addAlias(std::string alias, SniRateLimiter *limiter)
+  {
+    _limiters.emplace(alias, std::forward_as_tuple(false, limiter));
   }
 
   const std::string &
@@ -131,22 +150,39 @@ public:
     _reputations.emplace_back(iprep);
   }
 
-  void
-  addLimiter(SniRateLimiter *limiter)
+  IpReputation::SieveLru *
+  findIpRep(const std::string &name)
   {
-    _needs_queue_cont = (limiter->max_queue() > 0);
-    _limiters.emplace(limiter->name(), std::forward_as_tuple(true, limiter));
+    auto it = std::find_if(_reputations.begin(), _reputations.end(),
+                           [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
+
+    if (it != _reputations.end()) {
+      return *it;
+    }
+
+    return nullptr;
   }
 
   void
-  addAlias(std::string alias, SniRateLimiter *limiter)
+  addList(List::IP *list)
   {
-    _limiters.emplace(alias, std::forward_as_tuple(false, limiter));
+    _lists.emplace_back(list);
+  }
+
+  List::IP *
+  findList(const std::string &name)
+  {
+    auto it = std::find_if(_lists.begin(), _lists.end(), [&name](const List::IP *list) { return list->name() == name; });
+
+    if (it != _lists.end()) {
+      return *it;
+    }
+
+    return nullptr;
   }
 
   void setupQueueCont();
   bool yamlParser(const std::string yaml_file);
-  IpReputation::SieveLru *findIpRep(const std::string &name);
 
   static void startup();
 
@@ -159,6 +195,7 @@ private:
   Limiters _limiters;                 // The SNI limiters
   SniRateLimiter *_default = nullptr; // Default limiter, if any
   IPReputations _reputations;         // IP-Reputation rules
+  Lists _lists;                       // IP lists (for now, could be generalized later)
   std::atomic<uint32_t> _leases = 0;  // Number of leases we have on the current selector, start with one
 
   static std::atomic<self_type *> _instance; // Holds the singleton instance, initialized in the .cc file

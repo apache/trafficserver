@@ -18,7 +18,6 @@
 #include "tscore/ink_config.h"
 #include <yaml-cpp/yaml.h>
 
-#include "sni_limiter.h"
 #include "sni_selector.h"
 
 std::atomic<SniSelector *> SniSelector::_instance = nullptr;
@@ -44,6 +43,39 @@ SniSelector::yamlParser(std::string yaml_file)
   _yaml_file       = yaml_file;
   _yaml_last_write = std::filesystem::last_write_time(_yaml_file);
 
+  // First build the Lists, if any
+  const YAML::Node &lists = config["lists"];
+
+  if (lists && lists.IsSequence()) {
+    for (size_t i = 0; i < lists.size(); ++i) {
+      const YAML::Node &list = lists[i];
+
+      if (list.IsMap() && list["name"]) {
+        std::string name = list["name"].as<std::string>();
+
+        if (nullptr != findList(name)) {
+          TSError("[%s] Duplicate List names being added (%s)", PLUGIN_NAME, name.c_str());
+          return false;
+        }
+
+        auto ipl = new List::IP(name);
+
+        if (ipl->parseYaml(list)) {
+          Dbg(dbg_ctl, "Loaded List rule: %s", name.c_str());
+          addList(ipl);
+        } else {
+          TSError("[%s] Failed to parse the List YAML node", PLUGIN_NAME);
+          delete ipl;
+          return false;
+        }
+      } else {
+        TSError("[%s] List node is not a map or without a name", PLUGIN_NAME);
+        return false;
+      }
+    }
+  }
+
+  // Next, build the IP reputation (if any)
   const YAML::Node &ipreps = config["ip-rep"];
 
   if (ipreps && ipreps.IsSequence()) {
@@ -61,6 +93,7 @@ SniSelector::yamlParser(std::string yaml_file)
         auto iprep = new IpReputation::SieveLru(name);
 
         if (iprep->parseYaml(ipr)) {
+          Dbg(dbg_ctl, "Loaded IP Reputation rule: %s", name.c_str());
           addIPReputation(iprep);
         } else {
           TSError("[%s] Failed to parse the ip-rep YAML node", PLUGIN_NAME);
@@ -74,9 +107,7 @@ SniSelector::yamlParser(std::string yaml_file)
     }
   }
 
-  // ToDo: Add the IP list YAML parsing
-
-  // Parse all the SNI selectors
+  // Finally, parse all the SNI selectors (if any)
   const YAML::Node &sel = config["selector"];
 
   if (sel && sel.IsSequence()) {
@@ -87,7 +118,7 @@ SniSelector::yamlParser(std::string yaml_file)
         // ToDo: Allow a sequence of names here
         std::string name = sni["sni"].as<std::string>();
 
-        if (nullptr != findSNI(name)) {
+        if (nullptr != findLimiter(name)) {
           TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, name.c_str());
           return false;
         }
@@ -108,7 +139,7 @@ SniSelector::yamlParser(std::string yaml_file)
             for (size_t j = 0; j < aliases.size(); ++j) {
               std::string alias = aliases[j].as<std::string>();
 
-              if (nullptr != findSNI(alias)) {
+              if (nullptr != findLimiter(alias)) {
                 TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, alias.c_str());
                 return false;
               }
@@ -215,19 +246,6 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
   }
 
   return TS_EVENT_NONE;
-}
-
-IpReputation::SieveLru *
-SniSelector::findIpRep(const std::string &name)
-{
-  auto it = std::find_if(_reputations.begin(), _reputations.end(),
-                         [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
-
-  if (it != _reputations.end()) {
-    return *it;
-  }
-
-  return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -40,6 +40,17 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
       return false;
     }
   }
+
+  // ToDo: It's unfortunate, but the selector holds the lists (and the ip-reps), so the lookup has to happen here ... :/.
+  if (node["exclude"]) {
+    std::string excl_name = node["exclude"].as<std::string>();
+
+    if (!(_exclude = _selector->findList(excl_name))) {
+      TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, excl_name.c_str(), name().c_str());
+      return false;
+    }
+  }
+
   Dbg(dbg_ctl, "Loaded selector rule: %s(%u, %u, %ld)", name().c_str(), limit(), max_queue(), static_cast<long>(max_age().count()));
 
   return true;
@@ -60,13 +71,23 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
     const char *server_name = TSVConnSslSniGet(vc, &len);
     const std::string sni_name(server_name, len);
     SniSelector *selector   = SniSelector::instance();
-    SniRateLimiter *limiter = selector->findSNI(sni_name);
+    SniRateLimiter *limiter = selector->findLimiter(sni_name);
 
     if (limiter) {
+      const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);
+
+      // See if this should be excluded from any rate limiting at all.
+      if (limiter->exclude() && limiter->exclude()->contains(swoc::IPAddr(sock))) {
+        Dbg(dbg_ctl, "Limiter on %s is excluded via List=%s", sni_name.c_str(), limiter->exclude()->name().c_str());
+        TSUserArgSet(vc, gVCIdx, nullptr);
+        TSVConnReenableEx(vc, TS_EVENT_ERROR);
+
+        return TS_ERROR;
+      }
+
       // Check if we have an IP reputation for this SNI, and if we should block
       if (limiter->iprep() && limiter->iprep()->initialized()) {
-        const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);
-        int32_t pressure     = limiter->pressure();
+        int32_t pressure = limiter->pressure();
 
         Dbg(dbg_ctl, "CLIENT_HELLO on %s, pressure=%d", sni_name.c_str(), pressure);
 

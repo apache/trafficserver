@@ -17,10 +17,12 @@
  */
 #pragma once
 
-#include "limiter.h"
-#include "ip_reputation.h"
 #include "ts/ts.h"
 #include <yaml-cpp/yaml.h>
+
+#include "limiter.h"
+#include "ip_reputation.h"
+#include "lists.h"
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 
@@ -67,6 +69,12 @@ public:
     return _iprep;
   }
 
+  List::IP *
+  exclude() const
+  {
+    return _exclude;
+  }
+
   SniSelector *
   selector() const
   {
@@ -76,4 +84,5 @@ public:
 private:
   SniSelector *_selector         = nullptr; // The selector we belong to
   IpReputation::SieveLru *_iprep = nullptr; // IP reputation for this SNI (if any)
+  List::IP *_exclude             = nullptr; // The list of IPs to exclude (if any). ToDo: belongs in limiter.h :-/.
 };
