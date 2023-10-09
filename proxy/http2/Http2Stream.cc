@@ -1207,7 +1207,10 @@ void
 Http2Stream::set_tx_error_code(ProxyError e)
 {
   if (!this->is_outbound_connection() && this->_sm) {
-    this->_sm->t_state.client_info.tx_error_code = e;
+    if (!(this->_sm->t_state.client_info.tx_error_code.cls == ProxyErrorClass::SSN && e.cls == ProxyErrorClass::TXN)) {
+      // if there is not an error already set for the session set the transaction level error
+      this->_sm->t_state.client_info.tx_error_code = e;
+    }
   }
 }
 
