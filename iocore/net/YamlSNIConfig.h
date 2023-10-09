@@ -64,6 +64,10 @@ TSDECL(valid_tls_version_min_in);
 TSDECL(valid_tls_version_max_in);
 TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
+TSDECL(http2_max_settings_frames_per_minute);
+TSDECL(http2_max_ping_frames_per_minute);
+TSDECL(http2_max_priority_frames_per_minute);
+TSDECL(http2_max_rst_stream_frames_per_minute);
 TSDECL(quic);
 TSDECL(host_sni_policy);
 TSDECL(http2_initial_window_size_in);
@@ -103,6 +107,10 @@ struct YamlSNIConfig {
     int valid_tls_version_max_in = -1;
     std::vector<int> tunnel_alpn{};
     std::optional<int> http2_buffer_water_mark;
+    std::optional<int> http2_max_settings_frames_per_minute;
+    std::optional<int> http2_max_ping_frames_per_minute;
+    std::optional<int> http2_max_priority_frames_per_minute;
+    std::optional<int> http2_max_rst_stream_frames_per_minute;
     uint32_t server_max_early_data = 0;
     std::optional<int> http2_initial_window_size_in;
 
