@@ -526,8 +526,9 @@ public:
     bool proxy_connect_hdr        = false;
     /// @c errno from the most recent attempt to connect.
     /// zero means no failure (not attempted, succeeded).
-    int connect_result                   = 0;
-    char *name                           = nullptr;
+    int connect_result = 0;
+    char *name         = nullptr;
+    swoc::IPAddr name_addr;
     TransferEncoding_t transfer_encoding = NO_TRANSFER_ENCODING;
 
     /** This is the source address of the connection from the point of view of the transaction.

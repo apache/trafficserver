@@ -1590,9 +1590,7 @@ HttpTransact::HandleRequest(State *s)
 
   // if ip in url or cop test page, not do srv lookup.
   if (s->txn_conf->srv_enabled) {
-    IpEndpoint addr;
-    ats_ip_pton(s->server_info.name, &addr);
-    s->my_txn_conf().srv_enabled = !ats_is_ip(&addr);
+    s->my_txn_conf().srv_enabled = !s->server_info.name_addr.is_valid();
   }
 
   // if the request is a trace or options request, decrement the
@@ -1610,10 +1608,8 @@ HttpTransact::HandleRequest(State *s)
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
     //   could change as a result of this ip address
-    IpEndpoint addr;
-    ats_ip_pton(s->server_info.name, &addr);
-    if (ats_is_ip(&addr)) {
-      ats_ip_copy(&s->request_data.dest_ip, &addr);
+    if (s->server_info.name_addr.is_valid()) {
+      s->server_info.name_addr.copy_to(&s->request_data.dest_ip.sa);
     }
 
     if (parentExists(s)) {
@@ -1634,8 +1630,7 @@ HttpTransact::HandleRequest(State *s)
   // Added to skip the dns if the document is in the cache.
   // DNS is requested before cache lookup only if there are rules in cache.config , parent.config or
   // if the newly added variable doc_in_cache_skip_dns is not enabled
-  if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
-      (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
+  if (s->server_info.name_addr.is_valid() && (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
       s->parent_params->parent_table->hostMatch) {
     s->force_dns = true;
   }
@@ -2020,7 +2015,7 @@ HttpTransact::OSDNSLookup(State *s)
     // or we're locked on a plugin supplied address.
     // therefore no more backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
-  } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->parent_table->hostMatch &&
+  } else if (s->server_info.name_addr.is_valid() && s->parent_params->parent_table->hostMatch &&
              !s->txn_conf->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
@@ -5706,6 +5701,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
+    s->server_info.name_addr.load(s->server_info.name);
   }
 
   s->next_hop_scheme = s->scheme = incoming_request->url_get()->scheme_get_wksidx();
