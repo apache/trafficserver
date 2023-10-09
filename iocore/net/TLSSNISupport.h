@@ -52,6 +52,10 @@ public:
 
   struct HintsFromSNI {
     std::optional<uint32_t> http2_buffer_water_mark;
+    std::optional<uint32_t> http2_max_settings_frames_per_minute;
+    std::optional<uint32_t> http2_max_ping_frames_per_minute;
+    std::optional<uint32_t> http2_max_priority_frames_per_minute;
+    std::optional<uint32_t> http2_max_rst_stream_frames_per_minute;
   } hints_from_sni;
 
 protected:

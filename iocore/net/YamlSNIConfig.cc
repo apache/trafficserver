@@ -144,6 +144,10 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_sni_policy,
                                                TS_http2,
                                                TS_http2_buffer_water_mark,
+                                               TS_http2_max_settings_frames_per_minute,
+                                               TS_http2_max_ping_frames_per_minute,
+                                               TS_http2_max_priority_frames_per_minute,
+                                               TS_http2_max_rst_stream_frames_per_minute,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
                                                TS_valid_tls_versions_in,
@@ -176,6 +180,18 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_http2_buffer_water_mark]) {
       item.http2_buffer_water_mark = node[TS_http2_buffer_water_mark].as<int>();
+    }
+    if (node[TS_http2_max_settings_frames_per_minute]) {
+      item.http2_max_settings_frames_per_minute = node[TS_http2_max_settings_frames_per_minute].as<int>();
+    }
+    if (node[TS_http2_max_ping_frames_per_minute]) {
+      item.http2_max_ping_frames_per_minute = node[TS_http2_max_ping_frames_per_minute].as<int>();
+    }
+    if (node[TS_http2_max_priority_frames_per_minute]) {
+      item.http2_max_priority_frames_per_minute = node[TS_http2_max_priority_frames_per_minute].as<int>();
+    }
+    if (node[TS_http2_max_rst_stream_frames_per_minute]) {
+      item.http2_max_rst_stream_frames_per_minute = node[TS_http2_max_rst_stream_frames_per_minute].as<int>();
     }
 
     // enum
