@@ -112,6 +112,7 @@ script, and we can write this in remap.config:
 This module can also act as a global plugin of Traffic Server. In this case we should provide one of these functions in
 each lua script:
 
+- **'do_global_vconn_start'**
 - **'do_global_txn_start'**
 - **'do_global_txn_close'**
 - **'do_global_os_dns'**
@@ -620,6 +621,7 @@ Hook point constants
 
 ::
 
+    TS_LUA_HOOK_VCONN_START
     TS_LUA_HOOK_OS_DNS
     TS_LUA_HOOK_PRE_REMAP
     TS_LUA_HOOK_READ_CACHE_HDR
@@ -643,6 +645,8 @@ Additional Information:
 |                       |                           |   do_remap() via     | do_os_response()   |   global context via |
 |                       |                           |   ts.hook()?         | via ts.hook()?     |   ts.hook()?         |
 +=======================+===========================+======================+====================+======================+
+| TS_VCONN_START_HOOK   | TS_LUA_HOOK_VCONN_START   |     NO               |    NO              |    YES               |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_TXN           | TS_LUA_HOOK               |     NO               |    NO              |    YES               |
 | _START_HOOK           | _TXN_START                |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
@@ -3376,6 +3380,66 @@ Here is an example
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.http.get_ssn_remote_addr
+---------------------------
+**syntax:** *ts.http.get_ssn_remote_addr()*
+
+**context:** after do_global_read_reqest
+
+**description:** This function can be used to get the remote address (IP, port, family) of the session.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_client_received_error
+---------------------------------
+**syntax:** *ts.http.get_client_received_error()*
+
+**context:** after do_global_txn_close
+
+**description:** This function can be used to get the client received error from transaction.
+
+Here is an example
+
+::
+
+    function do_global_txn_close()
+        local class, code = ts.http.get_client_received_error()
+        ts.debug('txn_close: '..class)
+        ts.debug('txn_close: '..code)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_client_sent_error
+-----------------------------
+**syntax:** *ts.http.get_client_sent_error()*
+
+**context:** after do_global_txn_close
+
+**description:** This function can be used to get the client sent error from transaction.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_server_received_error
+---------------------------------
+**syntax:** *ts.http.get_server_received_error()*
+
+**context:** after do_global_txn_close
+
+**description:** This function can be used to get the server received error from transaction.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_server_sent_error
+-----------------------------
+**syntax:** *ts.http.get_server_sent_error()*
+
+**context:** after do_global_txn_close
+
+**description:** This function can be used to get the server sent error from transaction.
+
+`TOP <#ts-lua-plugin>`_
+
 ts.add_package_path
 -------------------
 **syntax:** *ts.add_package_path(lua-style-path-str)*
@@ -4557,6 +4621,36 @@ ts.stat_find
 be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
 
 :ref:`TOP <admin-plugins-ts-lua>`
+
+ts.vconn.get_fd
+---------------
+**syntax:** *ts.vconn.get_fd()*
+
+**context:** do_global_vconn_start
+
+**description:** This function can be used to get the file descriptor of the virtual connection.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.vconn.disable_h2
+-------------------
+**syntax:** *ts.vconn.disable_h2()*
+
+**context:** do_global_vconn_start
+
+**description:** This function can be used to disable http/2 for the virtual connection.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.vconn.get_remote_addr
+------------------------
+**syntax:** *ts.vconn.get_remote_addr()*
+
+**context:** do_global_vconn_start
+
+**description:** This function can be used to get the remote address (IP, port, family) of the virtual connection.
+
+`TOP <#ts-lua-plugin>`_
 
 Todo
 ====

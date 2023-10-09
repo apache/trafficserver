@@ -60,6 +60,8 @@ ts_lua_fetch(lua_State *L)
 
   ci = ts_lua_get_cont_info(L);
   if (ci == NULL) {
+    TSError("[ts_lua][%s] no cont info found", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of cont info");
     return 0;
   }
 
@@ -124,6 +126,8 @@ ts_lua_fetch_multi(lua_State *L)
 
   ci = ts_lua_get_cont_info(L);
   if (ci == NULL) {
+    TSError("[ts_lua][%s] no cont info found", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of cont info");
     return 0;
   }
 

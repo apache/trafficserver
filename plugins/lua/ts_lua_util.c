@@ -26,6 +26,7 @@
 #include "ts_lua_cached_response.h"
 #include "ts_lua_context.h"
 #include "ts_lua_hook.h"
+#include "ts_lua_vconn.h"
 #include "ts_lua_http.h"
 #include "ts_lua_misc.h"
 #include "ts_lua_log.h"
@@ -545,6 +546,8 @@ ts_lua_inject_ts_api(lua_State *L)
   ts_lua_inject_context_api(L);
   ts_lua_inject_hook_api(L);
 
+  ts_lua_inject_vconn_api(L);
+
   ts_lua_inject_http_api(L);
   ts_lua_inject_intercept_api(L);
   ts_lua_inject_misc_api(L);
@@ -665,6 +668,95 @@ ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx)
 
   ts_lua_release_cont_info(ci);
   TSfree(http_ctx);
+}
+
+void
+ts_lua_set_vconn_ctx(lua_State *L, ts_lua_vconn_ctx *ctx)
+{
+  lua_pushliteral(L, "__ts_vconn_ctx");
+  lua_pushlightuserdata(L, ctx);
+  lua_rawset(L, LUA_GLOBALSINDEX);
+}
+
+ts_lua_vconn_ctx *
+ts_lua_get_vconn_ctx(lua_State *L)
+{
+  ts_lua_vconn_ctx *ctx;
+
+  lua_pushliteral(L, "__ts_vconn_ctx");
+  lua_rawget(L, LUA_GLOBALSINDEX);
+  ctx = lua_touserdata(L, -1);
+
+  lua_pop(L, 1); // pop the ctx out
+
+  return ctx;
+}
+
+ts_lua_vconn_ctx *
+ts_lua_create_vconn_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
+{
+  ts_lua_vconn_ctx *vconn_ctx;
+
+  vconn_ctx = TSmalloc(sizeof(ts_lua_vconn_ctx));
+  memset(vconn_ctx, 0, sizeof(*vconn_ctx));
+
+  lua_State *L = main_ctx->lua;
+  lua_State *l = lua_newthread(L);
+
+  lua_pushlightuserdata(L, conf);
+  lua_rawget(L, LUA_REGISTRYINDEX);
+
+  /* new globals table for coroutine */
+  lua_newtable(l);
+  lua_pushvalue(l, -1);
+  lua_setfield(l, -2, "_G");
+  lua_newtable(l);
+  lua_xmove(L, l, 1);
+  lua_setfield(l, -2, "__index");
+  lua_setmetatable(l, -2);
+
+  lua_replace(l, LUA_GLOBALSINDEX);
+
+  // init coroutine
+  vconn_ctx->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+  vconn_ctx->lua  = l;
+  vconn_ctx->mctx = main_ctx;
+
+  // update thread stats
+  ts_lua_ctx_stats *const stats = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  ++stats->threads;
+  if (stats->threads_max < stats->threads) {
+    stats->threads_max = stats->threads;
+  }
+  TSMutexUnlock(stats->mutexp);
+
+  vconn_ctx->instance_conf = conf;
+
+  ts_lua_set_vconn_ctx(l, vconn_ctx);
+  ts_lua_create_context_table(l);
+
+  return vconn_ctx;
+}
+
+void
+ts_lua_destroy_vconn_ctx(ts_lua_vconn_ctx *vconn_ctx)
+{
+  // update thread stats
+  ts_lua_main_ctx *const main_ctx = vconn_ctx->mctx;
+  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  --stats->threads;
+  TSMutexUnlock(stats->mutexp);
+
+  if (vconn_ctx->lua) {
+    luaL_unref(vconn_ctx->lua, LUA_REGISTRYINDEX, vconn_ctx->ref);
+  }
+
+  TSfree(vconn_ctx);
 }
 
 void
