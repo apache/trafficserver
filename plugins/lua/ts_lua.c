@@ -1019,13 +1019,6 @@ TSPluginInit(int argc, const char *argv[])
   }
   lua_pop(l, 1);
 
-  lua_getglobal(l, TS_LUA_FUNCTION_G_VCONN_START);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    //TSHttpHookAdd(TS_VCONN_START_HOOK, vconn_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "vconn_start_hook detected");
-  }
-  lua_pop(l, 1);
-
   ts_lua_destroy_http_ctx(http_ctx);
 
   TSCont vconn_contp = TSContCreate(vconnHookHandler, NULL);

@@ -718,7 +718,7 @@ ts_lua_create_vconn_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
   lua_replace(l, LUA_GLOBALSINDEX);
 
   // init coroutine
-  vconn_ctx->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
+  vconn_ctx->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
   vconn_ctx->lua  = l;
   vconn_ctx->mctx = main_ctx;
