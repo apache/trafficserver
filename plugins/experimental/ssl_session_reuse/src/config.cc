@@ -82,12 +82,11 @@ Config::loadConfig(const std::string &filename)
       }
     }
 
-    close(fd);
-
     m_noConfig      = false;
     success         = true;
     m_alreadyLoaded = true;
   }
+  close(fd);
 
   return success;
 }

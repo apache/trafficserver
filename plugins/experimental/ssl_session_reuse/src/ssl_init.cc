@@ -105,7 +105,7 @@ get_redis_auth_key(char *retKeyBuff, int buffSize)
   if (ssl_param.redis_auth_key_file.length()) {
     int fd = open(ssl_param.redis_auth_key_file.c_str(), O_RDONLY);
     struct stat info;
-    if (0 == fstat(fd, &info)) {
+    if (fd >= 0 && 0 == fstat(fd, &info)) {
       size_t n = info.st_size;
       std::string key_data;
       key_data.resize(n);
@@ -114,10 +114,13 @@ get_redis_auth_key(char *retKeyBuff, int buffSize)
       while (read_len > 1 && key_data[read_len - 1] == '\n') {
         --read_len;
       }
-      memset(retKeyBuff, 0, buffSize);
-      strncpy(retKeyBuff, key_data.c_str(), read_len);
-      retval = key_data.length();
+      if (read_len > 0 && read_len <= buffSize && static_cast<size_t>(read_len) <= key_data.length()) {
+        memset(retKeyBuff, 0, buffSize);
+        strncpy(retKeyBuff, key_data.c_str(), read_len);
+        retval = read_len;
+      }
     }
+    close(fd);
   } else {
     TSError("Can not get redis auth key.");
   }
