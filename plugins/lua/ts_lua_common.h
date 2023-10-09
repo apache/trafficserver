@@ -121,7 +121,6 @@ typedef struct {
 
 } ts_lua_vconn_ctx;
 
-
 /* lua state for http request */
 typedef struct {
   ts_lua_cont_info cinfo;
