@@ -30,11 +30,7 @@ int gVCIdx = -1;
 bool
 SniRateLimiter::parseYaml(const YAML::Node &node)
 {
-  if (node["limit"]) {
-    _limit = node["limit"].as<uint32_t>();
-  } else {
-    // ToDo: Should we require the limit ?
-  }
+  super_type::parseYaml(node);
 
   if (node["ip-rep"]) {
     std::string ipr_name = node["ip-rep"].as<std::string>();
@@ -44,28 +40,6 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
       return false;
     }
   }
-
-  const YAML::Node &queue = node["queue"];
-
-  // If enabled, we default to UINT32_MAX, but the object default is still 0 (no queue)
-  if (queue) {
-    _max_queue = queue["size"] ? queue["size"].as<uint32_t>() : UINT32_MAX;
-
-    if (queue["max_age"]) {
-      _max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
-    }
-
-    const YAML::Node &metrics = node["metrics"];
-
-    if (metrics) {
-      std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
-      std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
-
-      Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
-      initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
-    }
-  }
-
   Dbg(dbg_ctl, "Loaded selector rule: %s(%u, %u, %ld)", name().c_str(), limit(), max_queue(), static_cast<long>(max_age().count()));
 
   return true;

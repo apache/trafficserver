@@ -26,6 +26,7 @@
 
 #include "tscore/ink_config.h"
 #include "ts/ts.h"
+#include <yaml-cpp/yaml.h>
 #include "utilities.h"
 
 constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{300}; // Examine the queue every 300ms
@@ -65,14 +66,47 @@ static const char *RATE_LIMITER_METRIC_PREFIX = "plugin.rate_limiter";
 template <class T> class RateLimiter
 {
   using QueueItem = std::tuple<T, TSCont, QueueTime>;
+  using self_type = RateLimiter;
 
 public:
-  RateLimiter() : _queue_lock(TSMutexCreate()), _active_lock(TSMutexCreate()) {}
+  RateLimiter()                           = default;
+  RateLimiter(self_type &&)               = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
 
-  virtual ~RateLimiter()
+  virtual ~RateLimiter() = default;
+
+  virtual bool
+  parseYaml(const YAML::Node &node)
   {
-    TSMutexDestroy(_queue_lock);
-    TSMutexDestroy(_active_lock);
+    if (node["limit"]) {
+      _limit = node["limit"].as<uint32_t>();
+    } else {
+      // ToDo: Should we require the limit ?
+    }
+
+    const YAML::Node &queue = node["queue"];
+
+    // If enabled, we default to UINT32_MAX, but the object default is still 0 (no queue)
+    if (queue) {
+      _max_queue = queue["size"] ? queue["size"].as<uint32_t>() : UINT32_MAX;
+
+      if (queue["max_age"]) {
+        _max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
+      }
+
+      const YAML::Node &metrics = node["metrics"];
+
+      if (metrics) {
+        std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
+        std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
+
+        Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
+        initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
+      }
+    }
+
+    return true;
   }
 
   void
@@ -111,37 +145,31 @@ public:
     }
   }
 
-  void
-  initializeQueue(uint32_t max_queue, std::chrono::seconds max_age = std::chrono::seconds::zero())
-  {
-    this->max_queue = max_queue;
-    this->max_age   = max_age;
-  }
-
   // Reserve / release a slot from the active resource limits. Reserve will return
   // false if we are unable to reserve a slot.
   bool
   reserve()
   {
+    std::lock_guard<std::mutex> lock(_active_lock);
+
     TSReleaseAssert(_active <= limit());
-    TSMutexLock(_active_lock);
     if (_active < limit()) {
       ++_active;
-      TSMutexUnlock(_active_lock); // Reduce the critical section, release early
       Dbg(dbg_ctl, "Reserving a slot, active entities == %u", _active.load());
       return true;
-    } else {
-      TSMutexUnlock(_active_lock);
-      return false;
     }
+
+    return false;
   }
 
   void
   free()
   {
-    TSMutexLock(_active_lock);
-    --_active;
-    TSMutexUnlock(_active_lock);
+    {
+      std::lock_guard<std::mutex> lock(_active_lock);
+      --_active;
+    }
+
     Dbg(dbg_ctl, "Releasing a slot, active entities == %u", _active.load());
   }
 
@@ -170,25 +198,23 @@ public:
   push(T elem, TSCont cont)
   {
     QueueTime now = std::chrono::system_clock::now();
+    std::lock_guard<std::mutex> lock(_queue_lock);
 
-    TSMutexLock(_queue_lock);
     _queue.push_front(std::make_tuple(elem, cont, now));
     ++_size;
-    TSMutexUnlock(_queue_lock);
   }
 
   QueueItem
   pop()
   {
     QueueItem item;
+    std::lock_guard<std::mutex> lock(_queue_lock);
 
-    TSMutexLock(_queue_lock);
     if (!_queue.empty()) {
       item = std::move(_queue.back());
       _queue.pop_back();
       --_size;
     }
-    TSMutexUnlock(_queue_lock);
 
     return item;
   }
@@ -202,20 +228,19 @@ public:
   }
 
   bool
-  hasOldEntity(QueueTime now) const
+  hasOldEntity(QueueTime now)
   {
-    TSMutexLock(_queue_lock);
+    std::lock_guard<std::mutex> lock(_queue_lock);
+
     if (!_queue.empty()) {
       QueueItem item = _queue.back();
-      TSMutexUnlock(_queue_lock); // A little ugly but this reduces the critical section for the lock a little bit.
 
       std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item));
 
       return (age >= max_age());
-    } else {
-      TSMutexUnlock(_queue_lock);
-      return false;
     }
+
+    return false;
   }
 
   const std::string &
@@ -258,8 +283,8 @@ private:
   std::atomic<uint32_t> _active = 0; // Current active number of txns. This has to always stay <= limit above
   std::atomic<uint32_t> _size   = 0; // Current size of the pending queue of txns. This should aim to be < _max_queue
 
-  TSMutex _queue_lock, _active_lock; // Resource locks
-  std::deque<QueueItem> _queue;      // Queue for the pending TXN's. ToDo: Should also move (see below)
+  std::mutex _queue_lock, _active_lock; // Resource locks
+  std::deque<QueueItem> _queue;         // Queue for the pending TXN's. ToDo: Should also move (see below)
 
   int _metrics[RATE_LIMITER_METRIC_MAX];
 };

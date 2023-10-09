@@ -20,6 +20,7 @@
 #include "limiter.h"
 #include "ip_reputation.h"
 #include "ts/ts.h"
+#include <yaml-cpp/yaml.h>
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 
@@ -30,7 +31,8 @@ class SniSelector;
 //
 class SniRateLimiter : public RateLimiter<TSVConn>
 {
-  using self_type = SniRateLimiter;
+  using super_type = RateLimiter<TSVConn>;
+  using self_type  = SniRateLimiter;
 
 public:
   SniRateLimiter()                        = delete;
