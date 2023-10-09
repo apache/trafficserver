@@ -42,9 +42,9 @@ if(maxminddb_FOUND)
     target_link_libraries(header_rewrite PRIVATE maxminddb::maxminddb)
 endif()
 
-add_executable(test_header_rewrite header_rewrite_test.cc)
 
 if(BUILD_TESTING)
+    add_executable(test_header_rewrite header_rewrite_test.cc)
     add_test(
         NAME test_header_rewrite
         COMMAND $<TARGET_FILE:test_header_rewrite>
