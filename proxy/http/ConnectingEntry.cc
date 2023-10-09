@@ -152,13 +152,12 @@ ConnectingEntry::state_http_server_open(int event, void *data)
 void
 ConnectingEntry::remove_entry()
 {
-  EThread *ethread = this_ethread();
-  auto ip_iter     = ethread->connecting_pool->m_ip_pool.find(this->ipaddr);
-  while (ip_iter != ethread->connecting_pool->m_ip_pool.end() && this->ipaddr == ip_iter->first) {
+  EThread *ethread            = this_ethread();
+  auto [iter_start, iter_end] = ethread->connecting_pool->m_ip_pool.equal_range(this->ipaddr);
+  for (auto ip_iter = iter_start; ip_iter != iter_end; ++ip_iter) {
     if (ip_iter->second == this) {
       ethread->connecting_pool->m_ip_pool.erase(ip_iter);
       break;
     }
-    ++ip_iter;
   }
 }
