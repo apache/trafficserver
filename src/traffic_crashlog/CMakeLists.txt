@@ -15,7 +15,7 @@
 #
 #######################
 
-add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc)
+add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc ../api/DbgCtl.cc)
 
 target_link_libraries(traffic_crashlog
     PRIVATE

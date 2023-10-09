@@ -16,6 +16,7 @@
 #######################
 
 add_library(tsapi SHARED
+	DbgCtl.cc
 	InkAPI.cc
 	InkIOCoreAPI.cc
 )

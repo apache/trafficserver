@@ -20,6 +20,7 @@ add_executable(traffic_layout
     file_system.cc
     info.cc
     traffic_layout.cc
+    ../api/DbgCtl.cc
 )
 
 target_link_libraries(traffic_layout

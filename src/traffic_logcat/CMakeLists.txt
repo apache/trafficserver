@@ -17,6 +17,7 @@
 
 add_executable(traffic_logcat
   ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
+  ${PROJECT_SOURCE_DIR}/src/api/DbgCtl.cc
   logcat.cc
 )
 target_link_libraries(traffic_logcat

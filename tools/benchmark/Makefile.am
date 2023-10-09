@@ -61,17 +61,17 @@ benchmark_LD_ADD = \
 benchmark_FreeList_SOURCES = benchmark_FreeList.cc
 benchmark_FreeList_CPPFLAGS = $(benchmark_CPP_FLAGS)
 benchmark_FreeList_LDFLAGS = $(benchmark_LD_FLAGS)
-benchmark_FreeList_LDADD = $(benchmark_LD_ADD)
+benchmark_FreeList_LDADD = $(top_builddir)/src/api/DbgCtl.lo $(benchmark_LD_ADD)
 
 benchmark_ProxyAllocator_SOURCES = benchmark_ProxyAllocator.cc
 benchmark_ProxyAllocator_CPPFLAGS = $(benchmark_CPP_FLAGS)
 benchmark_ProxyAllocator_LDFLAGS = $(benchmark_LD_FLAGS)
-benchmark_ProxyAllocator_LDADD = $(benchmark_LD_ADD)
+benchmark_ProxyAllocator_LDADD = $(top_builddir)/src/api/DbgCtl.lo $(benchmark_LD_ADD)
 
 benchmark_SharedMutex_SOURCES = benchmark_SharedMutex.cc
 benchmark_SharedMutex_CPPFLAGS = $(benchmark_CPP_FLAGS)
 benchmark_SharedMutex_LDFLAGS = $(benchmark_LD_FLAGS)
-benchmark_SharedMutex_LDADD = $(benchmark_LD_ADD)
+benchmark_SharedMutex_LDADD = $(top_builddir)/src/api/DbgCtl.lo $(benchmark_LD_ADD)
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

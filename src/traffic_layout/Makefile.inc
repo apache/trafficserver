@@ -42,6 +42,7 @@ traffic_layout_traffic_layout_SOURCES = \
 	traffic_layout/info.h
 
 traffic_layout_traffic_layout_LDADD = \
+	$(top_builddir)/src/api/DbgCtl.lo \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \

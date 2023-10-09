@@ -53,6 +53,7 @@ libtsapi_la_LIBADD = \
 	@SWOC_LIBS@
 
 libtsapi_la_SOURCES = \
+	DbgCtl.cc \
 	InkAPI.cc \
 	InkIOCoreAPI.cc
 

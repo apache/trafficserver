@@ -49,7 +49,6 @@ libtscore_a_SOURCES = \
 	ConsistentHash.cc \
 	ContFlags.cc \
 	CryptoHash.cc \
-	DbgCtl.cc \
 	Diags.cc \
 	Encoding.cc \
 	Errata.cc \

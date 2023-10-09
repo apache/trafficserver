@@ -152,3 +152,36 @@ TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_u
   constexpr swoc::TextView no_dot = "logging_yaml";
   REQUIRE(get_unrolled_filename(no_dot) == no_dot);
 }
+
+// Stubs
+
+#include <ts/DbgCtl.h>
+
+std::atomic<int> DbgCtl::_config_mode{0};
+
+DbgCtl::_TagData const *
+DbgCtl::_new_reference(char const *)
+{
+  return &_No_tag_dummy();
+}
+
+void
+DbgCtl::print(char const *, char const *, char const *, int, char const *, ...)
+{
+}
+
+void
+DbgCtl::_rm_reference()
+{
+}
+
+bool
+DbgCtl::_override_global_on()
+{
+  return false;
+}
+
+void
+DbgCtl::update()
+{
+}

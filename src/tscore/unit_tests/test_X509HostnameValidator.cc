@@ -197,3 +197,30 @@ main(int argc, const char **argv)
 
   return status;
 }
+
+// Stubs
+
+#include <ts/DbgCtl.h>
+
+std::atomic<int> DbgCtl::_config_mode{0};
+
+DbgCtl::_TagData const *
+DbgCtl::_new_reference(char const *)
+{
+  return &_No_tag_dummy();
+}
+
+void
+DbgCtl::print(char const *, char const *, char const *, int, char const *, ...)
+{
+}
+
+void
+DbgCtl::_rm_reference()
+{
+}
+
+void
+DbgCtl::update()
+{
+}

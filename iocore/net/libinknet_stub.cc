@@ -147,3 +147,34 @@ FetchSM::ext_init(Continuation *, char const *, char const *, char const *, sock
 }
 
 ChunkedHandler::ChunkedHandler() {}
+
+#include <ts/DbgCtl.h>
+
+std::atomic<int> DbgCtl::_config_mode{0};
+
+DbgCtl::_TagData const *
+DbgCtl::_new_reference(char const *)
+{
+  return &_No_tag_dummy();
+}
+
+void
+DbgCtl::print(char const *, char const *, char const *, int, char const *, ...)
+{
+}
+
+void
+DbgCtl::_rm_reference()
+{
+}
+
+bool
+DbgCtl::_override_global_on()
+{
+  return false;
+}
+
+void
+DbgCtl::update()
+{
+}

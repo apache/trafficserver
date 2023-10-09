@@ -22,6 +22,24 @@ include_directories(
         ${PROXY_INCLUDE_DIRS}
 )
 
+macro(add_simple_test name)
+    add_executable(${name}
+            ${ARGN})
+    target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/lib/catch2)
+    target_link_libraries(${name} PRIVATE
+            records
+            inkevent
+            tscore
+            tsapicore
+            tscpputil
+            libswoc
+            yaml-cpp::yaml-cpp)
+    add_test(NAME test_simple_${name} COMMAND $<TARGET_FILE:${name}>)
+endmacro()
+
+add_simple_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
+add_simple_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
+
 link_libraries(
         inkcache
         http
@@ -129,9 +147,6 @@ target_link_libraries(test_net
         hdrs
         proxy
 )
-
-add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
-add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
 
 add_stubbed_test(HttpTransact
   ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/main.cc

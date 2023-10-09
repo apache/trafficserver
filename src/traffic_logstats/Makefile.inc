@@ -43,6 +43,7 @@ traffic_logstats_traffic_logstats_SOURCES = \
 	traffic_logstats/logstats.cc
 
 traffic_logstats_traffic_logstats_LDADD = \
+	$(top_builddir)/src/api/DbgCtl.lo \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \

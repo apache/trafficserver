@@ -209,3 +209,34 @@ HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsi
   this->hosts_statuses[std::string(host)]->local_down_time = down_time;
   NH_Debug("next_hop", "setting host status for '%.*s' to %s", host.size(), host.data(), HostStatusNames[status]);
 }
+
+#include <ts/DbgCtl.h>
+
+std::atomic<int> DbgCtl::_config_mode{0};
+
+DbgCtl::_TagData const *
+DbgCtl::_new_reference(char const *)
+{
+  return &_No_tag_dummy();
+}
+
+void
+DbgCtl::print(char const *, char const *, char const *, int, char const *, ...)
+{
+}
+
+void
+DbgCtl::_rm_reference()
+{
+}
+
+bool
+DbgCtl::_override_global_on()
+{
+  return false;
+}
+
+void
+DbgCtl::update()
+{
+}
