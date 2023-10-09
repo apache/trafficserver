@@ -54,12 +54,12 @@ ts_lua_http_ctx *ts_lua_get_http_ctx(lua_State *L);
     return 0;                                         \
   }
 
-#define GET_VCONN_CONTEXT(ctx, list)                    \
-  ctx = ts_lua_get_vconn_ctx(list);                     \
-  if (ctx == NULL) {                                    \
-    TSError("[ts_lua] missing vconn_ctx");              \
-    TSReleaseAssert(!"Unexpected fetch of vconn_ctx");  \
-    return 0;                                           \
+#define GET_VCONN_CONTEXT(ctx, list)                   \
+  ctx = ts_lua_get_vconn_ctx(list);                    \
+  if (ctx == NULL) {                                   \
+    TSError("[ts_lua] missing vconn_ctx");             \
+    TSReleaseAssert(!"Unexpected fetch of vconn_ctx"); \
+    return 0;                                          \
   }
 
 ts_lua_http_ctx *ts_lua_create_http_ctx(ts_lua_main_ctx *mctx, ts_lua_instance_conf *conf);
