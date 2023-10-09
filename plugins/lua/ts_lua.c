@@ -556,6 +556,73 @@ configHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 }
 
 static int
+vconnHookHandler(TSCont contp, TSEvent event, void *edata)
+{
+  TSVConn vconn = (TSVConn)edata;
+
+  int ret;
+  uint64_t req_id;
+
+  lua_State *l;
+
+  ts_lua_main_ctx *main_ctx;
+  ts_lua_vconn_ctx *vconn_ctx;
+
+  ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+
+  req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+
+  main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
+
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
+
+  TSMutexLock(main_ctx->mutexp);
+
+  vconn_ctx        = ts_lua_create_vconn_ctx(main_ctx, conf);
+  vconn_ctx->vconn = vconn;
+  l                = vconn_ctx->lua;
+
+  switch (event) {
+  case TS_EVENT_VCONN_START:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_VCONN_START);
+    break;
+
+  default:
+    ts_lua_destroy_vconn_ctx(vconn_ctx);
+    TSMutexUnlock(main_ctx->mutexp);
+    TSVConnReenable(vconn);
+    return 0;
+  }
+
+  if (lua_type(l, -1) != LUA_TFUNCTION) {
+    lua_pop(l, 1);
+    ts_lua_destroy_vconn_ctx(vconn_ctx);
+    TSMutexUnlock(main_ctx->mutexp);
+
+    TSVConnReenable(vconn);
+    return 0;
+  }
+
+  if (lua_pcall(l, 0, 1, 0) != 0) {
+    TSError("[ts_lua][%s] lua_pcall failed: %s", __FUNCTION__, lua_tostring(l, -1));
+  }
+
+  ret = lua_tointeger(l, -1);
+  lua_pop(l, 1);
+
+  ts_lua_destroy_vconn_ctx(vconn_ctx);
+
+  TSMutexUnlock(main_ctx->mutexp);
+  if (ret) {
+    TSError("[ts_lua][%s] error returned", __FUNCTION__);
+  } else {
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no error returned", __FUNCTION__);
+  }
+  TSVConnReenable(vconn);
+  return 0;
+}
+
+static int
 globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
@@ -907,6 +974,26 @@ TSPluginInit(int argc, const char *argv[])
   lua_pop(l, 1);
 
   ts_lua_destroy_http_ctx(http_ctx);
+
+  TSCont vconn_contp = TSContCreate(vconnHookHandler, NULL);
+  if (!vconn_contp) {
+    TSError("[ts_lua][%s] could not create vconn continuation", __FUNCTION__);
+    return;
+  }
+  TSContDataSet(vconn_contp, conf);
+
+  // adding hook based on whther the lua global vconn function exists
+  ts_lua_vconn_ctx *vconn_ctx = ts_lua_create_vconn_ctx(main_ctx, conf);
+  lua_State *vl               = vconn_ctx->lua;
+
+  lua_getglobal(vl, TS_LUA_FUNCTION_G_VCONN_START);
+  if (lua_type(vl, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_VCONN_START_HOOK, vconn_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "vconn_start_hook added");
+  }
+  lua_pop(vl, 1);
+
+  ts_lua_destroy_vconn_ctx(vconn_ctx);
 
   // support for reload as global plugin
   if (reload) {
