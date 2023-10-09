@@ -37,6 +37,7 @@ add_library(http3 STATIC
     QPACK.cc
 )
 add_library(ts::http3 ALIAS http3)
+set_target_properties(http3 PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)

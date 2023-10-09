@@ -75,6 +75,7 @@ add_library(inknet STATIC
         SNIActionPerformer.cc
         )
 add_library(ts::inknet ALIAS inknet)
+set_target_properties(inknet PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(TS_USE_QUIC)
     add_subdirectory(quic)

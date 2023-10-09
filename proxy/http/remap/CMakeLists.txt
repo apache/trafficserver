@@ -35,6 +35,7 @@ add_library(http_remap STATIC
         UrlRewrite.cc
 )
 add_library(ts::http_remap ALIAS http_remap)
+set_target_properties(http_remap PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(http_remap
     PUBLIC

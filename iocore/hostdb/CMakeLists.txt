@@ -24,6 +24,7 @@ add_library(inkhostdb STATIC
     HostDBInfo.cc
 )
 add_library(ts::inkhostdb ALIAS inkhostdb)
+set_target_properties(inkhostdb PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(inkhostdb
     PUBLIC
@@ -42,6 +43,8 @@ target_link_libraries(inkhostdb
         ts::inkdns
         ts::inkevent
         ts::tscore
+        ts::inkdns
     PRIVATE
         ts::proxy
+        ts::http
 )

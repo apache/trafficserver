@@ -33,6 +33,7 @@ add_library(logging STATIC
         YamlLogConfigDecoders.cc
 )
 add_library(ts::logging ALIAS logging)
+set_target_properties(logging PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(logging PRIVATE
         ${IOCORE_INCLUDE_DIRS}

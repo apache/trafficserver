@@ -21,13 +21,13 @@ add_library(esicore
         EsiParser.cc
         EsiProcessor.cc
         Expression.cc
-        HandlerManager.cc
         Stats.cc
         Variables.cc
 )
-target_link_libraries(esicore PUBLIC esi-common fetcher libswoc)
+target_link_libraries(esicore PUBLIC esi-common libswoc)
 target_include_directories(esicore
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../fetcher"
 )
 set_target_properties(esicore PROPERTIES POSITION_INDEPENDENT_CODE ON)

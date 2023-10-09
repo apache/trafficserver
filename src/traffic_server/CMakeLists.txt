@@ -21,7 +21,6 @@ add_executable(traffic_server
         SocksProxy.cc
         traffic_server.cc
         RpcAdminPubHandlers.cc
-        ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
         )
 target_include_directories(traffic_server PRIVATE
         ${IOCORE_INCLUDE_DIRS}
@@ -30,25 +29,24 @@ target_include_directories(traffic_server PRIVATE
 )
 target_link_libraries(traffic_server
     PRIVATE
-        ts::tscore
         ts::tsapi
         ts::tsapicore
-        ts::http
-        ts::http_remap
-        ts::http2
         ts::logging
-        ts::hdrs
         ts::configmanager
         ts::diagsconfig
         ts::inkutils
-        ts::inkdns
         ts::inkhostdb
         ts::inkcache
         ts::aio
         ts::proxy
-        ts::inknet
         ts::records
         ts::inkevent
+        ts::inknet
+        ts::inkdns
+        ts::http
+        ts::http2
+        ts::http_remap
+        ts::hdrs
         libswoc
         ts::jsonrpc_protocol
         ts::jsonrpc_server

@@ -36,6 +36,7 @@ add_library(inkevent STATIC
         RecRawStatsImpl.cc
         RecProcess.cc)
 add_library(ts::inkevent ALIAS inkevent)
+set_target_properties(inkevent PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

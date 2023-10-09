@@ -31,6 +31,7 @@ add_library(hdrs STATIC
         HeaderValidator.cc
 )
 add_library(ts::hdrs ALIAS hdrs)
+set_target_properties(hdrs PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(hdrs
     PUBLIC

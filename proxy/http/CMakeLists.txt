@@ -41,6 +41,7 @@ add_library(http STATIC
         PreWarmConfig.cc
 )
 add_library(ts::http ALIAS http)
+set_target_properties(http PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_REGRESSION_TESTING)
     target_sources(http PRIVATE RegressionHttpTransact.cc)
@@ -63,11 +64,14 @@ target_link_libraries(http
         ts::proxy
         ts::tsapicore
         ts::tscore
+        ts::hdrs
+        ts::http_remap
     PRIVATE
         ts::http2
         ts::http_remap
         ts::inkcache
         ts::inkutils
+        ts::logging
 )
 
 if(TS_USE_QUIC)

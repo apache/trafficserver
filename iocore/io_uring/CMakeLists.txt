@@ -20,6 +20,7 @@ add_library(inkuring STATIC
         IOUringEventIO.cc
 )
 add_library(ts::inkuring ALIAS inkuring)
+set_target_properties(inkuring PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/iocore/dns

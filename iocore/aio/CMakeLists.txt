@@ -36,3 +36,4 @@ target_link_libraries(aio
 if(TS_USE_LINUX_IO_URING)
 target_link_libraries(aio PUBLIC ts::inkuring)
 endif()
+set_target_properties(aio PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

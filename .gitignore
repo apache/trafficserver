@@ -23,7 +23,7 @@ Makefile.in
 .cproject
 .idea
 
-CMakeUserPresets.json
+/CMakeUserPresets.json
 
 # clangd language server files.
 /compile_commands.json

@@ -22,41 +22,6 @@ include_directories(
         ${PROXY_INCLUDE_DIRS}
 )
 
-link_libraries(
-        inkcache
-        http
-        http_remap
-        http2
-        logging
-        hdrs
-        diagsconfig
-        inkutils
-        inkdns
-        inkhostdb
-        proxy
-        http
-        inkutils
-        inkdns
-        inkhostdb
-        proxy
-        http
-        hdrs
-        http_remap
-        logging
-        fastlz
-        aio
-        records
-        tscore
-        tsapicore
-        tscpputil
-        proxy
-        inknet
-        inkevent
-        yaml-cpp::yaml-cpp
-        libswoc
-        catch2::catch2
-        jsonrpc_protocol
-)
 if (TS_USE_LINUX_IO_URING)
     link_libraries(inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
@@ -67,22 +32,60 @@ macro(add_cache_test name)
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc
             ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
+    target_link_libraries(${name}
+      PRIVATE
+        ts::inkcache
+        ts::http
+        ts::http_remap
+        ts::hdrs
+        catch2::catch2
+        ts::inknet
+        ts::inkdns
+        ts::logging
+        ts::jsonrpc_server
+    )
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 macro(add_net_test name)
     add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc
-            ${ARGN})
+        ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc
+        ${ARGN}
+    )
+    target_link_libraries(${name}
+      PRIVATE
+        ts::tsapi
+        ts::proxy
+        ts::inknet
+        ts::inkdns
+        ts::http
+        ts::http_remap
+        ts::hdrs
+        ts::logging
+        ts::proxy
+        ts::inkhostdb
+        catch2::catch2
+        ts::jsonrpc_server
+    )
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 macro(add_stubbed_test name)
     add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
-            ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::proxy)
+      ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
+      ${ARGN})
+    target_link_libraries(${name}
+      PRIVATE
+        ts::proxy
+        ts::hdrs
+        ts::http
+        ts::http2
+        ts::http_remap
+        ts::inknet
+        ts::inkdns
+        ts::logging
+        ts::jsonrpc_server
+        catch2::catch2)
     add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
@@ -111,6 +114,7 @@ add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S
 #add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
 
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
+target_link_libraries(test_AIO PRIVATE ts::tscore ts::aio libswoc catch2::catch2)
 add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO> WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/iocore/aio)
 
 add_net_test(test_net

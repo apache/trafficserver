@@ -32,6 +32,7 @@ add_library(quic STATIC
     QUICStreamVCAdapter.cc
 )
 add_library(ts::quic ALIAS quic)
+set_target_properties(quic PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

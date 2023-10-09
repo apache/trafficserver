@@ -18,9 +18,25 @@
 add_library(tsapi SHARED
 	InkAPI.cc
 	InkIOCoreAPI.cc
+  ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 add_library(ts::tsapi ALIAS tsapi)
-target_link_libraries(tsapi PRIVATE ts::tscore)
+if(APPLE)
+  target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
+endif()
+target_link_libraries(tsapi
+  PRIVATE
+    ts::tscore
+    ts::http
+    ts::http_remap
+    ts::http2
+    ts::hdrs
+    ts::inknet
+    ts::inkdns
+    ts::configmanager
+    ts::jsonrpc_protocol
+    ts::logging
+)
 
 add_library(tsapicore STATIC
   APIHook.cc
@@ -34,6 +50,7 @@ add_library(tsapicore STATIC
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
+set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(
   ${IOCORE_INCLUDE_DIRS}
@@ -42,10 +59,6 @@ include_directories(
 )
 
 install(TARGETS tsapi)
-
-if(APPLE)
-  target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
-endif()
 
 if(BUILD_TESTING)
   add_executable(test_Metrics

@@ -20,7 +20,23 @@ add_library(esitest
     StubIncludeHandler.cc
     TestHandlerManager.cc
 )
-target_link_libraries(esitest PUBLIC esi-common esicore)
+target_link_libraries(esitest
+  PUBLIC
+    esi-common
+    esicore
+    ts::tsapi
+    ts::inkcache
+    ts::hdrs
+    ts::http
+    ts::http_remap
+    ts::inknet
+    ts::inkdns
+    ts::logging
+    ts::jsonrpc_protocol
+    ts::http2
+    configmanager
+    z
+)
 
 macro(ADD_ESI_TEST NAME)
     add_executable(${NAME} print_funcs.cc ${ARGN})
@@ -29,14 +45,14 @@ macro(ADD_ESI_TEST NAME)
 endmacro()
 
 add_esi_test(test_docnode docnode_test.cc)
-target_link_libraries(test_docnode PRIVATE catch2::catch2 esi-common esicore)
+target_link_libraries(test_docnode PRIVATE catch2::catch2 esicore ts::inkdns)
 add_esi_test(test_parser parser_test.cc)
-target_link_libraries(test_parser PRIVATE catch2::catch2 esi-common esicore)
+target_link_libraries(test_parser PRIVATE catch2::catch2 esicore)
 add_esi_test(test_processor processor_test.cc)
-target_link_libraries(test_processor PRIVATE catch2::catch2 esi-common esicore)
+target_link_libraries(test_processor PRIVATE catch2::catch2 esicore)
 add_esi_test(test_utils utils_test.cc)
-target_link_libraries(test_utils PRIVATE catch2::catch2 esi-common)
+target_link_libraries(test_utils PRIVATE catch2::catch2)
 add_esi_test(test_vars vars_test.cc)
-target_link_libraries(test_vars PRIVATE catch2::catch2 esi-common esicore)
+target_link_libraries(test_vars PRIVATE catch2::catch2 esicore)
 add_esi_test(test_gzip gzip_test.cc)
-target_link_libraries(test_gzip PRIVATE catch2::catch2 esi-common)
+target_link_libraries(test_gzip PRIVATE catch2::catch2)

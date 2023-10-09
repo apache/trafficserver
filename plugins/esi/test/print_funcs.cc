@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "tscore/I_Version.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
@@ -30,6 +31,8 @@
 #include <ts/ts.h>
 
 static const int LINE_SIZE = 1024 * 1024;
+
+AppVersionInfo appVersionInfo;
 
 namespace
 {

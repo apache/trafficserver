@@ -32,6 +32,7 @@ add_library(inkcache STATIC
     Store.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
+set_target_properties(inkcache PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_REGRESSION_TESTING)
     target_sources(inkcache PRIVATE CacheTest.cc)
