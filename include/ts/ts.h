@@ -2468,6 +2468,42 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 
+/**
+ * @brief Get the client error received from the transaction
+ *
+ * @param txnp The transaction where the error code is stored
+ * @param error_class Either session/connection or stream/transaction error
+ * @param error_code Error code received from the client
+ */
+void TSHttpTxnClientReceivedErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code);
+
+/**
+ * @brief Get the client error sent from the transaction
+ *
+ * @param txnp The transaction where the error code is stored
+ * @param error_class Either session/connection or stream/transaction error
+ * @param error_code Error code sent to the client
+ */
+void TSHttpTxnClientSentErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code);
+
+/**
+ * @brief Get the server error received from the transaction
+ *
+ * @param txnp The transaction where the error code is stored
+ * @param error_class Either session/connection or stream/transaction error
+ * @param error_code Error code sent from the server
+ */
+void TSHttpTxnServerReceivedErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code);
+
+/**
+ * @brief Get the server error sent from the transaction
+ *
+ * @param txnp The transaction where the error code is stored
+ * @param error_class Either session/connection or stream/transaction error
+ * @param error_code Error code sent to the server
+ */
+void TSHttpTxnServerSentErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -1240,6 +1240,7 @@ struct IpAddr {
       - Else: 0.
   */
   uint32_t hash() const;
+  uint64_t hash64() const;
 
   /** The hashing function embedded in a functor.
       @see hash
@@ -1434,6 +1435,18 @@ IpAddr::hash() const
   return zret;
 }
 
+inline uint64_t
+IpAddr::hash64() const
+{
+  uint64_t zret = 0;
+  if (this->isIp4()) {
+    zret = ntohl(_addr._ip4);
+  } else if (this->isIp6()) {
+    zret = _addr._u64[0] ^ _addr._u64[1];
+  }
+  return zret;
+}
+
 /// Write IP @a addr to storage @a dst.
 /// @return @s dst.
 sockaddr *ats_ip_set(sockaddr *dst,      ///< Destination storage.
@@ -1559,3 +1572,16 @@ bwformat(BufferWriter &w, BWFSpec const &spec, IpEndpoint const &addr)
   return bwformat(w, spec, &addr.sa);
 }
 } // namespace ts
+
+namespace std
+{
+/// Standard hash support for @a IPAddr.
+template <> struct hash<IpAddr> {
+  size_t
+  operator()(IpAddr const &addr) const
+  {
+    return addr.hash64();
+  }
+};
+
+} // namespace std
