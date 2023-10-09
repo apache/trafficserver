@@ -57,7 +57,7 @@ TEST_CASE("uriEncode(): encode reserved chars in a name which is not object name
   String encoded  = uriEncode(in, /* isObjectName */ false);
 
   CHECK(3 * in.length() == encoded.length()); /* size of "%NN" = 3 */
-  CHECK_FALSE(encoded.compare("%20%2F%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
+  CHECK_FALSE(encoded.compare("%20%2F%21%22%23%24%25%26%27%28%29%2A%20%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
 }
 
 TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][utility]")
@@ -66,7 +66,7 @@ TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][u
   String encoded  = uriEncode(in, /* isObjectName */ true);
 
   CHECK(3 * in.length() - 2 == encoded.length()); /* size of "%NN" = 3, '/' is not encoded */
-  CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
+  CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%20%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
 }
 
 TEST_CASE("isUriEncoded(): check an empty input", "[AWS][auth][utility]")

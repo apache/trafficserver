@@ -93,6 +93,10 @@ uriEncode(const String &in, bool isObjectName)
     } else if (isObjectName && i == '/') {
       /* Encode the forward slash character, '/', everywhere except in the object key name. */
       result << "/";
+    } else if (i == '+') {
+      /* Only written in the example code, but a plus sign is treated as a space regardless of the position and it must be encoded
+       * as "%20" instead of "%2B" */
+      result << "%20";
     } else {
       /* Letters in the hexadecimal value must be upper-case, for example "%1A". */
       result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(i);
