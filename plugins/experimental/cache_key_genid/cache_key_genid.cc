@@ -18,8 +18,8 @@
  */
 
 #include <ts/ts.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <kclangc.h>
 
 #define PLUGIN_NAME "cache-key-genid"
@@ -95,7 +95,7 @@ get_genid(char *host)
 static int
 handle_hook(TSCont *contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   char *url = nullptr, *host = nullptr;
   int url_length;
   int gen_id;
@@ -172,5 +172,5 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate((TSEventFunc)handle_hook, nullptr));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(reinterpret_cast<TSEventFunc>(handle_hook), nullptr));
 }

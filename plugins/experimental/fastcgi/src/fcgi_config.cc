@@ -113,7 +113,7 @@ FcgiPluginConfig::getFcgiParams()
 void
 FcgiPluginConfig::setFcgiParams(FCGIParams *params)
 {
-  params = params;
+  this->params = params;
 }
 TSMgmtString
 FcgiPluginConfig::getDocumentRootDir()

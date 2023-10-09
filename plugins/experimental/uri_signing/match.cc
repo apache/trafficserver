@@ -18,8 +18,8 @@
 
 #include <regex.h>
 #include "common.h"
-#include <stdbool.h>
-#include <string.h>
+
+#include <cstring>
 
 bool
 match_hash(const char *needle, const char *haystack)
@@ -32,9 +32,9 @@ match_regex(const char *pattern, const char *uri)
 {
   struct re_pattern_buffer pat_buff;
 
-  pat_buff.translate = 0;
-  pat_buff.fastmap   = 0;
-  pat_buff.buffer    = 0;
+  pat_buff.translate = nullptr;
+  pat_buff.fastmap   = nullptr;
+  pat_buff.buffer    = nullptr;
   pat_buff.allocated = 0;
 
   re_syntax_options = RE_SYNTAX_POSIX_MINIMAL_EXTENDED;
@@ -49,7 +49,7 @@ match_regex(const char *pattern, const char *uri)
   }
 
   int match_ret;
-  match_ret = re_match(&pat_buff, uri, strlen(uri), 0, 0);
+  match_ret = re_match(&pat_buff, uri, strlen(uri), 0, nullptr);
   regfree(&pat_buff);
 
   return match_ret >= 0;

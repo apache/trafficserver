@@ -64,7 +64,7 @@
   ((u_char *)(p))[6] = (u_char)((n) >> 8);            \
   ((u_char *)(p))[7] = (u_char)(n)
 
-typedef enum {
+enum TSMp4AtomID {
   MP4_TRAK_ATOM = 0,
   MP4_TKHD_ATOM,
   MP4_MDIA_ATOM,
@@ -92,20 +92,20 @@ typedef enum {
   MP4_CO64_ATOM,
   MP4_CO64_DATA,
   MP4_LAST_ATOM = MP4_CO64_DATA
-} TSMp4AtomID;
+};
 
-typedef struct {
+struct mp4_atom_header {
   u_char size[4];
   u_char name[4];
-} mp4_atom_header;
+};
 
-typedef struct {
+struct mp4_atom_header64 {
   u_char size[4];
   u_char name[4];
   u_char size64[8];
-} mp4_atom_header64;
+};
 
-typedef struct {
+struct mp4_mvhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -125,9 +125,9 @@ typedef struct {
   u_char selection_duration[4];
   u_char current_time[4];
   u_char next_track_id[4];
-} mp4_mvhd_atom;
+};
 
-typedef struct {
+struct mp4_mvhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -147,9 +147,9 @@ typedef struct {
   u_char selection_duration[4];
   u_char current_time[4];
   u_char next_track_id[4];
-} mp4_mvhd64_atom;
+};
 
-typedef struct {
+struct mp4_tkhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -167,9 +167,9 @@ typedef struct {
   u_char matrix[36];
   u_char width[4];
   u_char height[4];
-} mp4_tkhd_atom;
+};
 
-typedef struct {
+struct mp4_tkhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -187,9 +187,9 @@ typedef struct {
   u_char matrix[36];
   u_char width[4];
   u_char height[4];
-} mp4_tkhd64_atom;
+};
 
-typedef struct {
+struct mp4_mdhd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -200,9 +200,9 @@ typedef struct {
   u_char duration[4];
   u_char language[2];
   u_char quality[2];
-} mp4_mdhd_atom;
+};
 
-typedef struct {
+struct mp4_mdhd64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -213,9 +213,9 @@ typedef struct {
   u_char duration[8];
   u_char language[2];
   u_char quality[2];
-} mp4_mdhd64_atom;
+};
 
-typedef struct {
+struct mp4_stsd_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
@@ -224,88 +224,88 @@ typedef struct {
 
   u_char media_size[4];
   u_char media_name[4];
-} mp4_stsd_atom;
+};
 
-typedef struct {
+struct mp4_stts_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_stts_atom;
+};
 
-typedef struct {
+struct mp4_stts_entry {
   u_char count[4];
   u_char duration[4];
-} mp4_stts_entry;
+};
 
-typedef struct {
+struct mp4_stss_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_stss_atom;
+};
 
-typedef struct {
+struct mp4_ctts_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_ctts_atom;
+};
 
-typedef struct {
+struct mp4_ctts_entry {
   u_char count[4];
   u_char offset[4];
-} mp4_ctts_entry;
+};
 
-typedef struct {
+struct mp4_stsc_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_stsc_atom;
+};
 
-typedef struct {
+struct mp4_stsc_entry {
   u_char chunk[4];
   u_char samples[4];
   u_char id[4];
-} mp4_stsc_entry;
+};
 
-typedef struct {
+struct mp4_stsz_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char uniform_size[4];
   u_char entries[4];
-} mp4_stsz_atom;
+};
 
-typedef struct {
+struct mp4_stco_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_stco_atom;
+};
 
-typedef struct {
+struct mp4_co64_atom {
   u_char size[4];
   u_char name[4];
   u_char version[1];
   u_char flags[3];
   u_char entries[4];
-} mp4_co64_atom;
+};
 
 class Mp4Meta;
 using Mp4AtomHandler = int (Mp4Meta::*)(int64_t, int64_t);
 
-typedef struct {
+struct mp4_atom_handler {
   const char *name;
   Mp4AtomHandler handler;
-} mp4_atom_handler;
+};
 
 class BufferHandle
 {
@@ -382,8 +382,9 @@ public:
   {
     uint32_t i;
 
-    for (i = 0; i < trak_num; i++)
+    for (i = 0; i < trak_num; i++) {
       delete trak_vec[i];
+    }
 
     if (meta_reader) {
       TSIOBufferReaderFree(meta_reader);

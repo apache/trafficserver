@@ -67,19 +67,20 @@ static int
 handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
 {
   Dbg(dbg_ctl, "[%s]:  event( %d )\tEventName: %s\tContp: %p ", __FUNCTION__, event, TSHttpEventNameLookup(event), contp);
-  ServerConnectionInfo *conn_info     = (ServerConnectionInfo *)TSContDataGet(contp);
+  ServerConnectionInfo *conn_info     = static_cast<ServerConnectionInfo *>(TSContDataGet(contp));
   Server *server                      = conn_info->server;
   ServerConnection *server_connection = conn_info->server_connection;
 
   switch (event) {
   case TS_EVENT_NET_CONNECT: {
     TSStatIntIncrement(InterceptGlobal::phpConnCount, 1);
-    server_connection->vc_ = (TSVConn)edata;
+    server_connection->vc_ = static_cast<TSVConn>(edata);
     server_connection->setState(ServerConnection::READY);
     Dbg(dbg_ctl, "%s: New Connection success, %p", __FUNCTION__, server_connection);
     ServerIntercept *intercept = server->getIntercept(server_connection->requestId());
-    if (intercept)
+    if (intercept) {
       server_connection->createFCGIClient(intercept);
+    }
 
   } break;
 
@@ -136,13 +137,14 @@ handlePHPConnectionEvents(TSCont contp, TSEvent event, void *edata)
       break;
     }
 
-    if (server_connection->getState() != ServerConnection::COMPLETE)
+    if (server_connection->getState() != ServerConnection::COMPLETE) {
       if (intercept && !intercept->getOutputCompleteState()) {
         Dbg(dbg_ctl, "[%s]: EOS intercept->setResponseOutputComplete, _request_id: %d, connection: %p", __FUNCTION__,
             server_connection->requestId(), server_connection);
         Transaction &transaction = utils::internal::getTransaction(intercept->_txn);
         transaction.error("Internal server error");
       }
+    }
     server_connection->setState(ServerConnection::CLOSED);
     server->connectionClosed(server_connection);
   } break;

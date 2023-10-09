@@ -24,8 +24,8 @@
 #include "timing.h"
 #include <cjose/cjose.h>
 #include <jansson.h>
-#include <string.h>
-#include <inttypes.h>
+#include <cstring>
+#include <cinttypes>
 #include <tscpp/util/PostScript.h>
 
 cjose_jws_t *
@@ -83,7 +83,7 @@ get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *st
     key_end = value;
 
     /* If the Parameter key is our target parameter name, attempt to import a JWS from the value. */
-    if ((size_t)(key_end - key) == termination_ct && !strncmp(paramName, key, (size_t)(key_end - key))) {
+    if (static_cast<size_t>(key_end - key) == termination_ct && !strncmp(paramName, key, static_cast<size_t>(key_end - key))) {
       value_end = ++value;
       while (value_end != end && strchr(reserved_string, *value_end) == nullptr) {
         ++value_end;

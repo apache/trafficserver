@@ -23,17 +23,17 @@
 #include "tscore/ink_defs.h"
 #include "ts/ts.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <ctype.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstdlib>
+
+#include <cctype>
+#include <climits>
 #include <ts/ts.h>
-#include <string.h>
-#include <inttypes.h>
+#include <cstring>
+#include <cinttypes>
 #include <getopt.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <ctime>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -41,7 +41,7 @@
 #include <fstream>
 #include <ts/remap.h>
 #include <dirent.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 #include <chrono>
 
@@ -49,7 +49,7 @@
 #include <sys/sysinfo.h>
 #endif
 
-#include <limits.h>
+#include <climits>
 
 #define PLUGIN_NAME "system_stats"
 #define DEBUG_TAG   PLUGIN_NAME

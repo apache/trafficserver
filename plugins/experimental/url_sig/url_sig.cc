@@ -25,21 +25,20 @@
 
 #include "url_sig.h"
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/types.h>
-#include <time.h>
+#include <ctime>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <limits.h>
-#include <ctype.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <climits>
+#include <cctype>
+#include <cstdint>
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -191,7 +190,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       snprintf(&cfg->keys[keynum][0], MAX_KEY_LEN, "%s", value);
     } else if (strncmp(line, "error_url", 9) == 0) {
       if (atoi(value)) {
-        cfg->err_status = TSHttpStatus(atoi(value));
+        cfg->err_status = static_cast<TSHttpStatus>(atoi(value));
       }
       value += 3;
       while (isspace(*value)) {
@@ -281,7 +280,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
-  free_cfg((struct config *)ih);
+  free_cfg(static_cast<struct config *>(ih));
 }
 
 static void
@@ -492,7 +491,8 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
           oob = 1;
           break;
         }
-        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, (char *)decoded_string, strlen((char *)decoded_string))) {
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, reinterpret_cast<char *>(decoded_string),
+                              strlen(reinterpret_cast<char *>(decoded_string)))) {
           oob = 1;
           break;
         }
@@ -503,7 +503,8 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
 
         continue;
       } else if (i == numtoks - 2 && sig_anchor == nullptr) {
-        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, (char *)decoded_string, strlen((char *)decoded_string))) {
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, reinterpret_cast<char *>(decoded_string),
+                              strlen(reinterpret_cast<char *>(decoded_string)))) {
           oob = 1;
           break;
         }
@@ -534,7 +535,7 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  const struct config *cfg = (const struct config *)ih;
+  const struct config *cfg = static_cast<const struct config *>(ih);
 
   int url_len         = 0;
   int current_url_len = 0;
@@ -693,7 +694,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         cp = strstr(query, EXP_QSTRING "=");
         if (cp != nullptr) {
           cp += strlen(EXP_QSTRING) + 1;
-          if (sscanf(cp, "%" SCNu64, &expiration) != 1 || (time_t)expiration < time(nullptr)) {
+          if (sscanf(cp, "%" SCNu64, &expiration) != 1 || static_cast<time_t>(expiration) < time(nullptr)) {
             err_log(url, "Invalid expiration, or expired");
             goto deny;
           }
@@ -806,8 +807,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             /* calculate the expected the signature with the right algorithm */
             switch (algorithm) {
             case USIG_HMAC_SHA1:
-              HMAC(EVP_sha1(), (const unsigned char *)cfg->keys[keyindex], strlen(cfg->keys[keyindex]),
-                   (const unsigned char *)signed_part, strlen(signed_part), sig, &sig_len);
+              HMAC(EVP_sha1(), reinterpret_cast<const unsigned char *>(cfg->keys[keyindex]), strlen(cfg->keys[keyindex]),
+                   reinterpret_cast<const unsigned char *>(signed_part), strlen(signed_part), sig, &sig_len);
               if (sig_len != SHA1_SIG_SIZE) {
                 Dbg(dbg_ctl, "sig_len: %d", sig_len);
                 err_log(url, "Calculated sig len !=  SHA1_SIG_SIZE !");
@@ -816,8 +817,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
               break;
             case USIG_HMAC_MD5:
-              HMAC(EVP_md5(), (const unsigned char *)cfg->keys[keyindex], strlen(cfg->keys[keyindex]),
-                   (const unsigned char *)signed_part, strlen(signed_part), sig, &sig_len);
+              HMAC(EVP_md5(), reinterpret_cast<const unsigned char *>(cfg->keys[keyindex]), strlen(cfg->keys[keyindex]),
+                   reinterpret_cast<const unsigned char *>(signed_part), strlen(signed_part), sig, &sig_len);
               if (sig_len != MD5_SIG_SIZE) {
                 Dbg(dbg_ctl, "sig_len: %d", sig_len);
                 err_log(url, "Calculated sig len !=  MD5_SIG_SIZE !");

@@ -690,7 +690,7 @@ TEST_CASE("6", "[AudTests]")
   json_error_t *err = nullptr;
   SECTION("Standard aud string match")
   {
-    json_t *raw = json_loads("{\"aud\": \"tester\"}", 0, err);
+    json_t *raw = json_loads(R"({"aud": "tester"})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -698,7 +698,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Standard aud array match")
   {
-    json_t *raw = json_loads("{\"aud\": [ \"foo\", \"bar\",  \"tester\"]}", 0, err);
+    json_t *raw = json_loads(R"({"aud": [ "foo", "bar",  "tester"]})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -706,7 +706,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Standard aud string mismatch")
   {
-    json_t *raw = json_loads("{\"aud\": \"foo\"}", 0, err);
+    json_t *raw = json_loads(R"({"aud": "foo"})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -714,7 +714,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Standard aud array mismatch")
   {
-    json_t *raw = json_loads("{\"aud\": [\"foo\", \"bar\", \"foobar\"]}", 0, err);
+    json_t *raw = json_loads(R"({"aud": ["foo", "bar", "foobar"]})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -730,7 +730,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Integer mixed into a passing aud array")
   {
-    json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"tester\"]}", 0, err);
+    json_t *raw = json_loads(R"({"aud": [1, "foo", "bar", "tester"]})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -738,7 +738,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Case sensitive test for single string")
   {
-    json_t *raw = json_loads("{\"aud\": \"TESTer\"}", 0, err);
+    json_t *raw = json_loads(R"({"aud": "TESTer"})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
     json_decref(raw);
@@ -746,7 +746,7 @@ TEST_CASE("6", "[AudTests]")
 
   SECTION("Case sensitive test for array")
   {
-    json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"Tester\"]}", 0, err);
+    json_t *raw = json_loads(R"({"aud": [1, "foo", "bar", "Tester"]})", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
     json_decref(raw);

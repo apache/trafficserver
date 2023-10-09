@@ -41,13 +41,13 @@ async_handler(TSCont cont, TSEvent event, void *edata)
 {
   // information for the handler
   TSHttpTxn txn         = static_cast<TSHttpTxn>(edata);
-  AsyncInfo *ai         = (AsyncInfo *)TSContDataGet(cont);
+  AsyncInfo *ai         = static_cast<AsyncInfo *>(TSContDataGet(cont));
   uint32_t token        = ai->token;
   Context *root_context = ai->root_context;
   Wasm *wasm            = root_context->wasm();
 
   // variables to be used in handler
-  TSEvent result    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
+  TSEvent result    = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
   const void *body  = nullptr;
   size_t body_size  = 0;
   TSMBuffer hdr_buf = nullptr;

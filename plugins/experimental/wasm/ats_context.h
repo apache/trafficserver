@@ -251,7 +251,7 @@ public:
     cr_hdr_loc_   = nullptr;
     cr_body_      = nullptr;
     cr_body_size_ = 0;
-    cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
+    cr_result_    = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
   }
 
   // transform result functions
@@ -352,7 +352,7 @@ private:
   BufferBase buffer_;
 
   // Call result
-  TSEvent cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
+  TSEvent cr_result_    = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
   const void *cr_body_  = nullptr;
   size_t cr_body_size_  = 0;
   TSMBuffer cr_hdr_buf_ = nullptr;

@@ -18,7 +18,7 @@
 
 #include "cookie.h"
 #include "common.h"
-#include <string.h>
+#include <cstring>
 
 const char *
 next_cookie(const char *cookie, size_t *cookie_ct, const char **k, size_t *k_ct, const char **v, size_t *v_ct)

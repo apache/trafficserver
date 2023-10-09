@@ -24,7 +24,7 @@
 #include <atscppapi/PluginInit.h>
 #include <iostream>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
@@ -110,8 +110,9 @@ public:
 
       if (threadKey == 0) {
         // setup thread local storage
-        while (!gServer->setupThreadLocalStorage())
-          ;
+        while (!gServer->setupThreadLocalStorage()) {
+          // do nothing
+        }
       }
       gServer->connect(intercept);
 

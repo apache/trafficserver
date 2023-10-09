@@ -25,7 +25,7 @@
 
 #define FCGI_LISTENSOCK_FILENO 0
 
-using FCGI_Header = struct {
+struct FCGI_Header {
   unsigned char version;
   unsigned char type;
   unsigned char requestIdB1;
@@ -70,14 +70,14 @@ using FCGI_Header = struct {
  */
 #define FCGI_NULL_REQUEST_ID 0
 
-using FCGI_BeginRequestBody = struct {
+struct FCGI_BeginRequestBody {
   unsigned char roleB1;
   unsigned char roleB0;
   unsigned char flags;
   unsigned char reserved[5];
 };
 
-using FCGI_BeginRequest = struct {
+struct FCGI_BeginRequest {
   FCGI_Header *header;
   FCGI_BeginRequestBody *body;
 };
@@ -94,7 +94,7 @@ using FCGI_BeginRequest = struct {
 #define FCGI_AUTHORIZER 2
 #define FCGI_FILTER     3
 
-using FCGI_EndRequestBody = struct {
+struct FCGI_EndRequestBody {
   unsigned char appStatusB3;
   unsigned char appStatusB2;
   unsigned char appStatusB1;
@@ -103,7 +103,7 @@ using FCGI_EndRequestBody = struct {
   unsigned char reserved[3];
 };
 
-using FCGI_EndRequest = struct {
+struct FCGI_EndRequest {
   FCGI_Header header;
   FCGI_EndRequestBody body;
 };
@@ -123,12 +123,12 @@ using FCGI_EndRequest = struct {
 #define FCGI_MAX_REQS   "FCGI_MAX_REQS"
 #define FCGI_MPXS_CONNS "FCGI_MPXS_CONNS"
 
-using FCGI_UnknownTypeBody = struct {
+struct FCGI_UnknownTypeBody {
   unsigned char type;
   unsigned char reserved[7];
 };
 
-using FCGI_UnknownTypeRequest = struct {
+struct FCGI_UnknownTypeRequest {
   FCGI_Header header;
   FCGI_UnknownTypeBody body;
 };

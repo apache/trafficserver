@@ -28,14 +28,14 @@
 
 #include "redis_endpoint.h"
 
-using Message = struct message {
+struct Message {
   std::string channel;
   std::string data;
   bool cleanup;
   std::set<RedisEndpoint, RedisEndpointCompare> hosts_tried;
 
-  message() {}
-  message(const struct message &m) : channel(m.channel), data(m.data), cleanup(m.cleanup), hosts_tried(m.hosts_tried) {}
-  message(const std::string &c, const std::string &d, bool quit = false) : channel(c), data(d), cleanup(quit) {}
-  virtual ~message() {}
+  Message() {}
+  Message(const struct Message &m) : channel(m.channel), data(m.data), cleanup(m.cleanup), hosts_tried(m.hosts_tried) {}
+  Message(const std::string &c, const std::string &d, bool quit = false) : channel(c), data(d), cleanup(quit) {}
+  virtual ~Message() {}
 };
