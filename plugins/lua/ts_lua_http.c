@@ -16,6 +16,8 @@
   limitations under the License.
 */
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
 #include "ts_lua_http_config.h"
@@ -104,6 +106,13 @@ static int ts_lua_http_get_remap_to_url(lua_State *L);
 
 static int ts_lua_http_get_server_fd(lua_State *L);
 static int ts_lua_http_get_client_fd(lua_State *L);
+
+static int ts_lua_http_get_client_received_error(lua_State *L);
+static int ts_lua_http_get_client_sent_error(lua_State *L);
+static int ts_lua_http_get_server_received_error(lua_State *L);
+static int ts_lua_http_get_server_sent_error(lua_State *L);
+
+static int ts_lua_http_get_ssn_remote_addr(lua_State *L);
 
 static void ts_lua_inject_server_state_variables(lua_State *L);
 
@@ -297,6 +306,21 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_get_client_fd);
   lua_setfield(L, -2, "get_client_fd");
+
+  lua_pushcfunction(L, ts_lua_http_get_client_received_error);
+  lua_setfield(L, -2, "get_client_received_error");
+
+  lua_pushcfunction(L, ts_lua_http_get_client_sent_error);
+  lua_setfield(L, -2, "get_client_sent_error");
+
+  lua_pushcfunction(L, ts_lua_http_get_server_received_error);
+  lua_setfield(L, -2, "get_server_received_error");
+
+  lua_pushcfunction(L, ts_lua_http_get_server_sent_error);
+  lua_setfield(L, -2, "get_server_sent_error");
+
+  lua_pushcfunction(L, ts_lua_http_get_ssn_remote_addr);
+  lua_setfield(L, -2, "get_ssn_remote_addr");
 
   ts_lua_inject_server_state_variables(L);
 }
@@ -969,6 +993,109 @@ ts_lua_http_get_client_fd(lua_State *L)
 }
 
 static int
+ts_lua_http_get_client_received_error(lua_State *L)
+{
+  uint32_t class = 0;
+  uint64_t code  = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnClientReceivedErrorGet(http_ctx->txnp, &class, &code);
+  lua_pushnumber(L, class);
+  lua_pushnumber(L, code);
+
+  return 2;
+}
+
+static int
+ts_lua_http_get_client_sent_error(lua_State *L)
+{
+  uint32_t class = 0;
+  uint64_t code  = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnClientSentErrorGet(http_ctx->txnp, &class, &code);
+  lua_pushnumber(L, class);
+  lua_pushnumber(L, code);
+
+  return 2;
+}
+
+static int
+ts_lua_http_get_server_received_error(lua_State *L)
+{
+  uint32_t class = 0;
+  uint64_t code  = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnServerReceivedErrorGet(http_ctx->txnp, &class, &code);
+  lua_pushnumber(L, class);
+  lua_pushnumber(L, code);
+
+  return 2;
+}
+
+static int
+ts_lua_http_get_server_sent_error(lua_State *L)
+{
+  uint32_t class = 0;
+  uint64_t code  = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnServerSentErrorGet(http_ctx->txnp, &class, &code);
+  lua_pushnumber(L, class);
+  lua_pushnumber(L, code);
+
+  return 2;
+}
+
+static int
+ts_lua_http_get_ssn_remote_addr(lua_State *L)
+{
+  struct sockaddr const *client_ip;
+  ts_lua_http_ctx *http_ctx;
+  int port;
+  int family;
+  char cip[128];
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpSsn ssn = TSHttpTxnSsnGet(http_ctx->txnp);
+  TSVConn vconn = TSHttpSsnClientVConnGet(ssn);
+  client_ip     = TSNetVConnRemoteAddrGet(vconn);
+
+  if (client_ip == NULL) {
+    lua_pushnil(L);
+    lua_pushnil(L);
+    lua_pushnil(L);
+
+  } else {
+    if (client_ip->sa_family == AF_INET) {
+      port = ntohs(((struct sockaddr_in *)client_ip)->sin_port);
+      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)client_ip)->sin_addr, cip, sizeof(cip));
+      family = AF_INET;
+    } else {
+      port = ntohs(((struct sockaddr_in6 *)client_ip)->sin6_port);
+      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)client_ip)->sin6_addr, cip, sizeof(cip));
+      family = AF_INET6;
+    }
+
+    lua_pushstring(L, cip);
+    lua_pushnumber(L, port);
+    lua_pushnumber(L, family);
+  }
+
+  return 3;
+}
+
+static int
 ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L)
 {
   ts_lua_http_transform_ctx *transform_ctx;
@@ -976,6 +1103,7 @@ ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L)
   transform_ctx = ts_lua_get_http_transform_ctx(L);
   if (transform_ctx == NULL) {
     TSError("[ts_lua][%s] missing transform_ctx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of transform_ctx");
     return 0;
   }
 
@@ -992,6 +1120,7 @@ ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L)
   transform_ctx = ts_lua_get_http_transform_ctx(L);
   if (transform_ctx == NULL) {
     TSError("[ts_lua][%s] missing transform_ctx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of transform_ctx");
     return 0;
   }
 
@@ -1009,6 +1138,7 @@ ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L)
   transform_ctx = ts_lua_get_http_transform_ctx(L);
   if (transform_ctx == NULL) {
     TSError("[ts_lua][%s] missing transform_ctx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of transform_ctx");
     return 0;
   }
 
@@ -1028,6 +1158,7 @@ ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L)
   transform_ctx = ts_lua_get_http_transform_ctx(L);
   if (transform_ctx == NULL) {
     TSError("[ts_lua][%s] missing transform_ctx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of transform_ctx");
     return 0;
   }
 

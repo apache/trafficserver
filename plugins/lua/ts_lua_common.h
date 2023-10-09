@@ -58,6 +58,9 @@
 #define TS_LUA_FUNCTION_G_READ_CACHE "do_global_read_cache"
 #define TS_LUA_FUNCTION_G_TXN_CLOSE "do_global_txn_close"
 
+// TLS hooks can only be global
+#define TS_LUA_FUNCTION_G_VCONN_START "do_global_vconn_start"
+
 #define TS_LUA_DEBUG_TAG "ts_lua"
 
 #define TS_LUA_EVENT_COROUTINE_CONT 20000
@@ -101,6 +104,20 @@ typedef struct {
 
   int init_func;
 } ts_lua_instance_conf;
+
+/* lua state for vconn */
+typedef struct {
+  int ref;
+
+  ts_lua_main_ctx *mctx;
+
+  lua_State *lua;
+
+  TSVConn vconn;
+
+  ts_lua_instance_conf *instance_conf;
+
+} ts_lua_vconn_ctx;
 
 /* lua state for http request */
 typedef struct {

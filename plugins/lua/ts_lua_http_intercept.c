@@ -356,6 +356,7 @@ ts_lua_say(lua_State *L)
   ictx = ts_lua_get_http_intercept_ctx(L);
   if (ictx == NULL) {
     TSError("[ts_lua][%s] missing ictx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of intercept_ctx");
     return 0;
   }
 
@@ -378,6 +379,7 @@ ts_lua_flush(lua_State *L)
   ictx = ts_lua_get_http_intercept_ctx(L);
   if (ictx == NULL) {
     TSError("[ts_lua][%s] missing ictx", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of intercept_ctx");
     return 0;
   }
 
