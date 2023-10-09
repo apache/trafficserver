@@ -150,6 +150,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Access Control <access_control.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
+   Block Errors <block_errors.en>
    Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
@@ -180,6 +181,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Buffer Upload <buffer_upload.en>`
    Buffers POST data before connecting to the Origin server.
+
+:doc:`Block Errors <block_errors.en>`
+   Blocks or downgrades new connections when the server receives too many errors from an IP address.
 
 :doc:`Certifier <certifier.en>`
    Manages and/or generates certificates for incoming HTTPS requests.

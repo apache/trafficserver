@@ -55,6 +55,7 @@ if BUILD_EXPERIMENTAL_PLUGINS
 include experimental/access_control/Makefile.inc
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
+include experimental/block_errors/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
 include experimental/cache_range_requests/Makefile.inc
 include experimental/certifier/Makefile.inc
