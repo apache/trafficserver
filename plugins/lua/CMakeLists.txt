@@ -23,6 +23,7 @@ add_atsplugin(tslua
     ts_lua_client_response.cc
     ts_lua_context.cc
     ts_lua_hook.cc
+    ts_lua_vconn.cc
     ts_lua_http.cc
     ts_lua_http_intercept.cc
     ts_lua_log.cc
