@@ -630,7 +630,7 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
       this->get_received_rst_stream_frame_count() > configured_max_rst_stream_frames_per_minute) {
     Metrics::increment(http2_rsb.max_rst_stream_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent RST_STREAM frames: %u frames within a last minute",
-                     this->get_received_settings_frame_count());
+                     this->get_received_rst_stream_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "reset too frequent RST_STREAM frames");
   }
