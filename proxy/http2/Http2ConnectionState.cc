@@ -545,7 +545,7 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       cstate.get_received_rst_stream_frame_count() > cstate.configured_max_rst_stream_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_RST_STREAM_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.session, stream_id, "Observed too frequent RST_STREAM frames: %u frames within a last minute",
-                     cstate.get_received_settings_frame_count());
+                     cstate.get_received_rst_stream_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "reset too frequent RST_STREAM frames");
   }
