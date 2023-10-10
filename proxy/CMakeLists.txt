@@ -68,6 +68,7 @@ target_link_libraries(proxy
         ts::tsapicore
         ts::tscore
     PRIVATE
+        ts::jsonrpc_protocol
         ts::inkutils
 )
 

@@ -127,6 +127,7 @@ target_link_libraries(inknet
         OpenSSL::Crypto
         OpenSSL::SSL
     PRIVATE
+        ts::tsapicore
         yaml-cpp::yaml-cpp
 )
 
