@@ -68,6 +68,7 @@
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "api/FetchSM.h"
+#include "api/LifecycleAPIHooks.h"
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 #include "I_Tasks.h"
@@ -393,7 +394,6 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
-LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
 static ts::Metrics &global_api_metrics = ts::Metrics::getInstance();
 
@@ -1393,7 +1393,7 @@ api_init()
 
     init_global_http_hooks();
     init_global_ssl_hooks();
-    lifecycle_hooks   = new LifecycleAPIHooks;
+    init_global_lifecycle_hooks();
     global_config_cbs = new ConfigUpdateCbTable;
 
     // Setup the version string for returning to plugins
@@ -4496,7 +4496,7 @@ tsapi::c::TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_lifecycle_hook_id(id) == TS_SUCCESS);
 
-  lifecycle_hooks->append(id, (INKContInternal *)contp);
+  g_lifecycle_hooks->append(id, (INKContInternal *)contp);
 }
 
 /* HTTP sessions */

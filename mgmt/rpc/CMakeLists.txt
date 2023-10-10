@@ -69,6 +69,7 @@ target_link_libraries(rpcpublichandlers
     PRIVATE
         ts::inkcache
         ts::proxy
+        ts::tsapicore
 )
 
 add_executable(test_jsonrpc

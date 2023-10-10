@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "api/LifecycleAPIHooks.h"
 #include "tscore/ink_config.h"
 #include "P_Net.h"
 #include "HttpConfig.h"
@@ -366,7 +367,7 @@ start_HttpProxyServer()
   statPagesManager.register_http("remap_hits", register_ShowRemapHitCount);
 
   // Alert plugins that connections will be accepted.
-  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
+  APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
   while (hook) {
     hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, nullptr);
     hook = hook->next();

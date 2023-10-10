@@ -47,8 +47,6 @@ HttpHookState::getNext()
   return nullptr;
 }
 
-LifecycleAPIHooks *lifecycle_hooks = nullptr;
-
 namespace tsapi::c
 {
 TSVConn

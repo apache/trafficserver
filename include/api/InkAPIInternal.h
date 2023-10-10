@@ -106,10 +106,6 @@ struct HttpAltInfo {
   float m_qvalue;
 };
 
-class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE_LAST_HOOK>
-{
-};
-
 class ConfigUpdateCallback : public Continuation
 {
 public:
@@ -210,5 +206,4 @@ HttpHookState::id() const
 
 void api_init();
 
-extern LifecycleAPIHooks *lifecycle_hooks;
 extern ConfigUpdateCbTable *global_config_cbs;

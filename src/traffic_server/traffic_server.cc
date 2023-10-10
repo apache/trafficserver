@@ -99,6 +99,7 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
 #include "api/InkAPIInternal.h"
+#include "api/LifecycleAPIHooks.h"
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"
@@ -241,7 +242,7 @@ struct AutoStopCont : public Continuation {
   {
     TSSystemState::stop_ssl_handshaking();
 
-    APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
       WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
       hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
@@ -810,7 +811,7 @@ CB_After_Cache_Init()
   intm[id].store(time(nullptr));
 
   // Alert the plugins the cache is initialized.
-  hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
+  hook = g_lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
   while (hook) {
     hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, nullptr);
     hook = hook->next();
@@ -2229,7 +2230,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     if (http_enabled) {
       // call the ready hooks before we start accepting connections.
-      APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
+      APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
       while (hook) {
         hook->invoke(TS_EVENT_LIFECYCLE_PORTS_INITIALIZED, nullptr);
         hook = hook->next();
@@ -2319,7 +2320,7 @@ init_ssl_ctx_callback(void *ctx, bool server)
 {
   TSEvent event = server ? TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED : TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED;
   APIHook *hook =
-    lifecycle_hooks->get(server ? TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK : TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK);
+    g_lifecycle_hooks->get(server ? TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK : TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK);
 
   while (hook) {
     hook->invoke(event, ctx);
@@ -2341,7 +2342,7 @@ task_threads_started_callback()
     pluginInitCheck.wait(lock, [] { return plugin_init_done; });
   }
 
-  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
+  APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
   while (hook) {
     WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
     hook->invoke(TS_EVENT_LIFECYCLE_TASK_THREADS_READY, nullptr);

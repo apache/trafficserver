@@ -21,7 +21,7 @@
 #include "Plugins.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
-#include "api/InkAPIInternal.h"
+#include "api/LifecycleAPIHooks.h"
 
 namespace
 {
@@ -61,7 +61,7 @@ plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
 {
   // The rpc could be ready before plugins are initialized.
   // We make sure it is ready.
-  if (!lifecycle_hooks) {
+  if (!g_lifecycle_hooks) {
     return err::make_errata(err::Codes::PLUGIN, "Plugin is not yet ready to handle any messages.");
   }
 
@@ -75,7 +75,7 @@ plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
     msg.data      = info.data.data();
     msg.data_size = info.data.size();
 
-    APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
+    APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
 
     while (hook) {
       TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.

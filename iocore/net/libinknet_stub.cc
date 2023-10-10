@@ -97,7 +97,6 @@ HttpRequestData::get_client_ip()
   return nullptr;
 }
 
-LifecycleAPIHooks *lifecycle_hooks = nullptr;
 StatPagesManager statPagesManager;
 
 #include "PreWarmManager.h"
