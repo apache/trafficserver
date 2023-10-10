@@ -28,7 +28,7 @@
 static int
 txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 {
-  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
+  auto *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
@@ -63,8 +63,8 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 static int
 txn_queue_cont(TSCont cont, TSEvent event, void *edata)
 {
-  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
-  QueueTime now           = std::chrono::system_clock::now(); // Only do this once per "loop"
+  auto *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
+  QueueTime now = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {

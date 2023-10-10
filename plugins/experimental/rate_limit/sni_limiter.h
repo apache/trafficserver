@@ -44,7 +44,7 @@ public:
 
   SniRateLimiter(std::string &sni, SniSelector *sel) : _selector(sel) { setName(sni); }
 
-  bool parseYaml(const YAML::Node &node);
+  bool parseYaml(const YAML::Node &node) override;
 
   // Calculate the pressure, which is either a negative number (ignore), or a number 0-<buckets>.
   // 0 == block only perma-blocks.

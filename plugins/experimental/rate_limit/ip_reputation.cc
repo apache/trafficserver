@@ -34,12 +34,12 @@ SieveLru::hasher(const sockaddr *sock)
 {
   switch (sock->sa_family) {
   case AF_INET: {
-    const sockaddr_in *sa = reinterpret_cast<const sockaddr_in *>(sock);
+    const auto *sa = reinterpret_cast<const sockaddr_in *>(sock);
 
     return (0xffffffff00000000 | sa->sin_addr.s_addr);
   } break;
   case AF_INET6: {
-    const sockaddr_in6 *sa6 = reinterpret_cast<const sockaddr_in6 *>(sock);
+    const auto *sa6 = reinterpret_cast<const sockaddr_in6 *>(sock);
 
     return (*reinterpret_cast<uint64_t const *>(sa6->sin6_addr.s6_addr) ^
             *reinterpret_cast<uint64_t const *>(sa6->sin6_addr.s6_addr + sizeof(uint64_t)));
@@ -302,8 +302,7 @@ SieveLru::dump()
     long long cnt = 0, sum = 0;
     auto lru = _buckets[i];
 
-    std::cout << std::endl
-              << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << std::endl;
+    std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
     for (auto &it : *lru) {
       auto &[key, count, bucket, added] = it;
 
@@ -316,7 +315,7 @@ SieveLru::dump()
 #endif
     }
 
-    std::cout << "\tAverage count=" << (cnt > 0 ? sum / cnt : 0) << std::endl;
+    std::cout << "\tAverage count=" << (cnt > 0 ? sum / cnt : 0) << '\n';
   }
   TSMutexUnlock(_lock);
 }

@@ -182,7 +182,7 @@ public:
   }
 
   void setupQueueCont();
-  bool yamlParser(const std::string yaml_file);
+  bool yamlParser(const std::string &yaml_file);
 
   static void startup();
 

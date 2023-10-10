@@ -63,7 +63,7 @@ TSPluginInit(int argc, const char *argv[])
       selector->setupQueueCont(); // Start the queue processing continuation if needed
     } else {
       selector->release();
-      TSFatal("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[0]);
+      TSFatal("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[1]);
     }
   } else {
     TSError("[%s] Usage: rate_limit.so <config.yaml>", PLUGIN_NAME);
@@ -90,7 +90,7 @@ TSRemapDeleteInstance(void *ih)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  TxnRateLimiter *limiter = new TxnRateLimiter();
+  auto *limiter = new TxnRateLimiter();
 
   // set the name based on the pristine remap URL prior to advancing the pointer below
   limiter->setName(getDescriptionFromUrl(argv[0]));
@@ -116,7 +116,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(ih);
+  auto *limiter = static_cast<TxnRateLimiter *>(ih);
 
   if (limiter) {
     if (!limiter->reserve()) {

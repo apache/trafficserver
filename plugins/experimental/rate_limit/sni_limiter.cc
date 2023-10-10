@@ -33,7 +33,7 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
   super_type::parseYaml(node);
 
   if (node["ip-rep"]) {
-    std::string ipr_name = node["ip-rep"].as<std::string>();
+    auto ipr_name = node["ip-rep"].as<std::string>();
 
     if (!(_iprep = _selector->findIpRep(ipr_name))) {
       TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, ipr_name.c_str(), name().c_str());
@@ -43,7 +43,7 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
 
   // ToDo: It's unfortunate, but the selector holds the lists (and the ip-reps), so the lookup has to happen here ... :/.
   if (node["exclude"]) {
-    std::string excl_name = node["exclude"].as<std::string>();
+    auto excl_name = node["exclude"].as<std::string>();
 
     if (!(_exclude = _selector->findList(excl_name))) {
       TSError("[%s] IP Reputation name (%s) not found for SNI=%s", PLUGIN_NAME, excl_name.c_str(), name().c_str());
@@ -63,7 +63,7 @@ SniRateLimiter::parseYaml(const YAML::Node &node)
 int
 sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 {
-  TSVConn vc = static_cast<TSVConn>(edata);
+  auto vc = static_cast<TSVConn>(edata);
 
   switch (event) {
   case TS_EVENT_SSL_CLIENT_HELLO: {
@@ -156,7 +156,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
   } break;
 
   case TS_EVENT_VCONN_CLOSE: {
-    SniRateLimiter *limiter = static_cast<SniRateLimiter *>(TSUserArgGet(vc, gVCIdx));
+    auto *limiter = static_cast<SniRateLimiter *>(TSUserArgGet(vc, gVCIdx));
 
     if (limiter) {
       TSUserArgSet(vc, gVCIdx, nullptr);

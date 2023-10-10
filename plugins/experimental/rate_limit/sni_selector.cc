@@ -26,16 +26,16 @@ std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 // YAML parser for the global YAML configuration (via plugin.config)
 //
 bool
-SniSelector::yamlParser(std::string yaml_file)
+SniSelector::yamlParser(const std::string &yaml_file)
 {
   YAML::Node config;
 
   try {
     config = YAML::LoadFile(yaml_file);
-  } catch (YAML::BadFile &e) {
+  } catch (YAML::BadFile const &e) {
     TSError("[%s] Cannot load configuration file: %s.", PLUGIN_NAME, e.what());
     return false;
-  } catch (std::exception &e) {
+  } catch (std::exception const &e) {
     TSError("[%s] Unknown error while loading configuration file: %s.", PLUGIN_NAME, e.what());
     return false;
   }
@@ -47,11 +47,11 @@ SniSelector::yamlParser(std::string yaml_file)
   const YAML::Node &lists = config["lists"];
 
   if (lists && lists.IsSequence()) {
-    for (size_t i = 0; i < lists.size(); ++i) {
-      const YAML::Node &list = lists[i];
+    for (const auto &i : lists) {
+      const YAML::Node &list = i;
 
       if (list.IsMap() && list["name"]) {
-        std::string name = list["name"].as<std::string>();
+        auto name = list["name"].as<std::string>();
 
         if (nullptr != findList(name)) {
           TSError("[%s] Duplicate List names being added (%s)", PLUGIN_NAME, name.c_str());
@@ -79,11 +79,11 @@ SniSelector::yamlParser(std::string yaml_file)
   const YAML::Node &ipreps = config["ip-rep"];
 
   if (ipreps && ipreps.IsSequence()) {
-    for (size_t i = 0; i < ipreps.size(); ++i) {
-      const YAML::Node &ipr = ipreps[i];
+    for (const auto &i : ipreps) {
+      const YAML::Node &ipr = i;
 
       if (ipr.IsMap() && ipr["name"]) {
-        std::string name = ipr["name"].as<std::string>();
+        auto name = ipr["name"].as<std::string>();
 
         if (nullptr != findIpRep(name)) {
           TSError("[%s] Duplicate IP-Reputation names being added (%s)", PLUGIN_NAME, name.c_str());
@@ -111,12 +111,11 @@ SniSelector::yamlParser(std::string yaml_file)
   const YAML::Node &sel = config["selector"];
 
   if (sel && sel.IsSequence()) {
-    for (size_t i = 0; i < sel.size(); ++i) {
-      const YAML::Node &sni = sel[i];
+    for (const auto &i : sel) {
+      const YAML::Node &sni = i;
 
-      if (sni.IsMap()) {
-        // ToDo: Allow a sequence of names here
-        std::string name = sni["sni"].as<std::string>();
+      if (sni.IsMap() && !sni["sni"].IsSequence()) {
+        auto name = sni["sni"].as<std::string>();
 
         if (nullptr != findLimiter(name)) {
           TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, name.c_str());
@@ -135,16 +134,21 @@ SniSelector::yamlParser(std::string yaml_file)
           // Add aliases, if any
           const YAML::Node &aliases = sni["aliases"];
 
-          if (aliases && aliases.IsSequence()) {
-            for (size_t j = 0; j < aliases.size(); ++j) {
-              std::string alias = aliases[j].as<std::string>();
+          if (aliases) {
+            if (aliases.IsSequence()) {
+              for (const auto &aliase : aliases) {
+                auto alias = aliase.as<std::string>();
 
-              if (nullptr != findLimiter(alias)) {
-                TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, alias.c_str());
-                return false;
+                if (nullptr != findLimiter(alias)) {
+                  TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, alias.c_str());
+                  return false;
+                }
+                Dbg(dbg_ctl, "Adding alias: %s -> %s", alias.c_str(), name.c_str());
+                addAlias(alias, limiter);
               }
-              Dbg(dbg_ctl, "Adding alias: %s -> %s", alias.c_str(), name.c_str());
-              addAlias(alias, limiter);
+            } else {
+              TSError("[%s] aliases node is not a sequence", PLUGIN_NAME);
+              return false;
             }
           }
         } else {
@@ -209,7 +213,7 @@ sni_config_cont(TSCont cont, TSEvent event, void *edata)
 static int
 sni_queue_cont(TSCont cont, TSEvent event, void *edata)
 {
-  SniSelector *selector = static_cast<SniSelector *>(TSContDataGet(cont));
+  auto *selector = static_cast<SniSelector *>(TSContDataGet(cont));
 
   for (const auto &[key, entry] : selector->limiters()) {
     auto [owner, limiter] = entry;

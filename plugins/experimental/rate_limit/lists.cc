@@ -25,8 +25,8 @@ List::IP::parseYaml(const YAML::Node &node)
   const YAML::Node &cidr = node["cidr"];
 
   if (cidr && cidr.IsSequence()) {
-    for (size_t i = 0; i < cidr.size(); ++i) {
-      std::string str = cidr[i].as<std::string>();
+    for (const auto &i : cidr) {
+      auto str = i.as<std::string>();
 
       Dbg(dbg_ctl, "Adding CIDR %s to List %s", str.c_str(), _name.c_str());
       add(str);

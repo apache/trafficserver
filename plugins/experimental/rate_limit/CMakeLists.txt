@@ -29,6 +29,7 @@ add_atsplugin(
 
 target_link_libraries(rate_limit
     PRIVATE
+        libswoc
         yaml-cpp::yaml-cpp
         OpenSSL::SSL
 )
