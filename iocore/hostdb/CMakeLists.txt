@@ -39,6 +39,7 @@ target_include_directories(inkhostdb
 target_link_libraries(inkhostdb
     PUBLIC
         ts::inkcache
+        ts::inkdns
         ts::inkevent
         ts::tscore
     PRIVATE
