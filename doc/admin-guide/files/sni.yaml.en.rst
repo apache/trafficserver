@@ -145,15 +145,15 @@ http2_max_settings_frames_per_minute   Inbound   Specifies how many SETTINGS fra
                                                  NOTE: Connection coalescing may prevent this from taking effect.
 
 http2_max_ping_frames_per_minute       Inbound   Specifies how many PING frames |TS| receives per minute at maximum.
-                                                 By default this is :ts:cv:`proxy.config.http2.max_settings_frames_per_minute`.
+                                                 By default this is :ts:cv:`proxy.config.http2.max_ping_frames_per_minute`.
                                                  NOTE: Connection coalescing may prevent this from taking effect.
 
 http2_max_priority_frames_per_minute   Inbound   Specifies how many PRIORITY frames |TS| receives per minute at maximum.
-                                                 By default this is :ts:cv:`proxy.config.http2.max_settings_frames_per_minute`.
+                                                 By default this is :ts:cv:`proxy.config.http2.max_priority_frames_per_minute`.
                                                  NOTE: Connection coalescing may prevent this from taking effect.
 
 http2_max_rst_stream_frames_per_minute Inbound   Specifies how many RST_STREAM frames |TS| receives per minute at maximum.
-                                                 By default this is :ts:cv:`proxy.config.http2.max_settings_frames_per_minute`.
+                                                 By default this is :ts:cv:`proxy.config.http2.max_rst_stream_frames_per_minute`.
                                                  NOTE: Connection coalescing may prevent this from taking effect.
 
 disable_h2                             Inbound   Deprecated for the more general h2 setting.  Setting disable_h2
