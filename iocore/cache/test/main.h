@@ -191,6 +191,16 @@ public:
     build_hdrs(this->info, url);
   }
 
+  ~CacheWriteTest() override
+  {
+    if (this->_write_buffer) {
+      free_MIOBuffer(this->_write_buffer);
+      this->_write_buffer = nullptr;
+    }
+    info.destroy();
+    old_info.destroy();
+  }
+
   int start_test(int event, void *e) override;
   int write_event(int event, void *e);
   void fill_data();
@@ -216,6 +226,15 @@ public:
 
     this->info.create();
     build_hdrs(this->info, url);
+  }
+
+  ~CacheReadTest() override
+  {
+    if (this->_read_buffer) {
+      free_MIOBuffer(this->_read_buffer);
+      this->_read_buffer = nullptr;
+    }
+    info.destroy();
   }
 
   int start_test(int event, void *e) override;
