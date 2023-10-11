@@ -69,6 +69,7 @@ target_link_libraries(rpcpublichandlers
     PRIVATE
         ts::inkcache
         ts::proxy
+        ts::tsapicore
 )
 
 if(BUILD_TESTING)

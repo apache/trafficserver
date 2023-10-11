@@ -35,6 +35,7 @@ add_library(inknet STATIC
         ProxyProtocol.cc
         ReadWriteEventIO.cc
         Socks.cc
+        SSLAPIHooks.cc
         SSLCertLookup.cc
         SSLClientCoordinator.cc
         SSLClientUtils.cc
@@ -126,6 +127,7 @@ target_link_libraries(inknet
         OpenSSL::Crypto
         OpenSSL::SSL
     PRIVATE
+        ts::tsapicore
         yaml-cpp::yaml-cpp
 )
 

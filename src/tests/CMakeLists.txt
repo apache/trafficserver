@@ -67,7 +67,7 @@ macro(add_cache_test name)
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc
             ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::proxy)
+    target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
@@ -75,7 +75,6 @@ macro(add_net_test name)
     add_executable(${name}
             ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc
             ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::proxy)
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 

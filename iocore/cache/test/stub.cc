@@ -21,47 +21,15 @@
   limitations under the License.
  */
 
+#include "SSLAPIHooks.h"
+
+#include "api/InkAPIInternal.h"
+
+#include "HttpAPIHooks.h"
+
 #include "tscore/I_Version.h"
 
 AppVersionInfo appVersionInfo;
-
-#include "api/InkAPIInternal.h"
-void
-APIHooks::append(INKContInternal *cont)
-{
-}
-
-int
-APIHook::invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-int
-APIHook::blocking_invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-APIHook *
-APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::head() const
-{
-  return nullptr;
-}
-
-void
-APIHooks::clear()
-{
-}
 
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
@@ -79,44 +47,37 @@ HttpHookState::getNext()
   return nullptr;
 }
 
-HttpAPIHooks *http_global_hooks        = nullptr;
-SslAPIHooks *ssl_hooks                 = nullptr;
-LifecycleAPIHooks *lifecycle_hooks     = nullptr;
-ConfigUpdateCbTable *global_config_cbs = nullptr;
+namespace tsapi::c
+{
+TSVConn
+TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
+{
+  return TSVConn{};
+}
 
-#include "api/FetchSM.h"
-ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+int TS_MIME_LEN_CONTENT_LENGTH           = 0;
+const char *TS_MIME_FIELD_CONTENT_LENGTH = "";
+
+TSIOBufferBlock
+TSIOBufferReaderStart(TSIOBufferReader readerp)
+{
+  return TSIOBufferBlock{};
+}
+
+TSIOBufferBlock
+TSIOBufferBlockNext(TSIOBufferBlock blockp)
+{
+  return TSIOBufferBlock{};
+}
+
+const char *
+TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail)
+{
+  return "";
+}
+
 void
-FetchSM::ext_launch()
+TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
 {
 }
-void
-FetchSM::ext_destroy()
-{
-}
-ssize_t
-FetchSM::ext_read_data(char *, unsigned long)
-{
-  return 0;
-}
-void
-FetchSM::ext_add_header(char const *, int, char const *, int)
-{
-}
-void
-FetchSM::ext_write_data(void const *, unsigned long)
-{
-}
-void *
-FetchSM::ext_get_user_data()
-{
-  return nullptr;
-}
-void
-FetchSM::ext_set_user_data(void *)
-{
-}
-void
-FetchSM::ext_init(Continuation *, char const *, char const *, char const *, sockaddr const *, int)
-{
-}
+} // namespace tsapi::c

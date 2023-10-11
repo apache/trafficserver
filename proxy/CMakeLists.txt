@@ -21,7 +21,8 @@ add_library(proxy STATIC
         CacheControl.cc
         ControlBase.cc
         ControlMatcher.cc
-	    HostStatus.cc
+        HostStatus.cc
+        HttpAPIHooks.cc
         IPAllow.cc
         ParentConsistentHash.cc
         ParentRoundRobin.cc
@@ -63,8 +64,10 @@ target_link_libraries(proxy
     PUBLIC
         ts::inkcache
         ts::inkevent
+        ts::tsapicore
         ts::tscore
     PRIVATE
+        ts::jsonrpc_protocol
         ts::inkutils
 )
 

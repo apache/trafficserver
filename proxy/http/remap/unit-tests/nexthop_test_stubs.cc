@@ -60,10 +60,6 @@ HttpCacheAction::cancel(Continuation *c)
 {
 }
 PostDataBuffers::~PostDataBuffers() {}
-void
-APIHooks::clear()
-{
-}
 
 HttpTunnel::HttpTunnel() {}
 HttpCacheSM::HttpCacheSM() {}

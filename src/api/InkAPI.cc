@@ -44,6 +44,7 @@
 #include "ProxySession.h"
 #include "Http2ClientSession.h"
 #include "PoolableSession.h"
+#include "HttpAPIHooks.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -55,6 +56,7 @@
 #include "records/I_RecCore.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
+#include "SSLAPIHooks.h"
 #include "SSLDiags.h"
 #include "SSLInternal.h"
 #include "TLSBasicSupport.h"
@@ -66,6 +68,7 @@
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "api/FetchSM.h"
+#include "api/LifecycleAPIHooks.h"
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 #include "I_Tasks.h"
@@ -391,9 +394,6 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
-HttpAPIHooks *http_global_hooks        = nullptr;
-SslAPIHooks *ssl_hooks                 = nullptr;
-LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
 static ts::Metrics &global_api_metrics = ts::Metrics::getInstance();
 
@@ -1047,73 +1047,6 @@ FileImpl::fgets(char *buf, size_t length)
 // APIHook, APIHooks, HttpAPIHooks, HttpHookState
 //
 ////////////////////////////////////////////////////////////////////
-APIHook *
-APIHook::next() const
-{
-  return m_link.next;
-}
-
-APIHook *
-APIHook::prev() const
-{
-  return m_link.prev;
-}
-
-int
-APIHook::invoke(int event, void *edata) const
-{
-  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
-    if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
-      ink_assert(!"not reached");
-    }
-  }
-  WEAK_MUTEX_TRY_LOCK(lock, m_cont->mutex, this_ethread());
-  if (!lock.is_locked()) {
-    // If we cannot get the lock, the caller needs to restructure to handle rescheduling
-    ink_release_assert(0);
-  }
-  return m_cont->handleEvent(event, edata);
-}
-
-int
-APIHook::blocking_invoke(int event, void *edata) const
-{
-  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
-    if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
-      ink_assert(!"not reached");
-    }
-  }
-
-  WEAK_SCOPED_MUTEX_LOCK(lock, m_cont->mutex, this_ethread());
-
-  return m_cont->handleEvent(event, edata);
-}
-
-APIHook *
-APIHooks::head() const
-{
-  return m_hooks.head;
-}
-
-void
-APIHooks::append(INKContInternal *cont)
-{
-  APIHook *api_hook;
-
-  api_hook         = THREAD_ALLOC(apiHookAllocator, this_thread());
-  api_hook->m_cont = cont;
-
-  m_hooks.enqueue(api_hook);
-}
-
-void
-APIHooks::clear()
-{
-  APIHook *hook;
-  while (nullptr != (hook = m_hooks.pop())) {
-    THREAD_FREE(hook, apiHookAllocator, this_thread());
-  }
-}
 
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
@@ -1458,9 +1391,9 @@ api_init()
     TS_HTTP_LEN_PUBLIC           = HTTP_LEN_PUBLIC;
     TS_HTTP_LEN_S_MAXAGE         = HTTP_LEN_S_MAXAGE;
 
-    http_global_hooks = new HttpAPIHooks;
-    ssl_hooks         = new SslAPIHooks;
-    lifecycle_hooks   = new LifecycleAPIHooks;
+    init_global_http_hooks();
+    init_global_ssl_hooks();
+    init_global_lifecycle_hooks();
     global_config_cbs = new ConfigUpdateCbTable;
 
     // Setup the version string for returning to plugins
@@ -4551,7 +4484,7 @@ tsapi::c::TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 
   TSSslHookInternalID internalId{id};
   if (internalId.is_in_bounds()) {
-    ssl_hooks->append(internalId, icontp);
+    g_ssl_hooks->append(internalId, icontp);
   } else { // Follow through the regular HTTP hook framework
     http_global_hooks->append(id, icontp);
   }
@@ -4563,7 +4496,7 @@ tsapi::c::TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_lifecycle_hook_id(id) == TS_SUCCESS);
 
-  lifecycle_hooks->append(id, (INKContInternal *)contp);
+  g_lifecycle_hooks->append(id, (INKContInternal *)contp);
 }
 
 /* HTTP sessions */

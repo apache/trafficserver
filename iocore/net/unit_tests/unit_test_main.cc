@@ -26,6 +26,7 @@
 #include "I_Thread.h"
 #include "P_SSLConfig.h"
 #include "records/I_RecordsConfig.h"
+#include "SSLAPIHooks.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
 #include "tscore/I_Layout.h"
@@ -61,6 +62,7 @@ public:
     main_thread->set_specific();
 
     SSLConfig::startup();
+    init_global_ssl_hooks();
   }
 
   void

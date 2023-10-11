@@ -21,7 +21,8 @@
 
 #include "swoc/swoc_file.h"
 
-#include "api/InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
+#include "api/LifecycleAPIHooks.h"
+
 #include "P_SSLConfig.h"
 
 #include <utility>
@@ -44,7 +45,7 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
 {
   // Call the load secret hooks
   //
-  class APIHook *curHook = lifecycle_hooks->get(TS_LIFECYCLE_SSL_SECRET_HOOK);
+  class APIHook *curHook = g_lifecycle_hooks->get(TS_LIFECYCLE_SSL_SECRET_HOOK);
   TSSecretID secret_name;
   secret_name.cert_name     = name1.data();
   secret_name.cert_name_len = name1.size();

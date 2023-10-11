@@ -25,6 +25,7 @@
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 
 #include "TLSSessionResumptionSupport.h"
+#include "SSLAPIHooks.h"
 
 #include "P_SSLConfig.h"
 #include "SSLStats.h"
@@ -150,7 +151,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
     }
   }
 
-  APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
+  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
   while (hook) {
     hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
     hook = hook->m_link.next;

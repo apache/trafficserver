@@ -23,11 +23,14 @@ add_library(ts::tsapi ALIAS tsapi)
 target_link_libraries(tsapi PRIVATE ts::tscore)
 
 add_library(tsapicore STATIC
+  APIHook.cc
+  APIHooks.cc
   Metrics.cc
   ConfigUpdateCbTable.cc
   InkContInternal.cc
   InkVConnInternal.cc
   FetchSM.cc
+  LifecycleAPIHooks.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
