@@ -2108,8 +2108,8 @@ int
 LogAccess::marshal_client_rx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
-  m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
-  int round_len = LogAccess::strlen(error_code);
+
+  int round_len = m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
 
   if (buf) {
     marshal_str(buf, error_code, round_len);
@@ -2122,8 +2122,8 @@ int
 LogAccess::marshal_client_tx_error_code(char *buf)
 {
   char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
-  m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
-  int round_len = LogAccess::strlen(error_code);
+
+  int round_len = m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
 
   if (buf) {
     marshal_str(buf, error_code, round_len);
