@@ -43,8 +43,6 @@
 #include "tscore/I_Layout.h"
 #include "records/I_RecHttp.h"
 
-#include "HttpConfig.h"
-
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
