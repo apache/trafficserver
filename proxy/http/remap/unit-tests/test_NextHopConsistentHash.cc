@@ -251,29 +251,37 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
 
         // fourth request
-        result->reset();
-        build_request(20004, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
-        CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
+        {
+          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
+          result->reset();
+          build_request(20004, &sm, nullptr, "rabbit.net", nullptr);
+          strategy->findNextHop(txnp, nullptr, now);
+          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
+        }
 
         // mark down s1.bar.com
         strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
 
         // fifth request
-        result->reset();
-        build_request(20005, &sm, nullptr, "rabbit.net/asset1", nullptr);
-        strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
-        CHECK(strcmp(result->hostname, "q1.bar.com") == 0);
+        {
+          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
+          result->reset();
+          build_request(20005, &sm, nullptr, "rabbit.net/asset1", nullptr);
+          strategy->findNextHop(txnp, nullptr, now);
+          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          CHECK(strcmp(result->hostname, "q1.bar.com") == 0);
+        }
 
         // sixth request - wait and p1 should now become available
-        time_t now = time(nullptr) + 5;
-        result->reset();
-        build_request(20006, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp, nullptr, now);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
-        CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
+        {
+          time_t now = time(nullptr) + 5;
+          result->reset();
+          build_request(20006, &sm, nullptr, "rabbit.net", nullptr);
+          strategy->findNextHop(txnp, nullptr, now);
+          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
+        }
       }
       // free up request resources.
       br_destroy(sm);
@@ -602,19 +610,24 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         // mark it down
         strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
         // seventh request - new request with all hosts down and go_direct is false.
-        result->reset();
-        build_request(30007, &sm, nullptr, "bunny.net/asset4", nullptr);
-        strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_FAIL);
-        CHECK(result->hostname == nullptr);
+        {
+          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
+          result->reset();
+          build_request(30007, &sm, nullptr, "bunny.net/asset4", nullptr);
+          strategy->findNextHop(txnp, nullptr, now);
+          REQUIRE(result->result == ParentResultType::PARENT_FAIL);
+          CHECK(result->hostname == nullptr);
+        }
 
         // eighth request - retry after waiting for the retry window to expire.
-        time_t now = time(nullptr) + 5;
-        result->reset();
-        build_request(30008, &sm, nullptr, "bunny.net/asset4", nullptr);
-        strategy->findNextHop(txnp, nullptr, now);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
-        CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
+        {
+          time_t now = time(nullptr) + 5;
+          result->reset();
+          build_request(30008, &sm, nullptr, "bunny.net/asset4", nullptr);
+          strategy->findNextHop(txnp, nullptr, now);
+          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
+        }
       }
       // free up request resources.
       br_destroy(sm);
