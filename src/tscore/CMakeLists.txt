@@ -38,7 +38,6 @@ add_library(tscore
         ConsistentHash.cc
         ContFlags.cc
         CryptoHash.cc
-        DbgCtl.cc
         Diags.cc
         Encoding.cc
         Errata.cc
@@ -173,6 +172,7 @@ if(BUILD_TESTING)
             PRIVATE
                 libswoc
                 ts::tscore
+                ts::tsapicore
                 yaml-cpp::yaml-cpp
                 resolv
                 ts::tscpputil

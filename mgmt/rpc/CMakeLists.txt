@@ -78,6 +78,7 @@ if(BUILD_TESTING)
     jsonrpc/unit_tests/test_basic_protocol.cc
   )
   target_link_libraries(test_jsonrpc
+    ts::tsapicore
     catch2::catch2
     ts::jsonrpc_protocol
     libswoc
