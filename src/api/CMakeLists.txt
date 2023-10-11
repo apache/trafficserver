@@ -35,6 +35,7 @@ add_library(tsapicore STATIC
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
+set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(
   ${IOCORE_INCLUDE_DIRS}
