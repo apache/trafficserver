@@ -27,7 +27,6 @@
 #include "tscore/TSSystemState.h"
 
 #include "api/InkAPIInternal.h" // Added to include the ssl_hook definitions
-#include "HttpTunnel.h"
 #include "ProxyProtocol.h"
 #include "HttpConfig.h"
 #include "SSLSNIConfig.h"
