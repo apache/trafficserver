@@ -39,6 +39,8 @@ set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE TRUE
 target_link_libraries(jsonrpc_protocol
     PUBLIC
         ts::tscore
+    PRIVATE
+        ts::tsapicore
 )
 
 add_library(jsonrpc_server STATIC
