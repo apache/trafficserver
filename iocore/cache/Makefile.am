@@ -41,6 +41,8 @@ libinkcache_a_SOURCES = \
 	CacheRead.cc \
 	CacheVol.cc \
 	CacheWrite.cc \
+	HttpTransactCache.cc \
+	HttpTransactcache.h \
 	I_Cache.h \
 	I_CacheDefs.h \
 	I_Store.h \

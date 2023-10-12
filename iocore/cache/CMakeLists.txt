@@ -27,6 +27,7 @@ add_library(inkcache STATIC
     CacheRead.cc
     CacheVol.cc
     CacheWrite.cc
+    HttpTransactCache.cc
     RamCacheCLFUS.cc
     RamCacheLRU.cc
     Store.cc

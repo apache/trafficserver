@@ -72,8 +72,6 @@ libhttp_a_SOURCES = \
 	HttpSessionManager.h \
 	HttpTransact.cc \
 	HttpTransact.h \
-	HttpTransactCache.cc \
-	HttpTransactCache.h \
 	HttpTransactHeaders.cc \
 	HttpTransactHeaders.h \
 	HttpTunnel.cc \

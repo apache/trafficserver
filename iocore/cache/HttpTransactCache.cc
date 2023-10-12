@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "P_CacheHttp.h"
+
 #include "tscore/ink_platform.h"
 
 #include "HttpTransact.h"
@@ -29,9 +31,6 @@
 #include <ctime>
 #include "HTTP.h"
 #include "HttpCompat.h"
-
-// inkcache
-#include "P_Cache.h"
 
 #include "tscore/InkErrno.h"
 
