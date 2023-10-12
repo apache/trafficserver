@@ -57,7 +57,7 @@ The plugin can be configured at run time using the `traffic_ctl` command.  The f
 
 - ``block_errors.error_limit``: Set the error limit.  Takes a single argument, the number of errors allowed before blocking the client.
 - ``block_errors.timeout``: Set the block timeout.  Takes a single argument, the number of minutes to block the client.
-- ``block_errors.enable``: Enable or disable the plugin.  Takes a single argument, 0 to disable, 1 to enable.
+- ``block_errors.enabled``: Enable or disable the plugin.  Takes a single argument, 0 to disable, 1 to enable.
 
 Example Run Time Configuration
 ==============================
@@ -66,4 +66,4 @@ Example Run Time Configuration
 
     traffic_ctl plugin msg block_errors.timeout 10
 
-    traffic_ctl plugin msg block_errors.enable 1
+    traffic_ctl plugin msg block_errors.enabled 1
