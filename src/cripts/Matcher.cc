@@ -61,7 +61,6 @@ Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
         TSReleaseAssert(!"Failed to JIT compile regex");
       }
     }
-    TSDebug("Cripts", "Adding regex: %.*s", (int)regex.length(), regex.data());
     _regexes.push_back(Matcher::PCRE::Regex{regex, re});
   }
 }

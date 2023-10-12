@@ -33,8 +33,6 @@ const Cript::string maxMindDBPath = CRIPTS_MAXMIND_DB;
 void
 global_initialization()
 {
-  TSDebug("Cript", "Initializing the Cript library, this should only happen once!");
-
   std::srand(std::time(nullptr) * getpid());
 
 #if CRIPTS_HAS_MAXMIND
@@ -42,7 +40,7 @@ global_initialization()
 
   int status = MMDB_open(maxMindDBPath.c_str(), MMDB_MODE_MMAP, gMaxMindDB);
   if (MMDB_SUCCESS != status) {
-    TSDebug("Cript", "Cannot open %s - %s", maxMindDBPath.c_str(), MMDB_strerror(status));
+    TSError("[Cripts] Cannot open %s - %s", maxMindDBPath.c_str(), MMDB_strerror(status));
     delete gMaxMindDB;
     gMaxMindDB = nullptr;
     return;
