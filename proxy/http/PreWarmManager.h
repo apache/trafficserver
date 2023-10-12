@@ -28,6 +28,7 @@
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 #include "PreWarm.h"
+#include "SSLSNIConfig.h"
 #include "I_HostDB.h"
 #include "NetTimeout.h"
 #include "Milestones.h"
@@ -215,6 +216,16 @@ private:
 class PreWarmManager
 {
 public:
+  PreWarmManager()
+  {
+    // We use the callback because it would introduce a circular dependency
+    // for SNIConfig to explicitly call prewarmManager.reconfigure().
+    // Because prewarmManager is global there's not a good place to set
+    // this, but as long as there's only one instance of this class
+    // there should not be an issue.
+    SNIConfig::set_on_reconfigure_callback([this]() { this->reconfigure(); });
+  }
+
   static void reconfigure_prewarming_on_threads();
 
   // Controllers

@@ -99,16 +99,6 @@ HttpRequestData::get_client_ip()
 
 StatPagesManager statPagesManager;
 
-#include "PreWarmManager.h"
-void
-PreWarmManager::reconfigure()
-{
-  ink_assert(false);
-  return;
-}
-
-PreWarmManager prewarmManager;
-
 #include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void

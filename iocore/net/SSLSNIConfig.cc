@@ -32,8 +32,6 @@
 #include "SSLSNIConfig.h"
 #include "P_SNIActionPerformer.h"
 
-#include "PreWarmManager.h"
-
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_memory.h"
@@ -50,6 +48,7 @@
 #include <utility>
 #include <pcre.h>
 #include <algorithm>
+#include <functional>
 
 static constexpr int OVECSIZE{30};
 
@@ -328,7 +327,8 @@ SNIConfigParams::~SNIConfigParams()
 ////
 // SNIConfig
 //
-int SNIConfig::_configid = 0;
+int SNIConfig::_configid                        = 0;
+std::function<void()> SNIConfig::on_reconfigure = nullptr;
 
 void
 SNIConfig::startup()
@@ -348,7 +348,9 @@ SNIConfig::reconfigure()
   bool retStatus = params->initialize();
   if (retStatus) {
     _configid = configProcessor.set(_configid, params);
-    prewarmManager.reconfigure();
+    if (SNIConfig::on_reconfigure) {
+      SNIConfig::on_reconfigure();
+    }
   } else {
     delete params;
   }
@@ -373,6 +375,12 @@ void
 SNIConfig::release(SNIConfigParams *params)
 {
   configProcessor.release(_configid, params);
+}
+
+void
+SNIConfig::set_on_reconfigure_callback(std::function<void()> cb)
+{
+  SNIConfig::on_reconfigure = cb;
 }
 
 // See if any of the client-side actions would trigger for this combination of servername and client IP
