@@ -80,7 +80,7 @@ public:
   [[nodiscard]] bool
   debugOn() const
   {
-    return (diags_on_for_plugins && TSIsDebugTagSet(plugin_debug_tag.c_str()));
+    return dbg_ctl_cript.on();
   }
 
   void

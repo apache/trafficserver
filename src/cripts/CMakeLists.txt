@@ -23,12 +23,12 @@ find_package(fmt 8.1 REQUIRED)
 pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 # The source files, globbed so we can drop in local / custom Bundles and extensions.
-file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/Bundles/*.cc)
+file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/*/*.cc)
 
 add_library(cripts SHARED ${CPP_FILES})
 add_library(ts::cripts ALIAS cripts)
 
-target_link_libraries(cripts fmt::fmt PkgConfig::PCRE2)
+target_link_libraries(cripts libswoc fmt::fmt PkgConfig::PCRE2)
 target_include_directories(cripts PRIVATE
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/proxy
