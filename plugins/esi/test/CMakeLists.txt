@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(esitest
+add_library(esitest STATIC
     HandlerMap.cc
     StubIncludeHandler.cc
     TestHandlerManager.cc
