@@ -34,8 +34,6 @@
 #include <records/I_RecHttp.h>
 #include "HttpSessionManager.h"
 
-extern void HostDB_Config_Init();
-
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
   REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
   REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
@@ -201,6 +199,29 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
   return 0;
 }
 
+/** Enable a dynamic configuration variable.
+ *
+ * @param name Configuration var name.
+ * @param cb Callback to do the actual update of the master record.
+ * @param cookie Extra data for @a cb
+ *
+ * The purpose of this is to unite the different ways and times a configuration variable needs
+ * to be loaded. These are
+ * - Process start.
+ * - Dynamic update.
+ * - Plugin API update.
+ *
+ * @a cb is expected to perform the update. It must return a @c bool which is
+ * - @c true if the value was changed.
+ * - @c false if the value was not changed.
+ *
+ * Based on that, a run time configuration update is triggered or not.
+ *
+ * In addition, this invokes @a cb and passes it the information in the configuration variable
+ * global table in order to perform the initial loading of the value. No update is triggered for
+ * that call as it is not needed.
+ *
+ */
 void
 Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
 {
@@ -605,6 +626,81 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
   set_negative_caching_list(r->name, r->data_type, r->data, c, false);
 }
 
+/** Template for creating conversions and initialization for @c std::chrono based configuration variables.
+ *
+ * @tparam V The exact type of the configuration variable.
+ *
+ * The tricky template code is to enable having a class instance for each configuration variable, instead of for each _type_ of
+ * configuration variable. This is required because the callback interface requires functions and so the actual storage must be
+ * accessible from that function. *
+ */
+template <typename V> struct ConfigDuration {
+  using self_type = ConfigDuration;
+  V *_var; ///< Pointer to the variable to control.
+
+  /** Constructor.
+   *
+   * @param v The variable to update.
+   */
+  ConfigDuration(V &v) : _var(&v) {}
+
+  /// Convert to the mgmt (configuration) type.
+  static MgmtInt
+  to_mgmt(void const *data)
+  {
+    return static_cast<MgmtInt>(static_cast<V const *>(data)->count());
+  }
+
+  /// Convert from the mgmt (configuration) type.
+  static void
+  from_mgmt(void *data, MgmtInt i)
+  {
+    *static_cast<V *>(data) = V{i};
+  }
+
+  /// The conversion structure, which handles @c MgmtInt.
+  static inline const MgmtConverter Conversions{&to_mgmt, &from_mgmt};
+
+  /** Process start up conversion from configuration.
+   *
+   * @param type The data type in the configuration.
+   * @param data The data in the configuration.
+   * @param var Pointer to the variable to update.
+   * @return @c true if @a data was successfully converted and stored, @c false if not.
+   *
+   * @note @a var is the target variable because it was explicitly set to be the value of @a _var in @c Enable.
+   */
+  static bool
+  callback(char const *, RecDataT type, RecData data, void *var)
+  {
+    if (RECD_INT == type) {
+      (*self_type::Conversions.store_int)(var, data.rec_int);
+      return true;
+    }
+    return false;
+  }
+
+  /** Enable.
+   *
+   * @param name Name of the configuration variable.
+   *
+   * This enables both reading from the configuration and handling the callback for dynamic
+   * updates of the variable.
+   */
+  void
+  Enable(std::string_view name)
+  {
+    Enable_Config_Var(name, &self_type::callback, _var);
+  }
+};
+
+ConfigDuration HttpDownServerCacheTimeVar{HttpConfig::m_master.oride.down_server_timeout};
+// Make the conversions visible to the plugin API. This allows exporting just the conversions
+// without having to export the class definition. Again, the compiler doesn't allow doing this
+// in one line.
+extern MgmtConverter const &HttpDownServerCacheTimeConv;
+MgmtConverter const &HttpDownServerCacheTimeConv = HttpDownServerCacheTimeVar.Conversions;
+
 ////////////////////////////////////////////////////////////////
 //
 //  HttpConfig::startup()
@@ -854,7 +950,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.referer_filter_enabled, "proxy.config.http.referer_filter");
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
-  HostDB_Config_Init();
+  HttpDownServerCacheTimeVar.Enable("proxy.config.http.down_server.cache_time");
 
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");

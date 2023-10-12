@@ -7961,7 +7961,7 @@ static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
 {
   // External converters.
-  extern MgmtConverter const &HostDBDownServerCacheTimeConv;
+  extern MgmtConverter const &HttpDownServerCacheTimeConv;
 
   void *ret = nullptr;
   conv      = nullptr;
@@ -8118,7 +8118,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    conv = &HostDBDownServerCacheTimeConv;
+    conv = &HttpDownServerCacheTimeConv;
     ret  = &overridableHttpConfig->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
