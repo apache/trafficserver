@@ -35,7 +35,6 @@ target_include_directories(inkdns PRIVATE
 
 target_link_libraries(inkdns
     PUBLIC
-        ts::inkcache
         ts::inkevent
         ts::inkhostdb
         ts::proxy
