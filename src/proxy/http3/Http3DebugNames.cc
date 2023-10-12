@@ -32,24 +32,22 @@ Http3DebugNames::frame_type(Http3FrameType type)
     return "DATA";
   case Http3FrameType::HEADERS:
     return "HEADERS";
-  case Http3FrameType::PRIORITY:
-    return "PRIORITY";
+  case Http3FrameType::X_RESERVED_1:
+    return "X_RESERVED_1";
   case Http3FrameType::CANCEL_PUSH:
     return "CANCEL_PUSH";
   case Http3FrameType::SETTINGS:
     return "SETTINGS";
   case Http3FrameType::PUSH_PROMISE:
     return "PUSH_PROMISE";
-  case Http3FrameType::GOAWAY:
-    return "GOAWAY";
-  case Http3FrameType::DUPLICATE_PUSH_ID:
-    return "DUPLICATE_PUSH_ID";
-  case Http3FrameType::X_RESERVED_1:
-    return "X_RESERVED_1";
   case Http3FrameType::X_RESERVED_2:
     return "X_RESERVED_2";
+  case Http3FrameType::GOAWAY:
+    return "GOAWAY";
   case Http3FrameType::X_RESERVED_3:
     return "X_RESERVED_3";
+  case Http3FrameType::X_RESERVED_4:
+    return "X_RESERVED_4";
   case Http3FrameType::UNKNOWN:
   default:
     return "UNKNOWN";

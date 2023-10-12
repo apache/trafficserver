@@ -49,6 +49,8 @@ public:
   void destroy() override;
   void release(ProxyTransaction *trans) override;
   void free() override;
+  bool is_protocol_framed() const override;
+  uint64_t get_received_frame_count(uint64_t type) const override;
 
   ////////////////////
   // Accessors

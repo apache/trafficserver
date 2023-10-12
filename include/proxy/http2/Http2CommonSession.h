@@ -132,6 +132,11 @@ protected:
   int do_start_frame_read(Http2ErrorCode &ret_error);
   int do_complete_frame_read();
 
+  /**
+   * Count received frames
+   */
+  void _count_received_frames(uint32_t type);
+
   bool _should_do_something_else();
 
   ////////
@@ -168,6 +173,21 @@ protected:
 
   int64_t read_from_early_data   = 0;
   bool cur_frame_from_early_data = false;
+
+  // Counter for received frames
+  std::atomic<uint64_t> _frame_counts_in[HTTP2_FRAME_TYPE_MAX + 1] = {
+    0, // DATA
+    0, // HEADERS
+    0, // PRIORITY
+    0, // RST_STREAM
+    0, // SETTINGS
+    0, // PUSH_PROMISE
+    0, // PING
+    0, // GOAWAY
+    0, // WINDOW_UPDATE
+    0, // CONTINUATION
+    0  // UNKNOWN
+  };
 
 private:
   bool _interrupt_reading_frames = false;

@@ -17,3 +17,4 @@
 
 add_autest_plugin(test_tsapi test_tsapi.cc)
 add_autest_plugin(test_TSHttpTxnServerAddrSet test_TSHttpTxnServerAddrSet.cc)
+add_autest_plugin(test_TSHttpSsnInfo test_TSHttpSsnInfo.cc)

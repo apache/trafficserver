@@ -111,6 +111,9 @@ public:
 
   virtual PoolableSession *get_server_session() const;
 
+  virtual bool is_protocol_framed() const;
+  virtual uint64_t get_received_frame_count(uint64_t type) const;
+
   // Replicate NetVConnection API
   virtual sockaddr const *get_remote_addr() const;
   virtual sockaddr const *get_local_addr();

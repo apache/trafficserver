@@ -321,6 +321,7 @@ Http2CommonSession::do_complete_frame_read()
   ink_release_assert(this->_read_buffer_reader->read_avail() >= this->current_hdr.length);
 
   Http2Frame frame(this->current_hdr, this->_read_buffer_reader, this->cur_frame_from_early_data);
+  this->_count_received_frames(frame.header().type);
   connection_state.rcv_frame(&frame);
 
   // Check whether data is read from early data
@@ -466,4 +467,16 @@ bool
 Http2CommonSession::is_outbound() const
 {
   return false;
+}
+
+void
+Http2CommonSession::_count_received_frames(uint32_t type)
+{
+  if (type > HTTP2_FRAME_TYPE_MAX) {
+    type = HTTP2_FRAME_TYPE_MAX;
+  }
+  // Global counter
+  Metrics::Counter::increment(http2_frame_metrics_in[type]);
+  // Local counter
+  this->_frame_counts_in[type]++;
 }

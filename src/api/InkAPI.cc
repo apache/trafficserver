@@ -4933,6 +4933,31 @@ tsapi::c::TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *v
   return TS_SUCCESS;
 }
 
+TSReturnCode
+tsapi::c::TSHttpSsnInfoIntGet(TSHttpSsn ssnp, TSHttpSsnInfoKey key, TSMgmtInt *value, uint64_t sub_key)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
+
+  ProxySession *ssn = reinterpret_cast<ProxySession *>(ssnp);
+
+  switch (key) {
+  case TS_SSN_INFO_TRANSACTION_COUNT:
+    *value = ssn->get_transact_count();
+    break;
+  case TS_SSN_INFO_RECEIVED_FRAME_COUNT:
+    if (!ssn->is_protocol_framed()) {
+      return TS_ERROR;
+    }
+    *value = ssn->get_received_frame_count(sub_key);
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 int
 tsapi::c::TSHttpTxnIsWebsocket(TSHttpTxn txnp)
 {

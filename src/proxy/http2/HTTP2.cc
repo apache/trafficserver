@@ -50,6 +50,8 @@ static VersionConverter hvc;
 // Statistics
 Http2StatsBlock http2_rsb;
 
+Metrics::Counter::AtomicType *http2_frame_metrics_in[HTTP2_FRAME_TYPE_MAX + 1];
+
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
   void *ptr;
@@ -600,6 +602,29 @@ Http2::init()
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
   http2_rsb.max_concurrent_streams_exceeded_out =
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
+  http2_rsb.data_frames_in          = Metrics::Counter::createPtr("proxy.process.http2.data_frames_in"),
+  http2_rsb.headers_frames_in       = Metrics::Counter::createPtr("proxy.process.http2.headers_frames_in"),
+  http2_rsb.priority_frames_in      = Metrics::Counter::createPtr("proxy.process.http2.priority_frames_in"),
+  http2_rsb.rst_stream_frames_in    = Metrics::Counter::createPtr("proxy.process.http2.rst_stream_frames_in"),
+  http2_rsb.settings_frames_in      = Metrics::Counter::createPtr("proxy.process.http2.settings_frames_in"),
+  http2_rsb.push_promise_frames_in  = Metrics::Counter::createPtr("proxy.process.http2.push_promise_frames_in"),
+  http2_rsb.ping_frames_in          = Metrics::Counter::createPtr("proxy.process.http2.ping_frames_in"),
+  http2_rsb.goaway_frames_in        = Metrics::Counter::createPtr("proxy.process.http2.goaway_frames_in"),
+  http2_rsb.window_update_frames_in = Metrics::Counter::createPtr("proxy.process.http2.window_update_frames_in"),
+  http2_rsb.continuation_frames_in  = Metrics::Counter::createPtr("proxy.process.http2.continuation_frames_in"),
+  http2_rsb.unknown_frames_in       = Metrics::Counter::createPtr("proxy.process.http2.unknown_frames_in"),
+
+  http2_frame_metrics_in[0]  = http2_rsb.data_frames_in;
+  http2_frame_metrics_in[1]  = http2_rsb.headers_frames_in;
+  http2_frame_metrics_in[2]  = http2_rsb.priority_frames_in;
+  http2_frame_metrics_in[3]  = http2_rsb.rst_stream_frames_in;
+  http2_frame_metrics_in[4]  = http2_rsb.settings_frames_in;
+  http2_frame_metrics_in[5]  = http2_rsb.push_promise_frames_in;
+  http2_frame_metrics_in[6]  = http2_rsb.ping_frames_in;
+  http2_frame_metrics_in[7]  = http2_rsb.goaway_frames_in;
+  http2_frame_metrics_in[8]  = http2_rsb.window_update_frames_in;
+  http2_frame_metrics_in[9]  = http2_rsb.continuation_frames_in;
+  http2_frame_metrics_in[10] = http2_rsb.unknown_frames_in;
 
   http2_init();
 }

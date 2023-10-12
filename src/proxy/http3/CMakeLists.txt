@@ -28,6 +28,7 @@ add_library(
   Http3DebugNames.cc
   Http3Frame.cc
   Http3FrameCollector.cc
+  Http3FrameCounter.cc
   Http3FrameDispatcher.cc
   Http3HeaderFramer.cc
   Http3DataFramer.cc
