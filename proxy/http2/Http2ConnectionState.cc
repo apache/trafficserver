@@ -1235,6 +1235,21 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
     dependency_tree = new DependencyTree(this->_get_configured_max_concurrent_streams());
   }
 
+  // Generally speaking, before enforcing h2 settings we wait upon the client to
+  // acknowledge the settings via a SETTINGS ACK. This is important for things
+  // like correctly handling windows. Howerver, the RFC default values for
+  // MAX_CONCURRENT_STREAMS and MAX_HEADER_SIZE are infinite, which is not
+  // practical and a client can run ATS out of resources by simply opening up
+  // more streams than is reasonable. We enforce our configured defaults before
+  // the client ACKs our SETTINGS by setting the configured defaults in the
+  // acknowledged settings.
+  Http2ConnectionSettings configured_settings;
+  configured_settings.settings_from_configs(session->is_outbound());
+  acknowledged_local_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+                                  configured_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS));
+  acknowledged_local_settings.set(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+                                  configured_settings.get(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE));
+
   configured_max_settings_frames_per_minute   = Http2::max_settings_frames_per_minute;
   configured_max_ping_frames_per_minute       = Http2::max_ping_frames_per_minute;
   configured_max_priority_frames_per_minute   = Http2::max_priority_frames_per_minute;
