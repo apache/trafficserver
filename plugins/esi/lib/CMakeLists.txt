@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(esicore
+add_library(esicore STATIC
         EsiGunzip.cc
         EsiGzip.cc
         EsiParser.cc

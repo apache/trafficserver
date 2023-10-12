@@ -29,7 +29,7 @@ add_custom_command(
 
 add_custom_target(ParseRules ALL DEPENDS ParseRulesCType ParseRulesCTypeToUpper ParseRulesCTypeToLower)
 
-add_library(tscore STATIC
+add_library(tscore
         AcidPtr.cc
         AcidPtr.cc
         Arena.cc
@@ -119,6 +119,8 @@ target_link_libraries(tscore
         PCRE::PCRE
         libswoc
         yaml-cpp::yaml-cpp
+    PRIVATE
+        resolv
 )
 
 if(TS_USE_POSIX_CAP)
