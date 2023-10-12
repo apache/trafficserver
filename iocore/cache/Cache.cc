@@ -30,9 +30,6 @@
 #include "tscore/I_Layout.h"
 #include "tscore/Filenames.h"
 
-#include "HttpTransactCache.h"
-#include "HttpSM.h"
-#include "HttpCacheSM.h"
 #include "api/InkAPIInternal.h"
 
 #include "tscore/hugepages.h"
