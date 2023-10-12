@@ -68,6 +68,7 @@ target_link_libraries(http
         ts::http_remap
         ts::inkcache
         ts::inkutils
+        ts::logging
 )
 
 if(TS_USE_QUIC)
