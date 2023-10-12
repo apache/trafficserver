@@ -34,8 +34,6 @@
 // Global Data
 //
 // Global Configuration
-
-extern int accept_till_done;
 extern int auto_clear_hostdb_flag;
 
 //
