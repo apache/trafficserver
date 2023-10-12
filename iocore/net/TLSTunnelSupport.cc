@@ -22,8 +22,8 @@
   limitations under the License.
  */
 
+#include "PreWarm.h"
 #include "SSLTypes.h"
-#include "PreWarmManager.h"
 #include "TLSTunnelSupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"

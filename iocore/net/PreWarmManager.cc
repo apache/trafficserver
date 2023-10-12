@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "PreWarm.h"
 #include "PreWarmManager.h"
 #include "PreWarmConfig.h"
 

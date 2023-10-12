@@ -34,7 +34,6 @@
 #include <string_view>
 #include <optional>
 
-#include "TLSTunnelSupport.h"
 #include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 #include "HttpCacheSM.h"
@@ -46,6 +45,11 @@
 #include "api/InkAPIInternal.h"
 #include "../ProxyTransaction.h"
 #include "HdrUtils.h"
+
+// inknet
+#include "PreWarmManager.h"
+#include "TLSTunnelSupport.h"
+
 #include "tscore/History.h"
 #include "tscore/PendingAction.h"
 
@@ -68,7 +72,6 @@ static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
 class PoolableSession;
 class AuthHttpAdapter;
-class PreWarmSM;
 
 class HttpSM;
 using HttpSMHandler = int (HttpSM::*)(int, void *);
