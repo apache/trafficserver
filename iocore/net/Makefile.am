@@ -202,7 +202,6 @@ libinknet_a_SOURCES = \
 	P_UnixUDPConnection.h \
 	PollCont.h \
 	PollCont.cc \
-	PreWarmManager.cc \
 	ProxyProtocol.h \
 	ProxyProtocol.cc \
 	ReadWriteEventIO.h \

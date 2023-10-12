@@ -39,6 +39,7 @@ add_library(http STATIC
         ConnectingEntry.cc
         ForwardedConfig.cc
         PreWarmConfig.cc
+        PreWarmManager.cc
 )
 add_library(ts::http ALIAS http)
 

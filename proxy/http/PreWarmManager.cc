@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "PreWarm.h"
 #include "PreWarmManager.h"
 #include "PreWarmConfig.h"
 
@@ -29,6 +28,7 @@
 #include "SSLSNIConfig.h"
 #include "P_VConnection.h"
 #include "I_NetProcessor.h"
+#include "PreWarm.h"
 
 #include "api/Metrics.h"
 #include "tscore/ink_time.h"
