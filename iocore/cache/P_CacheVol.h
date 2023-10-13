@@ -118,7 +118,7 @@ struct EvacuationBlock {
   Dir new_dir;
   // we need to have a list of evacuationkeys because of collision.
   EvacuationKey evac_frags;
-  CacheVC *earliest_evacuator;
+  CacheEvacuateDocVC *earliest_evacuator;
   LINK(EvacuationBlock, link);
 };
 
@@ -158,7 +158,7 @@ struct Vol : public Continuation {
   int evacuate_size              = 0;
   DLL<EvacuationBlock> *evacuate = nullptr;
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
-  CacheVC *doc_evacuator = nullptr;
+  CacheEvacuateDocVC *doc_evacuator = nullptr;
 
   VolInitInfo *init_info = nullptr;
 

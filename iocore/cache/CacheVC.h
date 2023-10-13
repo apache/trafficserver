@@ -199,8 +199,6 @@ struct CacheVC : public CacheVConnection {
   {
     io.aiocb.aio_fildes = AIO_AGG_WRITE_IN_PROGRESS;
   }
-  int evacuateDocDone(int event, Event *e);
-  int evacuateReadHead(int event, Event *e);
 
   void cancel_trigger();
   int64_t get_object_size() override;

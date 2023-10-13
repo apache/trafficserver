@@ -126,6 +126,7 @@ public:
   ProxyAllocator hdrHeapAllocator;
   ProxyAllocator strHeapAllocator;
   ProxyAllocator cacheVConnectionAllocator;
+  ProxyAllocator cacheEvacuateDocVConnectionAllocator;
   ProxyAllocator openDirEntryAllocator;
   ProxyAllocator ramCacheCLFUSEntryAllocator;
   ProxyAllocator ramCacheLRUEntryAllocator;
