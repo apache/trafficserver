@@ -25,6 +25,8 @@
 
 #include "I_Cache.h"
 
+#include "P_AIO.h"
+
 extern int cache_config_max_disk_errors;
 
 #define DISK_BAD(_x)           ((_x)->num_errors >= cache_config_max_disk_errors)

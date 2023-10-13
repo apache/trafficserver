@@ -39,6 +39,7 @@ libinkcache_a_SOURCES = \
 	CachePages.cc \
 	CachePagesInternal.cc \
 	CacheRead.cc \
+	CacheVC.cc \
 	CacheVol.cc \
 	CacheWrite.cc \
 	I_Cache.h \

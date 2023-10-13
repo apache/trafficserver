@@ -25,6 +25,7 @@ add_library(inkcache STATIC
     CachePages.cc
     CachePagesInternal.cc
     CacheRead.cc
+    CacheVC.cc
     CacheVol.cc
     CacheWrite.cc
     RamCacheCLFUS.cc
