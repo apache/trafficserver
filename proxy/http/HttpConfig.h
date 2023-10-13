@@ -60,9 +60,6 @@ using ts::Metrics;
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
 
-/* Instead of enumerating the stats in DynamicStats.h, each module needs
-   to enumerate its stats separately and register them with librecords
-   */
 struct HttpStatsBlock {
   // Need two stats for these for counts and times
   ts::Metrics::IntType *background_fill_bytes_aborted;
