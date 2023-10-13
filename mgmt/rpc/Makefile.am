@@ -65,6 +65,7 @@ test_jsonrpc_LDADD = \
 	libjsonrpc_protocol.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
@@ -105,6 +106,7 @@ test_jsonrpcserver_LDADD = \
 	libjsonrpc_protocol.la \
 	libjsonrpc_server.la \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/api/libtsapicore.a \

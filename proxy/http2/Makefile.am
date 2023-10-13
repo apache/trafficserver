@@ -97,6 +97,7 @@ test_libhttp2_SOURCES = \
 
 test_Http2DependencyTree_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@
 
@@ -110,6 +111,7 @@ test_Http2DependencyTree_SOURCES = \
 test_Http2FrequencyCounter_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapicore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ \
 	@LIBPCRE@ \

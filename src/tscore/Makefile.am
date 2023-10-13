@@ -49,7 +49,6 @@ libtscore_a_SOURCES = \
 	ConsistentHash.cc \
 	ContFlags.cc \
 	CryptoHash.cc \
-	DbgCtl.cc \
 	Diags.cc \
 	Encoding.cc \
 	Errata.cc \
@@ -131,16 +130,16 @@ ParseRulesCType: CompileParseRules
 	LSAN_OPTIONS='detect_leaks=0' ./CompileParseRules
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
+test_atomic_LDADD = libtscore.a $(top_builddir)/src/api/libtsapicore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
+test_freelist_LDADD = libtscore.a  $(top_builddir)/src/api/libtsapicore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_geometry_SOURCES = test_geometry.cc
-test_geometry_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
+test_geometry_LDADD = libtscore.a  $(top_builddir)/src/api/libtsapicore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
 
 test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2
-test_X509HostnameValidator_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
+test_X509HostnameValidator_LDADD = libtscore.a  $(top_builddir)/src/api/libtsapicore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
@@ -148,7 +147,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
+test_tscore_LDADD = libtscore.a  $(top_builddir)/src/api/libtsapicore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @LIBCAP@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
