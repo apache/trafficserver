@@ -24,6 +24,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/EventNotify.h"
 #include "tscore/I_Layout.h"
+#include "tscore/InkErrno.h"
 #include "tscore/TSSystemState.h"
 
 #include "api/InkAPIInternal.h" // Added to include the ssl_hook definitions

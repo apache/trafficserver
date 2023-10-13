@@ -32,7 +32,6 @@ add_library(http STATIC
         Http1ServerSession.cc
         HttpSessionManager.cc
         HttpTransact.cc
-        HttpTransactCache.cc
         HttpTransactHeaders.cc
         HttpTunnel.cc
         HttpVCTable.cc

@@ -35,6 +35,10 @@
 #include "HttpTunnel.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
+
+// inkcache
+#include "P_Cache.h"
+
 #include "tscore/ParseRules.h"
 #include "tscore/ink_memory.h"
 
