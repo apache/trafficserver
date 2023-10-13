@@ -28,6 +28,9 @@
 #include "I_EventSystem.h"
 #include "I_Continuation.h"
 
+// aio
+#include "I_AIO.h"
+
 struct Vol;
 struct InterimCacheVol;
 struct CacheVC;
