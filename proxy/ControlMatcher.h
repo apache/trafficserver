@@ -74,16 +74,6 @@
  *
  ****************************************************************************/
 
-//
-// IMPORTANT: Instantiating these templates
-//
-//    The Implementation for these templates appears in
-//     ControlMatcher.cc   To get the templates instantiated
-//     correctly on all compilers new uses MUST explicitly
-//     instantiate the new instance at the bottom of
-//     ControlMatcher.cc
-//
-
 #pragma once
 
 #include <unordered_map>
@@ -349,3 +339,5 @@ public:
   int m_numEntries         = 0;
   const char *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
+
+#include "ControlMatcher.inl"

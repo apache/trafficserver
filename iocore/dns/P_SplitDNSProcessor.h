@@ -31,6 +31,8 @@
 #pragma once
 
 #include "ConfigProcessor.h"
+#include "I_SplitDNSProcessor.h"
+#include "P_DNSProcessor.h"
 
 #include "ControlMatcher.h"
 #include "tscore/HostLookup.h"

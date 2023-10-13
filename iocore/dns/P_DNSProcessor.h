@@ -23,9 +23,14 @@
 
 #pragma once
 
+#include "P_DNSConnection.h"
+#include "I_DNSProcessor.h"
+
 #include "I_EventSystem.h"
-#include "tscore/PendingAction.h"
 #include "api/Metrics.h"
+
+#include "tscore/ink_resolver.h"
+#include "tscore/PendingAction.h"
 
 using ts::Metrics;
 

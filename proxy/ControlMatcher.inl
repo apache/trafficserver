@@ -28,61 +28,37 @@
  *
  ****************************************************************************/
 
+#include "ControlMatcher.h"
+
+// records
+#include "records/I_RecCore.h"
+
+// tscore
+#include "tscore/Diags.h"
+#include "tscore/HostLookup.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_string.h"
+#include "tscore/Result.h"
+#include "tscore/Tokenizer.h"
+
+#include <swoc/bwf_base.h>
+#include <swoc/bwf_ip.h>
+#include <swoc/swoc_file.h>
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
 #include <sys/types.h>
 
-#include "swoc/bwf_ip.h"
-#include "swoc/swoc_file.h"
-
-#include "tscore/ink_config.h"
-#include "tscore/MatcherUtils.h"
-#include "tscore/Tokenizer.h"
-#include "ConfigProcessor.h"
-#include "ControlMatcher.h"
-#include "CacheControl.h"
-#include "ParentSelection.h"
-#include "tscore/HostLookup.h"
-#include "HTTP.h"
-#include "URL.h"
-#include "P_EventSystem.h"
-#include "P_Net.h"
-#include "P_Cache.h"
-#include "P_SplitDNS.h"
-
-/****************************************************************
- *   Place all template instantiations at the bottom of the file
- ****************************************************************/
-
-// HttpRequestData accessors
-//   Can not be inlined due being virtual functions
-//
-char *
-HttpRequestData::get_string()
-{
-  char *str = hdr->url_string_get(nullptr);
-
-  if (str) {
-    unescapifyStr(str);
-  }
-  return str;
-}
-
-const char *
-HttpRequestData::get_host()
-{
-  return hostname_str;
-}
-
-sockaddr const *
-HttpRequestData::get_ip()
-{
-  return &dest_ip.sa;
-}
-
-sockaddr const *
-HttpRequestData::get_client_ip()
-{
-  return &src_ip.sa;
-}
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <system_error>
 
 /*************************************************************
  *   Begin class HostMatcher
@@ -948,28 +924,3 @@ ControlMatcher<Data, MatchResult>::BuildTable()
 
   return BuildTableFromString(content.data());
 }
-
-/****************************************************************
- *    TEMPLATE INSTANTIATIONS GO HERE
- *
- ****************************************************************/
-
-template class ControlMatcher<ParentRecord, ParentResult>;
-template class HostMatcher<ParentRecord, ParentResult>;
-template class RegexMatcher<ParentRecord, ParentResult>;
-template class UrlMatcher<ParentRecord, ParentResult>;
-template class IpMatcher<ParentRecord, ParentResult>;
-template class HostRegexMatcher<ParentRecord, ParentResult>;
-
-template class ControlMatcher<SplitDNSRecord, SplitDNSResult>;
-template class HostMatcher<SplitDNSRecord, SplitDNSResult>;
-template class RegexMatcher<SplitDNSRecord, SplitDNSResult>;
-template class UrlMatcher<SplitDNSRecord, SplitDNSResult>;
-template class IpMatcher<SplitDNSRecord, SplitDNSResult>;
-template class HostRegexMatcher<SplitDNSRecord, SplitDNSResult>;
-
-template class ControlMatcher<CacheControlRecord, CacheControlResult>;
-template class HostMatcher<CacheControlRecord, CacheControlResult>;
-template class RegexMatcher<CacheControlRecord, CacheControlResult>;
-template class UrlMatcher<CacheControlRecord, CacheControlResult>;
-template class IpMatcher<CacheControlRecord, CacheControlResult>;
