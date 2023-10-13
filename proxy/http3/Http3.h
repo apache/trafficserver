@@ -24,8 +24,6 @@
 #pragma once
 
 #include "tscore/ink_defs.h"
-#include "records/I_RecDefs.h"
-#include "records/I_RecProcess.h"
 #include "api/Metrics.h"
 
 extern const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE;

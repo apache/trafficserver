@@ -37,7 +37,7 @@
 
 #define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)
 
-RecRawStatBlock *quic_rsb;
+QuicStatsBlock quic_rsb;
 
 int QUIC::ssl_quic_qc_index  = -1;
 int QUIC::ssl_quic_tls_index = -1;
@@ -73,13 +73,10 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 void
 QUIC::_register_stats()
 {
-  quic_rsb = RecAllocateRawStatBlock(static_cast<int>(QUICStats::count));
-
+  ts::Metrics &intm = ts::Metrics::getInstance();
   // Transferred packet counts
-  RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_sent", RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(QUICStats::total_packets_sent_stat), RecRawStatSyncSum);
-  // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_retransmitted", RECD_INT, RECP_PERSISTENT,
-  //                              static_cast<int>(quic_total_packets_retransmitted_stat), RecRawStatSyncSum);
-  // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_received", RECD_INT, RECP_PERSISTENT,
-  //                            static_cast<int>(quic_total_packets_received_stat), RecRawStatSyncSum);
+  quic_rsb.total_packets_sent = intm.newMetricPtr("proxy.process.quic.total_packets_sent");
+
+  // quic_rsb.total_packets_retransmitted = intm.newMetricPtr("proxy.process.quic.total_packets_retransmitted");
+  // quic_rsb.total_packets_received      = intm.newMetricPtr("proxy.process.quic.total_packets_received");
 }
