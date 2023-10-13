@@ -206,14 +206,6 @@ Ldone:
 }
 
 RecErrT
-RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock)
-{
-  RecData data;
-  data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock);
-}
-
-RecErrT
 RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock)
 {
   RecData data;
