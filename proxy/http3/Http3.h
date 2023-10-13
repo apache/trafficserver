@@ -24,15 +24,12 @@
 #pragma once
 
 #include "tscore/ink_defs.h"
-#include "records/I_RecDefs.h"
-#include "records/I_RecProcess.h"
+#include "api/Metrics.h"
 
 extern const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE;
 extern const uint32_t HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE;
 extern const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS;
 extern const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS;
-
-extern RecRawStatBlock *http3_rsb; // Container for statistics.
 
 class Http3
 {
@@ -41,6 +38,10 @@ public:
 };
 
 // Statistics
-enum {
-  HTTP3_N_STATS // Terminal counter, NOT A STAT INDEX.
+struct Http3StatsBlock {
+  // Example: Metrics::IntType *current_client_session_count;
+  // Once created, e.g.
+  // Metrics::increment(http3_rsb.current_client_session_count);
 };
+
+extern Http3StatsBlock http3_rsb; // Container for statistics.
