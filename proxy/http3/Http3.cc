@@ -29,10 +29,15 @@ const uint32_t HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE = UINT32_MAX;
 const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS  = 0;
 const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS       = 0;
 
-RecRawStatBlock *http3_rsb;
+Http3StatsBlock http3_rsb;
 
 void
 Http3::init()
 {
-  http3_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP3_N_STATS));
+  // Example (remove comments here when addding)
+  //
+  // Setup statistics
+  // ts::Metrics &intm = ts::Metrics::getInstance();
+  //
+  // http3_rsb.current_client_session_count = intm.newMetricPtr("proxy.process.http3.current_client_connections");
 }
