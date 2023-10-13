@@ -34,7 +34,7 @@
 struct Vol;
 struct InterimCacheVol;
 struct CacheVC;
-struct CacheEvacuateDocVC;
+class CacheEvacuateDocVC;
 
 /*
   Directory layout
