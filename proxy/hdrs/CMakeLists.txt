@@ -45,6 +45,7 @@ target_link_libraries(hdrs
         ts::tscore
     PRIVATE
         ts::inkevent
+        ts::tsapicore
 )
 
 if(BUILD_TESTING)
@@ -68,6 +69,6 @@ if(BUILD_TESTING)
     unit_tests/test_XPACK.cc
   )
   target_include_directories(test_proxy_hdrs_xpack PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-  target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore libswoc catch2::catch2)
+  target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore ts::tsapicore libswoc catch2::catch2)
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
 endif()

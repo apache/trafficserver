@@ -70,6 +70,7 @@ libtsapicore_a_SOURCES = \
 	ConfigUpdateCbTable.cc \
 	InkContInternal.cc \
 	InkVConnInternal.cc \
+	DbgCtl.cc \
 	FetchSM.cc \
 	LifecycleAPIHooks.cc
 
