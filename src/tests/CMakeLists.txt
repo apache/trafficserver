@@ -82,7 +82,7 @@ macro(add_stubbed_test name)
     add_executable(${name}
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
             ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::proxy)
+    target_link_libraries(${name} PRIVATE ts::proxy ts::http)
     add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
