@@ -38,7 +38,6 @@
 #include "Http3FrameGenerator.h"
 #include "Http3FrameHandler.h"
 
-class QUICNetVConnection;
 class Http3Session;
 
 /**
@@ -48,7 +47,7 @@ class Http3Session;
 class Http3App : public QUICApplication
 {
 public:
-  Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
+  Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   virtual ~Http3App();
 
   void on_new_stream(QUICStream &stream) override;

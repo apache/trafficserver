@@ -42,6 +42,7 @@
 #include "TLSSessionResumptionSupport.h"
 #include "TLSSNISupport.h"
 #include "TLSCertSwitchSupport.h"
+#include "QUICSupport.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
@@ -65,7 +66,8 @@ class QUICNetVConnection : public UnixNetVConnection,
                            public TLSSNISupport,
                            public TLSSessionResumptionSupport,
                            public TLSCertSwitchSupport,
-                           public TLSBasicSupport
+                           public TLSBasicSupport,
+                           public QUICSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -136,6 +138,9 @@ public:
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+
+  // QUICSupport
+  QUICConnection *get_quic_connection() override;
 
   // QUICNetVConnection
   int in_closed_queue = 0;

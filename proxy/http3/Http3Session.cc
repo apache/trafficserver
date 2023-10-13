@@ -22,7 +22,7 @@
  */
 
 #include "Http3Session.h"
-#include "P_QUICNetVConnection.h"
+#include "QUICSupport.h"
 
 #include "Http3.h"
 
@@ -31,7 +31,7 @@
 //
 HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
 {
-  auto app_name = static_cast<QUICNetVConnection *>(vc)->negotiated_application_name();
+  auto app_name = vc->get_service<QUICSupport>()->get_quic_connection()->negotiated_application_name();
   memcpy(this->_protocol_string, app_name.data(), std::min(app_name.length(), sizeof(this->_protocol_string)));
   this->_protocol_string[app_name.length()] = '\0';
 }
@@ -69,7 +69,7 @@ HQSession::populate_protocol(std::string_view *result, int size) const
 {
   int retval = 0;
   if (size > retval) {
-    result[retval++] = static_cast<QUICNetVConnection *>(this->_vc)->negotiated_application_name();
+    result[retval++] = this->_vc->get_service<QUICSupport>()->get_quic_connection()->negotiated_application_name();
     if (size > retval) {
       retval += super::populate_protocol(result + retval, size - retval);
     }
@@ -127,7 +127,7 @@ HQSession::reenable(VIO *vio)
 void
 HQSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reade)
 {
-  this->con_id = static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(new_vc))->connection_id();
+  this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
   this->_handle_if_ssl(new_vc);
 
   return;
@@ -170,10 +170,11 @@ HQSession::get_transact_count() const
 //
 Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 {
-  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc), HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE,
-                                  HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
-  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc), HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE,
-                                  HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  QUICConnection *qc = vc->get_service<QUICSupport>()->get_quic_connection();
+  this->_local_qpack =
+    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  this->_remote_qpack =
+    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
 }
 
 Http3Session::~Http3Session()

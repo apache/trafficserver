@@ -29,7 +29,7 @@
 
 #include "P_Net.h"
 #include "P_VConnection.h"
-#include "P_QUICNetVConnection.h"
+#include "QUICStreamManager.h"
 #include "QUICStreamVCAdapter.h"
 
 #include "Http3.h"
@@ -43,8 +43,9 @@
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
 
-Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
-  : QUICApplication(client_vc)
+Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
+                   const HttpSessionAccept::Options &options)
+  : QUICApplication(qc)
 {
   this->_ssn                 = new Http3Session(client_vc);
   this->_ssn->acl            = std::move(session_acl);

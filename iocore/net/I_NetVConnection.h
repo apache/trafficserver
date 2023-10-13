@@ -530,6 +530,7 @@ protected:
     TLS_SNI,
     TLS_SessionResumption,
     TLS_Tunnel,
+    QUIC,
     N_SERVICES,
   };
 
@@ -685,4 +686,18 @@ inline void
 NetVConnection::_set_service(TLSTunnelSupport *instance)
 {
   this->_set_service(NetVConnection::Service::TLS_Tunnel, instance);
+}
+
+class QUICSupport;
+template <>
+inline QUICSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<QUICSupport *>(this->_get_service(NetVConnection::Service::QUIC));
+}
+template <>
+inline void
+NetVConnection::_set_service(QUICSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::QUIC, instance);
 }

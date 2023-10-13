@@ -41,7 +41,7 @@ ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
   }
 
   // This action is only available for QUIC connections
-  if (dynamic_cast<QUICNetVConnection *>(SSLNetVCAccess(&ssl)) == nullptr) {
+  if (QUICSupport::getInstance(&ssl) == nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
 

@@ -22,11 +22,11 @@
  */
 
 #include "Http3SessionAccept.h"
-#include "P_QUICNetVConnection.h"
 
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "IPAllow.h"
+#include "QUICSupport.h"
 
 #include "Http09App.h"
 #include "Http3App.h"
@@ -57,23 +57,23 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   netvc->attributes = this->options.transport_type;
 
-  QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(netvc);
+  QUICConnection *qc = netvc->get_service<QUICSupport>()->get_quic_connection();
 
   if (is_debug_tag_set("http3")) {
     ip_port_text_buffer ipb;
 
-    Debug("http3", "[%s] accepted connection from %s transport type = %d", qvc->cids().data(),
+    Debug("http3", "[%s] accepted connection from %s transport type = %d", qc->cids().data(),
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
-  std::string_view alpn = qvc->negotiated_application_name();
+  std::string_view alpn = qc->negotiated_application_name();
 
   if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
-    Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%.*s)", qvc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
-    new Http09App(qvc, std::move(session_acl), this->options);
+    Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
+    new Http09App(netvc, qc, std::move(session_acl), this->options);
   } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0) {
-    Debug("http3", "[%s] start HTTP/3 app (ALPN=%.*s)", qvc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
+    Debug("http3", "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
-    Http3App *app = new Http3App(qvc, std::move(session_acl), this->options);
+    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
     app->start();
   } else {
     ink_abort("Negotiated App Name is unknown");

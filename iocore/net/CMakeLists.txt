@@ -88,6 +88,7 @@ if(TS_USE_QUIC)
             QUICNetVConnection_quiche.cc
             QUICNextProtocolAccept_quiche.cc
             QUICPacketHandler_quiche.cc
+            QUICSupport.cc
     )
 
     target_link_libraries(inknet

@@ -263,7 +263,8 @@ libinknet_a_SOURCES += \
 	QUICNetProcessor_quiche.cc \
 	QUICNetVConnection_quiche.cc \
 	QUICNextProtocolAccept_quiche.cc \
-	QUICPacketHandler_quiche.cc
+	QUICPacketHandler_quiche.cc \
+	QUICSupport.cc
 endif
 
 if BUILD_TESTS
