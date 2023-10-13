@@ -25,7 +25,6 @@
 #include "I_CacheDefs.h"
 #include "P_CacheDisk.h"
 #include "P_CacheHttp.h"
-// #include "P_CacheHosting.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
