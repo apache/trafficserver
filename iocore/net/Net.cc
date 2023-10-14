@@ -82,47 +82,56 @@ register_net_stats()
 {
   ts::Metrics &intm = ts::Metrics::getInstance();
 
-  net_rsb.accepts_currently_open              = intm.newMetricPtr("proxy.process.net.accepts_currently_open");
-  net_rsb.calls_to_read                       = intm.newMetricPtr("proxy.process.net.calls_to_read");
-  net_rsb.calls_to_read_nodata                = intm.newMetricPtr("proxy.process.net.calls_to_read_nodata");
-  net_rsb.calls_to_readfromnet                = intm.newMetricPtr("proxy.process.net.calls_to_readfromnet");
-  net_rsb.calls_to_write                      = intm.newMetricPtr("proxy.process.net.calls_to_write");
-  net_rsb.calls_to_write_nodata               = intm.newMetricPtr("proxy.process.net.calls_to_write_nodata");
-  net_rsb.calls_to_writetonet                 = intm.newMetricPtr("proxy.process.net.calls_to_writetonet");
-  net_rsb.connections_currently_open          = intm.newMetricPtr("proxy.process.net.connections_currently_open");
-  net_rsb.connections_throttled_in            = intm.newMetricPtr("proxy.process.net.connections_throttled_in");
-  net_rsb.connections_throttled_out           = intm.newMetricPtr("proxy.process.net.connections_throttled_out");
+  net_rsb.accepts_currently_open                    = intm.newMetricPtr("proxy.process.net.accepts_currently_open");
+  net_rsb.calls_to_read                             = intm.newMetricPtr("proxy.process.net.calls_to_read");
+  net_rsb.calls_to_read_nodata                      = intm.newMetricPtr("proxy.process.net.calls_to_read_nodata");
+  net_rsb.calls_to_readfromnet                      = intm.newMetricPtr("proxy.process.net.calls_to_readfromnet");
+  net_rsb.calls_to_write                            = intm.newMetricPtr("proxy.process.net.calls_to_write");
+  net_rsb.calls_to_write_nodata                     = intm.newMetricPtr("proxy.process.net.calls_to_write_nodata");
+  net_rsb.calls_to_writetonet                       = intm.newMetricPtr("proxy.process.net.calls_to_writetonet");
+  net_rsb.connections_currently_open                = intm.newMetricPtr("proxy.process.net.connections_currently_open");
+  net_rsb.connections_throttled_in                  = intm.newMetricPtr("proxy.process.net.connections_throttled_in");
+  net_rsb.connections_throttled_out                 = intm.newMetricPtr("proxy.process.net.connections_throttled_out");
   net_rsb.tunnel_total_client_connections_blind_tcp = intm.newMetricPtr("proxy.process.tunnel.total_client_connections_blind_tcp");
-  net_rsb.tunnel_current_client_connections_blind_tcp = intm.newMetricPtr("proxy.process.tunnel.current_client_connections_blind_tcp");
+  net_rsb.tunnel_current_client_connections_blind_tcp =
+    intm.newMetricPtr("proxy.process.tunnel.current_client_connections_blind_tcp");
   net_rsb.tunnel_total_server_connections_blind_tcp = intm.newMetricPtr("proxy.process.tunnel.total_server_connections_blind_tcp");
-  net_rsb.tunnel_current_server_connections_blind_tcp = intm.newMetricPtr("proxy.process.tunnel.current_server_connections_blind_tcp");
-  net_rsb.tunnel_total_client_connections_tls_tunnel = intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_tunnel");
-  net_rsb.tunnel_current_client_connections_tls_tunnel = intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_tunnel");
-  net_rsb.tunnel_total_client_connections_tls_forward = intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_forward");
-  net_rsb.tunnel_current_client_connections_tls_forward = intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_forward");
-  net_rsb.tunnel_total_client_connections_tls_partial_blind = intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_partial_blind");
-  net_rsb.tunnel_current_client_connections_tls_partial_blind = intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_partial_blind");
+  net_rsb.tunnel_current_server_connections_blind_tcp =
+    intm.newMetricPtr("proxy.process.tunnel.current_server_connections_blind_tcp");
+  net_rsb.tunnel_total_client_connections_tls_tunnel =
+    intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_tunnel");
+  net_rsb.tunnel_current_client_connections_tls_tunnel =
+    intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_tunnel");
+  net_rsb.tunnel_total_client_connections_tls_forward =
+    intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_forward");
+  net_rsb.tunnel_current_client_connections_tls_forward =
+    intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_forward");
+  net_rsb.tunnel_total_client_connections_tls_partial_blind =
+    intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_partial_blind");
+  net_rsb.tunnel_current_client_connections_tls_partial_blind =
+    intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_partial_blind");
   net_rsb.tunnel_total_client_connections_tls_http = intm.newMetricPtr("proxy.process.tunnel.total_client_connections_tls_http");
-  net_rsb.tunnel_current_client_connections_tls_http = intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_http");
-  net_rsb.tunnel_total_server_connections_tls = intm.newMetricPtr("proxy.process.tunnel.total_server_connections_tls");
+  net_rsb.tunnel_current_client_connections_tls_http =
+    intm.newMetricPtr("proxy.process.tunnel.current_client_connections_tls_http");
+  net_rsb.tunnel_total_server_connections_tls   = intm.newMetricPtr("proxy.process.tunnel.total_server_connections_tls");
   net_rsb.tunnel_current_server_connections_tls = intm.newMetricPtr("proxy.process.tunnel.current_server_connections_tls");
-  net_rsb.default_inactivity_timeout_applied  = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_applied");
-  net_rsb.default_inactivity_timeout_count    = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_count");
-  net_rsb.fastopen_attempts                   = intm.newMetricPtr("proxy.process.net.fastopen_out.attempts");
-  net_rsb.fastopen_successes                  = intm.newMetricPtr("proxy.process.net.fastopen_out.successes");
-  net_rsb.handler_run                         = intm.newMetricPtr("proxy.process.net.net_handler_run");
-  net_rsb.inactivity_cop_lock_acquire_failure = intm.newMetricPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
-  net_rsb.keep_alive_queue_timeout_count      = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
-  net_rsb.keep_alive_queue_timeout_total      = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
-  net_rsb.read_bytes                          = intm.newMetricPtr("proxy.process.net.read_bytes");
-  net_rsb.read_bytes_count                    = intm.newMetricPtr("proxy.process.net.read_bytes_count");
-  net_rsb.requests_max_throttled_in           = intm.newMetricPtr("proxy.process.net.max.requests_throttled_in");
-  net_rsb.socks_connections_currently_open    = intm.newMetricPtr("proxy.process.socks.connections_currently_open");
-  net_rsb.socks_connections_successful        = intm.newMetricPtr("proxy.process.socks.connections_successful");
-  net_rsb.socks_connections_unsuccessful      = intm.newMetricPtr("proxy.process.socks.connections_unsuccessful");
-  net_rsb.tcp_accept                          = intm.newMetricPtr("proxy.process.tcp.total_accepts");
-  net_rsb.write_bytes                         = intm.newMetricPtr("proxy.process.net.write_bytes");
-  net_rsb.write_bytes_count                   = intm.newMetricPtr("proxy.process.net.write_bytes_count");
+  net_rsb.default_inactivity_timeout_applied    = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_applied");
+  net_rsb.default_inactivity_timeout_count      = intm.newMetricPtr("proxy.process.net.default_inactivity_timeout_count");
+  net_rsb.fastopen_attempts                     = intm.newMetricPtr("proxy.process.net.fastopen_out.attempts");
+  net_rsb.fastopen_successes                    = intm.newMetricPtr("proxy.process.net.fastopen_out.successes");
+  net_rsb.handler_run                           = intm.newMetricPtr("proxy.process.net.net_handler_run");
+  net_rsb.inactivity_cop_lock_acquire_failure   = intm.newMetricPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.keep_alive_queue_timeout_count        = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
+  net_rsb.keep_alive_queue_timeout_total        = intm.newMetricPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
+  net_rsb.read_bytes                            = intm.newMetricPtr("proxy.process.net.read_bytes");
+  net_rsb.read_bytes_count                      = intm.newMetricPtr("proxy.process.net.read_bytes_count");
+  net_rsb.requests_max_throttled_in             = intm.newMetricPtr("proxy.process.net.max.requests_throttled_in");
+  net_rsb.socks_connections_currently_open      = intm.newMetricPtr("proxy.process.socks.connections_currently_open");
+  net_rsb.socks_connections_successful          = intm.newMetricPtr("proxy.process.socks.connections_successful");
+  net_rsb.socks_connections_unsuccessful        = intm.newMetricPtr("proxy.process.socks.connections_unsuccessful");
+  net_rsb.tcp_accept                            = intm.newMetricPtr("proxy.process.tcp.total_accepts");
+  net_rsb.write_bytes                           = intm.newMetricPtr("proxy.process.net.write_bytes");
+  net_rsb.write_bytes_count                     = intm.newMetricPtr("proxy.process.net.write_bytes_count");
 }
 
 void

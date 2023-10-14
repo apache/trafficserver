@@ -1040,24 +1040,23 @@ SSLNetVConnection::free_thread(EThread *t)
   if (is_tunnel_endpoint()) {
     ink_assert(get_context() != NET_VCONNECTION_UNSET);
 
-    Metrics::decrement(([&]() -> Metrics::IntType *
-    {
-    if (get_context() == NET_VCONNECTION_IN) {
-      switch (get_tunnel_type()) {
-      case SNIRoutingType::BLIND:
-        return net_rsb.tunnel_current_client_connections_tls_tunnel;
-      case SNIRoutingType::FORWARD:
-        return net_rsb.tunnel_current_client_connections_tls_forward;
-      case SNIRoutingType::PARTIAL_BLIND:
-        return net_rsb.tunnel_current_client_connections_tls_partial_blind;
-      default:
-        return net_rsb.tunnel_current_client_connections_tls_http;
+    Metrics::decrement(([&]() -> Metrics::IntType * {
+      if (get_context() == NET_VCONNECTION_IN) {
+        switch (get_tunnel_type()) {
+        case SNIRoutingType::BLIND:
+          return net_rsb.tunnel_current_client_connections_tls_tunnel;
+        case SNIRoutingType::FORWARD:
+          return net_rsb.tunnel_current_client_connections_tls_forward;
+        case SNIRoutingType::PARTIAL_BLIND:
+          return net_rsb.tunnel_current_client_connections_tls_partial_blind;
+        default:
+          return net_rsb.tunnel_current_client_connections_tls_http;
+        }
       }
-    }
-    // NET_VCONNECTION_OUT - Never a tunnel type for out (to server) context.
-    ink_assert(get_tunnel_type() == SNIRoutingType::NONE);
+      // NET_VCONNECTION_OUT - Never a tunnel type for out (to server) context.
+      ink_assert(get_tunnel_type() == SNIRoutingType::NONE);
 
-    return net_rsb.tunnel_current_server_connections_tls;
+      return net_rsb.tunnel_current_server_connections_tls;
     })());
   }
 

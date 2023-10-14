@@ -1297,16 +1297,15 @@ UnixNetVConnection::free_thread(EThread *t)
   if (is_tunnel_endpoint()) {
     Debug("iocore_net", "Freeing UnixNetVConnection that is tunnel endpoint");
 
-    Metrics::decrement(([&]() -> Metrics::IntType *
-    {
-    switch (get_context()) {
-    case NET_VCONNECTION_IN:
-      return net_rsb.tunnel_current_client_connections_blind_tcp;
-    case NET_VCONNECTION_OUT:
-      return net_rsb.tunnel_current_server_connections_blind_tcp;
-    default:
-      ink_release_assert(false);
-    }
+    Metrics::decrement(([&]() -> Metrics::IntType * {
+      switch (get_context()) {
+      case NET_VCONNECTION_IN:
+        return net_rsb.tunnel_current_client_connections_blind_tcp;
+      case NET_VCONNECTION_OUT:
+        return net_rsb.tunnel_current_server_connections_blind_tcp;
+      default:
+        ink_release_assert(false);
+      }
     })());
   }
 
