@@ -747,7 +747,6 @@ WARN_LOGFILE           =
 
 INPUT                  = mainpage.doc \
                          ../include \
-                         ../iocore \
                          ../src/records \
                          ../proxy \
                          ../src
