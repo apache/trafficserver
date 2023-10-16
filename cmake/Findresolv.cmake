@@ -27,7 +27,7 @@ find_package_handle_standard_args(resolv
 
 # Add the library but only add libraries if resolv is found
 add_library(resolv::resolv INTERFACE IMPORTED)
-if(resolv_FOUND AND NOT TARGET resolv::resolv)
+if(resolv_FOUND)
   target_include_directories(resolv::resolv INTERFACE ${resolv_INCLUDE_DIRS})
   target_link_libraries(resolv::resolv INTERFACE ${resolv_LIBRARY})
 endif()
