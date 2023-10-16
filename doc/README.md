@@ -15,30 +15,20 @@ documentation will also require Java and graphviz system packages to be
 installed.
 
 ## Build Steps
-By default, building the Traffic Server documentation is not configured via the
-Automake configure script. It is enabled using the `--enable-docs`
-configuration switch.
+Building the docs is a relatively simple matter of passing
+`-DENABLE_DOCS=ON` to cmake (docs generation is off by default), and
+then using the `generate_docs` build target. The build steps for the
+`generate_docs` target will install a Pipenv using `docs/Pipfile` and do
+what is necessary to build and install the docs. Thus the following
+steps should build the docs:
 
-Here is an example shell session that can be used to build the HTML version of
-the Traffic Server documentation:
-
-```bash
-cd doc
-
-# Create the Python virtual environment with Sphinx and other documentation
-# dependencies installed.
-pipenv install
-
-# Enter the Python virtual environment.
-pipenv shell
-
-# Configure and build an HTML version of the documentation.
-cd ../
-autoreconf -fi
-./configure --enable-docs
-cd doc
-make -j $(nproc) html
+```sh
+cmake -B docs-build -DENABLE_DOCS=ON
+cmake --build docs-build --target generate_docs
 ```
+
+The generated HTML docs will be installed in the cmake build's `doc/docbuild/html`
+directory, `docs-build/doc/docbuild/html` per the above example.
 
 Once the build completes, you can use Python's
 [http.server](https://docs.python.org/3/library/http.server.html) module to
@@ -46,7 +36,7 @@ create a local test HTTP server to view the built documentation. **Note:**
 http.server is only designed for test purposes, not for production use.
 
 ```bash
-cd docbuild/html
+cd docs-build/doc/docbuild/html
 python3 -m http.server 8888
 Serving HTTP on 0.0.0.0 port 8888 (http://0.0.0.0:8888/) ...
 ```
