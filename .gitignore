@@ -145,22 +145,16 @@ proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
 proxy/logging/test_RolledLogDeleter
 
-plugins/header_rewrite/header_rewrite_test
-plugins/experimental/cookie_remap/test_cookiejar
-plugins/experimental/esi/*_test
-plugins/experimental/slice/test_*
-plugins/experimental/sslheaders/test_sslheaders
-plugins/s3_auth/test_s3auth
-plugins/experimental/traffic_dump/test_*
 plugins/authproxy/authproxy_test
+plugins/esi/*_test
+plugins/experimental/cookie_remap/test_cookiejar
+plugins/header_rewrite/header_rewrite_test
 plugins/prefetch/test_*
-
-plugins/esi/docnode_test
-plugins/esi/gzip_test
-plugins/esi/parser_test
-plugins/esi/processor_test
-plugins/esi/utils_test
-plugins/esi/vars_test
+plugins/s3_auth/test_s3auth
+plugins/slice/test_*
+plugins/traffic_dump/test_*
+plugins/experimental/esi/*_test
+plugins/experimental/sslheaders/test_sslheaders
 
 plugins/experimental/uri_signing/test_uri_signing
 
