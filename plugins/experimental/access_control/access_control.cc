@@ -200,7 +200,7 @@ KvpAccessToken::parse(const StringView token)
       return _state = INVALID_SYNTAX;
     }
     StringView key   = kvp.substr(0, equalsign);
-    StringView value = equalsign != kvp.npos ? kvp.substr(equalsign + 1) : "";
+    StringView value = kvp.substr(equalsign + 1);
 
     DEBUG_OUT("kvp:'" << kvp << "', key:'" << key << "', value:'" << value << "'");
 
