@@ -283,5 +283,7 @@ SniSelector::startup()
   auto config_cont = TSContCreate(sni_config_cont, TSMutexCreate());
 
   TSReleaseAssert(config_cont);
-  TSContScheduleEveryOnPool(config_cont, std::chrono::milliseconds{10000}.count(), TS_THREAD_POOL_TASK);
+  // ToDo: Should we make schedule reloads configurable?
+  // TSContScheduleEveryOnPool(config_cont, std::chrono::milliseconds{10000}.count(), TS_THREAD_POOL_TASK);
+  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
 }

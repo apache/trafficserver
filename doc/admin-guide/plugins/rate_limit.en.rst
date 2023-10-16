@@ -122,7 +122,7 @@ configuration file. The basic use is as::
     :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`.
 
 
-The YAML configuration can have the following format, where the varies sections
+The YAML configuration can have the following format, where the various sections
 and nodes are documented below.
 
    .. code-block:: yaml
@@ -194,7 +194,7 @@ For the top level `selector` node, the following options are available:
    default to ``0``, which means no age limit.
 
    No queue is enable without this configuration directive, but it can also be
-   disable explicitly if the size is set to ``0``.
+   disabled explicitly if the size is set to ``0``.
 
 .. option:: metrics
 

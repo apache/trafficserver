@@ -25,11 +25,7 @@ add_atsplugin(
   sni_selector.cc
   txn_limiter.cc
   utilities.cc
+  lists.cc
 )
 
-target_link_libraries(rate_limit
-    PRIVATE
-        libswoc
-        yaml-cpp::yaml-cpp
-        OpenSSL::SSL
-)
+target_link_libraries(rate_limit PRIVATE libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
