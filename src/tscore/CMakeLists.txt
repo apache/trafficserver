@@ -118,8 +118,7 @@ target_link_libraries(tscore
         PCRE::PCRE
         libswoc
         yaml-cpp::yaml-cpp
-    PRIVATE
-        resolv
+        resolv::resolv
 )
 
 if(TS_USE_POSIX_CAP)
@@ -174,7 +173,7 @@ if(BUILD_TESTING)
                 ts::tscore
                 ts::tsapicore
                 yaml-cpp::yaml-cpp
-                resolv
+                resolv::resolv
                 ts::tscpputil
                 OpenSSL::Crypto
                 OpenSSL::SSL
