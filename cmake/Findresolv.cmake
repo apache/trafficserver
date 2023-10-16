@@ -15,41 +15,19 @@
 #
 #######################
 
+find_library(resolv_LIBRARY resolv)
+find_path(resolv_INCLUDE_DIR resolv.h)
 
-add_library(inkevent STATIC
-        EventSystem.cc
-        IOBuffer.cc
-        Inline.cc
-        Lock.cc
-        MIOBufferWriter.cc
-        PQ-List.cc
-        Processor.cc
-        ProtectedQueue.cc
-        ProxyAllocator.cc
-        SocketManager.cc
-        Tasks.cc
-        Thread.cc
-        UnixEThread.cc
-        UnixEvent.cc
-        UnixEventProcessor.cc
-        ConfigProcessor.cc
-        RecRawStatsImpl.cc
-        RecProcess.cc)
-add_library(ts::inkevent ALIAS inkevent)
+mark_as_advanced(resolv_FOUND resolv_LIBRARY resolv_INCLUDE_DIR)
 
-target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
-target_link_libraries(inkevent
-    PUBLIC
-        ts::records
-        ts::tscore
-    PRIVATE
-        libswoc
-        resolv::resolv # transitive
-        tscpputil # transitive
-        yaml-cpp::yaml-cpp # transitive
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(resolv
+    REQUIRED_VARS resolv_LIBRARY resolv_INCLUDE_DIR
 )
 
-if(TS_USE_HWLOC)
-        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
+# Add the library but only add libraries if resolv is found
+add_library(resolv::resolv INTERFACE IMPORTED)
+if(resolv_FOUND AND NOT TARGET resolv::resolv)
+  target_include_directories(resolv::resolv INTERFACE ${resolv_INCLUDE_DIRS})
+  target_link_libraries(resolv::resolv INTERFACE ${resolv_LIBRARY})
 endif()
