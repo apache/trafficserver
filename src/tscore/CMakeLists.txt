@@ -118,7 +118,6 @@ target_link_libraries(tscore
         PCRE::PCRE
         libswoc
         yaml-cpp::yaml-cpp
-    PRIVATE
         resolv::resolv
 )
 
