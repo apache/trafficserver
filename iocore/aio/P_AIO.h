@@ -41,10 +41,10 @@ static constexpr ts::ModuleVersion AIO_MODULE_INTERNAL_VERSION{AIO_MODULE_PUBLIC
 TS_INLINE int
 AIOCallback::ok()
 {
-  return (off_t)aiocb.aio_nbytes == (off_t)aio_result;
+  return (aiocb.aio_nbytes == static_cast<size_t>(aio_result)) && (aio_result >= 0);
 }
 
-extern Continuation *aio_err_callbck;
+extern Continuation *aio_err_callback;
 
 #if AIO_MODE == AIO_MODE_NATIVE
 
@@ -110,13 +110,16 @@ AIOCallbackInternal::io_complete(int event, void *data)
 {
   (void)event;
   (void)data;
-  if (aio_err_callbck && !ok()) {
+  if (aio_err_callback && !ok()) {
     AIOCallback *err_op          = new AIOCallbackInternal();
     err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
     err_op->aiocb.aio_lio_opcode = this->aiocb.aio_lio_opcode;
-    err_op->mutex                = aio_err_callbck->mutex;
-    err_op->action               = aio_err_callbck;
-    eventProcessor.schedule_imm(err_op);
+    err_op->mutex                = aio_err_callback->mutex;
+    err_op->action               = aio_err_callback;
+
+    // Take this lock in-line because we want to stop other I/O operations on this disk ASAP
+    SCOPED_MUTEX_LOCK(lock, aio_err_callback->mutex, this_ethread());
+    err_op->action.continuation->handleEvent(EVENT_NONE, err_op);
   }
   if (!action.cancelled) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);

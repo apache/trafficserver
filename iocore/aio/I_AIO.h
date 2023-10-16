@@ -137,7 +137,7 @@ struct DiskHandler : public Continuation {
 
 void ink_aio_init(ts::ModuleVersion version);
 int ink_aio_start();
-void ink_aio_set_callback(Continuation *error_callback);
+void ink_aio_set_err_callback(Continuation *error_callback);
 
 int ink_aio_read(AIOCallback *op,
                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
