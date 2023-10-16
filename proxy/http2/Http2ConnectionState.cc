@@ -521,6 +521,13 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "reset access stream with invalid id");
   }
 
+  // A RST_STREAM frame with a length other than 4 octets MUST be treated
+  // as a connection error (Section 5.4.1) of type FRAME_SIZE_ERROR.
+  if (frame.header().length != HTTP2_RST_STREAM_LEN) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR,
+                      "reset frame wrong length");
+  }
+
   Http2Stream *stream = cstate.find_stream(stream_id);
   if (stream == nullptr) {
     if (cstate.is_valid_streamid(stream_id)) {
@@ -529,13 +536,6 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "reset frame bad id stream not found");
     }
-  }
-
-  // A RST_STREAM frame with a length other than 4 octets MUST be treated
-  // as a connection error (Section 5.4.1) of type FRAME_SIZE_ERROR.
-  if (frame.header().length != HTTP2_RST_STREAM_LEN) {
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR,
-                      "reset frame wrong length");
   }
 
   // Update RST_STREAM frame count per minute
