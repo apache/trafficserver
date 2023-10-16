@@ -79,12 +79,11 @@ test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_librecords_on_eventsystem_SOURCES = \
-    unit_tests/unit_test_main_on_eventsystem.cc \
-	unit_tests/test_DynamicStats.cc
+    unit_tests/unit_test_main_on_eventsystem.cc
 
 test_librecords_on_eventsystem_LDADD = \
-	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/api/libtsapicore.a \

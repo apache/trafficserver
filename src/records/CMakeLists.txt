@@ -56,7 +56,6 @@ if(BUILD_TESTING)
 
   add_executable(test_records_on_eventsystem
     unit_tests/unit_test_main_on_eventsystem.cc
-    unit_tests/test_DynamicStats.cc
   )
   target_include_directories(test_records_on_eventsystem PRIVATE ${CMAKE_SOURCE_DIR}/iocore/utils)
   target_link_libraries(test_records_on_eventsystem PRIVATE records catch2::catch2 tscore libswoc)

@@ -120,10 +120,8 @@ RecErrT RecLinkConfigFloat(const char *name, RecFloat *rec_float);
 RecErrT RecLinkConfigCounter(const char *name, RecCounter *rec_counter);
 RecErrT RecLinkConfigString(const char *name, RecString *rec_string);
 RecErrT RecLinkConfigByte(const char *name, RecByte *rec_byte);
-RecErrT RecLinkConfigBool(const char *name, RecBool *rec_byte);
 
 RecErrT RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
-RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int id, RecStatUpdateFunc update_func, void *cookie);
 
 //-------------------------------------------------------------------------
 // Record Reading/Writing
@@ -135,7 +133,6 @@ RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int
 // be sure to set 'lock' to 'false' as the hash-table rwlock has
 // already been taken out for the callback.
 
-RecErrT RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
@@ -162,15 +159,7 @@ RecErrT RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookup
 RecErrT RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 RecErrT RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
 RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
-RecErrT RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true, bool check_sync_cb = false);
-RecErrT RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock = true);
-RecErrT RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
-RecErrT RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);
-RecErrT RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = true);
 RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
-
-RecErrT RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
-RecErrT RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
 /// Generate a warning if any configuration name/value is not registered.
 void RecConfigWarnIfUnregistered();
@@ -249,14 +238,6 @@ void RecConfigWarnIfUnregistered();
   do {                                                        \
     RecLinkConfigByte(_config_var_name, &_var);               \
     _var = (RecByte)REC_ConfigReadInteger(_config_var_name);  \
-  } while (0)
-
-// Allow to treat our "INT" configs as a bool type internally. Note
-// that the bool type is just a wrapper around RECD_INT.
-#define REC_EstablishStaticConfigBool(_var, _config_var_name) \
-  do {                                                        \
-    RecLinkConfigBool(_config_var_name, &_var);               \
-    _var = 0 != REC_ConfigReadInteger(_config_var_name);      \
   } while (0)
 
 RecInt REC_ConfigReadInteger(const char *name);
