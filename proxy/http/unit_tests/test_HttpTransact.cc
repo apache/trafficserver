@@ -22,7 +22,10 @@
  */
 
 #include <string_view>
+
 #include "tscore/Diags.h"
+#include "tscpp/util/PostScript.h"
+
 #include "HttpTransact.h"
 #include "records/I_RecordsConfig.h"
 
@@ -40,6 +43,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr hdr1;
       HTTPHdr hdr2;
+      ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
+      ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;
@@ -125,6 +131,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr hdr1;
       HTTPHdr hdr2;
+      ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
+      ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;
@@ -203,6 +212,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr hdr1;
       HTTPHdr hdr2;
+      ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
+      ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;
@@ -281,6 +293,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr hdr1;
       HTTPHdr hdr2;
+      ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
+      ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;
@@ -359,6 +374,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr hdr1;
       HTTPHdr hdr2;
+      ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
+      ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;
@@ -447,6 +465,9 @@ TEST_CASE("HttpTransact", "[http]")
     {
       HTTPHdr cached_headers;
       HTTPHdr response_headers;
+      ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
+      ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
+
       MIMEField *field;
       const char *str;
       int len;

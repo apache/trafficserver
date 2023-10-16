@@ -32,6 +32,7 @@
 #include "tscore/Regex.h"
 #include "tscore/ink_time.h"
 #include "tscore/Random.h"
+#include "tscpp/util/PostScript.h"
 
 #include "catch.hpp"
 
@@ -280,6 +281,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 {
   int err;
   HTTPHdr hdr;
+  ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser parser;
   const char *start;
   char cpy_buf[2048];
@@ -308,6 +310,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
       break;
     }
   }
+
   if (err != PARSE_RESULT_ERROR) {
     std::printf("FAILED: (test #%d) no parse error parsing request with null char\n", testnum);
     return (0);
@@ -320,6 +323,7 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
 {
   int err;
   HTTPHdr hdr;
+  ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser parser;
   const char *start;
   char cpy_buf[2048];
@@ -571,6 +575,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     };
 
     MIMEHdr hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
     MIMEParser parser;
     mime_parser_init(&parser);
 
