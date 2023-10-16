@@ -36,6 +36,20 @@ static constexpr int MAX_TEST_FIELD_NUM                     = 8;
 static constexpr int MAX_REQUEST_HEADER_SIZE                = 131072;
 static constexpr int MAX_TABLE_SIZE                         = 4096;
 
+namespace
+{
+/**
+  When HTTHdr::create is called, HTTPHdr::destroy needs to be called to free HdrHeap.
+  When Issue #10541 is fixed, we don't need this helper.
+*/
+void
+destroy_http_hdr(HTTPHdr *hdr)
+{
+  hdr->destroy();
+  delete hdr;
+}
+} // namespace
+
 TEST_CASE("HPACK low level APIs", "[hpack]")
 {
   SECTION("indexed_header_field")
@@ -71,7 +85,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       HpackIndexingTable indexing_table(4096);
 
       for (const auto &i : indexed_test_case) {
-        std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+        std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
         headers->create(HTTP_TYPE_REQUEST);
         MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
         MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -224,7 +238,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         HpackIndexingTable indexing_table(4096);
 
         for (const auto &i : literal_test_case) {
-          std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+          std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
           headers->create(HTTP_TYPE_REQUEST);
           MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
           MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -349,7 +363,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     indexing_table.update_maximum_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
 
     for (unsigned int i = 0; i < sizeof(encoded_field_response_test_case) / sizeof(encoded_field_response_test_case[0]); i++) {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_RESPONSE);
 
       for (unsigned int j = 0; j < sizeof(raw_field_response_test_case[i]) / sizeof(raw_field_response_test_case[i][0]); j++) {
@@ -455,7 +469,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     HpackIndexingTable indexing_table(4096);
 
     for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       hpack_decode_header_block(indexing_table, headers.get(), encoded_field_request_test_case[i].encoded_field,
@@ -488,7 +502,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // add entries in dynamic table
     {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       // C.3.1.  First Request
@@ -504,7 +518,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // clear all entries by setting a maximum size of 0
     {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x20};
@@ -518,7 +532,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // make the maximum size back to 4096
     {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x3f, 0xe1, 0x1f};
@@ -532,7 +546,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // error with exceeding the limit (MAX_TABLE_SIZE)
     {
-      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x3f, 0xe2, 0x1f};
