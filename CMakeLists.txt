@@ -610,6 +610,12 @@ if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git AND NOT EXISTS ${CMAKE_SOURCE_DIR}/.git
     configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
 endif()
 
+# Add a target to run the rat tool.  If java isn't installed this will fail, but its not normally run
+add_custom_target(rat
+  COMMENT "Running Apache RAT"
+  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.13-SNAPSHOT.jar -E ${CMAKE_SOURCE_DIR}/ci/rat-regex.txt -d ${CMAKE_SOURCE_DIR}
+)
+
 # Create an empty directories for ATS runtime
 install(DIRECTORY DESTINATION var/log/trafficserver)
 install(DIRECTORY DESTINATION var/trafficserver)

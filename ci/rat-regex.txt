@@ -70,3 +70,5 @@ port\.h
 ^swoc$
 ^tests/gold_tests/autest-site/min_cfg$
 ^clang-tidy.conf$
+^build.*$
+^cmake-build.*$
