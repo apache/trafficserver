@@ -43,6 +43,8 @@
 #include "SNIActionPerformer.h"
 #include "YamlSNIConfig.h"
 
+#include <functional>
+
 // Properties for the next hop server
 struct NextHopProperty {
   std::string client_cert_file;                                                      // full path to client cert file for lookup
@@ -126,9 +128,17 @@ public:
   static SNIConfigParams *acquire();
   static void release(SNIConfigParams *params);
 
+  /**
+   * Sets a callback to be invoked when the SNIConfig is reconfigured.
+   *
+   * This is used to reconfigure the pre-warm manager on SNI reload.
+   */
+  static void set_on_reconfigure_callback(std::function<void()> cb);
+
   static bool test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep,
                                  int &enforcement_policy);
 
 private:
   static int _configid;
+  static std::function<void()> on_reconfigure;
 };

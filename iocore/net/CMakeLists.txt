@@ -31,7 +31,6 @@ add_library(inknet STATIC
         NetAcceptEventIO.cc
         NetVConnection.cc
         PollCont.cc
-        PreWarmManager.cc
         ProxyProtocol.cc
         ReadWriteEventIO.cc
         Socks.cc

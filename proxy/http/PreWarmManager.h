@@ -27,43 +27,34 @@
 
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
-#include "I_HostDB.h"
+
+// inknet
+#include "PreWarm.h"
+#include "SSLSNIConfig.h"
 #include "YamlSNIConfig.h"
+
+#include "I_HostDB.h"
 #include "NetTimeout.h"
 #include "Milestones.h"
 
 #include "api/Metrics.h"
-#include "records/I_RecHttp.h"
 
+// tscore
+#include "tscore/CryptoHash.h"
+#include "tscore/ink_hrtime.h"
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <map>
-#include <unordered_map>
 #include <memory>
 #include <queue>
-#include <string_view>
+#include <string>
+#include <unordered_map>
 
-class PreWarmSM;
-class PreWarmManager;
-class SNIConfigParams;
-
-extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
-extern PreWarmManager prewarmManager;
-
+// PreWarm::Dst and PreWarm::SPtrConstDst are defined in iocore.
 namespace PreWarm
 {
-////
-// Dst
-//
-struct Dst {
-  Dst(std::string_view h, in_port_t p, SNIRoutingType t, int a) : host(h), port(p), type(t), alpn_index(a) {}
-
-  std::string host;
-  in_port_t port      = 0;
-  SNIRoutingType type = SNIRoutingType::NONE;
-  int alpn_index      = SessionProtocolNameRegistry::INVALID;
-};
-
-using SPtrConstDst = std::shared_ptr<const Dst>;
-
 struct DstHash {
   size_t
   operator()(const PreWarm::SPtrConstDst &dst) const
@@ -90,9 +81,6 @@ struct DstKeyEqual {
   }
 };
 
-////
-// Conf
-//
 struct Conf {
   Conf(uint32_t min, int32_t max, double rate, ink_hrtime connect_timeout, ink_hrtime inactive_timeout, bool srv_enabled,
        YamlSNIConfig::Policy verify_server_policy, YamlSNIConfig::Property verify_server_properties, const std::string &sni)
@@ -122,9 +110,6 @@ struct Conf {
 using SPtrConstConf = std::shared_ptr<const Conf>;
 using ParsedSNIConf = std::unordered_map<SPtrConstDst, SPtrConstConf, DstHash, DstKeyEqual>;
 
-////
-// Stats
-//
 enum class Stat {
   INIT_LIST_SIZE = 0,
   OPEN_LIST_SIZE,
@@ -139,8 +124,14 @@ enum class Stat {
 using StatsIds          = std::array<ts::Metrics::IntType *, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
 using SPtrConstStatsIds = std::shared_ptr<const StatsIds>;
 using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, DstHash, DstKeyEqual>;
-
 } // namespace PreWarm
+
+class PreWarmSM;
+class PreWarmManager;
+class SNIConfigParams;
+
+extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
+extern PreWarmManager prewarmManager;
 
 /**
    @class PreWarmSM
@@ -312,6 +303,16 @@ private:
 class PreWarmManager
 {
 public:
+  PreWarmManager()
+  {
+    // We use the callback because it would introduce a circular dependency
+    // for SNIConfig to explicitly call prewarmManager.reconfigure().
+    // Because prewarmManager is global there's not a good place to set
+    // this, but as long as there's only one instance of this class
+    // there should not be an issue.
+    SNIConfig::set_on_reconfigure_callback([this]() { this->reconfigure(); });
+  }
+
   static void reconfigure_prewarming_on_threads();
 
   // Controllers
