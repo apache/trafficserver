@@ -15,6 +15,8 @@
 #
 #######################
 
+include(CheckIncludeFile)
+
 set(GLOBAL_AUTO_OPTION_VARS "")
 
 function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION _DEFAULT)
@@ -43,6 +45,16 @@ macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
   foreach(PACKAGE_NAME ${_PACKAGE_DEPENDS})
     find_package(${PACKAGE_NAME} ${STRICTNESS})
     if(NOT ${PACKAGE_NAME}_FOUND)
+      set(${_FEATURE_VAR} FALSE)
+      break()
+    endif()
+  endforeach()
+endmacro()
+
+macro(_CHECK_HEADER_DEPENDS _OPTION_VAR _HEADER_DEPENDS _FEATURE_VAR)
+  foreach(HEADER_NAME ${_HEADER_DEPENDS})
+    check_include_file(${HEADER_NAME} HEADER_FOUND)
+    if(NOT HEADER_FOUND)
       set(${_FEATURE_VAR} FALSE)
       break()
     endif()
@@ -88,7 +100,7 @@ macro(auto_option _FEATURE_NAME)
   cmake_parse_arguments(ARG
     ""
     "DESCRIPTION;DEFAULT;FEATURE_VAR"
-    "PACKAGE_DEPENDS"
+    "PACKAGE_DEPENDS;HEADER_DEPENDS"
     ${ARGN}
   )
 
@@ -114,6 +126,7 @@ macro(auto_option _FEATURE_NAME)
   if(${${OPTION_VAR}} MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
     set(${FEATURE_VAR} TRUE)
     _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
+    _check_header_depends(${OPTION_VAR} "${ARG_HEADER_DEPENDS}" ${FEATURE_VAR})
   else()
     set(${FEATURE_VAR} FALSE)
   endif()

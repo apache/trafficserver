@@ -63,6 +63,11 @@ auto_option(MIMALLOC
     DEFAULT OFF
     PACKAGE_DEPENDS mimalloc
 )
+auto_option(POSIX_CAP
+  FEATURE_VAR TS_USE_POSIX_CAP
+  PACKAGE_DEPENDS cap
+  HEADER_DEPENDS "sys/prctl.h"
+)
 auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
@@ -215,20 +220,11 @@ if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
 endif()
 
-if(ENABLE_POSIX_CAP)
-    find_package(cap REQUIRED)
-    set(TS_USE_POSIX_CAP ${cap_FOUND})
-    find_path(PRCTL_HEADER NAMES sys/prctl.h)
-    # just making sure
-    if(NOT PRCTL_HEADER)
-        message(FATAL_ERROR "Have cap but sys/prctl.h not found.")
-    endif()
+if(TS_USE_POSIX_CAP)
+    # These headers must have been found for capabilites to be enabled.
+    set(HAVE_SYS_CAPABILITY_H TRUE)
     set(HAVE_SYS_PRCTL_H TRUE)
-    unset(PRCTL_HEADER)
-else()
-    find_package(cap QUIET)
 endif()
-set(HAVE_SYS_CAPABILITY_H ${cap_FOUND})
 
 find_package(LibLZMA)
 if(LibLZMA_FOUND)
