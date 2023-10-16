@@ -15,64 +15,51 @@
 #
 #######################
 
-
-add_library(http STATIC
-        HttpSessionAccept.cc
-        HttpBodyFactory.cc
-        HttpCacheSM.cc
-        Http1ClientSession.cc
-        Http1ClientTransaction.cc
-        Http1ServerTransaction.cc
-        HttpConfig.cc
-        HttpConnectionCount.cc
-        HttpDebugNames.cc
-        HttpPages.cc
-        HttpProxyServerMain.cc
-        HttpSM.cc
-        Http1ServerSession.cc
-        HttpSessionManager.cc
-        HttpTransact.cc
-        HttpTransactHeaders.cc
-        HttpTunnel.cc
-        HttpVCTable.cc
-        ConnectingEntry.cc
-        ForwardedConfig.cc
-        PreWarmConfig.cc
-        PreWarmManager.cc
+add_library(
+  http STATIC
+  HttpSessionAccept.cc
+  HttpBodyFactory.cc
+  HttpCacheSM.cc
+  Http1ClientSession.cc
+  Http1ClientTransaction.cc
+  Http1ServerTransaction.cc
+  HttpConfig.cc
+  HttpConnectionCount.cc
+  HttpDebugNames.cc
+  HttpPages.cc
+  HttpProxyServerMain.cc
+  HttpSM.cc
+  Http1ServerSession.cc
+  HttpSessionManager.cc
+  HttpTransact.cc
+  HttpTransactHeaders.cc
+  HttpTunnel.cc
+  HttpVCTable.cc
+  ConnectingEntry.cc
+  ForwardedConfig.cc
+  PreWarmConfig.cc
+  PreWarmManager.cc
 )
 add_library(ts::http ALIAS http)
 
 if(BUILD_REGRESSION_TESTING)
-    target_sources(http PRIVATE RegressionHttpTransact.cc)
+  target_sources(http PRIVATE RegressionHttpTransact.cc)
 endif()
 
-target_include_directories(http
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}"
-    PRIVATE
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-        ${YAMLCPP_INCLUDE_DIR}
-        OpenSSL::SSL
+target_include_directories(
+  http
+  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+  PRIVATE ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${YAMLCPP_INCLUDE_DIR} OpenSSL::SSL
 )
 
-target_link_libraries(http
-    PUBLIC
-        ts::inkevent
-        ts::inkhostdb
-        ts::proxy
-        ts::tsapicore
-        ts::tscore
-    PRIVATE
-        ts::http2
-        ts::http_remap
-        ts::inkcache
-        ts::inkutils
-        ts::logging
+target_link_libraries(
+  http
+  PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tsapicore ts::tscore
+  PRIVATE ts::http2 ts::http_remap ts::inkcache ts::inkutils ts::logging
 )
 
 if(TS_USE_QUIC)
-    target_link_libraries(http PRIVATE ts::http3)
+  target_link_libraries(http PRIVATE ts::http3)
 endif()
 
 if(BUILD_TESTING)
@@ -82,14 +69,11 @@ endif()
 add_subdirectory(remap)
 
 if(BUILD_TESTING)
-  add_executable(test_proxy_http
-    unit_tests/unit_test_main.cc
-    unit_tests/test_ForwardedConfig.cc
-    unit_tests/test_error_page_selection.cc
-    unit_tests/test_PreWarm.cc
-    ForwardedConfig.cc
-    HttpBodyFactory.cc
-)
+  add_executable(
+    test_proxy_http
+    unit_tests/unit_test_main.cc unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
+    unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
+  )
   target_include_directories(test_proxy_http PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
   add_test(NAME test_proxy_http COMMAND test_proxy_http)

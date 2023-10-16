@@ -15,14 +15,15 @@
 #
 #######################
 
-add_atsplugin(inliner
-    ats-inliner.cc
-    cache.cc
-    chunk-decoder.cc
-    fetcher.cc
-    html-parser.cc
-    inliner-handler.cc
-    ts.cc
+add_atsplugin(
+  inliner
+  ats-inliner.cc
+  cache.cc
+  chunk-decoder.cc
+  fetcher.cc
+  html-parser.cc
+  inliner-handler.cc
+  ts.cc
 )
 
 target_compile_options(inliner PRIVATE -DPLUGIN_TAG=\"inliner\")

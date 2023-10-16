@@ -15,6 +15,4 @@
 #
 #######################
 
-add_atsplugin(cache_range_requests
-        cache_range_requests.cc
-)
+add_atsplugin(cache_range_requests cache_range_requests.cc)

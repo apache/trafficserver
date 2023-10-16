@@ -17,25 +17,22 @@
 
 project(prefetch)
 
-add_atsplugin(prefetch
-    common.cc
-    configs.cc
-    evaluate.cc
-    fetch.cc
-    fetch_policy.cc
-    fetch_policy_simple.cc
-    fetch_policy_lru.cc
-    headers.cc
-    pattern.cc
-    plugin.cc
+add_atsplugin(
+  prefetch
+  common.cc
+  configs.cc
+  evaluate.cc
+  fetch.cc
+  fetch_policy.cc
+  fetch_policy_simple.cc
+  fetch_policy_lru.cc
+  headers.cc
+  pattern.cc
+  plugin.cc
 )
 
-target_link_libraries(prefetch
-    PRIVATE
-        OpenSSL::Crypto
-        PCRE::PCRE
-)
+target_link_libraries(prefetch PRIVATE OpenSSL::Crypto PCRE::PCRE)
 
 if(BUILD_TESTING)
-    add_subdirectory(test)
+  add_subdirectory(test)
 endif()

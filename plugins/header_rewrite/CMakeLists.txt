@@ -15,20 +15,21 @@
 #
 #######################
 
-add_atsplugin(header_rewrite
-    condition.cc
-    conditions.cc
-    factory.cc
-    header_rewrite.cc
-    lulu.cc
-    operator.cc
-    operators.cc
-    parser.cc
-    regex_helper.cc
-    resources.cc
-    ruleset.cc
-    statement.cc
-    value.cc
+add_atsplugin(
+  header_rewrite
+  condition.cc
+  conditions.cc
+  factory.cc
+  header_rewrite.cc
+  lulu.cc
+  operator.cc
+  operators.cc
+  parser.cc
+  regex_helper.cc
+  resources.cc
+  ruleset.cc
+  statement.cc
+  value.cc
 )
 
 add_library(header_rewrite_parser STATIC parser.cc)
@@ -38,21 +39,17 @@ target_link_libraries(header_rewrite PRIVATE PCRE::PCRE libswoc)
 find_package(maxminddb QUIET)
 
 if(maxminddb_FOUND)
-    target_sources(header_rewrite PRIVATE conditions_geo_maxmind.cc)
-    target_link_libraries(header_rewrite PRIVATE maxminddb::maxminddb)
+  target_sources(header_rewrite PRIVATE conditions_geo_maxmind.cc)
+  target_link_libraries(header_rewrite PRIVATE maxminddb::maxminddb)
 endif()
 
-
 if(BUILD_TESTING)
-    add_executable(test_header_rewrite header_rewrite_test.cc)
-    add_test(
-        NAME test_header_rewrite
-        COMMAND $<TARGET_FILE:test_header_rewrite>
-    )
+  add_executable(test_header_rewrite header_rewrite_test.cc)
+  add_test(NAME test_header_rewrite COMMAND $<TARGET_FILE:test_header_rewrite>)
 
-    target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser)
+  target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser)
 
-    if(maxminddb_FOUND)
-        target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
-    endif()
+  if(maxminddb_FOUND)
+    target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
+  endif()
 endif()

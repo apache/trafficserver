@@ -15,41 +15,38 @@
 #
 #######################
 
-
-add_library(hdrs STATIC
-        HTTP.cc
-        HdrHeap.cc
-        HdrTSOnly.cc
-        HdrToken.cc
-        HdrUtils.cc
-        HttpCompat.cc
-        MIME.cc
-        URL.cc
-        VersionConverter.cc
-        HuffmanCodec.cc
-        XPACK.cc
-        HeaderValidator.cc
+add_library(
+  hdrs STATIC
+  HTTP.cc
+  HdrHeap.cc
+  HdrTSOnly.cc
+  HdrToken.cc
+  HdrUtils.cc
+  HttpCompat.cc
+  MIME.cc
+  URL.cc
+  VersionConverter.cc
+  HuffmanCodec.cc
+  XPACK.cc
+  HeaderValidator.cc
 )
 add_library(ts::hdrs ALIAS hdrs)
 
-target_include_directories(hdrs
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}"
-    PRIVATE
-        ${IOCORE_INCLUDE_DIRS}
+target_include_directories(
+  hdrs
+  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+  PRIVATE ${IOCORE_INCLUDE_DIRS}
 )
 
-target_link_libraries(hdrs
-    PUBLIC
-        libswoc
-        ts::tscore
-    PRIVATE
-        ts::inkevent
-        ts::tsapicore
+target_link_libraries(
+  hdrs
+  PUBLIC libswoc ts::tscore
+  PRIVATE ts::inkevent ts::tsapicore
 )
 
 if(BUILD_TESTING)
-  add_executable(test_proxy_hdrs
+  add_executable(
+    test_proxy_hdrs
     unit_tests/test_HdrHeap.cc
     unit_tests/test_Hdrs.cc
     unit_tests/test_HdrUtils.cc
@@ -63,11 +60,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent catch2::catch2)
   add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
-  add_executable(test_proxy_hdrs_xpack
-    XPACK.cc
-    HuffmanCodec.cc
-    unit_tests/test_XPACK.cc
-  )
+  add_executable(test_proxy_hdrs_xpack XPACK.cc HuffmanCodec.cc unit_tests/test_XPACK.cc)
   target_include_directories(test_proxy_hdrs_xpack PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore ts::tsapicore libswoc catch2::catch2)
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)

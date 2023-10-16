@@ -15,30 +15,14 @@
 #
 #######################
 
-
-add_library(inkhostdb STATIC
-    HostDB.cc
-    Inline.cc
-    RefCountCache.cc
-    HostFile.cc
-    HostDBInfo.cc
-)
+add_library(inkhostdb STATIC HostDB.cc Inline.cc RefCountCache.cc HostFile.cc HostDBInfo.cc)
 add_library(ts::inkhostdb ALIAS inkhostdb)
 
-target_include_directories(inkhostdb
-    PUBLIC
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
+target_include_directories(
+  inkhostdb
+  PUBLIC ${CMAKE_SOURCE_DIR}/iocore/hostdb
+  PRIVATE ${CMAKE_SOURCE_DIR}/iocore/io_uring ${CMAKE_SOURCE_DIR}/iocore/dns ${CMAKE_SOURCE_DIR}/iocore/net
+          ${CMAKE_SOURCE_DIR}/proxy/http ${CMAKE_SOURCE_DIR}/proxy/hdrs
 )
 
-target_link_libraries(inkhostdb
-    PUBLIC
-        ts::inkdns
-        ts::inkevent
-        ts::tscore
-)
+target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)

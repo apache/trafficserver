@@ -15,8 +15,6 @@
 #
 #######################
 
-
-
 # yamlcpp shadows a bunch of variables but we don't want to hear bout it
 add_compile_options(-Wno-shadow)
 set(BUILD_SHARED_LIBS 1)
@@ -32,7 +30,10 @@ endif()
 
 add_subdirectory(fastlz)
 add_subdirectory(swoc)
-set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
+set(SWOC_INCLUDE_DIR
+    ${CMAKE_SOURCE_DIR}/lib/swoc/include
+    PARENT_SCOPE
+)
 
 add_library(catch2::catch2 INTERFACE IMPORTED GLOBAL)
 target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/catch2")

@@ -15,12 +15,13 @@
 #
 #######################
 
-add_atsplugin(rate_limit
-    ip_reputation.cc
-    rate_limit.cc
-    sni_limiter.cc
-    sni_selector.cc
-    txn_limiter.cc
-    utilities.cc
+add_atsplugin(
+  rate_limit
+  ip_reputation.cc
+  rate_limit.cc
+  sni_limiter.cc
+  sni_selector.cc
+  txn_limiter.cc
+  utilities.cc
 )
 target_link_libraries(rate_limit PRIVATE OpenSSL::SSL)

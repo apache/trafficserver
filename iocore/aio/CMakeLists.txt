@@ -15,24 +15,18 @@
 #
 #######################
 
-
 add_library(aio STATIC)
 add_library(ts::aio ALIAS aio)
 
 target_sources(aio PRIVATE AIO.cc Inline.cc AIO_fault_injection.cc)
 
-target_include_directories(aio
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
+target_include_directories(
+  aio
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_SOURCE_DIR}/iocore/io_uring
 )
 
-target_link_libraries(aio
-    PUBLIC
-        ts::inkevent
-        ts::tscore
-)
+target_link_libraries(aio PUBLIC ts::inkevent ts::tscore)
 if(TS_USE_LINUX_IO_URING)
-target_link_libraries(aio PUBLIC ts::inkuring)
+  target_link_libraries(aio PUBLIC ts::inkuring)
 endif()

@@ -22,10 +22,7 @@ add_autest_plugin(custom204plugin custom204plugin.cc)
 add_autest_plugin(emergency_shutdown emergency_shutdown.cc)
 add_autest_plugin(fatal_shutdown fatal_shutdown.cc)
 add_autest_plugin(hook_add_plugin hook_add_plugin.cc)
-add_autest_plugin(missing_mangled_definition
-    missing_mangled_definition_c.c
-    missing_mangled_definition_cpp.cc
-)
+add_autest_plugin(missing_mangled_definition missing_mangled_definition_c.c missing_mangled_definition_cpp.cc)
 add_autest_plugin(missing_ts_plugin_init missing_ts_plugin_init.cc)
 add_autest_plugin(ssl_client_verify_test ssl_client_verify_test.cc)
 add_autest_plugin(ssl_hook_test ssl_hook_test.cc)

@@ -20,7 +20,7 @@ target_link_libraries(traffic_via ts::tscore libswoc)
 install(TARGETS traffic_via)
 
 if(BUILD_TESTING)
-# Odd test to maintain compatibility with autotools.  This could be better.
+  # Odd test to maintain compatibility with autotools.  This could be better.
   add_test(
     NAME test_traffic_via
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test_traffic_via ${CMAKE_SOURCE_DIR}/src

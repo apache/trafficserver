@@ -24,6 +24,5 @@ if(BUILD_TESTING)
   target_link_libraries(test_sslhdr PRIVATE sslhdr catch2::catch2 OpenSSL::SSL)
 endif()
 
-
 add_atsplugin(sslheaders sslheaders.cc)
 target_link_libraries(sslheaders PRIVATE sslhdr OpenSSL::SSL)

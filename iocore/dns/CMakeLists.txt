@@ -15,28 +15,12 @@
 #
 #######################
 
-
-add_library(inkdns STATIC
-    DNS.cc
-    DNSConnection.cc
-    DNSEventIO.cc
-    Inline.cc
-    SplitDNS.cc
-)
+add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc Inline.cc SplitDNS.cc)
 add_library(ts::inkdns ALIAS inkdns)
 
-target_include_directories(inkdns PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
+target_include_directories(
+  inkdns PRIVATE ${CMAKE_SOURCE_DIR}/iocore/dns ${CMAKE_SOURCE_DIR}/iocore/io_uring ${CMAKE_SOURCE_DIR}/iocore/net
+                 ${CMAKE_SOURCE_DIR}/proxy/http ${CMAKE_SOURCE_DIR}/proxy/hdrs
 )
 
-target_link_libraries(inkdns
-    PUBLIC
-        ts::inkevent
-        ts::inkhostdb
-        ts::proxy
-        ts::tscore
-)
+target_link_libraries(inkdns PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tscore)

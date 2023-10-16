@@ -17,87 +17,81 @@
 
 # This is for tests that depend on multiple libraries where dependency order matters.
 
-include_directories(
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-)
+include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS})
 
 link_libraries(
-        inkcache
-        http
-        http_remap
-        http2
-        logging
-        hdrs
-        diagsconfig
-        inkutils
-        inkdns
-        inkhostdb
-        proxy
-        http
-        inkutils
-        inkdns
-        inkhostdb
-        proxy
-        http
-        hdrs
-        http_remap
-        logging
-        fastlz
-        aio
-        records
-        tscore
-        tsapicore
-        tscpputil
-        proxy
-        inknet
-        inkevent
-        yaml-cpp::yaml-cpp
-        libswoc
-        catch2::catch2
-        jsonrpc_protocol
+  inkcache
+  http
+  http_remap
+  http2
+  logging
+  hdrs
+  diagsconfig
+  inkutils
+  inkdns
+  inkhostdb
+  proxy
+  http
+  inkutils
+  inkdns
+  inkhostdb
+  proxy
+  http
+  hdrs
+  http_remap
+  logging
+  fastlz
+  aio
+  records
+  tscore
+  tsapicore
+  tscpputil
+  proxy
+  inknet
+  inkevent
+  yaml-cpp::yaml-cpp
+  libswoc
+  catch2::catch2
+  jsonrpc_protocol
 )
-if (TS_USE_LINUX_IO_URING)
-    link_libraries(inkuring uring)
-endif (TS_USE_LINUX_IO_URING)
+if(TS_USE_LINUX_IO_URING)
+  link_libraries(inkuring uring)
+endif(TS_USE_LINUX_IO_URING)
 
 macro(add_cache_test name)
-    add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/main.cc
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc
-            ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
-    add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
+  add_executable(
+    ${name} ${CMAKE_SOURCE_DIR}/iocore/cache/test/main.cc ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
+            ${CMAKE_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc ${ARGN}
+  )
+  target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
+  add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 macro(add_net_test name)
-    add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc
-            ${ARGN})
-    add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
+  add_executable(${name} ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc ${ARGN})
+  add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 macro(add_stubbed_test name)
-    add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
-            ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::proxy ts::http)
-    add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
+  add_executable(${name} ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc ${ARGN})
+  target_link_libraries(${name} PRIVATE ts::proxy ts::http)
+  add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 add_cache_test(Cache ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Cache.cc)
 add_cache_test(Populated_Cache ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Populated_Cache.cc)
 if(ENABLE_DISK_FAILURE_TESTS)
-foreach(i RANGE 1)
+  foreach(i RANGE 1)
     add_cache_test(Disk_Init_Failure_${i} ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Disk_Init_Failure.cc)
     target_compile_definitions(Disk_Init_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
-endforeach()
-foreach(i RANGE 5 20)
+  endforeach()
+  foreach(i RANGE 5 20)
     add_cache_test(Disk_Failure_${i} ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Disk_Failure.cc)
     target_compile_definitions(Disk_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
-endforeach()
-add_cache_test(Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Populated_Cache_Disk_Failure.cc)
+  endforeach()
+  add_cache_test(
+    Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Populated_Cache_Disk_Failure.cc
+  )
 endif()
 add_cache_test(RWW ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_RWW.cc)
 add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S.cc)
@@ -111,30 +105,27 @@ add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S
 #add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
 
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
-add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO> WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/iocore/aio)
+add_test(
+  NAME test_AIO
+  COMMAND $<TARGET_FILE:test_AIO>
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/iocore/aio
+)
 
-add_net_test(test_net
-    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc"
-    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_SSLSNIConfig.cc"
-    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_YamlSNIConfig.cc"
-    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/unit_test_main.cc"
+add_net_test(
+  test_net "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc"
+  "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_SSLSNIConfig.cc"
+  "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_YamlSNIConfig.cc"
+  "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/unit_test_main.cc"
 )
 set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests")
-target_compile_definitions(test_net
-    PRIVATE
-      LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR}
-)
-target_link_libraries(test_net
-    PRIVATE
-        hdrs
-        proxy
-)
+target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
+target_link_libraries(test_net PRIVATE hdrs proxy)
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
 
-add_stubbed_test(HttpTransact
-  ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/main.cc
+add_stubbed_test(
+  HttpTransact ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/main.cc
   ${CMAKE_SOURCE_DIR}/proxy/http/unit_tests/test_HttpTransact.cc
 )
 

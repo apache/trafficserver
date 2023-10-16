@@ -15,9 +15,4 @@
 #
 #######################
 
-add_atsplugin(background_fetch
-        background_fetch.cc
-        configs.cc
-        headers.cc
-        rules.cc
-)
+add_atsplugin(background_fetch background_fetch.cc configs.cc headers.cc rules.cc)

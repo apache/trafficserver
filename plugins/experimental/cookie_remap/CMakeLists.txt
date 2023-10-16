@@ -17,29 +17,16 @@
 
 project(cookie_remap)
 
-add_atsplugin(cookie_remap
-    cookie_remap.cc
-    cookiejar.cc
-    strip.cc
-    hash.cc
-)
+add_atsplugin(cookie_remap cookie_remap.cc cookiejar.cc strip.cc hash.cc)
 
-target_link_libraries(cookie_remap
-    PRIVATE
-        PCRE::PCRE
-        yaml-cpp::yaml-cpp
-)
+target_link_libraries(cookie_remap PRIVATE PCRE::PCRE yaml-cpp::yaml-cpp)
 
 if(BUILD_TESTING)
-    add_executable(test_cookiejar
-        test_cookiejar.cc
-        strip.cc
-        cookiejar.cc
-    )
+  add_executable(test_cookiejar test_cookiejar.cc strip.cc cookiejar.cc)
 
-    target_include_directories(test_cookiejar PRIVATE "${PROJECT_SOURCE_DIR}")
+  target_include_directories(test_cookiejar PRIVATE "${PROJECT_SOURCE_DIR}")
 
-    target_link_libraries(test_cookiejar PRIVATE catch2::catch2)
+  target_link_libraries(test_cookiejar PRIVATE catch2::catch2)
 
-    add_test(NAME test_cookiejar COMMAND test_cookiejar)
+  add_test(NAME test_cookiejar COMMAND test_cookiejar)
 endif()

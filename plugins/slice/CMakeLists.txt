@@ -17,23 +17,24 @@
 
 project(slice)
 
-add_atsplugin(slice
-    Config.cc
-    ContentRange.cc
-    HttpHeader.cc
-    Range.cc
-    client.cc
-    intercept.cc
-    prefetch.cc
-    response.cc
-    server.cc
-    slice.cc
-    transfer.cc
-    util.cc
+add_atsplugin(
+  slice
+  Config.cc
+  ContentRange.cc
+  HttpHeader.cc
+  Range.cc
+  client.cc
+  intercept.cc
+  prefetch.cc
+  response.cc
+  server.cc
+  slice.cc
+  transfer.cc
+  util.cc
 )
 
 target_link_libraries(slice PRIVATE ts::tscore)
 
 if(BUILD_TESTING)
-    add_subdirectory(unit-tests)
+  add_subdirectory(unit-tests)
 endif()
