@@ -24,7 +24,12 @@ set(TS_VERSION_MICRO ${PROJECT_VERSION_PATCH})
 set(TS_VERSION_STRING  ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO})
 math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR} * 1000 + ${TS_VERSION_MICRO}")
 
-set(CMAKE_CXX_STANDARD 17)
+# We make this a cache entry so that it can be configured to different values
+# for testing purposes. For example, it can be used on CI to check compatibility
+# with a newer standard than what our codebase currently has to comply with.
+set(CMAKE_CXX_STANDARD 17 CACHE String
+    "The C++ standard to compile with (default 17)"
+)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
