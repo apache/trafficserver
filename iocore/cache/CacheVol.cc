@@ -202,7 +202,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     goto Lread;
   }
 
-  if (static_cast<size_t>(io.aio_result) != io.aiocb.aio_nbytes) {
+  if (!io.ok()) {
     result = (void *)-ECACHE_READ_FAIL;
     goto Ldone;
   }

@@ -278,10 +278,10 @@ struct Vol : public Continuation {
   ~Vol() override { ats_free(agg_buffer); }
 };
 
-struct AIO_Callback_handler : public Continuation {
+struct AIO_failure_handler : public Continuation {
   int handle_disk_failure(int event, void *data);
 
-  AIO_Callback_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_Callback_handler::handle_disk_failure); }
+  AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
 };
 
 struct CacheVol {
