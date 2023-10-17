@@ -261,7 +261,6 @@ struct CacheSync : public Continuation {
 
 // Global Functions
 
-void vol_init_dir(Vol *vol);
 int dir_probe(const CacheKey *, Vol *, Dir *, Dir **);
 int dir_insert(const CacheKey *key, Vol *vol, Dir *to_part);
 int dir_overwrite(const CacheKey *key, Vol *vol, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
@@ -280,6 +279,7 @@ int dir_segment_accounted(int s, Vol *vol, int offby = 0, int *free = nullptr, i
                           int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Vol *vol);
 void sync_cache_dir_on_shutdown();
+int dir_freelist_length(Vol *vol, int s);
 
 // Inline Functions
 

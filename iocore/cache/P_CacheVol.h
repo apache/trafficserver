@@ -23,11 +23,13 @@
 
 #pragma once
 
-#include <atomic>
+#include "P_CacheDir.h"
+#include "P_CacheStats.h"
+#include "P_RamCache.h"
 
 #include "tscore/CryptoHash.h"
 
-#include "P_Cache.h"
+#include <atomic>
 
 #define CACHE_BLOCK_SHIFT        9
 #define CACHE_BLOCK_SIZE         (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
