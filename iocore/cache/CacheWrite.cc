@@ -489,7 +489,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
 }
 
 int
-Vol::evacuateWrite(CacheVC *evacuator, int event, Event *e)
+Vol::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 

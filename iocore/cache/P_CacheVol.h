@@ -76,6 +76,7 @@ struct CacheDisk;
 struct VolInitInfo;
 struct DiskVol;
 struct CacheVol;
+class CacheEvacuateDocVC;
 
 struct VolHeaderFooter {
   unsigned int magic;
@@ -217,7 +218,7 @@ struct Vol : public Continuation {
   int aggWrite(int event, void *e);
   void agg_wrap();
 
-  int evacuateWrite(CacheVC *evacuator, int event, Event *e);
+  int evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e);
   int evacuateDocReadDone(int event, Event *e);
   int evacuateDoc(int event, Event *e);
 
