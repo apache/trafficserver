@@ -29,7 +29,7 @@ math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR}
 # with a newer standard than what our codebase currently has to comply with.
 set(CMAKE_CXX_STANDARD
     17
-    CACHE String "The C++ standard to compile with (default 17)"
+    CACHE STRING "The C++ standard to compile with (default 17)"
 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
