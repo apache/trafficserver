@@ -514,7 +514,7 @@ if(HOST_OS STREQUAL "freebsd")
   set(CMAKE_USE_WIN32_THREADS_INIT 0)
   set(CMAKE_USE_PTHREADS_INIT 1)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
-endif(HOST_OS STREQUAL "linux")
+endif()
 
 # Set the rpath for installed binaries
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib64")
