@@ -1,5 +1,6 @@
 # 3.5 is actually available almost everywhere, but this a good minimum
-cmake_minimum_required(VERSION 3.4)
+# manual edit the upper version limit from upstream to avoid deprecation warning
+cmake_minimum_required(VERSION 3.4...3.14)
 
 # enable MSVC_RUNTIME_LIBRARY target property
 # see https://cmake.org/cmake/help/latest/policy/CMP0091.html
