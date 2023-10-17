@@ -120,6 +120,10 @@ if(TS_USE_HWLOC)
   target_link_libraries(tscore PUBLIC hwloc::hwloc)
 endif()
 
+if(Backtrace_LIBRARIES)
+  target_link_libraries(tscore PRIVATE ${Backtrace_LIBRARIES})
+endif()
+
 add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
