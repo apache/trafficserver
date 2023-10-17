@@ -15,41 +15,39 @@
 #
 #######################
 
-
-add_library(inkevent STATIC
-        EventSystem.cc
-        IOBuffer.cc
-        Inline.cc
-        Lock.cc
-        MIOBufferWriter.cc
-        PQ-List.cc
-        Processor.cc
-        ProtectedQueue.cc
-        ProxyAllocator.cc
-        SocketManager.cc
-        Tasks.cc
-        Thread.cc
-        UnixEThread.cc
-        UnixEvent.cc
-        UnixEventProcessor.cc
-        ConfigProcessor.cc
-        RecRawStatsImpl.cc
-        RecProcess.cc)
+add_library(
+  inkevent STATIC
+  EventSystem.cc
+  IOBuffer.cc
+  Inline.cc
+  Lock.cc
+  MIOBufferWriter.cc
+  PQ-List.cc
+  Processor.cc
+  ProtectedQueue.cc
+  ProxyAllocator.cc
+  SocketManager.cc
+  Tasks.cc
+  Thread.cc
+  UnixEThread.cc
+  UnixEvent.cc
+  UnixEventProcessor.cc
+  ConfigProcessor.cc
+  RecRawStatsImpl.cc
+  RecProcess.cc
+)
 add_library(ts::inkevent ALIAS inkevent)
 
 target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_link_libraries(inkevent
-    PUBLIC
-        ts::records
-        ts::tscore
-    PRIVATE
-        libswoc
-        resolv::resolv # transitive
-        tscpputil # transitive
-        yaml-cpp::yaml-cpp # transitive
+target_link_libraries(
+  inkevent
+  PUBLIC ts::records ts::tscore
+  PRIVATE libswoc resolv::resolv # transitive
+          tscpputil # transitive
+          yaml-cpp::yaml-cpp # transitive
 )
 
 if(TS_USE_HWLOC)
-        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
+  target_link_libraries(inkevent PRIVATE hwloc::hwloc)
 endif()

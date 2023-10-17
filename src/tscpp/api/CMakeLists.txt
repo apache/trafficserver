@@ -15,38 +15,35 @@
 #
 #######################
 
-add_library(tscppapi SHARED
-        AsyncHttpFetch.cc
-        AsyncTimer.cc
-        CaseInsensitiveStringComparator.cc
-        ClientRequest.cc
-        Continuation.cc
-        GlobalPlugin.cc
-        GzipDeflateTransformation.cc
-        GzipInflateTransformation.cc
-        Headers.cc
-        HttpMethod.cc
-        HttpVersion.cc
-        InterceptPlugin.cc
-        Logger.cc
-        Plugin.cc
-        RemapPlugin.cc
-        Request.cc
-        Response.cc
-        Stat.cc
-        Transaction.cc
-        TransactionPlugin.cc
-        TransformationPlugin.cc
-        Url.cc
-        utils.cc
-        utils_internal.cc
-        )
-add_library(ts::tscppapi ALIAS tscppapi)
-target_link_libraries(tscppapi
-    PUBLIC
-    libswoc
-    yaml-cpp::yaml-cpp
+add_library(
+  tscppapi SHARED
+  AsyncHttpFetch.cc
+  AsyncTimer.cc
+  CaseInsensitiveStringComparator.cc
+  ClientRequest.cc
+  Continuation.cc
+  GlobalPlugin.cc
+  GzipDeflateTransformation.cc
+  GzipInflateTransformation.cc
+  Headers.cc
+  HttpMethod.cc
+  HttpVersion.cc
+  InterceptPlugin.cc
+  Logger.cc
+  Plugin.cc
+  RemapPlugin.cc
+  Request.cc
+  Response.cc
+  Stat.cc
+  Transaction.cc
+  TransactionPlugin.cc
+  TransformationPlugin.cc
+  Url.cc
+  utils.cc
+  utils_internal.cc
 )
+add_library(ts::tscppapi ALIAS tscppapi)
+target_link_libraries(tscppapi PUBLIC libswoc yaml-cpp::yaml-cpp)
 install(TARGETS tscppapi)
 
 if(APPLE)

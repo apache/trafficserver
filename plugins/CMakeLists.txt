@@ -46,17 +46,17 @@ add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
 
 if(NOT OPENSSL_IS_BORINGSSL)
-    add_subdirectory(ja3_fingerprint)
+  add_subdirectory(ja3_fingerprint)
 endif()
 
 if(USE_LUAJIT)
-    add_subdirectory(lua)
+  add_subdirectory(lua)
 endif()
 
 if(BUILD_EXPERIMENTAL_PLUGINS)
-    add_subdirectory(experimental)
+  add_subdirectory(experimental)
 endif()
 
 if(HOST_OS STREQUAL "linux")
-    add_subdirectory(healthchecks)
+  add_subdirectory(healthchecks)
 endif()

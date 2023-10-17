@@ -15,60 +15,54 @@
 #
 #######################
 
-
-add_library(proxy STATIC
-        private/SSLProxySession.cc
-        CacheControl.cc
-        ControlBase.cc
-        ControlMatcher.cc
-        HostStatus.cc
-        HttpAPIHooks.cc
-        IPAllow.cc
-        ParentConsistentHash.cc
-        ParentRoundRobin.cc
-        ParentSelectionStrategy.cc
-        ParentSelection.cc
-        Plugin.cc
-        PluginVC.cc
-        ProtocolProbeSessionAccept.cc
-        ProxySession.cc
-        ProxyTransaction.cc
-        ReverseProxy.cc
-        StatPages.cc
-        Transform.cc
+add_library(
+  proxy STATIC
+  private/SSLProxySession.cc
+  CacheControl.cc
+  ControlBase.cc
+  ControlMatcher.cc
+  HostStatus.cc
+  HttpAPIHooks.cc
+  IPAllow.cc
+  ParentConsistentHash.cc
+  ParentRoundRobin.cc
+  ParentSelectionStrategy.cc
+  ParentSelection.cc
+  Plugin.cc
+  PluginVC.cc
+  ProtocolProbeSessionAccept.cc
+  ProxySession.cc
+  ProxyTransaction.cc
+  ReverseProxy.cc
+  StatPages.cc
+  Transform.cc
 )
 add_library(ts::proxy ALIAS proxy)
 
 if(BUILD_REGRESSION_TESTING)
-    target_sources(proxy PRIVATE RegressionSM.cc)
+  target_sources(proxy PRIVATE RegressionSM.cc)
 endif()
 set(PROXY_INCLUDE_DIRS
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/http2
-        ${CMAKE_SOURCE_DIR}/proxy/http3
-        ${CMAKE_SOURCE_DIR}/proxy/logging
-        ${CMAKE_SOURCE_DIR}/proxy/http/remap
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/proxy/shared
+    ${CMAKE_SOURCE_DIR}/proxy
+    ${CMAKE_SOURCE_DIR}/proxy/http
+    ${CMAKE_SOURCE_DIR}/proxy/http2
+    ${CMAKE_SOURCE_DIR}/proxy/http3
+    ${CMAKE_SOURCE_DIR}/proxy/logging
+    ${CMAKE_SOURCE_DIR}/proxy/http/remap
+    ${CMAKE_SOURCE_DIR}/proxy/hdrs
+    ${CMAKE_SOURCE_DIR}/proxy/shared
 )
-set(PROXY_INCLUDE_DIRS ${PROXY_INCLUDE_DIRS} PARENT_SCOPE)
+set(PROXY_INCLUDE_DIRS
+    ${PROXY_INCLUDE_DIRS}
+    PARENT_SCOPE
+)
 
-target_include_directories(proxy PUBLIC
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
-        )
+target_include_directories(proxy PUBLIC ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/mgmt)
 
-target_link_libraries(proxy
-    PUBLIC
-        ts::inkcache
-        ts::inkevent
-        ts::tsapicore
-        ts::tscore
-    PRIVATE
-        ts::jsonrpc_protocol
-        ts::inkutils
+target_link_libraries(
+  proxy
+  PUBLIC ts::inkcache ts::inkevent ts::tsapicore ts::tscore
+  PRIVATE ts::jsonrpc_protocol ts::inkutils
 )
 
 add_subdirectory(hdrs)
@@ -78,5 +72,5 @@ add_subdirectory(http2)
 add_subdirectory(logging)
 
 if(TS_USE_QUIC)
-    add_subdirectory(http3)
+  add_subdirectory(http3)
 endif()

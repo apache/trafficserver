@@ -36,16 +36,11 @@ target_link_libraries(cripts_example1 PRIVATE ts::cripts)
 #find_package(fmt 8.1 REQUIRED)
 #$<TARGET_PROPERTY:fmt::fmt,INCLUDE_DIRECTORIES>
 
-set(cript-includes
-    -I${CMAKE_SOURCE_DIR}/include
-    -I${CMAKE_SOURCE_DIR}/lib/swoc/include
-    -I${CMAKE_BINARY_DIR}/include
-    -I${OPENSSL_INCLUDE_DIR}
-    -I/opt/homebrew/include
-    -I/usr/local/include
+set(cript-includes -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/lib/swoc/include -I${CMAKE_BINARY_DIR}/include
+                   -I${OPENSSL_INCLUDE_DIR} -I/opt/homebrew/include -I/usr/local/include
 )
 
-add_custom_target(cripts-clang-tidy
-    COMMAND clang-tidy --config-file ${PROJECT_SOURCE_DIR}/tools/cripts/clang-tidy.conf --fix
-            ${PROJECT_SOURCE_DIR}/plugins/cripts/example1.cc -- -std=c++17 ${cript-includes}
+add_custom_target(
+  cripts-clang-tidy COMMAND clang-tidy --config-file ${PROJECT_SOURCE_DIR}/tools/cripts/clang-tidy.conf --fix
+                            ${PROJECT_SOURCE_DIR}/plugins/cripts/example1.cc -- -std=c++17 ${cript-includes}
 )

@@ -15,8 +15,5 @@
 #
 #######################
 
-add_atsplugin(geoip_acl
-    geoip_acl.cc
-    acl.cc
-)
+add_atsplugin(geoip_acl geoip_acl.cc acl.cc)
 target_link_libraries(geoip_acl PRIVATE PCRE::PCRE)

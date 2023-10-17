@@ -22,5 +22,5 @@ target_include_directories(stats_over_http PRIVATE "${PROJECT_SOURCE_DIR}/includ
 target_link_libraries(stats_over_http PRIVATE libswoc)
 
 if(HAVE_BROTLI_ENCODE_H)
-        target_link_libraries(stats_over_http PRIVATE brotli::brotlienc)
+  target_link_libraries(stats_over_http PRIVATE brotli::brotlienc)
 endif()

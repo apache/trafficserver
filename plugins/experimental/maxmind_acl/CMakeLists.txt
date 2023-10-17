@@ -15,18 +15,10 @@
 #
 #######################
 
-add_atsplugin(maxmind_acl
-    maxmind_acl.cc
-    mmdb.cc
-)
+add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
 
 target_include_directories(maxmind_acl PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
 find_package(maxminddb REQUIRED)
 
-target_link_libraries(maxmind_acl
-    PRIVATE
-        libswoc
-        yaml-cpp::yaml-cpp
-        maxminddb::maxminddb
-)
+target_link_libraries(maxmind_acl PRIVATE libswoc yaml-cpp::yaml-cpp maxminddb::maxminddb)

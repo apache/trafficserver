@@ -15,43 +15,40 @@
 #
 #######################
 
-add_atsplugin(tslua
-    ts_lua.cc
-    ts_lua_cached_response.cc
-    ts_lua_client_request.cc
-    ts_lua_client_response.cc
-    ts_lua_client_response.cc
-    ts_lua_context.cc
-    ts_lua_hook.cc
-    ts_lua_vconn.cc
-    ts_lua_http.cc
-    ts_lua_http_intercept.cc
-    ts_lua_log.cc
-    ts_lua_misc.cc
-    ts_lua_server_request.cc
-    ts_lua_server_response.cc
-    ts_lua_transform.cc
-    ts_lua_util.cc
-    ts_lua_remap.cc
-    ts_lua_http_cntl.cc
-    ts_lua_http_milestone.cc
-    ts_lua_http_txn_info.cc
-    ts_lua_http_config.cc
-    ts_lua_mgmt.cc
-    ts_lua_package.cc
-    ts_lua_string.cc
-    ts_lua_crypto.cc
-    ts_lua_stat.cc
-    ts_lua_io.cc
-    ts_lua_coroutine.cc
-    ts_lua_fetch.cc
-    ts_lua_constant.cc
+add_atsplugin(
+  tslua
+  ts_lua.cc
+  ts_lua_cached_response.cc
+  ts_lua_client_request.cc
+  ts_lua_client_response.cc
+  ts_lua_client_response.cc
+  ts_lua_context.cc
+  ts_lua_hook.cc
+  ts_lua_vconn.cc
+  ts_lua_http.cc
+  ts_lua_http_intercept.cc
+  ts_lua_log.cc
+  ts_lua_misc.cc
+  ts_lua_server_request.cc
+  ts_lua_server_response.cc
+  ts_lua_transform.cc
+  ts_lua_util.cc
+  ts_lua_remap.cc
+  ts_lua_http_cntl.cc
+  ts_lua_http_milestone.cc
+  ts_lua_http_txn_info.cc
+  ts_lua_http_config.cc
+  ts_lua_mgmt.cc
+  ts_lua_package.cc
+  ts_lua_string.cc
+  ts_lua_crypto.cc
+  ts_lua_stat.cc
+  ts_lua_io.cc
+  ts_lua_coroutine.cc
+  ts_lua_fetch.cc
+  ts_lua_constant.cc
 )
 
 target_include_directories(tslua PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
-target_link_libraries(tslua
-    PRIVATE
-        LuaJIT::LuaJIT
-        OpenSSL::Crypto
-)
+target_link_libraries(tslua PRIVATE LuaJIT::LuaJIT OpenSSL::Crypto)

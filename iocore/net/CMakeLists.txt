@@ -15,72 +15,72 @@
 #
 #######################
 
-
-add_library(inknet STATIC
-        ALPNSupport.cc
-        AsyncSignalEventIO.cc
-        BIO_fastopen.cc
-        BoringSSLUtils.cc
-        Connection.cc
-        EventIO.cc
-        Inline.cc
-        YamlSNIConfig.cc
-        Net.cc
-        NetHandler.cc
-        NetVCOptions.cc
-        NetAcceptEventIO.cc
-        NetVConnection.cc
-        PollCont.cc
-        ProxyProtocol.cc
-        ReadWriteEventIO.cc
-        Socks.cc
-        SSLAPIHooks.cc
-        SSLCertLookup.cc
-        SSLClientCoordinator.cc
-        SSLClientUtils.cc
-        SSLConfig.cc
-        SSLSecret.cc
-        SSLDiags.cc
-        SSLInternal.cc
-        SSLNetAccept.cc
-        SSLNetProcessor.cc
-        SSLNetVConnection.cc
-        SSLNextProtocolAccept.cc
-        SSLNextProtocolSet.cc
-        SSLSNIConfig.cc
-        SSLStats.cc
-        SSLSessionCache.cc
-        SSLSessionTicket.cc
-        SSLUtils.cc
-        OCSPStapling.cc
-        TLSBasicSupport.cc
-        TLSCertSwitchSupport.cc
-        TLSEarlyDataSupport.cc
-        TLSKeyLogger.cc
-        TLSSessionResumptionSupport.cc
-        TLSSNISupport.cc
-        TLSTunnelSupport.cc
-        UDPEventIO.cc
-        UDPIOEvent.cc
-        UnixConnection.cc
-        UnixNet.cc
-        UnixNetAccept.cc
-        UnixNetPages.cc
-        UnixNetProcessor.cc
-        UnixNetVConnection.cc
-        UnixUDPConnection.cc
-        UnixUDPNet.cc
-        SSLDynlock.cc
-        SNIActionPerformer.cc
-        )
+add_library(
+  inknet STATIC
+  ALPNSupport.cc
+  AsyncSignalEventIO.cc
+  BIO_fastopen.cc
+  BoringSSLUtils.cc
+  Connection.cc
+  EventIO.cc
+  Inline.cc
+  YamlSNIConfig.cc
+  Net.cc
+  NetHandler.cc
+  NetVCOptions.cc
+  NetAcceptEventIO.cc
+  NetVConnection.cc
+  PollCont.cc
+  ProxyProtocol.cc
+  ReadWriteEventIO.cc
+  Socks.cc
+  SSLAPIHooks.cc
+  SSLCertLookup.cc
+  SSLClientCoordinator.cc
+  SSLClientUtils.cc
+  SSLConfig.cc
+  SSLSecret.cc
+  SSLDiags.cc
+  SSLInternal.cc
+  SSLNetAccept.cc
+  SSLNetProcessor.cc
+  SSLNetVConnection.cc
+  SSLNextProtocolAccept.cc
+  SSLNextProtocolSet.cc
+  SSLSNIConfig.cc
+  SSLStats.cc
+  SSLSessionCache.cc
+  SSLSessionTicket.cc
+  SSLUtils.cc
+  OCSPStapling.cc
+  TLSBasicSupport.cc
+  TLSCertSwitchSupport.cc
+  TLSEarlyDataSupport.cc
+  TLSKeyLogger.cc
+  TLSSessionResumptionSupport.cc
+  TLSSNISupport.cc
+  TLSTunnelSupport.cc
+  UDPEventIO.cc
+  UDPIOEvent.cc
+  UnixConnection.cc
+  UnixNet.cc
+  UnixNetAccept.cc
+  UnixNetPages.cc
+  UnixNetProcessor.cc
+  UnixNetVConnection.cc
+  UnixUDPConnection.cc
+  UnixUDPNet.cc
+  SSLDynlock.cc
+  SNIActionPerformer.cc
+)
 add_library(ts::inknet ALIAS inknet)
 
 if(TS_USE_QUIC)
-    add_subdirectory(quic)
+  add_subdirectory(quic)
 
-    target_sources(inknet
-        PRIVATE
-            QUICClosedConCollector.cc
+  target_sources(
+    inknet
+    PRIVATE QUICClosedConCollector.cc
             QUICMultiCertConfigLoader.cc
             QUICNet.cc
             QUICNetProcessor_quiche.cc
@@ -88,51 +88,39 @@ if(TS_USE_QUIC)
             QUICNextProtocolAccept_quiche.cc
             QUICPacketHandler_quiche.cc
             QUICSupport.cc
-    )
+  )
 
-    target_link_libraries(inknet
-        PUBLIC
-            quiche::quiche
-            ts::quic
-    )
+  target_link_libraries(inknet PUBLIC quiche::quiche ts::quic)
 endif()
-
 
 if(BUILD_REGRESSION_TESTING)
-    target_sources(inknet PRIVATE NetVCTest.cc)
+  target_sources(inknet PRIVATE NetVCTest.cc)
 endif()
 
-
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
-target_include_directories(inknet PUBLIC
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/proxy/shared
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/http/remap
-        ${CMAKE_SOURCE_DIR}/src/api
+target_include_directories(
+  inknet
+  PUBLIC ${CMAKE_SOURCE_DIR}/iocore/dns
+         ${CMAKE_SOURCE_DIR}/iocore/io_uring
+         ${CMAKE_SOURCE_DIR}/iocore/aio
+         ${CMAKE_SOURCE_DIR}/iocore/net
+         ${CMAKE_SOURCE_DIR}/iocore/cache
+         ${CMAKE_SOURCE_DIR}/iocore/hostdb
+         ${CMAKE_SOURCE_DIR}/proxy/hdrs
+         ${CMAKE_SOURCE_DIR}/proxy/shared
+         ${CMAKE_SOURCE_DIR}/proxy/http
+         ${CMAKE_SOURCE_DIR}/proxy/http/remap
+         ${CMAKE_SOURCE_DIR}/src/api
 )
 
-target_link_libraries(inknet
-    PUBLIC
-        ts::inkevent
-        ts::proxy
-        ts::records
-        ts::tscore
-        OpenSSL::Crypto
-        OpenSSL::SSL
-    PRIVATE
-        ts::tsapicore
-        yaml-cpp::yaml-cpp
+target_link_libraries(
+  inknet
+  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL
+  PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
 )
 
 if(TS_USE_LINUX_IO_URING)
-    target_link_libraries(inknet PUBLIC ts::inkuring)
+  target_link_libraries(inknet PUBLIC ts::inkuring)
 endif()
 
 # Fails to link because of circular dep with proxy (ParentSelection)

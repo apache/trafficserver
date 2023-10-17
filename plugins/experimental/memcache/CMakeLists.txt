@@ -20,7 +20,7 @@ add_atsplugin(memcache tsmemcache.cc)
 get_target_property(EVENT_INCLUDES ts::inkevent INCLUDE_DIRECTORIES)
 get_target_property(NET_INCLUDES ts::inknet INCLUDE_DIRECTORIES)
 
-target_include_directories(memcache PRIVATE
-    $<TARGET_PROPERTY:ts::inkevent,INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:ts::inknet,INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:PCRE::PCRE,INCLUDE_DIRECTORIES>)
+target_include_directories(
+  memcache PRIVATE $<TARGET_PROPERTY:ts::inkevent,INCLUDE_DIRECTORIES>
+                   $<TARGET_PROPERTY:ts::inknet,INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:PCRE::PCRE,INCLUDE_DIRECTORIES>
+)

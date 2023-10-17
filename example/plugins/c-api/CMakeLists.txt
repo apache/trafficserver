@@ -15,7 +15,6 @@
 #
 #######################
 
-
 include(add_atsplugin)
 
 add_atsplugin(cache_scan ./cache_scan/cache_scan.cc)

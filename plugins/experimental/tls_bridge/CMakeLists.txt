@@ -15,13 +15,6 @@
 #
 #######################
 
-add_atsplugin(tls_bridge
-    regex.cc
-    tls_bridge.cc
-)
+add_atsplugin(tls_bridge regex.cc tls_bridge.cc)
 
-target_link_libraries(tls_bridge
-    PRIVATE
-        libswoc
-        ts::tscpputil
-)
+target_link_libraries(tls_bridge PRIVATE libswoc ts::tscpputil)

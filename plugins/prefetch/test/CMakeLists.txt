@@ -15,11 +15,7 @@
 #
 #######################
 
-add_executable(test_evaluate
-    test_evaluate.cc
-    "${PROJECT_SOURCE_DIR}/common.cc"
-    "${PROJECT_SOURCE_DIR}/evaluate.cc"
-)
+add_executable(test_evaluate test_evaluate.cc "${PROJECT_SOURCE_DIR}/common.cc" "${PROJECT_SOURCE_DIR}/evaluate.cc")
 
 target_link_libraries(test_evaluate PRIVATE catch2::catch2)
 

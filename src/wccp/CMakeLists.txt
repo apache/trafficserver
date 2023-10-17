@@ -15,17 +15,8 @@
 #
 #######################
 
+add_library(wccp SHARED WccpConfig.cc WccpEndPoint.cc WccpMsg.cc WccpStatic.cc)
 
-add_library(wccp SHARED
-	WccpConfig.cc  WccpEndPoint.cc  WccpMsg.cc  WccpStatic.cc
-)
-
-target_link_libraries(wccp
-    PRIVATE
-        ts::tscore
-        libswoc
-        OpenSSL::Crypto
-        yaml-cpp::yaml-cpp
-)
+target_link_libraries(wccp PRIVATE ts::tscore libswoc OpenSSL::Crypto yaml-cpp::yaml-cpp)
 
 install(TARGETS wccp)

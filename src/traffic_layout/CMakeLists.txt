@@ -15,35 +15,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-add_executable(traffic_layout
-    engine.cc
-    file_system.cc
-    info.cc
-    traffic_layout.cc
-)
+add_executable(traffic_layout engine.cc file_system.cc info.cc traffic_layout.cc)
 
-target_link_libraries(traffic_layout
-    PRIVATE
-        ts::inkevent
-        ts::records
-        OpenSSL::Crypto
-        yaml-cpp::yaml-cpp
-        ts::tscore
-        ts::tsapicore
-        PCRE::PCRE
-        ${OPENSSL_LIBRARY}
+target_link_libraries(
+  traffic_layout
+  PRIVATE ts::inkevent
+          ts::records
+          OpenSSL::Crypto
+          yaml-cpp::yaml-cpp
+          ts::tscore
+          ts::tsapicore
+          PCRE::PCRE
+          ${OPENSSL_LIBRARY}
 )
 
 if(TS_USE_HWLOC)
-    target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
+  target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
 endif()
 
 if(HAVE_LZMA_H)
-    target_link_libraries(traffic_layout PRIVATE LibLZMA::LibLZMA)
+  target_link_libraries(traffic_layout PRIVATE LibLZMA::LibLZMA)
 endif()
 
 if(HAVE_BROTLI_ENCODE_H)
-    target_link_libraries(traffic_layout PRIVATE brotli::brotlienc)
+  target_link_libraries(traffic_layout PRIVATE brotli::brotlienc)
 endif()
 
 install(TARGETS traffic_layout)

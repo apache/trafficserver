@@ -17,12 +17,6 @@
 
 add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc)
 
-target_link_libraries(traffic_crashlog
-    PRIVATE
-        ts::inkevent
-        ts::records
-        ts::tscore
-        ts::tsapicore
-)
+target_link_libraries(traffic_crashlog PRIVATE ts::inkevent ts::records ts::tscore ts::tsapicore)
 
 install(TARGETS traffic_crashlog)

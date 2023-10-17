@@ -15,11 +15,8 @@
 #
 #######################
 
-add_executable(test_traffic_dump
-    unit_test_main.cc
-    test_json_utils.cc
-    test_sensitive_fields.cc
-    ${PROJECT_SOURCE_DIR}/json_utils.cc
+add_executable(
+  test_traffic_dump unit_test_main.cc test_json_utils.cc test_sensitive_fields.cc ${PROJECT_SOURCE_DIR}/json_utils.cc
 )
 
 target_include_directories(test_traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}")

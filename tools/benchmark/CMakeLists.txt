@@ -16,29 +16,13 @@
 #######################
 
 add_executable(benchmark_FreeList benchmark_FreeList.cc)
-target_link_libraries(benchmark_FreeList
-    PRIVATE
-        catch2::catch2
-        ts::tscore
-        libswoc
-)
+target_link_libraries(benchmark_FreeList PRIVATE catch2::catch2 ts::tscore libswoc)
 if(TS_USE_HWLOC)
-    target_link_libraries(benchmark_FreeList PRIVATE hwloc)
+  target_link_libraries(benchmark_FreeList PRIVATE hwloc)
 endif()
 
 add_executable(benchmark_ProxyAllocator benchmark_ProxyAllocator.cc)
-target_link_libraries(benchmark_ProxyAllocator
-    PRIVATE
-        catch2::catch2
-        ts::tscore
-        ts::inkevent
-        libswoc
-)
+target_link_libraries(benchmark_ProxyAllocator PRIVATE catch2::catch2 ts::tscore ts::inkevent libswoc)
 
 add_executable(benchmark_SharedMutex benchmark_SharedMutex.cc)
-target_link_libraries(benchmark_SharedMutex
-    PRIVATE
-        catch2::catch2
-        ts::tscore
-        libswoc
-)
+target_link_libraries(benchmark_SharedMutex PRIVATE catch2::catch2 ts::tscore libswoc)

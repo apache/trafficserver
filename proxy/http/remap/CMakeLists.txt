@@ -15,42 +15,35 @@
 #
 #######################
 
-
-add_library(http_remap STATIC
-        AclFiltering.cc
-        NextHopSelectionStrategy.cc
-        NextHopConsistentHash.cc
-        NextHopHealthStatus.cc
-        NextHopRoundRobin.cc
-        NextHopStrategyFactory.cc
-        RemapConfig.cc
-        RemapHitCount.cc
-        RemapPluginInfo.cc
-        PluginDso.cc
-        PluginFactory.cc
-        RemapPlugins.cc
-        RemapProcessor.cc
-        UrlMapping.cc
-        UrlMappingPathIndex.cc
-        UrlRewrite.cc
+add_library(
+  http_remap STATIC
+  AclFiltering.cc
+  NextHopSelectionStrategy.cc
+  NextHopConsistentHash.cc
+  NextHopHealthStatus.cc
+  NextHopRoundRobin.cc
+  NextHopStrategyFactory.cc
+  RemapConfig.cc
+  RemapHitCount.cc
+  RemapPluginInfo.cc
+  PluginDso.cc
+  PluginFactory.cc
+  RemapPlugins.cc
+  RemapProcessor.cc
+  UrlMapping.cc
+  UrlMappingPathIndex.cc
+  UrlRewrite.cc
 )
 add_library(ts::http_remap ALIAS http_remap)
 
-target_include_directories(http_remap
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/src/records
-        )
+target_include_directories(
+  http_remap
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src/records
+)
 
-target_link_libraries(http_remap
-    PUBLIC
-        ts::proxy
-        ts::tscore
-    PRIVATE
-        ts::inkevent
-        ts::inkutils
-        yaml-cpp::yaml-cpp
+target_link_libraries(
+  http_remap
+  PUBLIC ts::proxy ts::tscore
+  PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
 )

@@ -15,38 +15,34 @@
 #
 #######################
 
-add_library(records STATIC
-        P_RecCore.cc
-        RecConfigParse.cc
-        RecCore.cc
-        RecDebug.cc
-        RecFile.cc
-        RecHttp.cc
-        RecMessage.cc
-        RecMutex.cc
-        RecUtils.cc
-        RecYAMLDecoder.cc
-        RecordsConfig.cc
-        RecordsConfigUtils.cc
-        RecRawStats.cc
-        )
+add_library(
+  records STATIC
+  P_RecCore.cc
+  RecConfigParse.cc
+  RecCore.cc
+  RecDebug.cc
+  RecFile.cc
+  RecHttp.cc
+  RecMessage.cc
+  RecMutex.cc
+  RecUtils.cc
+  RecYAMLDecoder.cc
+  RecordsConfig.cc
+  RecordsConfigUtils.cc
+  RecRawStats.cc
+)
 add_library(ts::records ALIAS records)
 
-target_include_directories(records
-    PUBLIC
-        "${PROJECT_SOURCE_DIR}/include"
-    PRIVATE
-        "${CMAKE_SOURCE_DIR}/mgmt"
-        "${CMAKE_SOURCE_DIR}/iocore/utils"
+target_include_directories(
+  records
+  PUBLIC "${PROJECT_SOURCE_DIR}/include"
+  PRIVATE "${CMAKE_SOURCE_DIR}/mgmt" "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 
-target_link_libraries(records
-    PUBLIC
-        ts::inkevent
-        ts::tscore
-        yaml-cpp::yaml-cpp
-    PRIVATE
-        ts::tsapicore
+target_link_libraries(
+  records
+  PUBLIC ts::inkevent ts::tscore yaml-cpp::yaml-cpp
+  PRIVATE ts::tsapicore
 )
 
 if(BUILD_TESTING)
@@ -54,9 +50,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_records PRIVATE records catch2::catch2 tscore libswoc)
   add_test(NAME test_records COMMAND test_records)
 
-  add_executable(test_records_on_eventsystem
-    unit_tests/unit_test_main_on_eventsystem.cc
-  )
+  add_executable(test_records_on_eventsystem unit_tests/unit_test_main_on_eventsystem.cc)
   target_include_directories(test_records_on_eventsystem PRIVATE ${CMAKE_SOURCE_DIR}/iocore/utils)
   target_link_libraries(test_records_on_eventsystem PRIVATE records catch2::catch2 tscore libswoc)
   add_test(NAME test_records_on_eventsystem COMMAND test_records_on_eventsystem)

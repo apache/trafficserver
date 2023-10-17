@@ -15,11 +15,10 @@
 #
 #######################
 
-
 add_subdirectory(eventsystem)
-if (TS_USE_LINUX_IO_URING)
-add_subdirectory(io_uring)
-endif (TS_USE_LINUX_IO_URING)
+if(TS_USE_LINUX_IO_URING)
+  add_subdirectory(io_uring)
+endif(TS_USE_LINUX_IO_URING)
 add_subdirectory(net)
 add_subdirectory(aio)
 add_subdirectory(dns)
@@ -28,11 +27,13 @@ add_subdirectory(utils)
 add_subdirectory(cache)
 
 set(IOCORE_INCLUDE_DIRS
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/iocore/utils PARENT_SCOPE)
+    ${CMAKE_SOURCE_DIR}/iocore/eventsystem
+    ${CMAKE_SOURCE_DIR}/iocore/dns
+    ${CMAKE_SOURCE_DIR}/iocore/io_uring
+    ${CMAKE_SOURCE_DIR}/iocore/aio
+    ${CMAKE_SOURCE_DIR}/iocore/net
+    ${CMAKE_SOURCE_DIR}/iocore/cache
+    ${CMAKE_SOURCE_DIR}/iocore/hostdb
+    ${CMAKE_SOURCE_DIR}/iocore/utils
+    PARENT_SCOPE
+)

@@ -15,32 +15,25 @@
 #
 #######################
 
-add_library(quic STATIC
-    QUICApplication.cc
-    QUICApplicationMap.cc
-    QUICConfig.cc
-    QUICContext.cc
-    QUICConnectionTable.cc
-    QUICGlobals.cc
-    QUICTypes.cc
-    QUICIntUtil.cc
-    QUICStream.cc
-    QUICStream_quiche.cc
-    QUICStreamManager.cc
-    QUICStreamManager_quiche.cc
-    QUICStreamAdapter.cc
-    QUICStreamVCAdapter.cc
+add_library(
+  quic STATIC
+  QUICApplication.cc
+  QUICApplicationMap.cc
+  QUICConfig.cc
+  QUICContext.cc
+  QUICConnectionTable.cc
+  QUICGlobals.cc
+  QUICTypes.cc
+  QUICIntUtil.cc
+  QUICStream.cc
+  QUICStream_quiche.cc
+  QUICStreamManager.cc
+  QUICStreamManager_quiche.cc
+  QUICStreamAdapter.cc
+  QUICStreamVCAdapter.cc
 )
 add_library(ts::quic ALIAS quic)
 
 target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_link_libraries(quic
-    PUBLIC
-        ts::inkevent
-        ts::inknet
-        ts::tscore
-        OpenSSL::Crypto
-        OpenSSL::SSL
-        quiche::quiche
-)
+target_link_libraries(quic PUBLIC ts::inkevent ts::inknet ts::tscore OpenSSL::Crypto OpenSSL::SSL quiche::quiche)

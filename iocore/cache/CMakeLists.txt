@@ -15,58 +15,50 @@
 #
 #######################
 
-
-add_library(inkcache STATIC
-    Cache.cc
-    CacheDir.cc
-    CacheDisk.cc
-    CacheHosting.cc
-    CacheHttp.cc
-    CachePages.cc
-    CachePagesInternal.cc
-    CacheRead.cc
-    CacheVC.cc
-    CacheVol.cc
-    CacheWrite.cc
-    HttpTransactCache.cc
-    RamCacheCLFUS.cc
-    RamCacheLRU.cc
-    Store.cc
+add_library(
+  inkcache STATIC
+  Cache.cc
+  CacheDir.cc
+  CacheDisk.cc
+  CacheHosting.cc
+  CacheHttp.cc
+  CachePages.cc
+  CachePagesInternal.cc
+  CacheRead.cc
+  CacheVC.cc
+  CacheVol.cc
+  CacheWrite.cc
+  HttpTransactCache.cc
+  RamCacheCLFUS.cc
+  RamCacheLRU.cc
+  Store.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 
 if(BUILD_REGRESSION_TESTING)
-    target_sources(inkcache PRIVATE CacheTest.cc)
-    target_link_libraries(inkcache PRIVATE ts::proxy)
+  target_sources(inkcache PRIVATE CacheTest.cc)
+  target_link_libraries(inkcache PRIVATE ts::proxy)
 endif()
 
-target_include_directories(inkcache
-    PUBLIC
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/io_uring
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/http/remap
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/lib
+target_include_directories(
+  inkcache
+  PUBLIC ${CMAKE_SOURCE_DIR}/iocore/cache
+  PRIVATE ${CMAKE_SOURCE_DIR}/iocore/io_uring
+          ${CMAKE_SOURCE_DIR}/iocore/dns
+          ${CMAKE_SOURCE_DIR}/iocore/net
+          ${CMAKE_SOURCE_DIR}/iocore/hostdb
+          ${CMAKE_SOURCE_DIR}/proxy/http
+          ${CMAKE_SOURCE_DIR}/proxy/http/remap
+          ${CMAKE_SOURCE_DIR}/proxy/hdrs
+          ${CMAKE_SOURCE_DIR}/lib
 )
 
-target_link_libraries(inkcache
-    PUBLIC
-        ts::aio
-        ts::hdrs
-        ts::http
-        ts::inkevent
-        ts::tscore
-    PRIVATE
-        ts::proxy
-        fastlz
-        ZLIB::ZLIB
+target_link_libraries(
+  inkcache
+  PUBLIC ts::aio ts::hdrs ts::http ts::inkevent ts::tscore
+  PRIVATE ts::proxy fastlz ZLIB::ZLIB
 )
 
 if(HAVE_LZMA_H)
-    target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
+  target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()

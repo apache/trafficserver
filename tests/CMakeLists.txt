@@ -16,13 +16,14 @@
 #######################
 
 function(ADD_AUTEST_PLUGIN _NAME)
-    add_library(${_NAME} MODULE ${ARGN})
-    set_target_properties(${_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
-        PREFIX ""
-        SUFFIX ".so"
-    )
-    target_link_libraries(${_NAME} PRIVATE ts::tsapi)
+  add_library(${_NAME} MODULE ${ARGN})
+  set_target_properties(
+    ${_NAME}
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
+               PREFIX ""
+               SUFFIX ".so"
+  )
+  target_link_libraries(${_NAME} PRIVATE ts::tsapi)
 endfunction()
 
 add_subdirectory(tools/plugins)
@@ -42,15 +43,12 @@ configure_file(Pipfile Pipfile COPYONLY)
 configure_file(autest.sh.in autest.sh)
 
 add_custom_target(
-    autest
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-    COMMAND ${RUNPIPENV} install
-    COMMAND ${RUNPIPENV} run env autest
-      --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
-      --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
-      --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
-      --build-root ${CMAKE_BINARY_DIR}
-      --sandbox ${AUTEST_SANDBOX}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    USES_TERMINAL
+  autest
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+  COMMAND ${RUNPIPENV} install
+  COMMAND ${RUNPIPENV} run env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
+          --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+          ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
 )

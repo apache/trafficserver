@@ -15,10 +15,7 @@
 #
 #######################
 
-add_executable(test_s3_auth
-    test_aws_auth_v4.cc
-    "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc"
-)
+add_executable(test_s3_auth test_aws_auth_v4.cc "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc")
 
 target_link_libraries(test_s3_auth PRIVATE catch2::catch2 OpenSSL::Crypto)
 

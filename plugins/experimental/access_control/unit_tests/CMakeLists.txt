@@ -15,26 +15,14 @@
 #
 #######################
 
-add_executable(test_access_control
-    test_access_control.cc
-    test_utils.cc
-    ${PROJECT_SOURCE_DIR}/access_control.cc
-    ${PROJECT_SOURCE_DIR}/common.cc
-    ${PROJECT_SOURCE_DIR}/utils.cc
+add_executable(
+  test_access_control test_access_control.cc test_utils.cc ${PROJECT_SOURCE_DIR}/access_control.cc
+                      ${PROJECT_SOURCE_DIR}/common.cc ${PROJECT_SOURCE_DIR}/utils.cc
 )
 
-target_include_directories(test_access_control
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}
-)
+target_include_directories(test_access_control PRIVATE ${PROJECT_SOURCE_DIR})
 
-target_link_libraries(test_access_control
-    PRIVATE
-        ts::tscore
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        catch2::catch2
-)
+target_link_libraries(test_access_control PRIVATE ts::tscore OpenSSL::SSL OpenSSL::Crypto catch2::catch2)
 target_compile_definitions(test_access_control PRIVATE ACCESS_CONTROL_UNIT_TEST)
 
 add_test(NAME test_access_control COMMAND test_access_control)

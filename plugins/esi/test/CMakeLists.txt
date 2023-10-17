@@ -15,17 +15,13 @@
 #
 #######################
 
-add_library(esitest STATIC
-    HandlerMap.cc
-    StubIncludeHandler.cc
-    TestHandlerManager.cc
-)
+add_library(esitest STATIC HandlerMap.cc StubIncludeHandler.cc TestHandlerManager.cc)
 target_link_libraries(esitest PUBLIC esi-common esicore)
 
 macro(ADD_ESI_TEST NAME)
-    add_executable(${NAME} print_funcs.cc ${ARGN})
-    target_link_libraries(${NAME} PRIVATE esitest)
-    add_test(NAME ${NAME}_esi COMMAND $<TARGET_FILE:${NAME}>)
+  add_executable(${NAME} print_funcs.cc ${ARGN})
+  target_link_libraries(${NAME} PRIVATE esitest)
+  add_test(NAME ${NAME}_esi COMMAND $<TARGET_FILE:${NAME}>)
 endmacro()
 
 add_esi_test(test_docnode docnode_test.cc)
