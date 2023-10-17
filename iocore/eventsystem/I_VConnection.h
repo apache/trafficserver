@@ -360,7 +360,13 @@ public:
     return false;
   }
 
-public:
+  // This function should be called when the VConnection is a tunnel endpoint.  By default, a VConnection does not care if it
+  // is a tunnel endpoint.
+  virtual void
+  mark_as_tunnel_endpoint()
+  {
+  }
+
   /**
     The error code from the last error.
 

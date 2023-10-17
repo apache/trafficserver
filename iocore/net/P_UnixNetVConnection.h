@@ -44,6 +44,8 @@ struct PollDescriptor;
 
 enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 
+// WARNING:  many or most of the member functions of UnixNetVConnection should only be used when it is instantiated
+// directly.  They should not be used when UnixNetVConnection is a base class.
 class UnixNetVConnection : public NetVConnection, public NetEvent
 {
 public:
@@ -225,9 +227,26 @@ public:
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
+  // set_context() should be called before calling this member function.
+  void mark_as_tunnel_endpoint() override;
+
+  bool
+  is_tunnel_endpoint() const
+  {
+    return _is_tunnel_endpoint;
+  }
+
 private:
   virtual void *_prepareForMigration();
   virtual NetProcessor *_getNetProcessor();
+
+  bool _is_tunnel_endpoint{false};
+
+  // Called by make_tunnel_endpiont() when the far end of the TCP connection is the active/client end.
+  virtual void _in_context_tunnel();
+
+  // Called by make_tunnel_endpiont() when the far end of the TCP connection is the passive/server end.
+  virtual void _out_context_tunnel();
 
   inline static DbgCtl _dbg_ctl_socket{"socket"};
   inline static DbgCtl _dbg_ctl_socket_mptcp{"socket_mptcp"};

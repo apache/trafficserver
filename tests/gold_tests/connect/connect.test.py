@@ -135,7 +135,7 @@ class ConnectViaPVTest:
 
         self.ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
+            'proxy.config.diags.debug.tags': 'http|iocore_net|rec',
             'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
             'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
         })
@@ -160,8 +160,43 @@ class ConnectViaPVTest:
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts
 
+    def __testMetrics(self):
+        tr = Test.AddTestRun("Test metrics")
+        tr.Processes.Default.Command = (
+            f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
+            " 'traffic_ctl metric get" +
+            " proxy.process.http.total_incoming_connections" +
+            " proxy.process.http.total_client_connections" +
+            " proxy.process.http.total_client_connections_ipv4" +
+            " proxy.process.http.total_client_connections_ipv6" +
+            " proxy.process.http.total_server_connections" +
+            " proxy.process.http2.total_client_connections" +
+            " proxy.process.http.connect_requests" +
+            " proxy.process.tunnel.total_client_connections_blind_tcp" +
+            " proxy.process.tunnel.current_client_connections_blind_tcp" +
+            " proxy.process.tunnel.total_server_connections_blind_tcp" +
+            " proxy.process.tunnel.current_server_connections_blind_tcp" +
+            " proxy.process.tunnel.total_client_connections_tls_tunnel" +
+            " proxy.process.tunnel.current_client_connections_tls_tunnel" +
+            " proxy.process.tunnel.total_client_connections_tls_forward" +
+            " proxy.process.tunnel.current_client_connections_tls_forward" +
+            " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
+            " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
+            " proxy.process.tunnel.total_client_connections_tls_http" +
+            " proxy.process.tunnel.current_client_connections_tls_http" +
+            " proxy.process.tunnel.total_server_connections_tls" +
+            " proxy.process.tunnel.current_server_connections_tls'" +
+            f" {Test.TestDirectory}/gold/metrics.gold"
+        )
+        # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
+        tr.Processes.Default.Env = self.ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
     def run(self):
         self.runTraffic()
+        self.__testMetrics()
 
 
 ConnectViaPVTest().run()

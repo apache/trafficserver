@@ -1284,6 +1284,8 @@ UnixNetVConnection::clear()
 void
 UnixNetVConnection::free_thread(EThread *t)
 {
+  Debug("iocore_net", "Entering UnixNetVConnection::free()");
+
   ink_release_assert(t == this_ethread());
 
   // close socket fd
@@ -1291,6 +1293,21 @@ UnixNetVConnection::free_thread(EThread *t)
     Metrics::decrement(net_rsb.connections_currently_open);
   }
   con.close();
+
+  if (is_tunnel_endpoint()) {
+    Debug("iocore_net", "Freeing UnixNetVConnection that is tunnel endpoint");
+
+    Metrics::decrement(([&]() -> Metrics::IntType * {
+      switch (get_context()) {
+      case NET_VCONNECTION_IN:
+        return net_rsb.tunnel_current_client_connections_blind_tcp;
+      case NET_VCONNECTION_OUT:
+        return net_rsb.tunnel_current_server_connections_blind_tcp;
+      default:
+        ink_release_assert(false);
+      }
+    })());
+  }
 
   clear();
   SET_CONTINUATION_HANDLER(this, &UnixNetVConnection::startEvent);
@@ -1490,4 +1507,39 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
   Debug("socket", "Setting TCP congestion control is not supported on this platform.");
   return -1;
 #endif
+}
+
+void
+UnixNetVConnection::mark_as_tunnel_endpoint()
+{
+  Debug("iocore_net", "Entering UnixNetVConnection::mark_as_tunnel_endpoint()");
+
+  ink_assert(!_is_tunnel_endpoint);
+
+  _is_tunnel_endpoint = true;
+
+  switch (get_context()) {
+  case NET_VCONNECTION_IN:
+    _in_context_tunnel();
+    break;
+  case NET_VCONNECTION_OUT:
+    _out_context_tunnel();
+    break;
+  default:
+    ink_release_assert(false);
+  }
+}
+
+void
+UnixNetVConnection::_in_context_tunnel()
+{
+  Metrics::increment(net_rsb.tunnel_total_client_connections_blind_tcp);
+  Metrics::increment(net_rsb.tunnel_current_client_connections_blind_tcp);
+}
+
+void
+UnixNetVConnection::_out_context_tunnel()
+{
+  Metrics::increment(net_rsb.tunnel_total_server_connections_blind_tcp);
+  Metrics::increment(net_rsb.tunnel_current_server_connections_blind_tcp);
 }

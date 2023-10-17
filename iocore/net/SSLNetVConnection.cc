@@ -1035,6 +1035,29 @@ SSLNetVConnection::free_thread(EThread *t)
   }
   con.close();
 
+  if (is_tunnel_endpoint()) {
+    ink_assert(get_context() != NET_VCONNECTION_UNSET);
+
+    Metrics::decrement(([&]() -> Metrics::IntType * {
+      if (get_context() == NET_VCONNECTION_IN) {
+        switch (get_tunnel_type()) {
+        case SNIRoutingType::BLIND:
+          return net_rsb.tunnel_current_client_connections_tls_tunnel;
+        case SNIRoutingType::FORWARD:
+          return net_rsb.tunnel_current_client_connections_tls_forward;
+        case SNIRoutingType::PARTIAL_BLIND:
+          return net_rsb.tunnel_current_client_connections_tls_partial_blind;
+        default:
+          return net_rsb.tunnel_current_client_connections_tls_http;
+        }
+      }
+      // NET_VCONNECTION_OUT - Never a tunnel type for out (to server) context.
+      ink_assert(get_tunnel_type() == SNIRoutingType::NONE);
+
+      return net_rsb.tunnel_current_server_connections_tls;
+    })());
+  }
+
 #if TS_HAS_TLS_EARLY_DATA
   if (_early_data_reader != nullptr) {
     _early_data_reader->dealloc();
@@ -1956,6 +1979,47 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
   this->_bindSSLObject();
   return EVENT_DONE;
+}
+
+void
+SSLNetVConnection::_in_context_tunnel()
+{
+  ink_assert(get_context() == NET_VCONNECTION_IN);
+
+  Metrics::IntType *t, *c;
+
+  switch (get_tunnel_type()) {
+  case SNIRoutingType::BLIND:
+    t = net_rsb.tunnel_total_client_connections_tls_tunnel;
+    c = net_rsb.tunnel_current_client_connections_tls_tunnel;
+    break;
+  case SNIRoutingType::FORWARD:
+    t = net_rsb.tunnel_total_client_connections_tls_forward;
+    c = net_rsb.tunnel_current_client_connections_tls_forward;
+    break;
+  case SNIRoutingType::PARTIAL_BLIND:
+    t = net_rsb.tunnel_total_client_connections_tls_partial_blind;
+    c = net_rsb.tunnel_current_client_connections_tls_partial_blind;
+    break;
+  default:
+    t = net_rsb.tunnel_total_client_connections_tls_http;
+    c = net_rsb.tunnel_current_client_connections_tls_http;
+    break;
+  }
+  Metrics::increment(t);
+  Metrics::increment(c);
+}
+
+void
+SSLNetVConnection::_out_context_tunnel()
+{
+  ink_assert(get_context() == NET_VCONNECTION_OUT);
+
+  // Never a tunnel type for out (to server) context.
+  ink_assert(get_tunnel_type() == SNIRoutingType::NONE);
+
+  Metrics::increment(net_rsb.tunnel_total_server_connections_tls);
+  Metrics::increment(net_rsb.tunnel_current_server_connections_tls);
 }
 
 void

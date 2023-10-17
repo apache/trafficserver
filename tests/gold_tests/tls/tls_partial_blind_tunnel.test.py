@@ -74,3 +74,35 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Acc
                                                                "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
+
+tr = Test.AddTestRun("Test Metrics")
+tr.Processes.Default.Command = (
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
+    " 'traffic_ctl metric get" +
+    " proxy.process.http.total_incoming_connections" +
+    " proxy.process.http.total_client_connections" +
+    " proxy.process.http.total_client_connections_ipv4" +
+    " proxy.process.http.total_client_connections_ipv6" +
+    " proxy.process.http.total_server_connections" +
+    " proxy.process.http2.total_client_connections" +
+    " proxy.process.http.connect_requests" +
+    " proxy.process.tunnel.total_client_connections_blind_tcp" +
+    " proxy.process.tunnel.current_client_connections_blind_tcp" +
+    " proxy.process.tunnel.total_server_connections_blind_tcp" +
+    " proxy.process.tunnel.current_server_connections_blind_tcp" +
+    " proxy.process.tunnel.total_client_connections_tls_tunnel" +
+    " proxy.process.tunnel.current_client_connections_tls_tunnel" +
+    " proxy.process.tunnel.total_client_connections_tls_forward" +
+    " proxy.process.tunnel.current_client_connections_tls_forward" +
+    " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
+    " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
+    " proxy.process.tunnel.total_client_connections_tls_http" +
+    " proxy.process.tunnel.current_client_connections_tls_http" +
+    " proxy.process.tunnel.total_server_connections_tls" +
+    " proxy.process.tunnel.current_server_connections_tls'" +
+    f" {Test.TestDirectory}/gold/tls-partial-blind-tunnel-metrics.gold"
+)
+# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = ts

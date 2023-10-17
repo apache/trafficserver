@@ -164,9 +164,32 @@ HTTP Connection
 
    Counts the number of times current parent or next parent was detected
 
+.. ts:stat:: global proxy.process.tunnel.total_client_connections_blind_tcp integer
+   :type: counter
+
+   Total number of non-TLS TCP connections for tunnels where the far end is the client
+   initiated with an HTTP request (such as a CONNECT or WebSocket request).
+
+.. ts:stat:: global proxy.process.tunnel.current_client_connections_blind_tcp integer
+   :type: counter
+
+   Current number of non-TLS TCP connections for tunnels where the far end is the client
+   initiated with an HTTP request (such as a CONNECT or WebSocket request).
+
+.. ts:stat:: global proxy.process.tunnel.total_server_connections_blind_tcp integer
+   :type: counter
+
+   Total number of TCP connections for tunnels where the far end is the server,
+   except for those counted by ``proxy.process.tunnel.total_server_connections_tls``
+
+.. ts:stat:: global proxy.process.tunnel.current_server_connections_blind_tcp integer
+   :type: counter
+
+   Current number of TCP connections for tunnels where the far end is the server,
+   except for those counted by ``proxy.process.tunnel.current_server_connections_tls``
+
 HTTP/2
 ------
-
 
 .. ts:stat:: global proxy.process.http2.total_client_connections integer
    :type: counter
