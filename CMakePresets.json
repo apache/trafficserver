@@ -49,6 +49,14 @@
       }
     },
     {
+      "name": "hardened",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-D_FORTIFY_SOURCE=2 -fPIE -fstack-protector",
+        "CMAKE_EXE_LINKER_FLAGS": "-pie -Wl,-z,relro -Wl,-z,now"
+      }
+    },
+    {
       "name": "dev-asan",
       "displayName": "dev with asan",
       "description": "Development Presets with ASAN sanitizer",
@@ -106,6 +114,18 @@
       "displayName": "CI Fedora Quiche Autest",
       "description": "CI Pipeline config for Fedora Linux (autest build)",
       "inherits": ["ci-fedora", "autest"]
+    },
+    {
+      "name": "ci-debian",
+      "displayName": "CI Debian Hardened Build",
+      "description": "CI Pipeline config for Debian with hardening flags",
+      "inherits": ["ci", "hardened"]
+    },
+    {
+      "name": "ci-ubuntu",
+      "displayName": "CI Ubuntu Hardened Build",
+      "description": "CI Pipeline config for Ubuntu with hardening flags",
+      "inherits": ["ci", "hardened"]
     }
   ],
   "buildPresets": [
