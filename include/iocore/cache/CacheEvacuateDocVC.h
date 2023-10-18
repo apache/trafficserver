@@ -30,10 +30,10 @@
 #include "CacheVC.h"
 
 // eventsystem
-#include "I_Continuation.h"
-#include "I_EThread.h"
-#include "I_Event.h"
-#include "I_ProxyAllocator.h"
+#include "Continuation.h"
+#include "EThread.h"
+#include "Event.h"
+#include "ProxyAllocator.h"
 
 // tscore
 #include "tscore/ink_assert.h"

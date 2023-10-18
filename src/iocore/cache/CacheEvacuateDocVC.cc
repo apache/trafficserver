@@ -26,17 +26,17 @@
 
 // inkcache
 #include "CacheEvacuateDocVC.h"
-#include "I_CacheDefs.h"
+#include "CacheDefs.h"
 #include "P_CacheDir.h"
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
 // aio
-#include "I_AIO.h"
+#include "AIO.h"
 
 // inkevent
-#include "I_EThread.h"
+#include "EThread.h"
 
 // tscore
 #include "tscore/Diags.h"
