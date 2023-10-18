@@ -45,23 +45,6 @@ void
 AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *app_version, const char *build_date,
                       const char *build_time, const char *build_machine, const char *build_person, const char *build_cflags)
 {
-  char month_name[8];
-  int year, month, day, hour, minute, second;
-  bool invalid_datetime;
-
-  static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"};
-
-  invalid_datetime  = sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
-  invalid_datetime |= sscanf(build_date, "%3s %d %d", month_name, &day, &year) < 3;
-
-  // Jan=1, Feb=2 ... Dec=12, ???=13
-  for (month = 0; month < 11; month++) {
-    if (strcasecmp(months[month], month_name) == 0) {
-      break;
-    }
-  }
-  month++;
-
   ///////////////////////////////////////////
   // now construct the version information //
   ///////////////////////////////////////////
@@ -73,10 +56,29 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   // Otherwise take the build timestamp ("??????" if invalid).
   if (0 != strlen(BUILD_NUMBER)) {
     snprintf(BldNumStr, sizeof(BldNumStr), "%s", BUILD_NUMBER);
-  } else if (!invalid_datetime) {
-    snprintf(BldNumStr, sizeof(BldNumStr), "%02d%02d%02d", month, day, hour);
   } else {
-    snprintf(BldNumStr, sizeof(BldNumStr), "??????");
+    // Construct the BldNumStr from the build date and time.
+    char month_name[8];
+    int year, month, day, hour, minute, second;
+    bool invalid_datetime;
+
+    static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"};
+
+    invalid_datetime  = sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
+    invalid_datetime |= sscanf(build_date, "%3s %d %d", month_name, &day, &year) < 3;
+
+    // Jan=1, Feb=2 ... Dec=12, ???=13
+    for (month = 0; month < 11; month++) {
+      if (strcasecmp(months[month], month_name) == 0) {
+        break;
+      }
+    }
+    month++;
+    if (invalid_datetime) {
+      snprintf(BldNumStr, sizeof(BldNumStr), "??????");
+    } else {
+      snprintf(BldNumStr, sizeof(BldNumStr), "%02d%02d%02d", month, day, hour);
+    }
   }
 
   snprintf(BldTimeStr, sizeof(BldTimeStr), "%s", build_time);
