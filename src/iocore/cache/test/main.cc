@@ -157,7 +157,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     thread->set_tail_handler(&uring_handler);
 #endif
 
-    std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "src/iocore/cache/test";
+    std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/src/iocore/cache/test";
     Layout::get()->sysconfdir = src_dir;
   }
 };
