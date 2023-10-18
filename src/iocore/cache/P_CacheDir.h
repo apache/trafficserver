@@ -37,9 +37,6 @@ struct CacheVC;
 class CacheEvacuateDocVC;
 
 // #define LOOP_CHECK_MODE 1
-#ifdef LOOP_CHECK_MODE
-#define DIR_LOOP_THRESHOLD 1000
-#endif
 
 /*
   Directory layout

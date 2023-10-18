@@ -27,7 +27,6 @@
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
 
-// #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
 #endif
