@@ -44,6 +44,7 @@ QUICNetVConnection::QUICNetVConnection()
   this->_set_service(static_cast<TLSCertSwitchSupport *>(this));
   this->_set_service(static_cast<TLSSNISupport *>(this));
   this->_set_service(static_cast<TLSSessionResumptionSupport *>(this));
+  this->_set_service(static_cast<QUICSupport *>(this));
 }
 
 QUICNetVConnection::~QUICNetVConnection() {}
