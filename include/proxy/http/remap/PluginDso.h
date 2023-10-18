@@ -45,9 +45,9 @@
 namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
-#include "Plugin.h"
+#include "proxy/Plugin.h"
 
 class PluginThreadContext : public RefCountObj
 {
