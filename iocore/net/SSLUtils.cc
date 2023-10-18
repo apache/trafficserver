@@ -49,6 +49,9 @@
 #include "SSLDiags.h"
 #include "SSLStats.h"
 #include "TLSSessionResumptionSupport.h"
+#if TS_USE_QUIC == 1
+#include "QUICSupport.h"
+#endif
 #include "P_SSLNetVConnection.h"
 
 #include <string>
@@ -960,6 +963,9 @@ SSLInitializeLibrary()
   TLSEarlyDataSupport::initialize();
   TLSTunnelSupport::initialize();
   TLSCertSwitchSupport::initialize();
+#if TS_USE_QUIC == 1
+  QUICSupport::initialize();
+#endif
 
   open_ssl_initialized = true;
 }
