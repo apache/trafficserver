@@ -34,7 +34,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "HTTP.h"
 #include "StatPages.h"
 #include "HttpSM.h"

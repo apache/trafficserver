@@ -29,7 +29,7 @@
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;

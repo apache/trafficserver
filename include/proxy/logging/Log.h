@@ -55,7 +55,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
 #include "tscore/Regression.h"
-#include "records/I_RecProcess.h"
+#include "records/RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
 

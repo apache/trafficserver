@@ -27,7 +27,7 @@
 #include <atomic>
 #include <cstddef>
 
-#include "I_IOBuffer.h"
+#include "IOBuffer.h"
 
 #include "QUICTypes.h"
 #include "QUICRetryIntegrityTag.h"

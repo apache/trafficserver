@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "PoolableSession.h"
 #include "swoc/IntrusiveHashMap.h"
 

@@ -37,7 +37,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
-#include "I_Lock.h"
+#include "Lock.h"
 #include "tscore/ContFlags.h"
 
 class Continuation;

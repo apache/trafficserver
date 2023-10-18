@@ -26,10 +26,10 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
-#include "tscore/I_Version.h"
-#include "I_Thread.h"
-#include "I_PriorityEventQueue.h"
-#include "I_ProtectedQueue.h"
+#include "tscore/Version.h"
+#include "Thread.h"
+#include "PriorityEventQueue.h"
+#include "ProtectedQueue.h"
 #include "tscpp/util/Histogram.h"
 
 // TODO: This would be much nicer to have "run-time" configurable (or something)

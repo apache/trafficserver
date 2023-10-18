@@ -23,10 +23,10 @@
 
 #include <atomic>
 
-#include "I_EventSystem.h"
-#include "I_Net.h"
-#include "I_Cache.h"
-#include "tscore/I_Version.h"
+#include "EventSystem.h"
+#include "Net.h"
+#include "Cache.h"
+#include "tscore/Version.h"
 
 #include "ts/ts.h" // plugin header
 #include "protocol_binary.h"

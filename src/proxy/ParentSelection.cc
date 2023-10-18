@@ -29,7 +29,7 @@
 #include "HostStatus.h"
 #include "HTTP.h"
 #include "HttpTransact.h"
-#include "I_Machine.h"
+#include "Machine.h"
 #include "tscore/Filenames.h"
 
 #define MAX_SIMPLE_RETRIES             5

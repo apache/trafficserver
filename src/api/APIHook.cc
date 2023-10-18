@@ -29,8 +29,8 @@
 #include "tscore/ink_atomic.h"
 
 // inkevent
-#include "I_Event.h"
-#include "I_Lock.h"
+#include "Event.h"
+#include "Lock.h"
 
 APIHook *
 APIHook::next() const

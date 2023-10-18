@@ -24,8 +24,8 @@
 #include "HttpConfig.h"
 #include "HttpVCTable.h"
 
-#include "I_VConnection.h"
-#include "I_VIO.h"
+#include "VConnection.h"
+#include "VIO.h"
 #include "tscore/ink_assert.h"
 
 class HttpSM;

@@ -22,7 +22,7 @@
  */
 
 #include "Http3StreamDataVIOAdaptor.h"
-#include "I_VIO.h"
+#include "VIO.h"
 
 Http3StreamDataVIOAdaptor::Http3StreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink), _buffer(new_MIOBuffer(BUFFER_SIZE_INDEX_4K)) {}
 

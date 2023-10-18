@@ -22,8 +22,8 @@ target_sources(aio PRIVATE AIO.cc Inline.cc AIO_fault_injection.cc)
 
 target_include_directories(
   aio
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_SOURCE_DIR}/iocore/io_uring
+  PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/aio
+  PRIVATE ${CMAKE_SOURCE_DIR}/include/iocore/io_uring ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem
 )
 
 target_link_libraries(aio PUBLIC ts::inkevent ts::tscore)

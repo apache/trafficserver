@@ -41,7 +41,7 @@ struct MIOBuffer {
 };
 
 #define UNIT_TEST_BUFFER_WRITER
-#include "I_MIOBufferWriter.h"
+#include "MIOBufferWriter.h"
 #include "MIOBufferWriter.cc"
 
 IOBufferBlock iobb[1];

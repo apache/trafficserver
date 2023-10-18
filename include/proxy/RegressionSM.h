@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "tscore/Regression.h"
 
 /*

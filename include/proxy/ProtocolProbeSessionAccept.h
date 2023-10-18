@@ -25,7 +25,7 @@
 
 #include "swoc/swoc_ip.h"
 
-#include "I_SessionAccept.h"
+#include "SessionAccept.h"
 
 struct ProtocolProbeSessionAcceptEnums {
   /// Enumeration for related groups of protocols.

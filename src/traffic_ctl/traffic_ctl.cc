@@ -24,7 +24,7 @@
 #include <iostream>
 #include <csignal>
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include "tscore/ArgParser.h"
 #include "tscore/ink_assert.h"

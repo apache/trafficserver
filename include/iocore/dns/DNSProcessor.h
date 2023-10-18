@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_resolver.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "SRV.h"
 
 // Events

@@ -20,11 +20,11 @@
  */
 
 #include "tscore/ink_config.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #include "P_Net.h"
 #include "P_QUICNet.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 
 #include "P_QUICNetProcessor_quiche.h"
 #include "P_QUICPacketHandler_quiche.h"

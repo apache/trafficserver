@@ -23,7 +23,7 @@ Public RecProcess declarations
 
 #pragma once
 
-#include "records/I_RecDefs.h"
+#include "records/RecDefs.h"
 #include "tscore/Diags.h"
 
 //-------------------------------------------------------------------------

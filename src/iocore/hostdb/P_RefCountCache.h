@@ -22,7 +22,7 @@
  */
 #pragma once
 
-#include <I_EventSystem.h>
+#include <EventSystem.h>
 #include <P_EventSystem.h> // TODO: less? just need ET_TASK
 
 #include "swoc/IntrusiveHashMap.h"
@@ -32,7 +32,7 @@
 #include "tscore/List.h"
 #include "tscore/ink_hrtime.h"
 
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 #include "tscpp/util/TsSharedMutex.h"
 
 #include "api/Metrics.h"

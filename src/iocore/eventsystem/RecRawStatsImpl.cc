@@ -21,7 +21,7 @@ Record statistics support (EThread implementation).
   limitations under the License.
  */
 
-#include "records/I_RecDefs.h"
+#include "records/RecDefs.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
 #include <string_view>

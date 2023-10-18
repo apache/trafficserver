@@ -24,7 +24,7 @@
 #include "P_DNS.h"
 #include "tscore/ink_inet.h"
 
-#include "I_SplitDNS.h"
+#include "SplitDNS.h"
 
 #define SRV_COST    (RRFIXEDSZ + 0)
 #define SRV_WEIGHT  (RRFIXEDSZ + 2)

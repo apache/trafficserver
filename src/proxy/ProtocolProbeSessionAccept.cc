@@ -22,11 +22,11 @@
  */
 
 #include "P_Net.h"
-#include "I_Machine.h"
+#include "Machine.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/HTTP2.h"
 #include "ProxyProtocol.h"
-#include "I_NetVConnection.h"
+#include "NetVConnection.h"
 #include "http/HttpConfig.h"
 
 static bool

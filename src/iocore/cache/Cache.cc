@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "I_Cache.h"
+#include "Cache.h"
 
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"

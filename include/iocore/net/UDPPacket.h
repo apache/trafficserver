@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "I_UDPConnection.h"
+#include "UDPConnection.h"
 
 struct UDPPacketInternal {
   // packet scheduling stuff: keep it a doubly linked list

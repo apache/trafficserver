@@ -42,7 +42,7 @@
 #include <libgen.h>
 
 #include "P_EventSystem.h"
-#include "I_Machine.h"
+#include "Machine.h"
 
 #include "tscore/BaseLogFile.h"
 #include "LogField.h"

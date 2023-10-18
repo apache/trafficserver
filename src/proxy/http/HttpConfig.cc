@@ -31,7 +31,7 @@
 #include "ConfigProcessor.h"
 #include "P_Net.h"
 #include "records/P_RecUtils.h"
-#include <records/I_RecHttp.h>
+#include <records/RecHttp.h>
 #include "HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \

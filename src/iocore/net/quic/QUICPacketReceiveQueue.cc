@@ -27,7 +27,7 @@
 #include "QUICIntUtil.h"
 
 #include "P_UDPConnection.h"
-#include "I_UDPPacket.h"
+#include "UDPPacket.h"
 
 static bool
 is_vn(QUICVersion v)

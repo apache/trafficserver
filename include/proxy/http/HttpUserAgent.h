@@ -26,10 +26,10 @@
 #include "HttpVCTable.h"
 #include "Milestones.h"
 
-#include "I_IOBuffer.h"
+#include "IOBuffer.h"
 #include "P_ALPNSupport.h"
 #include "ProxyTransaction.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include "TLSBasicSupport.h"
 #include "TLSSessionResumptionSupport.h"
 

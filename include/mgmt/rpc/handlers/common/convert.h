@@ -24,7 +24,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "records/I_RecCore.h"
+#include "records/RecCore.h"
 #include "records/P_RecCore.h"
 
 #include "shared/overridable_txn_vars.h"

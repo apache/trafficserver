@@ -36,7 +36,7 @@
 
 #include "swoc/MemSpan.h"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "SRV.h"
 
 // Event returned on a lookup

@@ -473,7 +473,7 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 }
 
 #if TS_USE_LINUX_IO_URING
-#include "I_IO_URING.h"
+#include "IO_URING.h"
 
 namespace
 {

@@ -24,9 +24,9 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_Continuation.h"
-#include "I_Processor.h"
-#include "I_Event.h"
+#include "Continuation.h"
+#include "Processor.h"
+#include "Event.h"
 #include <atomic>
 
 #ifdef TS_MAX_THREADS_IN_EACH_THREAD_TYPE

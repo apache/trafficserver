@@ -25,15 +25,15 @@
 
 #include "PreWarmAlgorithm.h"
 
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
+#include "EventSystem.h"
+#include "NetVConnection.h"
 
 // inknet
 #include "PreWarm.h"
 #include "SSLSNIConfig.h"
 #include "YamlSNIConfig.h"
 
-#include "I_HostDB.h"
+#include "HostDB.h"
 #include "NetTimeout.h"
 #include "Milestones.h"
 

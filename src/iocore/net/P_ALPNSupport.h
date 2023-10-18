@@ -23,7 +23,7 @@
  */
 
 #pragma once
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include <openssl/ssl.h>
 
 class SSLNextProtocolSet;

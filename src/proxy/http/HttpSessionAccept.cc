@@ -24,7 +24,7 @@
 #include "HttpSessionAccept.h"
 #include "IPAllow.h"
 #include "Http1ClientSession.h"
-#include "I_Machine.h"
+#include "Machine.h"
 
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)

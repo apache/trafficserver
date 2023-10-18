@@ -27,7 +27,7 @@
  ****************************************************************************/
 
 #include "P_EventSystem.h"
-#include "I_OneWayMultiTunnel.h"
+#include "OneWayMultiTunnel.h"
 
 // #define TEST
 

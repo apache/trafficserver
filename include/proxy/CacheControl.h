@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "ControlBase.h"
 #include "tscore/Result.h"
 

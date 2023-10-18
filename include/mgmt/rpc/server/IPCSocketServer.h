@@ -29,7 +29,7 @@
 
 #include "swoc/MemSpan.h"
 #include "tscpp/util/ts_bw.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #include "rpc/server/CommBase.h"
 #include "rpc/config/JsonRPCConfig.h"

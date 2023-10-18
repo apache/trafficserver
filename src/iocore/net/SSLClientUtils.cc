@@ -20,7 +20,7 @@
  */
 
 #include "tscore/ink_config.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"

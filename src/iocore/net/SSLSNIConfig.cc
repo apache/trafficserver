@@ -35,7 +35,7 @@
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_memory.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #include "tscpp/util/ts_ip.h"
 #include "tscpp/util/Convert.h"

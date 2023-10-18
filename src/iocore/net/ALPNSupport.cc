@@ -23,7 +23,7 @@
 
 #include "P_ALPNSupport.h"
 #include "P_SSLNextProtocolSet.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 
 int ALPNSupport::_ex_data_index = -1;
 

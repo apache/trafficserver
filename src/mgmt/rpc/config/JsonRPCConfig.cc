@@ -24,7 +24,7 @@
 #include "JsonRPCConfig.h"
 
 #include "tscore/Diags.h"
-#include "records/I_RecCore.h"
+#include "records/RecCore.h"
 
 #include "rpc/jsonrpc/JsonRPCManager.h"
 

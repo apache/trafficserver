@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "I_Continuation.h"
-#include "I_EThread.h"
+#include "Continuation.h"
+#include "EThread.h"
 #include "NetEvent.h"
 
 //

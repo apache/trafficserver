@@ -24,7 +24,7 @@
 #pragma once
 
 #include "HTTP.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "Show.h"
 
 Action *register_ShowRemapHitCount(Continuation *, HTTPHdr *);

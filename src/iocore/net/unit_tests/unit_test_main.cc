@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "I_EventSystem.h" // must be included before I_EThread.h
-#include "I_EThread.h"
-#include "I_Thread.h"
+#include "EventSystem.h" // must be included before I_EThread.h
+#include "EThread.h"
+#include "Thread.h"
 #include "P_SSLConfig.h"
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 #include "SSLAPIHooks.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"

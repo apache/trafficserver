@@ -24,7 +24,7 @@
 #include "P_Cache.h"
 
 #include "Show.h"
-#include "I_Tasks.h"
+#include "Tasks.h"
 #include "CacheControl.h"
 namespace
 {

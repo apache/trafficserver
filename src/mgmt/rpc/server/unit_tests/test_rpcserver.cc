@@ -41,8 +41,8 @@
 #include "rpc/server/IPCSocketServer.h"
 
 #include "shared/rpc/IPCSocketClient.h"
-#include "I_EventSystem.h"
-#include "tscore/I_Layout.h"
+#include "EventSystem.h"
+#include "tscore/Layout.h"
 #include "diags.i"
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)

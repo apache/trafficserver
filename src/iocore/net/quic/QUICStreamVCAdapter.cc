@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "I_VConnection.h"
+#include "VConnection.h"
 #include "QUICStreamVCAdapter.h"
 
 QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : VConnection(new_ProxyMutex()), QUICStreamAdapter(stream)

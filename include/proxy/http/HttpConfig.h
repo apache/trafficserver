@@ -50,7 +50,7 @@
 #include "tscpp/util/ts_bw.h"
 #include "HttpProxyAPIEnums.h"
 #include "ConfigProcessor.h"
-#include "records/I_RecProcess.h"
+#include "records/RecProcess.h"
 #include "HttpConnectionCount.h"
 #include "tscpp/util/ts_ip.h"
 #include "api/Metrics.h"

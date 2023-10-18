@@ -33,7 +33,7 @@
  ****************************************************************************/
 
 #include "P_EventSystem.h"
-#include "I_OneWayTunnel.h"
+#include "OneWayTunnel.h"
 
 // #define TEST
 

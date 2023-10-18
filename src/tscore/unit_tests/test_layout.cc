@@ -21,7 +21,7 @@
 
 #include "catch.hpp"
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 

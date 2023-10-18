@@ -22,8 +22,8 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "tscore/I_Layout.h"
-#include "I_Machine.h"
+#include "tscore/Layout.h"
+#include "Machine.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>

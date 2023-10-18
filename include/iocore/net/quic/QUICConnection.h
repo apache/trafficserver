@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
+#include "EventSystem.h"
+#include "NetVConnection.h"
 #include "QUICFrameHandler.h"
 
 class QUICApplication;

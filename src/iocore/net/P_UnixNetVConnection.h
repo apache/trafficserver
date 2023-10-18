@@ -32,7 +32,7 @@
 #pragma once
 
 #include "tscore/ink_sock.h"
-#include "I_NetVConnection.h"
+#include "NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"

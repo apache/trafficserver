@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include "engine.h"
 

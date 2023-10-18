@@ -25,7 +25,7 @@
 #include <string_view>
 
 #include <yaml-cpp/yaml.h>
-#include <tscore/I_Layout.h>
+#include <tscore/Layout.h>
 #include <swoc/BufferWriter.h>
 
 #include "IPCSocketClient.h"

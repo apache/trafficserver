@@ -24,7 +24,7 @@
 #include <string>
 
 #include "tscore/ink_config.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include "tscore/Diags.h"
 
 #include "P_QUICNetVConnection.h"

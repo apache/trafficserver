@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "I_DNSProcessor.h"
+#include "DNSProcessor.h"
 #include "HttpDebugNames.h"
 #include "P_EventSystem.h"
 #include "StatPages.h"
@@ -29,7 +29,7 @@
 #include "Transform.h"
 #include "HttpSM.h"
 #include <ts/apidefs.h>
-#include <I_Event.h>
+#include <Event.h>
 
 //----------------------------------------------------------------------------
 const char *

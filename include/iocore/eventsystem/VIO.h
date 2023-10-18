@@ -26,7 +26,7 @@
 #define I_VIO_h
 
 #if !defined(I_IOBuffer_h)
-#error "include I_IOBuffer.h"
+#error "include IOBuffer.h"
 #endif
 
 class Continuation;

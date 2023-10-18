@@ -36,8 +36,8 @@
 #pragma once
 
 #include "Plugin.h"
-#include "I_Net.h"
-#include "I_NetVConnection.h"
+#include "Net.h"
+#include "NetVConnection.h"
 #include "tscore/ink_atomic.h"
 
 class PluginVCCore;

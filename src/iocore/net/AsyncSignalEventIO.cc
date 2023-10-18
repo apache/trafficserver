@@ -23,7 +23,7 @@
  */
 
 #include "AsyncSignalEventIO.h"
-#include "I_EThread.h"
+#include "EThread.h"
 
 int
 AsyncSignalEventIO::start(EventLoop l, int fd, int events)

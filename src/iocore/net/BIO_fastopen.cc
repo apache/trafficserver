@@ -22,7 +22,7 @@
  */
 
 #include "P_Net.h"
-#include "I_SocketManager.h"
+#include "SocketManager.h"
 #include "tscore/ink_assert.h"
 
 #include "BIO_fastopen.h"

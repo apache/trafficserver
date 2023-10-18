@@ -27,7 +27,7 @@
 
 #include "HttpAPIHooks.h"
 
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 
 AppVersionInfo appVersionInfo;
 

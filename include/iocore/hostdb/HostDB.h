@@ -30,10 +30,10 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
-#include "I_Net.h"
+#include "EventSystem.h"
+#include "Net.h"
 
-#include "I_HostDBProcessor.h"
+#include "HostDBProcessor.h"
 
 // TS-1925: switch from MMH to MD5 hash; bumped to version 2
 // switch from MD5 to SHA256 hash; bumped to version 3

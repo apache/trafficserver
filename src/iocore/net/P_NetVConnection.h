@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "I_NetVConnection.h"
+#include "NetVConnection.h"
 #include "ProxyProtocol.h"
 
 inline sockaddr const *

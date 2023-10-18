@@ -33,7 +33,7 @@
 
 #include "tscore/ink_platform.h"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 #include "P_Thread.h"
 #include "P_VIO.h"

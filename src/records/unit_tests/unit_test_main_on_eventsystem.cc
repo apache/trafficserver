@@ -24,8 +24,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "I_EventSystem.h"
-#include "tscore/I_Layout.h"
+#include "EventSystem.h"
+#include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 
 #include "diags.i"

@@ -25,7 +25,7 @@
 
 #include <atomic>
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "P_UnixNetState.h"
 #include "EventIO.h"
 #include "ReadWriteEventIO.h"

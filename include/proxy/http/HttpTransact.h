@@ -27,7 +27,7 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
-#include "I_HostDB.h"
+#include "HostDB.h"
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "HttpTransactCache.h"
@@ -41,7 +41,7 @@
 #include "ts/parentselectdefs.h"
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include "ProxySession.h"
 #include "tscore/MgmtDefs.h"
 

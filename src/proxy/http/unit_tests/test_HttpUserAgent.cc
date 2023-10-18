@@ -26,7 +26,7 @@
 #include "Http1ClientTransaction.h"
 #include "HttpSessionAccept.h"
 #include "HttpUserAgent.h"
-#include "I_VConnection.h"
+#include "VConnection.h"
 #include "Milestones.h"
 #include "P_SSLNetVConnection.h"
 

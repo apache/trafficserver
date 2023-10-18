@@ -17,6 +17,17 @@
 
 add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
 add_library(ts::tsapi ALIAS tsapi)
+target_include_directories(
+  tsapi
+  PRIVATE # private headers
+          ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem
+          ${CMAKE_SOURCE_DIR}/src/iocore/net
+          ${CMAKE_SOURCE_DIR}/src/iocore/dns
+          ${CMAKE_SOURCE_DIR}/src/iocore/hostdb
+          ${CMAKE_SOURCE_DIR}/src/iocore/cache
+          ${CMAKE_SOURCE_DIR}/src/iocore/aio
+          ${CMAKE_SOURCE_DIR}/src/proxy/
+)
 target_link_libraries(tsapi PRIVATE ts::tscore)
 
 add_library(
@@ -32,10 +43,16 @@ add_library(
   DbgCtl.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
+target_include_directories(
+  tsapicore
+  PRIVATE # private headers
+          ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem ${CMAKE_SOURCE_DIR}/src/iocore/net
+          ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
+)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/mgmt)
+include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/mgmt)
 
 install(TARGETS tsapi)
 

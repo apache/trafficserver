@@ -25,8 +25,8 @@ limitations under the License.
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "I_EventSystem.h"
-#include "I_Thread.h"
+#include "EventSystem.h"
+#include "Thread.h"
 #include "tscore/Allocator.h"
 
 namespace

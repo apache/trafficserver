@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_Tasks.h"
+#include "Tasks.h"
 
 // Note that these should not be used for memory that wishes to retain
 // NUMA socket affinity. We'll potentially return these on an arbitrarily

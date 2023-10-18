@@ -26,7 +26,7 @@
 #include "ConfigProcessor.h"
 #include "ReverseProxy.h"
 #include "RemapConfig.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "HttpSM.h"
 

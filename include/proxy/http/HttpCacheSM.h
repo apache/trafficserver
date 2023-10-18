@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "I_Cache.h"
+#include "Cache.h"
 #include "ConfigProcessor.h"
 #include "URL.h"
 #include "HTTP.h"

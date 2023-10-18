@@ -24,7 +24,7 @@
 #include "P_SSLCertLookup.h"
 
 #include "tscore/ink_config.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Regex.h"
 #include "tscore/Trie.h"
@@ -37,7 +37,7 @@
 
 #include "tscpp/util/Convert.h"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"

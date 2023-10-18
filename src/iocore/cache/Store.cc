@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "P_Cache.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"

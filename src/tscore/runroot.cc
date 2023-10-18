@@ -26,7 +26,7 @@
 */
 
 #include "tscore/ink_error.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include <yaml-cpp/yaml.h>
 

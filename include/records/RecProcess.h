@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "I_RecCore.h"
-#include "I_EventSystem.h"
+#include "RecCore.h"
+#include "EventSystem.h"
 
 //-------------------------------------------------------------------------
 // RawStat Registration

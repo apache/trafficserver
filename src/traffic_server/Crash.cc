@@ -23,9 +23,9 @@
 
 #include "Crash.h"
 #include "swoc/swoc_file.h"
-#include "records/I_RecCore.h"
-#include "tscore/I_Layout.h"
-#include "tscore/I_Version.h"
+#include "records/RecCore.h"
+#include "tscore/Layout.h"
+#include "tscore/Version.h"
 #include "tscore/signals.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only

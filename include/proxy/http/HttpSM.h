@@ -35,7 +35,7 @@
 #include <optional>
 
 #include "tscore/ink_platform.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"
 #include "HttpUserAgent.h"

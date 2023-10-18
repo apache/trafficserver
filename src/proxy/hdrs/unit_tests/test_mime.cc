@@ -25,7 +25,7 @@
 
 #include "catch.hpp"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "MIME.h"
 
 TEST_CASE("Mime", "[proxy][mime]")

@@ -27,10 +27,10 @@
 #include <map>
 #include <set>
 
-#include "I_EventSystem.h"
-#include "I_Action.h"
+#include "EventSystem.h"
+#include "Action.h"
 #include "tscore/ink_hrtime.h"
-#include "I_VConnection.h"
+#include "VConnection.h"
 #include "QUICTypes.h"
 #include "QUICPacket.h"
 #include "QUICFrame.h"

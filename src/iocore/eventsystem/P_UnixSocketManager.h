@@ -33,7 +33,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
-#include "I_SocketManager.h"
+#include "SocketManager.h"
 
 //
 // These limits are currently disabled

@@ -20,7 +20,7 @@
   limitations under the License.
  */
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/ink_config.h"
 #include "P_Net.h"
 

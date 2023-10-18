@@ -32,8 +32,8 @@
 #include <openssl/evp.h>
 #endif
 
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
+#include "EventSystem.h"
+#include "NetVConnection.h"
 #include "QUICHandshakeProtocol.h"
 
 // TODO: fix size

@@ -22,7 +22,7 @@ limitations under the License.
 */
 
 #include "AIO_fault_injection.h"
-#include "I_Lock.h"
+#include "Lock.h"
 #include <mutex>
 
 AIOFaultInjection aioFaultInjection;

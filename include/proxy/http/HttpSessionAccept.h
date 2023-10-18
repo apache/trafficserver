@@ -24,13 +24,13 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "records/I_RecHttp.h"
-#include "I_EventSystem.h"
+#include "records/RecHttp.h"
+#include "EventSystem.h"
 #include "HttpConfig.h"
 #include "HTTP.h"
-#include "I_Net.h"
-#include "I_SessionAccept.h"
-#include <records/I_RecHttp.h>
+#include "Net.h"
+#include "SessionAccept.h"
+#include <records/RecHttp.h>
 
 namespace detail
 {

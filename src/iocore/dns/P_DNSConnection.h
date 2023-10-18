@@ -31,7 +31,7 @@
 #pragma once
 
 #include "DNSEventIO.h"
-#include "I_DNSProcessor.h"
+#include "DNSProcessor.h"
 
 //
 // Connection

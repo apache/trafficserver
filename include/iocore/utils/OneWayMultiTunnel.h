@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "I_OneWayTunnel.h"
+#include "OneWayTunnel.h"
 
 /** Maximum number which can be tunnelled too */
 #define ONE_WAY_MULTI_TUNNEL_LIMIT 4

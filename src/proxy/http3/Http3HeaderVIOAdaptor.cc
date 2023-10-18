@@ -24,7 +24,7 @@
 #include "Http3HeaderVIOAdaptor.h"
 #include "hdrs/HeaderValidator.h"
 
-#include "I_VIO.h"
+#include "VIO.h"
 #include "HTTP.h"
 
 Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)

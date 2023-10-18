@@ -23,7 +23,7 @@
 
 #include <sys/socket.h>
 
-#include "I_HostDBProcessor.h"
+#include "HostDBProcessor.h"
 
 namespace
 {

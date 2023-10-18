@@ -24,7 +24,7 @@
 #include "swoc/swoc_file.h"
 
 #include "P_Cache.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Regression.h"

@@ -167,7 +167,7 @@ ConfigUpdateCbTable::invoke(char const *p)
 {
 }
 
-#include "I_Machine.h"
+#include "Machine.h"
 
 static bool StubMachineInit = []() -> bool {
   Machine::init("localhost", nullptr);

@@ -26,10 +26,10 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Diags.h"
 
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 #include "Http3Config.h"
 
 #define TEST_THREADS 1

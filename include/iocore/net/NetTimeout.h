@@ -26,7 +26,7 @@
 #include "tscore/List.h"
 #include "tscore/ink_hrtime.h"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 /**
   NetTimeout - handle active & inactive timeout

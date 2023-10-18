@@ -26,7 +26,7 @@
 #include <tscore/TSSystemState.h>
 
 #include "tscore/ink_align.h"
-#include "I_EventProcessor.h"
+#include "EventProcessor.h"
 
 const int LOAD_BALANCE_INTERVAL = 1;
 

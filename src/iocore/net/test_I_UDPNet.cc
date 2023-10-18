@@ -25,15 +25,15 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/TestBox.h"
 
-#include "I_EventSystem.h"
-#include "I_Net.h"
-#include "I_NetVConnection.h"
-#include "I_UDPNet.h"
-#include "I_UDPPacket.h"
-#include "I_UDPConnection.h"
+#include "EventSystem.h"
+#include "Net.h"
+#include "NetVConnection.h"
+#include "UDPNet.h"
+#include "UDPPacket.h"
+#include "UDPConnection.h"
 #include "P_UDPConnection.h"
 
 #include "diags.i"

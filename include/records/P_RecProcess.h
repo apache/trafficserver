@@ -29,7 +29,7 @@
 // file.
 #include "P_EventSystem.h"
 
-#include "I_RecProcess.h"
+#include "RecProcess.h"
 #include "P_RecDefs.h"
 
 #include <functional>

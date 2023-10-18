@@ -25,7 +25,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "RemapProcessor.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"

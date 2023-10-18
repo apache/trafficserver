@@ -37,8 +37,8 @@
 #include "records/P_RecProcess.h"
 
 // Needs LibRecordsConfigInit()
-#include "records/I_RecordsConfig.h"
-#include "I_Machine.h"
+#include "records/RecordsConfig.h"
+#include "Machine.h"
 #include "RecProcess.h"
 
 #define LOG_FILENAME_SIZE 255

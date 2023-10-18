@@ -25,18 +25,18 @@
 
 #include "NetVCOptions.h"
 #include "ProxyProtocol.h"
-#include "I_Net.h"
+#include "Net.h"
 
 #include <string_view>
 #include <optional>
 
 #include "tscore/ink_inet.h"
-#include "I_Action.h"
-#include "I_VConnection.h"
-#include "I_Event.h"
+#include "Action.h"
+#include "VConnection.h"
+#include "Event.h"
 #include "tscore/List.h"
-#include "I_IOBuffer.h"
-#include "I_Socks.h"
+#include "IOBuffer.h"
+#include "Socks.h"
 #include "ts/apidefs.h"
 #include "YamlSNIConfig.h"
 #include "swoc/TextView.h"

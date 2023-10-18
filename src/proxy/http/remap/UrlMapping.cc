@@ -24,7 +24,7 @@
 
 #include "tscore/ink_defs.h"
 #include "UrlMapping.h"
-#include "records/I_RecCore.h"
+#include "records/RecCore.h"
 #include "tscore/ink_cap.h"
 
 /**

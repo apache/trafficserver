@@ -36,7 +36,7 @@
 #include "tscore/TSSystemState.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
-#include "I_Machine.h"
+#include "Machine.h"
 #include "HTTP.h"
 
 #include "LogAccess.h"

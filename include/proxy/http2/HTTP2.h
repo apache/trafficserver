@@ -27,7 +27,7 @@
 #include "tscore/ink_memory.h"
 #include "HPACK.h"
 #include "MIME.h"
-#include "records/I_RecDefs.h"
+#include "records/RecDefs.h"
 
 #include "api/Metrics.h"
 

@@ -44,15 +44,21 @@ endif()
 
 target_include_directories(
   inkcache
-  PUBLIC ${CMAKE_SOURCE_DIR}/iocore/cache
-  PRIVATE ${CMAKE_SOURCE_DIR}/iocore/io_uring
-          ${CMAKE_SOURCE_DIR}/iocore/dns
-          ${CMAKE_SOURCE_DIR}/iocore/net
-          ${CMAKE_SOURCE_DIR}/iocore/hostdb
-          ${CMAKE_SOURCE_DIR}/proxy/http
-          ${CMAKE_SOURCE_DIR}/proxy/http/remap
-          ${CMAKE_SOURCE_DIR}/proxy/hdrs
+  PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/cache
+  PRIVATE ${CMAKE_SOURCE_DIR}/include/iocore/io_uring
+          ${CMAKE_SOURCE_DIR}/include/iocore/dns
+          ${CMAKE_SOURCE_DIR}/include/iocore/net
+          ${CMAKE_SOURCE_DIR}/include/iocore/hostdb
+          ${CMAKE_SOURCE_DIR}/include/proxy/http
+          ${CMAKE_SOURCE_DIR}/include/proxy/http/remap
+          ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
           ${CMAKE_SOURCE_DIR}/lib
+          # private headers
+          ${CMAKE_SOURCE_DIR}/src/iocore/cache
+          ${CMAKE_SOURCE_DIR}/src/iocore/aio
+          ${CMAKE_SOURCE_DIR}/src/iocore/net
+          ${CMAKE_SOURCE_DIR}/src/iocore/dns
+          ${CMAKE_SOURCE_DIR}/src/proxy
 )
 
 target_link_libraries(

@@ -24,7 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_file.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "DiagsConfig.h"
 #include "records/P_RecCore.h"

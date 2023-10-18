@@ -26,9 +26,9 @@
 #include <cstring>
 
 #include "P_EventSystem.h"
-#include "I_Cache.h"
-#include "I_Net.h"
-#include "I_HostDB.h"
+#include "Cache.h"
+#include "Net.h"
+#include "HostDB.h"
 #include "P_RefCountCache.h"
 
 /*-------------------------------------------------------------------------

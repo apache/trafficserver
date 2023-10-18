@@ -89,7 +89,7 @@ extern NetStatsBlock net_rsb;
 
 #include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
-#include "I_Net.h"
+#include "Net.h"
 #include "P_NetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_UnixNetProcessor.h"

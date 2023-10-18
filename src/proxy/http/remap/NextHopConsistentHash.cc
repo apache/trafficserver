@@ -24,7 +24,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "HttpSM.h"
-#include "I_Machine.h"
+#include "Machine.h"
 #include "tscpp/util/YamlCfg.h"
 #include "NextHopConsistentHash.h"
 

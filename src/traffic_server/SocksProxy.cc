@@ -29,7 +29,7 @@
 */
 #include "tscore/ink_platform.h"
 #include "P_Net.h"
-#include "I_OneWayTunnel.h"
+#include "OneWayTunnel.h"
 #include "HttpSessionAccept.h"
 
 static DbgCtl dbg_ctl_SocksProxy("SocksProxy");

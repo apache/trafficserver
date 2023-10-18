@@ -27,12 +27,12 @@
 
 #include "catch.hpp"
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Diags.h"
 #include "tscore/TSSystemState.h"
 
-#include "records/I_RecordsConfig.h"
-#include "records/I_RecProcess.h"
+#include "records/RecordsConfig.h"
+#include "records/RecProcess.h"
 #include "P_AIO.h"
 #include "P_CacheDisk.h"
 #include "P_Net.h"

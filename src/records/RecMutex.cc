@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_config.h"
-#include "records/I_RecMutex.h"
+#include "records/RecMutex.h"
 
 void
 rec_mutex_init(RecMutex *m, const char *)

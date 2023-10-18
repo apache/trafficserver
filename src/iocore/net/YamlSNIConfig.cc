@@ -48,8 +48,8 @@
 #include "tscore/Errata.h"
 #include "tscore/ink_assert.h"
 
-#include "records/I_RecCore.h"
-#include "records/I_RecHttp.h"
+#include "records/RecCore.h"
+#include "records/RecHttp.h"
 
 namespace
 {

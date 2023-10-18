@@ -23,8 +23,8 @@
  */
 
 #include "NetVCOptions.h"
-#include "I_Net.h"
-#include "I_Socks.h"
+#include "Net.h"
+#include "Socks.h"
 
 void
 NetVCOptions::reset()

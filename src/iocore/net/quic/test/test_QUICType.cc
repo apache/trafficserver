@@ -24,7 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICTypes.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "tscore/ink_hrtime.h"
 #include <memory>
 

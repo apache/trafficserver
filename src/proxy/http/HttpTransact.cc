@@ -48,7 +48,7 @@
 #include "HttpBodyFactory.h"
 #include "StatPages.h"
 #include "../IPAllow.h"
-#include "I_Machine.h"
+#include "Machine.h"
 
 namespace
 {

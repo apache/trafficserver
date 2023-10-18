@@ -35,7 +35,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_Event.h"
+#include "Event.h"
 struct ProtectedQueue {
   void enqueue(Event *e);
   void signal();

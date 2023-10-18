@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "tscore/I_Version.h"
-#include "I_EventSystem.h"
+#include "tscore/Version.h"
+#include "EventSystem.h"
 #include "tscore/ink_inet.h"
 #include "NetVCOptions.h"
 
@@ -107,5 +107,5 @@ public:
 extern UDPNetProcessor &udpNet;
 extern EventType ET_UDP;
 
-#include "I_UDPPacket.h"
-#include "I_UDPConnection.h"
+#include "UDPPacket.h"
+#include "UDPConnection.h"

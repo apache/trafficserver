@@ -53,8 +53,8 @@ benchmark_LogObject_LDADD = \
 #include "LogConfig.h"
 #include "Log.h"
 #include "DiagsConfig.h"
-#include "records/I_RecLocal.h"
-#include "tscore/I_Layout.h"
+#include "records/RecLocal.h"
+#include "tscore/Layout.h"
 
 #include <thread>
 #include <condition_variable>

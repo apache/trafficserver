@@ -27,7 +27,7 @@
 #include "tscore/Allocator.h"
 #include "tscore/List.h"
 #include "tscore/Ptr.h"
-#include "I_IOBuffer.h"
+#include "IOBuffer.h"
 #include <vector>
 #include <iterator>
 #include <set>

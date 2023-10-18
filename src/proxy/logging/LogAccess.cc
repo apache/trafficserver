@@ -26,7 +26,7 @@
 
 #include "http/HttpSM.h"
 #include "MIME.h"
-#include "I_Machine.h"
+#include "Machine.h"
 #include "LogFormat.h"
 #include "LogBuffer.h"
 #include "tscore/Encoding.h"

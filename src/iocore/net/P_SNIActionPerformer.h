@@ -33,7 +33,7 @@
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
 #include "SNIActionPerformer.h"

@@ -27,7 +27,7 @@
 #include "swoc/swoc_ip.h"
 
 #include "P_EventSystem.h"
-#include "I_Socks.h"
+#include "Socks.h"
 #include "tscpp/util/ts_errata.h"
 
 #include "ParentSelection.h"

@@ -25,7 +25,7 @@
 #include "tscpp/util/ts_bw_format.h"
 
 #include "P_HostDB.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "Show.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/MgmtDefs.h" // MgmtInt, MgmtFloat, etc

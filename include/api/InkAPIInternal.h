@@ -23,14 +23,14 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 #include "URL.h"
-#include "I_Net.h"
+#include "Net.h"
 #include "HTTP.h"
 #include "tscore/List.h"
 #include "ConfigProcessor.h"
-#include "I_Cache.h"
-#include "I_Tasks.h"
+#include "Cache.h"
+#include "Tasks.h"
 #include "Plugin.h"
 
 #include "api/APIHook.h"

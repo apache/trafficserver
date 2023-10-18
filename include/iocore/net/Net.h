@@ -40,8 +40,8 @@
  */
 #pragma once
 
-#include "tscore/I_Version.h"
-#include "I_EventSystem.h"
+#include "tscore/Version.h"
+#include "EventSystem.h"
 #include <netinet/in.h>
 
 #ifndef UIO_MAXIOV

@@ -38,7 +38,9 @@ add_library(
 )
 add_library(ts::inkevent ALIAS inkevent)
 
-target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(
+  inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/include/iocore/eventsystem"
+)
 
 target_link_libraries(
   inkevent

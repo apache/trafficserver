@@ -26,7 +26,7 @@
 #include "RemapConfig.h"
 #include "UrlRewrite.h"
 #include "ReverseProxy.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "HTTP.h"
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"

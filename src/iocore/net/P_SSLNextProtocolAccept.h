@@ -27,8 +27,8 @@
 #include "P_EventSystem.h"
 #include "P_UnixNet.h"
 #include "P_SSLNextProtocolSet.h"
-#include "I_IOBuffer.h"
-#include "records/I_RecHttp.h"
+#include "IOBuffer.h"
+#include "records/RecHttp.h"
 
 class SSLNextProtocolAccept : public SessionAccept
 {

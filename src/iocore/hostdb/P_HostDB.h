@@ -35,7 +35,7 @@
 #include "P_SplitDNS.h"
 #include "P_EventSystem.h"
 
-#include "I_HostDB.h"
+#include "HostDB.h"
 
 // HostDB files
 #include "P_DNS.h"

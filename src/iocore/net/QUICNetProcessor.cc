@@ -20,10 +20,10 @@
  */
 
 #include "tscore/ink_config.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #include "P_Net.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 
 #include "P_QUICNetProcessor.h"
 #include "P_QUICNet.h"

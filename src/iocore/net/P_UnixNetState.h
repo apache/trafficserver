@@ -37,7 +37,7 @@
 #pragma once
 
 #include "tscore/List.h"
-#include "I_VIO.h"
+#include "VIO.h"
 
 class Event;
 class NetEvent;

@@ -19,8 +19,14 @@ add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
 add_library(ts::inkutils ALIAS inkutils)
 
 target_include_directories(
-  inkutils PRIVATE ${CMAKE_SOURCE_DIR}/iocore/dns ${CMAKE_SOURCE_DIR}/iocore/net ${CMAKE_SOURCE_DIR}/iocore/hostdb
-                   ${CMAKE_SOURCE_DIR}/proxy/http ${CMAKE_SOURCE_DIR}/proxy/hdrs
+  inkutils
+  PRIVATE ${CMAKE_SOURCE_DIR}/include/iocore/utils
+          ${CMAKE_SOURCE_DIR}/include/iocore/dns
+          ${CMAKE_SOURCE_DIR}/include/iocore/net
+          ${CMAKE_SOURCE_DIR}/include/iocore/hostdb
+          ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem
+          ${CMAKE_SOURCE_DIR}/include/proxy/http
+          ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
 )
 
 target_link_libraries(inkutils PUBLIC ts::inkevent ts::tscore)

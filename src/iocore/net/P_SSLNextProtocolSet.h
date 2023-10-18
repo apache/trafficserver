@@ -24,8 +24,8 @@
 #pragma once
 
 #include "tscore/List.h"
-#include "I_Net.h"
-#include "records/I_RecHttp.h"
+#include "Net.h"
+#include "records/RecHttp.h"
 
 class Continuation;
 

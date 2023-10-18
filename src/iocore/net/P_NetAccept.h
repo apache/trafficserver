@@ -38,7 +38,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "I_NetProcessor.h"
+#include "NetProcessor.h"
 #include "NetAcceptEventIO.h"
 #include <vector>
 #include "tscore/ink_platform.h"

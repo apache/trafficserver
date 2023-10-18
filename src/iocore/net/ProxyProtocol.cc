@@ -23,8 +23,8 @@
 
 #include "ProxyProtocol.h"
 
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
+#include "EventSystem.h"
+#include "NetVConnection.h"
 
 #include "tscpp/util/ts_bw.h"
 #include "tscore/ink_assert.h"

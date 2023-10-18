@@ -32,7 +32,7 @@
 #include "swoc/swoc_file.h"
 #include <tscpp/util/TsSharedMutex.h>
 
-#include "I_HostDBProcessor.h"
+#include "HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
 #include "api/Metrics.h"

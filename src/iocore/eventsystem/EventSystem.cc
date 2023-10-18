@@ -30,7 +30,7 @@
 
 #include "P_EventSystem.h"
 #include "tscore/hugepages.h"
-#include "records/I_RecCore.h"
+#include "records/RecCore.h"
 
 void
 ink_event_system_init(ts::ModuleVersion v)

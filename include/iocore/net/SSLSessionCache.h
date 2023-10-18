@@ -24,7 +24,7 @@
 #include "tscore/List.h"
 #include "tscore/ink_mutex.h"
 #include "P_EventSystem.h"
-#include "records/I_RecProcess.h"
+#include "records/RecProcess.h"
 #include "tscore/ink_platform.h"
 #include "P_SSLUtils.h"
 #include "ts/apidefs.h"

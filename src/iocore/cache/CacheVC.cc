@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "I_Cache.h"
-#include "I_CacheDefs.h"
+#include "Cache.h"
+#include "CacheDefs.h"
 #include "P_CacheDisk.h"
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
@@ -36,7 +36,7 @@
 #include "MIME.h"
 
 // aio
-#include "I_AIO.h"
+#include "AIO.h"
 
 // tsapi
 #if DEBUG
@@ -44,18 +44,18 @@
 #endif
 
 // inkevent
-#include "I_Continuation.h"
-#include "I_EThread.h"
-#include "I_Event.h"
-#include "I_IOBuffer.h"
-#include "I_Lock.h"
-#include "I_VIO.h"
+#include "Continuation.h"
+#include "EThread.h"
+#include "Event.h"
+#include "IOBuffer.h"
+#include "Lock.h"
+#include "VIO.h"
 
 // tscppapi
 #include "tscpp/api/HttpStatus.h"
 
 // tscore
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"

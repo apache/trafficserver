@@ -27,9 +27,9 @@
 
 #include "swoc/IntrusiveDList.h"
 
-#include "I_EventSystem.h"
-#include "I_Event.h"
-#include "I_IOBuffer.h"
+#include "EventSystem.h"
+#include "Event.h"
+#include "IOBuffer.h"
 #include "tscore/Arena.h"
 #include "MIME.h"
 #include "HTTP.h"

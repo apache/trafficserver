@@ -22,7 +22,7 @@
  */
 
 #pragma once
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 TS_INLINE const char *
 get_vc_event_name(int event)

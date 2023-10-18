@@ -31,7 +31,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_UDPNet.h"
+#include "UDPNet.h"
 #include "PollCont.h"
 
 // added by YTS Team, yamsat

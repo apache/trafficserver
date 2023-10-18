@@ -23,8 +23,8 @@
  */
 #pragma once
 #include "tscore/ink_inet.h"
-#include "I_EventSystem.h"
-#include "I_Event.h"
+#include "EventSystem.h"
+#include "Event.h"
 #include "YamlSNIConfig.h"
 
 #include <cstdint>

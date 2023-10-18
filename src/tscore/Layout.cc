@@ -26,7 +26,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/runroot.h"
 
 #include <unordered_map>

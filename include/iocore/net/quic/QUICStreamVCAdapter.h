@@ -23,7 +23,7 @@
 
 #pragma once
 #include "QUICStreamAdapter.h"
-#include "I_IOBuffer.h"
+#include "IOBuffer.h"
 
 class QUICStreamVCAdapter : public VConnection, public QUICStreamAdapter
 {

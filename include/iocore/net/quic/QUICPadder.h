@@ -27,7 +27,7 @@
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
 
-#include "I_Lock.h"
+#include "Lock.h"
 
 class QUICPadder : public QUICFrameOnceGenerator
 {

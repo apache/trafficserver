@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "I_RecCore.h"
+#include "RecCore.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfigRegister

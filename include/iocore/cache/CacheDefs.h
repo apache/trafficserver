@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "I_Event.h"
-#include "I_VConnection.h"
-#include "tscore/I_Version.h"
+#include "Event.h"
+#include "VConnection.h"
+#include "tscore/Version.h"
 #include "tscore/CryptoHash.h"
 
 #define CACHE_INIT_FAILED  -1

@@ -33,7 +33,7 @@
 #include "ConfigProcessor.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
-#include "records/I_RecProcess.h"
+#include "records/RecProcess.h"
 #include "tscore/ConsistentHash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"

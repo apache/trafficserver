@@ -32,7 +32,7 @@
 #include "records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)

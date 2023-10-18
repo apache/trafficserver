@@ -41,7 +41,7 @@
 #include "logging/Log.h"
 #include "logging/LogAccess.h"
 #include "HttpCompat.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 
 //////////////////////////////////////////////////////////////////////
 // The HttpBodyFactory creates HTTP response page bodies, supported //

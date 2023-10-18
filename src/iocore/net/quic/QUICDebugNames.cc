@@ -22,7 +22,7 @@
  */
 
 #include "QUICDebugNames.h"
-#include "I_VConnection.h"
+#include "VConnection.h"
 
 const char *
 QUICDebugNames::packet_type(QUICPacketType type)

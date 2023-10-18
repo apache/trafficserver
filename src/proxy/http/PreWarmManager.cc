@@ -27,7 +27,7 @@
 #include "HttpConfig.h"
 #include "SSLSNIConfig.h"
 #include "P_VConnection.h"
-#include "I_NetProcessor.h"
+#include "NetProcessor.h"
 #include "PreWarm.h"
 
 #include "api/Metrics.h"

@@ -23,10 +23,10 @@
 
 #include "tscore/ink_string.h"
 #include "tscore/ink_args.h"
-#include "tscore/I_Layout.h"
-#include "tscore/I_Version.h"
+#include "tscore/Layout.h"
+#include "tscore/Version.h"
 
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"

@@ -18,7 +18,7 @@
 add_executable(
   test_http
   main.cc
-  "${PROJECT_SOURCE_DIR}/iocore/cache/test/stub.cc"
+  "${PROJECT_SOURCE_DIR}/src/iocore/cache/test/stub.cc"
   test_error_page_selection.cc
   test_ForwardedConfig.cc
   test_HttpTransact.cc
@@ -27,7 +27,12 @@ add_executable(
 )
 
 # transitive
-target_include_directories(test_http PRIVATE "${PROJECT_BINARY_DIR}/include/ts")
+target_include_directories(
+  test_http
+  PRIVATE "${PROJECT_BINARY_DIR}/include/ts"
+          # private headers
+          ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
+)
 
 target_link_libraries(
   test_http

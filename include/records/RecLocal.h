@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "I_RecCore.h"
+#include "RecCore.h"
 
 class FileManager;
 

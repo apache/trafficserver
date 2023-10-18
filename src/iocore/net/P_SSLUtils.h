@@ -33,7 +33,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-#include "records/I_RecCore.h"
+#include "records/RecCore.h"
 #include "P_SSLCertLookup.h"
 
 #include <set>

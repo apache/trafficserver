@@ -35,8 +35,8 @@
 #include "plugin_testing_common.h"
 #include "../PluginFactory.h"
 #include "../PluginDso.h"
-#include "I_EventSystem.h"
-#include "tscore/I_Layout.h"
+#include "EventSystem.h"
+#include "tscore/Layout.h"
 #include "diags.i"
 
 #define TEST_THREADS 2

@@ -27,7 +27,7 @@
 #include "tscpp/util/PostScript.h"
 
 #include "HttpTransact.h"
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 
 #include "catch.hpp"
 

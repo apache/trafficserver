@@ -27,7 +27,7 @@
 
 #include "tscore/Diags.h"
 
-#include "I_RecDefs.h"
+#include "RecDefs.h"
 #include "swoc/MemSpan.h"
 
 struct RecRecord;

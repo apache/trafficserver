@@ -45,7 +45,7 @@
 namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 #include "Plugin.h"
 

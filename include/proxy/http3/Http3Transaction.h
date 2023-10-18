@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "I_VConnection.h"
+#include "VConnection.h"
 #include "ProxyTransaction.h"
 #include "quic/QUICStreamVCAdapter.h"
 #include "Http3FrameDispatcher.h"

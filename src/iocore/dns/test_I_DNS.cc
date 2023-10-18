@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "I_DNS.h"
+#include "DNS.h"
 
 #include "diags.i"
 

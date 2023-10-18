@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
-#include "I_IOBuffer.h"
+#include "EventSystem.h"
+#include "IOBuffer.h"
 #include "QUICTypes.h"
 #include "QUICConnection.h"
 #include "QUICStream.h"

@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "I_Continuation.h"
-#include "I_Net.h"
+#include "Continuation.h"
+#include "Net.h"
 
 class NetHandler;
 struct PollDescriptor;

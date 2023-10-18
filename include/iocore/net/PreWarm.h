@@ -27,7 +27,7 @@
 #include "SSLTypes.h"
 
 // records
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 
 #include <netinet/in.h>
 

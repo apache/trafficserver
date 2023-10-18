@@ -28,11 +28,11 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/ink_cap.h"
 #include "tscore/ink_mutex.h"
 #include "tscore/Filenames.h"
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 
 #include "P_Net.h"
 #include "api/InkAPIInternal.h"

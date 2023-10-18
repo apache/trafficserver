@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "I_Net.h"
+#include "Net.h"
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
 // it can generically apply to all protocol implementations.

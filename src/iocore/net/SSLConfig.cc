@@ -40,8 +40,8 @@
 #include "api/InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
 
 #include "tscore/ink_platform.h"
-#include "tscore/I_Layout.h"
-#include "records/I_RecHttp.h"
+#include "tscore/Layout.h"
+#include "records/RecHttp.h"
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"

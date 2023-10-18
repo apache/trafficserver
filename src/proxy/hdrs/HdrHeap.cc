@@ -35,7 +35,7 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "I_EventSystem.h"
+#include "EventSystem.h"
 
 static constexpr size_t MAX_LOST_STR_SPACE        = 1024;
 static constexpr uint32_t MAX_HDR_HEAP_OBJ_LENGTH = (1 << 20) - 1; ///< m_length is 20 bit

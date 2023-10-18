@@ -31,7 +31,7 @@
 #include "MIME.h"
 #include "HttpTransactCache.h"
 
-#include "I_Cache.h"
+#include "Cache.h"
 #include "P_CacheStats.h"
 #include "P_CacheDisk.h"
 #include "P_CacheDir.h"
