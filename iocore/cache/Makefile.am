@@ -34,6 +34,8 @@ libinkcache_a_SOURCES = \
 	Cache.cc \
 	CacheDir.cc \
 	CacheDisk.cc \
+	CacheEvacuateDocVC.cc \
+	CacheEvacuateDocVC.h \
 	CacheHosting.cc \
 	CacheHttp.cc \
 	CachePages.cc \

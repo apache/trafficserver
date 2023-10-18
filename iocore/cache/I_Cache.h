@@ -49,6 +49,7 @@ static constexpr ts::ModuleVersion CACHE_MODULE_VERSION(1, 0);
 enum { RAM_HIT_COMPRESS_NONE = 1, RAM_HIT_COMPRESS_FASTLZ, RAM_HIT_COMPRESS_LIBZ, RAM_HIT_COMPRESS_LIBLZMA, RAM_HIT_LAST_ENTRY };
 
 struct CacheVC;
+class CacheEvacuateDocVC;
 struct CacheDisk;
 struct OverridableHttpConfigParams;
 class URL;

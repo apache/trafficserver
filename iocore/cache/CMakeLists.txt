@@ -20,6 +20,7 @@ add_library(
   Cache.cc
   CacheDir.cc
   CacheDisk.cc
+  CacheEvacuateDocVC.cc
   CacheHosting.cc
   CacheHttp.cc
   CachePages.cc

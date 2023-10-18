@@ -32,6 +32,7 @@
 #include "api/Metrics.h"
 
 #include "CacheVC.h"
+#include "CacheEvacuateDocVC.h"
 
 using ts::Metrics;
 
@@ -152,7 +153,7 @@ extern CacheSync *cacheDirSync;
 // Function Prototypes
 int cache_write(CacheVC *, CacheHTTPInfoVector *);
 int get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
-CacheVC *new_DocEvacuator(int nbytes, Vol *vol);
+CacheEvacuateDocVC *new_DocEvacuator(int nbytes, Vol *vol);
 
 // inline Functions
 

@@ -91,6 +91,7 @@ CacheProcessor cacheProcessor;
 Vol **gvol             = nullptr;
 std::atomic<int> gnvol = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
+ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
