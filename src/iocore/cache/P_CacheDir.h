@@ -36,6 +36,11 @@ struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
 
+// #define LOOP_CHECK_MODE 1
+#ifdef LOOP_CHECK_MODE
+#define DIR_LOOP_THRESHOLD 1000
+#endif
+
 /*
   Directory layout
 */
@@ -281,6 +286,10 @@ int dir_segment_accounted(int s, Vol *vol, int offby = 0, int *free = nullptr, i
 uint64_t dir_entries_used(Vol *vol);
 void sync_cache_dir_on_shutdown();
 int dir_freelist_length(Vol *vol, int s);
+
+int dir_bucket_length(Dir *b, int s, Vol *vol);
+int dir_freelist_length(Vol *vol, int s);
+void dir_clean_segment(int s, Vol *vol);
 
 // Inline Functions
 
