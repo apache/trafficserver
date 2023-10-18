@@ -198,6 +198,26 @@ set(TS_USE_DIAGS
 )
 option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
 
+# Fetch dependencies
+include(FetchContent)
+set(YAML_CPP_CLANG_FORMAT_EXE OFF CACHE INTERNAL "Turn off format target for yaml-cpp")
+set(YAML_CPP_INSTALL ON CACHE INTERNAL "Turn on install targets")
+set(YAML_CPP_BUILD_TESTS OFF CACHE INTERNAL "Turn off yaml-cpp testing")
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
+  GIT_TAG 0.8.0
+  FIND_PACKAGE_ARGS 0.8.0
+)
+
+FetchContent_Declare(
+  libswoc
+  GIT_REPOSITORY https://github.com/SolidWallOfCode/libswoc.git
+  GIT_TAG 1.5.5
+)
+
+FetchContent_MakeAvailable(yaml-cpp libswoc)
+
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
 set(TS_HAS_WCCP ${ENABLE_WCCP})
@@ -344,12 +364,6 @@ set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})
 set(HAVE_NCURSES_H ${CURSES_HAVE_NCURSES_H})
 set(HAVE_NCURSES_CURSES_H ${CURSES_HAVE_NCURSES_CURSES_H})
 set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
-
-# find yaml-cpp if requested
-if(EXTERNAL_YAML_CPP)
-  message(STATUS "Looking for external yaml-cpp")
-  find_package(yaml-cpp "0.8.0" REQUIRED)
-endif()
 
 # curl is used in traffic_top
 find_package(CURL)
@@ -549,12 +563,7 @@ add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override>")
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
 
-if(NOT EXTERNAL_YAML_CPP)
-  include(subproject_version)
-  subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
-else()
-  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
-endif()
+get_target_property(YAMLCPP_LIB_VERSION yaml-cpp VERSION)
 
 set(rel_cachedir var/trafficserver)
 
