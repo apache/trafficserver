@@ -520,7 +520,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
 
   else {
     if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
-      if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
+      if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) ||
+          (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT)) {
         log_code = SQUID_LOG_TCP_IMS_HIT;
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
