@@ -34,6 +34,11 @@ add_library(
 )
 add_library(ts::quic ALIAS quic)
 
-target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(
+  quic
+  PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/net/quic
+  # private headers
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/iocore/net
+)
 
 target_link_libraries(quic PUBLIC ts::inkevent ts::inknet ts::tscore OpenSSL::Crypto OpenSSL::SSL quiche::quiche)

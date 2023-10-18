@@ -89,6 +89,7 @@ if(TS_USE_QUIC)
             QUICPacketHandler_quiche.cc
             QUICSupport.cc
   )
+  target_include_directories(inknet PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/net/quic)
 
   target_link_libraries(inknet PUBLIC quiche::quiche ts::quic)
 endif()
