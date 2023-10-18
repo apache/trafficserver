@@ -28,31 +28,35 @@ ConfigUpdateCbTable::ConfigUpdateCbTable() {}
 ConfigUpdateCbTable::~ConfigUpdateCbTable() {}
 
 void
-ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name)
+ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name, const char *file_name)
 {
-  if (contp && name) {
-    cb_table.emplace(name, contp);
+  std::filesystem::file_time_type timestamp;
+  std::string fname = file_name;
+
+  ink_assert(contp != nullptr);
+  ink_assert(name != nullptr);
+
+  if (fname.size() > 0) {
+    timestamp = std::filesystem::last_write_time(fname);
   }
+  cb_table.emplace(name, std::make_tuple(contp, fname, timestamp));
 }
 
 void
-ConfigUpdateCbTable::invoke(const char *name)
+ConfigUpdateCbTable::invoke()
 {
-  INKContInternal *contp;
+  for (auto &&it : cb_table) {
+    auto &[contp, file_name, timestamp] = it.second;
 
-  if (name != nullptr) {
-    if (strcmp(name, "*") == 0) {
-      for (auto &&it : cb_table) {
-        contp = it.second;
-        ink_assert(contp != nullptr);
+    if (file_name.size() > 0) {
+      auto newtime = std::filesystem::last_write_time(file_name);
+
+      if (newtime > timestamp) {
+        timestamp = newtime;
         invoke(contp);
       }
     } else {
-      if (auto it = cb_table.find(name); it != cb_table.end()) {
-        contp = it->second;
-        ink_assert(contp != nullptr);
-        invoke(contp);
-      }
+      invoke(contp);
     }
   }
 }

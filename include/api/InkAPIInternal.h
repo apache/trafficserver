@@ -41,6 +41,7 @@
 #include "ts/experimental.h"
 
 #include <typeinfo>
+#include <filesystem>
 
 /* Some defines that might be candidates for configurable settings later.
  */
@@ -143,12 +144,12 @@ public:
   ConfigUpdateCbTable();
   ~ConfigUpdateCbTable();
 
-  void insert(INKContInternal *contp, const char *name);
-  void invoke(const char *name);
+  void insert(INKContInternal *contp, const char *name, const char *file_name = nullptr);
+  void invoke();
   void invoke(INKContInternal *contp);
 
 private:
-  std::unordered_map<std::string, INKContInternal *> cb_table;
+  std::unordered_map<std::string, std::tuple<INKContInternal *, std::string, std::filesystem::file_time_type>> cb_table;
 };
 
 #include "HttpAPIHooks.h"

@@ -1255,7 +1255,7 @@ namespace c
 
   /* --------------------------------------------------------------------------
      Management */
-  void TSMgmtUpdateRegister(TSCont contp, const char *plugin_name);
+  void TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_file_name = nullptr);
   TSReturnCode TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
   TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
   TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
