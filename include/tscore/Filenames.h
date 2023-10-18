@@ -47,6 +47,7 @@ namespace filename
   // Various other file names
   constexpr const char *RECORDS_STATS = "records.snap";
   constexpr const char *HOST_RECORDS  = "host_records.yaml";
+  constexpr const char *BAD_DISKS     = "bad_disks";
 
 } // namespace filename
 } // namespace ts

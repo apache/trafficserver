@@ -74,6 +74,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cache.persist_bad_disks", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[01]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
   ,

@@ -2488,6 +2488,29 @@ Cache Control
    used from the asynchronous IO threads when IO finishes and the ``CacheVC`` lock or stripe lock is
    required.
 
+.. ts::cv:: CONFIG proxy.config.cache.max_disk_errors INT 5
+
+   Cache disks sometimes fail due to hardware problems.  |TS| keeps count of
+   the number of times it encounters I/O errors when accessing each cache disk.
+   If the number of errors on a disk reaches this setting, |TS| removes that
+   disk from the cache.
+
+   Note that the count of errors is kept in memory, and is reset to zero when
+   |TS| is restarted.  By default, |TS| will not remember which cache disk has
+   been removed in this way when it restarts.  If you wish to change this behavior
+   and prevent known bad disks from re-joining the cache upon restart, change
+   the setting :ts:cv:`proxy.config.cache.persist_bad_disks`.
+
+.. ts::cv:: CONFIG proxy.config.cache.persist_bad_disks INT 0
+
+   When enabled (``1``), |TS| will remember which cache disks have been
+   marked as failed through :ts:cv:`proxy.config.cache.max_disk_errors`,
+   even after a restart.  A list of known bad cache disks is written to
+   ``localstatedir/known_bad_disks``.  If you replace the known bad disks,
+   delete this file so that |TS| will use it in the cache again.
+
+   When disabled (``0``), |TS| will ignore the ``known_bad_disks`` file.
+
 RAM Cache
 =========
 
