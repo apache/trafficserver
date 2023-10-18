@@ -28,11 +28,11 @@
 #include "tscore/ink_string.h"
 #include "tscore/Filenames.h"
 
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 #include "records/P_RecFile.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecUtils.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"
 

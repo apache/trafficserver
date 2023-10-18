@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #include "tscore/Regression.h"
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_args.h"

@@ -33,7 +33,7 @@
 #include <unordered_map>
 #include "CacheDefs.h"
 
-#include "../../proxy/hdrs/HTTP.h"
+#include "../../include/proxy/hdrs/HTTP.h"
 // using namespace ct;
 namespace ct
 {

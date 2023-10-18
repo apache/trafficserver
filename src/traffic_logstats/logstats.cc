@@ -24,8 +24,8 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "tscore/I_Layout.h"
-#include "tscore/I_Version.h"
+#include "tscore/Layout.h"
+#include "tscore/Version.h"
 #include "tscore/HashFNV.h"
 #include "tscore/ink_args.h"
 #include "tscore/MatcherUtils.h"

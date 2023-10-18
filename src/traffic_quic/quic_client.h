@@ -24,8 +24,8 @@
 #pragma once
 
 #include "P_Net.h"
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
+#include "EventSystem.h"
+#include "NetVConnection.h"
 #include "P_QUICNetProcessor.h"
 
 #include "QUICApplication.h"

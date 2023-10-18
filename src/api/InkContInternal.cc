@@ -33,12 +33,12 @@
 #include "RemapPluginInfo.h"
 
 // inkevent
-#include "I_Continuation.h"
-#include "I_EThread.h"
-#include "I_Event.h"
-#include "I_Lock.h"
-#include "I_ProxyAllocator.h"
-#include "I_VConnection.h"
+#include "Continuation.h"
+#include "EThread.h"
+#include "Event.h"
+#include "Lock.h"
+#include "ProxyAllocator.h"
+#include "VConnection.h"
 
 ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 

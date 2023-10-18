@@ -30,10 +30,10 @@
 #include "tscore/ink_platform.h"
 #include "ts/ts.h"
 #include "ts/InkAPIPrivateIOCore.h"
-#include "I_EventSystem.h"
-#include "I_Net.h"
-#include "I_Cache.h"
-#include "I_HostDB.h"
+#include "EventSystem.h"
+#include "Net.h"
+#include "Cache.h"
+#include "HostDB.h"
 #include "P_UnixUDPConnection.h"
 
 // This assert is for internal API use only.

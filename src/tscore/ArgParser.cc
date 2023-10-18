@@ -23,7 +23,7 @@
 
 #include "tscore/ArgParser.h"
 #include "tscore/ink_file.h"
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 
 #include <iostream>
 #include <set>

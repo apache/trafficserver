@@ -53,9 +53,9 @@
 
 #include "stats.h"
 
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/ink_args.h"
-#include "tscore/I_Version.h"
+#include "tscore/Version.h"
 #include "tscore/runroot.h"
 
 using namespace std;

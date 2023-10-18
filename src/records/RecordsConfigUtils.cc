@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_config.h"
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 
 //-------------------------------------------------------------------------
 // LibRecordsConfigInit

@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/runroot.h"
 
 #define PROGRAM_NAME       "traffic_logcat"

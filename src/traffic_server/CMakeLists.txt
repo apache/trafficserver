@@ -19,7 +19,19 @@ add_executable(
   traffic_server Crash.cc EventName.cc SocksProxy.cc traffic_server.cc RpcAdminPubHandlers.cc
                  ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
-target_include_directories(traffic_server PRIVATE ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/mgmt)
+target_include_directories(
+  traffic_server
+  PRIVATE ${IOCORE_INCLUDE_DIRS}
+          ${PROXY_INCLUDE_DIRS}
+          ${CMAKE_SOURCE_DIR}/include/mgmt
+          # private headers
+          ${CMAKE_SOURCE_DIR}/src/iocore/net
+          ${CMAKE_SOURCE_DIR}/src/iocore/hostdb
+          ${CMAKE_SOURCE_DIR}/src/iocore/dns
+          ${CMAKE_SOURCE_DIR}/src/iocore/cache
+          ${CMAKE_SOURCE_DIR}/src/iocore/aio
+          ${CMAKE_SOURCE_DIR}/src/proxy
+)
 target_link_libraries(
   traffic_server
   PRIVATE ts::tscore

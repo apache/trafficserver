@@ -27,7 +27,7 @@
 
 #include "tscore/Diags.h"
 #include "tscpp/util/YamlCfg.h"
-#include "records/I_RecordsConfig.h"
+#include "records/RecordsConfig.h"
 
 #include <string_view>
 

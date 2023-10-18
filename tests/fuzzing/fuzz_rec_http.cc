@@ -18,7 +18,7 @@
    the License.
 */
 
-#include "records/I_RecHttp.h"
+#include "records/RecHttp.h"
 #include "tscore/ink_defs.h"
 #include "tscore/Diags.h"
 

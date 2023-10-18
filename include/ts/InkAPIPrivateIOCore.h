@@ -23,8 +23,8 @@
 
 #pragma once
 #if !defined(__GNUC__)
-#include "I_EventSystem.h"
-#include "I_Net.h"
+#include "EventSystem.h"
+#include "Net.h"
 #else
 #include "P_EventSystem.h"
 #include "P_Net.h"

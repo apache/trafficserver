@@ -23,11 +23,11 @@
 
 #include <fcntl.h>
 #include <openssl/crypto.h>
-#include "tscore/I_Layout.h"
+#include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscpp/util/ts_bw.h"
-#include "records/I_RecProcess.h"
-#include "records/I_RecordsConfig.h"
+#include "records/RecProcess.h"
+#include "records/RecordsConfig.h"
 #include "info.h"
 #include "RecProcess.h"
 
