@@ -172,7 +172,7 @@ test_HttpTransact_LDADD += \
 endif
 
 test_HttpTransact_SOURCES = \
-	../../iocore/cache/test/stub.cc \
+	../../iocore/cache/unit_tests/stub.cc \
 	unit_tests/main.cc \
 	unit_tests/test_HttpTransact.cc
 
