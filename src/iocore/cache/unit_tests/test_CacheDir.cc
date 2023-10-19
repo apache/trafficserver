@@ -97,7 +97,11 @@ private:
     Vol *vol        = gvol[0];
     EThread *thread = this_ethread();
     MUTEX_TRY_LOCK(lock, vol->mutex, thread);
-    ink_release_assert(lock.is_locked());
+    if (!lock.is_locked()) {
+      CONT_SCHED_LOCK_RETRY(this);
+      return;
+    }
+
     vol_dir_clear(vol);
 
     // coverity[var_decl]
