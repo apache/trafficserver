@@ -24,7 +24,7 @@
 #pragma once
 
 #include "RecCore.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 //-------------------------------------------------------------------------
 // RawStat Registration
