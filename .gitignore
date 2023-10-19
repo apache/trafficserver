@@ -222,4 +222,4 @@ tests/gold_tests/chunked_encoding/smuggle-client
 tests/gold_tests/tls/ssl-post
 
 src/iocore/cache/test_*
-src/iocore/cache/test/var/trafficserver/cache.db
+src/iocore/cache/unit_tests/var/trafficserver/cache.db

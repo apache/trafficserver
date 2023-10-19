@@ -69,8 +69,8 @@ endif(TS_USE_LINUX_IO_URING)
 
 macro(add_cache_test name)
   add_executable(
-    ${name} ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/main.cc ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/stub.cc
-            ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/CacheTestHandler.cc ${ARGN}
+    ${name} ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/main.cc ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc
+            ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/CacheTestHandler.cc ${ARGN}
   )
   target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
@@ -82,37 +82,37 @@ macro(add_net_test name)
 endmacro()
 
 macro(add_stubbed_test name)
-  add_executable(${name} ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/stub.cc ${ARGN})
+  add_executable(${name} ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc ${ARGN})
   target_link_libraries(${name} PRIVATE ts::proxy ts::http)
   add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
-add_cache_test(Cache ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Cache.cc)
-add_cache_test(Populated_Cache ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Populated_Cache.cc)
+add_cache_test(Cache ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Cache.cc)
+add_cache_test(Populated_Cache ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Populated_Cache.cc)
 if(ENABLE_DISK_FAILURE_TESTS)
   foreach(i RANGE 1)
-    add_cache_test(Disk_Init_Failure_${i} ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Disk_Init_Failure.cc)
+    add_cache_test(Disk_Init_Failure_${i} ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Disk_Init_Failure.cc)
     target_compile_definitions(Disk_Init_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
   endforeach()
   foreach(i RANGE 5 20)
-    add_cache_test(Disk_Failure_${i} ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Disk_Failure.cc)
+    add_cache_test(Disk_Failure_${i} ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Disk_Failure.cc)
     target_compile_definitions(Disk_Failure_${i} PUBLIC FAILURE_INDICES={${i}})
   endforeach()
   add_cache_test(
-    Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Populated_Cache_Disk_Failure.cc
+    Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Populated_Cache_Disk_Failure.cc
   )
 endif()
-add_cache_test(CacheDir ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_CacheDir.cc)
-add_cache_test(RWW ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_RWW.cc)
-add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_L_to_S.cc)
-add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_S_to_L.cc)
-add_cache_test(Alternate_L_to_S_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_L_to_S_remove_L.cc)
-add_cache_test(Alternate_L_to_S_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_L_to_S_remove_S.cc)
-add_cache_test(Alternate_S_to_L_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_S_to_L_remove_L.cc)
-add_cache_test(Alternate_S_to_L_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_S_to_L_remove_S.cc)
-add_cache_test(Update_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Update_L_to_S.cc)
-add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Update_S_to_L.cc)
-#add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
+add_cache_test(CacheDir ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_CacheDir.cc)
+add_cache_test(RWW ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_RWW.cc)
+add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S.cc)
+add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L.cc)
+add_cache_test(Alternate_L_to_S_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_L.cc)
+add_cache_test(Alternate_L_to_S_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_S.cc)
+add_cache_test(Alternate_S_to_L_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_L.cc)
+add_cache_test(Alternate_S_to_L_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_S.cc)
+add_cache_test(Update_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_L_to_S.cc)
+add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_S_to_L.cc)
+#add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_Header.cc)
 
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/src/iocore/aio/test_AIO.cc)
 add_test(

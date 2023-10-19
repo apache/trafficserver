@@ -36,7 +36,7 @@
 #include "P_AIO.h"
 #include "P_CacheDisk.h"
 #include "P_Net.h"
-#include "test/CacheTestHandler.h"
+#include "CacheTestHandler.h"
 #include "P_Cache.h"
 
 #include <queue>
