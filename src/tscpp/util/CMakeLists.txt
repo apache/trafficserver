@@ -18,7 +18,28 @@
 add_library(tscpputil SHARED ts_bwf.cc ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
 target_link_libraries(tscpputil PUBLIC libswoc yaml-cpp::yaml-cpp ts::tscore)
-install(TARGETS tscpputil)
+set(TSCPPUTIL_PUBLIC_HEADERS
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/Bravo.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/Convert.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/DenseThreadId.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/Histogram.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/LocalBuffer.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/PostScript.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/Strerror.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/TsSharedMutex.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/YamlCfg.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_bw.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_bw_format.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_diag_levels.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_errata.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_ip.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_meta.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_time_parser.h
+    ${CMAKE_SOURCE_DIR}/include/tscpp/util/ts_unit_parser.h
+)
+set_target_properties(tscpputil PROPERTIES PUBLIC_HEADER "${TSCPPUTIL_PUBLIC_HEADERS}")
+
+install(TARGETS tscpputil PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tscpp/util)
 
 if(BUILD_TESTING)
   add_executable(

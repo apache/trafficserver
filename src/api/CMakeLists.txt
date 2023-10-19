@@ -19,6 +19,7 @@ add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
 add_library(ts::tsapi ALIAS tsapi)
 target_include_directories(
   tsapi
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
   PRIVATE # private headers
           ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem
           ${CMAKE_SOURCE_DIR}/src/iocore/net
@@ -28,7 +29,20 @@ target_include_directories(
           ${CMAKE_SOURCE_DIR}/src/iocore/aio
           ${CMAKE_SOURCE_DIR}/src/proxy/
 )
+
+set(TSAPI_PUBLIC_HEADERS
+    ${CMAKE_SOURCE_DIR}/include/ts/ts.h
+    ${CMAKE_SOURCE_DIR}/include/ts/remap.h
+    ${CMAKE_SOURCE_DIR}/include/ts/DbgCtl.h
+    ${CMAKE_SOURCE_DIR}/include/ts/TsException.h
+    ${CMAKE_SOURCE_DIR}/include/ts/parentselectdefs.h
+    ${CMAKE_SOURCE_DIR}/include/ts/parentselectdefs.h
+    ${CMAKE_BINARY_DIR}/include/ts/apidefs.h
+    ${CMAKE_SOURCE_DIR}/include/ts/experimental.h
+)
+
 target_link_libraries(tsapi PRIVATE ts::tscore)
+set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 add_library(
   tsapicore STATIC
@@ -54,7 +68,7 @@ set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/mgmt)
 
-install(TARGETS tsapi)
+install(TARGETS tsapi PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
