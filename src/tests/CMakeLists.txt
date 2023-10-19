@@ -102,6 +102,7 @@ if(ENABLE_DISK_FAILURE_TESTS)
     Populated_Cache_Disk_Failure ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Populated_Cache_Disk_Failure.cc
   )
 endif()
+add_cache_test(CacheDir ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_CacheDir.cc)
 add_cache_test(RWW ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_RWW.cc)
 add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_L_to_S.cc)
 add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/test/test_Alternate_S_to_L.cc)
