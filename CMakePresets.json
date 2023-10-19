@@ -126,6 +126,18 @@
       "displayName": "CI Ubuntu Hardened Build",
       "description": "CI Pipeline config for Ubuntu with hardening flags",
       "inherits": ["ci", "hardened"]
+    },
+    {
+      "name": "ci-clang-analyzer",
+      "displayName": "CI Clang Analyzer",
+      "description": "CI Pipeline config for running clang-analyzer",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ENABLE_CCACHE": "OFF",
+        "ENABLE_EXAMPLE": "OFF",
+        "BUILD_TESTING": "OFF"
+      }
     }
   ],
   "buildPresets": [
