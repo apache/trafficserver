@@ -30,30 +30,41 @@ ConfigUpdateCbTable::~ConfigUpdateCbTable() {}
 void
 ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name, const char *file_name)
 {
-  std::filesystem::file_time_type timestamp;
-  std::string fname = file_name;
-
   ink_assert(contp != nullptr);
   ink_assert(name != nullptr);
 
-  if (fname.size() > 0) {
-    timestamp = std::filesystem::last_write_time(fname);
+  if (nullptr != file_name) {
+    swoc::file::path file_path{file_name};
+    std::error_code ec;
+    auto timestamp = swoc::file::last_write_time(file_path, ec);
+
+    if (!ec) {
+      cb_table.emplace(name, std::make_tuple(contp, file_path, timestamp));
+    } else {
+      Error("Failed to stat %s: %s", file_path.c_str(), ec.message().c_str());
+    }
+  } else {
+    cb_table.emplace(name, std::make_tuple(contp, swoc::file::path{}, swoc::file::file_time_type{}));
   }
-  cb_table.emplace(name, std::make_tuple(contp, fname, timestamp));
 }
 
 void
 ConfigUpdateCbTable::invoke()
 {
   for (auto &&it : cb_table) {
-    auto &[contp, file_name, timestamp] = it.second;
+    auto &[contp, file_path, timestamp] = it.second;
 
-    if (file_name.size() > 0) {
-      auto newtime = std::filesystem::last_write_time(file_name);
+    if (!file_path.empty()) {
+      std::error_code ec;
+      auto newtime = swoc::file::last_write_time(file_path, ec);
 
-      if (newtime > timestamp) {
-        timestamp = newtime;
-        invoke(contp);
+      if (!ec) {
+        if (newtime > timestamp) {
+          timestamp = newtime;
+          invoke(contp);
+        }
+      } else {
+        Error("Failed to stat %s: %s", file_path.c_str(), ec.message().c_str());
       }
     } else {
       invoke(contp);
