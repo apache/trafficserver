@@ -18,6 +18,119 @@ Traffic Server is a high-performance building block for cloud services.
 It's more than just a caching proxy server; it also has support for
 plugins to build large scale web applications.
 
+# Important notice to ATS developers
+
+ATS is transitioning to cmake as its build system.  At the moment, the autotools build is broken and will soon be removed from the
+repository.  Below is a quick-start guide to cmake:
+
+### Step 1: Configuration
+
+With cmake, you definitely want to create an out-of-source build.  You will give that directory to every cmake command.  For these
+examples, it will just be `build`
+
+```
+$ cmake -B build
+```
+
+This will configure the project with defaults.
+
+If you want to customize the build, you can pass values for variables on the command line.  Or, you can interactively change them
+using the `ccmake` program.
+
+```
+$ cmake -B build -DCMAKE_INSTALL_PREFIX=/tmp/ats -DBUILD_EXPERIMENTAL_PLUGINS=ON
+```
+
+-- or --
+
+```
+$ ccmake build
+```
+
+#### Specifying locations of dependencies
+
+To specify the location of a dependency (like --with-*), you generally set a variable with the `ROOT`. The big exception to this is
+for openssl. This variable is called `OPENSSL_ROOT_DIR`
+
+```
+$ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DPCRE_ROOT=/opt/edge -DOPENSSL_ROOT_DIR=/opt/boringssl
+```
+
+#### Using presets to configure the build
+
+cmake has a feature for grouping configurations together to make configuration and reproduction easier.  The file CMakePresets.json
+ declares presets that you can use from the command line.  You can provide your own CMakeUserPresets.json and further refine those
+ via inheritance:
+
+```
+$ cmake --preset dev
+```
+
+You can start out your user presets by just copying `CMakePresets.json` and removing everything in `configurePresets`
+
+Here is an example user preset:
+
+```
+
+    {
+      "name": "clang",
+      "hidden": true,
+      "environment": {
+        "LDFLAGS": "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++ -fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld",
+        "CPPFLAGS": "-I/opt/homebrew/opt/llvm/include",
+        "CXXFLAGS": "-stdlib=libc++",
+        "CC": "/opt/homebrew/opt/llvm/bin/clang",
+        "CXX": "/opt/homebrew/opt/llvm/bin/clang++"
+      }
+    },
+    {
+      "name": "mydev",
+      "displayName": "my development",
+      "description": "My Development Presets",
+      "binaryDir": "${sourceDir}/cmake-build-dev-clang",
+      "inherits": ["clang", "dev"],
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "/opt/ats-cmake",
+        "jemalloc_ROOT": "/opt/homebrew",
+        "ENABLE_LUAJIT": false,
+        "ENABLE_JEMALLOC": true,
+        "ENABLE_MIMALLOC": false,
+        "ENABLE_MALLOC_ALLOCATOR": true,
+        "BUILD_EXPERIMENTAL_PLUGINS": true,
+        "BUILD_REGRESSION_TESTING": true
+      }
+    },
+```
+
+And then use it like:
+
+```
+cmake --preset mydev
+```
+
+## Building the project
+
+```
+$ cmake --build build
+```
+
+```
+$ cmake --build build -t traffic_server
+```
+
+## running tests
+
+```
+$ cd build
+$ ctest
+```
+
+## installing
+
+```
+$ cmake --install build
+```
+
 ## DIRECTORY STRUCTURE
 ```
 trafficserver ............. Top src dir
