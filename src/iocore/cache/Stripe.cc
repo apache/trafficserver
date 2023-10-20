@@ -37,7 +37,7 @@ DbgCtl dbg_ctl_cache_init{"cache_init"};
 short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 
 void
-vol_init_data_internal(Vol *vol)
+vol_init_data_internal(Stripe *vol)
 {
   // step1: calculate the number of entries.
   off_t total_entries = (vol->len - (vol->start - vol->skip)) / cache_config_min_average_object_size;
@@ -52,7 +52,7 @@ vol_init_data_internal(Vol *vol)
 }
 
 void
-vol_init_data(Vol *vol)
+vol_init_data(Stripe *vol)
 {
   // iteratively calculate start + buckets
   vol_init_data_internal(vol);
@@ -61,7 +61,7 @@ vol_init_data(Vol *vol)
 }
 
 void
-vol_init_dir(Vol *vol)
+vol_init_dir(Stripe *vol)
 {
   int b, s, l;
 
@@ -78,7 +78,7 @@ vol_init_dir(Vol *vol)
 }
 
 void
-vol_clear_init(Vol *vol)
+vol_clear_init(Stripe *vol)
 {
   size_t dir_len = vol->dirlen();
   memset(vol->raw_dir, 0, dir_len);
@@ -105,7 +105,7 @@ compare_ushort(void const *a, void const *b)
 } // namespace
 
 int
-vol_dir_clear(Vol *d)
+vol_dir_clear(Stripe *d)
 {
   size_t dir_len = d->dirlen();
   vol_clear_init(d);
@@ -117,19 +117,19 @@ vol_dir_clear(Vol *d)
   return 0;
 }
 
-struct VolInitInfo {
+struct StripeInitInfo {
   off_t recover_pos;
   AIOCallbackInternal vol_aio[4];
   char *vol_h_f;
 
-  VolInitInfo()
+  StripeInitInfo()
   {
     recover_pos = 0;
     vol_h_f     = static_cast<char *>(ats_memalign(ats_pagesize(), 4 * STORE_BLOCK_SIZE));
     memset(vol_h_f, 0, 4 * STORE_BLOCK_SIZE);
   }
 
-  ~VolInitInfo()
+  ~StripeInitInfo()
   {
     for (auto &i : vol_aio) {
       i.action = nullptr;
@@ -144,7 +144,7 @@ struct VolInitInfo {
 //
 
 int
-Vol::begin_read(CacheVC *cont) const
+Stripe::begin_read(CacheVC *cont) const
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
   ink_assert(mutex->thread_holding == this_ethread());
@@ -179,7 +179,7 @@ Vol::begin_read(CacheVC *cont) const
 }
 
 int
-Vol::close_read(CacheVC *cont) const
+Stripe::close_read(CacheVC *cont) const
 {
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t == this_ethread());
@@ -210,12 +210,12 @@ Vol::close_read(CacheVC *cont) const
 }
 
 int
-Vol::clear_dir()
+Stripe::clear_dir()
 {
   size_t dir_len = this->dirlen();
   vol_clear_init(this);
 
-  SET_HANDLER(&Vol::handle_dir_clear);
+  SET_HANDLER(&Stripe::handle_dir_clear);
 
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_buf    = raw_dir;
@@ -229,7 +229,7 @@ Vol::clear_dir()
 }
 
 int
-Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
+Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
   char *seed_str              = disk->hash_base_string ? disk->hash_base_string : s;
   const size_t hash_seed_size = strlen(seed_str);
@@ -271,22 +271,22 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   }
 
   dir    = reinterpret_cast<Dir *>(raw_dir + this->headerlen());
-  header = reinterpret_cast<VolHeaderFooter *>(raw_dir);
-  footer = reinterpret_cast<VolHeaderFooter *>(raw_dir + this->dirlen() - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
+  header = reinterpret_cast<StripteHeaderFooter *>(raw_dir);
+  footer = reinterpret_cast<StripteHeaderFooter *>(raw_dir + this->dirlen() - ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter)));
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
     return clear_dir();
   }
 
-  init_info           = new VolInitInfo();
-  int footerlen       = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+  init_info           = new StripeInitInfo();
+  int footerlen       = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
   off_t footer_offset = this->dirlen() - footerlen;
   // try A
   off_t as = skip;
 
   Dbg(dbg_ctl_cache_init, "reading directory '%s'", hash_text.get());
-  SET_HANDLER(&Vol::handle_header_read);
+  SET_HANDLER(&Stripe::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
   off_t bs                               = skip + this->dirlen();
@@ -307,7 +307,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 }
 
 int
-Vol::handle_dir_clear(int event, void *data)
+Stripe::handle_dir_clear(int event, void *data)
 {
   size_t dir_len = this->dirlen();
   AIOCallback *op;
@@ -324,13 +324,13 @@ Vol::handle_dir_clear(int event, void *data)
       /* clear the header for directory B. We don't need to clear the
          whole of directory B. The header for directory B starts at
          skip + len */
-      op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+      op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
       op->aiocb.aio_offset = skip + dir_len;
       ink_assert(ink_aio_write(op));
       return EVENT_DONE;
     }
     set_io_not_in_progress();
-    SET_HANDLER(&Vol::dir_init_done);
+    SET_HANDLER(&Stripe::dir_init_done);
     dir_init_done(EVENT_IMMEDIATE, nullptr);
     /* mark the volume as bad */
   }
@@ -338,7 +338,7 @@ Vol::handle_dir_clear(int event, void *data)
 }
 
 int
-Vol::handle_dir_read(int event, void *data)
+Stripe::handle_dir_read(int event, void *data)
 {
   AIOCallback *op = static_cast<AIOCallback *>(data);
 
@@ -369,9 +369,9 @@ Vol::handle_dir_read(int event, void *data)
 }
 
 int
-Vol::recover_data()
+Stripe::recover_data()
 {
-  SET_HANDLER(&Vol::handle_recover_from_data);
+  SET_HANDLER(&Stripe::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, nullptr);
 }
 
@@ -412,7 +412,7 @@ Vol::recover_data()
       */
 
 int
-Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
+Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 {
   uint32_t got_len         = 0;
   uint32_t max_sync_serial = header->sync_serial;
@@ -420,7 +420,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   if (event == EVENT_IMMEDIATE) {
     if (header->sync_serial == 0) {
       io.aiocb.aio_buf = nullptr;
-      SET_HANDLER(&Vol::handle_recover_write_dir);
+      SET_HANDLER(&Stripe::handle_recover_write_dir);
       return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
     }
     // initialize
@@ -598,7 +598,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 Ldone: {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
-    SET_HANDLER(&Vol::handle_recover_write_dir);
+    SET_HANDLER(&Stripe::handle_recover_write_dir);
     if (dbg_ctl_cache_init.on()) {
       Note("recovery wrapped around. nothing to clear\n");
     }
@@ -632,7 +632,7 @@ Ldone: {
     dir_clear_range(1, clear_end, this);
   }
 
-  Note("recovery clearing offsets of Vol %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
+  Note("recovery clearing offsets of Stripe %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
        header->write_pos, recover_pos, header->sync_serial, next_sync_serial);
 
   footer->sync_serial = header->sync_serial = next_sync_serial;
@@ -644,7 +644,7 @@ Ldone: {
     aio->thread           = AIO_CALLBACK_THREAD_ANY;
     aio->then             = (i < 2) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
-  int footerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+  int footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
   size_t dirlen = this->dirlen();
   int B         = header->sync_serial & 1;
   off_t ss      = skip + (B ? dirlen : 0);
@@ -659,7 +659,7 @@ Ldone: {
   init_info->vol_aio[2].aiocb.aio_nbytes = footerlen;
   init_info->vol_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
-  SET_HANDLER(&Vol::handle_recover_write_dir);
+  SET_HANDLER(&Stripe::handle_recover_write_dir);
   ink_assert(ink_aio_write(init_info->vol_aio));
   return EVENT_CONT;
 }
@@ -673,7 +673,7 @@ Lclear:
 }
 
 int
-Vol::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+Stripe::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   if (io.aiocb.aio_buf) {
     free(static_cast<char *>(io.aiocb.aio_buf));
@@ -683,21 +683,21 @@ Vol::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNU
   set_io_not_in_progress();
   scan_pos = header->write_pos;
   periodic_scan();
-  SET_HANDLER(&Vol::dir_init_done);
+  SET_HANDLER(&Stripe::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
 }
 
 int
-Vol::handle_header_read(int event, void *data)
+Stripe::handle_header_read(int event, void *data)
 {
   AIOCallback *op;
-  VolHeaderFooter *hf[4];
+  StripteHeaderFooter *hf[4];
   switch (event) {
   case AIO_EVENT_DONE:
     op = static_cast<AIOCallback *>(data);
     for (auto &i : hf) {
       ink_assert(op != nullptr);
-      i = static_cast<VolHeaderFooter *>(op->aiocb.aio_buf);
+      i = static_cast<StripteHeaderFooter *>(op->aiocb.aio_buf);
       if (!op->ok()) {
         Note("Header read failed: clearing cache directory %s", this->hash_text.get());
         clear_dir();
@@ -715,7 +715,7 @@ Vol::handle_header_read(int event, void *data)
 
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
-      SET_HANDLER(&Vol::handle_dir_read);
+      SET_HANDLER(&Stripe::handle_dir_read);
       if (dbg_ctl_cache_init.on()) {
         Note("using directory A for '%s'", hash_text.get());
       }
@@ -724,7 +724,7 @@ Vol::handle_header_read(int event, void *data)
     }
     // try B
     else if (hf[2]->sync_serial == hf[3]->sync_serial) {
-      SET_HANDLER(&Vol::handle_dir_read);
+      SET_HANDLER(&Stripe::handle_dir_read);
       if (dbg_ctl_cache_init.on()) {
         Note("using directory B for '%s'", hash_text.get());
       }
@@ -746,7 +746,7 @@ Vol::handle_header_read(int event, void *data)
 }
 
 int
-Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   if (!cache->cache_read_done) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
@@ -755,14 +755,14 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     int vol_no = gnvol++;
     ink_assert(!gvol[vol_no]);
     gvol[vol_no] = this;
-    SET_HANDLER(&Vol::aggWrite);
+    SET_HANDLER(&Stripe::aggWrite);
     cache->vol_initialized(fd != -1);
     return EVENT_DONE;
   }
 }
 
 int
-Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH = 16;
   int hist[SEGMENT_HISTOGRAM_WIDTH + 1]    = {0};

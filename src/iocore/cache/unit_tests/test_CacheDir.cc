@@ -54,7 +54,7 @@ regress_rand_CacheKey(const CacheKey *key)
 }
 
 void
-dir_corrupt_bucket(Dir *b, int s, Vol *vol)
+dir_corrupt_bucket(Dir *b, int s, Stripe *vol)
 {
   int l    = (static_cast<int>(dir_bucket_length(b, s, vol) * ts::Random::drandom()));
   Dir *e   = b;
@@ -80,7 +80,7 @@ public:
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
     REQUIRE(gnvol >= 1);
 
-    Vol *vol        = gvol[0];
+    Stripe *vol     = gvol[0];
     EThread *thread = this_ethread();
     MUTEX_TRY_LOCK(lock, vol->mutex, thread);
     if (!lock.is_locked()) {

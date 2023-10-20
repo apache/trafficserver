@@ -58,7 +58,7 @@ Data Structures
 
       The cache volumes that are part of this cache host record.
 
-   .. member:: Vol ** vols
+   .. member:: Stripe ** vols
 
       The stripes that are part of the cache volumes. This is the union over the stripes of
       :member:`CacheHostRecord::cp`
@@ -462,7 +462,7 @@ Data Structures
       A generic class:`CacheHostRecord` that contains all cache volumes that are not explicitly
       assigned in :file:`hosting.config`.
 
-   .. function:: Vol * key_to_vol(const char * key, const char * host, int host_len)
+   .. function:: Stripe * key_to_vol(const char * key, const char * host, int host_len)
 
       Compute the stripe (:code:`Vol*`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
       used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe

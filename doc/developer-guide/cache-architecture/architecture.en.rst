@@ -280,11 +280,11 @@ start
    The offset for the start of the content, after the stripe metadata.
 
 length
-   Total number of bytes in the stripe. :cpp:member:`Vol::len`.
+   Total number of bytes in the stripe. :cpp:member:`Stripe::len`.
 
 data length
    Total number of blocks in the stripe available for content storage.
-   :cpp:member:`Vol::data_blocks`.
+   :cpp:member:`Stripe::data_blocks`.
 
 .. note::
 
@@ -978,7 +978,7 @@ stripe data structures (attached to the :cpp:class:`Vol` instance).
 
 Evacuation data structures are defined by dividing up the volume content into
 a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` bytes.
-The :cpp:member:`Vol::evacuate` member is an array with an element for each
+The :cpp:member:`Stripe::evacuate` member is an array with an element for each
 evacuation region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock`
 instances. Each instance contains a :cpp:class:`Dir` that specifies the fragment
 to evacuate. It is assumed that an evacuation block is placed in the evacuation
@@ -1004,14 +1004,14 @@ if the count goes to zero. If the ``EvacuationBlock`` already exists with a
 count of zero, the count is not modified and the number of readers is not
 tracked, so the evacuation is valid as long as the object exists.
 
-Evacuation is driven by cache writes, essentially in :cpp:member:`Vol::aggWrite`.
+Evacuation is driven by cache writes, essentially in :cpp:member:`Stripe::aggWrite`.
 This method processes the pending cache virtual connections that are trying to
 write to the stripe. Some of these may be evacuation virtual connections. If so
 then the completion callback for that virtual connection is called as the data
 is put in to the aggregation buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue
-or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` is called
+or the aggregation buffer filling) then :cpp:member:`Stripe::evac_range` is called
 to clear the range to be overwritten plus an additional :c:macro:`EVACUATION_SIZE`
 range. The buckets covering that range are checked. If there are any items in
 the buckets a new cache virtual connection (a *doc evacuator*) is created and
@@ -1021,7 +1021,7 @@ the read completes it is checked for validity and if valid, the cache virtual
 connection for it is placed at the front of the write queue for the stripe and
 the write aggregation resumed.
 
-Before doing a write, the method :cpp:member:`Vol::evac_range()` is called to
+Before doing a write, the method :cpp:member:`Stripe::evac_range()` is called to
 start an evacuation. If any fragments are found in the buckets in the range the
 earliest such fragment (smallest offset, closest to the write cursor) is
 selected and read from disk and the aggregation buffer write is suspended. The

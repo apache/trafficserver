@@ -48,7 +48,7 @@
 
 #include <cstdint>
 
-struct Vol;
+struct Stripe;
 
 struct CacheVC : public CacheVConnection {
   CacheVC();
@@ -270,7 +270,7 @@ struct CacheVC : public CacheVConnection {
   uint32_t write_len;    // for communicating with agg_copy
   uint32_t agg_len;      // for communicating with aggWrite
   uint32_t write_serial; // serial of the final write for SYNC
-  Vol *vol;
+  Stripe *vol;
   Dir *last_collision;
   Event *trigger;
   CacheKey *read_key;

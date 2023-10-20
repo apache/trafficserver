@@ -51,7 +51,7 @@ struct ShowCacheInternal : public ShowCont {
 extern ShowCacheInternal *theshowcacheInternal;
 Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
 
-extern Vol **gvol;
+extern Stripe **gvol;
 
 // Stat Pages
 ShowCacheInternal *theshowcacheInternal = nullptr;
@@ -194,7 +194,7 @@ ShowCacheInternal::showEvacuations(int event, Event *e)
 int
 ShowCacheInternal::showVolEvacuations(int event, Event *e)
 {
-  Vol *p = gvol[vol_index];
+  Stripe *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);
@@ -251,7 +251,7 @@ ShowCacheInternal::showVolumes(int event, Event *e)
 int
 ShowCacheInternal::showVolVolumes(int event, Event *e)
 {
-  Vol *p = gvol[vol_index];
+  Stripe *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);
@@ -309,7 +309,7 @@ ShowCacheInternal::showSegments(int event, Event *e)
 int
 ShowCacheInternal::showSegSegment(int event, Event *e)
 {
-  Vol *p = gvol[vol_index];
+  Stripe *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);

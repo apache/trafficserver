@@ -88,7 +88,7 @@ bool CacheProcessor::check               = false;
 int CacheProcessor::start_internal_flags = 0;
 int CacheProcessor::auto_clear_flag      = 0;
 CacheProcessor cacheProcessor;
-Vol **gvol             = nullptr;
+Stripe **gvol          = nullptr;
 std::atomic<int> gnvol = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
@@ -223,7 +223,7 @@ CachePeriodicMetricsUpdate()
 
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
-      Vol *v       = gvol[vol_ix];
+      Stripe *v    = gvol[vol_ix];
       int64_t used = cache_bytes_used(vol_ix);
 
       Metrics::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
@@ -542,17 +542,17 @@ CacheProcessor::diskInitialized()
     }
   }
 
-  gvol = static_cast<Vol **>(ats_malloc(gnvol * sizeof(Vol *)));
-  memset(gvol, 0, gnvol * sizeof(Vol *));
+  gvol = static_cast<Stripe **>(ats_malloc(gnvol * sizeof(Stripe *)));
+  memset(gvol, 0, gnvol * sizeof(Stripe *));
   gnvol = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
     if (dbg_ctl_cache_hosting.on()) {
       int j;
-      DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
-               d->free_space);
+      DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Stripe Blocks: %u: Free space: %" PRIu64, i, d->path,
+               d->header->num_diskvol_blks, d->free_space);
       for (j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        DbgPrint(dbg_ctl_cache_hosting, "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        DbgPrint(dbg_ctl_cache_hosting, "\tStripe: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
         DbgPrint(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
@@ -596,7 +596,7 @@ CacheProcessor::cacheInitialized()
   uint64_t vol_total_cache_bytes = 0;
   uint64_t vol_total_direntries  = 0;
   uint64_t vol_used_direntries   = 0;
-  Vol *vol;
+  Stripe *vol;
 
   if (theCache) {
     total_size += theCache->cache_size;
@@ -620,7 +620,7 @@ CacheProcessor::cacheInitialized()
   }
   // scan the rest of the stripes.
   for (i = 1; i < gnvol; i++) {
-    Vol *v = gvol[i];
+    Stripe *v = gvol[i];
     if (v->header->version < cacheProcessor.min_stripe_version) {
       cacheProcessor.min_stripe_version = v->header->version;
     }
@@ -871,10 +871,10 @@ build_vol_hash_table(CacheHostRecord *cp)
 {
   int num_vols          = cp->num_vols;
   unsigned int *mapping = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  Vol **p               = static_cast<Vol **>(ats_malloc(sizeof(Vol *) * num_vols));
+  Stripe **p            = static_cast<Stripe **>(ats_malloc(sizeof(Stripe *) * num_vols));
 
   memset(mapping, 0, num_vols * sizeof(unsigned int));
-  memset(p, 0, num_vols * sizeof(Vol *));
+  memset(p, 0, num_vols * sizeof(Stripe *));
   uint64_t total = 0;
   int bad_vols   = 0;
   int map        = 0;
@@ -1150,13 +1150,13 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
     if (cp->scheme == scheme) {
-      cp->vols   = static_cast<Vol **>(ats_malloc(cp->num_vols * sizeof(Vol *)));
+      cp->vols   = static_cast<Stripe **>(ats_malloc(cp->num_vols * sizeof(Stripe *)));
       int vol_no = 0;
       for (i = 0; i < gndisks; i++) {
         if (cp->disk_vols[i] && !DISK_BAD(cp->disk_vols[i]->disk)) {
           DiskVolBlockQueue *q = cp->disk_vols[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->vols[vol_no]            = new Vol();
+            cp->vols[vol_no]            = new Stripe();
             CacheDisk *d                = cp->disk_vols[i]->disk;
             cp->vols[vol_no]->disk      = d;
             cp->vols[vol_no]->fd        = d->fd;
@@ -1195,7 +1195,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  Vol *vol   = key_to_vol(key, hostname, host_len);
+  Stripe *vol = key_to_vol(key, hostname, host_len);
   CacheVC *c = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
@@ -1232,7 +1232,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 
   CACHE_TRY_LOCK(lock, cont->mutex, this_ethread());
   ink_assert(lock.is_locked());
-  Vol *vol = key_to_vol(key, hostname, host_len);
+  Stripe *vol = key_to_vol(key, hostname, host_len);
   // coverity[var_decl]
   Dir result;
   dir_clear(&result); // initialized here, set result empty so we can recognize missed lock
@@ -1778,7 +1778,7 @@ rebuild_host_table(Cache *cache)
 }
 
 // if generic_host_rec.vols == nullptr, what do we do???
-Vol *
+Stripe *
 Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);

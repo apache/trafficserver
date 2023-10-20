@@ -434,10 +434,10 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   static uint64_t DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
   CacheDisk disk;                                                    // Only need one because it's just checked for failure.
   CacheHostRecord hr1, hr2;
-  Vol *sample;
+  Stripe *sample;
   static int const sample_idx = 16;
-  Vol vols[MAX_VOLS];
-  Vol *vol_ptrs[MAX_VOLS]; // array of pointers.
+  Stripe vols[MAX_VOLS];
+  Stripe *vol_ptrs[MAX_VOLS]; // array of pointers.
   char buff[2048];
 
   // Only run at the highest levels.
@@ -552,7 +552,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 {
   bool pass = true;
   CacheKey key;
-  Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
+  Stripe *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
   std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);

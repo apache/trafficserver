@@ -49,7 +49,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
   }
   ink_assert(caches[type] == this);
 
-  Vol *vol = key_to_vol(key, hostname, host_len);
+  Stripe *vol = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = nullptr;
   ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od  = nullptr;
@@ -117,7 +117,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  Vol *vol = key_to_vol(key, hostname, host_len);
+  Stripe *vol = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = nullptr;
   ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od  = nullptr;

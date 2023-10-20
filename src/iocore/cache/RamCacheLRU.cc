@@ -44,7 +44,7 @@ struct RamCacheLRU : public RamCache {
   int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
-  void init(int64_t max_bytes, Vol *vol) override;
+  void init(int64_t max_bytes, Stripe *vol) override;
 
   // private
   uint16_t *seen = nullptr;
@@ -52,7 +52,7 @@ struct RamCacheLRU : public RamCache {
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
   int nbuckets                               = 0;
   int ibuckets                               = 0;
-  Vol *vol                                   = nullptr;
+  Stripe *vol                                = nullptr;
 
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
@@ -116,7 +116,7 @@ RamCacheLRU::resize_hashtable()
 }
 
 void
-RamCacheLRU::init(int64_t abytes, Vol *avol)
+RamCacheLRU::init(int64_t abytes, Stripe *avol)
 {
   vol       = avol;
   max_bytes = abytes;
