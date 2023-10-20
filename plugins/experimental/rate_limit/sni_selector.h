@@ -21,7 +21,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <filesystem>
 #include <atomic>
 
 #include "ts/ts.h"
@@ -138,12 +137,6 @@ public:
     return _yaml_file;
   }
 
-  std::filesystem::file_time_type
-  yamlLastWrite() const
-  {
-    return _yaml_last_write;
-  }
-
   void
   addIPReputation(IpReputation::SieveLru *iprep)
   {
@@ -184,11 +177,10 @@ public:
   void setupQueueCont();
   bool yamlParser(const std::string &yaml_file);
 
-  static void startup();
+  static void startup(const std::string &yaml_file);
 
 private:
   std::string _yaml_file;
-  std::filesystem::file_time_type _yaml_last_write; // Last time the yaml file was written to
   bool _needs_queue_cont = false;
   TSCont _queue_cont     = nullptr;   // Continuation processing the queue periodically
   TSAction _queue_action = nullptr;   // The action associated with the queue continuation, needed to shut it down

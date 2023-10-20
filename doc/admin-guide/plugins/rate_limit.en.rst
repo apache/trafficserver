@@ -193,7 +193,7 @@ For the top level `selector` node, the following options are available:
    default to ``UINT_MAX``, which is essentially unlimited. The max-age is
    default to ``0``, which means no age limit.
 
-   No queue is enable without this configuration directive, but it can also be
+   No queue is enabled without this configuration directive, but it can also be
    disabled explicitly if the size is set to ``0``.
 
 .. option:: metrics

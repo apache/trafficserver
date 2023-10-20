@@ -40,8 +40,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
     return false;
   }
 
-  _yaml_file       = yaml_file;
-  _yaml_last_write = std::filesystem::last_write_time(_yaml_file);
+  _yaml_file = yaml_file;
 
   // First build the Lists, if any
   const YAML::Node &lists = config["lists"];
@@ -175,31 +174,25 @@ static int
 sni_config_cont(TSCont cont, TSEvent event, void *edata)
 {
   auto selector = SniSelector::instance(); // Also leases the instance
-  auto current  = std::filesystem::last_write_time(selector->yamlFile());
   auto old_sel  = static_cast<SniSelector *>(TSContDataGet(cont));
+  auto new_sel  = new SniSelector();
 
-  // Delete the previous selector
+  // Delete the previous selector, which releases the lease we got at setup / reload
   if (old_sel) {
     old_sel->release();
     TSContDataSet(cont, nullptr);
   }
 
-  if (current > selector->yamlLastWrite()) {
-    auto new_sel = new SniSelector();
-
-    if (new_sel->yamlParser(selector->yamlFile())) {
-      new_sel->acquire();
-      new_sel->setupQueueCont(); // Start the queue processing continuation if needed
-      SniSelector::swap(new_sel);
-      // Now, save the old selector in the cont data here, such that we do the final release next time
-      TSContDataSet(cont, selector);
-      Dbg(dbg_ctl, "Reloading YAML file: %s", new_sel->yamlFile().c_str());
-    } else {
-      delete new_sel;
-      TSError("[%s] Failed to reload YAML file: %s", PLUGIN_NAME, selector->yamlFile().c_str());
-    }
+  if (new_sel->yamlParser(selector->yamlFile())) {
+    new_sel->acquire();
+    new_sel->setupQueueCont(); // Start the queue processing continuation if needed
+    SniSelector::swap(new_sel);
+    // Now, save the old selector in the cont data here, such that we do the final release next time
+    TSContDataSet(cont, selector);
+    Dbg(dbg_ctl, "Reloading YAML file: %s", new_sel->yamlFile().c_str());
   } else {
-    Dbg(dbg_ctl, "No change in YAML file: %s", selector->yamlFile().c_str());
+    delete new_sel;
+    TSError("[%s] Failed to reload YAML file: %s", PLUGIN_NAME, selector->yamlFile().c_str());
   }
 
   selector->release();
@@ -267,23 +260,30 @@ SniSelector::setupQueueCont()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Startup of the SNI selector hooks and config reload continuation and instance
+// Startup of the SNI selector hooks and config reload continuation and
+// instance. This should only be called once, after which the configuration
+// continuation takes over any reloads.
 //
 void
-SniSelector::startup()
+SniSelector::startup(const std::string &yaml_file)
 {
-  TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
+  auto sni_cont    = TSContCreate(sni_limit_cont, nullptr);
+  auto config_cont = TSContCreate(sni_config_cont, TSMutexCreate());
 
   TSReleaseAssert(sni_cont);
+  TSReleaseAssert(config_cont);
 
   _instance.store(new SniSelector());
   TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
   TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
 
-  auto config_cont = TSContCreate(sni_config_cont, TSMutexCreate());
+  auto selector = SniSelector::instance(); // Assure that we don't delete this until next config reload
 
-  TSReleaseAssert(config_cont);
-  // ToDo: Should we make schedule reloads configurable?
-  // TSContScheduleEveryOnPool(config_cont, std::chrono::milliseconds{10000}.count(), TS_THREAD_POOL_TASK);
-  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
+  if (selector->yamlParser(yaml_file)) {
+    selector->setupQueueCont(); // Start the queue processing continuation if needed
+    TSMgmtUpdateRegister(config_cont, PLUGIN_NAME, yaml_file.c_str());
+  } else {
+    selector->release();
+    TSFatal("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, yaml_file.c_str());
+  }
 }

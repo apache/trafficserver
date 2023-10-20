@@ -55,16 +55,7 @@ TSPluginInit(int argc, const char *argv[])
   if (argc == 2) {
     // Make sure we start the global SNI selector before we do anything else.
     // This selector can be replaced later, during configuration reload.
-    SniSelector::startup();
-
-    auto selector = SniSelector::instance(); // Assure that we don't delete this until config reload
-
-    if (selector->yamlParser(argv[1])) {
-      selector->setupQueueCont(); // Start the queue processing continuation if needed
-    } else {
-      selector->release();
-      TSFatal("[%s] Failed to parse YAML file '%s'", PLUGIN_NAME, argv[1]);
-    }
+    SniSelector::startup(argv[1]);
   } else {
     TSError("[%s] Usage: rate_limit.so <config.yaml>", PLUGIN_NAME);
   }
