@@ -20,13 +20,11 @@ plugins to build large scale web applications.
 
 # Important notice to ATS developers
 
-ATS is transitioning to cmake as its build system.  At the moment, the autotools build is broken and will soon be removed from the
-repository.  Below is a quick-start guide to cmake:
+ATS is transitioning to cmake as its build system.  At the moment, the autotools build is broken and will soon be removed from the repository.  Below is a quick-start guide to cmake:
 
 ### Step 1: Configuration
 
-With cmake, you definitely want to create an out-of-source build.  You will give that directory to every cmake command.  For these
-examples, it will just be `build`
+With cmake, you definitely want to create an out-of-source build.  You will give that directory to every cmake command.  For these examples, it will just be `build`
 
 ```
 $ cmake -B build
@@ -34,8 +32,7 @@ $ cmake -B build
 
 This will configure the project with defaults.
 
-If you want to customize the build, you can pass values for variables on the command line.  Or, you can interactively change them
-using the `ccmake` program.
+If you want to customize the build, you can pass values for variables on the command line.  Or, you can interactively change them using the `ccmake` program.
 
 ```
 $ cmake -B build -DCMAKE_INSTALL_PREFIX=/tmp/ats -DBUILD_EXPERIMENTAL_PLUGINS=ON
@@ -49,8 +46,7 @@ $ ccmake build
 
 #### Specifying locations of dependencies
 
-To specify the location of a dependency (like --with-*), you generally set a variable with the `ROOT`. The big exception to this is
-for openssl. This variable is called `OPENSSL_ROOT_DIR`
+To specify the location of a dependency (like --with-*), you generally set a variable with the `ROOT`. The big exception to this is for openssl. This variable is called `OPENSSL_ROOT_DIR`
 
 ```
 $ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DPCRE_ROOT=/opt/edge -DOPENSSL_ROOT_DIR=/opt/boringssl
@@ -58,9 +54,7 @@ $ cmake -B build -Djemalloc_ROOT=/opt/jemalloc -DPCRE_ROOT=/opt/edge -DOPENSSL_R
 
 #### Using presets to configure the build
 
-cmake has a feature for grouping configurations together to make configuration and reproduction easier.  The file CMakePresets.json
- declares presets that you can use from the command line.  You can provide your own CMakeUserPresets.json and further refine those
- via inheritance:
+cmake has a feature for grouping configurations together to make configuration and reproduction easier.  The file CMakePresets.json declares presets that you can use from the command line.  You can provide your own CMakeUserPresets.json and further refine those via inheritance:
 
 ```
 $ cmake --preset dev
