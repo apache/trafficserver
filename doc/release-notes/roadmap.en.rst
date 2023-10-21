@@ -102,19 +102,11 @@ are also for illustration.
 
 Burning release numbers, or how our release process works
 ---------------------------------------------------------
-
-When we upload a tar ball to VOTE on as a new release and it does not work
-out, because something is broken and needs a code-change we will not reuse
-the version number. The rationale behind this is the process which guarantees
-that what we release and what's in the tree is also what everyone has seen so
-far and no code is sneaked in.
-
-If for instance we had a release candidate trafficserver-4.1.4-rc1.tar.bz2
-(note the rc1 at the) end, and that vote passed, we'd re-roll the tar-ball to
-make sure it will simply be called trafficserver-4.1.4.tar.bz2. But now all
-sha1 and md5 sums as well as the GPG signature would also be different.
-That's the perfect opportunity to smuggle in some code that no one will
-bother to review any more.
+When we upload a tarball (compressed archive) to VOTE for a new release and encounter issues where the code is broken and requires changes, we avoid reusing the same version number.
+This precaution is taken to ensure the integrity of the process, maintaining that the released code matches what's in the repository and that no unauthorized code gets included.
+For instance, if we initially have a release candidate named trafficserver-4.1.4-rc1.tar.bz2 and it gets approved in the vote, we will create a new version without the "rc1" in the name, like trafficserver-4.1.4.tar.bz2.
+However, this change also affects the checksums (sha1 and md5) and the GPG signature.
+This situation could potentially be exploited to introduce unnoticed code changes.
 
 Therefore when creating a new release the first thing we do is create a
 signed tag and push it. That way everyone can compare that signed tag with
