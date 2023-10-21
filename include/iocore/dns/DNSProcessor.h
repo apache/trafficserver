@@ -121,9 +121,7 @@ struct DNSProcessor : public Processor {
   // NOTE: the HostEnt *block is freed when the function returns
   //
 
-  Action *gethostbyname(Continuation *cont, const char *name, Options const &opt);
   Action *gethostbyname(Continuation *cont, std::string_view name, Options const &opt);
-  Action *getSRVbyname(Continuation *cont, const char *name, Options const &opt);
   Action *getSRVbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *gethostbyaddr(Continuation *cont, IpAddr const *ip, Options const &opt);
 
@@ -169,21 +167,9 @@ extern DNSProcessor dnsProcessor;
 //
 
 inline Action *
-DNSProcessor::getSRVbyname(Continuation *cont, const char *name, Options const &opt)
-{
-  return getby(std::string_view(name), T_SRV, cont, opt);
-}
-
-inline Action *
 DNSProcessor::getSRVbyname(Continuation *cont, std::string_view name, Options const &opt)
 {
   return getby(name, T_SRV, cont, opt);
-}
-
-inline Action *
-DNSProcessor::gethostbyname(Continuation *cont, const char *name, Options const &opt)
-{
-  return getby(std::string_view(name), T_A, cont, opt);
 }
 
 inline Action *
