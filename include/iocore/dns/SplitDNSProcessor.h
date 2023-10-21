@@ -30,6 +30,11 @@
 
 #pragma once
 
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/eventsystem/Lock.h"
+
+#include "tscore/Ptr.h"
+
 struct SplitDNS;
 
 /* --------------------------------------------------------------

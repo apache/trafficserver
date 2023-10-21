@@ -23,9 +23,22 @@
 
 #pragma once
 
-#include "tscore/ink_resolver.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "iocore/dns/SRV.h"
+
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/Processor.h"
+
+#include "tscore/ink_config.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_resolver.h"
+#include "tscore/Version.h"
+
+#include <cstdint>
+#include <string_view>
 
 // Events
 #define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START

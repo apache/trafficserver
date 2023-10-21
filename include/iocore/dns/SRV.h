@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include <vector>
 #include "tscore/ink_platform.h"
 
-struct HostDBInfo;
+#include <cstdlib>
+#include <vector>
 
 #define RAND_INV_RANGE(r) ((int)((RAND_MAX + 1) / (r)))
 
