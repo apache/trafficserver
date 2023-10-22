@@ -15,22 +15,25 @@
 #
 #######################
 
-add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc Inline.cc SplitDNS.cc)
-add_library(ts::inkdns ALIAS inkdns)
-
-target_include_directories(
-  inkdns
-  PUBLIC "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+add_executable(test_dns
+  stub.cc
+  test_SplitDNSYAMLLoader.cc
+  unit_test_main.cc
 )
 
-target_link_libraries(
-  inkdns
-  PUBLIC libswoc::libswoc ts::inkevent ts::inkhostdb
-         #ts::inknet cyclic dependency
-         ts::proxy ts::tsutil ts::tscore
+target_include_directories(test_dns
+  PRIVATE
+    "${PROJECT_SOURCE_DIR}/src/iocore/dns"
+    "${PROJECT_SOURCE_DIR}/src/iocore/net"
+    "${PROJECT_SOURCE_DIR}/src/proxy"
 )
 
-if(BUILD_TESTING)
-  add_subdirectory(unit_tests)
-endif()
+target_link_libraries(test_dns
+  PRIVATE
+    catch2::catch2
+    libswoc
+    ts::inkdns
+    ts::configmanager # transitive
+)
+
+add_test(test_dns test_dns WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
