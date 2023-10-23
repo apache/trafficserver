@@ -132,6 +132,7 @@ endif
 check_PROGRAMS = \
   test_Cache \
   test_CacheDir \
+  test_CacheVol \
   test_RWW \
   test_Alternate_L_to_S \
   test_Alternate_S_to_L \
@@ -318,6 +319,13 @@ test_CacheDir_LDADD = $(test_LDADD)
 test_CacheDir_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_CacheDir.cc
+
+test_CacheVol_CPPFLAGS = $(test_CPPFLAGS)
+test_CacheVol_LDFLAGS = @AM_LDFLAGS@
+test_CacheVol_LDADD = $(test_LDADD)
+test_CacheVol_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_CacheVol.cc
 
 test_RWW_CPPFLAGS = $(test_CPPFLAGS)
 test_RWW_LDFLAGS = @AM_LDFLAGS@
