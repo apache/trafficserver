@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "Event.h"
 #include "main.h"
 
 #include "P_CacheDir.h"
@@ -74,21 +75,6 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    // Test
-    _run();
-
-    // Teardown
-    TerminalTest *tt = new TerminalTest;
-    this_ethread()->schedule_imm(tt);
-    delete this;
-
-    return 0;
-  }
-
-private:
-  void
-  _run()
-  {
     ink_hrtime ttime;
 
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
@@ -99,7 +85,7 @@ private:
     MUTEX_TRY_LOCK(lock, vol->mutex, thread);
     if (!lock.is_locked()) {
       CONT_SCHED_LOCK_RETRY(this);
-      return;
+      return EVENT_DONE;
     }
 
     vol_dir_clear(vol);
@@ -250,6 +236,12 @@ private:
 #endif
     }
     vol_dir_clear(vol);
+
+    // Teardown
+    test_done();
+    delete this;
+
+    return EVENT_DONE;
   }
 };
 
