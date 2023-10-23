@@ -193,9 +193,8 @@ void
 FileManager::invokeConfigPluginCallbacks()
 {
   Debug("filemanager", "invoke plugin callbacks");
-  static const std::string_view s{"*"};
   if (_pluginCallbackList) {
-    _pluginCallbackList->invoke(s.data());
+    _pluginCallbackList->invoke();
   }
 }
 

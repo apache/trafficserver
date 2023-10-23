@@ -4096,12 +4096,12 @@ tsapi::c::TSConfigDataGet(TSConfig configp)
 ////////////////////////////////////////////////////////////////////
 
 void
-tsapi::c::TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
+tsapi::c::TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_file_name)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_name) == TS_SUCCESS);
 
-  global_config_cbs->insert((INKContInternal *)contp, plugin_name);
+  global_config_cbs->insert((INKContInternal *)contp, plugin_name, plugin_file_name);
 }
 
 TSReturnCode

@@ -37,6 +37,7 @@
 #include "api/APIHooks.h"
 #include "api/FeatureAPIHooks.h"
 
+#include "swoc/swoc_file.h"
 #include "ts/InkAPIPrivateIOCore.h"
 #include "ts/experimental.h"
 
@@ -143,12 +144,12 @@ public:
   ConfigUpdateCbTable();
   ~ConfigUpdateCbTable();
 
-  void insert(INKContInternal *contp, const char *name);
-  void invoke(const char *name);
+  void insert(INKContInternal *contp, const char *name, const char *file_name = nullptr);
+  void invoke();
   void invoke(INKContInternal *contp);
 
 private:
-  std::unordered_map<std::string, INKContInternal *> cb_table;
+  std::unordered_map<std::string, std::tuple<INKContInternal *, swoc::file::path, swoc::file::file_time_type>> cb_table;
 };
 
 #include "HttpAPIHooks.h"
