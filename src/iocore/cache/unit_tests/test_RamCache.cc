@@ -39,6 +39,14 @@ namespace
 
 DbgCtl dbg_ctl_cache_test{"cache_test"};
 
+/**
+  When this test was a Regression Test, this value was 28. However, this is reduced
+  to 24 to avoid timeout of running unit test.
+
+  TODO: make this configurable by command line option
+ */
+int max_cache_size_bits = 24;
+
 double zipf_alpha        = 1.2;
 int64_t zipf_bucket_size = 1;
 
@@ -207,7 +215,7 @@ private:
   {
     REQUIRE(cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED);
 
-    for (int s = 20; s <= 28; s += 4) {
+    for (int s = 20; s <= max_cache_size_bits; s += 4) {
       int64_t cache_size = 1LL << s;
       test_RamCache(new_RamCacheLRU(), "LRU", cache_size);
       test_RamCache(new_RamCacheCLFUS(), "CLFUS", cache_size);
