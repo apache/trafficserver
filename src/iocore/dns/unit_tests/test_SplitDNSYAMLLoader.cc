@@ -37,7 +37,7 @@ TEST_CASE("loading a YAML config file")
           "when we try to load the SplitDNS from it, "
           "we should get \"Failed to load does-not-exist.yaml.\"")
   {
-    dns::yaml::load("does-not-exist.yaml", got, errorstream);
+    splitdns::yaml::load("does-not-exist.yaml", got, errorstream);
     CHECK(errorstream.str() == "Failed to load does-not-exist.yaml.");
   }
 
@@ -45,7 +45,23 @@ TEST_CASE("loading a YAML config file")
           "when we try to load the SplitDNS from it, "
           "we should get \"Failed to load does-not-exist-also.yaml.\"")
   {
-    dns::yaml::load("does-not-exist-also.yaml", got, errorstream);
+    splitdns::yaml::load("does-not-exist-also.yaml", got, errorstream);
     CHECK(errorstream.str() == "Failed to load does-not-exist-also.yaml.");
+  }
+
+  SECTION("Given wrong-root.yaml does not have root 'dns', "
+          "when we try to load the SplitDNS from it, "
+          "we should get \"Root tag 'dns' not found. While parsing wrong-root.yaml.\"")
+  {
+    splitdns::yaml::load("wrong-root.yaml", got, errorstream);
+    CHECK(errorstream.str() == "Failed to load wrong-root.yaml. Root tag 'dns' not found.");
+  }
+
+  SECTION("Given wrong-subroot.yaml does not have subroot 'split', "
+          "when we try to load the SplitDNS from it, "
+          "we should get \"Tag 'split' not found. While parsing wrong-subroot.yaml.\"")
+  {
+    splitdns::yaml::load("wrong-subroot.yaml", got, errorstream);
+    REQUIRE(errorstream.str() == "Failed to load wrong-subroot.yaml. Tag 'split' not found.");
   }
 }

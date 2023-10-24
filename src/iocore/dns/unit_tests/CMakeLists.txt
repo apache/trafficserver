@@ -34,6 +34,7 @@ target_link_libraries(test_dns
     libswoc
     ts::inkdns
     ts::configmanager # transitive
+    yaml-cpp::yaml-cpp
 )
 
-add_test(test_dns test_dns WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME test_dns COMMAND test_dns WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

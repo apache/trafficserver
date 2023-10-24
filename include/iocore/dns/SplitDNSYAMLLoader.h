@@ -25,19 +25,54 @@
 
 #include "P_SplitDNSProcessor.h"
 
+#include <swoc/Errata.h>
+#include <swoc/swoc_file.h>
+#include <yaml-cpp/yaml.h>
+
 #include <ostream>
 #include <string_view>
+#include <system_error>
 
-namespace dns
+namespace splitdns
 {
 namespace yaml
 {
+  class SplitDNSYAMLLoader
+  {
+  public:
+    using self_type = SplitDNSYAMLLoader;
+
+    SplitDNSYAMLLoader(std::string const &content, SplitDNS &out) { this->current_node = YAML::Load(content); }
+
+    static void
+    load(std::string const &content, SplitDNS &out, std::ostream &errorstream)
+    {
+      self_type loader{content, out};
+      loader.setUpSplitDNSFromYAMLTree();
+      if (!loader.err.is_ok()) {
+        loader.err.note("While loading SplitDNS configuration.");
+        errorstream << loader.err;
+      }
+    }
+
+  private:
+    YAML::Node current_node;
+    swoc::Errata err;
+
+    void setUpSplitDNSFromYAMLTree();
+  };
 
   inline void
   load(std::string_view config_filename, SplitDNS &out, std::ostream &errorstream)
   {
-    errorstream << "Failed to load " << config_filename << '.';
+    std::error_code ec;
+    auto content{swoc::file::load(config_filename, ec)};
+    if (ec.value() == 0) {
+      SplitDNSYAMLLoader::load(content, out, errorstream);
+    } else {
+      errorstream << "Failed to load " << config_filename << '.';
+    }
   }
 
 } // namespace yaml
-} // namespace dns
+} // namespace splitdns
