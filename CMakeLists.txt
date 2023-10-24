@@ -541,7 +541,7 @@ add_subdirectory(lib)
 # Keep this after lib because lib is made up of third party libraries, so if
 # there are warnings, we can't do anything about it.
 # Note: -DCMAKE_COMPILE_WARNING_AS_ERROR=ON will turn warnings into errors.
-add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type)
+add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override>")
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
 
