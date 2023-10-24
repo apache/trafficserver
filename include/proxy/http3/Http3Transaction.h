@@ -25,7 +25,7 @@
 
 #include "iocore/eventsystem/VConnection.h"
 #include "proxy/ProxyTransaction.h"
-#include "quic/QUICStreamVCAdapter.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3FrameCollector.h"
 

@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 
 namespace rpc::handlers::plugins
 {

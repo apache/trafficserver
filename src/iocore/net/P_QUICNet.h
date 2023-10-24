@@ -28,7 +28,7 @@
 #include "tscore/ink_platform.h"
 
 #include "iocore/net/P_Net.h"
-#include "quic/QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/P_QUICNetProcessor.h"
 #include "iocore/net/P_QUICNetVConnection.h"
 

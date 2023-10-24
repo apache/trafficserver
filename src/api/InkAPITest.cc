@@ -49,7 +49,7 @@
 #include "iocore/net/P_Net.h"
 #include "records/RecHttp.h"
 
-#include "http/HttpSM.h"
+#include "proxy/http/HttpSM.h"
 #include "tscore/TestBox.h"
 
 // This used to be in InkAPITestTool.cc, which we'd just #include here... But that seemed silly.

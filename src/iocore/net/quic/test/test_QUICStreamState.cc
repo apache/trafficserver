@@ -25,9 +25,9 @@
 
 #include <memory>
 
-#include "quic/QUICFrame.h"
-#include "quic/QUICStreamState.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICStreamState.h"
+#include "iocore/net/quic/Mock.h"
 
 // Unidirectional (sending)
 TEST_CASE("QUICSendStreamState", "[quic]")

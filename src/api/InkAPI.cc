@@ -81,9 +81,9 @@
 #include "iocore/utils/Machine.h"
 #include "proxy/http/HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
-#include "config/FileManager.h"
+#include "mgmt/config/FileManager.h"
 
-#include "rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include <swoc/bwf_base.h>
 #include "ts/ts.h"
 

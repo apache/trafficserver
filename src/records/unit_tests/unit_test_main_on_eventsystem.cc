@@ -28,7 +28,7 @@
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 namespace
 {

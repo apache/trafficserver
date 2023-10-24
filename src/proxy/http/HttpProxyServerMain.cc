@@ -28,7 +28,7 @@
 #include "proxy/http/HttpSessionAccept.h"
 #include "proxy/ReverseProxy.h"
 #include "proxy/http/HttpSessionManager.h"
-#include "remap/RemapHitCount.h"
+#include "proxy/http/remap/RemapHitCount.h"
 #ifdef USE_HTTP_DEBUG_LISTS
 #include "proxy/http/Http1ClientSession.h"
 #endif
@@ -37,13 +37,13 @@
 #include "tscore/Tokenizer.h"
 #include "iocore/net/P_SSLNextProtocolAccept.h"
 #include "proxy/ProtocolProbeSessionAccept.h"
-#include "http2/Http2SessionAccept.h"
+#include "proxy/http2/Http2SessionAccept.h"
 #include "proxy/http/HttpConnectionCount.h"
 #include "proxy/http/HttpProxyServerMain.h"
 #if TS_USE_QUIC == 1
 #include "iocore/net/P_QUICNetProcessor.h"
 #include "iocore/net/P_QUICNextProtocolAccept.h"
-#include "http3/Http3SessionAccept.h"
+#include "proxy/http3/Http3SessionAccept.h"
 #endif
 #include "proxy/http/PreWarmManager.h"
 

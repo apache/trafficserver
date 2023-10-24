@@ -40,14 +40,14 @@
 #include "tscore/Filenames.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrUtils.h"
-#include "logging/Log.h"
-#include "logging/LogUtils.h"
+#include "proxy/logging/Log.h"
+#include "proxy/logging/LogUtils.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
 #include "proxy/ReverseProxy.h"
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/StatPages.h"
-#include "../IPAllow.h"
+#include "proxy/IPAllow.h"
 #include "iocore/utils/Machine.h"
 
 namespace

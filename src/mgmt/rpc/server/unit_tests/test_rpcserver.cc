@@ -36,14 +36,14 @@
 #include <swoc/BufferWriter.h>
 #include "ts/ts.h"
 
-#include "rpc/jsonrpc/JsonRPC.h"
-#include "rpc/server/RPCServer.h"
-#include "rpc/server/IPCSocketServer.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/server/RPCServer.h"
+#include "mgmt/rpc/server/IPCSocketServer.h"
 
 #include "shared/rpc/IPCSocketClient.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 

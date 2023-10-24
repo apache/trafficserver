@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/ink_hrtime.h"
 #include <memory>

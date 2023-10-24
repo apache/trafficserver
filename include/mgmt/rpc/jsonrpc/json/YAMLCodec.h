@@ -21,8 +21,8 @@
 #pragma once
 
 #include <yaml-cpp/yaml.h>
-#include "rpc/jsonrpc/error/RPCError.h"
-#include "rpc/jsonrpc/Defs.h"
+#include "mgmt/rpc/jsonrpc/error/RPCError.h"
+#include "mgmt/rpc/jsonrpc/Defs.h"
 
 namespace rpc::json_codecs
 {

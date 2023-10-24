@@ -36,7 +36,7 @@
 #include "iocore/net/UDPConnection.h"
 #include "iocore/net/P_UDPConnection.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 static const char payload[] = "hello";
 in_port_t port              = 0;

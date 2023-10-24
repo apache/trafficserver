@@ -25,9 +25,9 @@
 #include "records/P_RecCore.h"
 #include "tscore/Diags.h"
 
-#include "config/FileManager.h"
+#include "mgmt/config/FileManager.h"
 
-#include "rpc/handlers/common/RecordsUtils.h"
+#include "mgmt/rpc/handlers/common/RecordsUtils.h"
 #include "api/Metrics.h"
 
 namespace utils = rpc::handlers::records::utils;

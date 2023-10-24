@@ -23,7 +23,7 @@
  */
 
 #include "tscpp/util/ts_bw_format.h"
-#include "../ProxyTransaction.h"
+#include "proxy/ProxyTransaction.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpTransact.h"
@@ -63,7 +63,6 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <atomic>
-#include <logging/Log.h>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K

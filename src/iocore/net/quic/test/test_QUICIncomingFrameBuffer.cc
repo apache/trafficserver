@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICIncomingFrameBuffer.h"
-#include "quic/QUICBidirectionalStream.h"
+#include "iocore/net/quic/QUICIncomingFrameBuffer.h"
+#include "iocore/net/quic/QUICBidirectionalStream.h"
 #include <memory>
 
 TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")

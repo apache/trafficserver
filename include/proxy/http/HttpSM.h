@@ -43,7 +43,7 @@
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
-#include "../ProxyTransaction.h"
+#include "proxy/ProxyTransaction.h"
 #include "proxy/hdrs/HdrUtils.h"
 
 // inknet

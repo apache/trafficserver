@@ -28,7 +28,7 @@
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
 // it can generically apply to all protocol implementations.
-#include "http/HttpSessionAccept.h"
+#include "proxy/http/HttpSessionAccept.h"
 
 // HTTP/2 Session Accept.
 //

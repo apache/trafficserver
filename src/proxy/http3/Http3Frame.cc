@@ -22,7 +22,7 @@
  */
 
 #include "tscore/Diags.h"
-#include "quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
 

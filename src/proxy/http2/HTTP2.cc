@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "hdrs/VersionConverter.h"
-#include "hdrs/HeaderValidator.h"
+#include "proxy/hdrs/VersionConverter.h"
+#include "proxy/hdrs/HeaderValidator.h"
 #include "proxy/http2/HTTP2.h"
 #include "proxy/http2/HPACK.h"
 

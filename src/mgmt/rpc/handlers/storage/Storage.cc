@@ -19,7 +19,7 @@
 */
 
 #include "mgmt/rpc/handlers/storage/Storage.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "iocore/cache/P_Cache.h"
 
 namespace rpc::handlers::storage::field_names

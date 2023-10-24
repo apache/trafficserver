@@ -28,7 +28,7 @@
 
 #include "tscore/Errata.h"
 
-#include <rpc/jsonrpc/JsonRPC.h>
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
 
 #include <unordered_map>
 #include <string_view>

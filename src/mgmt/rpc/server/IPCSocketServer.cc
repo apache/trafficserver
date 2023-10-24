@@ -41,8 +41,8 @@
 
 #include <ts/ts.h>
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/server/IPCSocketServer.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/server/IPCSocketServer.h"
 
 namespace
 {

@@ -26,7 +26,7 @@
 #include "tscore/Diags.h"
 #include "records/RecCore.h"
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 
 namespace
 {

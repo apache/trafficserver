@@ -25,10 +25,10 @@
 
 #include <memory>
 
-#include "quic/QUICStreamManager.h"
-#include "quic/QUICStreamManager_native.h"
-#include "quic/QUICFrame.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamManager_native.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/Mock.h"
 
 MockQUICContext context;
 

@@ -26,7 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "proxy/hdrs/HTTP.h"
-#include "../hdrs/XPACK.h"
+#include "proxy/hdrs/XPACK.h"
 
 #include <deque>
 #include <string_view>

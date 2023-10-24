@@ -23,7 +23,7 @@
 
 #include "iocore/net/P_Net.h"
 #include "iocore/net/P_QUICNet.h"
-#include "quic/QUICEvents.h"
+#include "iocore/net/quic/QUICEvents.h"
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 

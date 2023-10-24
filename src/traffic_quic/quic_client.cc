@@ -29,7 +29,7 @@
 
 #include "proxy/http3/Http3Transaction.h"
 #include "iocore/net/P_QUICNetVConnection.h"
-#include "quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamManager.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html

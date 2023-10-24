@@ -46,11 +46,11 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
-#include "quic/QUICConnection.h"
-#include "quic/QUICConnectionTable.h"
-#include "quic/QUICContext.h"
-#include "quic/QUICStreamManager.h"
-#include "quic/QUICStreamManager_quiche.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
+#include "iocore/net/quic/QUICContext.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamManager_quiche.h"
 
 #include <netinet/in.h>
 #include <quiche.h>

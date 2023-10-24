@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICPathValidator.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICPathValidator.h"
+#include "iocore/net/quic/Mock.h"
 #include "stdio.h"
 #include "stdlib.h"
 

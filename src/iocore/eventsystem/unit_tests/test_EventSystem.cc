@@ -29,7 +29,7 @@
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS     2

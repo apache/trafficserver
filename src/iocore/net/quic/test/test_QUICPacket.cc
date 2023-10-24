@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICPacket.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 TEST_CASE("Receiving Packet", "[quic]")
 {

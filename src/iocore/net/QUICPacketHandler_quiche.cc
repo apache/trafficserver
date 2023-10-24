@@ -28,7 +28,7 @@
 #include "iocore/net/P_QUICPacketHandler_quiche.h"
 #include "iocore/net/P_QUICNetProcessor_quiche.h"
 #include "iocore/net/P_QUICClosedConCollector.h"
-#include "quic/QUICConnectionTable.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include <quiche.h>
 

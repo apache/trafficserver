@@ -22,8 +22,8 @@
 
 #include "iocore/cache/P_Cache.h"
 #include <tscore/TSSystemState.h>
-#include "rpc/handlers/common/ErrorUtils.h"
-#include "rpc/handlers/common/Utils.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/handlers/common/Utils.h"
 
 namespace rpc::handlers::server
 {

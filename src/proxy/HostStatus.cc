@@ -25,7 +25,7 @@
 #include "proxy/HostStatus.h"
 #include "iocore/eventsystem/Tasks.h"
 
-#include "rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "shared/rpc/RPCRequests.h"
 
 namespace

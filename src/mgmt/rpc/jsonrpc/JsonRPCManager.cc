@@ -27,7 +27,7 @@
 #include <condition_variable>
 
 #include <swoc/swoc_meta.h>
-#include "json/YAMLCodec.h"
+#include "mgmt/rpc/jsonrpc/json/YAMLCodec.h"
 
 namespace
 {

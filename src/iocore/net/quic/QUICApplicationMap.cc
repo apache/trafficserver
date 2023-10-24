@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include <QUICApplicationMap.h>
+#include "iocore/net/quic/QUICApplicationMap.h"
 
 QUICApplication *
 QUICApplicationMap::get(QUICStreamId id)

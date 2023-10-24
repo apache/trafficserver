@@ -31,7 +31,7 @@
 
 #include <poll.h>
 
-#include "LogStandalone.cc"
+#include "proxy/logging/LogStandalone.cc"
 
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/LogField.h"

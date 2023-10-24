@@ -84,7 +84,7 @@ extern "C" int plock(int);
 #include "proxy/http/HttpProxyServerMain.h"
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/ProxySession.h"
-#include "logging/Log.h"
+#include "proxy/logging/Log.h"
 #include "proxy/CacheControl.h"
 #include "proxy/IPAllow.h"
 #include "proxy/ParentSelection.h"
@@ -108,10 +108,10 @@ extern "C" int plock(int);
 #include "traffic_server/RpcAdminPubHandlers.h"
 
 // Json Rpc stuffs
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/server/RPCServer.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/server/RPCServer.h"
 
-#include "config/FileManager.h"
+#include "mgmt/config/FileManager.h"
 
 #if TS_USE_QUIC == 1
 #include "proxy/http3/Http3.h"

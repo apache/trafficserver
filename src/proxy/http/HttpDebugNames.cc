@@ -29,7 +29,7 @@
 #include "proxy/Transform.h"
 #include "proxy/http/HttpSM.h"
 #include <ts/apidefs.h>
-#include <Event.h>
+#include "iocore/eventsystem/Event.h"
 
 //----------------------------------------------------------------------------
 const char *

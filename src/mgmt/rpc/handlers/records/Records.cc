@@ -23,7 +23,7 @@
 #include <string>
 #include <string_view>
 
-#include "handlers/common/RecordsUtils.h"
+#include "mgmt/rpc/handlers/common/RecordsUtils.h"
 // #include "common/yaml/codecs.h"
 ///
 /// @brief Local definitions to map requests and responsponses(not fully supported yet) to custom structures. All this definitions

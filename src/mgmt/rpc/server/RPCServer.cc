@@ -18,7 +18,7 @@
   limitations under the License.
 */
 #include "mgmt/rpc/server/RPCServer.h"
-#include "rpc/server/IPCSocketServer.h"
+#include "mgmt/rpc/server/IPCSocketServer.h"
 
 rpc::RPCServer *jsonrpcServer = nullptr;
 

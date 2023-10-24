@@ -31,11 +31,11 @@
 
 #ifdef TEST_LOG_UTILS
 
-#include "unit-tests/test_LogUtils.h"
+#include "proxy/logging/unit-tests/test_LogUtils.h"
 
 #else
 
-#include <MIME.h>
+#include "proxy/hdrs/MIME.h"
 
 #endif
 

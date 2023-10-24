@@ -33,11 +33,11 @@
 #include <utime.h>
 
 #include "proxy/http/remap/unit-tests/plugin_testing_common.h"
-#include "../PluginFactory.h"
-#include "../PluginDso.h"
+#include "proxy/http/remap/PluginFactory.h"
+#include "proxy/http/remap/PluginDso.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 #define TEST_THREADS 2
 struct EventProcessorListener : Catch::TestEventListenerBase {

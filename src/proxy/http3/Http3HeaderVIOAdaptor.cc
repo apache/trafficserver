@@ -22,7 +22,7 @@
  */
 
 #include "proxy/http3/Http3HeaderVIOAdaptor.h"
-#include "hdrs/HeaderValidator.h"
+#include "proxy/hdrs/HeaderValidator.h"
 
 #include "iocore/eventsystem/VIO.h"
 #include "proxy/hdrs/HTTP.h"

@@ -25,7 +25,7 @@
 
 #include "tscore/Errata.h"
 #include "ts/apidefs.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 namespace rpc
 {

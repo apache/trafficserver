@@ -39,7 +39,7 @@
 
 #include "tscore/ink_platform.h"
 #include "iocore/net/P_Net.h"
-#include "quic/QUICConnectionTable.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
 
 class UnixNetVConnection;
 class QUICResetTokenTable;

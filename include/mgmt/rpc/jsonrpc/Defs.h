@@ -25,7 +25,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "rpc/jsonrpc/error/RPCError.h"
+#include "mgmt/rpc/jsonrpc/error/RPCError.h"
 
 // This file contains all the internal types used by the RPC engine to deal with all the messages
 // While we use yamlcpp for parsing, internally we model the request/response on our wrappers (RPCRequest, RPCResponse)

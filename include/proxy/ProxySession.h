@@ -29,7 +29,7 @@
 #include <string_view>
 #include <memory>
 #include "api/InkAPIInternal.h"
-#include "http/HttpSessionAccept.h"
+#include "proxy/http/HttpSessionAccept.h"
 #include "proxy/IPAllow.h"
 #include "proxy/private/SSLProxySession.h"
 

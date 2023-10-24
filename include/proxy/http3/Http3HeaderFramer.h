@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "hdrs/HTTP.h"
-#include "hdrs/VersionConverter.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/VersionConverter.h"
 
 #include "proxy/http3/QPACK.h"
 

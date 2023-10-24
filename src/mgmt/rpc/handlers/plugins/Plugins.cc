@@ -19,7 +19,7 @@
 */
 
 #include "mgmt/rpc/handlers/plugins/Plugins.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "api/LifecycleAPIHooks.h"
 

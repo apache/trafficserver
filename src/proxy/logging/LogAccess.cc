@@ -24,7 +24,7 @@
 
 #include "proxy/logging/LogAccess.h"
 
-#include "http/HttpSM.h"
+#include "proxy/http/HttpSM.h"
 #include "proxy/hdrs/MIME.h"
 #include "iocore/utils/Machine.h"
 #include "proxy/logging/LogFormat.h"
