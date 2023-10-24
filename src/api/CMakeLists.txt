@@ -31,14 +31,14 @@ target_include_directories(
 )
 
 set(TSAPI_PUBLIC_HEADERS
-    ${CMAKE_SOURCE_DIR}/include/ts/ts.h
-    ${CMAKE_SOURCE_DIR}/include/ts/remap.h
-    ${CMAKE_SOURCE_DIR}/include/ts/DbgCtl.h
-    ${CMAKE_SOURCE_DIR}/include/ts/TsException.h
-    ${CMAKE_SOURCE_DIR}/include/ts/parentselectdefs.h
-    ${CMAKE_SOURCE_DIR}/include/ts/parentselectdefs.h
-    ${CMAKE_BINARY_DIR}/include/ts/apidefs.h
-    ${CMAKE_SOURCE_DIR}/include/ts/experimental.h
+  ${PROJECT_SOURCE_DIR}/include/ts/ts.h
+  ${PROJECT_SOURCE_DIR}/include/ts/remap.h
+  ${PROJECT_SOURCE_DIR}/include/ts/DbgCtl.h
+  ${PROJECT_SOURCE_DIR}/include/ts/TsException.h
+  ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
+  ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
+  ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
+  ${PROJECT_SOURCE_DIR}/include/ts/experimental.h
 )
 
 target_link_libraries(tsapi PRIVATE ts::tscore)

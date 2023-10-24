@@ -44,8 +44,42 @@ add_library(
 )
 add_library(ts::tscppapi ALIAS tscppapi)
 target_link_libraries(tscppapi PUBLIC libswoc yaml-cpp::yaml-cpp)
-install(TARGETS tscppapi)
 
 if(APPLE)
   target_link_options(tscppapi PRIVATE -undefined dynamic_lookup)
 endif()
+
+set(TSCPP_API_PUBLIC_HEADERS
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Async.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/AsyncHttpFetch.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/AsyncTimer.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/CaseInsensitiveStringComparator.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Cleanup.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/ClientRequest.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Continuation.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/GlobalPlugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/GzipDeflateTransformation.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/GzipInflateTransformation.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Headers.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/HttpMethod.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/HttpStatus.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/HttpVersion.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/InterceptPlugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Logger.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Plugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/PluginInit.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/RemapPlugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Request.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Response.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Stat.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Transaction.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/TransactionPlugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/TransformationPlugin.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/Url.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/noncopyable.h
+  ${PROJECT_SOURCE_DIR}/include/tscpp/api/utils.h
+)
+set_target_properties(tscppapi PROPERTIES PUBLIC_HEADER "${TSCPP_API_PUBLIC_HEADERS}")
+
+install(TARGETS tscppapi
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tscpp/api)
