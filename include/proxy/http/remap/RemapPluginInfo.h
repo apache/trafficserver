@@ -30,7 +30,7 @@
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include "ts/remap.h"
-#include "PluginDso.h"
+#include "proxy/http/remap/PluginDso.h"
 
 class url_mapping;
 

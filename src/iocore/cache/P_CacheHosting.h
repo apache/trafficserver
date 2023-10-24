@@ -24,7 +24,7 @@
 #pragma once
 #include <memory>
 #include <shared_mutex>
-#include "P_Cache.h"
+#include "iocore/cache/P_Cache.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 

@@ -93,9 +93,9 @@
 
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_defs.h"
-#include "HTTP.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/Regex.h"
-#include "URL.h"
+#include "proxy/hdrs/URL.h"
 
 #include <swoc/swoc_ip.h>
 

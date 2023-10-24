@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Crash.h"
+#include "traffic_server/Crash.h"
 #include "swoc/swoc_file.h"
 #include "records/RecCore.h"
 #include "tscore/Layout.h"

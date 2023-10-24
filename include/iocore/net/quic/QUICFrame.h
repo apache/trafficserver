@@ -27,12 +27,12 @@
 #include "tscore/Allocator.h"
 #include "tscore/List.h"
 #include "tscore/Ptr.h"
-#include "IOBuffer.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #include <vector>
 #include <iterator>
 #include <set>
 
-#include "QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 class QUICFrame;
 class QUICStreamFrame;

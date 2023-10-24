@@ -26,7 +26,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
-#include "DiagsConfig.h"
+#include "proxy/shared/DiagsConfig.h"
 #include "records/P_RecCore.h"
 
 //////////////////////////////////////////////////////////////////////////////

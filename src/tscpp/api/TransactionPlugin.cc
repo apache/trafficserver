@@ -25,9 +25,9 @@
 #include <cassert>
 #include "ts/ts.h"
 #include "tscpp/api/TransactionPlugin.h"
-#include "utils_internal.h"
+#include "tscpp/api/utils_internal.h"
 #include "tscpp/api/noncopyable.h"
-#include "logging_internal.h"
+#include "tscpp/api/logging_internal.h"
 
 using namespace atscppapi;
 using atscppapi::TransactionPlugin;

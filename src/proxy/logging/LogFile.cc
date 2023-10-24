@@ -41,19 +41,19 @@
 #include <fcntl.h>
 #include <libgen.h>
 
-#include "P_EventSystem.h"
-#include "Machine.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "iocore/utils/Machine.h"
 
 #include "tscore/BaseLogFile.h"
-#include "LogField.h"
-#include "LogFilter.h"
-#include "LogFormat.h"
-#include "LogBuffer.h"
-#include "LogFile.h"
-#include "LogObject.h"
-#include "LogUtils.h"
-#include "LogConfig.h"
-#include "Log.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/Log.h"
 
 /*-------------------------------------------------------------------------
   LogFile::LogFile

@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICDebugNames.h"
-#include "VConnection.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/eventsystem/VConnection.h"
 
 const char *
 QUICDebugNames::packet_type(QUICPacketType type)

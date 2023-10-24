@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "RemapHitCount.h"
-#include "UrlRewrite.h"
+#include "proxy/http/remap/RemapHitCount.h"
+#include "proxy/http/remap/UrlRewrite.h"
 
 extern UrlRewrite *rewrite_table;
 

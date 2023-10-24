@@ -26,10 +26,10 @@
 #include "hdrs/HTTP.h"
 #include "hdrs/VersionConverter.h"
 
-#include "QPACK.h"
+#include "proxy/http3/QPACK.h"
 
-#include "Http3FrameGenerator.h"
-#include "Http3Frame.h"
+#include "proxy/http3/Http3FrameGenerator.h"
+#include "proxy/http3/Http3Frame.h"
 
 class Http3Transaction;
 class VIO;

@@ -21,12 +21,12 @@
  *  limitations under the License.
  */
 
-#include "Http3FrameDispatcher.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
 
 #include "tscore/Diags.h"
-#include "QUICIntUtil.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 
-#include "Http3DebugNames.h"
+#include "proxy/http3/Http3DebugNames.h"
 
 //
 // Frame Dispatcher

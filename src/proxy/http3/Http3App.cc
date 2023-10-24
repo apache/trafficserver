@@ -21,24 +21,24 @@
  *  limitations under the License.
  */
 
-#include "Http3App.h"
+#include "proxy/http3/Http3App.h"
 
 #include <utility>
 
 #include "tscore/ink_resolver.h"
 
-#include "P_Net.h"
-#include "P_VConnection.h"
-#include "QUICStreamManager.h"
-#include "QUICStreamVCAdapter.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/eventsystem/P_VConnection.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
 
-#include "Http3.h"
-#include "Http3Config.h"
-#include "Http3DebugNames.h"
-#include "Http3Session.h"
-#include "Http3Transaction.h"
-#include "Http3ProtocolEnforcer.h"
-#include "Http3SettingsHandler.h"
+#include "proxy/http3/Http3.h"
+#include "proxy/http3/Http3Config.h"
+#include "proxy/http3/Http3DebugNames.h"
+#include "proxy/http3/Http3Session.h"
+#include "proxy/http3/Http3Transaction.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/Http3SettingsHandler.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";

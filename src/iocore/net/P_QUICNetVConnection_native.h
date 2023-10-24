@@ -32,14 +32,14 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_Net.h"
-#include "P_EventSystem.h"
-#include "P_UnixNetVConnection.h"
-#include "P_UnixNet.h"
-#include "P_UDPNet.h"
-#include "TLSALPNSupport.h"
-#include "TLSBasicSupport.h"
-#include "TLSSessionResumptionSupport.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "iocore/net/P_UnixNetVConnection.h"
+#include "iocore/net/P_UnixNet.h"
+#include "iocore/net/P_UDPNet.h"
+#include "iocore/net/TLSALPNSupport.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 

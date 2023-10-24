@@ -38,11 +38,11 @@
  ****************************************************************************/
 #pragma once
 
-#include "NetProcessor.h"
-#include "NetAcceptEventIO.h"
+#include "iocore/net/NetProcessor.h"
+#include "iocore/net/NetAcceptEventIO.h"
 #include <vector>
 #include "tscore/ink_platform.h"
-#include "P_Connection.h"
+#include "iocore/net/P_Connection.h"
 
 struct NetAccept;
 struct HttpProxyPort;

@@ -35,15 +35,15 @@
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/CryptoHash.h"
 
-#include "LogUtils.h"
-#include "LogFile.h"
-#include "LogField.h"
-#include "LogFilter.h"
-#include "LogFormat.h"
-#include "LogBuffer.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "Log.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/Log.h"
 
 // class variables
 //

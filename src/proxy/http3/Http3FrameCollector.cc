@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "Http3FrameCollector.h"
+#include "proxy/http3/Http3FrameCollector.h"
 
-#include "Http3DebugNames.h"
+#include "proxy/http3/Http3DebugNames.h"
 
 Http3ErrorUPtr
 Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, size_t &nwritten, bool &all_done)

@@ -22,7 +22,7 @@
 #pragma once
 
 #include <atomic>
-#include "Hash.h"
+#include "tscore/Hash.h"
 #include <cstdint>
 #include <iostream>
 #include <map>

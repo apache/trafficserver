@@ -21,14 +21,14 @@
  *  limitations under the License.
  */
 
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFrame.h"
 
 #include <algorithm>
 
-#include "QUICStream.h"
-#include "QUICIntUtil.h"
-#include "QUICDebugNames.h"
-#include "QUICPacket.h"
+#include "iocore/net/quic/QUICStream.h"
+#include "iocore/net/quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 #define LEFT_SPACE(pos) ((size_t)(buf + len - pos))
 #define FRAME_SIZE(pos) (pos - buf)

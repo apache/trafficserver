@@ -27,10 +27,10 @@
 
 #include "tscore/ink_platform.h"
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "quic/QUICTypes.h"
-#include "P_QUICNetProcessor.h"
-#include "P_QUICNetVConnection.h"
+#include "iocore/net/P_QUICNetProcessor.h"
+#include "iocore/net/P_QUICNetVConnection.h"
 
 class NetHandler;
 using NetContHandler = int (NetHandler::*)(int, void *);

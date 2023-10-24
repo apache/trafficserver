@@ -39,8 +39,8 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_Connection.h"
-#include "P_NetAccept.h"
+#include "iocore/net/P_Connection.h"
+#include "iocore/net/P_NetAccept.h"
 
 //
 // NetAccept

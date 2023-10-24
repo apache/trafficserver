@@ -23,30 +23,30 @@
 
 #pragma once
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 
-#include "QUICApplication.h"
-#include "QUICStreamManager.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICStreamManager.h"
 #if TS_HAS_QUICHE
-#include "QUICStreamManager_quiche.h"
+#include "iocore/net/quic/QUICStreamManager_quiche.h"
 #else
-#include "QUICStreamManager_native.h"
+#include "iocore/net/quic/QUICStreamManager_native.h"
 #endif
-#include "QUICLossDetector.h"
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICPinger.h"
-#include "QUICPadder.h"
-#include "QUICEvents.h"
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICPathManager.h"
-#include "QUICPinger.h"
-#include "QUICPadder.h"
-#include "QUICHandshakeProtocol.h"
-#include "QUICStreamAdapter.h"
+#include "iocore/net/quic/QUICLossDetector.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPinger.h"
+#include "iocore/net/quic/QUICPadder.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPathManager.h"
+#include "iocore/net/quic/QUICPinger.h"
+#include "iocore/net/quic/QUICPadder.h"
+#include "iocore/net/quic/QUICHandshakeProtocol.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 #if TS_HAS_QUICHE
-#include "QUICStream_quiche.h"
+#include "iocore/net/quic/QUICStream_quiche.h"
 #else
-#include "QUICStream_native.h"
+#include "iocore/net/quic/QUICStream_native.h"
 #endif
 
 class MockQUICContext;

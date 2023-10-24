@@ -30,13 +30,13 @@
 #include "tscore/Layout.h"
 #include "tscore/Diags.h"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "records/RecordsConfig.h"
 
-#include "QUICConfig.h"
-#include "HuffmanCodec.h"
-#include "QPACK.h"
-#include "HTTP.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "proxy/hdrs/HuffmanCodec.h"
+#include "proxy/http3/QPACK.h"
+#include "proxy/hdrs/HTTP.h"
 
 #define TEST_THREADS 1
 

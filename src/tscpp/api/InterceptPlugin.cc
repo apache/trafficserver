@@ -23,9 +23,9 @@
 #include "tscpp/api/InterceptPlugin.h"
 
 #include "ts/ts.h"
-#include "logging_internal.h"
+#include "tscpp/api/logging_internal.h"
 #include "tscpp/api/noncopyable.h"
-#include "utils_internal.h"
+#include "tscpp/api/utils_internal.h"
 
 #include <cstdlib>
 #include <cerrno>

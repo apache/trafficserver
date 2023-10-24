@@ -23,8 +23,8 @@
 
 #include "hdrs/VersionConverter.h"
 #include "hdrs/HeaderValidator.h"
-#include "HTTP2.h"
-#include "HPACK.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/http2/HPACK.h"
 
 #include "tscore/ink_assert.h"
 #include "tscpp/util/LocalBuffer.h"

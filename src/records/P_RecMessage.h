@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "P_RecDefs.h"
+#include "records/P_RecDefs.h"
 #include "swoc/MemSpan.h"
 
 //-------------------------------------------------------------------------

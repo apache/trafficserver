@@ -32,12 +32,12 @@
 #include "swoc/TextView.h"
 #include "swoc/string_view_util.h"
 
-#include "MIME.h"
-#include "LogUtils.h"
-#include "LogField.h"
-#include "LogBuffer.h"
-#include "LogAccess.h"
-#include "Log.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/Log.h"
 
 // clang-format off
 //

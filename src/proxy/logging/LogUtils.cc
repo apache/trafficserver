@@ -59,8 +59,8 @@
 
 #include "records/P_RecProcess.h"
 
-#include "LogUtils.h"
-#include "LogLimits.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogLimits.h"
 
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_str

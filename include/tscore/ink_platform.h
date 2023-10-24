@@ -137,7 +137,7 @@ struct ifafilt;
 #include <stropts.h>
 #endif
 
-#include "ink_endian.h"
+#include "tscore/ink_endian.h"
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>

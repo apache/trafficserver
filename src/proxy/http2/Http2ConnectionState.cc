@@ -21,18 +21,18 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
-#include "HTTP2.h"
-#include "Http2ConnectionState.h"
-#include "Http2ClientSession.h"
-#include "Http2ServerSession.h"
-#include "Http2Stream.h"
-#include "Http2Frame.h"
-#include "Http2DebugNames.h"
-#include "HttpDebugNames.h"
-#include "HttpSM.h"
+#include "iocore/net/P_Net.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/http2/Http2ConnectionState.h"
+#include "proxy/http2/Http2ClientSession.h"
+#include "proxy/http2/Http2ServerSession.h"
+#include "proxy/http2/Http2Stream.h"
+#include "proxy/http2/Http2Frame.h"
+#include "proxy/http2/Http2DebugNames.h"
+#include "proxy/http/HttpDebugNames.h"
+#include "proxy/http/HttpSM.h"
 
-#include "TLSSNISupport.h"
+#include "iocore/net/TLSSNISupport.h"
 
 #include "tscore/ink_assert.h"
 #include "tscpp/util/PostScript.h"

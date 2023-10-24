@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "IOBuffer.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
-#include "HTTP2.h"
+#include "proxy/http2/HTTP2.h"
 
 /**
    Incoming HTTP/2 Frame

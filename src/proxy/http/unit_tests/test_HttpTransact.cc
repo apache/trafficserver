@@ -26,7 +26,7 @@
 #include "tscore/Diags.h"
 #include "tscpp/util/PostScript.h"
 
-#include "HttpTransact.h"
+#include "proxy/http/HttpTransact.h"
 #include "records/RecordsConfig.h"
 
 #include "catch.hpp"

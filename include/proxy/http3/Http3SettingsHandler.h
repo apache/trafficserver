@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "Http3FrameHandler.h"
-#include "Http3Session.h"
+#include "proxy/http3/Http3FrameHandler.h"
+#include "proxy/http3/Http3Session.h"
 
 class Http3SettingsHandler : public Http3FrameHandler
 {

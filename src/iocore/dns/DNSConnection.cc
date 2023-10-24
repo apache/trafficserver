@@ -28,9 +28,9 @@
 
 **************************************************************************/
 #include <tscore/ink_defs.h>
-#include "P_DNS.h"
-#include "P_DNSConnection.h"
-#include "P_DNSProcessor.h"
+#include "iocore/dns/P_DNS.h"
+#include "iocore/dns/P_DNSConnection.h"
+#include "iocore/dns/P_DNSProcessor.h"
 #include "tscore/ink_sock.h"
 
 #define SET_TCP_NO_DELAY

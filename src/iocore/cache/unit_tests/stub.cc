@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "SSLAPIHooks.h"
+#include "iocore/net/SSLAPIHooks.h"
 
 #include "api/InkAPIInternal.h"
 
-#include "HttpAPIHooks.h"
+#include "proxy/HttpAPIHooks.h"
 
 #include "tscore/Version.h"
 

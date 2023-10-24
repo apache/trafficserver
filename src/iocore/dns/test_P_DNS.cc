@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_DNS.h"
+#include "iocore/dns/P_DNS.h"
 
 Diags *diags;
 struct NetTesterSM : public Continuation {

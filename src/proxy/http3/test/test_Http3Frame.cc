@@ -23,9 +23,9 @@
 
 #include "catch.hpp"
 #include <cstdio>
-#include "Http3Frame.h"
-#include "Http3FrameDispatcher.h"
-#include "Http3SettingsHandler.h"
+#include "proxy/http3/Http3Frame.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
+#include "proxy/http3/Http3SettingsHandler.h"
 
 TEST_CASE("Http3Frame Type", "[http3]")
 {

@@ -17,7 +17,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "RPCServer.h"
+#include "mgmt/rpc/server/RPCServer.h"
 #include "rpc/server/IPCSocketServer.h"
 
 rpc::RPCServer *jsonrpcServer = nullptr;

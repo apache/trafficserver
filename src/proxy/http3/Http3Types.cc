@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "Http3Types.h"
+#include "proxy/http3/Http3Types.h"
 
 Http3StreamType
 Http3Stream::type(const uint8_t *buf)

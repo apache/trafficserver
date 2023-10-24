@@ -30,17 +30,17 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
-#include "P_EventSystem.h"
-#include "P_Cache.h"
-#include "ConfigProcessor.h"
-#include "ReverseProxy.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "iocore/cache/P_Cache.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/ReverseProxy.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
 #include "ts/remap.h"
-#include "RemapPluginInfo.h"
-#include "RemapProcessor.h"
-#include "UrlRewrite.h"
-#include "UrlMapping.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/remap/RemapProcessor.h"
+#include "proxy/http/remap/UrlRewrite.h"
+#include "proxy/http/remap/UrlMapping.h"
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;

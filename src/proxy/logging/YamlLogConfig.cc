@@ -19,11 +19,11 @@
   limitations under the License.
  */
 
-#include "YamlLogConfig.h"
-#include "YamlLogConfigDecoders.h"
+#include "proxy/logging/YamlLogConfig.h"
+#include "proxy/logging/YamlLogConfigDecoders.h"
 
-#include "LogConfig.h"
-#include "LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogObject.h"
 
 #include "tscore/EnumDescriptor.h"
 

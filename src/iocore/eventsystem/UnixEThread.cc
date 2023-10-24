@@ -31,7 +31,7 @@
 // The EThread Class
 //
 /////////////////////////////////////////////////////////////////////
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>

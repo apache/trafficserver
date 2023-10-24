@@ -25,10 +25,10 @@
 
 #include <vector>
 
-#include "QUICConnection.h"
-#include "QUICFrame.h"
-#include "QUICFrameHandler.h"
-#include "QUICContext.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICContext.h"
 
 class QUICFrameDispatcher
 {

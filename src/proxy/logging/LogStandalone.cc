@@ -31,15 +31,15 @@
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/signals.h"
-#include "DiagsConfig.h"
+#include "proxy/shared/DiagsConfig.h"
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 #include "records/P_RecProcess.h"
 
 // Needs LibRecordsConfigInit()
 #include "records/RecordsConfig.h"
-#include "Machine.h"
-#include "RecProcess.h"
+#include "iocore/utils/Machine.h"
+#include "iocore/eventsystem/RecProcess.h"
 
 #define LOG_FILENAME_SIZE 255
 

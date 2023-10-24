@@ -36,15 +36,15 @@
 #include "tscore/ink_platform.h"
 #include "tscpp/util/ts_errata.h"
 
-#include "LogUtils.h"
-#include "LogFilter.h"
-#include "LogField.h"
-#include "LogFormat.h"
-#include "LogFile.h"
-#include "LogBuffer.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "Log.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/Log.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
 const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};

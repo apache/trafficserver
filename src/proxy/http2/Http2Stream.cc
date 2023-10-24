@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "Http2Stream.h"
+#include "proxy/http2/Http2Stream.h"
 
-#include "HTTP2.h"
-#include "Http2ClientSession.h"
-#include "Http2ServerSession.h"
-#include "HttpDebugNames.h"
-#include "HttpSM.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/http2/Http2ClientSession.h"
+#include "proxy/http2/Http2ServerSession.h"
+#include "proxy/http/HttpDebugNames.h"
+#include "proxy/http/HttpSM.h"
 #include "tscore/HTTPVersion.h"
 
 #include <numeric>

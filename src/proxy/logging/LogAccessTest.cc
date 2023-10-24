@@ -40,7 +40,7 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "LogAccessTest.h"
+#include "proxy/logging/LogAccessTest.h"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

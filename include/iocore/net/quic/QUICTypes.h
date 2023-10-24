@@ -28,9 +28,9 @@
 #include "tscore/ink_endian.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
-#include "NetVConnection.h"
+#include "iocore/net/NetVConnection.h"
 
 #include <memory>
 #include <random>

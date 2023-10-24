@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "QUICStream.h"
-#include "QUICStream_native.h"
+#include "iocore/net/quic/QUICStream.h"
+#include "iocore/net/quic/QUICStream_native.h"
 
 class QUICBidirectionalStream : public QUICStreamBase, public QUICTransferProgressProvider
 {

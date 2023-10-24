@@ -27,15 +27,15 @@
 
 #include "swoc/IntrusiveDList.h"
 
-#include "EventSystem.h"
-#include "Event.h"
-#include "IOBuffer.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/Arena.h"
-#include "MIME.h"
-#include "HTTP.h"
-#include "QUICApplication.h"
-#include "QUICStreamVCAdapter.h"
-#include "QUICConnection.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 class HTTPHdr;
 

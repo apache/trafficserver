@@ -38,7 +38,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "quic/QUICConnectionTable.h"
 #include <quiche.h>
 

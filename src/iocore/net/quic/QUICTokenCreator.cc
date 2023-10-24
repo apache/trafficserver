@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICTokenCreator.h"
+#include "iocore/net/quic/QUICTokenCreator.h"
 
 bool
 QUICTokenCreator::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)

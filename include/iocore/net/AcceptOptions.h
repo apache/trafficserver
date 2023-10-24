@@ -26,7 +26,7 @@
 
 #include "tscore/ink_inet.h"
 
-#include "Event.h"
+#include "iocore/eventsystem/Event.h"
 
 struct AcceptOptions {
   using self = AcceptOptions; ///< Self reference type.

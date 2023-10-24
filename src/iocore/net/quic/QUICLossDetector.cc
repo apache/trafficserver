@@ -21,17 +21,17 @@
  *  limitations under the License.
  */
 
-#include "QUICLossDetector.h"
+#include "iocore/net/quic/QUICLossDetector.h"
 
 #include "tscore/ink_assert.h"
 
-#include "QUICConfig.h"
-#include "QUICEvents.h"
-#include "QUICDebugNames.h"
-#include "QUICFrameGenerator.h"
-#include "QUICPinger.h"
-#include "QUICPadder.h"
-#include "QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICPinger.h"
+#include "iocore/net/quic/QUICPadder.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
 #define QUICLDDebug(fmt, ...) \
   Debug("quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)

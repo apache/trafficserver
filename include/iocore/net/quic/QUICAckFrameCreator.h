@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICFrameGenerator.h"
-#include "QUICTypes.h"
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICFrame.h"
 #include <list>
 
 class QUICConnection;

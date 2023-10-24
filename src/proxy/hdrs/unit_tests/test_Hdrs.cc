@@ -36,8 +36,8 @@
 
 #include "catch.hpp"
 
-#include "HTTP.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HttpCompat.h"
 
 // replaces test_http_parser_eos_boundary_cases
 TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")

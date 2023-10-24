@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "RecDefs.h"
+#include "records/RecDefs.h"
 
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 

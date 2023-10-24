@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "QUICTransportParameters.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
 
 TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
 {

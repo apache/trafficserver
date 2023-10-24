@@ -32,10 +32,10 @@
 #include <fstream>        /* ofstream */
 #include <utime.h>
 
-#include "plugin_testing_common.h"
+#include "proxy/http/remap/unit-tests/plugin_testing_common.h"
 #include "../PluginFactory.h"
 #include "../PluginDso.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
 #include "diags.i"
 

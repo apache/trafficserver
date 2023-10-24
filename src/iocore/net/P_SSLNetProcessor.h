@@ -39,8 +39,8 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_Net.h"
-#include "P_SSLConfig.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_SSLConfig.h"
 #include <openssl/ssl.h>
 
 class UnixNetVConnection;

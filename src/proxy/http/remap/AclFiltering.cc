@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "AclFiltering.h"
-#include "HTTP.h"
+#include "proxy/http/remap/AclFiltering.h"
+#include "proxy/hdrs/HTTP.h"
 
 // ===============================================================================
 //                              acl_filter_rule

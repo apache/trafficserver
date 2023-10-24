@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "HTTP.h"
-#include "XPACK.h"
-#include "QPACK.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/XPACK.h"
+#include "proxy/http3/QPACK.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 

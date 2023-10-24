@@ -31,7 +31,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "records/RecProcess.h"
 
 static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);

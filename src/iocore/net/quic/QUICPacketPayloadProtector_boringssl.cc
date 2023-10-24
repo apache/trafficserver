@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICPacketPayloadProtector.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPacketPayloadProtector.h"
 #include "tscore/Diags.h"
 
 static constexpr char tag[] = "quic_ppp";

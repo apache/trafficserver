@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "Http3Frame.h"
-#include "Http3DataFramer.h"
-#include "Http3Transaction.h"
+#include "proxy/http3/Http3Frame.h"
+#include "proxy/http3/Http3DataFramer.h"
+#include "proxy/http3/Http3Transaction.h"
 
 Http3DataFramer::Http3DataFramer(Http3Transaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source) {}
 

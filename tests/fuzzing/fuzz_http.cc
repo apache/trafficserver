@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "HTTP.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HttpCompat.h"
 #include "tscore/Diags.h"
 
 #define kMinInputLength 10

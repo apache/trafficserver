@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "ink_thread.h"
+#include "tscore/ink_thread.h"
 
 class ContFlags
 {

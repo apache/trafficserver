@@ -28,9 +28,9 @@
 
 #include "tscore/ink_platform.h"
 #include "records/RecProcess.h"
-#include "ConfigProcessor.h"
-#include "LogObject.h"
-#include "RolledLogDeleter.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/RolledLogDeleter.h"
 #include "swoc/MemSpan.h"
 #include "api/Metrics.h"
 

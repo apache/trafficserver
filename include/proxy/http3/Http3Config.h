@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ConfigProcessor.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
 namespace ts
 {

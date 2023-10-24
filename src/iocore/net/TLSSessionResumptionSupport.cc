@@ -24,11 +24,11 @@
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 
-#include "TLSSessionResumptionSupport.h"
-#include "SSLAPIHooks.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
+#include "iocore/net/SSLAPIHooks.h"
 
-#include "P_SSLConfig.h"
-#include "SSLStats.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/SSLStats.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB

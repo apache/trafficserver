@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "PreWarmConfig.h"
-#include "PreWarmManager.h"
+#include "proxy/http/PreWarmConfig.h"
+#include "proxy/http/PreWarmManager.h"
 
 ////
 // PreWarmConfigParams

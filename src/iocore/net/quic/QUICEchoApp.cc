@@ -21,11 +21,11 @@
  *  limitations under the License.
  */
 
-#include "QUICEchoApp.h"
+#include "iocore/net/quic/QUICEchoApp.h"
 
-#include "P_Net.h"
-#include "P_VConnection.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/eventsystem/P_VConnection.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 static constexpr char tag[] = "quic_echo_app";
 

@@ -22,7 +22,7 @@
 
 #include "catch.hpp"
 
-#include "URL.h"
+#include "proxy/hdrs/URL.h"
 #include "tscore/CryptoHash.h"
 
 TEST_CASE("ValidateURL", "[proxy][validurl]")

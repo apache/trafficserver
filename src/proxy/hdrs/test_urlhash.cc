@@ -25,11 +25,11 @@
 #include <string.h>
 
 #include "tscore/Arena.h"
-#include "HTTP.h"
-#include "MIME.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/MIME.h"
 #include "tscore/Regex.h"
-#include "URL.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/hdrs/HttpCompat.h"
 
 static void
 test_url()

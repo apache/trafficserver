@@ -24,16 +24,16 @@
 #pragma once
 
 /*
-#include "P_CacheDir.h"
+#include "iocore/cache/P_CacheDir.h"
 */
 
-#include "CacheVC.h"
+#include "iocore/cache/CacheVC.h"
 
 // eventsystem
-#include "Continuation.h"
-#include "EThread.h"
-#include "Event.h"
-#include "ProxyAllocator.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/ProxyAllocator.h"
 
 // tscore
 #include "tscore/ink_assert.h"

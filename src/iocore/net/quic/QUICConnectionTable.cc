@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "QUICConnectionTable.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
 
 QUICConnectionTable::~QUICConnectionTable()
 {

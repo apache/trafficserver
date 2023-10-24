@@ -23,9 +23,9 @@
 
 #include "catch.hpp"
 
-#include "Http3FrameDispatcher.h"
-#include "Http3ProtocolEnforcer.h"
-#include "Mock.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/test/Mock.h"
 
 TEST_CASE("Http3FrameHandler dispatch", "[http3]")
 {

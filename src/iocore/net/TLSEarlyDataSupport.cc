@@ -23,7 +23,7 @@
  */
 
 #include <openssl/ssl.h>
-#include "TLSEarlyDataSupport.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"

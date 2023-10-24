@@ -29,7 +29,7 @@
 #include <unordered_set>
 
 #include "tscore/Diags.h"
-#include "NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
 
 namespace ts
 {

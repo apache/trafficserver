@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "HTTP.h"
-#include "HeaderValidator.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HeaderValidator.h"
 #include <string_view>
 #include <vector>
 

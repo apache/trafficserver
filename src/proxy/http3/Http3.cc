@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "Http3.h"
+#include "proxy/http3/Http3.h"
 
 // Default values of settings defined by specs (draft-17)
 const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE      = 0;

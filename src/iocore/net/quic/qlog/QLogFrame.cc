@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QLogFrame.h"
+#include "iocore/net/quic/qlog/QLogFrame.h"
 
 namespace QLog
 {

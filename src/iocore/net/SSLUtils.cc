@@ -23,7 +23,7 @@
 #include "swoc/Errata.h"
 #include "swoc/bwf_std.h"
 
-#include "P_SSLUtils.h"
+#include "iocore/net/P_SSLUtils.h"
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
@@ -34,25 +34,25 @@
 #include "tscore/Filenames.h"
 #include "records/RecHttp.h"
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "api/InkAPIInternal.h"
 
-#include "P_OCSPStapling.h"
-#include "P_SSLConfig.h"
-#include "P_TLSKeyLogger.h"
-#include "BoringSSLUtils.h"
-#include "ProxyProtocol.h"
-#include "SSLAPIHooks.h"
-#include "SSLSessionCache.h"
-#include "SSLSessionTicket.h"
-#include "SSLDynlock.h"
-#include "SSLDiags.h"
-#include "SSLStats.h"
-#include "TLSSessionResumptionSupport.h"
+#include "iocore/net/P_OCSPStapling.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_TLSKeyLogger.h"
+#include "iocore/net/BoringSSLUtils.h"
+#include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/SSLAPIHooks.h"
+#include "iocore/net/SSLSessionCache.h"
+#include "iocore/net/SSLSessionTicket.h"
+#include "iocore/net/SSLDynlock.h"
+#include "iocore/net/SSLDiags.h"
+#include "iocore/net/SSLStats.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
 #if TS_USE_QUIC == 1
-#include "QUICSupport.h"
+#include "iocore/net/QUICSupport.h"
 #endif
-#include "P_SSLNetVConnection.h"
+#include "iocore/net/P_SSLNetVConnection.h"
 
 #include <string>
 #include <unistd.h>

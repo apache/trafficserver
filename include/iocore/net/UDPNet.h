@@ -32,9 +32,9 @@
 #pragma once
 
 #include "tscore/Version.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "tscore/ink_inet.h"
-#include "NetVCOptions.h"
+#include "iocore/net/NetVCOptions.h"
 
 /**
    UDP service
@@ -107,5 +107,5 @@ public:
 extern UDPNetProcessor &udpNet;
 extern EventType ET_UDP;
 
-#include "UDPPacket.h"
-#include "UDPConnection.h"
+#include "iocore/net/UDPPacket.h"
+#include "iocore/net/UDPConnection.h"

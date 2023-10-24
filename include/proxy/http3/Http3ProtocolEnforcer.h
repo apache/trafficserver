@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "Http3Types.h"
-#include "Http3FrameHandler.h"
+#include "proxy/http3/Http3Types.h"
+#include "proxy/http3/Http3FrameHandler.h"
 
 class Http3ProtocolEnforcer : public Http3FrameHandler
 {

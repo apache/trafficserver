@@ -27,11 +27,11 @@
 #include <vector>
 
 #include "tscore/ink_config.h"
-#include "AclFiltering.h"
-#include "URL.h"
-#include "RemapHitCount.h"
-#include "RemapPluginInfo.h"
-#include "PluginFactory.h"
+#include "proxy/http/remap/AclFiltering.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/http/remap/RemapHitCount.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/remap/PluginFactory.h"
 #include "tscore/Regex.h"
 #include "tscore/List.h"
 

@@ -22,13 +22,13 @@
 
  */
 
-#include "UrlRewrite.h"
-#include "ConfigProcessor.h"
-#include "ReverseProxy.h"
-#include "RemapConfig.h"
+#include "proxy/http/remap/UrlRewrite.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/ReverseProxy.h"
+#include "proxy/http/remap/RemapConfig.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
-#include "HttpSM.h"
+#include "proxy/http/HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"
 

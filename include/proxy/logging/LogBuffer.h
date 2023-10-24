@@ -26,9 +26,9 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_atomic.h"
 #include "tscore/Diags.h"
-#include "LogFormat.h"
-#include "LogLimits.h"
-#include "LogAccess.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogLimits.h"
+#include "proxy/logging/LogAccess.h"
 
 class LogObject;
 class LogConfig;

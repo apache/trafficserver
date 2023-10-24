@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "Http2Frame.h"
+#include "proxy/http2/Http2Frame.h"
 
 TEST_CASE("Http2Frame", "[http2][Http2Frame]")
 {

@@ -31,9 +31,9 @@
 #include "tscore/ink_config.h"
 #include "tscpp/util/ts_bw_format.h"
 #include "tscore/Allocator.h"
-#include "Http1ServerSession.h"
-#include "HttpSessionManager.h"
-#include "HttpSM.h"
+#include "proxy/http/Http1ServerSession.h"
+#include "proxy/http/HttpSessionManager.h"
+#include "proxy/http/HttpSM.h"
 
 ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator("httpServerSessionAllocator");
 

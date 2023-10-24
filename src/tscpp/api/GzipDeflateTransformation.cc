@@ -26,7 +26,7 @@
 #include <string_view>
 #include "tscpp/api/TransformationPlugin.h"
 #include "tscpp/api/GzipDeflateTransformation.h"
-#include "logging_internal.h"
+#include "tscpp/api/logging_internal.h"
 
 using namespace atscppapi::transformations;
 using std::vector;

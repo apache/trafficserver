@@ -24,7 +24,7 @@
 #include "atscppapi/TransactionPlugin.h"
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
-#include "utils_internal.h"
+#include "tscpp/api/utils_internal.h"
 #include <atscppapi/Headers.h>
 #include <atscppapi/InterceptPlugin.h>
 #include <atscppapi/utils.h>

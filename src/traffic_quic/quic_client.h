@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include "P_Net.h"
-#include "EventSystem.h"
-#include "NetVConnection.h"
-#include "P_QUICNetProcessor.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/P_QUICNetProcessor.h"
 
-#include "QUICApplication.h"
-#include "Http3App.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "proxy/http3/Http3App.h"
 
 // TODO: add quic version option
 // TODO: add host header option (also should be used for SNI)

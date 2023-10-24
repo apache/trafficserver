@@ -48,10 +48,10 @@
 #include "tscore/ink_resolver.h"
 #include "tscore/Regex.h"
 #include "tscpp/util/ts_bw.h"
-#include "HttpProxyAPIEnums.h"
-#include "ConfigProcessor.h"
+#include "proxy/http/HttpProxyAPIEnums.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 #include "records/RecProcess.h"
-#include "HttpConnectionCount.h"
+#include "proxy/http/HttpConnectionCount.h"
 #include "tscpp/util/ts_ip.h"
 #include "api/Metrics.h"
 

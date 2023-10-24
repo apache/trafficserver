@@ -57,10 +57,10 @@
 #include <strings.h>
 #include <sys/types.h>
 #include "tscore/ink_platform.h"
-#include "HTTP.h"
-#include "HttpConfig.h"
-#include "HttpCompat.h"
-#include "HttpTransact.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HttpCompat.h"
+#include "proxy/http/HttpTransact.h"
 #include "tscore/ink_sprintf.h"
 
 #include <memory>

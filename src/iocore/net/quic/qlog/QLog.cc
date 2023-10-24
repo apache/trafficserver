@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include "QLog.h"
+#include "iocore/net/quic/qlog/QLog.h"
 
 namespace QLog
 {

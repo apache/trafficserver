@@ -27,7 +27,7 @@
 
  */
 
-#include "plugin_testing_common.h"
+#include "proxy/http/remap/unit-tests/plugin_testing_common.h"
 
 void
 PrintToStdErr(const char *fmt, ...)

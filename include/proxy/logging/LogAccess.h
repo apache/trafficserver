@@ -25,7 +25,7 @@
 #pragma once
 
 #include "tscore/ink_align.h"
-#include "LogField.h"
+#include "proxy/logging/LogField.h"
 
 class HTTPHdr;
 class HttpSM;

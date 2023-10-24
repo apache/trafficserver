@@ -21,18 +21,18 @@
  *  limitations under the License.
  */
 
-#include "Http09App.h"
+#include "proxy/http3/Http09App.h"
 
 #include "tscore/ink_resolver.h"
 
-#include "P_Net.h"
-#include "P_VConnection.h"
-#include "QUICStreamManager.h"
-#include "QUICDebugNames.h"
-#include "QUICStreamVCAdapter.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/eventsystem/P_VConnection.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
 
-#include "Http3Session.h"
-#include "Http3Transaction.h"
+#include "proxy/http3/Http3Session.h"
+#include "proxy/http3/Http3Transaction.h"
 
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";

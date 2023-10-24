@@ -34,17 +34,17 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
-#include "AsyncSignalEventIO.h"
-#include "AIO.h"
+#include "iocore/net/AsyncSignalEventIO.h"
+#include "iocore/aio/AIO.h"
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 #endif
-#include "P_Net.h"
-#include "P_UDPNet.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_UDPNet.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
-#include "P_UnixNet.h"
+#include "iocore/net/P_UnixNet.h"
 
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.

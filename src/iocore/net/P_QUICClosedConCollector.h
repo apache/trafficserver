@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "P_QUICNetVConnection.h"
+#include "iocore/net/P_QUICNetVConnection.h"
 
 class QUICClosedConCollector : public Continuation
 {

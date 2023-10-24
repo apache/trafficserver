@@ -27,11 +27,11 @@
 #include "tscore/ink_memory.h"
 #include <cstdio>
 #include "tscore/Allocator.h"
-#include "HTTP.h"
-#include "HdrToken.h"
-#include "MIME.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HdrToken.h"
+#include "proxy/hdrs/MIME.h"
 #include "tscore/Regex.h"
-#include "URL.h"
+#include "proxy/hdrs/URL.h"
 
 /*
  You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering

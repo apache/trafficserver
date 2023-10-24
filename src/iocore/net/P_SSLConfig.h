@@ -37,13 +37,13 @@
 #include "swoc/swoc_ip.h"
 
 #include "tscore/ink_inet.h"
-#include "ConfigProcessor.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
-#include "SSLSessionCache.h"
-#include "YamlSNIConfig.h"
+#include "iocore/net/SSLSessionCache.h"
+#include "iocore/net/YamlSNIConfig.h"
 
-#include "P_SSLUtils.h"
-#include "P_SSLSecret.h"
+#include "iocore/net/P_SSLUtils.h"
+#include "iocore/net/P_SSLSecret.h"
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;

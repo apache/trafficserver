@@ -22,8 +22,8 @@
  */
 
 #pragma once
-#include "QUICStreamAdapter.h"
-#include "IOBuffer.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 class QUICStreamVCAdapter : public VConnection, public QUICStreamAdapter
 {

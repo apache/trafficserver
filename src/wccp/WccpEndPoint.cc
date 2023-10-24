@@ -26,9 +26,9 @@
 #include "swoc/IPAddr.h"
 #include "swoc/bwf_ip.h"
 
-#include "WccpLocal.h"
-#include "WccpUtil.h"
-#include "WccpMeta.h"
+#include "wccp/WccpLocal.h"
+#include "wccp/WccpUtil.h"
+#include "wccp/WccpMeta.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_defs.h"
 

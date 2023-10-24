@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Http3Types.h"
+#include "proxy/http3/Http3Types.h"
 
 class Http3DebugNames
 {

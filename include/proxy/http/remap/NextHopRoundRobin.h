@@ -24,7 +24,7 @@
 #pragma once
 
 #include <mutex>
-#include "NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
 
 class NextHopRoundRobin : public NextHopSelectionStrategy
 {

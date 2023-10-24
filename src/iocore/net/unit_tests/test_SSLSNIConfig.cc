@@ -28,7 +28,7 @@
 #define _STR(s)  #s
 #define _XSTR(s) _STR(s)
 
-#include "SSLSNIConfig.h"
+#include "iocore/net/SSLSNIConfig.h"
 
 #include "catch.hpp"
 

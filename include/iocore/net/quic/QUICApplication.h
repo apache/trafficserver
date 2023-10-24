@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "IOBuffer.h"
-#include "QUICTypes.h"
-#include "QUICConnection.h"
-#include "QUICStream.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICStream.h"
 
 class QUICApplication;
 

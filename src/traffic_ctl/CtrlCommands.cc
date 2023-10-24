@@ -18,7 +18,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "CtrlCommands.h"
+#include "traffic_ctl/CtrlCommands.h"
 
 #include <fstream>
 #include <unordered_map>

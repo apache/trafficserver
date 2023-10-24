@@ -23,7 +23,7 @@
 #pragma once
 
 #include "tscpp/util/ts_bw_format.h"
-#include "ink_memory.h"
+#include "tscore/ink_memory.h"
 #include <openssl/evp.h>
 #include <string_view>
 

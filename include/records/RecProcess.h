@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "RecCore.h"
+#include "records/RecCore.h"
 #include "iocore/eventsystem/EventSystem.h"
 
 //-------------------------------------------------------------------------

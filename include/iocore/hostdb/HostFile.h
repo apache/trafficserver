@@ -25,7 +25,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "HostDBProcessor.h"
+#include "iocore/hostdb/HostDBProcessor.h"
 #include "swoc/TextView.h"
 
 #include <memory>

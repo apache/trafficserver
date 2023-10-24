@@ -24,7 +24,7 @@
 #pragma once
 
 // inknet
-#include "SSLTypes.h"
+#include "iocore/net/SSLTypes.h"
 
 // records
 #include "records/RecHttp.h"

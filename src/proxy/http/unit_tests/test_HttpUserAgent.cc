@@ -22,13 +22,13 @@
 
  */
 
-#include "Http1ClientSession.h"
-#include "Http1ClientTransaction.h"
-#include "HttpSessionAccept.h"
-#include "HttpUserAgent.h"
-#include "VConnection.h"
-#include "Milestones.h"
-#include "P_SSLNetVConnection.h"
+#include "proxy/http/Http1ClientSession.h"
+#include "proxy/http/Http1ClientTransaction.h"
+#include "proxy/http/HttpSessionAccept.h"
+#include "proxy/http/HttpUserAgent.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "proxy/Milestones.h"
+#include "iocore/net/P_SSLNetVConnection.h"
 
 #include <catch.hpp>
 

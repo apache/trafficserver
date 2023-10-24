@@ -27,7 +27,7 @@
 
 #include "ts/ts.h"
 #include "tscpp/api/Headers.h"
-#include "logging_internal.h"
+#include "tscpp/api/logging_internal.h"
 #include "tscpp/api/noncopyable.h"
 
 using atscppapi::Headers;

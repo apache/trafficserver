@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFrame.h"
 
 class QUICCongestionController
 {

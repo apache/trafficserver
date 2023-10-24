@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICConnection.h"
-#include "QUICConfig.h"
-#include "QUICEvents.h"
-#include "QUICCongestionController.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICCongestionController.h"
 
 class QUICRTTProvider;
 class QUICCongestionController;

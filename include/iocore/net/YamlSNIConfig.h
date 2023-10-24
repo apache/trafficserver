@@ -29,8 +29,8 @@
 #include <memory>
 #include <cstdint>
 
-#include "SNIActionPerformer.h"
-#include "SSLTypes.h"
+#include "iocore/net/SNIActionPerformer.h"
+#include "iocore/net/SSLTypes.h"
 
 #include "tscpp/util/ts_ip.h"
 

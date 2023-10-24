@@ -29,7 +29,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "plugin_testing_common.h"
+#include "proxy/http/remap/unit-tests/plugin_testing_common.h"
 #include <iostream>
 
 #include "../RemapPluginInfo.h"

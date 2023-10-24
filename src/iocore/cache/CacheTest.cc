@@ -22,8 +22,8 @@
 
  */
 
-#include "P_Cache.h"
-#include "P_CacheTest.h"
+#include "iocore/cache/P_Cache.h"
+#include "iocore/cache/P_CacheTest.h"
 #include "tscore/Random.h"
 #include <vector>
 #include <cmath>

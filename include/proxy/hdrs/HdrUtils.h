@@ -35,7 +35,7 @@
 
 #include "swoc/TextView.h"
 #include "tscore/ParseRules.h"
-#include "MIME.h"
+#include "proxy/hdrs/MIME.h"
 
 /** Accessor class to iterate over values in a multi-valued field.
  *

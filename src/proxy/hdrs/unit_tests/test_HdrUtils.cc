@@ -27,9 +27,9 @@
 
 #include "catch.hpp"
 
-#include "HdrHeap.h"
-#include "MIME.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HdrUtils.h"
 
 TEST_CASE("HdrUtils", "[proxy][hdrutils]")
 {

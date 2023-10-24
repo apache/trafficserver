@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "Http2SessionAccept.h"
-#include "Http2ClientSession.h"
-#include "Machine.h"
+#include "proxy/http2/Http2SessionAccept.h"
+#include "proxy/http2/Http2ClientSession.h"
+#include "iocore/utils/Machine.h"
 #include "../IPAllow.h"
 
 Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)

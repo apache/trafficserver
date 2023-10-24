@@ -30,9 +30,9 @@
 
 
  ****************************************************************************/
-#include "HttpPages.h"
-#include "HttpSM.h"
-#include "HttpDebugNames.h"
+#include "proxy/http/HttpPages.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpDebugNames.h"
 
 HttpSMListBucket HttpSMList[HTTP_LIST_BUCKETS];
 

@@ -25,9 +25,9 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
-#include "QUICAltConnectionManager.h"
-#include "QUICConnectionTable.h"
-#include "QUICResetTokenTable.h"
+#include "iocore/net/quic/QUICAltConnectionManager.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
+#include "iocore/net/quic/QUICResetTokenTable.h"
 
 static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 

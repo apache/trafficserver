@@ -27,7 +27,7 @@
 
 #include "tscore/ink_error.h"
 #include "tscore/runroot.h"
-#include "file_system.h"
+#include "traffic_layout/file_system.h"
 
 #include <fstream>
 #include <ftw.h>

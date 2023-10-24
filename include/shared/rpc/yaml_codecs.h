@@ -22,7 +22,7 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
-#include "RPCRequests.h"
+#include "shared/rpc/RPCRequests.h"
 
 /// JSONRPC 2.0 Client API request/response codecs only. If you need to define your own specific codecs they should then be defined
 /// in a different file, unless they are strongly related to the ones defined here.

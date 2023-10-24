@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "UDPPacket.h"
+#include "iocore/net/UDPPacket.h"
 #include "tscore/List.h"
 
-#include "QUICPacket.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 class QUICPacketFactory;
 class QUICPacketHeaderProtector;

@@ -21,9 +21,9 @@
     limitations under the License.
 */
 
-#include "HuffmanCodec.h"
-#include "HPACK.h"
-#include "EventSystem.h"
+#include "proxy/hdrs/HuffmanCodec.h"
+#include "proxy/http2/HPACK.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string>

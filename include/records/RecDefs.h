@@ -25,7 +25,7 @@
 
 #include "tscore/ink_mutex.h"
 #include "tscore/ink_rwlock.h"
-#include "RecMutex.h"
+#include "records/RecMutex.h"
 
 //-------------------------------------------------------------------------
 // Error Values

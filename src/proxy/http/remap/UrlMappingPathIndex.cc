@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include "UrlMappingPathIndex.h"
+#include "proxy/http/remap/UrlMappingPathIndex.h"
 
 UrlMappingPathIndex::~UrlMappingPathIndex()
 {

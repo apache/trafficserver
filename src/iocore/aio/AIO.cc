@@ -30,10 +30,10 @@
 
 #include <atomic>
 
-#include "P_AIO.h"
+#include "iocore/aio/P_AIO.h"
 
 #ifdef AIO_FAULT_INJECTION
-#include "AIO_fault_injection.h"
+#include "iocore/aio/AIO_fault_injection.h"
 #endif
 
 #define MAX_DISKS_POSSIBLE 100
@@ -473,7 +473,7 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 }
 
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 
 namespace
 {

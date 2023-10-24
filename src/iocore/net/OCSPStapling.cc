@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "P_OCSPStapling.h"
+#include "iocore/net/P_OCSPStapling.h"
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -30,10 +30,10 @@
 #include "tscore/Encoding.h"
 #include "tscore/ink_base64.h"
 #include "tscore/ink_string.h"
-#include "P_Net.h"
-#include "P_SSLConfig.h"
-#include "P_SSLUtils.h"
-#include "SSLStats.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLStats.h"
 #include "api/FetchSM.h"
 
 // Macros for ASN1 and the code in TS_OCSP_* functions were borrowed from OpenSSL 3.1.0 (a92271e03a8d0dee507b6f1e7f49512568b2c7ad),

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Http2Frame.h"
+#include "proxy/http2/Http2Frame.h"
 
 //
 // Http2Frame

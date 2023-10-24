@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-#include "QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamManager.h"
 
-#include "QUICApplication.h"
-#include "QUICTransportParameters.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
 
 QUICStreamManager::QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map) : _context(context), _app_map(app_map) {}
 

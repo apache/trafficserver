@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "HttpConfig.h"
+#include "proxy/http/HttpConfig.h"
 
 struct PreWarmConfigParams : public ConfigInfo {
   PreWarmConfigParams();

@@ -22,8 +22,8 @@
 
  */
 
-#include "ConnectingEntry.h"
-#include "HttpSM.h"
+#include "proxy/http/ConnectingEntry.h"
+#include "proxy/http/HttpSM.h"
 
 ConnectingEntry::~ConnectingEntry()
 {

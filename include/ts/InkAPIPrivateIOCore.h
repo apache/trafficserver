@@ -23,11 +23,11 @@
 
 #pragma once
 #if !defined(__GNUC__)
-#include "EventSystem.h"
-#include "Net.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Net.h"
 #else
-#include "P_EventSystem.h"
-#include "P_Net.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "iocore/net/P_Net.h"
 #endif
 
 namespace tsapi

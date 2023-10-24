@@ -33,11 +33,11 @@
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
 
-#include "EventSystem.h"
-#include "P_SSLNextProtocolAccept.h"
-#include "P_SSLNetVConnection.h"
-#include "SNIActionPerformer.h"
-#include "SSLTypes.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/P_SSLNextProtocolAccept.h"
+#include "iocore/net/P_SSLNetVConnection.h"
+#include "iocore/net/SNIActionPerformer.h"
+#include "iocore/net/SSLTypes.h"
 
 #include "tscore/ink_inet.h"
 

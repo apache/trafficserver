@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICPacketHeaderProtector.h"
-#include "QUICDebugNames.h"
-#include "QUICPacket.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 #include "tscore/Diags.h"
 

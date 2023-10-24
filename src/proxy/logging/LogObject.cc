@@ -28,13 +28,13 @@
  ***************************************************************************/
 #include "tscore/ink_platform.h"
 #include "tscore/CryptoHash.h"
-#include "P_EventSystem.h"
-#include "LogUtils.h"
-#include "LogField.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "LogAccess.h"
-#include "Log.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/Log.h"
 #include "tscore/TestBox.h"
 
 #include <algorithm>

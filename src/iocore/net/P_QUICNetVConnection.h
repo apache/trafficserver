@@ -26,7 +26,7 @@
 #include "tscore/ink_config.h"
 
 #if TS_HAS_QUICHE
-#include "P_QUICNetVConnection_quiche.h"
+#include "iocore/net/P_QUICNetVConnection_quiche.h"
 #else
-#include "P_QUICNetVConnection_native.h"
+#include "iocore/net/P_QUICNetVConnection_native.h"
 #endif

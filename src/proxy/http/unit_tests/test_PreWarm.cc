@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "PreWarmAlgorithm.h"
+#include "proxy/http/PreWarmAlgorithm.h"
 
 #include "catch.hpp"
 

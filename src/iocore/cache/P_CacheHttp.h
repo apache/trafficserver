@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "P_CacheArray.h"
-#include "HTTP.h"
-#include "URL.h"
+#include "iocore/cache/P_CacheArray.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/URL.h"
 
 using CacheURL      = URL;
 using CacheHTTPHdr  = HTTPHdr;

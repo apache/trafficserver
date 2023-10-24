@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "traffic_crashlog.h"
+#include "traffic_crashlog/traffic_crashlog.h"
 #include <sys/utsname.h>
 
 static int

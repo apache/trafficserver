@@ -26,8 +26,8 @@
 
 #include <map>
 
-#include "URL.h"
-#include "UrlMapping.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/http/remap/UrlMapping.h"
 #include "tscore/Trie.h"
 
 class UrlMappingPathIndex

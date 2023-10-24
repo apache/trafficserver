@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 
 #include <iostream>
 #include <chrono>

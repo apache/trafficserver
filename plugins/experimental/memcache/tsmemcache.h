@@ -23,9 +23,9 @@
 
 #include <atomic>
 
-#include "EventSystem.h"
-#include "Net.h"
-#include "Cache.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Net.h"
+#include "iocore/cache/Cache.h"
 #include "tscore/Version.h"
 
 #include "ts/ts.h" // plugin header

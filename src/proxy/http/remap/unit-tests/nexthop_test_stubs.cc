@@ -29,8 +29,8 @@
 
 #include <memory>
 
-#include "HttpSM.h"
-#include "nexthop_test_stubs.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/remap/unit-tests/nexthop_test_stubs.h"
 
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 void
@@ -167,14 +167,14 @@ ConfigUpdateCbTable::invoke(char const *p)
 {
 }
 
-#include "Machine.h"
+#include "iocore/utils/Machine.h"
 
 static bool StubMachineInit = []() -> bool {
   Machine::init("localhost", nullptr);
   return true;
 }();
 
-#include "HostStatus.h"
+#include "proxy/HostStatus.h"
 
 HostStatRec::HostStatRec(){};
 HostStatus::HostStatus() {}

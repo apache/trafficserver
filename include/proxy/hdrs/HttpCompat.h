@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_string++.h"
-#include "MIME.h"
+#include "proxy/hdrs/MIME.h"
 #include "tscore/Diags.h"
 
 class HttpCompat

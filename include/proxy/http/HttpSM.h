@@ -35,20 +35,20 @@
 #include <optional>
 
 #include "tscore/ink_platform.h"
-#include "EventSystem.h"
-#include "HttpCacheSM.h"
-#include "HttpTransact.h"
-#include "HttpUserAgent.h"
-#include "HttpVCTable.h"
-#include "UrlRewrite.h"
-#include "HttpTunnel.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/http/HttpCacheSM.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpUserAgent.h"
+#include "proxy/http/HttpVCTable.h"
+#include "proxy/http/remap/UrlRewrite.h"
+#include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "../ProxyTransaction.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HdrUtils.h"
 
 // inknet
-#include "PreWarmManager.h"
-#include "TLSTunnelSupport.h"
+#include "proxy/http/PreWarmManager.h"
+#include "iocore/net/TLSTunnelSupport.h"
 
 #include "tscore/History.h"
 #include "tscore/PendingAction.h"

@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "SSLStats.h"
+#include "iocore/net/SSLStats.h"
 
 #include <openssl/err.h>
 
-#include "P_SSLConfig.h"
-#include "P_SSLUtils.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_SSLUtils.h"
 #include "records/P_RecProcess.h"
 
 SSLStatsBlock ssl_rsb;

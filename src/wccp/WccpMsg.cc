@@ -20,7 +20,7 @@
     limitations under the License.
  */
 
-#include "WccpLocal.h"
+#include "wccp/WccpLocal.h"
 #include <errno.h>
 #include <openssl/md5.h>
 #include "ts/TsException.h"

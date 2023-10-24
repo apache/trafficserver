@@ -27,8 +27,8 @@
 #include <utility>
 
 #include "ts/parentselectdefs.h"
-#include "ParentSelection.h"
-#include "HttpTransact.h"
+#include "proxy/ParentSelection.h"
+#include "proxy/http/HttpTransact.h"
 
 #ifndef _NH_UNIT_TESTS_
 #define NH_Debug(tag, ...) Debug(tag, __VA_ARGS__)

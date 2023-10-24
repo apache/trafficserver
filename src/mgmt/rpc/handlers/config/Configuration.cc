@@ -15,7 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "Configuration.h"
+#include "mgmt/rpc/handlers/config/Configuration.h"
 
 #include <system_error>
 #include <string>

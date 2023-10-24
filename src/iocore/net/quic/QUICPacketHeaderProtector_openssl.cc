@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
 
 bool
 QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const

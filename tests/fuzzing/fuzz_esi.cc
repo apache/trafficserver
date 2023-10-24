@@ -22,7 +22,7 @@
  */
 
 #include "EsiParser.h"
-#include "Utils.h"
+#include "mgmt/rpc/handlers/common/Utils.h"
 #include "DocNode.h"
 
 #define kMinInputLength 10

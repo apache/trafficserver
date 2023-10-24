@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "P_QUICNetVConnection_quiche.h"
-#include "P_SSLNextProtocolSet.h"
-#include "IOBuffer.h"
+#include "iocore/net/P_QUICNetVConnection_quiche.h"
+#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 class QUICNextProtocolAccept : public SessionAccept
 {

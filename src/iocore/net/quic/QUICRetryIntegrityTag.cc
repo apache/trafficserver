@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICRetryIntegrityTag.h"
+#include "iocore/net/quic/QUICRetryIntegrityTag.h"
 
 bool
 QUICRetryIntegrityTag::compute(uint8_t *out, QUICVersion version, QUICConnectionId odcid, Ptr<IOBufferBlock> header,

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 class QUICStream;
 

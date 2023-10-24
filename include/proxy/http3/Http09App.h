@@ -23,12 +23,12 @@
 
 #pragma once
 
-#include "IPAllow.h"
+#include "proxy/IPAllow.h"
 
-#include "HttpSessionAccept.h"
+#include "proxy/http/HttpSessionAccept.h"
 
-#include "QUICApplication.h"
-#include "QUICStreamVCAdapter.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
 
 class Http09Session;
 

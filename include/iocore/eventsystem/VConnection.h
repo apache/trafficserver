@@ -26,7 +26,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/PluginUserArgs.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 #if !defined(I_VIO_h)
 #error "include VIO.h"

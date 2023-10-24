@@ -30,14 +30,14 @@
 
 #pragma once
 
-#include "ConfigProcessor.h"
-#include "ControlBase.h"
-#include "ControlMatcher.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/ControlBase.h"
+#include "proxy/ControlMatcher.h"
 #include "records/RecProcess.h"
 #include "tscore/ConsistentHash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
-#include "HostStatus.h"
+#include "proxy/HostStatus.h"
 
 #include <algorithm>
 #include <vector>

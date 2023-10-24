@@ -19,9 +19,9 @@
   limitations under the License.
  */
 
-#include "CacheDefs.h"
-#include "main.h"
-#include "CacheTestHandler.h"
+#include "iocore/cache/CacheDefs.h"
+#include "iocore/cache/unit_tests/main.h"
+#include "iocore/cache/unit_tests/CacheTestHandler.h"
 
 TestContChain::TestContChain() : Continuation(new_ProxyMutex()) {}
 

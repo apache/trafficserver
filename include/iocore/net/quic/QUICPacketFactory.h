@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICPacket.h"
-#include "QUICPacketPayloadProtector.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICPacket.h"
+#include "iocore/net/quic/QUICPacketPayloadProtector.h"
 
 class QUICPacketProtectionKeyInfo;
 

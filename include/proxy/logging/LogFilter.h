@@ -27,9 +27,9 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Ptr.h"
-#include "LogAccess.h"
-#include "LogField.h"
-#include "LogFormat.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFormat.h"
 
 /*-------------------------------------------------------------------------
   LogFilter

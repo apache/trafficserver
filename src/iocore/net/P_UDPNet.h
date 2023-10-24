@@ -31,14 +31,14 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "UDPNet.h"
-#include "PollCont.h"
+#include "iocore/net/UDPNet.h"
+#include "iocore/net/PollCont.h"
 
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
 
-#include "P_UnixUDPConnection.h"
-#include "P_UDPIOEvent.h"
+#include "iocore/net/P_UnixUDPConnection.h"
+#include "iocore/net/P_UDPIOEvent.h"
 
 #include "netinet/udp.h"
 

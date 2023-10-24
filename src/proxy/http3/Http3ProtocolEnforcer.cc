@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "Http3ProtocolEnforcer.h"
-#include "Http3DebugNames.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/Http3DebugNames.h"
 
 std::vector<Http3FrameType>
 Http3ProtocolEnforcer::interests()

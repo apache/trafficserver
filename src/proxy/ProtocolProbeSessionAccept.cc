@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
-#include "Machine.h"
-#include "ProtocolProbeSessionAccept.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/utils/Machine.h"
+#include "proxy/ProtocolProbeSessionAccept.h"
 #include "http2/HTTP2.h"
-#include "ProxyProtocol.h"
-#include "NetVConnection.h"
+#include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/NetVConnection.h"
 #include "http/HttpConfig.h"
 
 static bool

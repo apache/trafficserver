@@ -30,9 +30,9 @@
 #include "tscore/ink_defs.h"
 #include "records/RecProcess.h"
 #include "records/RecordsConfig.h"
-#include "engine.h"
-#include "file_system.h"
-#include "info.h"
+#include "traffic_layout/engine.h"
+#include "traffic_layout/file_system.h"
+#include "traffic_layout/info.h"
 
 #include <fstream>
 #include <iostream>
@@ -41,7 +41,7 @@
 #include <grp.h>
 #include <sysexits.h>
 
-#include "RecProcess.h"
+#include "iocore/eventsystem/RecProcess.h"
 
 static const long MAX_LOGIN        = ink_login_name_max();
 static constexpr int MAX_GROUP_NUM = 32;

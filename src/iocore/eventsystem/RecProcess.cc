@@ -24,9 +24,9 @@
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
 
-#include "Tasks.h"
+#include "iocore/eventsystem/Tasks.h"
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
 #include "records/P_RecMessage.h"

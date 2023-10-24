@@ -29,7 +29,7 @@
 
 #include "catch.hpp"
 
-#include "HttpConfig.h"
+#include "proxy/http/HttpConfig.h"
 
 using namespace HttpForwarded;
 

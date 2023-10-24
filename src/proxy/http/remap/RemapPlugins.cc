@@ -22,7 +22,7 @@
 
  */
 
-#include "RemapPlugins.h"
+#include "proxy/http/remap/RemapPlugins.h"
 
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 

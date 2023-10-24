@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "HttpConfig.h"
-#include "HttpDebugNames.h"
-#include "ProxySession.h"
-#include "TLSBasicSupport.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/http/HttpDebugNames.h"
+#include "proxy/ProxySession.h"
+#include "iocore/net/TLSBasicSupport.h"
 
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 

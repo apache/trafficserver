@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "HPACK.h"
+#include "proxy/http2/HPACK.h"
 
 #include "tscpp/util/LocalBuffer.h"
 #include "swoc/TextView.h"

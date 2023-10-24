@@ -19,7 +19,7 @@
 */
 #pragma once
 
-#include "JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
 namespace rpc

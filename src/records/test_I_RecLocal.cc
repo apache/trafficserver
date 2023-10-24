@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "P_RecUtils.h"
-#include "test_RecordsConfig.h"
+#include "records/P_RecUtils.h"
+#include "records/test_RecordsConfig.h"
 
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 void
 DiagsPtr::set(Diags *new_ptr)

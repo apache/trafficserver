@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 
 PriorityEventQueue::PriorityEventQueue()
 {

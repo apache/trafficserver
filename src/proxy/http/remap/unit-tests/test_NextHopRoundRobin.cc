@@ -31,11 +31,11 @@
 #include <catch.hpp> /* catch unit-test framework */
 #include <yaml-cpp/yaml.h>
 
-#include "HttpSM.h"
-#include "nexthop_test_stubs.h"
-#include "NextHopSelectionStrategy.h"
-#include "NextHopStrategyFactory.h"
-#include "NextHopRoundRobin.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/remap/unit-tests/nexthop_test_stubs.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopStrategyFactory.h"
+#include "proxy/http/remap/NextHopRoundRobin.h"
 
 SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopRoundRobin]")
 {

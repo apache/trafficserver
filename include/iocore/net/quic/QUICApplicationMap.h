@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICApplication.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICApplication.h"
 #include <map>
 
 class QUICApplicationMap

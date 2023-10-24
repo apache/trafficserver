@@ -25,8 +25,8 @@
 #include "ts/ts.h"
 #include <cstddef>
 #include <cinttypes>
-#include "utils_internal.h"
-#include "logging_internal.h"
+#include "tscpp/api/utils_internal.h"
+#include "tscpp/api/logging_internal.h"
 #include "tscpp/api/noncopyable.h"
 #include "tscpp/api/Continuation.h"
 

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 #include "tscore/ink_assert.h"
-#include "QUICKeyGenerator.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
 
 #include <openssl/ssl.h>
 size_t

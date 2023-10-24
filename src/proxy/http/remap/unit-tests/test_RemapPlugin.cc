@@ -32,7 +32,7 @@
 #include <fstream>        /* ofstream */
 #include <string>
 
-#include "plugin_testing_common.h"
+#include "proxy/http/remap/unit-tests/plugin_testing_common.h"
 #include "../RemapPluginInfo.h"
 
 thread_local PluginThreadContext *pluginThreadContext;

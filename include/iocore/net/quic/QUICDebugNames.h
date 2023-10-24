@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICEvents.h"
-#include "QUICTransportParameters.h"
-#include "QUICStreamState.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
+#include "iocore/net/quic/QUICStreamState.h"
 
 class QUICDebugNames
 {

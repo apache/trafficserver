@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "XPACK.h"
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/XPACK.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 
 #include "tscore/Arena.h"
 #include "tscore/ink_memory.h"

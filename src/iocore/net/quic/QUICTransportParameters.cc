@@ -23,13 +23,13 @@
 
 #include <cstdlib>
 #include "tscore/Diags.h"
-#include "QUICGlobals.h"
-#include "QUICIntUtil.h"
-#include "QUICTransportParameters.h"
-#include "QUICConnection.h"
-#include "QUICDebugNames.h"
-#include "QUICTLS.h"
-#include "QUICTypes.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICTLS.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 static constexpr char tag[] = "quic_handshake";
 

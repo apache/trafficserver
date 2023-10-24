@@ -33,16 +33,16 @@
 
 #include "LogStandalone.cc"
 
-#include "LogAccess.h"
-#include "LogField.h"
-#include "LogFilter.h"
-#include "LogFormat.h"
-#include "LogFile.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "LogBuffer.h"
-#include "LogUtils.h"
-#include "Log.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/Log.h"
 
 // logcat-specific command-line flags
 static int squid_flag              = 0;

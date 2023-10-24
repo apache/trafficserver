@@ -28,7 +28,7 @@
  ***************************************************************************/
 
 #include "tscore/ink_config.h"
-#include "LogFieldAliasMap.h"
+#include "proxy/logging/LogFieldAliasMap.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_memory.h"
 

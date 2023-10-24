@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICHKDF.h"
+#include "iocore/net/quic/QUICHKDF.h"
 
 #include <cstdio>
 #include <cstring>

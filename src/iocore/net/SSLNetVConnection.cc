@@ -28,19 +28,19 @@
 #include "tscore/TSSystemState.h"
 
 #include "api/InkAPIInternal.h" // Added to include the ssl_hook definitions
-#include "ProxyProtocol.h"
-#include "SSLSNIConfig.h"
+#include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/SSLSNIConfig.h"
 
-#include "P_Net.h"
-#include "P_SSLUtils.h"
-#include "P_SSLNextProtocolSet.h"
-#include "P_SSLConfig.h"
-#include "P_SSLClientUtils.h"
-#include "P_SSLNetVConnection.h"
-#include "BIO_fastopen.h"
-#include "SSLAPIHooks.h"
-#include "SSLStats.h"
-#include "TLSALPNSupport.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_SSLUtils.h"
+#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_SSLClientUtils.h"
+#include "iocore/net/P_SSLNetVConnection.h"
+#include "iocore/net/BIO_fastopen.h"
+#include "iocore/net/SSLAPIHooks.h"
+#include "iocore/net/SSLStats.h"
+#include "iocore/net/TLSALPNSupport.h"
 
 #include <netinet/in.h>
 

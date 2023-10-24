@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 
 #include "tscore/ink_hw.h"
 

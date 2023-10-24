@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "APIHook.h"
-#include "APIHooks.h"
+#include "api/APIHook.h"
+#include "api/APIHooks.h"
 
 #include "ts/InkAPIPrivateIOCore.h"
 

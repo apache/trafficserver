@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "ConfigProcessor.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
-#include "ControlMatcher.h"
+#include "proxy/ControlMatcher.h"
 #include "tscore/HostLookup.h"
 
 /* ---------------------------

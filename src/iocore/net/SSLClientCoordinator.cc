@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "P_SSLClientCoordinator.h"
-#include "P_SSLConfig.h"
-#include "SSLSNIConfig.h"
+#include "iocore/net/P_SSLClientCoordinator.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/SSLSNIConfig.h"
 
 std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 

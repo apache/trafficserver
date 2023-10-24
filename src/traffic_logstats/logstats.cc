@@ -34,7 +34,7 @@
 // Includes and namespaces etc.
 #include "LogStandalone.cc"
 
-#include "LogObject.h"
+#include "proxy/logging/LogObject.h"
 #include "hdrs/HTTP.h"
 
 #include <sys/utsname.h>

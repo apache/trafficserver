@@ -29,8 +29,8 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
-#include "LogFieldAliasMap.h"
-#include "Milestones.h"
+#include "proxy/logging/LogFieldAliasMap.h"
+#include "proxy/Milestones.h"
 
 enum LogEscapeType { LOG_ESCAPE_NONE, LOG_ESCAPE_JSON };
 

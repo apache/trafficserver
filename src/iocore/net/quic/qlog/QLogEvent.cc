@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QLogEvent.h"
+#include "iocore/net/quic/qlog/QLogEvent.h"
 
 namespace QLog
 {

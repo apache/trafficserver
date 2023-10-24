@@ -23,16 +23,16 @@
 
 #include "catch.hpp"
 
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICPacketHeaderProtector.h"
-#include "QUICTLS.h"
-#include "QUICGlobals.h"
-#include "Mock.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICTLS.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/Mock.h"
 
 struct PollCont;
-#include "P_UDPConnection.h"
-#include "P_UnixNet.h"
-#include "P_UnixNetVConnection.h"
+#include "iocore/net/P_UDPConnection.h"
+#include "iocore/net/P_UnixNet.h"
+#include "iocore/net/P_UnixNetVConnection.h"
 
 #include "./server_cert.h"
 

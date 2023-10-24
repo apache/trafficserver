@@ -19,7 +19,7 @@
     limitations under the License.
  */
 
-#include "WccpLocal.h"
+#include "wccp/WccpLocal.h"
 
 #include <sstream>
 #include <arpa/inet.h>

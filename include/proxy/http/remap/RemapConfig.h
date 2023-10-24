@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "AclFiltering.h"
+#include "proxy/http/remap/AclFiltering.h"
 
 class UrlRewrite;
 

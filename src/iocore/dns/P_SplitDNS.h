@@ -30,11 +30,11 @@
 
 #pragma once
 
-#include "P_DNS.h"
-#include "SplitDNS.h"
-#include "Lock.h"
-#include "ControlBase.h"
-#include "ControlMatcher.h"
-#include "P_SplitDNSProcessor.h"
+#include "iocore/dns/P_DNS.h"
+#include "iocore/dns/SplitDNS.h"
+#include "iocore/eventsystem/Lock.h"
+#include "proxy/ControlBase.h"
+#include "proxy/ControlMatcher.h"
+#include "iocore/dns/P_SplitDNSProcessor.h"
 
 static constexpr ts::ModuleVersion SPLITDNS_MODULE_INTERNAL_VERSION{SPLITDNS_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};

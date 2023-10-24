@@ -25,14 +25,14 @@
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
-#include "P_Net.h"
-#include "P_SSLClientUtils.h"
-#include "P_SSLConfig.h"
-#include "P_SSLNetVConnection.h"
-#include "P_TLSKeyLogger.h"
-#include "YamlSNIConfig.h"
-#include "SSLDiags.h"
-#include "SSLSessionCache.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_SSLClientUtils.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_SSLNetVConnection.h"
+#include "iocore/net/P_TLSKeyLogger.h"
+#include "iocore/net/YamlSNIConfig.h"
+#include "iocore/net/SSLDiags.h"
+#include "iocore/net/SSLSessionCache.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>

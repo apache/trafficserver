@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "LogAccess.h"
+#include "proxy/logging/LogAccess.h"
 
 /*-------------------------------------------------------------------------
   LogAccessTest

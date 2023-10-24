@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
+#include "iocore/cache/P_Cache.h"
 
-#include "Show.h"
-#include "Tasks.h"
-#include "CacheControl.h"
+#include "proxy/Show.h"
+#include "iocore/eventsystem/Tasks.h"
+#include "proxy/CacheControl.h"
 namespace
 {
 

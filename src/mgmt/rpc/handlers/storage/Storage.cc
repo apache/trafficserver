@@ -18,9 +18,9 @@
   limitations under the License.
 */
 
-#include "Storage.h"
+#include "mgmt/rpc/handlers/storage/Storage.h"
 #include "rpc/handlers/common/ErrorUtils.h"
-#include "P_Cache.h"
+#include "iocore/cache/P_Cache.h"
 
 namespace rpc::handlers::storage::field_names
 {

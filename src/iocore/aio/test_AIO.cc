@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_AIO.h"
+#include "iocore/aio/P_AIO.h"
 #include "api/InkAPIInternal.h"
 #include "tscore/ink_hw.h"
 #include "tscore/Layout.h"

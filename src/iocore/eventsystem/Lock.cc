@@ -28,7 +28,7 @@
 
 
 **************************************************************************/
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 #include "tscore/Diags.h"
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");

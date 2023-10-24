@@ -25,10 +25,10 @@
 
 #include <unordered_set>
 
-#include "HTTP2.h"
-#include "ProxySession.h"
-#include "Http2ConnectionState.h"
-#include "Http2Frame.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/ProxySession.h"
+#include "proxy/http2/Http2ConnectionState.h"
+#include "proxy/http2/Http2Frame.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2CommonSession *  HTTP/2 session is born

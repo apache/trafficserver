@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICApplication.h"
-#include "Http3Frame.h"
-#include "Http3FrameGenerator.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "proxy/http3/Http3Frame.h"
+#include "proxy/http3/Http3FrameGenerator.h"
 #include <vector>
 
 class QUICStreamVCAdapter;

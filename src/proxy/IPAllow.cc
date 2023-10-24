@@ -26,7 +26,7 @@
 
 #include <sstream>
 
-#include "IPAllow.h"
+#include "proxy/IPAllow.h"
 #include "tscore/Filenames.h"
 #include "tscpp/util/ts_errata.h"
 

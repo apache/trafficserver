@@ -25,11 +25,11 @@
 #include <cstdio>
 #include <cstring>
 
-#include "P_EventSystem.h"
-#include "Cache.h"
-#include "Net.h"
-#include "HostDB.h"
-#include "P_RefCountCache.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/net/Net.h"
+#include "iocore/hostdb/HostDB.h"
+#include "iocore/hostdb/P_RefCountCache.h"
 
 /*-------------------------------------------------------------------------
   event_int_to_string

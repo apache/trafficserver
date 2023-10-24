@@ -27,7 +27,7 @@
 #include <cstdio>
 
 #include "tscore/ink_platform.h"
-#include "LogBufferSink.h"
+#include "proxy/logging/LogBufferSink.h"
 
 class LogBuffer;
 struct LogBufferHeader;

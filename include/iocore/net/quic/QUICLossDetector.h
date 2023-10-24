@@ -27,17 +27,17 @@
 #include <map>
 #include <set>
 
-#include "EventSystem.h"
-#include "Action.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Action.h"
 #include "tscore/ink_hrtime.h"
-#include "VConnection.h"
-#include "QUICTypes.h"
-#include "QUICPacket.h"
-#include "QUICFrame.h"
-#include "QUICFrameHandler.h"
-#include "QUICConnection.h"
-#include "QUICContext.h"
-#include "QUICCongestionController.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICPacket.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICContext.h"
+#include "iocore/net/quic/QUICCongestionController.h"
 
 class QUICPadder;
 class QUICPinger;

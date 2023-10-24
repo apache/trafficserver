@@ -30,8 +30,8 @@
 #include <memory>
 #include "api/InkAPIInternal.h"
 #include "http/HttpSessionAccept.h"
-#include "IPAllow.h"
-#include "private/SSLProxySession.h"
+#include "proxy/IPAllow.h"
+#include "proxy/private/SSLProxySession.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session

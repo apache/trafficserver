@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "HTTP.h"
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"

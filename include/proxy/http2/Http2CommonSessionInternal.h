@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "Http2CommonSession.h"
+#include "proxy/http2/Http2CommonSession.h"
 
 #define REMEMBER(e, r)                          \
   {                                             \

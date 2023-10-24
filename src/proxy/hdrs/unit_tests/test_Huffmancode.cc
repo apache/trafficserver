@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 #include <cstdlib>
 #include <iostream>
 #include <cassert>

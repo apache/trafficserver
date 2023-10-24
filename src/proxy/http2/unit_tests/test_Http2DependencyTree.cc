@@ -27,7 +27,7 @@
 #include <cstring>
 #include <sstream>
 
-#include "Http2DependencyTree.h"
+#include "proxy/http2/Http2DependencyTree.h"
 
 using namespace std;
 

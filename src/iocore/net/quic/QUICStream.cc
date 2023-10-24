@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "QUICStream.h"
+#include "iocore/net/quic/QUICStream.h"
 
-#include "QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamManager.h"
 
 constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 

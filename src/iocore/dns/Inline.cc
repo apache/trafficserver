@@ -27,4 +27,4 @@
  */
 
 #define TS_INLINE
-#include "P_DNS.h"
+#include "iocore/dns/P_DNS.h"

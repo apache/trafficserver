@@ -23,7 +23,7 @@
  */
 #pragma once
 
-#include "EventIO.h"
+#include "iocore/net/EventIO.h"
 
 class EThread;
 

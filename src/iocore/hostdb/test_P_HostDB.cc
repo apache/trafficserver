@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_HostDB.h"
+#include "iocore/hostdb/P_HostDB.h"
 
 Diags *diags;
 struct NetTesterSM : public Continuation {

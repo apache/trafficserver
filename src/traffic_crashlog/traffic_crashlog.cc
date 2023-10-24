@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "traffic_crashlog.h"
+#include "traffic_crashlog/traffic_crashlog.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Version.h"
@@ -31,7 +31,7 @@
 #include "records/RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
-#include "RecProcess.h"
+#include "iocore/eventsystem/RecProcess.h"
 
 static int syslog_mode    = false;
 static int debug_mode     = false;

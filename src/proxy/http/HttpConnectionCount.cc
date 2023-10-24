@@ -26,7 +26,7 @@
 #include "tscpp/util/ts_bw_format.h"
 #include <records/P_RecDefs.h>
 #include <HttpConfig.h>
-#include "HttpConnectionCount.h"
+#include "proxy/http/HttpConnectionCount.h"
 
 using namespace std::literals;
 

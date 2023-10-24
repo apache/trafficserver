@@ -24,10 +24,10 @@
 #pragma once
 
 #include "tscore/Arena.h"
-#include "HdrToken.h"
-#include "HdrHeap.h"
+#include "proxy/hdrs/HdrToken.h"
+#include "proxy/hdrs/HdrHeap.h"
 #include "tscore/CryptoHash.h"
-#include "MIME.h"
+#include "proxy/hdrs/MIME.h"
 #include <string_view>
 
 #include "tscore/ink_apidefs.h"

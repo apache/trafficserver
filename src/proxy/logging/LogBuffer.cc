@@ -32,17 +32,17 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "P_EventSystem.h"
-#include "LogField.h"
-#include "LogFilter.h"
-#include "LogFormat.h"
-#include "LogUtils.h"
-#include "LogFile.h"
-#include "LogObject.h"
-#include "LogAccess.h"
-#include "LogConfig.h"
-#include "LogBuffer.h"
-#include "Log.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/Log.h"
 
 struct FieldListCacheElement {
   LogFieldList *fieldlist;

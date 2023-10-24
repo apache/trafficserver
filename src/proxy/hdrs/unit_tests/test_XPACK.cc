@@ -25,8 +25,8 @@
 
 #include "catch.hpp"
 
-#include "XPACK.h"
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/XPACK.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 
 static constexpr int BUFSIZE_FOR_REGRESSION_TEST = 128;
 

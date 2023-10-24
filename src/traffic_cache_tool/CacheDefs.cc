@@ -21,7 +21,7 @@
     limitations under the License.
  */
 
-#include "CacheDefs.h"
+#include "traffic_cache_tool/CacheDefs.h"
 
 #include <iostream>
 #include <fcntl.h>

@@ -23,15 +23,15 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "URL.h"
-#include "Net.h"
-#include "HTTP.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/hdrs/URL.h"
+#include "iocore/net/Net.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/List.h"
-#include "ConfigProcessor.h"
-#include "Cache.h"
-#include "Tasks.h"
-#include "Plugin.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/eventsystem/Tasks.h"
+#include "proxy/Plugin.h"
 
 #include "api/APIHook.h"
 #include "api/APIHooks.h"
@@ -152,7 +152,7 @@ private:
   std::unordered_map<std::string, std::tuple<INKContInternal *, swoc::file::path, swoc::file::file_time_type>> cb_table;
 };
 
-#include "HttpAPIHooks.h"
+#include "proxy/HttpAPIHooks.h"
 
 class HttpHookState
 {

@@ -18,8 +18,8 @@
   limitations under the License.
  */
 
-#include "DNSEventIO.h"
-#include "P_DNSConnection.h"
+#include "iocore/dns/DNSEventIO.h"
+#include "iocore/dns/P_DNSConnection.h"
 
 int
 DNSEventIO::start(EventLoop l, int fd, int events)

@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "HTTP2.h"
+#include "proxy/http2/HTTP2.h"
 
 #include "tscpp/util/PostScript.h"
 

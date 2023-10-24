@@ -30,7 +30,7 @@
 
 */
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 
 // The protected queue is designed to delay signaling of threads
 // until some amount of work has been completed on the current thread

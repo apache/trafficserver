@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "HTTP.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/hdrs/HTTP.h"
 #include "api/InkAPIInternal.h"
 
 #define TRANSFORM_READ_READY (TRANSFORM_EVENTS_START + 0)

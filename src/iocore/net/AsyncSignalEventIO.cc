@@ -22,8 +22,8 @@
   limitations under the License.
  */
 
-#include "AsyncSignalEventIO.h"
-#include "EThread.h"
+#include "iocore/net/AsyncSignalEventIO.h"
+#include "iocore/eventsystem/EThread.h"
 
 int
 AsyncSignalEventIO::start(EventLoop l, int fd, int events)

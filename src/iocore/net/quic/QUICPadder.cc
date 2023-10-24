@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "QUICIntUtil.h"
-#include "QUICPadder.h"
+#include "iocore/net/quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICPadder.h"
 
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr uint32_t MIN_PKT_PAYLOAD_LEN         = 3; ///< Minimum payload length for sampling for header protection

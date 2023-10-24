@@ -29,8 +29,8 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 
-#include "SSLSNIConfig.h"
-#include "P_SNIActionPerformer.h"
+#include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/P_SNIActionPerformer.h"
 
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"

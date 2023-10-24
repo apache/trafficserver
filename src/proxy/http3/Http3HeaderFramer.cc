@@ -21,14 +21,14 @@
  *  limitations under the License.
  */
 
-#include "Http3HeaderFramer.h"
+#include "proxy/http3/Http3HeaderFramer.h"
 
-#include "VIO.h"
+#include "iocore/eventsystem/VIO.h"
 
-#include "HTTP.h"
+#include "proxy/hdrs/HTTP.h"
 
-#include "Http3Frame.h"
-#include "Http3Transaction.h"
+#include "proxy/http3/Http3Frame.h"
+#include "proxy/http3/Http3Transaction.h"
 
 Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id)
   : _transaction(transaction), _source_vio(source), _qpack(qpack), _stream_id(stream_id)

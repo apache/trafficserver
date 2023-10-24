@@ -32,9 +32,9 @@
 #include <openssl/evp.h>
 #endif
 
-#include "EventSystem.h"
-#include "NetVConnection.h"
-#include "QUICHandshakeProtocol.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/quic/QUICHandshakeProtocol.h"
 
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;

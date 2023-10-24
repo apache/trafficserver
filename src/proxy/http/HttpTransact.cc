@@ -30,25 +30,25 @@
 #include <strings.h>
 #include <cmath>
 
-#include "HttpTransact.h"
-#include "HttpTransactHeaders.h"
-#include "HttpSM.h"
-#include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
-#include "HttpDebugNames.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpTransactHeaders.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
+#include "proxy/http/HttpDebugNames.h"
 #include <ctime>
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
-#include "HTTP.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
-#include "CacheControl.h"
-#include "ControlMatcher.h"
-#include "ReverseProxy.h"
-#include "HttpBodyFactory.h"
-#include "StatPages.h"
+#include "proxy/CacheControl.h"
+#include "proxy/ControlMatcher.h"
+#include "proxy/ReverseProxy.h"
+#include "proxy/http/HttpBodyFactory.h"
+#include "proxy/StatPages.h"
 #include "../IPAllow.h"
-#include "Machine.h"
+#include "iocore/utils/Machine.h"
 
 namespace
 {

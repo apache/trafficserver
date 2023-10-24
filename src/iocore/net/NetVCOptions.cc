@@ -22,9 +22,9 @@
   limitations under the License.
  */
 
-#include "NetVCOptions.h"
-#include "Net.h"
-#include "Socks.h"
+#include "iocore/net/NetVCOptions.h"
+#include "iocore/net/Net.h"
+#include "iocore/net/Socks.h"
 
 void
 NetVCOptions::reset()

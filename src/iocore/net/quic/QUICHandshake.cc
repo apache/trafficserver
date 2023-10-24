@@ -21,16 +21,16 @@
  *  limitations under the License.
  */
 
-#include "QUICHandshake.h"
+#include "iocore/net/quic/QUICHandshake.h"
 
 #include <utility>
 
-#include "QUICEvents.h"
-#include "QUICGlobals.h"
-#include "QUICHandshakeProtocol.h"
-#include "QUICPacketFactory.h"
-#include "QUICVersionNegotiator.h"
-#include "QUICConfig.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICHandshakeProtocol.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICVersionNegotiator.h"
+#include "iocore/net/quic/QUICConfig.h"
 
 #define QUICHSDebug(fmt, ...) Debug("quic_handshake", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 

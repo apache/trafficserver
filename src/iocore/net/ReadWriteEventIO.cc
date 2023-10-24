@@ -22,8 +22,8 @@
   limitations under the License.
  */
 
-#include "ReadWriteEventIO.h"
-#include "NetHandler.h"
+#include "iocore/net/ReadWriteEventIO.h"
+#include "iocore/net/NetHandler.h"
 
 int
 ReadWriteEventIO::start(EventLoop l, NetEvent *ne, NetHandler *nh, int events)

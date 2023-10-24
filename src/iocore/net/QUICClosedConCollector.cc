@@ -16,7 +16,7 @@
   limitations under the License.
  */
 
-#include "P_QUICClosedConCollector.h"
+#include "iocore/net/P_QUICClosedConCollector.h"
 
 QUICClosedConCollector::QUICClosedConCollector()
 {

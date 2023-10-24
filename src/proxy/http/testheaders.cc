@@ -22,8 +22,8 @@
  */
 
 #include "tscore/ink_string.h"
-#include "HttpTransact.h"
-#include "HttpTransactHeaders.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpTransactHeaders.h"
 
 #define MAX_FIELD_VALUE_SIZE 512
 

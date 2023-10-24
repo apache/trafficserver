@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "HeaderValidator.h"
-#include "HTTP.h"
+#include "proxy/hdrs/HeaderValidator.h"
+#include "proxy/hdrs/HTTP.h"
 
 bool
 HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, bool is_trailing_header)

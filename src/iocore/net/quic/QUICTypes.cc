@@ -26,10 +26,10 @@
 #include <iomanip>
 #include <iostream>
 
-#include "QUICTypes.h"
-#include "QUICIntUtil.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;

@@ -25,12 +25,12 @@
 #pragma once
 
 #include "tscore/ink_config.h"
-#include "UrlMapping.h"
-#include "UrlMappingPathIndex.h"
-#include "HttpTransact.h"
+#include "proxy/http/remap/UrlMapping.h"
+#include "proxy/http/remap/UrlMappingPathIndex.h"
+#include "proxy/http/HttpTransact.h"
 #include "tscore/Regex.h"
-#include "PluginFactory.h"
-#include "NextHopStrategyFactory.h"
+#include "proxy/http/remap/PluginFactory.h"
+#include "proxy/http/remap/NextHopStrategyFactory.h"
 
 #include <memory>
 

@@ -36,7 +36,7 @@
 #include "tscpp/util/ts_bw.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
-#include "IOBuffer.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #endif
 
 /** BufferWriter interface on top of IOBuffer blocks.

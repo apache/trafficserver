@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "HostDB.h"
+#include "iocore/hostdb/HostDB.h"
 
 #include "diags.i"
 

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICCryptoStream.h"
+#include "iocore/net/quic/QUICCryptoStream.h"
 
 constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
 

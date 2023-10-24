@@ -28,7 +28,7 @@
 
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
-#include "utils_internal.h"
+#include "tscpp/api/utils_internal.h"
 
 #include "fcgi_config.h"
 #include "server_intercept.h"

@@ -22,8 +22,8 @@
  */
 
 #include "tscore/Regression.h"
-#include "HttpTransact.h"
-#include "HttpSM.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpSM.h"
 
 void
 forceLinkRegressionHttpTransact()

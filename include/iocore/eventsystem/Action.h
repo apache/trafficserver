@@ -25,8 +25,8 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "Thread.h"
-#include "Continuation.h"
+#include "iocore/eventsystem/Thread.h"
+#include "iocore/eventsystem/Continuation.h"
 
 /**
   Represents an operation initiated on a Processor.

@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "YamlSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 #include <utility>
 #include <unordered_map>
@@ -38,7 +38,7 @@
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 
-#include "P_SNIActionPerformer.h"
+#include "iocore/net/P_SNIActionPerformer.h"
 
 #include "tscpp/util/ts_ip.h"
 

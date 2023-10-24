@@ -26,7 +26,7 @@
 #include <memory>
 #include <yaml-cpp/yaml.h>
 
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFrame.h"
 
 namespace QLog
 {

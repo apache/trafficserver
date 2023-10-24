@@ -25,9 +25,9 @@
 
 #include <yaml-cpp/yaml.h>
 #include <tscpp/util/YamlCfg.h>
-#include "Machine.h"
-#include "HttpSM.h"
-#include "NextHopSelectionStrategy.h"
+#include "iocore/utils/Machine.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
 
 // ring mode strings
 constexpr std::string_view alternate_rings = "alternate_ring";

@@ -24,8 +24,8 @@
 
 #include <unordered_map>
 
-#include "RemapPluginInfo.h"
-#include "PluginFactory.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/remap/PluginFactory.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
@@ -33,7 +33,7 @@
 #define PluginDebug Debug
 #define PluginError Error
 #endif
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 
 #include <algorithm> /* std::swap */
 

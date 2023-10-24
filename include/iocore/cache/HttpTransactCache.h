@@ -31,7 +31,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "HttpConfig.h"
+#include "proxy/http/HttpConfig.h"
 
 // This is needed since txn_conf->cache_guaranteed_max_lifetime is currently not
 // readily available in the cache. ToDo: We should fix this with TS-1919

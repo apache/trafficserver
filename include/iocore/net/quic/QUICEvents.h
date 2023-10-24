@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "Event.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Event.h"
 
 enum {
   QUIC_EVENT_PACKET_READ_READY = QUIC_EVENT_EVENTS_START,

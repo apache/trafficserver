@@ -23,7 +23,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "P_Cache.h"
+#include "iocore/cache/P_Cache.h"
 #include "tscore/Layout.h"
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"

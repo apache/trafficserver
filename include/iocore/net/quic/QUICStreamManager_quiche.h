@@ -24,8 +24,8 @@
 #pragma once
 
 #include "tscore/List.h"
-#include "QUICStreamManager.h"
-#include "QUICStream_quiche.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStream_quiche.h"
 
 class QUICStreamManagerImpl : public QUICStreamManager
 {

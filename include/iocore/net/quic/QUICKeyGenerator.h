@@ -23,8 +23,8 @@
 #pragma once
 
 #include <openssl/evp.h>
-#include "QUICTypes.h"
-#include "QUICHKDF.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICHKDF.h"
 
 #ifdef OPENSSL_IS_BORINGSSL
 typedef EVP_AEAD QUIC_EVP_CIPHER;

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICStreamManager_native.h"
+#include "iocore/net/quic/QUICStreamManager_native.h"
 
 static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;

@@ -24,7 +24,7 @@
 // base yaml codecs.
 #include "shared/rpc/yaml_codecs.h"
 
-#include "CtrlRPCRequests.h"
+#include "traffic_ctl/jsonrpc/CtrlRPCRequests.h"
 
 // traffic_ctl jsonrpc request/response YAML codec implementation.
 

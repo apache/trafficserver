@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "IOBuffer.h"
-#include "QUICStreamAdapter.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 
 void
 QUICTransferProgressProviderSA::set_stream_adapter(QUICStreamAdapter *adapter)

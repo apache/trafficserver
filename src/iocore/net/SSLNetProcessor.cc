@@ -21,16 +21,16 @@
 
 #include "tscore/ink_config.h"
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
-#include "P_SSLUtils.h"
-#include "P_OCSPStapling.h"
-#include "SSLStats.h"
-#include "P_SSLNetProcessor.h"
-#include "P_SSLNetAccept.h"
-#include "P_SSLNetVConnection.h"
-#include "P_SSLClientCoordinator.h"
+#include "iocore/net/P_SSLUtils.h"
+#include "iocore/net/P_OCSPStapling.h"
+#include "iocore/net/SSLStats.h"
+#include "iocore/net/P_SSLNetProcessor.h"
+#include "iocore/net/P_SSLNetAccept.h"
+#include "iocore/net/P_SSLNetVConnection.h"
+#include "iocore/net/P_SSLClientCoordinator.h"
 
 //
 // Global Data

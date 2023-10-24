@@ -36,8 +36,8 @@
 
 #include "swoc/MemSpan.h"
 
-#include "EventSystem.h"
-#include "SRV.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/dns/SRV.h"
 
 // Event returned on a lookup
 #define EVENT_HOST_DB_LOOKUP       (HOSTDB_EVENT_EVENTS_START + 0)

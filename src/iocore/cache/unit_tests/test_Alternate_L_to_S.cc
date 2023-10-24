@@ -27,7 +27,7 @@
 int cache_vols            = 1;
 bool reuse_existing_cache = false;
 
-#include "main.h"
+#include "iocore/cache/unit_tests/main.h"
 
 class CacheAltReadAgain : public CacheTestHandler
 {

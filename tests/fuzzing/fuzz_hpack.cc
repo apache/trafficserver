@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "HTTP2.h"
-#include "HuffmanCodec.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 #include "tscore/Diags.h"
 
 #define kMinInputLength 8

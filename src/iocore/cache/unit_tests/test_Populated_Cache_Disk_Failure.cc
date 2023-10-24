@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "main.h"
+#include "iocore/cache/unit_tests/main.h"
 
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
@@ -31,7 +31,7 @@ bool reuse_existing_cache = true;
 #ifndef AIO_FAULT_INJECTION
 #error Must define AIO_FAULT_INJECTION!
 #endif
-#include "AIO_fault_injection.h"
+#include "iocore/aio/AIO_fault_injection.h"
 
 class CacheCommInit : public CacheInit
 {

@@ -26,9 +26,9 @@
 #include <string>
 #include <yaml-cpp/yaml.h>
 
-#include "QUICTypes.h"
-#include "QLogEvent.h"
-#include "QLogFrame.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/qlog/QLogEvent.h"
+#include "iocore/net/quic/qlog/QLogFrame.h"
 
 namespace QLog
 {

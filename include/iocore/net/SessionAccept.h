@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "Net.h"
-#include "VConnection.h"
-#include "NetVConnection.h"
+#include "iocore/net/Net.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "iocore/net/NetVConnection.h"
 
 struct AclRecord;
 struct HttpProxyPort;

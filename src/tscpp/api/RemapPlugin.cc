@@ -20,8 +20,8 @@
  */
 
 #include "tscpp/api/RemapPlugin.h"
-#include "logging_internal.h"
-#include "utils_internal.h"
+#include "tscpp/api/logging_internal.h"
+#include "tscpp/api/utils_internal.h"
 #include <cassert>
 #include "ts/remap.h"
 

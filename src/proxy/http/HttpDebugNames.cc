@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "DNSProcessor.h"
-#include "HttpDebugNames.h"
-#include "P_EventSystem.h"
-#include "StatPages.h"
-#include "HttpTunnel.h"
-#include "Transform.h"
-#include "HttpSM.h"
+#include "iocore/dns/DNSProcessor.h"
+#include "proxy/http/HttpDebugNames.h"
+#include "iocore/eventsystem/P_EventSystem.h"
+#include "proxy/StatPages.h"
+#include "proxy/http/HttpTunnel.h"
+#include "proxy/Transform.h"
+#include "proxy/http/HttpSM.h"
 #include <ts/apidefs.h>
 #include <Event.h>
 

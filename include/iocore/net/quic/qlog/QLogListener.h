@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "QLog.h"
-#include "QLogUtils.h"
-#include "QUICPacket.h"
-#include "QUICContext.h"
+#include "iocore/net/quic/qlog/QLog.h"
+#include "iocore/net/quic/qlog/QLogUtils.h"
+#include "iocore/net/quic/QUICPacket.h"
+#include "iocore/net/quic/QUICContext.h"
 
 namespace QLog
 {

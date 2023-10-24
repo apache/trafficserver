@@ -18,9 +18,9 @@
   limitations under the License.
 */
 
-#include "Server.h"
+#include "mgmt/rpc/handlers/server/Server.h"
 
-#include "P_Cache.h"
+#include "iocore/cache/P_Cache.h"
 #include <tscore/TSSystemState.h>
 #include "rpc/handlers/common/ErrorUtils.h"
 #include "rpc/handlers/common/Utils.h"

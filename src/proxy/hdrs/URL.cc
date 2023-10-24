@@ -25,9 +25,9 @@
 #include <new>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
-#include "URL.h"
-#include "MIME.h"
-#include "HTTP.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/Diags.h"
 
 const char *URL_SCHEME_FILE;

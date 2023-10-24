@@ -23,8 +23,8 @@
 
 #include "swoc/swoc_file.h"
 
-#include "HostFile.h"
-#include "P_HostDBProcessor.h"
+#include "iocore/hostdb/HostFile.h"
+#include "iocore/hostdb/P_HostDBProcessor.h"
 
 /* Container for temporarily holding data from the host file. For each FQDN there is a vector of IPv4
  * and IPv6 addresses. These are used to generate the HostDBRecord instances that are stored persistently.

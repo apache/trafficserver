@@ -20,9 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "P_SSLNextProtocolAccept.h"
-#include "SSLSNIConfig.h"
-#include "TLSSNISupport.h"
+#include "iocore/net/P_SSLNextProtocolAccept.h"
+#include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_inet.h"
 #include "tscore/Diags.h"

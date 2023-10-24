@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "P_CacheDir.h"
-#include "P_CacheStats.h"
-#include "P_RamCache.h"
+#include "iocore/cache/P_CacheDir.h"
+#include "iocore/cache/P_CacheStats.h"
+#include "iocore/cache/P_RamCache.h"
 
 #include "tscore/CryptoHash.h"
 

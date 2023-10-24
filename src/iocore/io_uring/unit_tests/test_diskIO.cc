@@ -26,7 +26,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 
 #include <functional>
 

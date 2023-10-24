@@ -25,11 +25,11 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "EventSystem.h"
-#include "RemapProcessor.h"
-#include "RemapPluginInfo.h"
-#include "HttpTransact.h"
-#include "ReverseProxy.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/http/remap/RemapProcessor.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/ReverseProxy.h"
 
 /**
  * A class that represents a queue of plugins to run

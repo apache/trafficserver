@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "StatPages.h"
+#include "proxy/StatPages.h"
 
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 

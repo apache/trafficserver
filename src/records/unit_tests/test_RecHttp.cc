@@ -27,7 +27,7 @@
 
 #include "tscpp/util/ts_bw.h"
 #include "records/RecHttp.h"
-#include "test_Diags.h"
+#include "records/unit_tests/test_Diags.h"
 #include "tscore/ink_defs.h"
 
 using swoc::TextView;

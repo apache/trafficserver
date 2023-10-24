@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "QUICFrame.h"
-#include "QUICFrameRetransmitter.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICFrameRetransmitter.h"
 
 class QUICFrameGenerator
 {

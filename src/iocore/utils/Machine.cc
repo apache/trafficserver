@@ -25,7 +25,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
-#include "Machine.h"
+#include "iocore/utils/Machine.h"
 
 #if HAVE_IFADDRS_H
 #include <ifaddrs.h>

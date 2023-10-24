@@ -21,16 +21,16 @@
  *  limitations under the License.
  */
 
-#include "QUICMultiCertConfigLoader.h"
-#include "P_SSLConfig.h"
-#include "P_SSLNextProtocolSet.h"
-#include "P_OCSPStapling.h"
-#include "QUICGlobals.h"
-#include "QUICConfig.h"
-#include "QUICConnection.h"
-#include "QUICTypes.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "iocore/net/P_OCSPStapling.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICTypes.h"
 #include "tscore/Filenames.h"
-// #include "QUICGlobals.h"
+// #include "iocore/net/quic/QUICGlobals.h"
 
 #define QUICConfDebug(fmt, ...)         Debug("quic_conf", fmt, ##__VA_ARGS__)
 #define QUICGlobalQCDebug(qc, fmt, ...) Debug("quic_global", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)

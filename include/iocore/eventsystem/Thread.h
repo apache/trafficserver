@@ -60,7 +60,7 @@
 
 #include <functional>
 
-#include "ProxyAllocator.h"
+#include "iocore/eventsystem/ProxyAllocator.h"
 #include "tscore/Ptr.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_thread.h"

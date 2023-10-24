@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "QUICFrame.h"
-#include "QUICTransferProgressProvider.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICTransferProgressProvider.h"
 
 enum class QUICSendStreamState {
   Init,

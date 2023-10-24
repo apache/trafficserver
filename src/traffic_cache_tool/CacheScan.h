@@ -31,7 +31,7 @@
 
 #include <thread>
 #include <unordered_map>
-#include "CacheDefs.h"
+#include "traffic_cache_tool/CacheDefs.h"
 
 #include "../../include/proxy/hdrs/HTTP.h"
 // using namespace ct;

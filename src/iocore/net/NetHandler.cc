@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include "NetHandler.h"
+#include "iocore/net/NetHandler.h"
 
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 #endif
 
-#include "P_Net.h"
-#include "P_UnixNet.h"
-#include "P_UnixNetProcessor.h"
-#include "PollCont.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_UnixNet.h"
+#include "iocore/net/P_UnixNetProcessor.h"
+#include "iocore/net/PollCont.h"
 
 using namespace std::literals;
 

@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "Http3StreamDataVIOAdaptor.h"
-#include "VIO.h"
+#include "proxy/http3/Http3StreamDataVIOAdaptor.h"
+#include "iocore/eventsystem/VIO.h"
 
 Http3StreamDataVIOAdaptor::Http3StreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink), _buffer(new_MIOBuffer(BUFFER_SIZE_INDEX_4K)) {}
 

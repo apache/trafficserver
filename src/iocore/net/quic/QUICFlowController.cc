@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICFlowController.h"
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFlowController.h"
+#include "iocore/net/quic/QUICFrame.h"
 
 //
 // QUICRateAnalyzer

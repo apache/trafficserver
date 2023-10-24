@@ -20,8 +20,8 @@
  */
 #include "tscpp/api/Response.h"
 #include "tscpp/api/noncopyable.h"
-#include "utils_internal.h"
-#include "logging_internal.h"
+#include "tscpp/api/utils_internal.h"
+#include "tscpp/api/logging_internal.h"
 
 using namespace atscppapi;
 using std::string;

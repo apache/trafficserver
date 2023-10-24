@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-#include "QUICStream.h"
-#include "QUICBidirectionalStream.h"
-#include "QUICUnidirectionalStream.h"
-#include "QUICStreamFactory.h"
+#include "iocore/net/quic/QUICStream.h"
+#include "iocore/net/quic/QUICBidirectionalStream.h"
+#include "iocore/net/quic/QUICUnidirectionalStream.h"
+#include "iocore/net/quic/QUICStreamFactory.h"
 
 QUICStreamBase *
 QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint64_t remote_max_stream_data)

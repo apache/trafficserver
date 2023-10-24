@@ -17,7 +17,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "Records.h"
+#include "mgmt/rpc/handlers/records/Records.h"
 
 #include <system_error>
 #include <string>

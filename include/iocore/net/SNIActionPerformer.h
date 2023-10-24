@@ -32,7 +32,7 @@
 
 #include <vector>
 #include <optional>
-#include "TLSSNISupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "tscore/ink_inet.h"
 #include "ts/DbgCtl.h"
 

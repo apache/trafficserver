@@ -23,15 +23,15 @@
 
 #pragma once
 
-#include "HttpVCTable.h"
-#include "Milestones.h"
+#include "proxy/http/HttpVCTable.h"
+#include "proxy/Milestones.h"
 
-#include "IOBuffer.h"
-#include "TLSALPNSupport.h"
-#include "ProxyTransaction.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/TLSALPNSupport.h"
+#include "proxy/ProxyTransaction.h"
 #include "records/RecHttp.h"
-#include "TLSBasicSupport.h"
-#include "TLSSessionResumptionSupport.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
 
 struct ClientTransactionInfo {
   int id{-1};

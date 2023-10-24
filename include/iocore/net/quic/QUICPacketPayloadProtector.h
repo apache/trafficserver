@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "IOBuffer.h"
-#include "QUICTypes.h"
-#include "QUICKeyGenerator.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
 
 class QUICPacketProtectionKeyInfo;
 

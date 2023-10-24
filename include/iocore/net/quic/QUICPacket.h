@@ -27,10 +27,10 @@
 #include <atomic>
 #include <cstddef>
 
-#include "IOBuffer.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
-#include "QUICTypes.h"
-#include "QUICRetryIntegrityTag.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICRetryIntegrityTag.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4

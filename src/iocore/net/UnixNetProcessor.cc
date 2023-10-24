@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "tscore/InkErrno.h"
 #include "tscore/ink_sock.h"
 #include "tscore/TSSystemState.h"
-#include "P_SSLNextProtocolAccept.h"
+#include "iocore/net/P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
-#include "StatPages.h"
+#include "proxy/StatPages.h"
 
 // naVecMutext protects access to naVec.
 Ptr<ProxyMutex> naVecMutex;

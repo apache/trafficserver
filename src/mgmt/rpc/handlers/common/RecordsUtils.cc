@@ -17,12 +17,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "RecordsUtils.h"
+#include "mgmt/rpc/handlers/common/RecordsUtils.h"
 
 #include <system_error>
 #include <string>
 
-#include "convert.h"
+#include "mgmt/rpc/handlers/common/convert.h"
 #include "records/P_RecCore.h"
 #include "tscore/Tokenizer.h"
 

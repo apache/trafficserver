@@ -30,7 +30,7 @@
 #include "tscore/Diags.h"
 #include "tscore/PriorityQueue.h"
 
-#include "HTTP2.h"
+#include "proxy/http2/HTTP2.h"
 
 // TODO: K is a constant, 256 is temporal value.
 const static uint32_t K                               = 256;

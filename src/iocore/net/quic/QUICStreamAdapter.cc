@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICStreamAdapter.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 
 Ptr<IOBufferBlock>
 QUICStreamAdapter::read(size_t len)

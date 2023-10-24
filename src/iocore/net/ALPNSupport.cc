@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "TLSALPNSupport.h"
-#include "P_SSLNextProtocolSet.h"
+#include "iocore/net/TLSALPNSupport.h"
+#include "iocore/net/P_SSLNextProtocolSet.h"
 #include "records/RecHttp.h"
 
 int ALPNSupport::_ex_data_index = -1;

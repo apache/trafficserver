@@ -28,8 +28,8 @@
 #include <cstdio>
 #include <cstring>
 #include <string_view>
-#include "HTTP.h"
-#include "HdrToken.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HdrToken.h"
 #include "tscore/Diags.h"
 
 /***********************************************************************

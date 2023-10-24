@@ -24,7 +24,7 @@
 #pragma once
 
 #include <vector>
-#include "QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 class QUICFrame;
 

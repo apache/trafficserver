@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "main.h"
+#include "iocore/cache/unit_tests/main.h"
 
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024

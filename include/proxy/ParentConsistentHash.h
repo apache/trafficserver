@@ -30,7 +30,7 @@
 #pragma once
 
 #include "tscore/HashSip.h"
-#include "ParentSelection.h"
+#include "proxy/ParentSelection.h"
 
 //
 //  Implementation of round robin based upon consistent hash of the URL,

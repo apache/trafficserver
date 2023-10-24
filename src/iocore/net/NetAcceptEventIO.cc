@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "NetAcceptEventIO.h"
-#include "P_NetAccept.h"
+#include "iocore/net/NetAcceptEventIO.h"
+#include "iocore/net/P_NetAccept.h"
 
 int
 NetAcceptEventIO::start(EventLoop l, NetAccept *na, int events)

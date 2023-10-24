@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICTLS.h"
+#include "iocore/net/quic/QUICTLS.h"
 
 #include <openssl/base.h>
 #include <openssl/err.h>
@@ -29,9 +29,9 @@
 #include <openssl/hkdf.h>
 #include <openssl/aead.h>
 
-#include "QUICGlobals.h"
-#include "QUICConnection.h"
-#include "QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
 static constexpr char tag[] = "quic_tls";
 

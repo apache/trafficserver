@@ -25,8 +25,8 @@
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
-#include "HPACK.h"
-#include "MIME.h"
+#include "proxy/http2/HPACK.h"
+#include "proxy/hdrs/MIME.h"
 #include "records/RecDefs.h"
 
 #include "api/Metrics.h"

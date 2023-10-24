@@ -26,10 +26,10 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ip.h"
 
-#include "P_SNIActionPerformer.h"
+#include "iocore/net/P_SNIActionPerformer.h"
 
 #if TS_USE_QUIC == 1
-#include "P_QUICNetVConnection.h"
+#include "iocore/net/P_QUICNetVConnection.h"
 #endif
 
 int

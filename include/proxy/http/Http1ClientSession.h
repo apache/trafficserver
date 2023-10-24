@@ -32,11 +32,11 @@
 #pragma once
 
 #include "api/InkAPIInternal.h"
-#include "HTTP.h"
-#include "HttpConfig.h"
-#include "IPAllow.h"
-#include "ProxySession.h"
-#include "Http1ClientTransaction.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/IPAllow.h"
+#include "proxy/ProxySession.h"
+#include "proxy/http/Http1ClientTransaction.h"
 
 #ifdef USE_HTTP_DEBUG_LISTS
 extern ink_mutex debug_cs_list_mutex;

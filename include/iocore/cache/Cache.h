@@ -24,10 +24,10 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "EventSystem.h"
-#include "AIO.h"
-#include "CacheDefs.h"
-#include "Store.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/aio/AIO.h"
+#include "iocore/cache/CacheDefs.h"
+#include "iocore/cache/Store.h"
 
 static constexpr ts::ModuleVersion CACHE_MODULE_VERSION(1, 0);
 

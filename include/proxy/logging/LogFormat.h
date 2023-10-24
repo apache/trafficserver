@@ -26,7 +26,7 @@
 #define LOG_FIELD_MARKER '\377'
 
 #include "tscore/ink_platform.h"
-#include "LogField.h"
+#include "proxy/logging/LogField.h"
 
 enum LogFormatType {
   // We start the numbering at 4 to compatibility with Traffic Server 4.x, which used

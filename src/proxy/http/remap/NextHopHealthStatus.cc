@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "NextHopSelectionStrategy.h"
-#include "HttpSM.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
+#include "proxy/http/HttpSM.h"
 
 /**
  * initialize the host_map

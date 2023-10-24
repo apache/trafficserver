@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "P_QUICNetVConnection_quiche.h"
-#include "P_QUICPacketHandler_quiche.h"
-#include "QUICMultiCertConfigLoader.h"
+#include "iocore/net/P_QUICNetVConnection_quiche.h"
+#include "iocore/net/P_QUICPacketHandler_quiche.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "quic/QUICStream_quiche.h"
 #include "quic/QUICGlobals.h"
 

@@ -23,10 +23,10 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "HttpSM.h"
-#include "Machine.h"
+#include "proxy/http/HttpSM.h"
+#include "iocore/utils/Machine.h"
 #include "tscpp/util/YamlCfg.h"
-#include "NextHopConsistentHash.h"
+#include "proxy/http/remap/NextHopConsistentHash.h"
 
 // hash_key strings.
 constexpr std::string_view hash_key_url           = "url";

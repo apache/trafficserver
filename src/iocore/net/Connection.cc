@@ -30,7 +30,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 
 #ifdef SO_ACCEPTFILTER
 #include <sys/param.h>

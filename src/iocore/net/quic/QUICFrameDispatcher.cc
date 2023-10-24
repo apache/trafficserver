@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICFrameDispatcher.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICFrameDispatcher.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 static constexpr char tag[]   = "quic_net";
 static constexpr char v_tag[] = "v_quic_net";

@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "SSLProxySession.h"
-#include "EventSystem.h"
-#include "NetVConnection.h"
-#include "TLSSNISupport.h"
+#include "proxy/private/SSLProxySession.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/TLSSNISupport.h"
 
 void
 SSLProxySession::init(NetVConnection const &new_vc)

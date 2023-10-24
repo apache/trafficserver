@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "NetVConnection.h"
-#include "QUICFrameHandler.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
 
 class QUICApplication;
 class QUICStreamManager;

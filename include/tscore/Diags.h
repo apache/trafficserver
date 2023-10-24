@@ -34,9 +34,9 @@
 #pragma once
 
 #include <ts/DbgCtl.h>
-#include "DiagsTypes.h"
-#include "SourceLocation.h"
-#include "LogMessage.h"
+#include "tscore/DiagsTypes.h"
+#include "tscore/SourceLocation.h"
+#include "tscore/LogMessage.h"
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //

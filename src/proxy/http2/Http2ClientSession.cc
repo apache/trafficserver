@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "Http2ClientSession.h"
-#include "HttpDebugNames.h"
+#include "proxy/http2/Http2ClientSession.h"
+#include "proxy/http/HttpDebugNames.h"
 #include "tscore/ink_base64.h"
-#include "Http2CommonSessionInternal.h"
-#include "TLSSNISupport.h"
-#include "TLSEarlyDataSupport.h"
+#include "proxy/http2/Http2CommonSessionInternal.h"
+#include "iocore/net/TLSSNISupport.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 

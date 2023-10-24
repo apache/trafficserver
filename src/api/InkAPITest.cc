@@ -46,7 +46,7 @@
 #include "ts/experimental.h"
 #include "records/RecCore.h"
 
-#include "P_Net.h"
+#include "iocore/net/P_Net.h"
 #include "records/RecHttp.h"
 
 #include "http/HttpSM.h"

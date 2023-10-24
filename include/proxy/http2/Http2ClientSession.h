@@ -23,12 +23,12 @@
 
 #pragma once
 
-#include "Plugin.h"
-#include "Http2CommonSession.h"
+#include "proxy/Plugin.h"
+#include "proxy/http2/Http2CommonSession.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
-#include "Milestones.h"
+#include "proxy/Milestones.h"
 
 class Http2ClientSession : public ProxySession, public Http2CommonSession
 {

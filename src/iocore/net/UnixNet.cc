@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "AsyncSignalEventIO.h"
-#include "P_Net.h"
-#include "P_UnixNet.h"
+#include "iocore/net/AsyncSignalEventIO.h"
+#include "iocore/net/P_Net.h"
+#include "iocore/net/P_UnixNet.h"
 #include "tscore/ink_hrtime.h"
 
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 #endif
 
 ink_hrtime last_throttle_warning;

@@ -21,7 +21,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "JsonRPCConfig.h"
+#include "mgmt/rpc/config/JsonRPCConfig.h"
 
 #include "tscore/Diags.h"
 #include "records/RecCore.h"

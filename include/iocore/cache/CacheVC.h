@@ -25,21 +25,21 @@
 
 /*
 // inkcache
-#include "Cache.h"
-#include "P_CacheDir.h"
-#include "P_CacheVol.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/cache/P_CacheDir.h"
+#include "iocore/cache/P_CacheVol.h"
 */
-#include "P_CacheHttp.h"
+#include "iocore/cache/P_CacheHttp.h"
 
 // aio
-#include "AIO.h"
+#include "iocore/aio/AIO.h"
 
 // inkevent
-#include "Action.h"
-#include "Continuation.h"
-#include "Event.h"
-#include "IOBuffer.h"
-#include "VIO.h"
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/eventsystem/VIO.h"
 
 // tscore
 #include "tscore/ink_hrtime.h"

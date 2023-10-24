@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "HttpSessionAccept.h"
-#include "IPAllow.h"
-#include "Http1ClientSession.h"
-#include "Machine.h"
+#include "proxy/http/HttpSessionAccept.h"
+#include "proxy/IPAllow.h"
+#include "proxy/http/Http1ClientSession.h"
+#include "iocore/utils/Machine.h"
 
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)

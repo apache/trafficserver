@@ -40,8 +40,8 @@
 #include "swoc/bwf_fwd.h"
 #include "swoc/TextView.h"
 #include <tscore/MgmtDefs.h>
-#include "HttpProxyAPIEnums.h"
-#include "Show.h"
+#include "proxy/http/HttpProxyAPIEnums.h"
+#include "proxy/Show.h"
 
 /**
  * Singleton class to keep track of the number of outbound connections.

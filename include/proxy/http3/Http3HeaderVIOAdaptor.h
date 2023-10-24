@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QPACK.h"
+#include "proxy/http3/QPACK.h"
 #include "hdrs/VersionConverter.h"
-#include "Http3FrameHandler.h"
+#include "proxy/http3/Http3FrameHandler.h"
 
 class Http3HeaderVIOAdaptor : public Continuation, public Http3FrameHandler
 {

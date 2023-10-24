@@ -26,7 +26,7 @@
   SocketManager.cc
  ****************************************************************************/
 #include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/P_EventSystem.h"
 
 #include "tscore/TextBuffer.h"
 

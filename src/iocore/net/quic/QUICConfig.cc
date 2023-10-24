@@ -21,17 +21,17 @@
  *  limitations under the License.
  */
 
-#include "QUICConfig.h"
+#include "iocore/net/quic/QUICConfig.h"
 
 #include <openssl/ssl.h>
 
 #include <records/RecHttp.h>
 
-#include "P_SSLConfig.h"
-#include "P_TLSKeyLogger.h"
+#include "iocore/net/P_SSLConfig.h"
+#include "iocore/net/P_TLSKeyLogger.h"
 
-#include "QUICGlobals.h"
-#include "QUICTransportParameters.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
