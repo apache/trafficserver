@@ -121,8 +121,11 @@ struct DNSProcessor : public Processor {
   // NOTE: the HostEnt *block is freed when the function returns
   //
 
+  // To avoid lifetime issues, the name will be copied out of the view's
+  // buffer before the query is scheduled.
   Action *gethostbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *getSRVbyname(Continuation *cont, std::string_view name, Options const &opt);
+
   Action *gethostbyaddr(Continuation *cont, IpAddr const *ip, Options const &opt);
 
   // Processor API
