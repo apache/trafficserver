@@ -89,6 +89,6 @@ if(BUILD_TESTING)
             # private headers
             ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
   )
-  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
+  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging inknet tsapi)
   add_test(NAME test_proxy_http COMMAND test_proxy_http)
 endif(BUILD_TESTING)

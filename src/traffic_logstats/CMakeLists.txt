@@ -27,6 +27,7 @@ target_link_libraries(
           ts::diagsconfig
           ts::inkevent
           libswoc
+          ts::tsapi
 )
 
 if(BUILD_TESTING)

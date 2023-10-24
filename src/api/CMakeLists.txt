@@ -15,7 +15,11 @@
 #
 #######################
 
-add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
+add_library(tsapi SHARED
+  InkAPI.cc
+  InkIOCoreAPI.cc
+  ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
+)
 add_library(ts::tsapi ALIAS tsapi)
 target_include_directories(
   tsapi
@@ -41,7 +45,19 @@ set(TSAPI_PUBLIC_HEADERS
   ${PROJECT_SOURCE_DIR}/include/ts/experimental.h
 )
 
-target_link_libraries(tsapi PRIVATE ts::tscore)
+target_link_libraries(tsapi
+   PRIVATE
+     ts::tscore
+     ts::http
+     ts::http_remap
+     ts::http2
+     ts::hdrs
+     ts::inknet
+     ts::inkdns
+     ts::configmanager
+     ts::jsonrpc_protocol
+     ts::logging
+ )
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 add_library(
@@ -55,6 +71,7 @@ add_library(
   FetchSM.cc
   LifecycleAPIHooks.cc
   DbgCtl.cc
+  Version.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_include_directories(
@@ -69,10 +86,6 @@ set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/mgmt)
 
 install(TARGETS tsapi PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
-
-if(APPLE)
-  target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
-endif()
 
 if(BUILD_TESTING)
   add_executable(test_Metrics test_Metrics.cc)
