@@ -16,5 +16,3 @@
 #######################
 
 add_atsplugin(tcpinfo tcpinfo.cc)
-
-target_include_directories(tcpinfo PRIVATE "${PROJECT_SOURCE_DIR}/include")

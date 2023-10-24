@@ -17,18 +17,15 @@
 
 add_executable(test_content_range test_content_range.cc ${PROJECT_SOURCE_DIR}/ContentRange.cc)
 target_compile_definitions(test_content_range PRIVATE UNITTEST)
-target_include_directories(test_content_range PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_content_range PRIVATE catch2::catch2)
 add_test(NAME test_content_range COMMAND test_content_range)
 
 add_executable(test_range test_range.cc ${PROJECT_SOURCE_DIR}/Range.cc)
 target_compile_definitions(test_range PRIVATE UNITTEST)
-target_include_directories(test_range PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_range PRIVATE catch2::catch2)
 add_test(NAME test_range COMMAND test_range)
 
 add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc)
 target_compile_definitions(test_config PRIVATE UNITTEST)
-target_include_directories(test_config PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_config PRIVATE PCRE::PCRE catch2::catch2)
 add_test(NAME test_config COMMAND test_config)

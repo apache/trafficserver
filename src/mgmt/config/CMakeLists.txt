@@ -18,17 +18,6 @@
 add_library(configmanager STATIC FileManager.cc AddConfigFilesHere.cc)
 add_library(ts::configmanager ALIAS configmanager)
 
-include_directories(
-  ${CMAKE_SOURCE_DIR}/include/mgmt
-  ${CMAKE_SOURCE_DIR}/include/mgmt/config
-  ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-  ${CMAKE_SOURCE_DIR}/include/proxy/http
-  ${IOCORE_INCLUDE_DIRS}
-  # Private headers
-  ${CMAKE_SOURCE_DIR}/src/iocore/net
-  ${CMAKE_SOURCE_DIR}/src/iocore/dns
-)
-
 target_link_libraries(
   configmanager
   PUBLIC ts::tscore

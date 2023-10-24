@@ -32,12 +32,6 @@ add_library(
 )
 add_library(ts::hdrs ALIAS hdrs)
 
-target_include_directories(
-  hdrs
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-  PRIVATE ${IOCORE_INCLUDE_DIRS}
-)
-
 target_link_libraries(
   hdrs
   PUBLIC libswoc ts::tscore
@@ -61,7 +55,6 @@ if(BUILD_TESTING)
   add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
   add_executable(test_proxy_hdrs_xpack XPACK.cc HuffmanCodec.cc unit_tests/test_XPACK.cc)
-  target_include_directories(test_proxy_hdrs_xpack PRIVATE ${CMAKE_SOURCE_DIR}/include/proxy/hdrs)
   target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore ts::tsapicore libswoc catch2::catch2)
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
 endif()

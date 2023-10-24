@@ -28,7 +28,6 @@
 
 add_atsplugin(cripts_example1 example1.cc)
 
-target_include_directories(cripts_example1 PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(cripts_example1 PRIVATE ts::cripts)
 
 # This is a hack, but useful to run clang-tidy across all of Cripts

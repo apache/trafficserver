@@ -46,20 +46,7 @@ if(BUILD_REGRESSION_TESTING)
   target_sources(http PRIVATE RegressionHttpTransact.cc)
 endif()
 
-target_include_directories(
-  http
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/proxy/http
-  PRIVATE ${IOCORE_INCLUDE_DIRS}
-          ${PROXY_INCLUDE_DIRS}
-          ${YAMLCPP_INCLUDE_DIR}
-          OpenSSL::SSL
-          # private headers
-          ${CMAKE_SOURCE_DIR}/src/iocore/dns
-          ${CMAKE_SOURCE_DIR}/src/proxy/
-          ${CMAKE_SOURCE_DIR}/src/iocore/net
-          ${CMAKE_SOURCE_DIR}/src/iocore/cache
-          ${CMAKE_SOURCE_DIR}/src/iocore/aio
-)
+target_include_directories(http PRIVATE ${YAMLCPP_INCLUDE_DIR} OpenSSL::SSL)
 
 target_link_libraries(
   http
@@ -82,12 +69,6 @@ if(BUILD_TESTING)
     test_proxy_http
     unit_tests/unit_test_main.cc unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
     unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
-  )
-  target_include_directories(
-    test_proxy_http
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-            # private headers
-            ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
   )
   target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging)
   add_test(NAME test_proxy_http COMMAND test_proxy_http)

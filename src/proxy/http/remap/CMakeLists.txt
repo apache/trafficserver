@@ -36,19 +36,6 @@ add_library(
 )
 add_library(ts::http_remap ALIAS http_remap)
 
-target_include_directories(
-  http_remap
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${IOCORE_INCLUDE_DIRS}
-          ${PROXY_INCLUDE_DIRS}
-          # private header files
-          ${CMAKE_SOURCE_DIR}/src/proxy
-          ${CMAKE_SOURCE_DIR}/src/records
-          ${CMAKE_SOURCE_DIR}/src/iocore/net
-          ${CMAKE_SOURCE_DIR}/src/records
-          ${CMAKE_SOURCE_DIR}/src/iocore/dns
-)
-
 target_link_libraries(
   http_remap
   PUBLIC ts::proxy ts::tscore

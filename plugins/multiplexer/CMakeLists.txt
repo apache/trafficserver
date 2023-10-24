@@ -26,6 +26,4 @@ add_atsplugin(
   ts.cc
 )
 
-target_include_directories(multiplexer PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")
-
 target_compile_definitions(multiplexer PRIVATE PLUGIN_TAG="multiplexer")

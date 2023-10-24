@@ -25,15 +25,3 @@ add_subdirectory(dns)
 add_subdirectory(hostdb)
 add_subdirectory(utils)
 add_subdirectory(cache)
-
-set(IOCORE_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem
-    ${CMAKE_SOURCE_DIR}/include/iocore/dns
-    ${CMAKE_SOURCE_DIR}/include/iocore/io_uring
-    ${CMAKE_SOURCE_DIR}/include/iocore/aio
-    ${CMAKE_SOURCE_DIR}/include/iocore/net
-    ${CMAKE_SOURCE_DIR}/include/iocore/cache
-    ${CMAKE_SOURCE_DIR}/include/iocore/hostdb
-    ${CMAKE_SOURCE_DIR}/include/iocore/utils
-    PARENT_SCOPE
-)
