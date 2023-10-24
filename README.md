@@ -81,7 +81,7 @@ Here is an example user preset:
       "name": "mydev",
       "displayName": "my development",
       "description": "My Development Presets",
-      "binaryDir": "${sourceDir}/cmake-build-dev-clang",
+      "binaryDir": "${sourceDir}/build-dev-clang",
       "inherits": ["clang", "dev"],
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "/opt/ats-cmake",

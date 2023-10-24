@@ -33,7 +33,7 @@
       "displayName": "development",
       "description": "Development Presets",
       "inherits": ["default"],
-      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "binaryDir": "${sourceDir}/build-${presetName}",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
@@ -67,7 +67,7 @@
       "displayName": "CI defaults",
       "description": "Defaults for CI Pipeline builds",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-ci",
+      "binaryDir": "${sourceDir}/build-ci",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
