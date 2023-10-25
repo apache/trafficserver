@@ -42,6 +42,7 @@ target_include_directories(
 )
 
 target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::proxy ts::tscore yaml-cpp::yaml-cpp)
+set_target_properties(logging PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_TESTING)
   add_executable(test_LogUtils LogUtils.cc unit-tests/test_LogUtils.cc)

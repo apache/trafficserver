@@ -122,6 +122,7 @@ target_link_libraries(
   PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL
   PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
 )
+set_target_properties(inknet PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(inknet PUBLIC ts::inkuring)

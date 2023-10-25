@@ -30,3 +30,4 @@ target_include_directories(
 )
 
 target_link_libraries(inkutils PUBLIC ts::inkevent ts::tscore)
+set_target_properties(inkutils PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

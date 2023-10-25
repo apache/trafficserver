@@ -31,4 +31,5 @@ target_include_directories(
           ${CMAKE_SOURCE_DIR}/src/iocore/dns
 )
 
-target_link_libraries(inkdns PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tscore)
+target_link_libraries(inkdns PUBLIC ts::inkevent ts::inknet ts::inkhostdb ts::proxy ts::tscore)
+set_target_properties(inkdns PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

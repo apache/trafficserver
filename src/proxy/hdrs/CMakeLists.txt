@@ -43,6 +43,7 @@ target_link_libraries(
   PUBLIC libswoc ts::tscore
   PRIVATE ts::inkevent ts::tsapicore
 )
+set_target_properties(hdrs PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_TESTING)
   add_executable(

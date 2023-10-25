@@ -49,6 +49,7 @@ target_link_libraries(
           tscpputil # transitive
           yaml-cpp::yaml-cpp # transitive
 )
+set_target_properties(inkevent PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(TS_USE_HWLOC)
   target_link_libraries(inkevent PRIVATE hwloc::hwloc)

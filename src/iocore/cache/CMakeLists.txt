@@ -66,6 +66,7 @@ target_link_libraries(
   PUBLIC ts::aio ts::hdrs ts::http ts::inkevent ts::tscore
   PRIVATE ts::proxy fastlz ZLIB::ZLIB
 )
+set_target_properties(inkcache PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)

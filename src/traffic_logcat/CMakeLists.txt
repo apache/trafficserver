@@ -15,7 +15,7 @@
 #
 #######################
 
-add_executable(traffic_logcat ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc logcat.cc)
+add_executable(traffic_logcat logcat.cc)
 target_include_directories(traffic_logcat PRIVATE ${CMAKE_SOURCE_DIR}/src/proxy/logging)
 target_link_libraries(
   traffic_logcat

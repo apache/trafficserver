@@ -34,3 +34,4 @@ target_link_libraries(
   PUBLIC ts::tscore
   PRIVATE ts::proxy
 )
+set_target_properties(configmanager PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

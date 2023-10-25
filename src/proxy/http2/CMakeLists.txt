@@ -43,6 +43,7 @@ target_link_libraries(
   PUBLIC ts::inkevent ts::proxy ts::tscore
   PRIVATE ts::inkutils
 )
+set_target_properties(http2 PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_TESTING)
   add_executable(

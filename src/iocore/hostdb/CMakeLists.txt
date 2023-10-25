@@ -34,3 +34,4 @@ target_include_directories(
 )
 
 target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
+set_target_properties(inkhostdb PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

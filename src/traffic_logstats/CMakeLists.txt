@@ -28,6 +28,7 @@ target_link_libraries(
           ts::inkevent
           libswoc
           ts::tsapi
+          ts::configmanager
 )
 
 if(BUILD_TESTING)

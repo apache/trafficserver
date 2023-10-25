@@ -49,6 +49,7 @@ macro(add_cache_test name)
     ts::logging
     ts::jsonrpc_server
     ts::tsapi
+    ts::configmanager
   )
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
@@ -69,6 +70,7 @@ macro(add_net_test name)
        catch2::catch2
        ts::jsonrpc_server
        ts::tsapi
+       ts::configmanager
    )
 endmacro()
 
@@ -79,7 +81,6 @@ macro(add_stubbed_test name)
   )
   target_link_libraries(${name}
     PRIVATE
-    ts::proxy
     ts::hdrs
     ts::http
     ts::http2
@@ -89,6 +90,7 @@ macro(add_stubbed_test name)
     ts::logging
     ts::jsonrpc_server
     catch2::catch2
+    ts::proxy
   )
   add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()

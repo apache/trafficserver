@@ -70,6 +70,7 @@ target_link_libraries(
   PUBLIC ts::inkcache ts::inkevent ts::tsapicore ts::tscore
   PRIVATE ts::jsonrpc_protocol ts::inkutils
 )
+set_target_properties(proxy PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(hdrs)
 add_subdirectory(shared)

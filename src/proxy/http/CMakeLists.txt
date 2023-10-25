@@ -66,6 +66,7 @@ target_link_libraries(
   PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tsapicore ts::tscore
   PRIVATE ts::http2 ts::http_remap ts::inkcache ts::inkutils ts::logging
 )
+set_target_properties(http PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(TS_USE_QUIC)
   target_link_libraries(http PRIVATE ts::http3)
@@ -89,6 +90,6 @@ if(BUILD_TESTING)
             # private headers
             ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
   )
-  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging inknet tsapi)
+  target_link_libraries(test_proxy_http PRIVATE catch2::catch2 hdrs tscore inkevent proxy logging inknet tsapi configmanager)
   add_test(NAME test_proxy_http COMMAND test_proxy_http)
 endif(BUILD_TESTING)

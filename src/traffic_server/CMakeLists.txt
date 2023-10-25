@@ -17,7 +17,6 @@
 
 add_executable(
   traffic_server Crash.cc EventName.cc SocksProxy.cc traffic_server.cc RpcAdminPubHandlers.cc
-                 ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 target_include_directories(
   traffic_server

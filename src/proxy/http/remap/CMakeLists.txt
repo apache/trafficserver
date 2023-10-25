@@ -54,3 +54,4 @@ target_link_libraries(
   PUBLIC ts::proxy ts::tscore
   PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
 )
+set_target_properties(http_remap PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

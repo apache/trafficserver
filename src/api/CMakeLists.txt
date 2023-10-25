@@ -18,7 +18,6 @@
 add_library(tsapi SHARED
   InkAPI.cc
   InkIOCoreAPI.cc
-  ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 add_library(ts::tsapi ALIAS tsapi)
 target_include_directories(
@@ -46,18 +45,18 @@ set(TSAPI_PUBLIC_HEADERS
 )
 
 target_link_libraries(tsapi
-   PRIVATE
-     ts::tscore
-     ts::http
-     ts::http_remap
-     ts::http2
-     ts::hdrs
-     ts::inknet
-     ts::inkdns
-     ts::configmanager
-     ts::jsonrpc_protocol
-     ts::logging
- )
+  PRIVATE
+    ts::tscore
+    #    ts::http
+    #    ts::http_remap
+    #    ts::http2
+    #    ts::hdrs
+    #    ts::inknet
+    #    ts::inkdns
+    #    ts::configmanager
+    #    ts::jsonrpc_protocol
+    #    ts::logging
+)
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 add_library(
@@ -72,6 +71,7 @@ add_library(
   LifecycleAPIHooks.cc
   DbgCtl.cc
   Version.cc
+  ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_include_directories(
@@ -80,7 +80,7 @@ target_include_directories(
           ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem ${CMAKE_SOURCE_DIR}/src/iocore/net
           ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
 )
-target_link_libraries(tsapicore PRIVATE ts::tscore)
+target_link_libraries(tsapicore PRIVATE ts::tscore ts::http)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/mgmt)
