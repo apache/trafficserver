@@ -17,7 +17,7 @@
 
 add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
 
-target_include_directories(maxmind_acl PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(maxmind_acl PRIVATE ${PCRE_INCLUDE_DIR})
 
 find_package(maxminddb REQUIRED)
 
