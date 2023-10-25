@@ -852,9 +852,14 @@ Http2ConnectionState::rcv_goaway_frame(const Http2Frame &frame)
   while (nbytes < frame.header().length) {
     unsigned read_bytes = read_rcv_buffer(buf, sizeof(buf), nbytes, frame);
 
-    if (!http2_parse_goaway(make_iovec(buf, read_bytes), goaway)) {
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
-                        "goaway failed parse");
+    if (nbytes == HTTP2_GOAWAY_LEN) {
+      // Read Last-Stream-ID and Error Code
+      if (!http2_parse_goaway(make_iovec(buf, read_bytes), goaway)) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "goaway failed parse");
+      }
+    } else {
+      // TODO: Parse additional debug data
     }
   }
 
