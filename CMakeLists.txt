@@ -538,7 +538,7 @@ if(ENABLE_FUZZING)
 endif()
 
 # Common includes for everyone
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 
 add_subdirectory(lib)
 
