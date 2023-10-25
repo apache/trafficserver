@@ -34,12 +34,12 @@ SieveLru::hasher(const sockaddr *sock)
 {
   switch (sock->sa_family) {
   case AF_INET: {
-    const sockaddr_in *sa = reinterpret_cast<const sockaddr_in *>(sock);
+    const auto *sa = reinterpret_cast<const sockaddr_in *>(sock);
 
     return (0xffffffff00000000 | sa->sin_addr.s_addr);
   } break;
   case AF_INET6: {
-    const sockaddr_in6 *sa6 = reinterpret_cast<const sockaddr_in6 *>(sock);
+    const auto *sa6 = reinterpret_cast<const sockaddr_in6 *>(sock);
 
     return (*reinterpret_cast<uint64_t const *>(sa6->sin6_addr.s6_addr) ^
             *reinterpret_cast<uint64_t const *>(sa6->sin6_addr.s6_addr + sizeof(uint64_t)));
@@ -77,38 +77,65 @@ SieveLru::hasher(const std::string &ip, u_short family) // Mostly a convenience 
 
   return 0; // Probably can't happen, but have to return something
 }
-// Constructor, setting up the pre-sized LRU buckets etc.
-SieveLru::SieveLru(uint32_t num_buckets, uint32_t size) : _lock(TSMutexCreate())
+
+bool
+SieveLru::parseYaml(const YAML::Node &node)
 {
-  initialize(num_buckets, size);
-}
+  if (node["buckets"]) {
+    _num_buckets = node["buckets"].as<uint32_t>();
+  }
 
-// Initialize the Sieve LRU object
-void
-SieveLru::initialize(uint32_t num_buckets, uint32_t size)
-{
-  TSMutexLock(_lock);
-  TSAssert(!_initialized);             // Don't allow it to be initialized more than once!
-  TSReleaseAssert(size > num_buckets); // Otherwise we can't half the bucket sizes
+  if (node["size"]) {
+    _size = node["size"].as<uint32_t>();
+  }
 
-  _initialized = true;
-  _num_buckets = num_buckets;
-  _size        = size;
+  if (node["percentage"]) {
+    _percentage = node["percentage"].as<uint32_t>();
+  }
 
-  uint32_t cur_size = pow(2, 1 + _size - num_buckets);
+  if (node["max_age"]) {
+    _max_age = std::chrono::seconds(node["max_age"].as<uint32_t>());
+  }
 
-  _map.reserve(pow(2, size + 2));     // Allow for all the sieve LRUs, and extra room for the allow list
-  _buckets.reserve(_num_buckets + 2); // Two extra buckets, for the block list and allow list
+  if (node["perma-block"]) {
+    const YAML::Node &perma = node["perma-block"];
+
+    if (perma.IsMap()) {
+      if (perma["limit"]) {
+        _permablock_limit = perma["limit"].as<uint32_t>();
+      }
+
+      if (perma["threshold"]) {
+        _permablock_threshold = perma["threshold"].as<uint32_t>();
+      }
+
+      if (perma["max_age"]) {
+        _permablock_max_age = std::chrono::seconds(perma["max_age"].as<uint32_t>());
+      }
+    } else {
+      TSError("[%s] The perma-block node must be a map", PLUGIN_NAME);
+      return false;
+    }
+  }
+
+  uint32_t cur_size = pow(2, 1 + _size - _num_buckets);
+
+  _map.reserve(pow(2, _size + 1));    // Allow for all the sieve LRUs
+  _buckets.reserve(_num_buckets + 1); // One extra bucket, for the deny list
 
   // Create the other buckets, in smaller and smaller sizes (power of 2)
   for (uint32_t i = lastBucket(); i <= entryBucket(); ++i) {
     _buckets[i]  = new SieveBucket(cur_size);
     cur_size    *= 2;
   }
-
   _buckets[blockBucket()] = new SieveBucket(cur_size / 2); // Block LRU, same size as entry bucket
-  _buckets[allowBucket()] = new SieveBucket(0);            // Allow LRU, this is unlimited
-  TSMutexUnlock(_lock);
+
+  Dbg(dbg_ctl, "Loaded IP-Reputation rule: %s(%u, %u, %u, %ld)", _name.c_str(), _num_buckets, _size, _percentage,
+      static_cast<long>(_max_age.count()));
+  Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %ld)", _name.c_str(), _permablock_limit, _permablock_threshold,
+      static_cast<long>(_permablock_max_age.count()));
+
+  return true;
 }
 
 // Increment the count for an element (will be created / added if new).
@@ -132,7 +159,8 @@ SieveLru::increment(KeyClass key)
       _map.erase(l_key);
       *last = {key, 1, entryBucket(), SystemClock::now()};
     } else {
-      // Create a new entry, the date is not used now (unless perma blocked), but could be useful for aging out stale elements.
+      // Create a new entry, the date is not used now (unless perma blocked), but could be useful for aging out stale
+      // elements.
       lru->push_front({key, 1, entryBucket(), SystemClock::now()});
     }
     _map[key] = lru->begin();
@@ -143,7 +171,7 @@ SieveLru::increment(KeyClass key)
     auto &[map_key, map_item]              = *map_it;
     auto &[list_key, count, bucket, added] = *map_item;
     auto lru                               = _buckets[bucket];
-    auto max_age                           = (bucket == blockBucket() ? _perma_max_age : _max_age);
+    auto max_age                           = (bucket == blockBucket() ? _permablock_max_age : _max_age);
 
     // Check if the entry is older than max_age (if set), if so just move it to the entry bucket and restart
     // Yes, this will move likely abusive IPs but they will earn back a bad reputation; The goal here is to
@@ -274,8 +302,7 @@ SieveLru::dump()
     long long cnt = 0, sum = 0;
     auto lru = _buckets[i];
 
-    std::cout << std::endl
-              << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << std::endl;
+    std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
     for (auto &it : *lru) {
       auto &[key, count, bucket, added] = it;
 
@@ -288,7 +315,7 @@ SieveLru::dump()
 #endif
     }
 
-    std::cout << "\tAverage count=" << (cnt > 0 ? sum / cnt : 0) << std::endl;
+    std::cout << "\tAverage count=" << (cnt > 0 ? sum / cnt : 0) << '\n';
   }
   TSMutexUnlock(_lock);
 }

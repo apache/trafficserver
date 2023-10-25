@@ -33,7 +33,6 @@
 // As a global plugin, things works a little different since we don't setup
 // per transaction or via remap.config.
 extern int gVCIdx;
-SniSelector *gSNISelector = nullptr;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -53,37 +52,12 @@ TSPluginInit(int argc, const char *argv[])
     TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
   }
 
-  if (argc > 1) {
-    if (!strncasecmp(argv[1], "SNI=", 4)) {
-      if (gSNISelector == nullptr) {
-        TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
-        gSNISelector    = new SniSelector();
-
-        TSReleaseAssert(sni_cont);
-        TSContDataSet(sni_cont, gSNISelector);
-
-        TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
-        TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
-      }
-
-      // Have to skip the first one, which is considered the 'program' name
-      --argc;
-      ++argv;
-
-      size_t num_sni = gSNISelector->factory(argv[0] + 4, argc, argv);
-      Dbg(dbg_ctl, "Finished loading %zu SNIs", num_sni);
-
-      gSNISelector->setupQueueCont(); // Start the queue processing continuation if needed
-    } else if (!strncasecmp(argv[1], "HOST=", 5)) {
-      // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
-      --argc; // Skip the "HOST" arg of course when parsing the real parameters
-      ++argv;
-      // TSCont host_cont = TSContCreate(globalHostCont, nullptr);
-    } else {
-      TSError("[%s] unknown global limiter type: %s", PLUGIN_NAME, argv[1]);
-    }
+  if (argc == 2) {
+    // Make sure we start the global SNI selector before we do anything else.
+    // This selector can be replaced later, during configuration reload.
+    SniSelector::startup(argv[1]);
   } else {
-    TSError("[%s] Usage: rate_limit.so SNI|HOST [option arguments]", PLUGIN_NAME);
+    TSError("[%s] Usage: rate_limit.so <config.yaml>", PLUGIN_NAME);
   }
 }
 
@@ -107,10 +81,10 @@ TSRemapDeleteInstance(void *ih)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  TxnRateLimiter *limiter = new TxnRateLimiter();
+  auto *limiter = new TxnRateLimiter();
 
-  // set the description based on the pristine remap URL prior to advancing the pointer below
-  limiter->description = getDescriptionFromUrl(argv[0]);
+  // set the name based on the pristine remap URL prior to advancing the pointer below
+  limiter->setName(getDescriptionFromUrl(argv[0]));
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -121,8 +95,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit, limiter->max_queue,
-      static_cast<long>(limiter->max_age.count()), limiter->error);
+  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit(), limiter->max_queue(),
+      static_cast<long>(limiter->max_age().count()), limiter->error());
 
   return TS_SUCCESS;
 }
@@ -133,13 +107,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(ih);
+  auto *limiter = static_cast<TxnRateLimiter *>(ih);
 
   if (limiter) {
     if (!limiter->reserve()) {
-      if (!limiter->max_queue || limiter->full()) {
+      if (!limiter->max_queue() || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
+        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
         limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
         Dbg(dbg_ctl, "Rejecting request, we're at capacity and queue is full");
       } else {

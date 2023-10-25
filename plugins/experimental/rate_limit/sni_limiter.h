@@ -17,52 +17,72 @@
  */
 #pragma once
 
+#include "ts/ts.h"
+#include <yaml-cpp/yaml.h>
+
 #include "limiter.h"
 #include "ip_reputation.h"
-#include "ts/ts.h"
+#include "lists.h"
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 
+class SniSelector;
+
 ///////////////////////////////////////////////////////////////////////////////
-// SNI based limiters, for global (pligin.config) instance(s).
+// SNI based limiters, for global (plugin.config) instance(s).
 //
 class SniRateLimiter : public RateLimiter<TSVConn>
 {
+  using super_type = RateLimiter<TSVConn>;
+  using self_type  = SniRateLimiter;
+
 public:
-  SniRateLimiter() {}
+  SniRateLimiter()                        = delete;
+  SniRateLimiter(self_type &&)            = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = delete;
 
-  SniRateLimiter(const SniRateLimiter &src)
-  {
-    limit     = src.limit;
-    max_queue = src.max_queue;
-    max_age   = src.max_age;
-    prefix    = src.prefix;
-    tag       = src.tag;
-  }
+  SniRateLimiter(std::string &sni, SniSelector *sel) : _selector(sel) { setName(sni); }
 
-  bool initialize(int argc, const char *argv[]);
-
-  // ToDo: this ought to go into some better global IP reputation pool / settings. Waiting for YAML...
-  IpReputation::SieveLru iprep;
-  uint32_t iprep_permablock_count     = 0; // "Hits" limit for blocking permanently
-  uint32_t iprep_permablock_threshold = 0; // Pressure threshold for permanent block
+  bool parseYaml(const YAML::Node &node) override;
 
   // Calculate the pressure, which is either a negative number (ignore), or a number 0-<buckets>.
   // 0 == block only perma-blocks.
   int32_t
   pressure() const
   {
-    int32_t p = ((active() / static_cast<float>(limit) * 100) - _iprep_percent) / (100 - _iprep_percent) * (_iprep_num_buckets + 1);
+    int32_t p = ((active() / static_cast<float>(limit()) * 100) - _iprep->percentage()) / (100 - _iprep->percentage()) *
+                (_iprep->numBuckets() + 1);
 
-    return (p >= static_cast<int32_t>(_iprep_num_buckets) ? _iprep_num_buckets : p);
+    return (p >= static_cast<int32_t>(_iprep->numBuckets()) ? _iprep->numBuckets() : p);
+  }
+
+  void
+  addIPReputation(IpReputation::SieveLru *iprep)
+  {
+    this->_iprep = iprep;
+  }
+
+  IpReputation::SieveLru *
+  iprep() const
+  {
+    return _iprep;
+  }
+
+  List::IP *
+  exclude() const
+  {
+    return _exclude;
+  }
+
+  SniSelector *
+  selector() const
+  {
+    return _selector;
   }
 
 private:
-  // ToDo: These should be moved to global configurations to have one shared IP Reputation.
-  // today the configuration of this is so clunky, that there is no easy way to make it "global".
-  std::chrono::seconds _iprep_max_age       = std::chrono::seconds::zero(); // Max age in the SieveLRUs for regular buckets
-  std::chrono::seconds _iprep_perma_max_age = std::chrono::seconds::zero(); // Max age in the SieveLRUs for perma-block buckets
-  uint32_t _iprep_num_buckets               = 10;                           // Number of buckets. ToDo: leave this at 10 always
-  uint32_t _iprep_percent                   = 90;                           // At what percentage of limit we start blocking
-  uint32_t _iprep_size                      = 0;                            // Size of the biggest bucket; 15 == 2^15 == 32768
+  SniSelector *_selector         = nullptr; // The selector we belong to
+  IpReputation::SieveLru *_iprep = nullptr; // IP reputation for this SNI (if any)
+  List::IP *_exclude             = nullptr; // The list of IPs to exclude (if any). ToDo: belongs in limiter.h :-/.
 };

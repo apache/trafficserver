@@ -15,21 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 
-#include <string>
-#include <chrono>
+#include "utilities.h"
+#include "lists.h"
 
-#include "ts/ts.h"
-
-constexpr char const PLUGIN_NAME[] = "rate_limit";
-
-void delayHeader(TSHttpTxn txnp, const std::string &header, std::chrono::milliseconds delay);
-void retryAfter(TSHttpTxn txnp, unsigned retry);
-std::string getDescriptionFromUrl(const char *url);
-
-namespace rate_limit_ns
+bool
+List::IP::parseYaml(const YAML::Node &node)
 {
-extern DbgCtl dbg_ctl;
+  const YAML::Node &cidr = node["cidr"];
+
+  if (cidr && cidr.IsSequence()) {
+    for (const auto &i : cidr) {
+      auto str = i.as<std::string>();
+
+      Dbg(dbg_ctl, "Adding CIDR %s to List %s", str.c_str(), _name.c_str());
+      add(str);
+    }
+  } else {
+    TSError("[%s] No 'cidr' list found in Lists rule %s", PLUGIN_NAME, name().c_str());
+    return false;
+  }
+
+  return true;
 }
-using namespace rate_limit_ns;
