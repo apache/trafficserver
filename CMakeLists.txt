@@ -275,6 +275,7 @@ endif()
 find_package(PCRE REQUIRED)
 
 include(CheckOpenSSLIsBoringSSL)
+include(CheckOpenSSLIsQuictls)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 
@@ -291,6 +292,7 @@ else()
     message(FATAL_ERROR "OpenSSL version >= ${min_ossl} or BoringSSL required")
   endif()
 endif()
+check_openssl_is_quictls(OPENSSL_IS_QUICTLS "${OPENSSL_INCLUDE_DIR}")
 
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
   set(OPENSSL_IS_OPENSSL3 TRUE)
@@ -317,9 +319,8 @@ if(ENABLE_QUICHE)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
   set(TS_USE_QUIC ${TS_HAS_QUICHE})
-
-  if(NOT OPENSSL_IS_BORINGSSL)
-    message(FATAL_ERROR "Use of BoringSSL is required if quiche is used.")
+  if(NOT OPENSSL_IS_BORINGSSL AND NOT OPENSSL_IS_QUICTLS)
+    message(FATAL_ERROR "Use of BoringSSL or OPENSSL/QUICTLS is required if quiche is used.")
   endif()
 endif()
 
