@@ -27,8 +27,8 @@
 #include "tscore/InkErrno.h"
 
 #include "proxy/hdrs/HTTP.h"
-#include "iocore/cache/P_CacheHttp.h"
-#include "iocore/cache/P_CacheHosting.h"
+#include "P_CacheHttp.h"
+#include "P_CacheHosting.h"
 #include "api/Metrics.h"
 
 #include "iocore/cache/CacheVC.h"

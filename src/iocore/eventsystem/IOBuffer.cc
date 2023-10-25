@@ -26,7 +26,7 @@
 
 **************************************************************************/
 #include "tscore/ink_defs.h"
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "P_EventSystem.h"
 #include "swoc/Lexicon.h"
 
 #include <optional>

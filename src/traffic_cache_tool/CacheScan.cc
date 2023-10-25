@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "traffic_cache_tool/CacheScan.h"
+#include "CacheScan.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrHeap.h"
 #include "proxy/hdrs/MIME.h"

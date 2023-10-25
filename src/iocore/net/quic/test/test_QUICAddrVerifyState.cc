@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "iocore/net/P_QUICNetVConnection.h"
+#include "../../P_QUICNetVConnection.h"
 #include <memory>
 
 TEST_CASE("QUICAddrVerifyState", "[quic]")

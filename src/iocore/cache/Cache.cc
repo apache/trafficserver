@@ -24,12 +24,12 @@
 #include "iocore/cache/Cache.h"
 
 // Cache Inspector and State Pages
-#include "iocore/cache/P_CacheTest.h"
+#include "P_CacheTest.h"
 #include "proxy/StatPages.h"
 
 #include "tscore/Filenames.h"
 
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecProcess.h"
 
 #ifdef AIO_FAULT_INJECTION
 #include "iocore/aio/AIO_fault_injection.h"

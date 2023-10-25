@@ -26,7 +26,7 @@
 #include "tscore/ink_config.h"
 
 #if TS_HAS_QUICHE
-#include "iocore/net/P_QUICPacketHandler_quiche.h"
+#include "P_QUICPacketHandler_quiche.h"
 #else
-#include "iocore/net/P_QUICPacketHandler_native.h"
+#include "P_QUICPacketHandler_native.h"
 #endif

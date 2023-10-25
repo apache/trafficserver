@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "proxy/private/SSLProxySession.h"
+#include "SSLProxySession.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/TLSSNISupport.h"

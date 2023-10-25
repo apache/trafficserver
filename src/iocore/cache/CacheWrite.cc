@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"
 
 #define UINT_WRAP_LTE(_x, _y) (((_y) - (_x)) < INT_MAX)  // exploit overflow

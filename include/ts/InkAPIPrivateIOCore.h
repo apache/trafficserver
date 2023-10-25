@@ -26,8 +26,8 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/Net.h"
 #else
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_Net.h"
+#include "../../src/iocore/eventsystem/P_EventSystem.h"
+#include "../../src/iocore/net/P_Net.h"
 #endif
 
 namespace tsapi

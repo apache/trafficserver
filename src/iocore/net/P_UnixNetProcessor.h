@@ -25,7 +25,7 @@
 #include "iocore/net/Net.h"
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/SessionAccept.h"
-#include "iocore/net/P_NetAccept.h"
+#include "P_NetAccept.h"
 
 class UnixNetVConnection;
 

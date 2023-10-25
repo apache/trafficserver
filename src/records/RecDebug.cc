@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "records/P_RecUtils.h"
-#include "records/P_RecCore.h"
+#include "P_RecUtils.h"
+#include "P_RecCore.h"
 
 static Diags *g_diags = nullptr;
 

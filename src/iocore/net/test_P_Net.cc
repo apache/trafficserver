@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 
 Diags *diags;
 struct NetTesterSM : public Continuation {

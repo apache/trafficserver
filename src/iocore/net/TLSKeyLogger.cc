@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_TLSKeyLogger.h"
+#include "P_TLSKeyLogger.h"
 #include "tscore/Diags.h"
 
 #include <cstring>

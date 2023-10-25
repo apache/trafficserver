@@ -22,9 +22,9 @@
  */
 
 #include "iocore/eventsystem/Event.h"
-#include "iocore/cache/unit_tests/main.h"
+#include "main.h"
 
-#include "iocore/cache/P_CacheDir.h"
+#include "../P_CacheDir.h"
 
 #include "tscore/Random.h"
 

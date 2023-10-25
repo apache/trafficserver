@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "proxy/Show.h"
 #include "iocore/eventsystem/Tasks.h"
 

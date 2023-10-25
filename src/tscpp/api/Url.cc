@@ -22,7 +22,7 @@
 #include "tscpp/api/Url.h"
 #include "ts/ts.h"
 #include "tscpp/api/noncopyable.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 using namespace atscppapi;
 using std::string;

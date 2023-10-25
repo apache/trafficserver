@@ -25,8 +25,8 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ParseRules.h"
 #include "records/RecordsConfig.h"
-#include "records/P_RecUtils.h"
-#include "records/P_RecCore.h"
+#include "P_RecUtils.h"
+#include "P_RecCore.h"
 
 //-------------------------------------------------------------------------
 // RecRecord initializer / Free

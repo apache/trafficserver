@@ -22,8 +22,8 @@
  */
 
 #include "iocore/net/AsyncSignalEventIO.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_UnixNet.h"
+#include "P_Net.h"
+#include "P_UnixNet.h"
 #include "tscore/ink_hrtime.h"
 
 #if TS_USE_LINUX_IO_URING

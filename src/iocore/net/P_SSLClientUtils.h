@@ -23,8 +23,8 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-#include "iocore/net/P_SSLUtils.h"
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
 
 #include <openssl/ssl.h>
 

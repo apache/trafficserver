@@ -28,7 +28,7 @@
 #include "proxy/http/HttpUserAgent.h"
 #include "iocore/eventsystem/VConnection.h"
 #include "proxy/Milestones.h"
-#include "iocore/net/P_SSLNetVConnection.h"
+#include "../../../iocore/net/P_SSLNetVConnection.h"
 
 #include <catch.hpp>
 

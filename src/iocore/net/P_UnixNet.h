@@ -36,12 +36,12 @@
 #include "iocore/io_uring/IOUringEventIO.h"
 #endif
 
-#include "iocore/dns/P_DNSConnection.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_NetAccept.h"
-#include "iocore/net/P_UnixNetProcessor.h"
-#include "iocore/net/P_UnixNetVConnection.h"
-#include "iocore/net/P_UnixPollDescriptor.h"
+#include "../dns/P_DNSConnection.h"
+#include "P_Net.h"
+#include "P_NetAccept.h"
+#include "P_UnixNetProcessor.h"
+#include "P_UnixNetVConnection.h"
+#include "P_UnixPollDescriptor.h"
 #include <limits>
 #include "tscore/ink_sys_control.h"
 

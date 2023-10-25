@@ -35,16 +35,16 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 
-#include "iocore/eventsystem/P_Thread.h"
-#include "iocore/eventsystem/P_VIO.h"
-#include "iocore/eventsystem/P_IOBuffer.h"
-#include "iocore/eventsystem/P_VConnection.h"
-#include "iocore/eventsystem/P_Freer.h"
-#include "iocore/eventsystem/P_UnixEvent.h"
-#include "iocore/eventsystem/P_UnixEThread.h"
-#include "iocore/eventsystem/P_ProtectedQueue.h"
-#include "iocore/eventsystem/P_UnixEventProcessor.h"
-#include "iocore/eventsystem/P_UnixSocketManager.h"
+#include "P_Thread.h"
+#include "P_VIO.h"
+#include "P_IOBuffer.h"
+#include "P_VConnection.h"
+#include "P_Freer.h"
+#include "P_UnixEvent.h"
+#include "P_UnixEThread.h"
+#include "P_ProtectedQueue.h"
+#include "P_UnixEventProcessor.h"
+#include "P_UnixSocketManager.h"
 
 static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_INTERNAL_VERSION{EVENT_SYSTEM_MODULE_PUBLIC_VERSION,
                                                                         ts::ModuleVersion::PRIVATE};

@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/ParentSelection.h"
 #include "proxy/ParentConsistentHash.h"
 #include "proxy/ParentRoundRobin.h"

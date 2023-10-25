@@ -20,7 +20,7 @@
 
 #include "mgmt/rpc/handlers/server/Server.h"
 
-#include "iocore/cache/P_Cache.h"
+#include "../../../../iocore/cache/P_Cache.h"
 #include <tscore/TSSystemState.h>
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "mgmt/rpc/handlers/common/Utils.h"

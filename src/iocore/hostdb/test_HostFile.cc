@@ -29,7 +29,7 @@
 #include "swoc/bwf_base.h"
 
 #include "iocore/hostdb/HostFile.h"
-#include "iocore/hostdb/P_HostDBProcessor.h"
+#include "P_HostDBProcessor.h"
 
 using namespace std::literals;
 

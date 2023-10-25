@@ -29,9 +29,9 @@
 #include "proxy/http/HttpConfig.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "iocore/net/P_Net.h"
-#include "records/P_RecUtils.h"
-#include <records/RecHttp.h>
+#include "../../iocore/net/P_Net.h"
+#include "../../records/P_RecUtils.h"
+#include "records/RecHttp.h"
 #include "proxy/http/HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \

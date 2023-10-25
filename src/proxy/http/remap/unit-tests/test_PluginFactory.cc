@@ -32,7 +32,7 @@
 #include <fstream>        /* ofstream */
 #include <utime.h>
 
-#include "proxy/http/remap/unit-tests/plugin_testing_common.h"
+#include "plugin_testing_common.h"
 #include "proxy/http/remap/PluginFactory.h"
 #include "proxy/http/remap/PluginDso.h"
 #include "iocore/eventsystem/EventSystem.h"

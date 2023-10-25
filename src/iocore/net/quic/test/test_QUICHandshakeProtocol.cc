@@ -42,11 +42,11 @@
 
 // XXX For NetVCOptions::reset
 struct PollCont;
-#include "iocore/net/P_UDPConnection.h"
-#include "iocore/net/P_UnixNet.h"
-#include "iocore/net/P_UnixNetVConnection.h"
+#include "../../P_UDPConnection.h"
+#include "../../P_UnixNet.h"
+#include "../../P_UnixNetVConnection.h"
 
-#include "./server_cert.h"
+#include "server_cert.h"
 
 static void
 print_hex(const uint8_t *v, size_t len)

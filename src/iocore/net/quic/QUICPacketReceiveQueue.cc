@@ -26,7 +26,7 @@
 #include "iocore/net/quic/QUICPacketFactory.h"
 #include "iocore/net/quic/QUICIntUtil.h"
 
-#include "iocore/net/P_UDPConnection.h"
+#include "../P_UDPConnection.h"
 #include "iocore/net/UDPPacket.h"
 
 static bool

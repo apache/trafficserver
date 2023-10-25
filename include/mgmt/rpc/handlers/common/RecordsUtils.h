@@ -26,7 +26,7 @@
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "records/RecCore.h"
-#include "records/P_RecCore.h"
+#include "../../../../../src/records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Errata.h"
 

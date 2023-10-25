@@ -43,10 +43,10 @@
 #include "tscore/HostLookup.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/URL.h"
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/cache/P_Cache.h"
-#include "iocore/dns/P_SplitDNS.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
+#include "../iocore/net/P_Net.h"
+#include "../iocore/cache/P_Cache.h"
+#include "../iocore/dns/P_SplitDNS.h"
 
 /****************************************************************
  *   Place all template instantiations at the bottom of the file

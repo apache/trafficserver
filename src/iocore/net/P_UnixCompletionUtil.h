@@ -25,7 +25,7 @@
 
 // platform specific wrappers for dealing with I/O completion events
 // passed into and back from the I/O core.
-#include "iocore/net/P_UDPIOEvent.h"
+#include "P_UDPIOEvent.h"
 
 TS_INLINE Event *
 completionUtil::create()

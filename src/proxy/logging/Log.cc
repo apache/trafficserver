@@ -34,8 +34,8 @@
  ***************************************************************************/
 #include "tscore/ink_platform.h"
 #include "tscore/TSSystemState.h"
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_Net.h"
+#include "../../iocore/eventsystem/P_EventSystem.h"
+#include "../../iocore/net/P_Net.h"
 #include "iocore/utils/Machine.h"
 #include "proxy/hdrs/HTTP.h"
 

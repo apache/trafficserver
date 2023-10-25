@@ -25,10 +25,10 @@
 
 #include <openssl/ssl.h>
 
-#include <records/RecHttp.h>
+#include "records/RecHttp.h"
 
-#include "iocore/net/P_SSLConfig.h"
-#include "iocore/net/P_TLSKeyLogger.h"
+#include "../P_SSLConfig.h"
+#include "../P_TLSKeyLogger.h"
 
 #include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/quic/QUICTransportParameters.h"

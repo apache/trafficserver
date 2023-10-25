@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 
 void
 CacheDisk::incrErrors(const AIOCallback *io)

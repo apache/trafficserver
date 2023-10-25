@@ -26,7 +26,7 @@
 #include <openssl/ssl.h>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "iocore/net/P_SSLCertLookup.h"
+#include "../../../../src/iocore/net/P_SSLCertLookup.h"
 
 class QUICConfigParams : public ConfigInfo
 {

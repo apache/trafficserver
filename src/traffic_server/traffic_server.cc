@@ -65,16 +65,16 @@ extern "C" int plock(int);
 #include <mcheck.h>
 #endif
 
-#include "traffic_server/Crash.h"
+#include "Crash.h"
 #include "tscore/signals.h"
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_QUICNetProcessor.h"
-#include "iocore/net/P_UDPNet.h"
-#include "iocore/dns/P_DNS.h"
-#include "iocore/dns/P_SplitDNS.h"
-#include "iocore/hostdb/P_HostDB.h"
-#include "iocore/cache/P_Cache.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
+#include "../iocore/net/P_Net.h"
+#include "../iocore/net/P_QUICNetProcessor.h"
+#include "../iocore/net/P_UDPNet.h"
+#include "../iocore/dns/P_DNS.h"
+#include "../iocore/dns/P_SplitDNS.h"
+#include "../iocore/hostdb/P_HostDB.h"
+#include "../iocore/cache/P_Cache.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
 #include "records/RecordsConfig.h"
@@ -102,10 +102,10 @@ extern "C" int plock(int);
 #include "api/LifecycleAPIHooks.h"
 #include "proxy/http2/HTTP2.h"
 #include "tscore/ink_config.h"
-#include "iocore/net/P_SSLClientUtils.h"
+#include "../iocore/net/P_SSLClientUtils.h"
 
 // Mgmt Admin public handlers
-#include "traffic_server/RpcAdminPubHandlers.h"
+#include "RpcAdminPubHandlers.h"
 
 // Json Rpc stuffs
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 
 #include "proxy/http/HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
 

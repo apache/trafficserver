@@ -20,8 +20,8 @@
  */
 
 #include "iocore/cache/CacheDefs.h"
-#include "iocore/cache/unit_tests/main.h"
-#include "iocore/cache/unit_tests/CacheTestHandler.h"
+#include "main.h"
+#include "CacheTestHandler.h"
 
 TestContChain::TestContChain() : Continuation(new_ProxyMutex()) {}
 

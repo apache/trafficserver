@@ -26,7 +26,7 @@
    OneWayMultiTunnel.h
  ****************************************************************************/
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../eventsystem/P_EventSystem.h"
 #include "iocore/utils/OneWayMultiTunnel.h"
 
 // #define TEST

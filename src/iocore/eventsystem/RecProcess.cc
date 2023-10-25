@@ -26,12 +26,12 @@
 
 #include "iocore/eventsystem/Tasks.h"
 
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "records/P_RecCore.h"
-#include "records/P_RecProcess.h"
-#include "records/P_RecMessage.h"
-#include "records/P_RecUtils.h"
-#include "records/P_RecFile.h"
+#include "P_EventSystem.h"
+#include "../../records/P_RecCore.h"
+#include "../../records/P_RecProcess.h"
+#include "../../records/P_RecMessage.h"
+#include "../../records/P_RecUtils.h"
+#include "../../records/P_RecFile.h"
 
 // Marks whether the message handler has been initialized.
 static bool g_started = false;

@@ -27,7 +27,7 @@
 #include "iocore/net/SSLAPIHooks.h"
 
 #define CATCH_CONFIG_MAIN
-#include "iocore/cache/unit_tests/main.h"
+#include "main.h"
 
 #include <unistd.h>
 

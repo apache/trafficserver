@@ -23,7 +23,7 @@
 #pragma once
 
 #include "iocore/eventsystem/EventSystem.h"
-#include "iocore/eventsystem/P_EventSystem.h" // TODO: less? just need ET_TASK
+#include "../eventsystem/P_EventSystem.h" // TODO: less? just need ET_TASK
 
 #include "swoc/IntrusiveHashMap.h"
 

@@ -22,9 +22,9 @@
  */
 
 #include "iocore/cache/Cache.h"
-#include "iocore/cache/P_CacheDisk.h"
-#include "iocore/cache/P_CacheInternal.h"
-#include "iocore/cache/P_CacheVol.h"
+#include "P_CacheDisk.h"
+#include "P_CacheInternal.h"
+#include "P_CacheVol.h"
 
 #include "tscore/hugepages.h"
 

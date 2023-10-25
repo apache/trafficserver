@@ -31,7 +31,7 @@
 #include "swoc/MemSpan.h"
 
 #include "wccp/Wccp.h"
-#include "wccp/WccpUtil.h"
+#include "WccpUtil.h"
 #include "ts/apidefs.h"
 
 namespace YAML

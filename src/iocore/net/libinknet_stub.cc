@@ -24,8 +24,8 @@
 class EThread;
 class Continuation;
 
-#include "iocore/net/P_UnixNet.h"
-#include "iocore/dns/P_DNSConnection.h"
+#include "P_UnixNet.h"
+#include "../dns/P_DNSConnection.h"
 int
 DNSConnection::close()
 {

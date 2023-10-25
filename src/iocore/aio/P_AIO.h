@@ -30,7 +30,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../eventsystem/P_EventSystem.h"
 #include "iocore/aio/AIO.h"
 
 #if TS_USE_LINUX_IO_URING

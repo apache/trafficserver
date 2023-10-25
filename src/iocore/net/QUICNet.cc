@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_QUICNet.h"
+#include "P_Net.h"
+#include "P_QUICNet.h"
 #include "iocore/net/quic/QUICEvents.h"
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");

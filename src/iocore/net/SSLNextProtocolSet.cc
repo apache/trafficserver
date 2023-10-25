@@ -24,7 +24,7 @@
 #include "tscore/ink_config.h"
 #include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
-#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "P_SSLNextProtocolSet.h"
 #include "swoc/TextView.h"
 
 // For currently defined protocol strings, see

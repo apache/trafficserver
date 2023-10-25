@@ -21,7 +21,7 @@
  */
 #include "tscpp/api/AsyncTimer.h"
 #include "ts/ts.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 using namespace atscppapi;
 

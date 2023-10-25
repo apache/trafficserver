@@ -26,7 +26,7 @@
 #include <atomic>
 
 #include "iocore/eventsystem/EventSystem.h"
-#include "iocore/net/P_UnixNetState.h"
+#include "../../../src/iocore/net/P_UnixNetState.h"
 #include "iocore/net/EventIO.h"
 #include "iocore/net/ReadWriteEventIO.h"
 

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_SSLCertLookup.h"
+#include "P_SSLCertLookup.h"
 
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
@@ -39,8 +39,8 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 
-#include "iocore/net/P_SSLUtils.h"
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
 #include "iocore/net/SSLSessionTicket.h"
 
 #include <unordered_map>

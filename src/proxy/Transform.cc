@@ -60,7 +60,7 @@
 */
 
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "iocore/net/P_Net.h"
+#include "../iocore/net/P_Net.h"
 #include "proxy/TransformInternal.h"
 #include "proxy/hdrs/HdrUtils.h"
 #include "proxy/logging/Log.h"

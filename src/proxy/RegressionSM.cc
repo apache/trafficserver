@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/RegressionSM.h"
 
 #define REGRESSION_SM_RETRY (100 * HRTIME_MSECOND)

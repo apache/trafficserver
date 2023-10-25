@@ -23,7 +23,7 @@
 #include <string>
 
 #include "mgmt/rpc/handlers/common/convert.h"
-#include "records/P_RecCore.h"
+#include "../../../../records/P_RecCore.h"
 #include "tscore/Tokenizer.h"
 
 namespace

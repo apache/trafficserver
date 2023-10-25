@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "iocore/hostdb/P_RefCountCache.h"
+#include "P_RefCountCache.h"
 
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
 static ClassAllocator<RefCountCacheHashEntry> refCountCacheHashingValueAllocator("refCountCacheHashingValueAllocator");

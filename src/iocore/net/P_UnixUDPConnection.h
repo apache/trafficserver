@@ -30,7 +30,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "iocore/net/P_UDPConnection.h"
+#include "P_UDPConnection.h"
 #include "iocore/net/UDPEventIO.h"
 
 class UnixUDPConnection : public UDPConnectionInternal

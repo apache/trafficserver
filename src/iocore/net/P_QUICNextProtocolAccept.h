@@ -26,7 +26,7 @@
 #include "tscore/ink_config.h"
 
 #if TS_HAS_QUICHE
-#include "iocore/net/P_QUICNextProtocolAccept_quiche.h"
+#include "P_QUICNextProtocolAccept_quiche.h"
 #else
-#include "iocore/net/P_QUICNextProtocolAccept_native.h"
+#include "P_QUICNextProtocolAccept_native.h"
 #endif

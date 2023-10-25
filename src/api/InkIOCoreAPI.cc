@@ -34,7 +34,7 @@
 #include "iocore/net/Net.h"
 #include "iocore/cache/Cache.h"
 #include "iocore/hostdb/HostDB.h"
-#include "iocore/net/P_UnixUDPConnection.h"
+#include "../iocore/net/P_UnixUDPConnection.h"
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK

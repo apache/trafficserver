@@ -33,11 +33,11 @@
 #include "proxy/hdrs/HuffmanCodec.h"
 #include "proxy/http3/Http3Config.h"
 
-#include "traffic_quic/diags.h"
-#include "traffic_quic/quic_client.h"
+#include "diags.h"
+#include "quic_client.h"
 
-#include "iocore/net/P_SSLUtils.h"
-#include "iocore/net/P_SSLConfig.h"
+#include "../iocore/net/P_SSLUtils.h"
+#include "../iocore/net/P_SSLConfig.h"
 
 #include "iocore/eventsystem/RecProcess.h"
 
@@ -130,8 +130,8 @@ initialize_thread_for_http_sessions(EThread *, int)
   ink_assert(false);
 }
 
-#include "iocore/net/P_UnixNet.h"
-#include "iocore/dns/P_DNSConnection.h"
+#include "../iocore/net/P_UnixNet.h"
+#include "../iocore/dns/P_DNSConnection.h"
 int
 DNSConnection::close()
 {

@@ -34,9 +34,9 @@
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_UnixNetVConnection.h"
-#include "iocore/net/P_UnixNet.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "P_UnixNetVConnection.h"
+#include "P_UnixNet.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSSNISupport.h"
@@ -44,8 +44,8 @@
 #include "iocore/net/TLSTunnelSupport.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSCertSwitchSupport.h"
-#include "iocore/net/P_SSLUtils.h"
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
 
 #include <netinet/in.h>
 #include <openssl/ssl.h>

@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "tscore/InkErrno.h"
 #include "tscore/ink_sock.h"
 #include "tscore/TSSystemState.h"
-#include "iocore/net/P_SSLNextProtocolAccept.h"
+#include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
 #include "proxy/StatPages.h"

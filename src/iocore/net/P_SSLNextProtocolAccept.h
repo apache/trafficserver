@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "iocore/net/P_Net.h"
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_UnixNet.h"
-#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "P_Net.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "P_UnixNet.h"
+#include "P_SSLNextProtocolSet.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "records/RecHttp.h"
 

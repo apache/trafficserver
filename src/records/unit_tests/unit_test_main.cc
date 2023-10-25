@@ -22,7 +22,7 @@
 #include <string>
 #include "tscpp/util/ts_bw.h"
 #include "tscore/ink_resolver.h"
-#include "records/unit_tests/test_Diags.h"
+#include "test_Diags.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"

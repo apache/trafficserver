@@ -25,8 +25,8 @@
 #include "tscpp/api/AsyncHttpFetch.h"
 #include "ts/ts.h"
 #include "ts/experimental.h"
-#include "tscpp/api/logging_internal.h"
-#include "tscpp/api/utils_internal.h"
+#include "logging_internal.h"
+#include "utils_internal.h"
 
 #include <cstdio>
 #include <cstring>

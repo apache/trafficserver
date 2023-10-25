@@ -33,7 +33,7 @@
 #define PluginDebug Debug
 #define PluginError Error
 #endif
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../../../iocore/eventsystem/P_EventSystem.h"
 
 #include <algorithm> /* std::swap */
 

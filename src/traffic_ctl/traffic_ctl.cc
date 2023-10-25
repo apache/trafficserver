@@ -30,8 +30,8 @@
 #include "tscore/ink_assert.h"
 #include "tscore/signals.h"
 
-#include "traffic_ctl/CtrlCommands.h"
-#include "traffic_ctl/FileConfigCommand.h"
+#include "CtrlCommands.h"
+#include "FileConfigCommand.h"
 
 constexpr int CTRL_EX_OK            = 0;
 constexpr int CTRL_EX_ERROR         = 2;

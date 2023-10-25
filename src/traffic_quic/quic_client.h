@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "iocore/net/P_Net.h"
+#include "../iocore/net/P_Net.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/NetVConnection.h"
-#include "iocore/net/P_QUICNetProcessor.h"
+#include "../iocore/net/P_QUICNetProcessor.h"
 
 #include "iocore/net/quic/QUICApplication.h"
 #include "proxy/http3/Http3App.h"

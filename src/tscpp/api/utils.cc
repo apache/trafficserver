@@ -24,7 +24,7 @@
 #include <sstream>
 #include <arpa/inet.h>
 #include "ts/ts.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 std::string
 atscppapi::utils::getIpString(const sockaddr *sockaddress)

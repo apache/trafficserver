@@ -51,7 +51,7 @@
 #error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-#include "traffic_top/stats.h"
+#include "stats.h"
 
 #include "tscore/Layout.h"
 #include "tscore/ink_args.h"

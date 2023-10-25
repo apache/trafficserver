@@ -25,9 +25,9 @@
 
 #include <openssl/err.h>
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "iocore/net/SSLStats.h"
-#include "iocore/net/P_SSLNetVConnection.h"
+#include "P_SSLNetVConnection.h"
 
 static DbgCtl ssl_diags_dbg_ctl{"ssl-diag"};
 

@@ -26,7 +26,7 @@
 
 #include "proxy/http/HttpConfig.h"
 #include "iocore/net/SSLSNIConfig.h"
-#include "iocore/eventsystem/P_VConnection.h"
+#include "../../iocore/eventsystem/P_VConnection.h"
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/PreWarm.h"
 

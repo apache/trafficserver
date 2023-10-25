@@ -25,7 +25,7 @@
   Connections
 
 **************************************************************************/
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_sock.h"
 

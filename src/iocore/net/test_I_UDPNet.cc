@@ -34,7 +34,7 @@
 #include "iocore/net/UDPNet.h"
 #include "iocore/net/UDPPacket.h"
 #include "iocore/net/UDPConnection.h"
-#include "iocore/net/P_UDPConnection.h"
+#include "P_UDPConnection.h"
 
 #include "iocore/utils/diags.i"
 

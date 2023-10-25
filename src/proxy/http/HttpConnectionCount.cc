@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <deque>
 #include "tscpp/util/ts_bw_format.h"
-#include <records/P_RecDefs.h>
+#include "../../records/P_RecDefs.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpConnectionCount.h"
 

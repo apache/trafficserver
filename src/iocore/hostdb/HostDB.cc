@@ -24,7 +24,7 @@
 #include "swoc/swoc_file.h"
 #include "tscpp/util/ts_bw_format.h"
 
-#include "iocore/hostdb/P_HostDB.h"
+#include "P_HostDB.h"
 #include "tscore/Layout.h"
 #include "proxy/Show.h"
 #include "tscore/ink_apidefs.h"

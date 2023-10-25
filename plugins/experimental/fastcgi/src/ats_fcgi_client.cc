@@ -27,7 +27,7 @@
 #include <ts/ts.h>
 #include <map>
 #include <iterator>
-#include "tscpp/api/utils_internal.h"
+#include "../../../../src/tscpp/api/utils_internal.h"
 #include <atscppapi/Headers.h>
 #include <atscppapi/utils.h>
 

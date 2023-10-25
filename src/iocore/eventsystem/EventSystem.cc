@@ -28,7 +28,7 @@
 
 ****************************************************************************/
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "P_EventSystem.h"
 #include "tscore/hugepages.h"
 #include "records/RecCore.h"
 

@@ -33,7 +33,7 @@
 #include <tscpp/util/TsSharedMutex.h>
 
 #include "iocore/hostdb/HostDBProcessor.h"
-#include "iocore/hostdb/P_RefCountCache.h"
+#include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
 #include "api/Metrics.h"
 

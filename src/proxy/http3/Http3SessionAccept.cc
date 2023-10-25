@@ -23,7 +23,7 @@
 
 #include "proxy/http3/Http3SessionAccept.h"
 
-#include "iocore/net/P_Net.h"
+#include "../../iocore/net/P_Net.h"
 #include "iocore/utils/Machine.h"
 #include "proxy/IPAllow.h"
 #include "iocore/net/QUICSupport.h"

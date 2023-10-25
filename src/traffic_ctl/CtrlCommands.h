@@ -24,7 +24,7 @@ limitations under the License.
 #include "tscore/ArgParser.h"
 
 #include "shared/rpc/RPCClient.h"
-#include "traffic_ctl/CtrlPrinters.h"
+#include "CtrlPrinters.h"
 
 /// @brief Class that provides access to the RPC side of things.
 struct RPCAccessor {

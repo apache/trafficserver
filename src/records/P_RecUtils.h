@@ -26,7 +26,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
 
-#include "records/P_RecDefs.h"
+#include "P_RecDefs.h"
 
 //-------------------------------------------------------------------------
 // Macros

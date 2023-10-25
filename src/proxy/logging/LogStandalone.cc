@@ -33,8 +33,8 @@
 #include "tscore/signals.h"
 #include "proxy/shared/DiagsConfig.h"
 
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "records/P_RecProcess.h"
+#include "../../iocore/eventsystem/P_EventSystem.h"
+#include "../../records/P_RecProcess.h"
 
 // Needs LibRecordsConfigInit()
 #include "records/RecordsConfig.h"

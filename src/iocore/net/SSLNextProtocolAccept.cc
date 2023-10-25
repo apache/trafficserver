@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_SSLNextProtocolAccept.h"
-#include "iocore/net/P_SSLNetVConnection.h"
+#include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
 
 static void
 send_plugin_event(Continuation *plugin, int event, void *edata)

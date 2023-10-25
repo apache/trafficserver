@@ -32,7 +32,7 @@
 
 #include <swoc/TextView.h>
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "ts/apidefs.h"
 
 ////

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/cache/P_CacheHttp.h"
+#include "P_CacheHttp.h"
 
 #include "tscore/ink_platform.h"
 

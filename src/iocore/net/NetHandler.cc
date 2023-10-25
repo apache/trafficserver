@@ -27,9 +27,9 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_UnixNet.h"
-#include "iocore/net/P_UnixNetProcessor.h"
+#include "P_Net.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetProcessor.h"
 #include "iocore/net/PollCont.h"
 
 using namespace std::literals;

@@ -23,7 +23,7 @@
 #include "swoc/Errata.h"
 #include "swoc/bwf_std.h"
 
-#include "iocore/net/P_SSLUtils.h"
+#include "P_SSLUtils.h"
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
@@ -34,12 +34,12 @@
 #include "tscore/Filenames.h"
 #include "records/RecHttp.h"
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "api/InkAPIInternal.h"
 
-#include "iocore/net/P_OCSPStapling.h"
-#include "iocore/net/P_SSLConfig.h"
-#include "iocore/net/P_TLSKeyLogger.h"
+#include "P_OCSPStapling.h"
+#include "P_SSLConfig.h"
+#include "P_TLSKeyLogger.h"
 #include "iocore/net/BoringSSLUtils.h"
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLAPIHooks.h"
@@ -52,7 +52,7 @@
 #if TS_USE_QUIC == 1
 #include "iocore/net/QUICSupport.h"
 #endif
-#include "iocore/net/P_SSLNetVConnection.h"
+#include "P_SSLNetVConnection.h"
 
 #include <string>
 #include <unistd.h>

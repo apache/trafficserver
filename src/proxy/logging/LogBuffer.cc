@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/logging/LogField.h"
 #include "proxy/logging/LogFilter.h"
 #include "proxy/logging/LogFormat.h"

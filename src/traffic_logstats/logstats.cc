@@ -32,7 +32,7 @@
 #include "tscore/runroot.h"
 
 // Includes and namespaces etc.
-#include "proxy/logging/LogStandalone.cc"
+#include "../proxy/logging/LogStandalone.cc"
 
 #include "proxy/logging/LogObject.h"
 #include "proxy/hdrs/HTTP.h"

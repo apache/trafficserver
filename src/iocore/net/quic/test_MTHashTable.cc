@@ -24,7 +24,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../../eventsystem/P_EventSystem.h"
 #include "iocore/net/quic/MTHashTable.h"
 
 // -------------

@@ -22,7 +22,7 @@
  */
 
 #include "iocore/net/UDPEventIO.h"
-#include "iocore/net/P_UDPNet.h"
+#include "P_UDPNet.h"
 
 int
 UDPEventIO::start(EventLoop l, UnixUDPConnection *uc, UDPNetHandler *uh, int events)

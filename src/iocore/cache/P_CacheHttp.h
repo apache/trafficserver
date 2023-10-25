@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "iocore/cache/P_CacheArray.h"
+#include "P_CacheArray.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/URL.h"
 

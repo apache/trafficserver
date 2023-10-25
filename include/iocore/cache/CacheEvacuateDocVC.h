@@ -24,7 +24,7 @@
 #pragma once
 
 /*
-#include "iocore/cache/P_CacheDir.h"
+#include "../../../src/iocore/cache/P_CacheDir.h"
 */
 
 #include "iocore/cache/CacheVC.h"

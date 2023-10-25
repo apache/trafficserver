@@ -27,8 +27,8 @@
 #include <openssl/ssl.h>
 
 #include "tscore/ink_inet.h"
-#include "iocore/net/P_SSLCertLookup.h"
-#include "iocore/net/P_SSLUtils.h"
+#include "../../../src/iocore/net/P_SSLCertLookup.h"
+#include "../../../src/iocore/net/P_SSLUtils.h"
 
 class TLSSessionResumptionSupport
 {

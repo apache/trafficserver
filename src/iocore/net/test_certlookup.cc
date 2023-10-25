@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_SSLCertLookup.h"
+#include "P_SSLCertLookup.h"
 #include "tscore/TestBox.h"
 #include <fstream>
 

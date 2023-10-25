@@ -29,7 +29,7 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLConfig.h"
 
 #include <cstring>
 #include <cmath>
@@ -43,10 +43,10 @@
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
 
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_SSLClientUtils.h"
-#include "iocore/net/P_SSLCertLookup.h"
-#include "iocore/net/P_TLSKeyLogger.h"
+#include "P_Net.h"
+#include "P_SSLClientUtils.h"
+#include "P_SSLCertLookup.h"
+#include "P_TLSKeyLogger.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLSessionCache.h"
 #include "iocore/net/SSLSessionTicket.h"

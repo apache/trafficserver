@@ -30,7 +30,6 @@
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/net/Net.h"
 #include "iocore/net/SessionAccept.h"
-#include <records/RecHttp.h>
 
 namespace detail
 {

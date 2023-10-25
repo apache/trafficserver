@@ -24,7 +24,7 @@
 #include <tscore/TSSystemState.h>
 #include <tscore/ink_defs.h>
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 

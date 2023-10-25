@@ -29,8 +29,8 @@
 
  ****************************************************************************/
 
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_UDPNet.h"
+#include "P_Net.h"
+#include "P_UDPNet.h"
 
 namespace
 {

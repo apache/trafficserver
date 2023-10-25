@@ -30,7 +30,7 @@
 #include <memory>
 
 #include "proxy/http/HttpSM.h"
-#include "proxy/http/remap/unit-tests/nexthop_test_stubs.h"
+#include "nexthop_test_stubs.h"
 
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 void

@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
-#include "records/P_RecCore.h"
+#include "../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "mgmt/config/FileManager.h"
 #include "tscore/Errata.h"

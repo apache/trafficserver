@@ -24,8 +24,8 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "iocore/net/P_Connection.h"
-#include "iocore/net/P_NetAccept.h"
+#include "P_Connection.h"
+#include "P_NetAccept.h"
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/quic/QUICResetTokenTable.h"

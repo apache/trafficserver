@@ -30,7 +30,7 @@
 #include <cstring>
 #include "ts/ts.h"
 #include "tscpp/api/noncopyable.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 using std::vector;
 using std::string;

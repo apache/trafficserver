@@ -25,8 +25,8 @@
 
 #include "tscore/ink_resolver.h"
 
-#include "iocore/net/P_Net.h"
-#include "iocore/eventsystem/P_VConnection.h"
+#include "../../iocore/net/P_Net.h"
+#include "../../iocore/eventsystem/P_VConnection.h"
 #include "iocore/net/quic/QUICStreamManager.h"
 #include "iocore/net/quic/QUICDebugNames.h"
 #include "iocore/net/quic/QUICStreamVCAdapter.h"

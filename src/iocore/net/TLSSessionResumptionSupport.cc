@@ -27,7 +27,7 @@
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/SSLAPIHooks.h"
 
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLConfig.h"
 #include "iocore/net/SSLStats.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>

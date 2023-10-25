@@ -28,7 +28,7 @@
 #include "tscpp/util/ts_bw.h"
 #include "records/RecProcess.h"
 #include "records/RecordsConfig.h"
-#include "traffic_layout/info.h"
+#include "info.h"
 #include "iocore/eventsystem/RecProcess.h"
 
 #if TS_USE_HWLOC

@@ -25,7 +25,7 @@
 
 #if TS_HAS_TLS_SESSION_TICKET
 
-#include "iocore/net/P_SSLCertLookup.h"
+#include "P_SSLCertLookup.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 
 void

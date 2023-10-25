@@ -37,8 +37,8 @@
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
 
-#include "iocore/net/P_UnixUDPConnection.h"
-#include "iocore/net/P_UDPIOEvent.h"
+#include "P_UnixUDPConnection.h"
+#include "P_UDPIOEvent.h"
 
 #include "netinet/udp.h"
 

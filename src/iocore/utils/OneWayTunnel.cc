@@ -32,7 +32,7 @@
    anything to do with HTTP, so it has been renamed to OneWayTunnel.
  ****************************************************************************/
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../eventsystem/P_EventSystem.h"
 #include "iocore/utils/OneWayTunnel.h"
 
 // #define TEST

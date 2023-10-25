@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "records/P_RecCore.h"
+#include "P_RecCore.h"
 #include "records/RecYAMLDecoder.h"
 #include "records/RecYAMLDefs.h"
 

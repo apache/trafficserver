@@ -25,9 +25,9 @@
 #include <swoc/swoc_meta.h>
 #include "tscpp/util/ts_bw_format.h"
 
-#include "traffic_ctl/CtrlPrinters.h"
+#include "CtrlPrinters.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
-#include "traffic_ctl/PrintUtils.h"
+#include "PrintUtils.h"
 
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, FloatDate const &wrap)

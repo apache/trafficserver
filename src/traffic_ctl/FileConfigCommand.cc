@@ -21,7 +21,7 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "traffic_ctl/FileConfigCommand.h"
+#include "FileConfigCommand.h"
 #include "tscpp/util/YamlCfg.h"
 #include "swoc/TextView.h"
 #include "swoc/BufferWriter.h"

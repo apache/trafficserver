@@ -22,15 +22,15 @@
  */
 
 // make sure there are no incomplete types
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 
 // inkcache
 #include "iocore/cache/CacheEvacuateDocVC.h"
 #include "iocore/cache/CacheDefs.h"
-#include "iocore/cache/P_CacheDir.h"
-#include "iocore/cache/P_CacheHttp.h"
-#include "iocore/cache/P_CacheInternal.h"
-#include "iocore/cache/P_CacheVol.h"
+#include "P_CacheDir.h"
+#include "P_CacheHttp.h"
+#include "P_CacheInternal.h"
+#include "P_CacheVol.h"
 
 // aio
 #include "iocore/aio/AIO.h"

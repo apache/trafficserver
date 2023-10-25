@@ -32,15 +32,15 @@
 
 #include "tscore/ink_platform.h"
 
-#include "iocore/dns/P_SplitDNS.h"
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../dns/P_SplitDNS.h"
+#include "../eventsystem/P_EventSystem.h"
 
 #include "iocore/hostdb/HostDB.h"
 
 // HostDB files
-#include "iocore/dns/P_DNS.h"
-#include "iocore/hostdb/P_RefCountCache.h"
-#include "iocore/hostdb/P_HostDBProcessor.h"
+#include "../dns/P_DNS.h"
+#include "P_RefCountCache.h"
+#include "P_HostDBProcessor.h"
 
 static constexpr ts::ModuleVersion HOSTDB_MODULE_INTERNAL_VERSION{HOSTDB_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
 

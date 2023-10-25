@@ -25,9 +25,9 @@
 
 #include <openssl/err.h>
 
-#include "iocore/net/P_SSLConfig.h"
-#include "iocore/net/P_SSLUtils.h"
-#include "records/P_RecProcess.h"
+#include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
+#include "../../records/P_RecProcess.h"
 
 SSLStatsBlock ssl_rsb;
 std::unordered_map<std::string, ts::Metrics::IntType *> cipher_map;

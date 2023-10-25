@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_QUICNextProtocolAccept_native.h"
+#include "P_QUICNextProtocolAccept_native.h"
 
 static QUICNetVConnection *
 quic_netvc_cast(int event, void *edata)

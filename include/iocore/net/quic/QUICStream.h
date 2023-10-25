@@ -25,7 +25,7 @@
 
 #include "tscore/List.h"
 
-#include "iocore/eventsystem/P_VConnection.h"
+#include "../../../../src/iocore/eventsystem/P_VConnection.h"
 #include "iocore/eventsystem/Event.h"
 
 #include "iocore/net/quic/QUICFrame.h"

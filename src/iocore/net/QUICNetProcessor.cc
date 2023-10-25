@@ -22,12 +22,12 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "records/RecHttp.h"
 
-#include "iocore/net/P_QUICNetProcessor.h"
-#include "iocore/net/P_QUICNet.h"
-#include "iocore/net/P_QUICPacketHandler.h"
+#include "P_QUICNetProcessor.h"
+#include "P_QUICNet.h"
+#include "P_QUICPacketHandler.h"
 #include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"

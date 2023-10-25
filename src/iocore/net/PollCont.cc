@@ -23,7 +23,7 @@
  */
 
 #include "iocore/net/PollCont.h"
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 
 namespace
 {

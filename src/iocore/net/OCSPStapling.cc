@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_OCSPStapling.h"
+#include "P_OCSPStapling.h"
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -30,9 +30,9 @@
 #include "tscore/Encoding.h"
 #include "tscore/ink_base64.h"
 #include "tscore/ink_string.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/net/P_SSLConfig.h"
-#include "iocore/net/P_SSLUtils.h"
+#include "P_Net.h"
+#include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
 #include "iocore/net/SSLStats.h"
 #include "api/FetchSM.h"
 

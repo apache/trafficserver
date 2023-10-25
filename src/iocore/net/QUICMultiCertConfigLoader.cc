@@ -22,9 +22,9 @@
  */
 
 #include "iocore/net/QUICMultiCertConfigLoader.h"
-#include "iocore/net/P_SSLConfig.h"
-#include "iocore/net/P_SSLNextProtocolSet.h"
-#include "iocore/net/P_OCSPStapling.h"
+#include "P_SSLConfig.h"
+#include "P_SSLNextProtocolSet.h"
+#include "P_OCSPStapling.h"
 #include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/quic/QUICConnection.h"

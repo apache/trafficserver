@@ -29,7 +29,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "records/P_RecCore.h"
+#include "../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"

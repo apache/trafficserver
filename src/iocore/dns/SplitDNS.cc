@@ -33,7 +33,7 @@
 #include "tscore/Filenames.h"
 
 #include <sys/types.h>
-#include "iocore/dns/P_SplitDNS.h"
+#include "P_SplitDNS.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 

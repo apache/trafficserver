@@ -25,7 +25,7 @@
 
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3ProtocolEnforcer.h"
-#include "proxy/http3/test/Mock.h"
+#include "Mock.h"
 
 TEST_CASE("Http3FrameHandler dispatch", "[http3]")
 {

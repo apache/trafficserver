@@ -31,8 +31,8 @@
 
 #include "tscore/ink_platform.h"
 #include "iocore/dns/DNS.h"
-#include "iocore/eventsystem/P_EventSystem.h"
-#include "iocore/net/P_Net.h"
-#include "iocore/dns/P_DNSConnection.h"
-#include "iocore/dns/P_DNSProcessor.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "../net/P_Net.h"
+#include "P_DNSConnection.h"
+#include "P_DNSProcessor.h"
 #include "iocore/dns/SRV.h"

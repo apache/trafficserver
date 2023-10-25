@@ -29,8 +29,8 @@
 
 #include "tscpp/api/Transaction.h"
 #include "tscore/ink_memory.h"
-#include "tscpp/api/logging_internal.h"
-#include "tscpp/api/utils_internal.h"
+#include "logging_internal.h"
+#include "utils_internal.h"
 #include "tscpp/api/noncopyable.h"
 
 using std::map;

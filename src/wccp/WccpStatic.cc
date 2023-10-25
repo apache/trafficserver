@@ -20,8 +20,8 @@
     limitations under the License.
  */
 
-#include "wccp/WccpLocal.h"
-#include "wccp/WccpMeta.h"
+#include "WccpLocal.h"
+#include "WccpMeta.h"
 #include "tscore/ink_error.h"
 #include "tscore/ink_defs.h"
 

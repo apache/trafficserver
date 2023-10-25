@@ -22,8 +22,8 @@ Record statistics support (EThread implementation).
  */
 
 #include "records/RecDefs.h"
-#include "records/P_RecCore.h"
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecCore.h"
+#include "../../records/P_RecProcess.h"
 #include <string_view>
 
 //-------------------------------------------------------------------------

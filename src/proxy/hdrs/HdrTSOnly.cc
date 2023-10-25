@@ -38,7 +38,7 @@
 
 #include "tscore/ink_platform.h"
 #include "proxy/hdrs/HTTP.h"
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../../iocore/eventsystem/P_EventSystem.h"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

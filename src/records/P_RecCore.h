@@ -28,8 +28,8 @@
 #include "tscore/TextBuffer.h"
 
 #include "records/RecCore.h"
-#include "records/P_RecDefs.h"
-#include "records/P_RecUtils.h"
+#include "P_RecDefs.h"
+#include "P_RecUtils.h"
 
 #include <unordered_set>
 #include <unordered_map>

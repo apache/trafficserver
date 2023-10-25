@@ -24,7 +24,7 @@ limitations under the License.
 #include <utility>
 
 #include "tscore/ArgParser.h"
-#include "traffic_ctl/CtrlCommands.h"
+#include "CtrlCommands.h"
 #include "swoc/TextView.h"
 
 /// @brief Very basic flat YAML node handling.

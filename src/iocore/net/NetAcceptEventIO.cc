@@ -22,7 +22,7 @@
  */
 
 #include "iocore/net/NetAcceptEventIO.h"
-#include "iocore/net/P_NetAccept.h"
+#include "P_NetAccept.h"
 
 int
 NetAcceptEventIO::start(EventLoop l, NetAccept *na, int events)

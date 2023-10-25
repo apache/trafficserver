@@ -28,7 +28,7 @@
 #include "atscppapi/HttpMethod.h"
 #include "atscppapi/Transaction.h"
 #include "atscppapi/TransactionPlugin.h"
-#include "tscpp/api/utils_internal.h"
+#include "../../../../src/tscpp/api/utils_internal.h"
 #include <atscppapi/Headers.h>
 #include <atscppapi/utils.h>
 

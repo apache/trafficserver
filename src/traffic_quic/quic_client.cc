@@ -21,14 +21,14 @@
  *  limitations under the License.
  */
 
-#include "traffic_quic/quic_client.h"
+#include "quic_client.h"
 
 #include <iostream>
 #include <fstream>
 #include <string_view>
 
 #include "proxy/http3/Http3Transaction.h"
-#include "iocore/net/P_QUICNetVConnection.h"
+#include "../iocore/net/P_QUICNetVConnection.h"
 #include "iocore/net/quic/QUICStreamManager.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)

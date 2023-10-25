@@ -22,7 +22,7 @@
 #include <string_view>
 
 #include "records/RecCore.h"
-#include "records/P_RecCore.h"
+#include "../../../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 
 #include "mgmt/config/FileManager.h"

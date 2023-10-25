@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/dns/P_DNS.h"
+#include "P_DNS.h"
 #include "tscore/ink_inet.h"
 
 #include "iocore/dns/SplitDNS.h"

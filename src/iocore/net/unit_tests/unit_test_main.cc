@@ -24,7 +24,7 @@
 #include "iocore/eventsystem/EventSystem.h" // must be included before I_EThread.h
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/eventsystem/Thread.h"
-#include "iocore/net/P_SSLConfig.h"
+#include "../P_SSLConfig.h"
 #include "records/RecordsConfig.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "tscore/BaseLogFile.h"

@@ -19,7 +19,7 @@
 /**
  * @file utils_internal.cc
  */
-#include "tscpp/api/utils_internal.h"
+#include "utils_internal.h"
 #include <cassert>
 #include "ts/ts.h"
 #include <pthread.h>
@@ -33,7 +33,7 @@
 #include "tscpp/api/TransactionPlugin.h"
 #include "tscpp/api/TransformationPlugin.h"
 #include "tscpp/api/utils.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 using namespace atscppapi;
 

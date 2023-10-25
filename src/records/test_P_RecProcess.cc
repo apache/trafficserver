@@ -21,5 +21,5 @@
   limitations under the License.
  */
 
-#include "records/P_RecProcess.h"
+#include "P_RecProcess.h"
 #include "test_RecProcess.i"

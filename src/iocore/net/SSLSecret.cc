@@ -23,7 +23,7 @@
 
 #include "api/LifecycleAPIHooks.h"
 
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLConfig.h"
 
 #include <utility>
 

@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_file.h"

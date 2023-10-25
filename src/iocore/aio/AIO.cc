@@ -30,7 +30,7 @@
 
 #include <atomic>
 
-#include "iocore/aio/P_AIO.h"
+#include "P_AIO.h"
 
 #ifdef AIO_FAULT_INJECTION
 #include "iocore/aio/AIO_fault_injection.h"

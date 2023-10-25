@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 
 struct RamCacheLRUEntry {
   CryptoHash key;

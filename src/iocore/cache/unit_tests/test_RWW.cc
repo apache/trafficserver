@@ -26,7 +26,7 @@
 
 #define DEFAULT_URL "http://www.scw00.com/"
 
-#include "iocore/cache/unit_tests/main.h"
+#include "main.h"
 
 int cache_vols            = 1;
 bool reuse_existing_cache = false;

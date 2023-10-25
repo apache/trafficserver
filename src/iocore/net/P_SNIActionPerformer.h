@@ -34,8 +34,8 @@
 #include "swoc/swoc_ip.h"
 
 #include "iocore/eventsystem/EventSystem.h"
-#include "iocore/net/P_SSLNextProtocolAccept.h"
-#include "iocore/net/P_SSLNetVConnection.h"
+#include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
 #include "iocore/net/SNIActionPerformer.h"
 #include "iocore/net/SSLTypes.h"
 

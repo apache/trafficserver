@@ -33,7 +33,7 @@
 #include <utime.h>
 #include <yaml-cpp/yaml.h>
 
-#include "proxy/http/remap/unit-tests/nexthop_test_stubs.h"
+#include "nexthop_test_stubs.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"

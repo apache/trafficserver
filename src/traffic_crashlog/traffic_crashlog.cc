@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "traffic_crashlog/traffic_crashlog.h"
+#include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Version.h"

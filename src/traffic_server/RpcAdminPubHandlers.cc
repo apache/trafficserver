@@ -27,7 +27,7 @@
 #include "mgmt/rpc/handlers/server/Server.h"
 #include "mgmt/rpc/handlers/plugins/Plugins.h"
 
-#include "traffic_server/RpcAdminPubHandlers.h"
+#include "RpcAdminPubHandlers.h"
 namespace rpc::admin
 {
 void

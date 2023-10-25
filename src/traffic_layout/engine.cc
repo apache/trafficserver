@@ -30,9 +30,9 @@
 #include "tscore/ink_defs.h"
 #include "records/RecProcess.h"
 #include "records/RecordsConfig.h"
-#include "traffic_layout/engine.h"
-#include "traffic_layout/file_system.h"
-#include "traffic_layout/info.h"
+#include "engine.h"
+#include "file_system.h"
+#include "info.h"
 
 #include <fstream>
 #include <iostream>

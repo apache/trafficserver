@@ -31,7 +31,7 @@
 
 #ifdef TEST_LOG_UTILS
 
-#include "proxy/logging/unit-tests/test_LogUtils.h"
+#include "unit-tests/test_LogUtils.h"
 
 #else
 
@@ -57,7 +57,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecProcess.h"
 
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogLimits.h"

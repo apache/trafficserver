@@ -20,7 +20,7 @@
  */
 
 #include "iocore/net/TLSCertSwitchSupport.h"
-#include "iocore/net/P_SSLCertLookup.h"
+#include "P_SSLCertLookup.h"
 
 int TLSCertSwitchSupport::_ex_data_index = -1;
 

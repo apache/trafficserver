@@ -28,7 +28,7 @@
 
 */
 #include "tscore/ink_platform.h"
-#include "iocore/net/P_Net.h"
+#include "../iocore/net/P_Net.h"
 #include "iocore/utils/OneWayTunnel.h"
 #include "proxy/http/HttpSessionAccept.h"
 

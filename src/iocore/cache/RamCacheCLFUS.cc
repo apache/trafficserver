@@ -24,7 +24,7 @@
 // Clocked Least Frequently Used by Size (CLFUS) replacement policy
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
-#include "iocore/cache/P_Cache.h"
+#include "P_Cache.h"
 #include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include <zlib.h>

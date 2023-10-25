@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "iocore/net/P_QUICNetVConnection.h"
-#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "P_QUICNetVConnection.h"
+#include "P_SSLNextProtocolSet.h"
 #include "iocore/eventsystem/IOBuffer.h"
 
 class QUICNextProtocolAccept : public SessionAccept

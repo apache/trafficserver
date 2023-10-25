@@ -37,7 +37,7 @@
 #define NH_Warn(...)       DiagsError(DL_Warning, __VA_ARGS__)
 #define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
 #else
-#include "unit-tests/nexthop_test_stubs.h"
+#include "../../../../src/proxy/http/remap/unit-tests/nexthop_test_stubs.h"
 #endif /* _NH_UNIT_TESTS_ */
 
 constexpr const char *NH_DEBUG_TAG = "next_hop";

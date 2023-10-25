@@ -29,7 +29,7 @@
 ************************************************************************/
 
 #include "iocore/net/SSLAPIHooks.h"
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include <utility>
 
 NetStatsBlock net_rsb;

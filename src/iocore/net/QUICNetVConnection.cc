@@ -27,12 +27,12 @@
 #include "records/RecHttp.h"
 #include "tscore/Diags.h"
 
-#include "iocore/net/P_QUICNetVConnection.h"
-#include "iocore/net/P_QUICPacketHandler.h"
-#include "iocore/net/P_Net.h"
+#include "P_QUICNetVConnection.h"
+#include "P_QUICPacketHandler.h"
+#include "P_Net.h"
 #include "api/InkAPIInternal.h" // Added to include the quic_hook definitions
 
-#include "iocore/net/P_SSLNextProtocolSet.h"
+#include "P_SSLNextProtocolSet.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/quic/QUICTLS.h"
 

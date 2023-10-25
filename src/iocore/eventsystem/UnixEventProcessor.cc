@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "P_EventSystem.h"
 #include <sched.h>
 #if TS_USE_HWLOC
 #if HAVE_ALLOCA_H

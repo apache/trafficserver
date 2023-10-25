@@ -27,4 +27,4 @@
  */
 
 #define TS_INLINE
-#include "iocore/hostdb/P_HostDB.h"
+#include "P_HostDB.h"

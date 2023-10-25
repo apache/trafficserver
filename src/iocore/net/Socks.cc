@@ -34,7 +34,7 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_sock.h"
 #include "tscore/InkErrno.h"

@@ -27,7 +27,7 @@
 
 **************************************************************************/
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "P_EventSystem.h"
 #include "tscore/ink_string.h"
 
 ///////////////////////////////////////////////

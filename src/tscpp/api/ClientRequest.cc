@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include "ts/ts.h"
 #include "tscpp/api/noncopyable.h"
-#include "tscpp/api/logging_internal.h"
+#include "logging_internal.h"
 
 using namespace atscppapi;
 

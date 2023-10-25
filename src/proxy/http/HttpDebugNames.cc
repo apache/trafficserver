@@ -23,7 +23,7 @@
 
 #include "iocore/dns/DNSProcessor.h"
 #include "proxy/http/HttpDebugNames.h"
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/StatPages.h"
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/Transform.h"

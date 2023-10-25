@@ -43,8 +43,8 @@
 #include "tscore/ArgParser.h"
 #include <thread>
 
-#include "traffic_cache_tool/CacheDefs.h"
-#include "traffic_cache_tool/CacheScan.h"
+#include "CacheDefs.h"
+#include "CacheScan.h"
 
 using swoc::MemSpan;
 using swoc::Errata;

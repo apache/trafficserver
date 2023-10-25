@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "iocore/net/P_Net.h"
+#include "P_Net.h"
 #include "iocore/eventsystem/SocketManager.h"
 #include "tscore/ink_assert.h"
 

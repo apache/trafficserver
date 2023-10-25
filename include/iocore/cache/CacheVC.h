@@ -26,10 +26,10 @@
 /*
 // inkcache
 #include "iocore/cache/Cache.h"
-#include "iocore/cache/P_CacheDir.h"
-#include "iocore/cache/P_CacheVol.h"
+#include "../../../src/iocore/cache/P_CacheDir.h"
+#include "../../../src/iocore/cache/P_CacheVol.h"
 */
-#include "iocore/cache/P_CacheHttp.h"
+#include "../../../src/iocore/cache/P_CacheHttp.h"
 
 // aio
 #include "iocore/aio/AIO.h"

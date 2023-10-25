@@ -34,11 +34,11 @@
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpConfig.h"
-#include "iocore/cache/P_Cache.h"
+#include "../iocore/cache/P_Cache.h"
 #include "tscore/Regex.h"
 
 static const char modulePrefix[] = "[CacheControl]";

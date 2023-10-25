@@ -26,7 +26,7 @@
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
 
-#include "iocore/eventsystem/P_EventSystem.h"
+#include "../eventsystem/P_EventSystem.h"
 #include "iocore/net/Socks.h"
 #include "tscpp/util/ts_errata.h"
 

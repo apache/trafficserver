@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/P_SSLConfig.h"
+#include "P_SSLConfig.h"
 #include "iocore/net/SSLSessionCache.h"
 #include "iocore/net/SSLStats.h"
 

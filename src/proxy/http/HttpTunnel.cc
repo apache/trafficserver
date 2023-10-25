@@ -37,7 +37,7 @@
 #include "proxy/http/HttpDebugNames.h"
 
 // inkcache
-#include "iocore/cache/P_Cache.h"
+#include "../../iocore/cache/P_Cache.h"
 
 #include "tscore/ParseRules.h"
 #include "tscore/ink_memory.h"
