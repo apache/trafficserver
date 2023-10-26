@@ -108,6 +108,7 @@ auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
 option(ENABLE_FIPS "Enable fips compliance (default OFF)")
+option(ENABLE_EVENT_TRACKER "Enable event tracking (default OFF)")
 option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
 set(DEFAULT_STACK_SIZE
@@ -541,6 +542,9 @@ if(ENABLE_FUZZING)
 endif()
 
 set(TS_ENABLE_FIPS ${ENABLE_FIPS})
+if(ENABLE_EVENT_TRACKER)
+  add_compile_definitions(ENABLE_EVENT_TRACKER)
+endif()
 
 # Common includes for everyone
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
