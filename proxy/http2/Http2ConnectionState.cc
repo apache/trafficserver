@@ -753,7 +753,7 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2Goaway goaway;
   char buf[HTTP2_GOAWAY_LEN];
-  unsigned nbytes               = 0;
+  char *end;
   const Http2StreamId stream_id = frame.header().streamid;
 
   Http2StreamDebug(cstate.session, stream_id, "Received GOAWAY frame");
@@ -765,13 +765,11 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "goaway id non-zero");
   }
 
-  while (nbytes < frame.header().length) {
-    unsigned read_bytes = read_rcv_buffer(buf, sizeof(buf), nbytes, frame);
+  end = frame.reader()->memcpy(buf, sizeof(buf), 0);
 
-    if (!http2_parse_goaway(make_iovec(buf, read_bytes), goaway)) {
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
-                        "goaway failed parse");
-    }
+  if (!http2_parse_goaway(make_iovec(buf, end - buf), goaway)) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                      "goaway failed parse");
   }
 
   Http2StreamDebug(cstate.session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
