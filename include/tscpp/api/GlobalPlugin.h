@@ -21,6 +21,8 @@
  * @brief Contains the interface used in creating Global plugins.
  */
 
+// The C++ Plugin API is deprecated in ATS 10, and will be removed in ATS 11.
+
 #pragma once
 
 #include "tscpp/api/Plugin.h"

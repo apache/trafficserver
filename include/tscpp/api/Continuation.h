@@ -21,6 +21,8 @@
  * @brief Wrapper class for TS API type TSCont.
  */
 
+// The C++ Plugin API is deprecated in ATS 10, and will be removed in ATS 11.
+
 #pragma once
 
 #include <ts/ts.h>

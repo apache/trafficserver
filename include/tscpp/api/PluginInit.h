@@ -20,6 +20,8 @@
  * @brief Provides hooks that plugins have to implement. ATS will invoke these when loading the plugin .so files.
  */
 
+// The C++ Plugin API is deprecated in ATS 10, and will be removed in ATS 11.
+
 #pragma once
 #include <ts/apidefs.h>
 #include "tscpp/api/utils.h"
