@@ -1048,8 +1048,8 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
     DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
 
-    Metrics::increment(cache_rsb.fragment_document_count[std::max(fragment, 2)]);
-    Metrics::increment(vol->cache_vol->vol_rsb.fragment_document_count[std::max(fragment, 2)]);
+    Metrics::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
+    Metrics::increment(vol->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
   }
   if (f.close_complete) {
     recursive++;
