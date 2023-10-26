@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include "Plugin.h"
-#include "Http2CommonSession.h"
+#include "proxy/Plugin.h"
+#include "proxy/http2/Http2CommonSession.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
-#include "Milestones.h"
-#include "PoolableSession.h"
+#include "proxy/Milestones.h"
+#include "proxy/PoolableSession.h"
 
 class Http2ServerSession : public PoolableSession, public Http2CommonSession
 {

@@ -23,8 +23,8 @@
 
 #include "swoc/swoc_ip.h"
 
-#include <records/RecCore.h>
-#include <records/RecHttp.h>
+#include "records/RecCore.h"
+#include "records/RecHttp.h"
 #include "tscore/ink_defs.h"
 #include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"

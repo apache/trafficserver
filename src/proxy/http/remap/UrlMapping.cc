@@ -23,7 +23,7 @@
  */
 
 #include "tscore/ink_defs.h"
-#include "UrlMapping.h"
+#include "proxy/http/remap/UrlMapping.h"
 #include "records/RecCore.h"
 #include "tscore/ink_cap.h"
 

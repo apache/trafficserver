@@ -35,10 +35,10 @@
 #include "records/RecProcess.h"
 
 #include "tscore/ink_defs.h"
-#include "HttpTransact.h"
-#include "RemapPluginInfo.h"
-#include "UrlRewrite.h"
-#include "UrlMapping.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/remap/UrlRewrite.h"
+#include "proxy/http/remap/UrlMapping.h"
 
 #define EMPTY_PORT_MAPPING (int32_t) ~0
 

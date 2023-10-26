@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICConnection.h"
-#include "MTHashTable.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/MTHashTable.h"
 
 class QUICConnectionTable
 {

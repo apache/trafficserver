@@ -22,8 +22,8 @@
  */
 #pragma once
 
-#include "QUICFrameGenerator.h"
-#include "QUICContext.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICContext.h"
 
 class QUICTokenCreator final : public QUICFrameGenerator
 {

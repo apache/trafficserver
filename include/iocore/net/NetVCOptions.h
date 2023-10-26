@@ -23,9 +23,9 @@
  */
 #pragma once
 #include "tscore/ink_inet.h"
-#include "EventSystem.h"
-#include "Event.h"
-#include "YamlSNIConfig.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 #include <cstdint>
 

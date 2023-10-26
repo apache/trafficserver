@@ -22,9 +22,9 @@
  */
 
 #include <stdio.h>
-#include "HostDB.h"
+#include "iocore/hostdb/HostDB.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 class HostDBTest : Continuation
 {

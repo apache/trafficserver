@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #include "tscore/ink_platform.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HdrUtils.h"
 
 void
 HdrCsvIter::find_csv()

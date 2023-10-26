@@ -25,10 +25,10 @@
 
 #include <atomic>
 
-#include "EventSystem.h"
-#include "P_UnixNetState.h"
-#include "EventIO.h"
-#include "ReadWriteEventIO.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "../../../src/iocore/net/P_UnixNetState.h"
+#include "iocore/net/EventIO.h"
+#include "iocore/net/ReadWriteEventIO.h"
 
 class NetHandler;
 

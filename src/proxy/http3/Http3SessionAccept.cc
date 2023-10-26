@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "Http3SessionAccept.h"
+#include "proxy/http3/Http3SessionAccept.h"
 
-#include "P_Net.h"
-#include "Machine.h"
-#include "IPAllow.h"
-#include "QUICSupport.h"
+#include "../../iocore/net/P_Net.h"
+#include "iocore/utils/Machine.h"
+#include "proxy/IPAllow.h"
+#include "iocore/net/QUICSupport.h"
 
-#include "Http09App.h"
-#include "Http3App.h"
+#include "proxy/http3/Http09App.h"
+#include "proxy/http3/Http3App.h"
 
 Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
 {

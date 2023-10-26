@@ -26,8 +26,8 @@
 #include "tscore/Allocator.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_assert.h"
-#include "QUICApplication.h"
-#include "Http3Types.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "proxy/http3/Http3Types.h"
 
 class Http3Frame
 {

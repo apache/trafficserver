@@ -24,8 +24,6 @@ target_link_libraries(cookie_remap PRIVATE PCRE::PCRE yaml-cpp::yaml-cpp)
 if(BUILD_TESTING)
   add_executable(test_cookiejar test_cookiejar.cc strip.cc cookiejar.cc)
 
-  target_include_directories(test_cookiejar PRIVATE "${PROJECT_SOURCE_DIR}")
-
   target_link_libraries(test_cookiejar PRIVATE catch2::catch2)
 
   add_test(NAME test_cookiejar COMMAND test_cookiejar)

@@ -29,9 +29,9 @@
  ****************************************************************************/
 
 #include "tscore/ink_config.h"
-#include "ConfigProcessor.h"
-#include "StatPages.h"
-#include "HdrUtils.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/StatPages.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/MatcherUtils.h"
 
 #define MAX_STAT_PAGES 32

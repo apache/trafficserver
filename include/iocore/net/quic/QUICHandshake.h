@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "QUICConnection.h"
-#include "QUICTransportParameters.h"
-#include "QUICFrameHandler.h"
-#include "QUICFrameGenerator.h"
-#include "QUICCryptoStream.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICCryptoStream.h"
 
 /**
  * @class QUICHandshake

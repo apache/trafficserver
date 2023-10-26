@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "QUICPathManager.h"
-#include "QUICPathValidator.h"
-#include "QUICConnection.h"
+#include "iocore/net/quic/QUICPathManager.h"
+#include "iocore/net/quic/QUICPathValidator.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 #define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
 

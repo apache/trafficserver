@@ -27,15 +27,15 @@
 #include "P_QUICNet.h"
 #include "P_QUICClosedConCollector.h"
 
-#include "QUICGlobals.h"
-#include "QUICConfig.h"
-#include "QUICPacket.h"
-#include "QUICDebugNames.h"
-#include "QUICEvents.h"
-#include "QUICResetTokenTable.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICPacket.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICResetTokenTable.h"
 
-#include "QUICMultiCertConfigLoader.h"
-#include "QUICTLS.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
+#include "iocore/net/quic/QUICTLS.h"
 
 namespace
 {

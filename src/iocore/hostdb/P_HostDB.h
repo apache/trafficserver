@@ -32,13 +32,13 @@
 
 #include "tscore/ink_platform.h"
 
-#include "P_SplitDNS.h"
-#include "P_EventSystem.h"
+#include "../dns/P_SplitDNS.h"
+#include "../eventsystem/P_EventSystem.h"
 
-#include "HostDB.h"
+#include "iocore/hostdb/HostDB.h"
 
 // HostDB files
-#include "P_DNS.h"
+#include "../dns/P_DNS.h"
 #include "P_RefCountCache.h"
 #include "P_HostDBProcessor.h"
 

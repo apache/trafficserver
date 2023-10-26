@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "Continuation.h"
-#include "Lock.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/Lock.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_mutex.h"
 #include <cerrno>

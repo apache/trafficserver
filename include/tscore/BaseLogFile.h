@@ -32,12 +32,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "ink_memory.h"
-#include "ink_string.h"
-#include "ink_file.h"
-#include "ink_cap.h"
-#include "ink_time.h"
-#include "SimpleTokenizer.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_file.h"
+#include "tscore/ink_cap.h"
+#include "tscore/ink_time.h"
+#include "tscore/SimpleTokenizer.h"
 
 #define LOGFILE_ROLLED_EXTENSION ".old"
 #define LOGFILE_SEPARATOR_STRING "_"

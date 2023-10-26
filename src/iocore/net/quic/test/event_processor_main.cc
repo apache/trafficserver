@@ -29,10 +29,10 @@
 #include "tscore/Layout.h"
 #include "tscore/Diags.h"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "records/RecordsConfig.h"
 
-#include "QUICConfig.h"
+#include "iocore/net/quic/QUICConfig.h"
 
 #define TEST_THREADS 1
 

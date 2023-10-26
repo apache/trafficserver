@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "IOBuffer.h"
-#include "VConnection.h"
-#include "VIO.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "iocore/eventsystem/VIO.h"
 
 class HttpSM;
 using HttpSMHandler = int (HttpSM::*)(int, void *);

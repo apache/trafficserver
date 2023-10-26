@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "ParentSelection.h"
+#include "proxy/ParentSelection.h"
 
 class ParentRoundRobin : public ParentSelectionStrategy
 {

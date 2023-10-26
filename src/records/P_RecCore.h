@@ -27,7 +27,7 @@
 #include "tscore/ink_rwlock.h"
 #include "tscore/TextBuffer.h"
 
-#include "RecCore.h"
+#include "records/RecCore.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"
 

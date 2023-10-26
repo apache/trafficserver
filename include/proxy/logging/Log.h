@@ -56,8 +56,8 @@
 #include "tscore/EventNotify.h"
 #include "tscore/Regression.h"
 #include "records/RecProcess.h"
-#include "LogFile.h"
-#include "LogBuffer.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogBuffer.h"
 
 #include <unordered_map>
 

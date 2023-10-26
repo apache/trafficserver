@@ -17,6 +17,4 @@
 
 add_autest_plugin(jsonrpc_plugin_handler_test jsonrpc_plugin_handler_test.cc)
 
-target_include_directories(jsonrpc_plugin_handler_test PRIVATE "${PROJECT_SOURCE_DIR}/include/mgmt")
-
 target_link_libraries(jsonrpc_plugin_handler_test PRIVATE jsonrpc_protocol libswoc)

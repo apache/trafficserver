@@ -23,10 +23,10 @@
 
 #include "tscore/List.h"
 #include "tscore/ink_mutex.h"
-#include "P_EventSystem.h"
+#include "../../../src/iocore/eventsystem/P_EventSystem.h"
 #include "records/RecProcess.h"
 #include "tscore/ink_platform.h"
-#include "P_SSLUtils.h"
+#include "../../../src/iocore/net/P_SSLUtils.h"
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>
 #include <mutex>

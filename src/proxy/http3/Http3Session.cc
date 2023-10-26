@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "Http3Session.h"
-#include "QUICSupport.h"
+#include "proxy/http3/Http3Session.h"
+#include "iocore/net/QUICSupport.h"
 
-#include "Http3.h"
+#include "proxy/http3/Http3.h"
 
 //
 // HQSession

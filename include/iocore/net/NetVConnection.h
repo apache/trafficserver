@@ -23,22 +23,22 @@
  */
 #pragma once
 
-#include "NetVCOptions.h"
-#include "ProxyProtocol.h"
-#include "Net.h"
+#include "iocore/net/NetVCOptions.h"
+#include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/Net.h"
 
 #include <string_view>
 #include <optional>
 
 #include "tscore/ink_inet.h"
-#include "Action.h"
-#include "VConnection.h"
-#include "Event.h"
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "iocore/eventsystem/Event.h"
 #include "tscore/List.h"
-#include "IOBuffer.h"
-#include "Socks.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/Socks.h"
 #include "ts/apidefs.h"
-#include "YamlSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 #include "swoc/TextView.h"
 
 #define CONNECT_SUCCESS 1

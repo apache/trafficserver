@@ -24,8 +24,8 @@
 #pragma once
 
 #include "tscore/ink_resolver.h"
-#include "EventSystem.h"
-#include "SRV.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/dns/SRV.h"
 
 // Events
 #define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START

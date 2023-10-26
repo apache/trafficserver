@@ -30,7 +30,7 @@
 ****************************************************************************/
 #pragma once
 
-#include "Thread.h"
+#include "iocore/eventsystem/Thread.h"
 
 ///////////////////////////////////////////////
 // Common Interface impl                     //

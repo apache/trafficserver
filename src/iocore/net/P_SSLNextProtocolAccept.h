@@ -24,10 +24,10 @@
 #pragma once
 
 #include "P_Net.h"
-#include "P_EventSystem.h"
+#include "../eventsystem/P_EventSystem.h"
 #include "P_UnixNet.h"
 #include "P_SSLNextProtocolSet.h"
-#include "IOBuffer.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #include "records/RecHttp.h"
 
 class SSLNextProtocolAccept : public SessionAccept

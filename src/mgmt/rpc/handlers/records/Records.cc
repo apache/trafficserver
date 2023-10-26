@@ -17,13 +17,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "Records.h"
+#include "mgmt/rpc/handlers/records/Records.h"
 
 #include <system_error>
 #include <string>
 #include <string_view>
 
-#include "handlers/common/RecordsUtils.h"
+#include "mgmt/rpc/handlers/common/RecordsUtils.h"
 // #include "common/yaml/codecs.h"
 ///
 /// @brief Local definitions to map requests and responsponses(not fully supported yet) to custom structures. All this definitions

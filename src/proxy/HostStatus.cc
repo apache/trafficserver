@@ -22,10 +22,10 @@
  */
 #include <fstream>
 #include "tscpp/util/ts_bw_format.h"
-#include "HostStatus.h"
-#include "Tasks.h"
+#include "proxy/HostStatus.h"
+#include "iocore/eventsystem/Tasks.h"
 
-#include "rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "shared/rpc/RPCRequests.h"
 
 namespace

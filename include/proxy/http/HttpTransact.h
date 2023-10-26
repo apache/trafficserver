@@ -27,22 +27,22 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
-#include "HostDB.h"
-#include "HttpConfig.h"
-#include "HTTP.h"
-#include "HttpTransactCache.h"
-#include "ControlMatcher.h"
-#include "CacheControl.h"
-#include "ParentSelection.h"
-#include "ConfigProcessor.h"
-#include "Transform.h"
-#include "Milestones.h"
+#include "iocore/hostdb/HostDB.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/cache/HttpTransactCache.h"
+#include "proxy/ControlMatcher.h"
+#include "proxy/CacheControl.h"
+#include "proxy/ParentSelection.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/Transform.h"
+#include "proxy/Milestones.h"
 #include "ts/remap.h"
 #include "ts/parentselectdefs.h"
-#include "RemapPluginInfo.h"
-#include "UrlMapping.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/http/remap/UrlMapping.h"
 #include "records/RecHttp.h"
-#include "ProxySession.h"
+#include "proxy/ProxySession.h"
 #include "tscore/MgmtDefs.h"
 
 #define HTTP_OUR_VIA_MAX_LENGTH 1024 // 512-bytes for hostname+via string, 512-bytes for the debug info
@@ -77,7 +77,7 @@ struct HttpConfigParams;
 class HttpSM;
 
 #include "tscore/InkErrno.h"
-#include "HttpConnectionCount.h"
+#include "proxy/http/HttpConnectionCount.h"
 
 #define UNKNOWN_INTERNAL_ERROR (INK_START_ERRNO - 1)
 

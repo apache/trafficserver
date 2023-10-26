@@ -18,11 +18,6 @@
 add_library(inkuring STATIC io_uring.cc IOUringEventIO.cc)
 add_library(ts::inkuring ALIAS inkuring)
 
-include_directories(
-  ${CMAKE_SOURCE_DIR}/iocore/dns ${CMAKE_SOURCE_DIR}/iocore/io_uring ${CMAKE_SOURCE_DIR}/iocore/net
-  ${CMAKE_SOURCE_DIR}/iocore/cache
-)
-
 target_link_libraries(
   inkuring
   PUBLIC ts::tscore uring
@@ -32,6 +27,6 @@ target_link_libraries(
 add_executable(test_iouring unit_tests/test_diskIO.cc)
 target_link_libraries(test_iouring PRIVATE inkuring libswoc tscpputil catch2::catch2)
 
-target_include_directories(test_iouring PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
 
 add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)

@@ -25,7 +25,7 @@
 
 #include <openssl/ssl.h>
 
-#include "quic/QUICConnection.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 class QUICSupport
 {

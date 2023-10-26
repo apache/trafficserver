@@ -28,7 +28,7 @@
 #include <string_view>
 #include "swoc/TextView.h"
 
-#include <HttpConfig.h>
+#include "proxy/http/HttpConfig.h"
 
 namespace
 {

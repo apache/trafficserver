@@ -28,8 +28,8 @@
 
 #include "swoc/swoc_file.h"
 
-#include "RolledLogDeleter.h"
-#include "LogUtils.h"
+#include "proxy/logging/RolledLogDeleter.h"
+#include "proxy/logging/LogUtils.h"
 #include "swoc/TextView.h"
 
 namespace fs = swoc::file;

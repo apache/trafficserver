@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "Http2CommonSession.h"
-#include "HttpDebugNames.h"
+#include "proxy/http2/Http2CommonSession.h"
+#include "proxy/http/HttpDebugNames.h"
 
 #define REMEMBER(e, r)                          \
   {                                             \

@@ -30,8 +30,8 @@
 #include "tscore/Diags.h"
 
 #include "records/RecordsConfig.h"
-#include "QUICGlobals.h"
-#include "QUICConfig.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICConfig.h"
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor

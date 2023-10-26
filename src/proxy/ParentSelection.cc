@@ -20,16 +20,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "P_EventSystem.h"
-#include "ParentSelection.h"
-#include "ParentConsistentHash.h"
-#include "ParentRoundRobin.h"
-#include "ControlMatcher.h"
-#include "ConfigProcessor.h"
-#include "HostStatus.h"
-#include "HTTP.h"
-#include "HttpTransact.h"
-#include "Machine.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
+#include "proxy/ParentSelection.h"
+#include "proxy/ParentConsistentHash.h"
+#include "proxy/ParentRoundRobin.h"
+#include "proxy/ControlMatcher.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/HostStatus.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http/HttpTransact.h"
+#include "iocore/utils/Machine.h"
 #include "tscore/Filenames.h"
 
 #define MAX_SIMPLE_RETRIES             5

@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "Continuation.h"
-#include "EThread.h"
-#include "NetEvent.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/net/NetEvent.h"
 
 //
 // NetHandler

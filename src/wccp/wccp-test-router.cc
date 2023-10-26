@@ -28,7 +28,7 @@
 
 #include <getopt.h>
 
-#include "Wccp.h"
+#include "wccp/Wccp.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>

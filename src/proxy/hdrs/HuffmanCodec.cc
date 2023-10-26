@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_defs.h"

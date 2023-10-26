@@ -33,7 +33,7 @@
 using std::cout;
 using std::endl;
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 #define MAX_DISK_THREADS 200
 #ifdef DISK_ALIGN

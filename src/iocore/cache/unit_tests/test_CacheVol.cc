@@ -23,8 +23,8 @@
 
 #include "main.h"
 
-#include "P_Cache.h"
-#include "P_CacheHosting.h"
+#include "../P_Cache.h"
+#include "../P_CacheHosting.h"
 
 #include "tscore/Diags.h"
 #include "tscpp/util/PostScript.h"

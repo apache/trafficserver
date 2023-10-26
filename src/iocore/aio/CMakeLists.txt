@@ -20,12 +20,6 @@ add_library(ts::aio ALIAS aio)
 
 target_sources(aio PRIVATE AIO.cc Inline.cc AIO_fault_injection.cc)
 
-target_include_directories(
-  aio
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/aio
-  PRIVATE ${CMAKE_SOURCE_DIR}/include/iocore/io_uring ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem
-)
-
 target_link_libraries(aio PUBLIC ts::inkevent ts::tscore)
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(aio PUBLIC ts::inkuring)

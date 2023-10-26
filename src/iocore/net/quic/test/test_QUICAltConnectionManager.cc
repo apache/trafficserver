@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICAltConnectionManager.h"
-#include "quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICAltConnectionManager.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 #include <memory>
 
 TEST_CASE("QUICPreferredAddress", "[quic]")

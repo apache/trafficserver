@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICIntUtil.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 #include "tscore/ink_endian.h"
 #include <memory>
 #include <cstring>

@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "FileManager.h"
+#include "mgmt/config/FileManager.h"
 
 #include <vector>
 #include <algorithm>
@@ -29,7 +29,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "records/P_RecCore.h"
+#include "../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"

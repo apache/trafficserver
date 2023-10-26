@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Http3Frame.h"
+#include "proxy/http3/Http3Frame.h"
 
 class Http3FrameGenerator
 {

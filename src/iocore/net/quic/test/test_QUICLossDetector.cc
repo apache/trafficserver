@@ -23,13 +23,13 @@
 
 #include "catch.hpp"
 
-#include "QUICLossDetector.h"
-#include "QUICPacketFactory.h"
-#include "QUICAckFrameCreator.h"
-#include "QUICEvents.h"
-#include "QUICPacketFactory.h"
-#include "QUICAckFrameCreator.h"
-#include "Mock.h"
+#include "iocore/net/quic/QUICLossDetector.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICAckFrameCreator.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICAckFrameCreator.h"
+#include "iocore/net/quic/Mock.h"
 #include "tscore/ink_hrtime.h"
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")

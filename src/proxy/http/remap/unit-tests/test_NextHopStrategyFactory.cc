@@ -34,10 +34,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include "nexthop_test_stubs.h"
-#include "NextHopSelectionStrategy.h"
-#include "NextHopStrategyFactory.h"
-#include "NextHopConsistentHash.h"
-#include "NextHopRoundRobin.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopStrategyFactory.h"
+#include "proxy/http/remap/NextHopConsistentHash.h"
+#include "proxy/http/remap/NextHopRoundRobin.h"
 
 SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {

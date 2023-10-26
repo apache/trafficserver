@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "Socks.h"
-#include "NetVConnection.h"
-#include "AcceptOptions.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Socks.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/AcceptOptions.h"
 struct socks_conf_struct;
 #define NET_CONNECT_TIMEOUT 30
 

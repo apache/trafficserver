@@ -31,7 +31,7 @@ bool reuse_existing_cache = true;
 #ifndef AIO_FAULT_INJECTION
 #error Must define AIO_FAULT_INJECTION!
 #endif
-#include "AIO_fault_injection.h"
+#include "iocore/aio/AIO_fault_injection.h"
 
 class CacheCommInit : public CacheInit
 {

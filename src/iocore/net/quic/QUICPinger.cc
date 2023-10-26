@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "QUICPinger.h"
+#include "iocore/net/quic/QUICPinger.h"
 
 void
 QUICPinger::request(QUICEncryptionLevel level)

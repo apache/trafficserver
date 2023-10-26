@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "SSLDiags.h"
+#include "iocore/net/SSLDiags.h"
 
 #include <openssl/err.h>
 
 #include "P_Net.h"
-#include "SSLStats.h"
+#include "iocore/net/SSLStats.h"
 #include "P_SSLNetVConnection.h"
 
 static DbgCtl ssl_diags_dbg_ctl{"ssl-diag"};

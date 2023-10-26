@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Http3FrameHandler.h"
+#include "proxy/http3/Http3FrameHandler.h"
 
 class VIO;
 

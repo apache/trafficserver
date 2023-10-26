@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "LogBuffer.h"
+#include "proxy/logging/LogBuffer.h"
 
 /**********************************************************************
 The LogBufferSink class in an abstract class that provides an interface

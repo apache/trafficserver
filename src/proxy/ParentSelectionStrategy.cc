@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ParentSelection.h"
+#include "proxy/ParentSelection.h"
 
 void
 ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)

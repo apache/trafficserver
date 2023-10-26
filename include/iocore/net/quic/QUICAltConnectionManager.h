@@ -26,9 +26,9 @@
 #include <inttypes.h>
 #include <queue>
 
-#include "QUICFrameGenerator.h"
-#include "QUICTypes.h"
-#include "QUICConnection.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 class QUICConnectionTable;
 class QUICResetTokenTable;

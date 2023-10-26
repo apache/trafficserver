@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "Http3Config.h"
+#include "proxy/http3/Http3Config.h"
 
 int ts::Http3Config::_config_id = 0;
 

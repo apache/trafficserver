@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "Event.h"
+#include "iocore/eventsystem/Event.h"
 #include "main.h"
 
-#include "P_CacheDir.h"
+#include "../P_CacheDir.h"
 
 #include "tscore/Random.h"
 

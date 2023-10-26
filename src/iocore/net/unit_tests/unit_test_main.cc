@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "EventSystem.h" // must be included before I_EThread.h
-#include "EThread.h"
-#include "Thread.h"
-#include "P_SSLConfig.h"
+#include "iocore/eventsystem/EventSystem.h" // must be included before I_EThread.h
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Thread.h"
+#include "../P_SSLConfig.h"
 #include "records/RecordsConfig.h"
-#include "SSLAPIHooks.h"
+#include "iocore/net/SSLAPIHooks.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
 #include "tscore/Layout.h"

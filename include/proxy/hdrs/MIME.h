@@ -31,8 +31,8 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_string++.h"
 #include "tscore/ParseRules.h"
-#include "HdrHeap.h"
-#include "HdrToken.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/HdrToken.h"
 
 #include "swoc/TextView.h"
 

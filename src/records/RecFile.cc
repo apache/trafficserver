@@ -23,9 +23,9 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_string.h"
-#include "records/P_RecFile.h"
-#include "records/P_RecDefs.h"
-#include "records/P_RecUtils.h"
+#include "P_RecFile.h"
+#include "P_RecDefs.h"
+#include "P_RecUtils.h"
 
 #include <array>
 

@@ -24,7 +24,7 @@
 #pragma once
 
 #include "P_Cache.h"
-#include "RegressionSM.h"
+#include "proxy/RegressionSM.h"
 
 #define MAX_HOSTS_POSSIBLE    256
 #define PINNED_DOC_TABLE_SIZE 16

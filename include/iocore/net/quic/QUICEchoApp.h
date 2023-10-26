@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "QUICApplication.h"
+#include "iocore/net/quic/QUICApplication.h"
 
 /**
  * @brief Echo over QUIC

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "../PluginFactory.h"
+#include "proxy/http/remap/PluginFactory.h"
 
 extern thread_local PluginThreadContext *pluginThreadContext;
 

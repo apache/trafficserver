@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../ProxyTransaction.h"
+#include "proxy/ProxyTransaction.h"
 
 class Continuation;
 

@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "ProxyProtocol.h"
+#include "iocore/net/ProxyProtocol.h"
 
 using namespace std::literals;
 

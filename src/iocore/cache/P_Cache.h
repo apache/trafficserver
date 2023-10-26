@@ -24,14 +24,14 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
-#include "P_AIO.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "../aio/P_AIO.h"
 
-#include "HTTP.h"
-#include "MIME.h"
-#include "HttpTransactCache.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/MIME.h"
+#include "iocore/cache/HttpTransactCache.h"
 
-#include "Cache.h"
+#include "iocore/cache/Cache.h"
 #include "P_CacheStats.h"
 #include "P_CacheDisk.h"
 #include "P_CacheDir.h"

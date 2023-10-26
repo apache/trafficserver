@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "QPACK.h"
+#include "proxy/http3/QPACK.h"
 void
 QPACK::update_max_field_section_size(uint32_t max_field_section_size)
 {
@@ -37,7 +37,7 @@ QPACK::update_max_blocking_streams(uint16_t max_blocking_streams)
 {
 }
 
-#include "Http3Session.h"
+#include "proxy/http3/Http3Session.h"
 QPACK *
 Http3Session::remote_qpack()
 {

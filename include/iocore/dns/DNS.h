@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "HostDB.h"
-#include "Net.h"
-#include "DNSProcessor.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/hostdb/HostDB.h"
+#include "iocore/net/Net.h"
+#include "iocore/dns/DNSProcessor.h"

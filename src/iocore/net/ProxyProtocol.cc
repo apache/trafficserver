@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-#include "ProxyProtocol.h"
+#include "iocore/net/ProxyProtocol.h"
 
-#include "EventSystem.h"
-#include "NetVConnection.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
 
 #include "tscpp/util/ts_bw.h"
 #include "tscore/ink_assert.h"

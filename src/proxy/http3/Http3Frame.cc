@@ -22,9 +22,9 @@
  */
 
 #include "tscore/Diags.h"
-#include "quic/QUICIntUtil.h"
-#include "Http3Frame.h"
-#include "Http3Config.h"
+#include "iocore/net/quic/QUICIntUtil.h"
+#include "proxy/http3/Http3Frame.h"
+#include "proxy/http3/Http3Config.h"
 
 ClassAllocator<Http3Frame> http3FrameAllocator("http3FrameAllocator");
 ClassAllocator<Http3DataFrame> http3DataFrameAllocator("http3DataFrameAllocator");

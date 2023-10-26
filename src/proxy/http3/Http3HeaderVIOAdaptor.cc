@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "Http3HeaderVIOAdaptor.h"
-#include "hdrs/HeaderValidator.h"
+#include "proxy/http3/Http3HeaderVIOAdaptor.h"
+#include "proxy/hdrs/HeaderValidator.h"
 
-#include "VIO.h"
-#include "HTTP.h"
+#include "iocore/eventsystem/VIO.h"
+#include "proxy/hdrs/HTTP.h"
 
 Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)
   : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id)

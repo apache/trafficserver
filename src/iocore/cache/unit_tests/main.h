@@ -33,11 +33,11 @@
 
 #include "records/RecordsConfig.h"
 #include "records/RecProcess.h"
-#include "P_AIO.h"
-#include "P_CacheDisk.h"
-#include "P_Net.h"
+#include "../../aio/P_AIO.h"
+#include "../P_CacheDisk.h"
+#include "../../net/P_Net.h"
 #include "CacheTestHandler.h"
-#include "P_Cache.h"
+#include "../P_Cache.h"
 
 #include <queue>
 

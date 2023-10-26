@@ -31,7 +31,7 @@
 #pragma once
 
 #include "tscore/ink_atomic.h"
-#include "UDPNet.h"
+#include "iocore/net/UDPNet.h"
 
 class UDPConnectionInternal : public UDPConnection
 {

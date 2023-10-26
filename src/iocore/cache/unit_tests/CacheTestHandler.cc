@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "CacheDefs.h"
+#include "iocore/cache/CacheDefs.h"
 #include "main.h"
 #include "CacheTestHandler.h"
 

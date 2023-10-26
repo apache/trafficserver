@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Cache.h"
+#include "iocore/cache/Cache.h"
 #include "P_CacheDisk.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"

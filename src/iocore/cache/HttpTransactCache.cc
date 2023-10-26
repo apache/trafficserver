@@ -25,12 +25,12 @@
 
 #include "tscore/ink_platform.h"
 
-#include "HttpTransact.h"
-#include "HttpTransactHeaders.h"
-#include "HttpTransactCache.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpTransactHeaders.h"
+#include "iocore/cache/HttpTransactCache.h"
 #include <ctime>
-#include "HTTP.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HttpCompat.h"
 
 #include "tscore/InkErrno.h"
 

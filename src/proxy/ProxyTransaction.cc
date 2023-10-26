@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "http/HttpSM.h"
-#include "Plugin.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/Plugin.h"
 
 #define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
 

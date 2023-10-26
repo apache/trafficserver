@@ -22,13 +22,13 @@
 
  */
 
-#include "LogAccess.h"
+#include "proxy/logging/LogAccess.h"
 
-#include "http/HttpSM.h"
-#include "MIME.h"
-#include "Machine.h"
-#include "LogFormat.h"
-#include "LogBuffer.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/hdrs/MIME.h"
+#include "iocore/utils/Machine.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
 
 extern AppVersionInfo appVersionInfo;

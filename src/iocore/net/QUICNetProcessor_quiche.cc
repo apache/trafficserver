@@ -29,10 +29,10 @@
 #include "P_QUICNetProcessor_quiche.h"
 #include "P_QUICPacketHandler_quiche.h"
 #include "P_QUICNetVConnection_quiche.h"
-#include "QUICGlobals.h"
-#include "QUICTypes.h"
-#include "QUICConfig.h"
-#include "QUICMultiCertConfigLoader.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 
 #include <quiche.h>
 

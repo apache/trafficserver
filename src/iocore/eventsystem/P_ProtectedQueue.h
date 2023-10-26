@@ -29,7 +29,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 TS_INLINE
 ProtectedQueue::ProtectedQueue()

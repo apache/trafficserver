@@ -29,9 +29,9 @@
  ****************************************************************************/
 
 #pragma once
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
-#include "HTTP.h"
+#include "proxy/hdrs/HTTP.h"
 
 //              SPECIAL URLs
 //

@@ -22,10 +22,10 @@
  */
 
 #include "P_Net.h"
-#include "SocketManager.h"
+#include "iocore/eventsystem/SocketManager.h"
 #include "tscore/ink_assert.h"
 
-#include "BIO_fastopen.h"
+#include "iocore/net/BIO_fastopen.h"
 
 // For BoringSSL, which for some reason doesn't have this function.
 // (In BoringSSL, sock_read() and sock_write() use the internal

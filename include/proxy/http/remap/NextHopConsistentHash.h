@@ -26,7 +26,7 @@
 #include <map>
 #include <vector>
 #include "tscore/HashSip.h"
-#include "NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
 
 enum NHHashKeyType {
   NH_URL_HASH_KEY = 0,

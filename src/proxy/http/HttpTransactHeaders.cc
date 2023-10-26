@@ -29,15 +29,15 @@
 #include "tscore/ink_platform.h"
 #include "tscpp/util/ts_bw.h"
 
-#include "HttpTransact.h"
-#include "HttpTransactHeaders.h"
-#include "HTTP.h"
-#include "HdrUtils.h"
-#include "HttpCompat.h"
-#include "HttpSM.h"
-#include "PoolableSession.h"
+#include "proxy/http/HttpTransact.h"
+#include "proxy/http/HttpTransactHeaders.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HdrUtils.h"
+#include "proxy/hdrs/HttpCompat.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/PoolableSession.h"
 
-#include "Machine.h"
+#include "iocore/utils/Machine.h"
 
 using namespace std::literals;
 
@@ -629,7 +629,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   squid_codes->hit_miss_code = hit_miss_code;
 }
 
-#include "HttpDebugNames.h"
+#include "proxy/http/HttpDebugNames.h"
 
 void
 HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,

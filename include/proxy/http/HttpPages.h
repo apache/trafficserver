@@ -34,10 +34,10 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "EventSystem.h"
-#include "HTTP.h"
-#include "StatPages.h"
-#include "HttpSM.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/StatPages.h"
+#include "proxy/http/HttpSM.h"
 
 class HttpSM;
 

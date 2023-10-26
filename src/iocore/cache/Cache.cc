@@ -21,18 +21,18 @@
   limitations under the License.
  */
 
-#include "Cache.h"
+#include "iocore/cache/Cache.h"
 
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"
-#include "StatPages.h"
+#include "proxy/StatPages.h"
 
 #include "tscore/Filenames.h"
 
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecProcess.h"
 
 #ifdef AIO_FAULT_INJECTION
-#include "AIO_fault_injection.h"
+#include "iocore/aio/AIO_fault_injection.h"
 #endif
 
 #include <atomic>

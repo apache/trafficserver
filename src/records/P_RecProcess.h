@@ -27,9 +27,9 @@
 // included in 'I_RecProcess.h') to prevent multiple-symbol-definition
 // complaints if the caller uses both 'P_EventSystem.h' and this 'P_'
 // file.
-#include "P_EventSystem.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
 
-#include "RecProcess.h"
+#include "records/RecProcess.h"
 #include "P_RecDefs.h"
 
 #include <functional>

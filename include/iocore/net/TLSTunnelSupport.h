@@ -24,13 +24,13 @@
 
 #pragma once
 
-#include "PreWarm.h"
+#include "iocore/net/PreWarm.h"
 
 #include <openssl/ssl.h>
 
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
-#include "YamlSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 class TLSTunnelSupport
 {

@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "VConnection.h"
-#include "ProxyTransaction.h"
-#include "quic/QUICStreamVCAdapter.h"
-#include "Http3FrameDispatcher.h"
-#include "Http3FrameCollector.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "proxy/ProxyTransaction.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
+#include "proxy/http3/Http3FrameCollector.h"
 
 class QUICStreamIO;
 class HQSession;

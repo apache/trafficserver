@@ -23,9 +23,9 @@
 
 #include "tscore/Diags.h"
 
-#include "QUICFrameRetransmitter.h"
-#include "QUICFrameGenerator.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICFrameRetransmitter.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 ClassAllocator<QUICFrameInformation> quicFrameInformationAllocator("quicFrameInformationAllocator");
 

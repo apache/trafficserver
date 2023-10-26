@@ -28,8 +28,8 @@
 #include "P_QUICPacketHandler_quiche.h"
 #include "P_QUICNetProcessor_quiche.h"
 #include "P_QUICClosedConCollector.h"
-#include "quic/QUICConnectionTable.h"
-#include "QUICMultiCertConfigLoader.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 #include <quiche.h>
 
 #include "swoc/BufferWriter.h"

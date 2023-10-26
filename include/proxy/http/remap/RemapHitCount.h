@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "HTTP.h"
-#include "EventSystem.h"
-#include "Show.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/Show.h"
 
 Action *register_ShowRemapHitCount(Continuation *, HTTPHdr *);

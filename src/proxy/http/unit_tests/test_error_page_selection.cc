@@ -22,7 +22,7 @@
  */
 
 #include "catch.hpp"
-#include "HttpBodyFactory.h"
+#include "proxy/http/HttpBodyFactory.h"
 #include <array>
 
 TEST_CASE("error page selection test", "[http]")

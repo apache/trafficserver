@@ -27,7 +27,7 @@
 
 #include <netdb.h>
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 /*
  * Choose a net test application

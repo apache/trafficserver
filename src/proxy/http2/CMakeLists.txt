@@ -31,12 +31,7 @@ add_library(
 )
 add_library(ts::http2 ALIAS http2)
 
-target_include_directories(
-  http2
-  PRIVATE ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${YAMLCPP_INCLUDE_DIR}
-          # private headers
-          ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy
-)
+target_include_directories(http2 PRIVATE ${YAMLCPP_INCLUDE_DIR})
 
 target_link_libraries(
   http2
@@ -55,28 +50,18 @@ if(BUILD_TESTING)
     unit_tests/test_Http2Frame.cc
     unit_tests/test_HpackIndexingTable.cc
   )
-  target_include_directories(
-    test_http2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/iocore/utils
-  )
   target_link_libraries(test_http2 PRIVATE catch2::catch2 records tscore hdrs inkevent)
   add_test(NAME test_http2 COMMAND test_http2)
 
   add_executable(test_Http2DependencyTree unit_tests/test_Http2DependencyTree.cc)
   target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc)
-  target_include_directories(
-    test_Http2DependencyTree PRIVATE ${CMAKE_SOURCE_DIR}/include/proxy/http2 ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-  )
   add_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
 
   add_executable(test_Http2FrequencyCounter Http2FrequencyCounter.cc unit_tests/test_Http2FrequencyCounter.cc)
   target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc)
-  target_include_directories(
-    test_Http2FrequencyCounter PRIVATE ${CMAKE_SOURCE_DIR}/include/proxy/http2 ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-  )
   add_test(NAME test_Http2FrequencyCounter COMMAND test_Http2FrequencyCounter)
 
   add_executable(test_HPACK test_HPACK.cc HPACK.cc)
-  target_include_directories(test_HPACK PRIVATE ${CMAKE_SOURCE_DIR}/include/proxy/http2)
   target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)
   add_test(NAME test_HPACK COMMAND test_HPACK -i ${CMAKE_CURRENT_SOURCE_DIR}/hpack-tests -o ./results)
 endif()

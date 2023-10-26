@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "TextBuffer.h"
+#include "tscore/TextBuffer.h"
 
 #include <utility>
 

@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "IOUringEventIO.h"
+#include "iocore/io_uring/IOUringEventIO.h"
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 
 int
 IOUringEventIO::start(EventLoop l, IOUringContext *h)

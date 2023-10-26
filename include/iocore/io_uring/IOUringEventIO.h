@@ -24,7 +24,7 @@
 #pragma once
 #include "tscore/ink_config.h"
 #if TS_USE_LINUX_IO_URING
-#include "../net/EventIO.h"
+#include "iocore/net/EventIO.h"
 
 class IOUringContext;
 class IOUringEventIO : public EventIO

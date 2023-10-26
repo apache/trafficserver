@@ -25,10 +25,10 @@
 
 #include <vector>
 #include <unordered_map>
-#include "QUICTypes.h"
-#include "QUICFrameHandler.h"
-#include "QUICFrameGenerator.h"
-#include "QUICConnection.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
 {

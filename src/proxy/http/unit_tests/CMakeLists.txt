@@ -26,14 +26,6 @@ add_executable(
   test_PreWarm.cc
 )
 
-# transitive
-target_include_directories(
-  test_http
-  PRIVATE "${PROJECT_BINARY_DIR}/include/ts"
-          # private headers
-          ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy/
-)
-
 target_link_libraries(
   test_http
   PRIVATE catch2::catch2

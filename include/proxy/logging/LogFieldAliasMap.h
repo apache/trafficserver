@@ -33,7 +33,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Ptr.h"
-#include "LogUtils.h"
+#include "proxy/logging/LogUtils.h"
 #include "tscore/ink_string.h"
 
 /*****************************************************************************

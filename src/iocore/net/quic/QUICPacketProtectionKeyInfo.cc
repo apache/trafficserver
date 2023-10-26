@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
 void
 QUICPacketProtectionKeyInfo::set_context(Context ctx)

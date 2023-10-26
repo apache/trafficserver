@@ -33,20 +33,20 @@
 
 #include <openssl/ssl.h>
 
-#include "QUICPacketHeaderProtector.h"
-#include "QUICPacketPayloadProtector.h"
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICTLS.h"
-#include "QUICGlobals.h"
-#include "Mock.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICPacketPayloadProtector.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICTLS.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/Mock.h"
 
 // XXX For NetVCOptions::reset
 struct PollCont;
-#include "P_UDPConnection.h"
-#include "P_UnixNet.h"
-#include "P_UnixNetVConnection.h"
+#include "../../P_UDPConnection.h"
+#include "../../P_UnixNet.h"
+#include "../../P_UnixNetVConnection.h"
 
-#include "./server_cert.h"
+#include "server_cert.h"
 
 static void
 print_hex(const uint8_t *v, size_t len)

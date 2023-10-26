@@ -32,8 +32,8 @@
 #include "tscore/Diags.h"
 #include "ts/apidefs.h"
 
-#include "Defs.h"
-#include "Context.h"
+#include "mgmt/rpc/jsonrpc/Defs.h"
+#include "mgmt/rpc/jsonrpc/Context.h"
 
 namespace rpc
 {

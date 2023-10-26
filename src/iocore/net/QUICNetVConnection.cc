@@ -33,18 +33,18 @@
 #include "api/InkAPIInternal.h" // Added to include the quic_hook definitions
 
 #include "P_SSLNextProtocolSet.h"
-#include "QUICMultiCertConfigLoader.h"
-#include "QUICTLS.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
+#include "iocore/net/quic/QUICTLS.h"
 
-#include "QUICNewRenoCongestionController.h"
+#include "iocore/net/quic/QUICNewRenoCongestionController.h"
 
-#include "QUICStats.h"
-#include "QUICGlobals.h"
-#include "QUICDebugNames.h"
-#include "QUICEvents.h"
-#include "QUICHandshake.h"
-#include "QUICConfig.h"
-#include "QUICIntUtil.h"
+#include "iocore/net/quic/QUICStats.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICEvents.h"
+#include "iocore/net/quic/QUICHandshake.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 
 using namespace std::literals;
 static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;

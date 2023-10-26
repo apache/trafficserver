@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include "CacheDefs.h"
+#include "iocore/cache/CacheDefs.h"
 #include "P_CacheHttp.h"
-#include "EventSystem.h"
-#include "Continuation.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Continuation.h"
 
 // aio
-#include "AIO.h"
+#include "iocore/aio/AIO.h"
 
 struct Vol;
 struct InterimCacheVol;

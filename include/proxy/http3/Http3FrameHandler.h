@@ -24,8 +24,8 @@
 #pragma once
 
 #include <vector>
-#include <Http3Types.h>
-#include <Http3Frame.h>
+#include "proxy/http3/Http3Types.h"
+#include "proxy/http3/Http3Frame.h"
 
 class Http3FrameHandler
 {

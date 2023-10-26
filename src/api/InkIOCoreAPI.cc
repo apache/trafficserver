@@ -30,11 +30,11 @@
 #include "tscore/ink_platform.h"
 #include "ts/ts.h"
 #include "ts/InkAPIPrivateIOCore.h"
-#include "EventSystem.h"
-#include "Net.h"
-#include "Cache.h"
-#include "HostDB.h"
-#include "P_UnixUDPConnection.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Net.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/hostdb/HostDB.h"
+#include "../iocore/net/P_UnixUDPConnection.h"
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK

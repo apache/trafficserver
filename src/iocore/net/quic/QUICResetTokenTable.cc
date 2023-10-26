@@ -20,8 +20,8 @@
  */
 
 #include "tscore/Diags.h"
-#include "QUICResetTokenTable.h"
-#include "QUICConnection.h"
+#include "iocore/net/quic/QUICResetTokenTable.h"
+#include "iocore/net/quic/QUICConnection.h"
 
 void
 QUICResetTokenTable::insert(const QUICStatelessResetToken token, QUICConnection *connection)

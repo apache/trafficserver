@@ -27,16 +27,16 @@
 
 #include "tscore/ink_platform.h"
 
-#include "PollCont.h"
-#include "EventIO.h"
-#include "NetHandler.h"
+#include "iocore/net/PollCont.h"
+#include "iocore/net/EventIO.h"
+#include "iocore/net/NetHandler.h"
 #include "tscore/ink_platform.h"
 
 #if TS_USE_LINUX_IO_URING
-#include "IOUringEventIO.h"
+#include "iocore/io_uring/IOUringEventIO.h"
 #endif
 
-#include "P_DNSConnection.h"
+#include "../dns/P_DNSConnection.h"
 #include "P_Net.h"
 #include "P_NetAccept.h"
 #include "P_UnixNetProcessor.h"

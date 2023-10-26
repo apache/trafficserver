@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "Http3DebugNames.h"
-#include "Http3Types.h"
+#include "proxy/http3/Http3DebugNames.h"
+#include "proxy/http3/Http3Types.h"
 
 const char *
 Http3DebugNames::frame_type(Http3FrameType type)

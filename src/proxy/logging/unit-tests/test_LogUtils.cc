@@ -30,9 +30,9 @@
 #include <tscore/ink_assert.h>
 #include <tscore/ink_align.h>
 
-#include <LogUtils.h>
+#include "proxy/logging/LogUtils.h"
 
-#include "unit-tests/test_LogUtils.h"
+#include "test_LogUtils.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"

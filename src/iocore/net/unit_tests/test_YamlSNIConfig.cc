@@ -36,7 +36,7 @@
 #include <netinet/in.h>
 #include "catch.hpp"
 
-#include "YamlSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 static void
 check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_port_t max_expected)

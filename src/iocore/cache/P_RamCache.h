@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Cache.h"
+#include "iocore/cache/Cache.h"
 
 // Generic Ram Cache interface
 

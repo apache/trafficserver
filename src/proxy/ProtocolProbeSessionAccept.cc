@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
-#include "Machine.h"
-#include "ProtocolProbeSessionAccept.h"
-#include "http2/HTTP2.h"
-#include "ProxyProtocol.h"
-#include "NetVConnection.h"
-#include "http/HttpConfig.h"
+#include "../iocore/net/P_Net.h"
+#include "iocore/utils/Machine.h"
+#include "proxy/ProtocolProbeSessionAccept.h"
+#include "proxy/http2/HTTP2.h"
+#include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/NetVConnection.h"
+#include "proxy/http/HttpConfig.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)

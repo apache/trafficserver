@@ -26,7 +26,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-#include "QLogEvent.h"
+#include "iocore/net/quic/qlog/QLogEvent.h"
 
 namespace QLog
 {

@@ -29,9 +29,9 @@
 #include "tscore/Filenames.h"
 
 #include "records/RecordsConfig.h"
-#include "records/P_RecFile.h"
-#include "records/P_RecCore.h"
-#include "records/P_RecUtils.h"
+#include "P_RecFile.h"
+#include "P_RecCore.h"
+#include "P_RecUtils.h"
 #include "tscore/Layout.h"
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"

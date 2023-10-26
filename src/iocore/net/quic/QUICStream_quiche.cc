@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICStream_quiche.h"
-#include "QUICStreamAdapter.h"
+#include "iocore/net/quic/QUICStream_quiche.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 
 QUICStreamImpl::QUICStreamImpl() {}
 

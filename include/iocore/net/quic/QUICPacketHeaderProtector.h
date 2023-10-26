@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICKeyGenerator.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
 
 class QUICPacketProtectionKeyInfo;
 

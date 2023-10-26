@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICStreamManager_quiche.h"
-#include "QUICStream_quiche.h"
+#include "iocore/net/quic/QUICStreamManager_quiche.h"
+#include "iocore/net/quic/QUICStream_quiche.h"
 
 QUICStreamManagerImpl::QUICStreamManagerImpl(QUICContext *context, QUICApplicationMap *app_map)
   : QUICStreamManager(context, app_map)

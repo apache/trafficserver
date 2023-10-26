@@ -22,11 +22,11 @@
 
 #include <tuple>
 
-#include "rpc/handlers/common/convert.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/handlers/common/convert.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "records/RecCore.h"
-#include "records/P_RecCore.h"
+#include "../../../../../src/records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Errata.h"
 

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "HttpTransact.h"
+#include "proxy/http/HttpTransact.h"
 #include "tscpp/util/ts_bw.h"
 
 class HttpDebugNames

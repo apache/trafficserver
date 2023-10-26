@@ -41,7 +41,7 @@
 #include <grp.h>
 #include <sysexits.h>
 
-#include "RecProcess.h"
+#include "iocore/eventsystem/RecProcess.h"
 
 static const long MAX_LOGIN        = ink_login_name_max();
 static constexpr int MAX_GROUP_NUM = 32;

@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "Http3FrameHandler.h"
+#include "proxy/http3/Http3FrameHandler.h"
 
 class Http3MockFrameHandler : public Http3FrameHandler
 {

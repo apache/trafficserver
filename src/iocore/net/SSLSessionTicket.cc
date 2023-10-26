@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "SSLSessionTicket.h"
+#include "iocore/net/SSLSessionTicket.h"
 
 #if TS_HAS_TLS_SESSION_TICKET
 
 #include "P_SSLCertLookup.h"
-#include "TLSSessionResumptionSupport.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
 
 void
 ssl_session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)

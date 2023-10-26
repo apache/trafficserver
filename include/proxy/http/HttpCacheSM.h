@@ -32,11 +32,11 @@
 
 #pragma once
 
-#include "Cache.h"
-#include "ConfigProcessor.h"
-#include "URL.h"
-#include "HTTP.h"
-#include "HttpConfig.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http/HttpConfig.h"
 
 class HttpSM;
 class HttpCacheSM;

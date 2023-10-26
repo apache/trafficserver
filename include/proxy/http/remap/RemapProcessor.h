@@ -26,10 +26,10 @@
  **/
 #pragma once
 
-#include "EventSystem.h"
-#include "RemapPlugins.h"
-#include "RemapPluginInfo.h"
-#include "ReverseProxy.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/http/remap/RemapPlugins.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
+#include "proxy/ReverseProxy.h"
 
 #define EVENT_REMAP_START    (REMAP_EVENT_EVENTS_START + 0)
 #define EVENT_REMAP_ERROR    (REMAP_EVENT_EVENTS_START + 1)

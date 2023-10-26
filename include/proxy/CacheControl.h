@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "ControlBase.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/ControlBase.h"
 #include "tscore/Result.h"
 
 struct RequestData;

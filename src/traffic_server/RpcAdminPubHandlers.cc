@@ -18,14 +18,14 @@
   limitations under the License.
 */
 
-#include "rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
 
 // Admin API Implementation headers.
-#include "rpc/handlers/config/Configuration.h"
-#include "rpc/handlers/records/Records.h"
-#include "rpc/handlers/storage/Storage.h"
-#include "rpc/handlers/server/Server.h"
-#include "rpc/handlers/plugins/Plugins.h"
+#include "mgmt/rpc/handlers/config/Configuration.h"
+#include "mgmt/rpc/handlers/records/Records.h"
+#include "mgmt/rpc/handlers/storage/Storage.h"
+#include "mgmt/rpc/handlers/server/Server.h"
+#include "mgmt/rpc/handlers/plugins/Plugins.h"
 
 #include "RpcAdminPubHandlers.h"
 namespace rpc::admin

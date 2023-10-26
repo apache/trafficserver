@@ -23,7 +23,7 @@
 
 #include "P_SSLClientCoordinator.h"
 #include "P_SSLConfig.h"
-#include "SSLSNIConfig.h"
+#include "iocore/net/SSLSNIConfig.h"
 
 std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 

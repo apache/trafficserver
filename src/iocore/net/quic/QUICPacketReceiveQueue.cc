@@ -21,13 +21,13 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketReceiveQueue.h"
-#include "QUICPacketHeaderProtector.h"
-#include "QUICPacketFactory.h"
-#include "QUICIntUtil.h"
+#include "iocore/net/quic/QUICPacketReceiveQueue.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 
-#include "P_UDPConnection.h"
-#include "UDPPacket.h"
+#include "../P_UDPConnection.h"
+#include "iocore/net/UDPPacket.h"
 
 static bool
 is_vn(QUICVersion v)

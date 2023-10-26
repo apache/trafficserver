@@ -34,8 +34,8 @@
 #include <string_view>
 #include <vector>
 
-#include "hdrs/HTTP.h"
-#include "ConfigProcessor.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 #include "swoc/TextView.h"
 #include "swoc/swoc_file.h"
 #include "swoc/swoc_ip.h"

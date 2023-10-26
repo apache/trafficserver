@@ -25,17 +25,17 @@
 
 #include "tscore/List.h"
 
-#include "P_VConnection.h"
-#include "Event.h"
+#include "../../../../src/iocore/eventsystem/P_VConnection.h"
+#include "iocore/eventsystem/Event.h"
 
-#include "QUICFrame.h"
-#include "QUICStreamState.h"
-#include "QUICFlowController.h"
-#include "QUICIncomingFrameBuffer.h"
-#include "QUICFrameGenerator.h"
-#include "QUICConnection.h"
-#include "QUICFrameRetransmitter.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICStreamState.h"
+#include "iocore/net/quic/QUICFlowController.h"
+#include "iocore/net/quic/QUICIncomingFrameBuffer.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICFrameRetransmitter.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 class QUICStreamAdapter;
 class QUICStreamStateListener;

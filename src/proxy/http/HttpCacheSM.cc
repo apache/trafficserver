@@ -30,9 +30,9 @@
 
  ****************************************************************************/
 
-#include "HttpCacheSM.h"
-#include "HttpSM.h"
-#include "HttpDebugNames.h"
+#include "proxy/http/HttpCacheSM.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpDebugNames.h"
 
 #define SM_REMEMBER(sm, e, r)                          \
   {                                                    \

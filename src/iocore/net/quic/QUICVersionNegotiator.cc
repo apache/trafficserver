@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICVersionNegotiator.h"
-#include "QUICTransportParameters.h"
+#include "iocore/net/quic/QUICVersionNegotiator.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
 
 QUICVersionNegotiationStatus
 QUICVersionNegotiator::status() const

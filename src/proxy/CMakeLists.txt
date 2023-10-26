@@ -42,28 +42,6 @@ add_library(ts::proxy ALIAS proxy)
 if(BUILD_REGRESSION_TESTING)
   target_sources(proxy PRIVATE RegressionSM.cc)
 endif()
-set(PROXY_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}/include/proxy
-    ${CMAKE_SOURCE_DIR}/include/proxy/http
-    ${CMAKE_SOURCE_DIR}/include/proxy/http2
-    ${CMAKE_SOURCE_DIR}/include/proxy/http3
-    ${CMAKE_SOURCE_DIR}/include/proxy/logging
-    ${CMAKE_SOURCE_DIR}/include/proxy/http/remap
-    ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-    ${CMAKE_SOURCE_DIR}/include/proxy/shared
-)
-set(PROXY_INCLUDE_DIRS
-    ${PROXY_INCLUDE_DIRS}
-    PARENT_SCOPE
-)
-
-target_include_directories(
-  proxy
-  PUBLIC ${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/mgmt
-  # private header files
-  PRIVATE ${CMAKE_SOURCE_DIR}/src/proxy ${CMAKE_SOURCE_DIR}/src/iocore/cache ${CMAKE_SOURCE_DIR}/src/iocore/net
-          ${CMAKE_SOURCE_DIR}/src/iocore/aio ${CMAKE_SOURCE_DIR}/src/iocore/dns
-)
 
 target_link_libraries(
   proxy

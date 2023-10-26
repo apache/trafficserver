@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "ProxySession.h"
-#include "Http3Transaction.h"
-#include "QPACK.h"
+#include "proxy/ProxySession.h"
+#include "proxy/http3/Http3Transaction.h"
+#include "proxy/http3/QPACK.h"
 
 class HQSession : public ProxySession
 {

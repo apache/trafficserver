@@ -21,8 +21,8 @@
   limitations under the License.
  */
 #include <atomic>
-#include "HostStatus.h"
-#include "ParentConsistentHash.h"
+#include "proxy/HostStatus.h"
+#include "proxy/ParentConsistentHash.h"
 
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 {

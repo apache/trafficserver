@@ -26,13 +26,13 @@
 #include <atomic>
 #include <queue>
 
-#include "NetTimeout.h"
+#include "iocore/net/NetTimeout.h"
 
-#include "HTTP2.h"
-#include "HPACK.h"
-#include "Http2Stream.h"
-#include "Http2DependencyTree.h"
-#include "Http2FrequencyCounter.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/http2/HPACK.h"
+#include "proxy/http2/Http2Stream.h"
+#include "proxy/http2/Http2DependencyTree.h"
+#include "proxy/http2/Http2FrequencyCounter.h"
 
 class Http2CommonSession;
 class Http2Frame;

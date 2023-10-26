@@ -29,11 +29,11 @@
 #include <cstring>
 #include <cctype>
 #include <algorithm>
-#include "MIME.h"
-#include "HdrHeap.h"
-#include "HdrToken.h"
-#include "HdrUtils.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/HdrToken.h"
+#include "proxy/hdrs/HdrUtils.h"
+#include "proxy/hdrs/HttpCompat.h"
 
 using swoc::TextView;
 

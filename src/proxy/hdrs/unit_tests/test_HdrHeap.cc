@@ -20,8 +20,8 @@
 
 #include "catch.hpp"
 
-#include "HdrHeap.h"
-#include "URL.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/URL.h"
 
 /**
   This test is designed to test numerous pieces of the HdrHeaps including allocations,

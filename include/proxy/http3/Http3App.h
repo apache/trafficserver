@@ -25,18 +25,18 @@
 
 #include <map>
 
-#include "IPAllow.h"
+#include "proxy/IPAllow.h"
 
-#include "QUICApplication.h"
-#include "QUICStreamVCAdapter.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
 
-#include "HttpSessionAccept.h"
+#include "proxy/http/HttpSessionAccept.h"
 
-#include "Http3Types.h"
-#include "Http3FrameDispatcher.h"
-#include "Http3FrameCollector.h"
-#include "Http3FrameGenerator.h"
-#include "Http3FrameHandler.h"
+#include "proxy/http3/Http3Types.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
+#include "proxy/http3/Http3FrameCollector.h"
+#include "proxy/http3/Http3FrameGenerator.h"
+#include "proxy/http3/Http3FrameHandler.h"
 
 class Http3Session;
 

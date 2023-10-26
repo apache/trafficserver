@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 TEST_CASE("Long Header - regular case", "[quic]")
 {

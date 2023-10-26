@@ -25,7 +25,7 @@
 #pragma once
 
 #include <openssl/ssl.h>
-#include "P_SSLCertLookup.h"
+#include "../../../src/iocore/net/P_SSLCertLookup.h"
 
 class TLSCertSwitchSupport
 {

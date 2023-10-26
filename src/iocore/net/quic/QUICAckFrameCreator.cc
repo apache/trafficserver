@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "EventSystem.h"
-#include "QUICAckFrameCreator.h"
-#include "QUICConfig.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/quic/QUICAckFrameCreator.h"
+#include "iocore/net/quic/QUICConfig.h"
 #include <algorithm>
 
 QUICAckFrameManager::QUICAckFrameManager()

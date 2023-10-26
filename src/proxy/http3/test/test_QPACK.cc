@@ -25,10 +25,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include "XPACK.h"
-#include "QPACK.h"
-#include "HTTP.h"
-#include "../../iocore/net/quic/Mock.h"
+#include "proxy/hdrs/XPACK.h"
+#include "proxy/http3/QPACK.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/net/quic/Mock.h"
 
 // Declared in main_qpack.cc
 extern char qifdir[256];

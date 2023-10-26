@@ -28,7 +28,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "ConfigProcessor.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;

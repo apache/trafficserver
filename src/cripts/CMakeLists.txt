@@ -29,10 +29,6 @@ add_library(cripts SHARED ${CPP_FILES})
 add_library(ts::cripts ALIAS cripts)
 
 target_link_libraries(cripts libswoc fmt::fmt PkgConfig::PCRE2)
-target_include_directories(
-  cripts PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/proxy ${PROJECT_SOURCE_DIR}/iocore
-                 ${PROJECT_SOURCE_DIR}/iocore/eventsystem
-)
 
 set_target_properties(
   cripts

@@ -24,8 +24,8 @@
 #include "tscore/ink_config.h"
 #include "api/FetchSM.h"
 #include <cstdio>
-#include "HTTP.h"
-#include "PluginVC.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/PluginVC.h"
 #include "ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
 
 #define DEBUG_TAG             "FetchSM"

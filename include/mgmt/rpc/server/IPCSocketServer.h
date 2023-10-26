@@ -31,8 +31,8 @@
 #include "tscpp/util/ts_bw.h"
 #include "tscore/Layout.h"
 
-#include "rpc/server/CommBase.h"
-#include "rpc/config/JsonRPCConfig.h"
+#include "mgmt/rpc/server/CommBase.h"
+#include "mgmt/rpc/config/JsonRPCConfig.h"
 
 namespace rpc::comm
 {

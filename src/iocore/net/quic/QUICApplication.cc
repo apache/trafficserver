@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICApplication.h"
-#include "QUICStream.h"
+#include "iocore/net/quic/QUICApplication.h"
+#include "iocore/net/quic/QUICStream.h"
 
 //
 // QUICApplication

@@ -39,10 +39,6 @@ add_library(
 )
 add_library(ts::http3 ALIAS http3)
 
-target_include_directories(
-  http3 PUBLIC # private headers
-               ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy
-)
 target_link_libraries(
   http3
   PUBLIC ts::quic
@@ -72,12 +68,6 @@ target_link_libraries(
           ts::hdrs
           ts::tscore
 )
-target_include_directories(
-  test_http3
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-          # private headers
-          ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy
-)
 add_test(NAME test_http3 COMMAND test_http3)
 
 add_executable(test_qpack test/main_qpack.cc test/test_QPACK.cc QPACK.cc)
@@ -90,11 +80,5 @@ target_link_libraries(
           ts::tsapicore
           ts::hdrs
           ts::tscore
-)
-target_include_directories(
-  test_qpack
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-          # private headers
-          ${CMAKE_SOURCE_DIR}/src/iocore/net ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy
 )
 add_test(NAME test_qpack COMMAND test_qpack)

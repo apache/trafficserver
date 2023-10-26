@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "Event.h"
-#include "VConnection.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/VConnection.h"
 #include "tscore/Version.h"
 #include "tscore/CryptoHash.h"
 

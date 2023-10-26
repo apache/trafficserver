@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "HttpConfig.h"
-#include "HttpVCTable.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/http/HttpVCTable.h"
 
-#include "VConnection.h"
-#include "VIO.h"
+#include "iocore/eventsystem/VConnection.h"
+#include "iocore/eventsystem/VIO.h"
 #include "tscore/ink_assert.h"
 
 class HttpSM;

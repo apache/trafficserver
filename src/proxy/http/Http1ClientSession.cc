@@ -31,15 +31,15 @@
  ****************************************************************************/
 
 #include "tscore/ink_resolver.h"
-#include "Http1ClientSession.h"
-#include "Http1Transaction.h"
-#include "HttpSM.h"
-#include "HttpDebugNames.h"
-#include "Plugin.h"
-#include "PoolableSession.h"
+#include "proxy/http/Http1ClientSession.h"
+#include "proxy/http/Http1Transaction.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpDebugNames.h"
+#include "proxy/Plugin.h"
+#include "proxy/PoolableSession.h"
 
-#include "TLSBasicSupport.h"
-#include "TLSEarlyDataSupport.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 

@@ -34,13 +34,13 @@
 #include <cstdarg>
 #include <string>
 #include <string_view>
-#include "BaseLogFile.h"
-#include "ContFlags.h"
-#include "ink_apidefs.h"
-#include "ink_inet.h"
-#include "ink_mutex.h"
-#include "Regex.h"
-#include "SourceLocation.h"
+#include "tscore/BaseLogFile.h"
+#include "tscore/ContFlags.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/Regex.h"
+#include "tscore/SourceLocation.h"
 
 #include "tscpp/util/ts_diag_levels.h"
 

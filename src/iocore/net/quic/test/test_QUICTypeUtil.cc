@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICTypes.h"
-#include "quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICIntUtil.h"
 #include <memory>
 
 TEST_CASE("QUICTypeUtil", "[quic]")

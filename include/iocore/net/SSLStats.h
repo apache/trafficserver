@@ -26,7 +26,7 @@
 #include <unordered_map>
 
 #include "records/RecProcess.h"
-#include "SSLDiags.h"
+#include "iocore/net/SSLDiags.h"
 
 #include "api/Metrics.h"
 

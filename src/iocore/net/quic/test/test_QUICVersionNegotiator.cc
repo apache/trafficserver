@@ -23,11 +23,11 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICVersionNegotiator.h"
-#include "quic/QUICPacketFactory.h"
-#include "quic/QUICPacketProtectionKeyInfo.h"
-#include "quic/QUICPacketFactory.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICVersionNegotiator.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/Mock.h"
 
 TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
 {

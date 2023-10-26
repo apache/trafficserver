@@ -48,8 +48,8 @@ void GetConfigInteger(int *v, const char *n);
 void PrintToStdErr(const char *fmt, ...);
 void build_request(HttpRequestData &h, const char *os_hostname);
 
-#include "ControlMatcher.h"
-#include "ParentSelection.h"
+#include "proxy/ControlMatcher.h"
+#include "proxy/ParentSelection.h"
 
 struct trans_config {
   int64_t parent_retry_time     = 0;

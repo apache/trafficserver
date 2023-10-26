@@ -24,7 +24,7 @@
 #pragma once
 
 #include <deque>
-#include "QUICFrame.h"
+#include "iocore/net/quic/QUICFrame.h"
 
 class QUICFrameGenerator;
 

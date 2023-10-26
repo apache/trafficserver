@@ -23,18 +23,18 @@
 
 #include "swoc/swoc_file.h"
 
-#include "RemapConfig.h"
-#include "UrlRewrite.h"
-#include "ReverseProxy.h"
+#include "proxy/http/remap/RemapConfig.h"
+#include "proxy/http/remap/UrlRewrite.h"
+#include "proxy/ReverseProxy.h"
 #include "tscore/Layout.h"
-#include "HTTP.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
-#include "IPAllow.h"
-#include "PluginFactory.h"
+#include "proxy/IPAllow.h"
+#include "proxy/http/remap/PluginFactory.h"
 
 #define modulePrefix "[ReverseProxy]"
 

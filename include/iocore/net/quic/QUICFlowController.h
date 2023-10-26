@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "QUICTypes.h"
-#include "QUICFrame.h"
-#include "QUICFrameGenerator.h"
-#include "QUICLossDetector.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICLossDetector.h"
 
 class QUICRateAnalyzer
 {

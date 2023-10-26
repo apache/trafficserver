@@ -25,7 +25,7 @@ class EThread;
 class Continuation;
 
 #include "P_UnixNet.h"
-#include "P_DNSConnection.h"
+#include "../dns/P_DNSConnection.h"
 int
 DNSConnection::close()
 {
@@ -39,14 +39,14 @@ DNSConnection::trigger()
   ink_assert(false);
 }
 
-#include "StatPages.h"
+#include "proxy/StatPages.h"
 void
 StatPagesManager::register_http(char const *, Action *(*)(Continuation *, HTTPHdr *))
 {
   ink_assert(false);
 }
 
-#include "ParentSelection.h"
+#include "proxy/ParentSelection.h"
 void
 SocksServerConfig::startup()
 {
@@ -68,7 +68,7 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
 }
 
 #include "api/InkAPIInternal.h"
-#include "ControlMatcher.h"
+#include "proxy/ControlMatcher.h"
 char *
 HttpRequestData::get_string()
 {

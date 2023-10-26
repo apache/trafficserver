@@ -26,12 +26,12 @@
 
 #include "tscore/Layout.h"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "records/RecordsConfig.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
-#include "HuffmanCodec.h"
+#include "proxy/hdrs/HuffmanCodec.h"
 
 #define TEST_THREADS 1
 

@@ -28,15 +28,15 @@
 #include "tscore/Layout.h"
 #include "tscore/TestBox.h"
 
-#include "EventSystem.h"
-#include "Net.h"
-#include "NetVConnection.h"
-#include "UDPNet.h"
-#include "UDPPacket.h"
-#include "UDPConnection.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Net.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/UDPNet.h"
+#include "iocore/net/UDPPacket.h"
+#include "iocore/net/UDPConnection.h"
 #include "P_UDPConnection.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 static const char payload[] = "hello";
 in_port_t port              = 0;

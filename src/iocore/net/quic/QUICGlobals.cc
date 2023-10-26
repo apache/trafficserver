@@ -21,18 +21,18 @@
  *  limitations under the License.
  */
 
-#include "QUICGlobals.h"
+#include "iocore/net/quic/QUICGlobals.h"
 
 #include <cstring>
 #include <fstream>
 
-#include "QUICMultiCertConfigLoader.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 
-#include "QUICStats.h"
-#include "QUICConfig.h"
-#include "QUICConnection.h"
+#include "iocore/net/quic/QUICStats.h"
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICConnection.h"
 
-#include "QUICTLS.h"
+#include "iocore/net/quic/QUICTLS.h"
 #include <openssl/ssl.h>
 
 #define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)

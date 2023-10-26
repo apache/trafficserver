@@ -16,5 +16,3 @@
 #######################
 
 add_atsplugin(escalate escalate.cc)
-
-target_include_directories(escalate PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")

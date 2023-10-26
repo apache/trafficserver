@@ -23,9 +23,9 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICPacket.h"
-#include "quic/QUICPacketFactory.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICPacket.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/Mock.h"
 
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {

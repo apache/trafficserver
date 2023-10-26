@@ -25,12 +25,11 @@
 
 #include "tscore/ink_platform.h"
 #include "records/RecHttp.h"
-#include "EventSystem.h"
-#include "HttpConfig.h"
-#include "HTTP.h"
-#include "Net.h"
-#include "SessionAccept.h"
-#include <records/RecHttp.h>
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HTTP.h"
+#include "iocore/net/Net.h"
+#include "iocore/net/SessionAccept.h"
 
 namespace detail
 {

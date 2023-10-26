@@ -24,12 +24,12 @@
 
 #include <unistd.h>
 
-#include "RemapPluginInfo.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_apidefs.h"
 
-#include "RemapPluginInfo.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else

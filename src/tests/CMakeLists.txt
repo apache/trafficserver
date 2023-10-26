@@ -17,17 +17,6 @@
 
 # This is for tests that depend on multiple libraries where dependency order matters.
 
-include_directories(
-  ${IOCORE_INCLUDE_DIRS}
-  ${PROXY_INCLUDE_DIRS}
-  # private headers
-  ${CMAKE_SOURCE_DIR}/src/iocore/dns
-  ${CMAKE_SOURCE_DIR}/src/proxy/
-  ${CMAKE_SOURCE_DIR}/src/iocore/net
-  ${CMAKE_SOURCE_DIR}/src/iocore/cache
-  ${CMAKE_SOURCE_DIR}/src/iocore/aio
-)
-
 link_libraries(
   inkcache
   http
@@ -69,8 +58,9 @@ endif(TS_USE_LINUX_IO_URING)
 
 macro(add_cache_test name)
   add_executable(
-    ${name} ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/main.cc ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc
-            ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/CacheTestHandler.cc ${ARGN}
+    ${name}
+    ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/main.cc ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc
+    ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/CacheTestHandler.cc ${ARGN}
   )
   target_link_libraries(${name} PRIVATE ts::inknet ts::proxy ts::tsapicore)
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
@@ -107,10 +97,18 @@ add_cache_test(CacheVol ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Cac
 add_cache_test(RWW ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_RWW.cc)
 add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S.cc)
 add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L.cc)
-add_cache_test(Alternate_L_to_S_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_L.cc)
-add_cache_test(Alternate_L_to_S_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_S.cc)
-add_cache_test(Alternate_S_to_L_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_L.cc)
-add_cache_test(Alternate_S_to_L_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_S.cc)
+add_cache_test(
+  Alternate_L_to_S_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_L.cc
+)
+add_cache_test(
+  Alternate_L_to_S_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_L_to_S_remove_S.cc
+)
+add_cache_test(
+  Alternate_S_to_L_remove_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_L.cc
+)
+add_cache_test(
+  Alternate_S_to_L_remove_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Alternate_S_to_L_remove_S.cc
+)
 add_cache_test(Update_L_to_S ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_L_to_S.cc)
 add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_S_to_L.cc)
 #add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/src/iocore/cache/unit_tests/test_Update_Header.cc)

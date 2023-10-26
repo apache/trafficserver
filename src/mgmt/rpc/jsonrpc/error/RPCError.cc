@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "RPCError.h"
+#include "mgmt/rpc/jsonrpc/error/RPCError.h"
 
 #include <string>
 #include <system_error>

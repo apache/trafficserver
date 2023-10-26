@@ -23,14 +23,14 @@
 
 #pragma once
 
-#include "QUICStreamManager.h"
-#include "QUICBidirectionalStream.h"
-#include "QUICUnidirectionalStream.h"
-#include "QUICFrameHandler.h"
-#include "QUICFrame.h"
-#include "QUICStreamFactory.h"
-#include "QUICLossDetector.h"
-#include "QUICPathManager.h"
+#include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICBidirectionalStream.h"
+#include "iocore/net/quic/QUICUnidirectionalStream.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICStreamFactory.h"
+#include "iocore/net/quic/QUICLossDetector.h"
+#include "iocore/net/quic/QUICPathManager.h"
 
 class QUICStreamManagerImpl : public QUICStreamManager, public QUICFrameHandler, public QUICFrameGenerator
 {

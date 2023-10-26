@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "EventSystem.h"
-#include "PoolableSession.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/PoolableSession.h"
 #include "swoc/IntrusiveHashMap.h"
 
 class ProxyTransaction;

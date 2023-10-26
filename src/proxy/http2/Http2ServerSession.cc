@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "Http2ServerSession.h"
-#include "HttpDebugNames.h"
+#include "proxy/http2/Http2ServerSession.h"
+#include "proxy/http/HttpDebugNames.h"
 #include "tscore/ink_base64.h"
-#include "Http2CommonSessionInternal.h"
-#include "HttpSessionManager.h"
+#include "proxy/http2/Http2CommonSessionInternal.h"
+#include "proxy/http/HttpSessionManager.h"
 
 ClassAllocator<Http2ServerSession> http2ServerSessionAllocator("http2ServerSessionAllocator");
 

@@ -24,7 +24,7 @@
 #pragma once
 
 #include <cstdint>
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 class Http2FrequencyCounter
 {

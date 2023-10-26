@@ -23,10 +23,10 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICBidirectionalStream.h"
-#include "quic/QUICUnidirectionalStream.h"
-#include "quic/QUICStreamVCAdapter.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICBidirectionalStream.h"
+#include "iocore/net/quic/QUICUnidirectionalStream.h"
+#include "iocore/net/quic/QUICStreamVCAdapter.h"
+#include "iocore/net/quic/Mock.h"
 
 TEST_CASE("QUICBidiStream", "[quic]")
 {

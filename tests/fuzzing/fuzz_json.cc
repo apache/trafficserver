@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/jsonrpc/JsonRPC.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPC.h"
+#include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "tscore/Diags.h"
 
 #define kMinInputLength 5

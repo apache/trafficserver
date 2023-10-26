@@ -23,7 +23,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "Http2FrequencyCounter.h"
+#include "proxy/http2/Http2FrequencyCounter.h"
 
 class TestHttp2FrequencyCounter : public Http2FrequencyCounter
 {

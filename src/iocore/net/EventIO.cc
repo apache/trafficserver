@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "EventIO.h"
+#include "iocore/net/EventIO.h"
 #include "tscore/ink_assert.h"
 
 int

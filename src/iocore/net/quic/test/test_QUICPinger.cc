@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "QUICPinger.h"
+#include "iocore/net/quic/QUICPinger.h"
 
 static constexpr QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 static uint8_t frame[1024]                 = {0};

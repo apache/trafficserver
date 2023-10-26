@@ -30,11 +30,11 @@
  ****************************************************************************/
 #pragma once
 
-#include "P_EventSystem.h"
-#include "AIO.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "iocore/aio/AIO.h"
 
 #if TS_USE_LINUX_IO_URING
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 #endif
 
 #include "api/Metrics.h"

@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICContext.h"
-#include "QUICCongestionController.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICContext.h"
+#include "iocore/net/quic/QUICCongestionController.h"
 
 class QUICNewRenoCongestionController : public QUICCongestionController
 {

@@ -29,7 +29,7 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 
-#include "SSLSNIConfig.h"
+#include "iocore/net/SSLSNIConfig.h"
 #include "P_SNIActionPerformer.h"
 
 #include "tscore/Diags.h"

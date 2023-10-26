@@ -21,17 +21,17 @@
   limitations under the License.
  */
 
-#include "Http3Transaction.h"
-#include "QUICSupport.h"
+#include "proxy/http3/Http3Transaction.h"
+#include "iocore/net/QUICSupport.h"
 
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
-#include "Http3Session.h"
-#include "Http3StreamDataVIOAdaptor.h"
-#include "Http3HeaderVIOAdaptor.h"
-#include "Http3HeaderFramer.h"
-#include "Http3DataFramer.h"
-#include "HttpSM.h"
+#include "proxy/http3/Http3Session.h"
+#include "proxy/http3/Http3StreamDataVIOAdaptor.h"
+#include "proxy/http3/Http3HeaderVIOAdaptor.h"
+#include "proxy/http3/Http3HeaderFramer.h"
+#include "proxy/http3/Http3DataFramer.h"
+#include "proxy/http/HttpSM.h"
 
 #define NetVC2QUICCon(netvc) netvc->get_service<QUICSupport>()->get_quic_connection()
 

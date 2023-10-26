@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICFrameDispatcher.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICFrameDispatcher.h"
+#include "iocore/net/quic/Mock.h"
 #include <memory>
 
 TEST_CASE("QUICFrameHandler", "[quic]")

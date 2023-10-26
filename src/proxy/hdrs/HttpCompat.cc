@@ -22,8 +22,8 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "HttpCompat.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HttpCompat.h"
+#include "proxy/hdrs/HdrUtils.h"
 
 //////////////////////////////////////////////////////////////////////////////
 //

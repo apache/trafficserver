@@ -22,8 +22,8 @@
   limitations under the License.
  */
 
-#include "TLSBasicSupport.h"
-#include "SSLStats.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/SSLStats.h"
 
 int TLSBasicSupport::_ex_data_index = -1;
 

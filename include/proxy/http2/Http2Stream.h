@@ -23,14 +23,14 @@
 
 #pragma once
 
-#include "NetTimeout.h"
+#include "iocore/net/NetTimeout.h"
 
-#include "HTTP2.h"
-#include "ProxyTransaction.h"
-#include "Http2DebugNames.h"
-#include "Http2DependencyTree.h"
+#include "proxy/http2/HTTP2.h"
+#include "proxy/ProxyTransaction.h"
+#include "proxy/http2/Http2DebugNames.h"
+#include "proxy/http2/Http2DependencyTree.h"
 #include "tscore/History.h"
-#include "Milestones.h"
+#include "proxy/Milestones.h"
 
 class Http2Stream;
 class Http2ConnectionState;

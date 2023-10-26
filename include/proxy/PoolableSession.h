@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ProxySession.h"
+#include "proxy/ProxySession.h"
 
 class PoolableSession : public ProxySession
 {

@@ -28,7 +28,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_hrtime.h"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 template <class T, size_t entries> class Milestones
 {

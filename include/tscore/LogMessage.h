@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "DiagsTypes.h"
-#include "SourceLocation.h"
-#include "Throttler.h"
+#include "tscore/DiagsTypes.h"
+#include "tscore/SourceLocation.h"
+#include "tscore/Throttler.h"
 
 #include <atomic>
 #include <chrono>

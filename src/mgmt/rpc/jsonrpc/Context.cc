@@ -17,7 +17,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "Context.h"
+#include "mgmt/rpc/jsonrpc/Context.h"
 
 namespace rpc
 {

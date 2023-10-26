@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "HostStatus.h"
-#include "ParentRoundRobin.h"
+#include "proxy/HostStatus.h"
+#include "proxy/ParentRoundRobin.h"
 
 ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _round_robin_type)
 {

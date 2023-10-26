@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QUICBidirectionalStream.h"
-#include "QUICStreamAdapter.h"
+#include "iocore/net/quic/QUICBidirectionalStream.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 
 //
 // QUICBidirectionalStream

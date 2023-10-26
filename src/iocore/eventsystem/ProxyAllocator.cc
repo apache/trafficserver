@@ -20,7 +20,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 int thread_freelist_high_watermark = 512;
 int thread_freelist_low_watermark  = 32;

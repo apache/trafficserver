@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "Http1ServerTransaction.h"
-#include "Http1ServerSession.h"
+#include "proxy/http/Http1ServerTransaction.h"
+#include "proxy/http/Http1ServerSession.h"
 
 void
 Http1ServerTransaction::release()

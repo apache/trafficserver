@@ -69,8 +69,8 @@
 #include <sstream>
 #include <deque>
 #include <system_error>
-#include "NumericType.h"
-#include "IntrusivePtr.h"
+#include "tscore/NumericType.h"
+#include "tscore/IntrusivePtr.h"
 
 namespace ts
 {

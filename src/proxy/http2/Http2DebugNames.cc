@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "Http2DebugNames.h"
+#include "proxy/http2/Http2DebugNames.h"
 
-#include "HTTP2.h"
+#include "proxy/http2/HTTP2.h"
 
 const char *
 Http2DebugNames::get_settings_param_name(uint16_t id)

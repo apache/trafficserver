@@ -27,8 +27,8 @@
 #include "tscore/Arena.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/HTTPVersion.h"
-#include "MIME.h"
-#include "URL.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/URL.h"
 
 #include "tscore/ink_apidefs.h"
 

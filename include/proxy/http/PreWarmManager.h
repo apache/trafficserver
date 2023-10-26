@@ -23,19 +23,19 @@
 
 #pragma once
 
-#include "PreWarmAlgorithm.h"
+#include "proxy/http/PreWarmAlgorithm.h"
 
-#include "EventSystem.h"
-#include "NetVConnection.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/NetVConnection.h"
 
 // inknet
-#include "PreWarm.h"
-#include "SSLSNIConfig.h"
-#include "YamlSNIConfig.h"
+#include "iocore/net/PreWarm.h"
+#include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 
-#include "HostDB.h"
-#include "NetTimeout.h"
-#include "Milestones.h"
+#include "iocore/hostdb/HostDB.h"
+#include "iocore/net/NetTimeout.h"
+#include "proxy/Milestones.h"
 
 #include "api/Metrics.h"
 

@@ -28,8 +28,8 @@
 #include "swoc/IntrusiveDList.h"
 
 #include "tscore/Ptr.h"
-#include "PluginDso.h"
-#include "RemapPluginInfo.h"
+#include "proxy/http/remap/PluginDso.h"
+#include "proxy/http/remap/RemapPluginInfo.h"
 
 #include "tscore/Ptr.h"
 

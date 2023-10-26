@@ -23,7 +23,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include "HostFile.h"
+#include "iocore/hostdb/HostFile.h"
 #include "P_HostDBProcessor.h"
 
 /* Container for temporarily holding data from the host file. For each FQDN there is a vector of IPv4

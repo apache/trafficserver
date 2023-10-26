@@ -27,7 +27,7 @@
 #include <tscore/ink_memory.h>
 
 #include <openssl/ssl.h>
-#include "QUICTypes.h"
+#include "iocore/net/quic/QUICTypes.h"
 #include <cstddef>
 
 class QUICTransportParameterId

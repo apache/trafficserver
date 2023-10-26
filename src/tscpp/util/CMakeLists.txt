@@ -47,7 +47,6 @@ if(BUILD_TESTING)
                    unit_tests/test_ts_meta.cc unit_tests/test_time_parser.cc unit_tests/unit_test_main.cc
   )
   target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc catch2::catch2)
-  target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
   add_test(NAME test_tscpputil COMMAND $<TARGET_FILE:test_tscpputil>)
 endif()

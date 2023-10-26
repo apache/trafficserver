@@ -50,9 +50,9 @@ benchmark_LogObject_LDADD = \
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "LogConfig.h"
-#include "Log.h"
-#include "DiagsConfig.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/Log.h"
+#include "proxy/shared/DiagsConfig.h"
 #include "records/RecLocal.h"
 #include "tscore/Layout.h"
 

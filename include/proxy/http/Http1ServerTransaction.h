@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Http1Transaction.h"
+#include "proxy/http/Http1Transaction.h"
 
 class Http1ServerTransaction : public Http1Transaction
 {

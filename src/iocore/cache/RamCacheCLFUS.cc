@@ -25,7 +25,7 @@
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
 #include "P_Cache.h"
-#include "Tasks.h"
+#include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include <zlib.h>
 #ifdef HAVE_LZMA_H

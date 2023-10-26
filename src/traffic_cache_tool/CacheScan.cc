@@ -22,10 +22,10 @@
  */
 
 #include "CacheScan.h"
-#include "../../include/proxy/hdrs/HTTP.h"
-#include "../../include/proxy/hdrs/HdrHeap.h"
-#include "../../include/proxy/hdrs/MIME.h"
-#include "../../include/proxy/hdrs/URL.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/URL.h"
 
 // using namespace ct;
 

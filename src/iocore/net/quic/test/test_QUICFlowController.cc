@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICFlowController.h"
-#include "quic/Mock.h"
+#include "iocore/net/quic/QUICFlowController.h"
+#include "iocore/net/quic/Mock.h"
 #include <memory>
 
 static constexpr int DEFAULT_RTT = 1 * HRTIME_SECOND;

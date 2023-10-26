@@ -15,19 +15,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "Configuration.h"
+#include "mgmt/rpc/handlers/config/Configuration.h"
 
 #include <system_error>
 #include <string>
 #include <string_view>
 
 #include "records/RecCore.h"
-#include "records/P_RecCore.h"
+#include "../../../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 
-#include "config/FileManager.h"
+#include "mgmt/config/FileManager.h"
 
-#include "rpc/handlers/common/RecordsUtils.h"
+#include "mgmt/rpc/handlers/common/RecordsUtils.h"
 #include "api/Metrics.h"
 
 namespace utils = rpc::handlers::records::utils;

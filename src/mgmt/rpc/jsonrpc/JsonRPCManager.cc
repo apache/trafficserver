@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "JsonRPCManager.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 
 #include <iostream>
 #include <chrono>
@@ -27,7 +27,7 @@
 #include <condition_variable>
 
 #include <swoc/swoc_meta.h>
-#include "json/YAMLCodec.h"
+#include "mgmt/rpc/jsonrpc/json/YAMLCodec.h"
 
 namespace
 {

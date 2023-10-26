@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "SSLStats.h"
+#include "iocore/net/SSLStats.h"
 
 #include <openssl/err.h>
 
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecProcess.h"
 
 SSLStatsBlock ssl_rsb;
 std::unordered_map<std::string, ts::Metrics::IntType *> cipher_map;

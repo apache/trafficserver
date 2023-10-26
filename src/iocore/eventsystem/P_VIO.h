@@ -22,7 +22,7 @@
  */
 
 #pragma once
-#include "VIO.h"
+#include "iocore/eventsystem/VIO.h"
 
 TS_INLINE
 VIO::VIO(int aop) : op(aop), buffer(), mutex(nullptr) {}

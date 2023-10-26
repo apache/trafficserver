@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICApplicationMap.h"
-#include "QUICContext.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICApplicationMap.h"
+#include "iocore/net/quic/QUICContext.h"
 
 class QUICTransportParameters;
 

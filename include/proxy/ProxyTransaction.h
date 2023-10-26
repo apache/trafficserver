@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ProxySession.h"
+#include "proxy/ProxySession.h"
 #include <string_view>
 
 class HttpSM;

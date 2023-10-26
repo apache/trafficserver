@@ -22,8 +22,8 @@
  */
 
 #include <chrono>
-#include "QUICPathValidator.h"
-#include "QUICPacket.h"
+#include "iocore/net/quic/QUICPathValidator.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 #define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
 

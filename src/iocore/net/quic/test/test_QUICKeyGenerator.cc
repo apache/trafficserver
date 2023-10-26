@@ -32,8 +32,8 @@
 
 #include <openssl/ssl.h>
 
-#include "QUICKeyGenerator.h"
-#include "QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
 // https://github.com/quicwg/base-drafts/wiki/Test-Vector-for-the-Initial-AEAD-key-derivation
 TEST_CASE("draft-23~27 Test Vectors", "[quic]")

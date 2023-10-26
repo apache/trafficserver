@@ -34,13 +34,13 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_time.h"
 
-#include "URL.h"
+#include "proxy/hdrs/URL.h"
 #include "tscore/Tokenizer.h"
-#include "ControlBase.h"
+#include "proxy/ControlBase.h"
 #include "tscore/MatcherUtils.h"
-#include "HTTP.h"
-#include "ControlMatcher.h"
-#include "HdrUtils.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/ControlMatcher.h"
+#include "proxy/hdrs/HdrUtils.h"
 
 #include <vector>
 

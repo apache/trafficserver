@@ -28,7 +28,7 @@
 
 #include "catch.hpp"
 
-#include "HPACK.h"
+#include "proxy/http2/HPACK.h"
 
 static constexpr int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
 static constexpr int BUFSIZE_FOR_REGRESSION_TEST            = 128;

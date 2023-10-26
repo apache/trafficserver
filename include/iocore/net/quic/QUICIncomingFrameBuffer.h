@@ -26,9 +26,9 @@
 #include <map>
 #include <queue>
 
-#include "QUICTypes.h"
-#include "QUICFrame.h"
-#include "QUICTransferProgressProvider.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICTransferProgressProvider.h"
 
 class QUICIncomingFrameBuffer
 {

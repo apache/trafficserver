@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "QUICStream.h"
+#include "iocore/net/quic/QUICStream.h"
 
 class QUICStreamBase : public QUICStream, public QUICFrameGenerator, public QUICFrameRetransmitter
 {

@@ -21,8 +21,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "AIO_fault_injection.h"
-#include "Lock.h"
+#include "iocore/aio/AIO_fault_injection.h"
+#include "iocore/eventsystem/Lock.h"
 #include <mutex>
 
 AIOFaultInjection aioFaultInjection;

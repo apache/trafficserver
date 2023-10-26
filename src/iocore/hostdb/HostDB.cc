@@ -26,10 +26,10 @@
 
 #include "P_HostDB.h"
 #include "tscore/Layout.h"
-#include "Show.h"
+#include "proxy/Show.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/MgmtDefs.h" // MgmtInt, MgmtFloat, etc
-#include "HostFile.h"
+#include "iocore/hostdb/HostFile.h"
 
 #include <utility>
 #include <vector>

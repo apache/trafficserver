@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "QUICContext.h"
-#include "QUICConnection.h"
-#include "QUICLossDetector.h"
-#include "QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICContext.h"
+#include "iocore/net/quic/QUICConnection.h"
+#include "iocore/net/quic/QUICLossDetector.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
 class QUICCCConfigQCP : public QUICCCConfig
 {

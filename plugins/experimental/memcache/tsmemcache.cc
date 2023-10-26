@@ -22,8 +22,8 @@
  */
 
 #include "tsmemcache.h"
-#include "NetVConnection.h"
-#include "NetProcessor.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/NetProcessor.h"
 #include "tscore/ink_atomic.h"
 
 /*

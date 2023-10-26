@@ -30,8 +30,8 @@
 *****************************************************************************/
 #pragma once
 
-#include "EThread.h"
-#include "EventProcessor.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/EventProcessor.h"
 #include "tscore/ink_atomic.h"
 #include <execinfo.h>
 

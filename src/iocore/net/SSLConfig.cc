@@ -47,10 +47,10 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "P_TLSKeyLogger.h"
-#include "SSLDiags.h"
-#include "SSLSessionCache.h"
-#include "SSLSessionTicket.h"
-#include "YamlSNIConfig.h"
+#include "iocore/net/SSLDiags.h"
+#include "iocore/net/SSLSessionCache.h"
+#include "iocore/net/SSLSessionTicket.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 int SSLConfig::config_index                                 = 0;
 int SSLConfig::configids[]                                  = {0, 0};

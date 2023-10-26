@@ -32,15 +32,15 @@
 #include "tscore/ink_sprintf.h"
 #include "tscore/ink_file.h"
 #include "tscore/Filenames.h"
-#include "HttpBodyFactory.h"
+#include "proxy/http/HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "URL.h"
-#include "logging/Log.h"
-#include "logging/LogAccess.h"
-#include "HttpCompat.h"
+#include "proxy/hdrs/URL.h"
+#include "proxy/logging/Log.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/hdrs/HttpCompat.h"
 #include "tscore/Layout.h"
 
 //////////////////////////////////////////////////////////////////////

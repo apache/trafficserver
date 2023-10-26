@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Layout.h"
-#include "Machine.h"
+#include "iocore/utils/Machine.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -38,18 +38,18 @@
 #include "tscore/List.h"
 #include "tscore/LogMessage.h"
 
-#include "Log.h"
-#include "LogField.h"
-#include "LogFilter.h"
-#include "LogFormat.h"
-#include "LogFile.h"
-#include "LogBuffer.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "LogUtils.h"
+#include "proxy/logging/Log.h"
+#include "proxy/logging/LogField.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogUtils.h"
 #include "tscore/SimpleTokenizer.h"
 
-#include "YamlLogConfig.h"
+#include "proxy/logging/YamlLogConfig.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE                    \
   "Access logging to local log directory suspended - " \

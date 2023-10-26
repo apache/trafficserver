@@ -39,9 +39,9 @@
 
 #include "tscpp/util/ts_ip.h"
 
-#include "ConfigProcessor.h"
-#include "SNIActionPerformer.h"
-#include "YamlSNIConfig.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/SNIActionPerformer.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 #include <functional>
 

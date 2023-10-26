@@ -29,9 +29,9 @@
 
 #pragma once
 
-#include "P_Net.h"
-#include "HttpSM.h"
-#include "HttpTunnel.h"
+#include "../../src/iocore/net/P_Net.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpTunnel.h"
 
 class PluginVC;
 

@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "QUICTypes.h"
-#include "QUICFrameHandler.h"
-#include "QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
 
-#include "Lock.h"
+#include "iocore/eventsystem/Lock.h"
 
 class QUICPadder : public QUICFrameOnceGenerator
 {

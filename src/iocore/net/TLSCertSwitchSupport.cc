@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "TLSCertSwitchSupport.h"
+#include "iocore/net/TLSCertSwitchSupport.h"
 #include "P_SSLCertLookup.h"
 
 int TLSCertSwitchSupport::_ex_data_index = -1;

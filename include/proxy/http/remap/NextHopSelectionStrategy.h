@@ -27,8 +27,8 @@
 #include <utility>
 
 #include "ts/parentselectdefs.h"
-#include "ParentSelection.h"
-#include "HttpTransact.h"
+#include "proxy/ParentSelection.h"
+#include "proxy/http/HttpTransact.h"
 
 #ifndef _NH_UNIT_TESTS_
 #define NH_Debug(tag, ...) Debug(tag, __VA_ARGS__)
@@ -37,7 +37,7 @@
 #define NH_Warn(...)       DiagsError(DL_Warning, __VA_ARGS__)
 #define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
 #else
-#include "unit-tests/nexthop_test_stubs.h"
+#include "../../../../src/proxy/http/remap/unit-tests/nexthop_test_stubs.h"
 #endif /* _NH_UNIT_TESTS_ */
 
 constexpr const char *NH_DEBUG_TAG = "next_hop";

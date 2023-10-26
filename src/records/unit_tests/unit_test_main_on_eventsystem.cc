@@ -24,11 +24,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 
-#include "diags.i"
+#include "iocore/utils/diags.i"
 
 namespace
 {

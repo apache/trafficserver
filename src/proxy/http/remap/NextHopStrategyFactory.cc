@@ -26,9 +26,9 @@
 #include <fstream>
 #include <cstring>
 
-#include "NextHopStrategyFactory.h"
-#include "NextHopConsistentHash.h"
-#include "NextHopRoundRobin.h"
+#include "proxy/http/remap/NextHopStrategyFactory.h"
+#include "proxy/http/remap/NextHopConsistentHash.h"
+#include "proxy/http/remap/NextHopRoundRobin.h"
 #include <tscpp/util/YamlCfg.h>
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)

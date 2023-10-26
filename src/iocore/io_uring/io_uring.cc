@@ -28,7 +28,7 @@ Linux io_uring helper library
 
 #include <unistd.h>
 
-#include "IO_URING.h"
+#include "iocore/io_uring/IO_URING.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Diags.h"
 

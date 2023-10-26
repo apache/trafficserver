@@ -32,11 +32,11 @@
 #pragma once
 
 #include "tscore/ink_sock.h"
-#include "NetVConnection.h"
+#include "iocore/net/NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
-#include "NetEvent.h"
+#include "iocore/net/NetEvent.h"
 
 class UnixNetVConnection;
 class NetHandler;

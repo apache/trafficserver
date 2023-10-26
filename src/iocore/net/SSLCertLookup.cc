@@ -37,11 +37,11 @@
 
 #include "tscpp/util/Convert.h"
 
-#include "EventSystem.h"
+#include "iocore/eventsystem/EventSystem.h"
 
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
-#include "SSLSessionTicket.h"
+#include "iocore/net/SSLSessionTicket.h"
 
 #include <unordered_map>
 #include <utility>

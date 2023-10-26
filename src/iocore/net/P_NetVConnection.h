@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "NetVConnection.h"
-#include "ProxyProtocol.h"
+#include "iocore/net/NetVConnection.h"
+#include "iocore/net/ProxyProtocol.h"
 
 inline sockaddr const *
 NetVConnection::get_remote_addr()

@@ -21,14 +21,14 @@
  *  limitations under the License.
  */
 
-#include "QUICTLS.h"
+#include "iocore/net/quic/QUICTLS.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 constexpr static char tag[] = "quic_tls";
 

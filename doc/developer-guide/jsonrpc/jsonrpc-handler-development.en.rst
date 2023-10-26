@@ -141,7 +141,7 @@ The actual registration:
 
 .. code-block:: cpp
 
-    #include "rpc/jsonrpc/JsonRPC.h"
+    #include "mgmt/rpc/jsonrpc/JsonRPC.h"
     ...
     rpc::add_method_handler("my_handler_impl", &my_handler_impl);
 
@@ -169,7 +169,7 @@ Registration for notifications uses a different API:
 
 .. code-block:: cpp
 
-    #include "rpc/jsonrpc/JsonRPC.h"
+    #include "mgmt/rpc/jsonrpc/JsonRPC.h"
     rpc::add_notification_handler("my_notification_handler", &my_notification_handler);
 
 

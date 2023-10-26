@@ -24,13 +24,13 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "Log.h"
-#include "LogFile.h"
-#include "LogFormat.h"
-#include "LogFilter.h"
-#include "LogBuffer.h"
-#include "LogAccess.h"
-#include "LogFilter.h"
+#include "proxy/logging/Log.h"
+#include "proxy/logging/LogFile.h"
+#include "proxy/logging/LogFormat.h"
+#include "proxy/logging/LogFilter.h"
+#include "proxy/logging/LogBuffer.h"
+#include "proxy/logging/LogAccess.h"
+#include "proxy/logging/LogFilter.h"
 #include <vector>
 
 /*-------------------------------------------------------------------------

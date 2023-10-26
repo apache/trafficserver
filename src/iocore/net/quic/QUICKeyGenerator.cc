@@ -21,15 +21,15 @@
  *  limitations under the License.
  */
 
-#include "QUICKeyGenerator.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
 
 #include <openssl/ssl.h>
 
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
 
-#include "QUICHKDF.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICHKDF.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 using namespace std::literals;
 

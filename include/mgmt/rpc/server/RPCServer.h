@@ -30,8 +30,8 @@
 
 #include "tscore/ink_apidefs.h"
 #include <ts/apidefs.h>
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/config/JsonRPCConfig.h"
+#include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
+#include "mgmt/rpc/config/JsonRPCConfig.h"
 
 namespace rpc
 {

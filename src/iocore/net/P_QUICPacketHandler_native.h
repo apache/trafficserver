@@ -26,9 +26,9 @@
 #include "tscore/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
-#include "quic/QUICTypes.h"
-#include "quic/QUICConnectionTable.h"
-#include "quic/QUICResetTokenTable.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
+#include "iocore/net/quic/QUICResetTokenTable.h"
 
 class QUICClosedConCollector;
 class QUICNetVConnection;

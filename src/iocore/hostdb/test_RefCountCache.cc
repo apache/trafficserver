@@ -23,7 +23,7 @@
 
 #include <iostream>
 #include <RefCountCache.cc>
-#include <EventSystem.h>
+#include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
 #include <diags.i>
 #include <set>

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "SSLAPIHooks.h"
+#include "iocore/net/SSLAPIHooks.h"
 
 SSLAPIHooks *g_ssl_hooks = nullptr;
 

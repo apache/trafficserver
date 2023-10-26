@@ -18,7 +18,7 @@
    the License.
 */
 
-#include "ProxyProtocol.h"
+#include "iocore/net/ProxyProtocol.h"
 #include "tscore/Diags.h"
 
 #define kMinInputLength 8

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICFrameGenerator.h"
+#include "iocore/net/quic/QUICFrameGenerator.h"
 
 // QUICFrameGenerator
 void

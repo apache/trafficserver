@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "DNSEventIO.h"
-#include "DNSProcessor.h"
+#include "iocore/dns/DNSEventIO.h"
+#include "iocore/dns/DNSProcessor.h"
 
 //
 // Connection

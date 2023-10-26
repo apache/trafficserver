@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "QLog.h"
-#include "QUICPacket.h"
+#include "iocore/net/quic/qlog/QLog.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 namespace QLog
 {

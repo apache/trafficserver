@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "YamlSNIConfig.h"
+#include "iocore/net/YamlSNIConfig.h"
 
 #include <utility>
 #include <unordered_map>

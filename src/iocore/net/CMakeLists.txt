@@ -89,7 +89,6 @@ if(TS_USE_QUIC)
             QUICPacketHandler_quiche.cc
             QUICSupport.cc
   )
-  target_include_directories(inknet PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/net/quic)
 
   target_link_libraries(inknet PUBLIC quiche::quiche ts::quic)
 endif()
@@ -99,23 +98,6 @@ if(BUILD_REGRESSION_TESTING)
 endif()
 
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
-target_include_directories(
-  inknet
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/iocore/dns
-         ${CMAKE_SOURCE_DIR}/include/iocore/io_uring
-         ${CMAKE_SOURCE_DIR}/include/iocore/aio
-         ${CMAKE_SOURCE_DIR}/include/iocore/net
-         ${CMAKE_SOURCE_DIR}/include/iocore/cache
-         ${CMAKE_SOURCE_DIR}/include/iocore/hostdb
-         ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem
-         ${CMAKE_SOURCE_DIR}/include/proxy/
-         ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-         ${CMAKE_SOURCE_DIR}/include/proxy/shared
-         ${CMAKE_SOURCE_DIR}/include/proxy/http
-         ${CMAKE_SOURCE_DIR}/include/proxy/http/remap
-         ${CMAKE_SOURCE_DIR}/src/api
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src/iocore/dns ${CMAKE_SOURCE_DIR}/src/proxy
-)
 
 target_link_libraries(
   inknet

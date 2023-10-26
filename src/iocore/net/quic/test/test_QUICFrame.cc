@@ -23,9 +23,9 @@
 
 #include "catch.hpp"
 
-#include "quic/Mock.h"
-#include "quic/QUICFrame.h"
-#include "quic/QUICStream.h"
+#include "iocore/net/quic/Mock.h"
+#include "iocore/net/quic/QUICFrame.h"
+#include "iocore/net/quic/QUICStream.h"
 
 extern const ink_freelist_ops *freelist_global_ops;
 extern const ink_freelist_ops *freelist_class_ops;

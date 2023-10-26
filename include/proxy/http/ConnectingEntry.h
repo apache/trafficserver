@@ -22,7 +22,7 @@
 
  */
 
-#include "PoolableSession.h"
+#include "proxy/PoolableSession.h"
 
 #include <set>
 #include <string>

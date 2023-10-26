@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICStreamState.h"
+#include "iocore/net/quic/QUICStreamState.h"
 #include "tscore/ink_assert.h"
 
 // ---------QUICReceiveStreamState -----------

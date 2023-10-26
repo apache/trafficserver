@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 
-#include "quic/QUICAckFrameCreator.h"
+#include "iocore/net/quic/QUICAckFrameCreator.h"
 
 TEST_CASE("QUICAckFrameManager", "[quic]")
 {

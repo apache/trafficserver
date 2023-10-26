@@ -24,8 +24,8 @@
 #include <mutex>
 #include <yaml-cpp/yaml.h>
 
-#include "HttpSM.h"
-#include "NextHopRoundRobin.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/remap/NextHopRoundRobin.h"
 
 NextHopRoundRobin::~NextHopRoundRobin()
 {

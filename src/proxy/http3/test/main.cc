@@ -30,7 +30,7 @@
 #include "tscore/Diags.h"
 
 #include "records/RecordsConfig.h"
-#include "Http3Config.h"
+#include "proxy/http3/Http3Config.h"
 
 #define TEST_THREADS 1
 

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "HttpSM.h"
+#include "proxy/http/HttpSM.h"
 
 class TransformVConnection;
 

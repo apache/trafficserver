@@ -15,30 +15,7 @@
 #
 #######################
 
-include_directories(
-  ${CMAKE_SOURCE_DIR}/include/mgmt
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/jsonrpc
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/jsonrpc/error
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/config
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/server
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/common
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/config
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/storage
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/records
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/server
-  ${CMAKE_SOURCE_DIR}/include/mgmt/rpc/handlers/plugins
-  ${IOCORE_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/lib
-  ${CMAKE_SOURCE_DIR}/include/proxy/hdrs
-  ${CMAKE_SOURCE_DIR}/include/proxy/http
-  # Private headers
-  ${CMAKE_SOURCE_DIR}/src/iocore/cache
-  ${CMAKE_SOURCE_DIR}/src/iocore/aio
-  ${CMAKE_SOURCE_DIR}/src/iocore/net
-  ${CMAKE_SOURCE_DIR}/src/iocore/dns
-)
+include_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_library(jsonrpc_protocol STATIC jsonrpc/error/RPCError.cc jsonrpc/JsonRPCManager.cc jsonrpc/Context.cc)
 add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)

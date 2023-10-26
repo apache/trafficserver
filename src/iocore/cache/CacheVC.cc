@@ -21,22 +21,22 @@
   limitations under the License.
  */
 
-#include "Cache.h"
-#include "CacheDefs.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/cache/CacheDefs.h"
 #include "P_CacheDisk.h"
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
 // must be included after the others
-#include "CacheVC.h"
+#include "iocore/cache/CacheVC.h"
 
 // hdrs
-#include "HTTP.h"
-#include "MIME.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/MIME.h"
 
 // aio
-#include "AIO.h"
+#include "iocore/aio/AIO.h"
 
 // tsapi
 #if DEBUG
@@ -44,12 +44,12 @@
 #endif
 
 // inkevent
-#include "Continuation.h"
-#include "EThread.h"
-#include "Event.h"
-#include "IOBuffer.h"
-#include "Lock.h"
-#include "VIO.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/eventsystem/Lock.h"
+#include "iocore/eventsystem/VIO.h"
 
 // tscppapi
 #include "tscpp/api/HttpStatus.h"

@@ -28,7 +28,7 @@
 #include "records/RecCore.h"
 #include "tscore/Layout.h"
 #include "api/InkAPIInternal.h"
-#include "Plugin.h"
+#include "proxy/Plugin.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
 

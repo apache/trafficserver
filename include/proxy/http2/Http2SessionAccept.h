@@ -24,11 +24,11 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "Net.h"
+#include "iocore/net/Net.h"
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
 // it can generically apply to all protocol implementations.
-#include "http/HttpSessionAccept.h"
+#include "proxy/http/HttpSessionAccept.h"
 
 // HTTP/2 Session Accept.
 //

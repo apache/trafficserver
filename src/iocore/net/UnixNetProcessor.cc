@@ -28,7 +28,7 @@
 #include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
-#include "StatPages.h"
+#include "proxy/StatPages.h"
 
 // naVecMutext protects access to naVec.
 Ptr<ProxyMutex> naVecMutex;

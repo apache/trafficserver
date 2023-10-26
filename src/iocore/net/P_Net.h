@@ -88,8 +88,8 @@ extern NetStatsBlock net_rsb;
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 
 #include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
-#include "Net.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "iocore/net/Net.h"
 #include "P_NetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_UnixNetProcessor.h"

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketHeaderProtector.h"
+#include "iocore/net/quic/QUICPacketHeaderProtector.h"
 
 #include <openssl/chacha.h>
 

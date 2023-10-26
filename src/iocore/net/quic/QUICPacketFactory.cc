@@ -21,9 +21,9 @@
  *  limitations under the License.
  */
 
-#include "QUICPacketFactory.h"
-#include "QUICPacketProtectionKeyInfo.h"
-#include "QUICDebugNames.h"
+#include "iocore/net/quic/QUICPacketFactory.h"
+#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
+#include "iocore/net/quic/QUICDebugNames.h"
 
 using namespace std::literals;
 static constexpr std::string_view tag   = "quic_packet"sv;

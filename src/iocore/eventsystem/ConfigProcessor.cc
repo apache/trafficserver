@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ConfigProcessor.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 #include "P_EventSystem.h"
 #if TS_HAS_TESTS
 #include "tscore/TestBox.h"

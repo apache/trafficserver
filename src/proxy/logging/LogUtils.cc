@@ -35,7 +35,7 @@
 
 #else
 
-#include <MIME.h>
+#include "proxy/hdrs/MIME.h"
 
 #endif
 
@@ -57,10 +57,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "records/P_RecProcess.h"
+#include "../../records/P_RecProcess.h"
 
-#include "LogUtils.h"
-#include "LogLimits.h"
+#include "proxy/logging/LogUtils.h"
+#include "proxy/logging/LogLimits.h"
 
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_str

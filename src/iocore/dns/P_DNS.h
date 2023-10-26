@@ -30,9 +30,9 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "DNS.h"
-#include "P_EventSystem.h"
-#include "P_Net.h"
+#include "iocore/dns/DNS.h"
+#include "../eventsystem/P_EventSystem.h"
+#include "../net/P_Net.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
-#include "SRV.h"
+#include "iocore/dns/SRV.h"

@@ -19,10 +19,10 @@
   limitations under the License.
  */
 
-#include "YamlLogConfigDecoders.h"
+#include "proxy/logging/YamlLogConfigDecoders.h"
 
-#include "LogConfig.h"
-#include "LogObject.h"
+#include "proxy/logging/LogConfig.h"
+#include "proxy/logging/LogObject.h"
 
 #include <yaml-cpp/yaml.h>
 #include <algorithm>

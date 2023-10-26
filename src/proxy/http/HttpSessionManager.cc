@@ -30,10 +30,10 @@
 
  ****************************************************************************/
 
-#include "HttpSessionManager.h"
-#include "../ProxySession.h"
-#include "HttpSM.h"
-#include "HttpDebugNames.h"
+#include "proxy/http/HttpSessionManager.h"
+#include "proxy/ProxySession.h"
+#include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpDebugNames.h"
 
 // Initialize a thread to handle HTTP session management
 void

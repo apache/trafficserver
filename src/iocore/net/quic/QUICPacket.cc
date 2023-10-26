@@ -21,16 +21,16 @@
  *  limitations under the License.
  */
 
-#include "QUICPacket.h"
+#include "iocore/net/quic/QUICPacket.h"
 
 #include <algorithm>
 
 #include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
 
-#include "QUICIntUtil.h"
-#include "QUICDebugNames.h"
-#include "QUICRetryIntegrityTag.h"
+#include "iocore/net/quic/QUICIntUtil.h"
+#include "iocore/net/quic/QUICDebugNames.h"
+#include "iocore/net/quic/QUICRetryIntegrityTag.h"
 
 using namespace std::literals;
 static constexpr uint64_t aead_tag_len             = 16;

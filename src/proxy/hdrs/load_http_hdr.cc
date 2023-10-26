@@ -42,9 +42,9 @@
  *    state and is therefore not useful for must purposes.
  ***************************************************************************/
 
-#include "HdrHeap.h"
-#include "MIME.h"
-#include "HTTP.h"
+#include "proxy/hdrs/HdrHeap.h"
+#include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Diags.h"
 #include <stdio.h>

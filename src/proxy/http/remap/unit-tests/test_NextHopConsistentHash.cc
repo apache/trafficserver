@@ -31,13 +31,13 @@
 #include <catch.hpp> /* catch unit-test framework */
 #include <yaml-cpp/yaml.h>
 
-#include "HttpSM.h"
+#include "proxy/http/HttpSM.h"
 #include "nexthop_test_stubs.h"
-#include "NextHopSelectionStrategy.h"
-#include "NextHopStrategyFactory.h"
-#include "NextHopConsistentHash.h"
+#include "proxy/http/remap/NextHopSelectionStrategy.h"
+#include "proxy/http/remap/NextHopStrategyFactory.h"
+#include "proxy/http/remap/NextHopConsistentHash.h"
 
-#include "HTTP.h"
+#include "proxy/hdrs/HTTP.h"
 extern int cmd_disable_pfreelist;
 
 SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", "[NextHopConsistentHash]")

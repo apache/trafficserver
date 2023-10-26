@@ -32,13 +32,13 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
-#include "CacheControl.h"
-#include "ControlMatcher.h"
-#include "P_EventSystem.h"
-#include "ConfigProcessor.h"
-#include "HTTP.h"
-#include "HttpConfig.h"
-#include "P_Cache.h"
+#include "proxy/CacheControl.h"
+#include "proxy/ControlMatcher.h"
+#include "../iocore/eventsystem/P_EventSystem.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "proxy/hdrs/HTTP.h"
+#include "proxy/http/HttpConfig.h"
+#include "../iocore/cache/P_Cache.h"
 #include "tscore/Regex.h"
 
 static const char modulePrefix[] = "[CacheControl]";

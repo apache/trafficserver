@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "PreWarmManager.h"
-#include "PreWarmConfig.h"
+#include "proxy/http/PreWarmManager.h"
+#include "proxy/http/PreWarmConfig.h"
 
-#include "HttpConfig.h"
-#include "SSLSNIConfig.h"
-#include "P_VConnection.h"
-#include "NetProcessor.h"
-#include "PreWarm.h"
+#include "proxy/http/HttpConfig.h"
+#include "iocore/net/SSLSNIConfig.h"
+#include "../../iocore/eventsystem/P_VConnection.h"
+#include "iocore/net/NetProcessor.h"
+#include "iocore/net/PreWarm.h"
 
 #include "api/Metrics.h"
 #include "tscore/ink_time.h"

@@ -29,7 +29,7 @@
 #ifndef AIO_FAULT_INJECTION
 #error Must define AIO_FAULT_INJECTION!
 #endif
-#include "AIO_fault_injection.h"
+#include "iocore/aio/AIO_fault_injection.h"
 
 int cache_vols            = 2;
 bool reuse_existing_cache = false;

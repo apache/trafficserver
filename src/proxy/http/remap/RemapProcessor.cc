@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "RemapProcessor.h"
+#include "proxy/http/remap/RemapProcessor.h"
 
 RemapProcessor remapProcessor;
 extern ClassAllocator<RemapPlugins> pluginAllocator;

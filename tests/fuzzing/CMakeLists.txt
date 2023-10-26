@@ -40,18 +40,8 @@ target_sources(
   fuzz_hpack PRIVATE ${CMAKE_SOURCE_DIR}/src/proxy/http2/HTTP2.cc ${CMAKE_SOURCE_DIR}/src/proxy/http2/Http2Frame.cc
                      ${CMAKE_SOURCE_DIR}/src/proxy/http2/HPACK.cc
 )
-target_include_directories(
-  fuzz_hpack PRIVATE ${CMAKE_SOURCE_DIR}/include/proxy/http2 ${PROXY_INCLUDE_DIRS}
-                     ${CMAKE_SOURCE_DIR}/include/iocore/utils
-)
-target_include_directories(
-  fuzz_json PRIVATE ${CMAKE_SOURCE_DIR}/include/mgmt ${CMAKE_SOURCE_DIR}/include/mgmt/rpc ${IOCORE_INCLUDE_DIRS}
-                    ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/proxy/hdrs ${CMAKE_SOURCE_DIR}/proxy/http
-)
-target_include_directories(
-  fuzz_proxy_protocol PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/iocore/net
-                              ${CMAKE_SOURCE_DIR}/include/iocore/eventsystem ${CATCH_INCLUDE_DIR}
-)
+target_include_directories(fuzz_json PRIVATE ${CMAKE_SOURCE_DIR}/lib)
+target_include_directories(fuzz_proxy_protocol PRIVATE ${CATCH_INCLUDE_DIR})
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 add_custom_command(

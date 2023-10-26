@@ -23,8 +23,8 @@
 
 #include "tscore/ink_config.h"
 #include <string_view>
-#include "HttpAPIHooks.h"
-#include "SSLAPIHooks.h"
+#include "proxy/HttpAPIHooks.h"
+#include "iocore/net/SSLAPIHooks.h"
 
 #define CATCH_CONFIG_MAIN
 #include "main.h"

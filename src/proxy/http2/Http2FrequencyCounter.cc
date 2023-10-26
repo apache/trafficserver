@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Http2FrequencyCounter.h"
+#include "proxy/http2/Http2FrequencyCounter.h"
 
 void
 Http2FrequencyCounter::increment(uint16_t amount)

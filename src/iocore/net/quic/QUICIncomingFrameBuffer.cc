@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICIncomingFrameBuffer.h"
+#include "iocore/net/quic/QUICIncomingFrameBuffer.h"
 
 //
 // QUICIncomingFrameBuffer

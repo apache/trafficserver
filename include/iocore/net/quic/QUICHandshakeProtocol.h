@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "QUICKeyGenerator.h"
-#include "QUICTypes.h"
-#include "QUICTransportParameters.h"
+#include "iocore/net/quic/QUICKeyGenerator.h"
+#include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICTransportParameters.h"
 
 class QUICHandshakeProtocol;
 class QUICPacketProtectionKeyInfo;

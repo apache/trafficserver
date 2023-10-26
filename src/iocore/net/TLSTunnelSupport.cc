@@ -22,9 +22,9 @@
   limitations under the License.
  */
 
-#include "PreWarm.h"
-#include "SSLTypes.h"
-#include "TLSTunnelSupport.h"
+#include "iocore/net/PreWarm.h"
+#include "iocore/net/SSLTypes.h"
+#include "iocore/net/TLSTunnelSupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
 
