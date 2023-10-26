@@ -284,11 +284,13 @@ TSRemapDeleteInstance(void *ih)
 }
 
 static void
-err_log(const char *url, const char *msg)
+err_log(const char *url, int url_len, const char *msg)
 {
   if (msg && url) {
-    Dbg(dbg_ctl, "[URL=%s]: %s", url, msg);
-    TSError("[url_sig] [URL=%s]: %s", url, msg); // This goes to error.log
+    Dbg(dbg_ctl, "Test");
+
+    Dbg(dbg_ctl, "[URL=%.*s]: %s", url_len, url, msg);
+    TSError("[url_sig] [URL=%.*s]: %s", url_len, url, msg); // This goes to error.log
   } else {
     TSError("[url_sig] Invalid err_log request");
   }
@@ -561,7 +563,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   char sig_string[2 * MAX_SIG_SIZE + 1];
 
   if (current_url_len >= MAX_REQ_LEN - 1) {
-    err_log(current_url, "Request Url string too long");
+    err_log(current_url, current_url_len, "Request Url string too long");
     goto deny;
   }
 
@@ -575,7 +577,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
     url = TSUrlStringGet(mbuf, ul, &url_len);
     if (url_len >= MAX_REQ_LEN - 1) {
-      err_log(url, "Pristine URL string too long.");
+      err_log(url, url_len, "Pristine URL string too long.");
       goto deny;
     }
   } else {
@@ -608,7 +610,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (query == nullptr || strstr(query, "E=") == nullptr) {
       char *const parsed = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192);
       if (parsed == nullptr) {
-        err_log(url, "Unable to parse/decode new url path parameters");
+        err_log(url, url_len, "Unable to parse/decode new url path parameters");
         goto deny;
       }
 
@@ -616,7 +618,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       query           = strstr(parsed, ";");
 
       if (query == nullptr) {
-        err_log(url, "Has no signing query string or signing path parameters.");
+        err_log(url, url_len, "Has no signing query string or signing path parameters.");
         TSfree(parsed);
         goto deny;
       }
@@ -651,7 +653,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             Dbg(dbg_ctl, "ip->sa_family: AF_INET");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
             if ((pp - cp) > INET_ADDRSTRLEN - 1 || (pp - cp) < 4) {
-              err_log(url, "IP address string too long or short.");
+              err_log(url, url_len, "IP address string too long or short.");
               goto deny;
             }
             strncpy(client_ip, cp, (pp - cp));
@@ -660,7 +662,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             inet_ntop(AF_INET, &(((struct sockaddr_in *)ip)->sin_addr), ipstr, sizeof ipstr);
             Dbg(dbg_ctl, "Peer address: -%s-", ipstr);
             if (strcmp(ipstr, client_ip) != 0) {
-              err_log(url, "Client IP doesn't match signature.");
+              err_log(url, url_len, "Client IP doesn't match signature.");
               goto deny;
             }
             break;
@@ -668,7 +670,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             Dbg(dbg_ctl, "ip->sa_family: AF_INET6");
             has_path_params == false ? (pp = strstr(cp, "&")) : (pp = strstr(cp, ";"));
             if ((pp - cp) > INET6_ADDRSTRLEN - 1 || (pp - cp) < 4) {
-              err_log(url, "IP address string too long or short.");
+              err_log(url, url_len, "IP address string too long or short.");
               goto deny;
             }
             strncpy(client_ip, cp, (pp - cp));
@@ -677,7 +679,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)ip)->sin6_addr), ipstr, sizeof ipstr);
             Dbg(dbg_ctl, "Peer address: -%s-", ipstr);
             if (strcmp(ipstr, client_ip) != 0) {
-              err_log(url, "Client IP doesn't match signature.");
+              err_log(url, url_len, "Client IP doesn't match signature.");
               goto deny;
             }
             break;
@@ -695,12 +697,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         if (cp != nullptr) {
           cp += strlen(EXP_QSTRING) + 1;
           if (sscanf(cp, "%" SCNu64, &expiration) != 1 || static_cast<time_t>(expiration) < time(nullptr)) {
-            err_log(url, "Invalid expiration, or expired");
+            err_log(url, url_len, "Invalid expiration, or expired");
             goto deny;
           }
           Dbg(dbg_ctl, "Exp: %" PRIu64, expiration);
         } else {
-          err_log(url, "Expiration query string not found");
+          err_log(url, url_len, "Expiration query string not found");
           goto deny;
         }
       }
@@ -712,7 +714,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         // The check for a valid algorithm is later.
         Dbg(dbg_ctl, "Algorithm: %d", algorithm);
       } else {
-        err_log(url, "Algorithm query string not found");
+        err_log(url, url_len, "Algorithm query string not found");
         goto deny;
       }
       // Key index
@@ -721,12 +723,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         cp       += strlen(KIN_QSTRING) + 1;
         keyindex  = atoi(cp);
         if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
-          err_log(url, "Invalid key index");
+          err_log(url, url_len, "Invalid key index");
           goto deny;
         }
         Dbg(dbg_ctl, "Key Index: %d", keyindex);
       } else {
-        err_log(url, "KeyIndex query string not found");
+        err_log(url, url_len, "KeyIndex query string not found");
         goto deny;
       }
       // Block needed due to goto.
@@ -744,7 +746,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             Dbg(dbg_ctl, "Parts: %s", parts);
           }
         } else {
-          err_log(url, "PartsSigned query string not found");
+          err_log(url, url_len, "PartsSigned query string not found");
           goto deny;
         }
 
@@ -758,11 +760,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             signature  = cp;
             if ((algorithm == USIG_HMAC_SHA1 && strlen(signature) < SHA1_SIG_SIZE) ||
                 (algorithm == USIG_HMAC_MD5 && strlen(signature) < MD5_SIG_SIZE)) {
-              err_log(url, "Signature query string too short (< 20)");
+              err_log(url, url_len, "Signature query string too short (< 20)");
               goto deny;
             }
           } else {
-            err_log(url, "Signature query string not found");
+            err_log(url, url_len, "Signature query string not found");
             goto deny;
           }
 
@@ -811,7 +813,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
                    reinterpret_cast<const unsigned char *>(signed_part), strlen(signed_part), sig, &sig_len);
               if (sig_len != SHA1_SIG_SIZE) {
                 Dbg(dbg_ctl, "sig_len: %d", sig_len);
-                err_log(url, "Calculated sig len !=  SHA1_SIG_SIZE !");
+                err_log(url, url_len, "Calculated sig len !=  SHA1_SIG_SIZE !");
                 goto deny;
               }
 
@@ -821,12 +823,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
                    reinterpret_cast<const unsigned char *>(signed_part), strlen(signed_part), sig, &sig_len);
               if (sig_len != MD5_SIG_SIZE) {
                 Dbg(dbg_ctl, "sig_len: %d", sig_len);
-                err_log(url, "Calculated sig len !=  MD5_SIG_SIZE !");
+                err_log(url, url_len, "Calculated sig len !=  MD5_SIG_SIZE !");
                 goto deny;
               }
               break;
             default:
-              err_log(url, "Algorithm not supported");
+              err_log(url, url_len, "Algorithm not supported");
               goto deny;
             }
 
@@ -839,7 +841,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             /* and compare to signature that was sent */
             cmp_res = strncmp(sig_string, signature, sig_len * 2);
             if (cmp_res != 0) {
-              err_log(url, "Signature check failed");
+              err_log(url, url_len, "Signature check failed");
               goto deny;
             } else {
               Dbg(dbg_ctl, "Signature check passed");
@@ -865,7 +867,7 @@ deny:
     start = cfg->err_url;
     end   = start + strlen(cfg->err_url);
     if (TSUrlParse(rri->requestBufp, rri->requestUrl, (const char **)&start, end) != TS_PARSE_DONE) {
-      err_log("url", "Error inn TSUrlParse!");
+      err_log("url", 3, "Error inn TSUrlParse!");
     }
     rri->redirect = 1;
     break;
