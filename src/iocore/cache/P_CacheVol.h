@@ -131,20 +131,20 @@ struct Stripe : public Continuation {
   CryptoHash hash_id;
   int fd = -1;
 
-  char *raw_dir           = nullptr;
-  Dir *dir                = nullptr;
+  char *raw_dir               = nullptr;
+  Dir *dir                    = nullptr;
   StripteHeaderFooter *header = nullptr;
   StripteHeaderFooter *footer = nullptr;
-  int segments            = 0;
-  off_t buckets           = 0;
-  off_t recover_pos       = 0;
-  off_t prev_recover_pos  = 0;
-  off_t scan_pos          = 0;
-  off_t skip              = 0; // start of headers
-  off_t start             = 0; // start of data
-  off_t len               = 0;
-  off_t data_blocks       = 0;
-  int hit_evacuate_window = 0;
+  int segments                = 0;
+  off_t buckets               = 0;
+  off_t recover_pos           = 0;
+  off_t prev_recover_pos      = 0;
+  off_t scan_pos              = 0;
+  off_t skip                  = 0; // start of headers
+  off_t start                 = 0; // start of data
+  off_t len                   = 0;
+  off_t data_blocks           = 0;
+  int hit_evacuate_window     = 0;
   AIOCallbackInternal io;
 
   Queue<CacheVC, Continuation::Link_link> agg;

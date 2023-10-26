@@ -648,7 +648,7 @@ static int
 agg_copy(char *p, CacheVC *vc)
 {
   Stripe *vol = vc->vol;
-  off_t o  = vol->header->write_pos + vol->agg_buf_pos;
+  off_t o     = vol->header->write_pos + vol->agg_buf_pos;
 
   if (!vc->f.evacuator) {
     Doc *doc                   = reinterpret_cast<Doc *>(p);
@@ -1558,9 +1558,9 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   intptr_t res = 0;
   CacheVC *c   = new_CacheVC(cont);
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
-  c->vio.op  = VIO::WRITE;
-  c->op_type = static_cast<int>(CacheOpType::Write);
-  c->vol     = key_to_vol(key, hostname, host_len);
+  c->vio.op   = VIO::WRITE;
+  c->op_type  = static_cast<int>(CacheOpType::Write);
+  c->vol      = key_to_vol(key, hostname, host_len);
   Stripe *vol = c->vol;
   Metrics::increment(cache_rsb.status[c->op_type].active);
   Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);

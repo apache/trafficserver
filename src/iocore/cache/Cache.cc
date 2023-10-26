@@ -1196,7 +1196,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
   }
 
   Stripe *vol = key_to_vol(key, hostname, host_len);
-  CacheVC *c = new_CacheVC(cont);
+  CacheVC *c  = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);
