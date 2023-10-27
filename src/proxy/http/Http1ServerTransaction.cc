@@ -33,13 +33,13 @@ Http1ServerTransaction::release()
 void
 Http1ServerTransaction::increment_transactions_stat()
 {
-  Counter::increment(http_rsb.current_server_transactions);
+  Metrics::Counter::increment(http_rsb.current_server_transactions);
 }
 
 void
 Http1ServerTransaction::decrement_transactions_stat()
 {
-  Counter::decrement(http_rsb.current_server_transactions);
+  Metrics::Counter::decrement(http_rsb.current_server_transactions);
 }
 
 void

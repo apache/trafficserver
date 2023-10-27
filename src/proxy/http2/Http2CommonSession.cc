@@ -98,32 +98,32 @@ Http2CommonSession::common_free(ProxySession *ssn)
   if (cause_of_death != Http2SessionCod::NOT_PROVIDED) {
     switch (cause_of_death) {
     case Http2SessionCod::HIGH_ERROR_RATE:
-      Counter::increment(http2_rsb.session_die_high_error_rate);
+      Metrics::Counter::increment(http2_rsb.session_die_high_error_rate);
       break;
     case Http2SessionCod::NOT_PROVIDED:
       // Can't happen but this case is here to not have default case.
-      Counter::increment(http2_rsb.session_die_other);
+      Metrics::Counter::increment(http2_rsb.session_die_other);
       break;
     }
   } else {
     switch (dying_event) {
     case VC_EVENT_NONE:
-      Counter::increment(http2_rsb.session_die_default);
+      Metrics::Counter::increment(http2_rsb.session_die_default);
       break;
     case VC_EVENT_ACTIVE_TIMEOUT:
-      Counter::increment(http2_rsb.session_die_active);
+      Metrics::Counter::increment(http2_rsb.session_die_active);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      Counter::increment(http2_rsb.session_die_inactive);
+      Metrics::Counter::increment(http2_rsb.session_die_inactive);
       break;
     case VC_EVENT_ERROR:
-      Counter::increment(http2_rsb.session_die_error);
+      Metrics::Counter::increment(http2_rsb.session_die_error);
       break;
     case VC_EVENT_EOS:
-      Counter::increment(http2_rsb.session_die_eos);
+      Metrics::Counter::increment(http2_rsb.session_die_eos);
       break;
     default:
-      Counter::increment(http2_rsb.session_die_other);
+      Metrics::Counter::increment(http2_rsb.session_die_other);
       break;
     }
   }

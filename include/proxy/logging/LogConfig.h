@@ -34,34 +34,34 @@
 #include "swoc/MemSpan.h"
 #include "api/Metrics.h"
 
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 struct LogsStatsBlock {
-  Counter::AtomicType *event_log_error_ok;
-  Counter::AtomicType *event_log_error_skip;
-  Counter::AtomicType *event_log_error_aggr;
-  Counter::AtomicType *event_log_error_full;
-  Counter::AtomicType *event_log_error_fail;
-  Counter::AtomicType *event_log_access_ok;
-  Counter::AtomicType *event_log_access_skip;
-  Counter::AtomicType *event_log_access_aggr;
-  Counter::AtomicType *event_log_access_full;
-  Counter::AtomicType *event_log_access_fail;
-  Counter::AtomicType *num_sent_to_network;
-  Counter::AtomicType *num_lost_before_sent_to_network;
-  Counter::AtomicType *num_received_from_network;
-  Counter::AtomicType *num_flush_to_disk;
-  Counter::AtomicType *num_lost_before_flush_to_disk;
-  Counter::AtomicType *bytes_lost_before_preproc;
-  Counter::AtomicType *bytes_sent_to_network;
-  Counter::AtomicType *bytes_lost_before_sent_to_network;
-  Counter::AtomicType *bytes_received_from_network;
-  Counter::AtomicType *bytes_flush_to_disk;
-  Counter::AtomicType *bytes_lost_before_flush_to_disk;
-  Counter::AtomicType *bytes_written_to_disk;
-  Counter::AtomicType *bytes_lost_before_written_to_disk;
-  Counter::AtomicType *log_files_open;
-  Counter::AtomicType *log_files_space_used;
+  Metrics::Counter::AtomicType *event_log_error_ok;
+  Metrics::Counter::AtomicType *event_log_error_skip;
+  Metrics::Counter::AtomicType *event_log_error_aggr;
+  Metrics::Counter::AtomicType *event_log_error_full;
+  Metrics::Counter::AtomicType *event_log_error_fail;
+  Metrics::Counter::AtomicType *event_log_access_ok;
+  Metrics::Counter::AtomicType *event_log_access_skip;
+  Metrics::Counter::AtomicType *event_log_access_aggr;
+  Metrics::Counter::AtomicType *event_log_access_full;
+  Metrics::Counter::AtomicType *event_log_access_fail;
+  Metrics::Counter::AtomicType *num_sent_to_network;
+  Metrics::Counter::AtomicType *num_lost_before_sent_to_network;
+  Metrics::Counter::AtomicType *num_received_from_network;
+  Metrics::Counter::AtomicType *num_flush_to_disk;
+  Metrics::Counter::AtomicType *num_lost_before_flush_to_disk;
+  Metrics::Counter::AtomicType *bytes_lost_before_preproc;
+  Metrics::Counter::AtomicType *bytes_sent_to_network;
+  Metrics::Counter::AtomicType *bytes_lost_before_sent_to_network;
+  Metrics::Counter::AtomicType *bytes_received_from_network;
+  Metrics::Counter::AtomicType *bytes_flush_to_disk;
+  Metrics::Counter::AtomicType *bytes_lost_before_flush_to_disk;
+  Metrics::Counter::AtomicType *bytes_written_to_disk;
+  Metrics::Counter::AtomicType *bytes_lost_before_written_to_disk;
+  Metrics::Counter::AtomicType *log_files_open;
+  Metrics::Counter::AtomicType *log_files_space_used;
 };
 
 extern LogsStatsBlock log_rsb;

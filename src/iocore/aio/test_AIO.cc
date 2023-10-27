@@ -223,11 +223,11 @@ dump_summary()
 
   auto &m = Metrics::getInstance();
 
-  Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
-  Counter::AtomicType *submitted = m.lookup(m.lookup("proxy.process.io_uring.submitted"));
+  Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
+  Metrics::Counter::AtomicType *submitted = m.lookup(m.lookup("proxy.process.io_uring.submitted"));
 
-  printf("submissions: %lu\n", Counter::read(submitted));
-  printf("completions: %lu\n", Counter::read(completed));
+  printf("submissions: %lu\n", Metrics::Counter::read(submitted));
+  printf("completions: %lu\n", Metrics::Counter::read(completed));
 #endif
 
   if (delete_disks) {

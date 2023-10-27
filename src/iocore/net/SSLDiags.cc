@@ -37,7 +37,7 @@ increment_ssl_client_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
-    Counter::increment(ssl_rsb.user_agent_other_errors);
+    Metrics::Counter::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
 
@@ -46,31 +46,31 @@ increment_ssl_client_error(unsigned long err)
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
-    Counter::increment(ssl_rsb.user_agent_expired_cert);
+    Metrics::Counter::increment(ssl_rsb.user_agent_expired_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
-    Counter::increment(ssl_rsb.user_agent_revoked_cert);
+    Metrics::Counter::increment(ssl_rsb.user_agent_revoked_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
-    Counter::increment(ssl_rsb.user_agent_unknown_cert);
+    Metrics::Counter::increment(ssl_rsb.user_agent_unknown_cert);
     break;
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
-    Counter::increment(ssl_rsb.user_agent_cert_verify_failed);
+    Metrics::Counter::increment(ssl_rsb.user_agent_cert_verify_failed);
     break;
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
-    Counter::increment(ssl_rsb.user_agent_bad_cert);
+    Metrics::Counter::increment(ssl_rsb.user_agent_bad_cert);
     break;
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
-    Counter::increment(ssl_rsb.user_agent_decryption_failed);
+    Metrics::Counter::increment(ssl_rsb.user_agent_decryption_failed);
     break;
   case SSL_R_WRONG_VERSION_NUMBER:
-    Counter::increment(ssl_rsb.user_agent_wrong_version);
+    Metrics::Counter::increment(ssl_rsb.user_agent_wrong_version);
     break;
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
-    Counter::increment(ssl_rsb.user_agent_unknown_ca);
+    Metrics::Counter::increment(ssl_rsb.user_agent_unknown_ca);
     break;
   default:
-    Counter::increment(ssl_rsb.user_agent_other_errors);
+    Metrics::Counter::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
 
@@ -84,7 +84,7 @@ increment_ssl_server_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
-    Counter::increment(ssl_rsb.origin_server_other_errors);
+    Metrics::Counter::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }
 
@@ -93,31 +93,31 @@ increment_ssl_server_error(unsigned long err)
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
-    Counter::increment(ssl_rsb.origin_server_expired_cert);
+    Metrics::Counter::increment(ssl_rsb.origin_server_expired_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
-    Counter::increment(ssl_rsb.origin_server_revoked_cert);
+    Metrics::Counter::increment(ssl_rsb.origin_server_revoked_cert);
     break;
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
-    Counter::increment(ssl_rsb.origin_server_unknown_cert);
+    Metrics::Counter::increment(ssl_rsb.origin_server_unknown_cert);
     break;
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
-    Counter::increment(ssl_rsb.origin_server_cert_verify_failed);
+    Metrics::Counter::increment(ssl_rsb.origin_server_cert_verify_failed);
     break;
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
-    Counter::increment(ssl_rsb.origin_server_bad_cert);
+    Metrics::Counter::increment(ssl_rsb.origin_server_bad_cert);
     break;
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
-    Counter::increment(ssl_rsb.origin_server_decryption_failed);
+    Metrics::Counter::increment(ssl_rsb.origin_server_decryption_failed);
     break;
   case SSL_R_WRONG_VERSION_NUMBER:
-    Counter::increment(ssl_rsb.origin_server_wrong_version);
+    Metrics::Counter::increment(ssl_rsb.origin_server_wrong_version);
     break;
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
-    Counter::increment(ssl_rsb.origin_server_unknown_ca);
+    Metrics::Counter::increment(ssl_rsb.origin_server_unknown_ca);
     break;
   default:
-    Counter::increment(ssl_rsb.origin_server_other_errors);
+    Metrics::Counter::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }
 

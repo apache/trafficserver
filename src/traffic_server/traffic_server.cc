@@ -269,8 +269,8 @@ public:
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-    static auto drain_id          = metrics.lookup("proxy.process.proxy.draining");
+    ts::Metrics &metrics = ts::Metrics::instance();
+    static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
 
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
@@ -426,11 +426,9 @@ class MemoryLimit : public Continuation
 public:
   MemoryLimit() : Continuation(new_ProxyMutex())
   {
-    ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
-    memory_rss = Counter::CreatePtr("proxy.process.traffic_server.memory.rss");
+    memory_rss = Metrics::Counter::createPtr("proxy.process.traffic_server.memory.rss");
   }
 
   ~MemoryLimit() override { mutex = nullptr; }
@@ -478,7 +476,7 @@ public:
 private:
   int64_t _memory_limit = 0;
   struct rusage _usage;
-  Counter::AtomicType *memory_rss;
+  Metrics::Counter::AtomicType *memory_rss;
 };
 
 /** Gate the emission of the "Traffic Server is fuly initialized" log message.
@@ -805,8 +803,8 @@ CB_After_Cache_Init()
     emit_fully_initialized_message();
   }
 
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-  auto id                       = metrics.lookup("proxy.process.proxy.cache_ready_time");
+  ts::Metrics &metrics = ts::Metrics::instance();
+  auto id              = metrics.lookup("proxy.process.proxy.cache_ready_time");
 
   metrics[id].store(time(nullptr));
 
@@ -1412,24 +1410,24 @@ struct ShowStats : public Continuation {
     if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     }
-    int64_t d_rb  = Counter::read(net_rsb.calls_to_readfromnet) - last_rb;
+    int64_t d_rb  = Metrics::Counter::read(net_rsb.calls_to_readfromnet) - last_rb;
     last_rb      += d_rb;
 
-    int64_t d_wb  = Counter::read(net_rsb.calls_to_writetonet) - last_wb;
+    int64_t d_wb  = Metrics::Counter::read(net_rsb.calls_to_writetonet) - last_wb;
     last_wb      += d_wb;
 
-    int64_t d_nrb  = Counter::read(net_rsb.read_bytes) - last_nrb;
+    int64_t d_nrb  = Metrics::Counter::read(net_rsb.read_bytes) - last_nrb;
     last_nrb      += d_nrb;
-    int64_t d_nr   = Counter::read(net_rsb.read_bytes_count) - last_nr;
+    int64_t d_nr   = Metrics::Counter::read(net_rsb.read_bytes_count) - last_nr;
     last_nr       += d_nr;
 
-    int64_t d_nwb  = Counter::read(net_rsb.write_bytes) - last_nwb;
+    int64_t d_nwb  = Metrics::Counter::read(net_rsb.write_bytes) - last_nwb;
     last_nwb      += d_nwb;
-    int64_t d_nw   = Counter::read(net_rsb.write_bytes_count) - last_nw;
+    int64_t d_nw   = Metrics::Counter::read(net_rsb.write_bytes_count) - last_nw;
     last_nw       += d_nw;
 
-    int64_t d_o = Counter::read(net_rsb.connections_currently_open);
-    int64_t d_p = Counter::read(net_rsb.handler_run) - last_p;
+    int64_t d_o = Metrics::Counter::read(net_rsb.connections_currently_open);
+    int64_t d_p = Metrics::Counter::read(net_rsb.handler_run) - last_p;
 
     last_p += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
@@ -1856,19 +1854,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   syslog_log_configure();
 
   // Register stats
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
+  ts::Metrics &metrics = ts::Metrics::instance();
   int32_t id;
 
-  id          = metrics.create("proxy.process.proxy.reconfigure_time");
+  id          = Metrics::Counter::create("proxy.process.proxy.reconfigure_time");
   metrics[id] = time(nullptr);
-  id          = metrics.create("proxy.process.proxy.start_time");
+  id          = Metrics::Counter::create("proxy.process.proxy.start_time");
   metrics[id] = time(nullptr);
   // These all gets initialied to 0
-  metrics.create("proxy.process.proxy.reconfigure_required");
-  metrics.create("proxy.process.proxy.restart_required");
-  metrics.create("proxy.process.proxy.draining");
+  Metrics::Counter::create("proxy.process.proxy.reconfigure_required");
+  Metrics::Counter::create("proxy.process.proxy.restart_required");
+  Metrics::Counter::create("proxy.process.proxy.draining");
   // This gets updated later (in the callback)
-  metrics.create("proxy.process.proxy.cache_ready_time");
+  Metrics::Counter::create("proxy.process.proxy.cache_ready_time");
 
   // init huge pages
   int enabled;

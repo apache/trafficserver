@@ -45,7 +45,7 @@
 
 #include "api/Metrics.h"
 
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 #define MAX_NAMED                       32
 #define DEFAULT_DNS_RETRIES             5
@@ -97,17 +97,17 @@ extern unsigned int dns_sequence_number;
 
 // Stats
 struct DNSStatsBlock {
-  Counter::AtomicType *fail_time;
-  Counter::AtomicType *in_flight;
-  Counter::AtomicType *lookup_fail;
-  Counter::AtomicType *lookup_success;
-  Counter::AtomicType *max_retries_exceeded;
-  Counter::AtomicType *response_time;
-  Counter::AtomicType *retries;
-  Counter::AtomicType *success_time;
-  Counter::AtomicType *tcp_reset;
-  Counter::AtomicType *tcp_retries;
-  Counter::AtomicType *total_lookups;
+  Metrics::Counter::AtomicType *fail_time;
+  Metrics::Counter::AtomicType *in_flight;
+  Metrics::Counter::AtomicType *lookup_fail;
+  Metrics::Counter::AtomicType *lookup_success;
+  Metrics::Counter::AtomicType *max_retries_exceeded;
+  Metrics::Counter::AtomicType *response_time;
+  Metrics::Counter::AtomicType *retries;
+  Metrics::Counter::AtomicType *success_time;
+  Metrics::Counter::AtomicType *tcp_reset;
+  Metrics::Counter::AtomicType *tcp_retries;
+  Metrics::Counter::AtomicType *total_lookups;
 };
 
 struct HostEnt;

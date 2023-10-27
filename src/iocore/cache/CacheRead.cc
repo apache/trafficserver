@@ -61,8 +61,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
       c->op_type = static_cast<int>(CacheOpType::Read);
-      Counter::increment(cache_rsb.status[c->op_type].active);
-      Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->first_key = c->key = c->earliest_key = *key;
       c->vol                                  = vol;
       c->frag_type                            = type;
@@ -90,8 +90,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
     }
   }
 Lmiss:
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -131,8 +131,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
       c->vol                                  = vol;
       c->vio.op                               = VIO::READ;
       c->op_type                              = static_cast<int>(CacheOpType::Read);
-      Counter::increment(cache_rsb.status[c->op_type].active);
-      Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
       c->params    = params;
@@ -163,8 +163,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     }
   }
 Lmiss:
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -203,10 +203,10 @@ CacheVC::openReadFromWriterFailure(int event, Event *e)
 {
   od = nullptr;
   vector.clear(false);
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(cache_rsb.read_busy_failure);
-  Counter::increment(vol->cache_vol->vol_rsb.read_busy_failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(cache_rsb.read_busy_failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_busy_failure);
   _action.continuation->handleEvent(event, e);
   free_CacheVC(this);
   return EVENT_DONE;
@@ -454,8 +454,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
         dir_clean(&first_dir);
         dir_clean(&earliest_dir);
         SET_HANDLER(&CacheVC::openReadFromWriterMain);
-        Counter::increment(cache_rsb.read_busy_success);
-        Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
+        Metrics::Counter::increment(cache_rsb.read_busy_success);
+        Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
 
         return callcont(CACHE_EVENT_OPEN_READ);
       }
@@ -494,8 +494,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
   DDbg(dbg_ctl_cache_read_agg, "%p: key: %X %X: single fragment read", this, first_key.slice32(1), key.slice32(0));
   MUTEX_RELEASE(writer_lock);
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
-  Counter::increment(cache_rsb.read_busy_success);
-  Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
+  Metrics::Counter::increment(cache_rsb.read_busy_success);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
   return callcont(CACHE_EVENT_OPEN_READ);
 }
 
@@ -776,8 +776,8 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
       doc->magic = DOC_CORRUPT;
 
-      Counter::increment(cache_rsb.read_seek_fail);
-      Counter::increment(vol->cache_vol->vol_rsb.read_seek_fail);
+      Metrics::Counter::increment(cache_rsb.read_seek_fail);
+      Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_seek_fail);
 
       CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
       if (!lock.is_locked()) {
@@ -1014,16 +1014,16 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       vol->close_write(this);
     }
   }
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return free_CacheVC(this);
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
 Lsuccess:
   if (write_vc) {
-    Counter::increment(cache_rsb.read_busy_success);
-    Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
+    Metrics::Counter::increment(cache_rsb.read_busy_success);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_busy_success);
   }
   SET_HANDLER(&CacheVC::openReadMain);
   return callcont(CACHE_EVENT_OPEN_READ);
@@ -1074,8 +1074,8 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     }
   }
 
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_ALT_MISS);
   return free_CacheVC(this);
 Lrestart:
@@ -1216,8 +1216,8 @@ CacheVC::openReadStartHead(int event, Event *e)
         if (cl != doc_len) {
           Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %" PRId64 " != %" PRId64,
                   key.slice32(0), cl, doc_len);
-          Counter::increment(cache_rsb.read_invalid);
-          Counter::increment(vol->cache_vol->vol_rsb.read_invalid);
+          Metrics::Counter::increment(cache_rsb.read_invalid);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.read_invalid);
           err = ECACHE_BAD_META_DATA;
           goto Ldone;
         }
@@ -1282,12 +1282,12 @@ CacheVC::openReadStartHead(int event, Event *e)
   }
 Ldone:
   if (!f.lookup) {
-    Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-    Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+    Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-err);
   } else {
-    Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-    Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+    Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
     _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, (void *)-err);
   }
   return free_CacheVC(this);
@@ -1297,8 +1297,8 @@ Lsuccess:
   SET_HANDLER(&CacheVC::openReadMain);
   return callcont(CACHE_EVENT_OPEN_READ);
 Lookup:
-  Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-  Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
   _action.continuation->handleEvent(CACHE_EVENT_LOOKUP, nullptr);
   return free_CacheVC(this);
 Learliest:

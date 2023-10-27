@@ -228,7 +228,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
     }
   }
 
-  Counter::increment(ssl_rsb.session_cache_new_session);
+  Metrics::Counter::increment(ssl_rsb.session_cache_new_session);
   session_cache->insertSession(sid, sess, ssl);
 
   // Call hook after new session is created
@@ -651,7 +651,7 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 
   // On the "first run" the metrics have not been initialized, so this has to check it.
   if (ssl_rsb.total_ticket_keys_renewed) {
-    Counter::increment(ssl_rsb.total_ticket_keys_renewed);
+    Metrics::Counter::increment(ssl_rsb.total_ticket_keys_renewed);
   }
 
 // Setting the callback can only fail if OpenSSL does not recognize the
@@ -1136,7 +1136,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
         it = cipher_map.find(SSL_CIPHER_STAT_OTHER);
         ink_assert(it != cipher_map.end());
       }
-      Counter::increment(it->second);
+      Metrics::Counter::increment(it->second);
     }
   }
 }

@@ -36,7 +36,7 @@
 #include "tscore/ink_hrtime.h"
 
 #include "api/Metrics.h"
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 swoc::file::path
 temp_prefix(const char *basename)
@@ -267,12 +267,12 @@ TEST_CASE("net_io", "[io_uring]")
 
   auto &m = Metrics::getInstance();
 
-  Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
+  Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
 
-  uint64_t completions_before = Counter::read(completed);
+  uint64_t completions_before = Metrics::Counter::read(completed);
   uint64_t needed             = 2;
 
-  while ((Counter::read(completed) - completions_before) < needed) {
+  while ((Metrics::Counter::read(completed) - completions_before) < needed) {
     ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 

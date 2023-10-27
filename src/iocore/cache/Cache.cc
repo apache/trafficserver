@@ -130,66 +130,66 @@ static void
 register_cache_stats(CacheStatsBlock *rsb, const std::string prefix)
 {
   // These are special, in that we have 7 x 3 metrics here in a structure based on cache operation done
-  rsb->status[static_cast<int>(CacheOpType::Lookup)].active    = Counter::CreatePtr(prefix + ".lookup.active");
-  rsb->status[static_cast<int>(CacheOpType::Lookup)].success   = Counter::CreatePtr(prefix + ".lookup.success");
-  rsb->status[static_cast<int>(CacheOpType::Lookup)].failure   = Counter::CreatePtr(prefix + ".lookup.failure");
-  rsb->status[static_cast<int>(CacheOpType::Read)].active      = Counter::CreatePtr(prefix + ".read.active");
-  rsb->status[static_cast<int>(CacheOpType::Read)].success     = Counter::CreatePtr(prefix + ".read.success");
-  rsb->status[static_cast<int>(CacheOpType::Read)].failure     = Counter::CreatePtr(prefix + ".read.failure");
-  rsb->status[static_cast<int>(CacheOpType::Write)].active     = Counter::CreatePtr(prefix + ".write.active");
-  rsb->status[static_cast<int>(CacheOpType::Write)].success    = Counter::CreatePtr(prefix + ".write.success");
-  rsb->status[static_cast<int>(CacheOpType::Write)].failure    = Counter::CreatePtr(prefix + ".write.failure");
-  rsb->status[static_cast<int>(CacheOpType::Update)].active    = Counter::CreatePtr(prefix + ".update.active");
-  rsb->status[static_cast<int>(CacheOpType::Update)].success   = Counter::CreatePtr(prefix + ".update.success");
-  rsb->status[static_cast<int>(CacheOpType::Update)].failure   = Counter::CreatePtr(prefix + ".update.failure");
-  rsb->status[static_cast<int>(CacheOpType::Remove)].active    = Counter::CreatePtr(prefix + ".remove.active");
-  rsb->status[static_cast<int>(CacheOpType::Remove)].success   = Counter::CreatePtr(prefix + ".remove.success");
-  rsb->status[static_cast<int>(CacheOpType::Remove)].failure   = Counter::CreatePtr(prefix + ".remove.failure");
-  rsb->status[static_cast<int>(CacheOpType::Evacuate)].active  = Counter::CreatePtr(prefix + ".evacuate.active");
-  rsb->status[static_cast<int>(CacheOpType::Evacuate)].success = Counter::CreatePtr(prefix + ".evacuate.success");
-  rsb->status[static_cast<int>(CacheOpType::Evacuate)].failure = Counter::CreatePtr(prefix + ".evacuate.failure");
-  rsb->status[static_cast<int>(CacheOpType::Scan)].active      = Counter::CreatePtr(prefix + ".scan.active");
-  rsb->status[static_cast<int>(CacheOpType::Scan)].success     = Counter::CreatePtr(prefix + ".scan.success");
-  rsb->status[static_cast<int>(CacheOpType::Scan)].failure     = Counter::CreatePtr(prefix + ".scan.failure");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].active    = Metrics::Counter::createPtr(prefix + ".lookup.active");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].success   = Metrics::Counter::createPtr(prefix + ".lookup.success");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].failure   = Metrics::Counter::createPtr(prefix + ".lookup.failure");
+  rsb->status[static_cast<int>(CacheOpType::Read)].active      = Metrics::Counter::createPtr(prefix + ".read.active");
+  rsb->status[static_cast<int>(CacheOpType::Read)].success     = Metrics::Counter::createPtr(prefix + ".read.success");
+  rsb->status[static_cast<int>(CacheOpType::Read)].failure     = Metrics::Counter::createPtr(prefix + ".read.failure");
+  rsb->status[static_cast<int>(CacheOpType::Write)].active     = Metrics::Counter::createPtr(prefix + ".write.active");
+  rsb->status[static_cast<int>(CacheOpType::Write)].success    = Metrics::Counter::createPtr(prefix + ".write.success");
+  rsb->status[static_cast<int>(CacheOpType::Write)].failure    = Metrics::Counter::createPtr(prefix + ".write.failure");
+  rsb->status[static_cast<int>(CacheOpType::Update)].active    = Metrics::Counter::createPtr(prefix + ".update.active");
+  rsb->status[static_cast<int>(CacheOpType::Update)].success   = Metrics::Counter::createPtr(prefix + ".update.success");
+  rsb->status[static_cast<int>(CacheOpType::Update)].failure   = Metrics::Counter::createPtr(prefix + ".update.failure");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].active    = Metrics::Counter::createPtr(prefix + ".remove.active");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].success   = Metrics::Counter::createPtr(prefix + ".remove.success");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].failure   = Metrics::Counter::createPtr(prefix + ".remove.failure");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].active  = Metrics::Counter::createPtr(prefix + ".evacuate.active");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].success = Metrics::Counter::createPtr(prefix + ".evacuate.success");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].failure = Metrics::Counter::createPtr(prefix + ".evacuate.failure");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].active      = Metrics::Counter::createPtr(prefix + ".scan.active");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].success     = Metrics::Counter::createPtr(prefix + ".scan.success");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].failure     = Metrics::Counter::createPtr(prefix + ".scan.failure");
 
   // These are in an array of 1, 2 and 3+ fragment documents
-  rsb->fragment_document_count[0] = Counter::CreatePtr(prefix + ".frags_per_doc.1");
-  rsb->fragment_document_count[1] = Counter::CreatePtr(prefix + ".frags_per_doc.2");
-  rsb->fragment_document_count[2] = Counter::CreatePtr(prefix + ".frags_per_doc.3+");
+  rsb->fragment_document_count[0] = Metrics::Counter::createPtr(prefix + ".frags_per_doc.1");
+  rsb->fragment_document_count[1] = Metrics::Counter::createPtr(prefix + ".frags_per_doc.2");
+  rsb->fragment_document_count[2] = Metrics::Counter::createPtr(prefix + ".frags_per_doc.3+");
 
   // And then everything else
-  rsb->bytes_used                = Counter::CreatePtr(prefix + ".bytes_used");
-  rsb->bytes_total               = Counter::CreatePtr(prefix + ".bytes_total");
-  rsb->stripes                   = Counter::CreatePtr(prefix + ".stripes");
-  rsb->ram_cache_bytes_total     = Counter::CreatePtr(prefix + ".ram_cache.total_bytes");
-  rsb->ram_cache_bytes           = Counter::CreatePtr(prefix + ".ram_cache.bytes_used");
-  rsb->ram_cache_hits            = Counter::CreatePtr(prefix + ".ram_cache.hits");
-  rsb->ram_cache_misses          = Counter::CreatePtr(prefix + ".ram_cache.misses");
-  rsb->pread_count               = Counter::CreatePtr(prefix + ".pread_count");
-  rsb->percent_full              = Counter::CreatePtr(prefix + ".percent_full");
-  rsb->read_seek_fail            = Counter::CreatePtr(prefix + ".read.seek.failure");
-  rsb->read_invalid              = Counter::CreatePtr(prefix + ".read.invalid");
-  rsb->write_backlog_failure     = Counter::CreatePtr(prefix + ".write.backlog.failure");
-  rsb->direntries_total          = Counter::CreatePtr(prefix + ".direntries.total");
-  rsb->direntries_used           = Counter::CreatePtr(prefix + ".direntries.used");
-  rsb->directory_collision_count = Counter::CreatePtr(prefix + ".directory_collision");
-  rsb->read_busy_success         = Counter::CreatePtr(prefix + ".read_busy.success");
-  rsb->read_busy_failure         = Counter::CreatePtr(prefix + ".read_busy.failure");
-  rsb->write_bytes               = Counter::CreatePtr(prefix + ".write_bytes_stat");
-  rsb->hdr_vector_marshal        = Counter::CreatePtr(prefix + ".vector_marshals");
-  rsb->hdr_marshal               = Counter::CreatePtr(prefix + ".hdr_marshals");
-  rsb->hdr_marshal_bytes         = Counter::CreatePtr(prefix + ".hdr_marshal_bytes");
-  rsb->gc_bytes_evacuated        = Counter::CreatePtr(prefix + ".gc_bytes_evacuated");
-  rsb->gc_frags_evacuated        = Counter::CreatePtr(prefix + ".gc_frags_evacuated");
-  rsb->directory_wrap            = Counter::CreatePtr(prefix + ".wrap_count");
-  rsb->directory_sync_count      = Counter::CreatePtr(prefix + ".sync.count");
-  rsb->directory_sync_bytes      = Counter::CreatePtr(prefix + ".sync.bytes");
-  rsb->directory_sync_time       = Counter::CreatePtr(prefix + ".sync.time");
-  rsb->span_errors_read          = Counter::CreatePtr(prefix + ".span.errors.read");
-  rsb->span_errors_write         = Counter::CreatePtr(prefix + ".span.errors.write");
-  rsb->span_failing              = Counter::CreatePtr(prefix + ".span.failing");
-  rsb->span_offline              = Counter::CreatePtr(prefix + ".span.offline");
-  rsb->span_online               = Counter::CreatePtr(prefix + ".span.online");
+  rsb->bytes_used                = Metrics::Counter::createPtr(prefix + ".bytes_used");
+  rsb->bytes_total               = Metrics::Counter::createPtr(prefix + ".bytes_total");
+  rsb->stripes                   = Metrics::Counter::createPtr(prefix + ".stripes");
+  rsb->ram_cache_bytes_total     = Metrics::Counter::createPtr(prefix + ".ram_cache.total_bytes");
+  rsb->ram_cache_bytes           = Metrics::Counter::createPtr(prefix + ".ram_cache.bytes_used");
+  rsb->ram_cache_hits            = Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
+  rsb->ram_cache_misses          = Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
+  rsb->pread_count               = Metrics::Counter::createPtr(prefix + ".pread_count");
+  rsb->percent_full              = Metrics::Counter::createPtr(prefix + ".percent_full");
+  rsb->read_seek_fail            = Metrics::Counter::createPtr(prefix + ".read.seek.failure");
+  rsb->read_invalid              = Metrics::Counter::createPtr(prefix + ".read.invalid");
+  rsb->write_backlog_failure     = Metrics::Counter::createPtr(prefix + ".write.backlog.failure");
+  rsb->direntries_total          = Metrics::Counter::createPtr(prefix + ".direntries.total");
+  rsb->direntries_used           = Metrics::Counter::createPtr(prefix + ".direntries.used");
+  rsb->directory_collision_count = Metrics::Counter::createPtr(prefix + ".directory_collision");
+  rsb->read_busy_success         = Metrics::Counter::createPtr(prefix + ".read_busy.success");
+  rsb->read_busy_failure         = Metrics::Counter::createPtr(prefix + ".read_busy.failure");
+  rsb->write_bytes               = Metrics::Counter::createPtr(prefix + ".write_bytes_stat");
+  rsb->hdr_vector_marshal        = Metrics::Counter::createPtr(prefix + ".vector_marshals");
+  rsb->hdr_marshal               = Metrics::Counter::createPtr(prefix + ".hdr_marshals");
+  rsb->hdr_marshal_bytes         = Metrics::Counter::createPtr(prefix + ".hdr_marshal_bytes");
+  rsb->gc_bytes_evacuated        = Metrics::Counter::createPtr(prefix + ".gc_bytes_evacuated");
+  rsb->gc_frags_evacuated        = Metrics::Counter::createPtr(prefix + ".gc_frags_evacuated");
+  rsb->directory_wrap            = Metrics::Counter::createPtr(prefix + ".wrap_count");
+  rsb->directory_sync_count      = Metrics::Counter::createPtr(prefix + ".sync.count");
+  rsb->directory_sync_bytes      = Metrics::Counter::createPtr(prefix + ".sync.bytes");
+  rsb->directory_sync_time       = Metrics::Counter::createPtr(prefix + ".sync.time");
+  rsb->span_errors_read          = Metrics::Counter::createPtr(prefix + ".span.errors.read");
+  rsb->span_errors_write         = Metrics::Counter::createPtr(prefix + ".span.errors.write");
+  rsb->span_failing              = Metrics::Counter::createPtr(prefix + ".span.failing");
+  rsb->span_offline              = Metrics::Counter::createPtr(prefix + ".span.offline");
+  rsb->span_online               = Metrics::Counter::createPtr(prefix + ".span.online");
 }
 
 // ToDo: This gets called as part of librecords collection continuation, probably change this later.
@@ -216,7 +216,7 @@ CachePeriodicMetricsUpdate()
   // volume metric more than once (once per disk). This happens once every sync
   // period (5s), and nothing else modifies these metrics.
   for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
-    Counter::write(gvol[vol_ix]->cache_vol->vol_rsb.bytes_used, 0);
+    Metrics::Counter::write(gvol[vol_ix]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
@@ -224,15 +224,15 @@ CachePeriodicMetricsUpdate()
       Stripe *v    = gvol[vol_ix];
       int64_t used = cache_bytes_used(vol_ix);
 
-      Counter::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
+      Metrics::Counter::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
       total_sum += used;
     }
 
     // Also update the global (not per volume) metrics
-    int64_t total = Counter::read(cache_rsb.bytes_total);
+    int64_t total = Metrics::Counter::read(cache_rsb.bytes_total);
 
-    Counter::write(cache_rsb.bytes_used, total_sum);
-    Counter::write(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
+    Metrics::Counter::write(cache_rsb.bytes_used, total_sum);
+    Metrics::Counter::write(cache_rsb.percent_full, total ? (total_sum * 100) / total : 0);
   }
 }
 
@@ -509,9 +509,9 @@ CacheProcessor::diskInitialized()
 
   /* Practically just took all bad_disks offline so update the stats. */
   // ToDo: These don't get update on the per-volume metrics :-/
-  Counter::write(cache_rsb.span_offline, bad_disks);
-  Counter::decrement(cache_rsb.span_failing, bad_disks);
-  Counter::write(cache_rsb.span_online, gndisks);
+  Metrics::Counter::write(cache_rsb.span_offline, bad_disks);
+  Metrics::Counter::decrement(cache_rsb.span_failing, bad_disks);
+  Metrics::Counter::write(cache_rsb.span_online, gndisks);
 
   /* create the cachevol list only if num volumes are greater than 0. */
   if (config_volumes.num_volumes == 0) {
@@ -657,21 +657,21 @@ CacheProcessor::cacheInitialized()
             ram_cache_bytes += gvol[i]->dirlen();
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-            Counter::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total, gvol[i]->dirlen());
+            Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total, gvol[i]->dirlen());
           }
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
-          Counter::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
-          Counter::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
-          Counter::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
 
@@ -704,7 +704,8 @@ CacheProcessor::cacheInitialized()
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - factor = %f", factor);
             gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), vol);
             ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
-            Counter::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total, static_cast<int64_t>(http_ram_cache_size * factor));
+            Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_bytes_total,
+                                        static_cast<int64_t>(http_ram_cache_size * factor));
           } else if (gvol[i]->cache_vol->ramcache_enabled) {
             ink_release_assert(!"Unexpected non-HTTP cache volume");
           }
@@ -712,17 +713,17 @@ CacheProcessor::cacheInitialized()
               ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
-          Counter::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
-          Counter::increment(vol->cache_vol->vol_rsb.stripes);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.stripes);
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
-          Counter::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
-          Counter::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
+          Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
       }
@@ -741,10 +742,10 @@ CacheProcessor::cacheInitialized()
         break;
       }
 
-      Counter::write(cache_rsb.ram_cache_bytes_total, ram_cache_bytes);
-      Counter::write(cache_rsb.bytes_total, total_cache_bytes);
-      Counter::write(cache_rsb.direntries_total, total_direntries);
-      Counter::write(cache_rsb.direntries_used, used_direntries);
+      Metrics::Counter::write(cache_rsb.ram_cache_bytes_total, ram_cache_bytes);
+      Metrics::Counter::write(cache_rsb.bytes_total, total_cache_bytes);
+      Metrics::Counter::write(cache_rsb.direntries_total, total_direntries);
+      Metrics::Counter::write(cache_rsb.direntries_used, used_direntries);
 
       if (!check) {
         dir_sync_init();
@@ -1014,14 +1015,14 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
     }
   }
 
-  Counter::decrement(cache_rsb.bytes_total, total_bytes_delete);
-  Counter::decrement(cache_rsb.direntries_total, total_dir_delete);
-  Counter::decrement(cache_rsb.direntries_used, used_dir_delete);
+  Metrics::Counter::decrement(cache_rsb.bytes_total, total_bytes_delete);
+  Metrics::Counter::decrement(cache_rsb.direntries_total, total_dir_delete);
+  Metrics::Counter::decrement(cache_rsb.direntries_used, used_dir_delete);
 
   /* Update the span metrics, if failing then move the span from "failing" to "offline" bucket
    * if operator took it offline, move it from "online" to "offline" bucket */
-  Counter::decrement(admin ? cache_rsb.span_online : cache_rsb.span_failing);
-  Counter::increment(cache_rsb.span_offline);
+  Metrics::Counter::decrement(admin ? cache_rsb.span_online : cache_rsb.span_failing);
+  Metrics::Counter::increment(cache_rsb.span_offline);
 
   if (theCache) {
     rebuild_host_table(theCache);
@@ -1198,8 +1199,8 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);
-  Counter::increment(cache_rsb.status[c->op_type].active);
-  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = type;
   c->f.lookup           = 1;
@@ -1240,8 +1241,8 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
   c->vio.op    = VIO::NONE;
   c->frag_type = type;
   c->op_type   = static_cast<int>(CacheOpType::Remove);
-  Counter::increment(cache_rsb.status[c->op_type].active);
-  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->vol                = vol;
   c->dir                = result;
@@ -1689,7 +1690,7 @@ cplist_reconfigure()
     }
   }
 
-  Counter::write(cache_rsb.stripes, gnvol + assignedVol);
+  Metrics::Counter::write(cache_rsb.stripes, gnvol + assignedVol);
 
   return 0;
 }

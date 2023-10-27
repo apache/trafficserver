@@ -326,7 +326,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   IOUringContext *ur = IOUringContext::local_context();
 #endif
 
-  Counter::increment(net_rsb.handler_run);
+  Metrics::Counter::increment(net_rsb.handler_run);
   SCOPED_MUTEX_LOCK(lock, mutex, this->thread);
 
   process_enabled_list();
@@ -481,8 +481,8 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
   if (diff > 0) {
     total_idle_time += diff;
     ++total_idle_count;
-    Counter::increment(net_rsb.keep_alive_queue_timeout_total, diff);
-    Counter::increment(net_rsb.keep_alive_queue_timeout_count);
+    Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_total, diff);
+    Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_count);
   }
   Debug("net_queue", "closing connection NetEvent=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64, ne,
         keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(ne->next_inactivity_timeout_at),
@@ -560,7 +560,7 @@ NetHandler::add_to_active_queue(NetEvent *ne)
   } else {
     if (active_queue_full) {
       // there is no room left in the queue
-      Counter::increment(net_rsb.requests_max_throttled_in);
+      Metrics::Counter::increment(net_rsb.requests_max_throttled_in);
       return false;
     }
     // in the keep-alive queue or no queue, new to this queue

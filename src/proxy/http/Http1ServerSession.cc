@@ -80,8 +80,8 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   con_id = ProxySession::next_connection_id();
 
   magic = HTTP_SS_MAGIC_ALIVE;
-  Counter::increment(http_rsb.current_server_connections);
-  Counter::increment(http_rsb.total_server_connections);
+  Metrics::Counter::increment(http_rsb.current_server_connections);
+  Metrics::Counter::increment(http_rsb.total_server_connections);
 
   if (iobuf == nullptr) {
     read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -110,7 +110,7 @@ Http1ServerSession::do_io_close(int alerrno)
       w.print("[{}] session close: nevtc {:x}", con_id, _vc);
     }
 
-    Counter::decrement(http_rsb.current_server_connections);
+    Metrics::Counter::decrement(http_rsb.current_server_connections);
 
     // Update upstream connection tracking data if present.
     this->release_outbound_connection_tracking();
@@ -125,7 +125,7 @@ Http1ServerSession::do_io_close(int alerrno)
     _vc = nullptr;
 
     if (to_parent_proxy) {
-      Counter::decrement(http_rsb.current_parent_proxy_connections);
+      Metrics::Counter::decrement(http_rsb.current_parent_proxy_connections);
     }
   }
 
@@ -207,7 +207,7 @@ Http1ServerSession ::release_transaction()
   // Private sessions are never released back to the shared pool
   if (this->is_private() || sharing_match == 0) {
     if (this->is_private()) {
-      Counter::increment(http_rsb.origin_close_private);
+      Metrics::Counter::increment(http_rsb.origin_close_private);
     }
     this->do_io_close();
   } else if (state == SSN_TO_RELEASE) {
@@ -225,7 +225,7 @@ Http1ServerSession ::release_transaction()
       //  due to lock contention
       // FIX:  should retry instead of closing
       do_io_close(HTTP_ERRNO);
-      Counter::increment(http_rsb.origin_shutdown_pool_lock_contention);
+      Metrics::Counter::increment(http_rsb.origin_shutdown_pool_lock_contention);
     } else {
       // The session was successfully put into the session
       //    manager and it will manage it

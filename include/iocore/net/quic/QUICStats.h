@@ -25,10 +25,10 @@
 
 #include "api/Metrics.h"
 
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 struct QuicStatsBlock {
-  Counter::AtomicType *total_packets_sent;
+  Metrics::Counter::AtomicType *total_packets_sent;
 };
 
 extern QuicStatsBlock quic_rsb;

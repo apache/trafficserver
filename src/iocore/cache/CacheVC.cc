@@ -513,8 +513,8 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
 // ToDo: Why are these for debug only ??
 #if DEBUG
-  Counter::increment(cache_rsb.pread_count);
-  Counter::increment(vol->cache_vol->vol_rsb.pread_count);
+  Metrics::Counter::increment(cache_rsb.pread_count);
+  Metrics::Counter::increment(vol->cache_vol->vol_rsb.pread_count);
 #endif
 
   return EVENT_CONT;
@@ -603,8 +603,8 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return ret;
     }
   Ldone:
-    Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
-    Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
     if (od) {
       vol->close_write(this);
     }

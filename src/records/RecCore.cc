@@ -36,12 +36,6 @@
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"
 
-#include <deque>
-#include <utility>
-
-#include <deque>
-#include <utility>
-
 using ts::Metrics;
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
@@ -516,9 +510,9 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err                   = REC_ERR_FAIL;
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-  auto it                       = metrics.find(name);
+  RecErrT err          = REC_ERR_FAIL;
+  ts::Metrics &metrics = ts::Metrics::instance();
+  auto it              = metrics.find(name);
 
   if (it != metrics.end()) {
     RecRecord r;
@@ -570,7 +564,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   tmp.rec_type  = RECT_ALL;
   tmp.data_type = RECD_INT;
 
-  for (auto &&[name, val] : ts::Metrics::Counter::getInstance()) {
+  for (auto &&[name, val] : ts::Metrics::instance()) {
     if (regex.match(name.data()) >= 0) {
       tmp.name         = name.data();
       tmp.data.rec_int = val;
@@ -902,7 +896,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
   // Dump all new metrics as well (no "type" for them)
   RecData datum;
 
-  for (auto &&[name, val] : ts::Metrics::Counter::getInstance()) {
+  for (auto &&[name, val] : ts::Metrics::instance()) {
     datum.rec_int = val;
     callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
   }

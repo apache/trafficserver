@@ -33,21 +33,21 @@ Linux io_uring helper library
 #include "tscore/Diags.h"
 
 #include <api/Metrics.h>
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 std::atomic<int> main_wq_fd;
 
 IOUringConfig IOUringContext::config;
 
 struct IOUringStatsBlock {
-  Counter::AtomicType *io_uring_submitted;
-  Counter::AtomicType *io_uring_completed;
+  Metrics::Counter::AtomicType *io_uring_submitted;
+  Metrics::Counter::AtomicType *io_uring_completed;
 };
 
 static IOUringStatsBlock io_uring_rsb = []() {
   auto &intm = Metrics::getInstance();
-  return IOUringStatsBlock{Counter::CreatePtr("proxy.process.io_uring.submitted"),
-                           Counter::CreatePtr("proxy.process.io_uring.completed")};
+  return IOUringStatsBlock{Metrics::Counter::createPtr("proxy.process.io_uring.submitted"),
+                           Metrics::Counter::createPtr("proxy.process.io_uring.completed")};
 }();
 
 void
@@ -142,7 +142,7 @@ IOUringContext::get_wq_max_workers()
 void
 IOUringContext::submit()
 {
-  Counter::increment(io_uring_rsb.io_uring_submitted, io_uring_submit(&ring));
+  Metrics::Counter::increment(io_uring_rsb.io_uring_submitted, io_uring_submit(&ring));
 }
 
 void
@@ -160,7 +160,7 @@ IOUringContext::service()
   io_uring_peek_cqe(&ring, &cqe);
   while (cqe) {
     handle_cqe(cqe);
-    Counter::increment(io_uring_rsb.io_uring_completed);
+    Metrics::Counter::increment(io_uring_rsb.io_uring_completed);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;
@@ -182,10 +182,10 @@ IOUringContext::submit_and_wait(ink_hrtime t)
 
   int count = io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
 
-  Counter::increment(io_uring_rsb.io_uring_submitted, count);
+  Metrics::Counter::increment(io_uring_rsb.io_uring_submitted, count);
   while (cqe) {
     handle_cqe(cqe);
-    Counter::increment(io_uring_rsb.io_uring_completed);
+    Metrics::Counter::increment(io_uring_rsb.io_uring_completed);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;

@@ -31,7 +31,7 @@
 
 #include "api/Metrics.h"
 
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 class HTTPHdr;
 
@@ -77,35 +77,35 @@ const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT             = 15;
 
 // Statistics
 struct Http2StatsBlock {
-  Counter::AtomicType *current_client_session_count;
-  Counter::AtomicType *current_server_session_count;
-  Counter::AtomicType *current_active_client_connection_count;
-  Counter::AtomicType *current_active_server_connection_count;
-  Counter::AtomicType *current_client_stream_count;
-  Counter::AtomicType *current_server_stream_count;
-  Counter::AtomicType *total_client_stream_count;
-  Counter::AtomicType *total_server_stream_count;
-  Counter::AtomicType *total_transactions_time;
-  Counter::AtomicType *total_client_connection_count;
-  Counter::AtomicType *total_server_connection_count;
-  Counter::AtomicType *stream_errors_count;
-  Counter::AtomicType *connection_errors_count;
-  Counter::AtomicType *session_die_default;
-  Counter::AtomicType *session_die_other;
-  Counter::AtomicType *session_die_active;
-  Counter::AtomicType *session_die_inactive;
-  Counter::AtomicType *session_die_eos;
-  Counter::AtomicType *session_die_error;
-  Counter::AtomicType *session_die_high_error_rate;
-  Counter::AtomicType *max_settings_per_frame_exceeded;
-  Counter::AtomicType *max_settings_per_minute_exceeded;
-  Counter::AtomicType *max_settings_frames_per_minute_exceeded;
-  Counter::AtomicType *max_ping_frames_per_minute_exceeded;
-  Counter::AtomicType *max_priority_frames_per_minute_exceeded;
-  Counter::AtomicType *max_rst_stream_frames_per_minute_exceeded;
-  Counter::AtomicType *insufficient_avg_window_update;
-  Counter::AtomicType *max_concurrent_streams_exceeded_in;
-  Counter::AtomicType *max_concurrent_streams_exceeded_out;
+  Metrics::Counter::AtomicType *current_client_session_count;
+  Metrics::Counter::AtomicType *current_server_session_count;
+  Metrics::Counter::AtomicType *current_active_client_connection_count;
+  Metrics::Counter::AtomicType *current_active_server_connection_count;
+  Metrics::Counter::AtomicType *current_client_stream_count;
+  Metrics::Counter::AtomicType *current_server_stream_count;
+  Metrics::Counter::AtomicType *total_client_stream_count;
+  Metrics::Counter::AtomicType *total_server_stream_count;
+  Metrics::Counter::AtomicType *total_transactions_time;
+  Metrics::Counter::AtomicType *total_client_connection_count;
+  Metrics::Counter::AtomicType *total_server_connection_count;
+  Metrics::Counter::AtomicType *stream_errors_count;
+  Metrics::Counter::AtomicType *connection_errors_count;
+  Metrics::Counter::AtomicType *session_die_default;
+  Metrics::Counter::AtomicType *session_die_other;
+  Metrics::Counter::AtomicType *session_die_active;
+  Metrics::Counter::AtomicType *session_die_inactive;
+  Metrics::Counter::AtomicType *session_die_eos;
+  Metrics::Counter::AtomicType *session_die_error;
+  Metrics::Counter::AtomicType *session_die_high_error_rate;
+  Metrics::Counter::AtomicType *max_settings_per_frame_exceeded;
+  Metrics::Counter::AtomicType *max_settings_per_minute_exceeded;
+  Metrics::Counter::AtomicType *max_settings_frames_per_minute_exceeded;
+  Metrics::Counter::AtomicType *max_ping_frames_per_minute_exceeded;
+  Metrics::Counter::AtomicType *max_priority_frames_per_minute_exceeded;
+  Metrics::Counter::AtomicType *max_rst_stream_frames_per_minute_exceeded;
+  Metrics::Counter::AtomicType *insufficient_avg_window_update;
+  Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_in;
+  Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_out;
 };
 
 extern Http2StatsBlock http2_rsb;

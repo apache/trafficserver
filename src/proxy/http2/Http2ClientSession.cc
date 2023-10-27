@@ -60,7 +60,7 @@ Http2ClientSession::free()
 {
   auto mutex_thread = this->mutex->thread_holding;
   if (Http2CommonSession::common_free(this)) {
-    Counter::decrement(http2_rsb.current_client_session_count);
+    Metrics::Counter::decrement(http2_rsb.current_client_session_count);
     THREAD_FREE(this, http2ClientSessionAllocator, mutex_thread);
   }
 }
@@ -88,8 +88,8 @@ void
 Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
-  Counter::increment(http2_rsb.current_client_session_count);
-  Counter::increment(http2_rsb.total_client_connection_count);
+  Metrics::Counter::increment(http2_rsb.current_client_session_count);
+  Metrics::Counter::increment(http2_rsb.total_client_connection_count);
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.
@@ -254,13 +254,13 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 void
 Http2ClientSession::increment_current_active_connections_stat()
 {
-  Counter::increment(http2_rsb.current_active_client_connection_count);
+  Metrics::Counter::increment(http2_rsb.current_active_client_connection_count);
 }
 
 void
 Http2ClientSession::decrement_current_active_connections_stat()
 {
-  Counter::decrement(http2_rsb.current_active_client_connection_count);
+  Metrics::Counter::decrement(http2_rsb.current_active_client_connection_count);
 }
 
 sockaddr const *

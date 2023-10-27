@@ -1125,8 +1125,8 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
 void
 PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 {
-  int stats_counter             = 0;
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
+  int stats_counter    = 0;
+  ts::Metrics &metrics = ts::Metrics::instance();
 
   for (auto &entry : parsed_conf) {
     const PreWarm::SPtrConstDst &dst = entry.first;
@@ -1145,11 +1145,11 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
                  dst->host.data(), dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp", STAT_ENTRIES[j].data());
       }
 
-      ts::Metrics::Counter::IdType stats_id = metrics.lookup(name);
-      Counter::AtomicType *metric           = nullptr;
+      ts::Metrics::IdType stats_id         = metrics.lookup(name);
+      Metrics::Counter::AtomicType *metric = nullptr;
 
-      if (stats_id == ts::Metrics::Counter::NOT_FOUND) {
-        metric = Counter::CreatePtr(name);
+      if (stats_id == ts::Metrics::NOT_FOUND) {
+        metric = Metrics::Counter::createPtr(name);
 
         if (metric == nullptr) {
           Error("couldn't register stat name=%s", name);

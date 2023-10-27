@@ -230,7 +230,7 @@ do_remap()
 
   // Testing some simple metrics
   static auto m1 = Metrics::Sum("cript.example1`.m1");
-  static auto m2 = Counter::AtomicType("cript.example1`.m2");
+  static auto m2 = Metrics::Counter("cript.example1`.m2");
 
   m1.increment(100);
   m2.increment();

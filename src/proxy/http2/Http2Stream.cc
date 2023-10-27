@@ -121,7 +121,7 @@ Http2Stream::~Http2Stream()
   this->_milestones.mark(Http2StreamMilestone::CLOSE);
 
   ink_hrtime total_time = this->_milestones.elapsed(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE);
-  Counter::increment(http2_rsb.total_transactions_time, total_time);
+  Metrics::Counter::increment(http2_rsb.total_transactions_time, total_time);
 
   // Slow Log
   if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
@@ -1030,11 +1030,11 @@ void
 Http2Stream::increment_transactions_stat()
 {
   if (this->is_outbound_connection()) {
-    Counter::increment(http2_rsb.current_server_stream_count);
-    Counter::increment(http2_rsb.total_server_stream_count);
+    Metrics::Counter::increment(http2_rsb.current_server_stream_count);
+    Metrics::Counter::increment(http2_rsb.total_server_stream_count);
   } else {
-    Counter::increment(http2_rsb.current_client_stream_count);
-    Counter::increment(http2_rsb.total_client_stream_count);
+    Metrics::Counter::increment(http2_rsb.current_client_stream_count);
+    Metrics::Counter::increment(http2_rsb.total_client_stream_count);
   }
 }
 
@@ -1042,9 +1042,9 @@ void
 Http2Stream::decrement_transactions_stat()
 {
   if (this->is_outbound_connection()) {
-    Counter::decrement(http2_rsb.current_server_stream_count);
+    Metrics::Counter::decrement(http2_rsb.current_server_stream_count);
   } else {
-    Counter::decrement(http2_rsb.current_client_stream_count);
+    Metrics::Counter::decrement(http2_rsb.current_client_stream_count);
   }
 }
 

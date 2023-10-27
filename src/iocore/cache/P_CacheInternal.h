@@ -34,7 +34,7 @@
 #include "iocore/cache/CacheVC.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"
 
-using ts::Metrics::Counter;
+using ts::Metrics;
 
 struct EvacuationBlock;
 
@@ -187,11 +187,11 @@ free_CacheVC(CacheVC *cont)
   Stripe *vol       = cont->vol;
 
   if (vol) {
-    Counter::decrement(cache_rsb.status[cont->op_type].active);
-    Counter::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
+    Metrics::Counter::decrement(cache_rsb.status[cont->op_type].active);
+    Metrics::Counter::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
     if (cont->closed > 0) {
-      Counter::increment(cache_rsb.status[cont->op_type].success);
-      Counter::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);
+      Metrics::Counter::increment(cache_rsb.status[cont->op_type].success);
+      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);
     } // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());
@@ -397,8 +397,8 @@ Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
 
   if (agg_error) {
-    Counter::increment(cache_rsb.write_backlog_failure);
-    Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
 
     return ECACHE_WRITE_FAIL;
   }

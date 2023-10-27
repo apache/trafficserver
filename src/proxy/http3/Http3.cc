@@ -37,5 +37,5 @@ Http3::init()
   // Example (remove comments here when addding)
   //
   // Setup statistics
-  // http3_rsb.current_client_session_count = Counter::CreatePtr("proxy.process.http3.current_client_connections");
+  // http3_rsb.current_client_session_count = Metrics::Counter::createPtr("proxy.process.http3.current_client_connections");
 }

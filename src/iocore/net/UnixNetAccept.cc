@@ -80,7 +80,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
-    Counter::increment(net_rsb.tcp_accept);
+    Metrics::Counter::increment(net_rsb.tcp_accept);
 
     vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
     if (!vc) {
@@ -88,7 +88,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
 
     count++;
-    Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Counter::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -338,7 +338,7 @@ NetAccept::do_blocking_accept(EThread *t)
       check_throttle_warning(ACCEPT);
       // close the connection as we are in throttle state
       con.close();
-      Counter::increment(net_rsb.connections_throttled_in);
+      Metrics::Counter::increment(net_rsb.connections_throttled_in);
       continue;
     }
 
@@ -346,7 +346,7 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-    Counter::increment(net_rsb.tcp_accept);
+    Metrics::Counter::increment(net_rsb.tcp_accept);
 
     // Use 'nullptr' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
@@ -355,7 +355,7 @@ NetAccept::do_blocking_accept(EThread *t)
     }
 
     count++;
-    Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Counter::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -410,14 +410,14 @@ NetAccept::acceptEvent(int event, void *ep)
   if (lock.is_locked()) {
     if (action_->cancelled) {
       e->cancel();
-      Counter::decrement(net_rsb.accepts_currently_open);
+      Metrics::Counter::decrement(net_rsb.accepts_currently_open);
       delete this;
       return EVENT_DONE;
     }
 
     int res;
     if ((res = accept_fn(this, e, false)) < 0) {
-      Counter::decrement(net_rsb.accepts_currently_open);
+      Metrics::Counter::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
       Warning("Traffic Server may be unable to accept more network"
@@ -458,11 +458,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
       if (check_net_throttle(ACCEPT)) {
         // close the connection as we are in throttle state
         con.close();
-        Counter::increment(net_rsb.connections_throttled_in);
+        Metrics::Counter::increment(net_rsb.connections_throttled_in);
         continue;
       }
       Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", fd);
-      Counter::increment(net_rsb.tcp_accept);
+      Metrics::Counter::increment(net_rsb.tcp_accept);
       if (opt.send_bufsize > 0) {
         if (unlikely(SocketManager::set_sndbuf_size(fd, opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
@@ -512,7 +512,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     ink_release_assert(vc);
 
     count++;
-    Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Counter::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -560,7 +560,7 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  Counter::decrement(net_rsb.accepts_currently_open);
+  Metrics::Counter::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }
@@ -577,7 +577,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   }
 
   // Don't think this ever happens ...
-  Counter::decrement(net_rsb.accepts_currently_open);
+  Metrics::Counter::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }

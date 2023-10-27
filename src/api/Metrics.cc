@@ -1,6 +1,6 @@
 /** @file
 
-  The implementations of the Counter API class.
+  The implementations of the Metrics::Counter API class.
 
   @section license License
 
@@ -25,168 +25,164 @@
 
 namespace ts
 {
-namespace Metrics
+
+// This is the singleton instance of the metrics class.
+Metrics &
+Metrics::instance()
 {
+  static Metrics _instance;
 
-  // This is the singleton instance of the metrics class.
-  Counter &
-  Counter::getInstance()
-  {
-    static Counter _instance;
+  return _instance;
+}
 
-    return _instance;
+void
+Metrics::_addBlob() // The mutex must be held before calling this!
+{
+  auto blob = new Metrics::NamesAndAtomics();
+
+  ink_assert(blob);
+  ink_assert(_cur_blob < MAX_BLOBS);
+
+  _blobs[++_cur_blob] = blob;
+  _cur_off            = 0;
+}
+
+Metrics::IdType
+Metrics::_create(std::string_view name)
+{
+  std::lock_guard<std::mutex> lock(_mutex);
+  auto it = _lookups.find(name);
+
+  if (it != _lookups.end()) {
+    return it->second;
   }
 
-  void
-  Counter::_addBlob() // The mutex must be held before calling this!
-  {
-    auto blob = new Counter::NamesAndAtomics();
+  Metrics::IdType id              = _makeId(_cur_blob, _cur_off);
+  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob];
+  Metrics::NameStorage &names     = std::get<0>(*blob);
+  Metrics::AtomicStorage &atomics = std::get<1>(*blob);
 
-    ink_assert(blob);
-    ink_assert(_cur_blob < MAX_BLOBS);
+  atomics[_cur_off].store(0);
+  names[_cur_off] = std::make_tuple(std::string(name), id);
+  _lookups.emplace(std::get<0>(names[_cur_off]), id);
 
-    _blobs[++_cur_blob] = blob;
-    _cur_off            = 0;
+  if (++_cur_off >= MAX_SIZE) {
+    _addBlob(); // This resets _cur_off to 0 as well
   }
 
-  Counter::IdType
-  Counter::create(std::string_view name)
-  {
-    std::lock_guard<std::mutex> lock(_mutex);
-    auto it = _lookups.find(name);
+  return id;
+}
 
-    if (it != _lookups.end()) {
-      return it->second;
-    }
+Metrics::IdType
+Metrics::lookup(const std::string_view name) const
+{
+  std::lock_guard<std::mutex> lock(_mutex);
+  auto it = _lookups.find(name);
 
-    Counter::IdType id              = _makeId(_cur_blob, _cur_off);
-    Counter::NamesAndAtomics *blob  = _blobs[_cur_blob];
-    Counter::NameStorage &names     = std::get<0>(*blob);
-    Counter::AtomicStorage &atomics = std::get<1>(*blob);
-
-    atomics[_cur_off].store(0);
-    names[_cur_off] = std::make_tuple(std::string(name), id);
-    _lookups.emplace(std::get<0>(names[_cur_off]), id);
-
-    if (++_cur_off >= MAX_SIZE) {
-      _addBlob(); // This resets _cur_off to 0 as well
-    }
-
-    return id;
+  if (it != _lookups.end()) {
+    return it->second;
   }
 
-  Counter::IdType
-  Counter::lookup(const std::string_view name) const
-  {
-    std::lock_guard<std::mutex> lock(_mutex);
-    auto it = _lookups.find(name);
+  return NOT_FOUND;
+}
 
-    if (it != _lookups.end()) {
-      return it->second;
-    }
+Metrics::Counter::AtomicType *
+Metrics::lookup(Metrics::IdType id, std::string_view *name) const
+{
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
 
-    return NOT_FOUND;
+  // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
+  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+    blob   = _blobs[0];
+    offset = 0;
   }
 
-  Counter::AtomicType *
-  Counter::lookup(Counter::IdType id, std::string_view *name) const
-  {
-    auto [blob_ix, offset]         = _splitID(id);
-    Counter::NamesAndAtomics *blob = _blobs[blob_ix];
-
-    // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
-    if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-      blob   = _blobs[0];
-      offset = 0;
-    }
-
-    if (name) {
-      *name = std::get<0>(std::get<0>(*blob)[offset]);
-    }
-
-    return &((std::get<1>(*blob)[offset]));
+  if (name) {
+    *name = std::get<0>(std::get<0>(*blob)[offset]);
   }
 
-  std::string_view
-  Counter::name(Counter::IdType id) const
-  {
-    auto [blob_ix, offset]         = _splitID(id);
-    Counter::NamesAndAtomics *blob = _blobs[blob_ix];
+  return &((std::get<1>(*blob)[offset]));
+}
 
-    // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
-    if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-      blob   = _blobs[0];
-      offset = 0;
-    }
+std::string_view
+Metrics::name(Metrics::IdType id) const
+{
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
 
-    const std::string &result = std::get<0>(std::get<0>(*blob)[offset]);
-
-    return result;
+  // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
+  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+    blob   = _blobs[0];
+    offset = 0;
   }
 
-  Counter::SpanType
-  Counter::createSpan(size_t size, Counter::IdType *id)
-  {
-    ink_release_assert(size <= MAX_SIZE);
-    std::lock_guard<std::mutex> lock(_mutex);
+  const std::string &result = std::get<0>(std::get<0>(*blob)[offset]);
 
-    if (_cur_off + size > MAX_SIZE) {
-      _addBlob();
-    }
+  return result;
+}
 
-    Counter::IdType span_start      = _makeId(_cur_blob, _cur_off);
-    Counter::NamesAndAtomics *blob  = _blobs[_cur_blob];
-    Counter::AtomicStorage &atomics = std::get<1>(*blob);
-    Counter::SpanType span          = Counter::SpanType(&atomics[_cur_off], size);
+Metrics::SpanType
+Metrics::_createSpan(size_t size, Metrics::IdType *id)
+{
+  ink_release_assert(size <= MAX_SIZE);
+  std::lock_guard<std::mutex> lock(_mutex);
 
-    std::fill(span.begin(), span.end(), 0);
-
-    if (id) {
-      *id = span_start;
-    }
-
-    _cur_off += size;
-
-    return span;
+  if (_cur_off + size > MAX_SIZE) {
+    _addBlob();
   }
 
-  bool
-  Counter::rename(Counter::IdType id, std::string_view name)
-  {
-    auto [blob_ix, offset]         = _splitID(id);
-    Counter::NamesAndAtomics *blob = _blobs[blob_ix];
+  Metrics::IdType span_start      = _makeId(_cur_blob, _cur_off);
+  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob];
+  Metrics::AtomicStorage &atomics = std::get<1>(*blob);
+  Metrics::SpanType span          = Metrics::SpanType(&atomics[_cur_off], size);
 
-    // We can only rename counter that are already allocated
-    if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-      return false;
-    }
+  std::fill(span.begin(), span.end(), 0);
 
-    std::string &cur = std::get<0>(std::get<0>(*blob)[offset]);
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (cur.length() > 0) {
-      _lookups.erase(cur);
-    }
-    cur = name;
-    _lookups.emplace(cur, id);
-
-    return true;
+  if (id) {
+    *id = span_start;
   }
 
-  // Iterator implementation
-  void
-  Counter::iterator::next()
-  {
-    auto [blob, offset] = _counter._splitID(_it);
+  _cur_off += size;
 
-    if (++offset == MAX_SIZE) {
-      ++blob;
-      offset = 0;
-    }
+  return span;
+}
 
-    _it = _makeId(blob, offset);
+bool
+Metrics::rename(Metrics::IdType id, std::string_view name)
+{
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
+
+  // We can only rename Metrics that are already allocated
+  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+    return false;
   }
 
-} // namespace Metrics
+  std::string &cur = std::get<0>(std::get<0>(*blob)[offset]);
+  std::lock_guard<std::mutex> lock(_mutex);
+
+  if (cur.length() > 0) {
+    _lookups.erase(cur);
+  }
+  cur = name;
+  _lookups.emplace(cur, id);
+
+  return true;
+}
+
+// Iterator implementation
+void
+Metrics::iterator::next()
+{
+  auto [blob, offset] = _metrics._splitID(_it);
+
+  if (++offset == MAX_SIZE) {
+    ++blob;
+    offset = 0;
+  }
+
+  _it = _makeId(blob, offset);
+}
 
 } // namespace ts
