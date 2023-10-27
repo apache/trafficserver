@@ -1517,7 +1517,7 @@ HttpTransact::HandleRequest(State *s)
     initialize_state_variables_from_request(s, &s->hdr_info.client_request);
     // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
     if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
-      if (Metrics::Counter::read(http_rsb.websocket_current_active_client_connections) >=
+      if (Metrics::Counter::load(http_rsb.websocket_current_active_client_connections) >=
           s->http_config_param->max_websocket_connections) {
         s->is_websocket = false; // unset to avoid screwing up stats.
         TxnDebug("http_trans", "Rejecting websocket connection because the limit has been exceeded");

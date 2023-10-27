@@ -6165,20 +6165,20 @@ tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 int
 tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
-  return Metrics::Counter::read(http_rsb.current_client_connections);
+  return Metrics::Counter::load(http_rsb.current_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentActiveClientConnectionsGet()
 {
-  return Metrics::Counter::read(http_rsb.current_active_client_connections);
+  return Metrics::Counter::load(http_rsb.current_active_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 {
-  int64_t total  = Metrics::Counter::read(http_rsb.current_client_connections);
-  int64_t active = Metrics::Counter::read(http_rsb.current_active_client_connections);
+  int64_t total  = Metrics::Counter::load(http_rsb.current_client_connections);
+  int64_t active = Metrics::Counter::load(http_rsb.current_active_client_connections);
 
   if (total >= active) {
     return static_cast<int>(total - active);
@@ -6190,13 +6190,13 @@ tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 int
 tsapi::c::TSHttpCurrentCacheConnectionsGet()
 {
-  return Metrics::Counter::read(http_rsb.current_cache_connections);
+  return Metrics::Counter::load(http_rsb.current_cache_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentServerConnectionsGet()
 {
-  return Metrics::Counter::read(http_rsb.current_server_connections);
+  return Metrics::Counter::load(http_rsb.current_server_connections);
 }
 
 /* HTTP alternate selection */
@@ -7012,14 +7012,14 @@ void
 tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_add(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics.increment(id, amount);
 }
 
 void
 tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_sub(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics.decrement(id, amount);
 }
 
 tsapi::c::TSMgmtInt

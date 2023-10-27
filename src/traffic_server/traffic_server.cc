@@ -308,7 +308,7 @@ public:
 
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
-        metrics[drain_id] = 1;
+        metrics[drain_id].store(1);
         TSSystemState::drain(true);
         // Close listening sockets here only if TS is running standalone
         RecInt close_sockets = 0;
@@ -428,7 +428,7 @@ public:
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
-    memory_rss = Metrics::Counter::createPtr("proxy.process.traffic_server.memory.rss");
+    memory_rss = Metrics::Gauge::createPtr("proxy.process.traffic_server.memory.rss");
   }
 
   ~MemoryLimit() override { mutex = nullptr; }
@@ -448,7 +448,7 @@ public:
     _memory_limit = _memory_limit >> 10; // divide by 1024
 
     if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-      ts::Metrics::Counter::write(memory_rss, _usage.ru_maxrss << 10); // * 1024
+      ts::Metrics::Gauge::store(memory_rss, _usage.ru_maxrss << 10); // * 1024
       Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
       if (_memory_limit > 0) {
         if (_usage.ru_maxrss > _memory_limit) {
@@ -476,7 +476,7 @@ public:
 private:
   int64_t _memory_limit = 0;
   struct rusage _usage;
-  Metrics::Counter::AtomicType *memory_rss;
+  Metrics::Gauge::AtomicType *memory_rss;
 };
 
 /** Gate the emission of the "Traffic Server is fuly initialized" log message.
@@ -1410,24 +1410,24 @@ struct ShowStats : public Continuation {
     if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     }
-    int64_t d_rb  = Metrics::Counter::read(net_rsb.calls_to_readfromnet) - last_rb;
+    int64_t d_rb  = Metrics::Counter::load(net_rsb.calls_to_readfromnet) - last_rb;
     last_rb      += d_rb;
 
-    int64_t d_wb  = Metrics::Counter::read(net_rsb.calls_to_writetonet) - last_wb;
+    int64_t d_wb  = Metrics::Counter::load(net_rsb.calls_to_writetonet) - last_wb;
     last_wb      += d_wb;
 
-    int64_t d_nrb  = Metrics::Counter::read(net_rsb.read_bytes) - last_nrb;
+    int64_t d_nrb  = Metrics::Counter::load(net_rsb.read_bytes) - last_nrb;
     last_nrb      += d_nrb;
-    int64_t d_nr   = Metrics::Counter::read(net_rsb.read_bytes_count) - last_nr;
+    int64_t d_nr   = Metrics::Counter::load(net_rsb.read_bytes_count) - last_nr;
     last_nr       += d_nr;
 
-    int64_t d_nwb  = Metrics::Counter::read(net_rsb.write_bytes) - last_nwb;
+    int64_t d_nwb  = Metrics::Counter::load(net_rsb.write_bytes) - last_nwb;
     last_nwb      += d_nwb;
-    int64_t d_nw   = Metrics::Counter::read(net_rsb.write_bytes_count) - last_nw;
+    int64_t d_nw   = Metrics::Counter::load(net_rsb.write_bytes_count) - last_nw;
     last_nw       += d_nw;
 
-    int64_t d_o = Metrics::Counter::read(net_rsb.connections_currently_open);
-    int64_t d_p = Metrics::Counter::read(net_rsb.handler_run) - last_p;
+    int64_t d_o = Metrics::Counter::load(net_rsb.connections_currently_open);
+    int64_t d_p = Metrics::Counter::load(net_rsb.handler_run) - last_p;
 
     last_p += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
@@ -1857,16 +1857,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   ts::Metrics &metrics = ts::Metrics::instance();
   int32_t id;
 
-  id          = Metrics::Counter::create("proxy.process.proxy.reconfigure_time");
-  metrics[id] = time(nullptr);
-  id          = Metrics::Counter::create("proxy.process.proxy.start_time");
-  metrics[id] = time(nullptr);
+  id = Metrics::Gauge::create("proxy.process.proxy.reconfigure_time");
+  metrics[id].store(time(nullptr));
+  id = Metrics::Gauge::create("proxy.process.proxy.start_time");
+  metrics[id].store(time(nullptr));
   // These all gets initialied to 0
-  Metrics::Counter::create("proxy.process.proxy.reconfigure_required");
-  Metrics::Counter::create("proxy.process.proxy.restart_required");
-  Metrics::Counter::create("proxy.process.proxy.draining");
+  Metrics::Gauge::create("proxy.process.proxy.reconfigure_required");
+  Metrics::Gauge::create("proxy.process.proxy.restart_required");
+  Metrics::Gauge::create("proxy.process.proxy.draining");
   // This gets updated later (in the callback)
-  Metrics::Counter::create("proxy.process.proxy.cache_ready_time");
+  Metrics::Gauge::create("proxy.process.proxy.cache_ready_time");
 
   // init huge pages
   int enabled;

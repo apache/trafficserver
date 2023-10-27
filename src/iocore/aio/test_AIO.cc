@@ -226,8 +226,8 @@ dump_summary()
   Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
   Metrics::Counter::AtomicType *submitted = m.lookup(m.lookup("proxy.process.io_uring.submitted"));
 
-  printf("submissions: %lu\n", Metrics::Counter::read(submitted));
-  printf("completions: %lu\n", Metrics::Counter::read(completed));
+  printf("submissions: %lu\n", Metrics::Counter::load(submitted));
+  printf("completions: %lu\n", Metrics::Counter::load(completed));
 #endif
 
   if (delete_disks) {

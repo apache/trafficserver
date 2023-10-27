@@ -532,7 +532,7 @@ LogConfig::register_stat_callbacks()
   log_rsb.bytes_written_to_disk             = Metrics::Counter::createPtr("proxy.process.log.bytes_written_to_disk");
   log_rsb.bytes_lost_before_written_to_disk = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_written_to_disk");
   log_rsb.log_files_open                    = Metrics::Counter::createPtr("proxy.process.log.log_files_open");
-  log_rsb.log_files_space_used              = Metrics::Counter::createPtr("proxy.process.log.log_files_space_used");
+  log_rsb.log_files_space_used              = Metrics::Gauge::createPtr("proxy.process.log.log_files_space_used");
 }
 
 /*-------------------------------------------------------------------------
@@ -658,7 +658,7 @@ LogConfig::update_space_used()
   //
   m_space_used           = total_space_used;
   m_partition_space_left = partition_space_left;
-  Metrics::Counter::write(log_rsb.log_files_space_used, m_space_used);
+  Metrics::Gauge::store(log_rsb.log_files_space_used, m_space_used);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
   Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);

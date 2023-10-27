@@ -43,8 +43,32 @@ namespace ts
 class Metrics
 {
 private:
-  using self_type  = Metrics;
-  using AtomicType = std::atomic<int64_t>; // Make sure users don't use this, rather than a proper Counter/Gauge
+  using self_type = Metrics;
+
+  class AtomicType
+  {
+    friend class Metrics;
+
+  public:
+    AtomicType()          = default;
+    virtual ~AtomicType() = default;
+
+    int64_t
+    load()
+    {
+      return _value.load();
+    }
+
+    // ToDo: This is a little sketchy
+    void
+    store(int64_t val)
+    {
+      _value.store(val);
+    }
+
+  protected:
+    std::atomic<int64_t> _value{0};
+  };
 
 public:
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
@@ -120,7 +144,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_add(val, MEMORY_ORDER) : NOT_FOUND);
+    return (metric ? metric->_value.fetch_add(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   int64_t
@@ -128,7 +152,7 @@ public:
   {
     auto metric = lookup(id);
 
-    return (metric ? metric->fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
+    return (metric ? metric->_value.fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
   std::string_view name(IdType id) const;
@@ -177,7 +201,7 @@ public:
       std::string_view name;
       auto metric = _metrics.lookup(_it, &name);
 
-      return std::make_tuple(name, metric->load());
+      return std::make_tuple(name, metric->_value.load());
     }
 
     bool
@@ -265,9 +289,12 @@ public:
   class Gauge
   {
   public:
-    using self_type  = Gauge;
-    using AtomicType = Metrics::AtomicType;
-    using SpanType   = Metrics::SpanType;
+    using self_type = Gauge;
+    using SpanType  = Metrics::SpanType;
+
+    class AtomicType : public Metrics::AtomicType
+    {
+    };
 
     static Metrics::IdType
     create(const std::string_view name)
@@ -282,7 +309,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance.lookup(instance._create(name));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
     }
 
     static Metrics::Gauge::SpanType
@@ -297,28 +324,28 @@ public:
     increment(AtomicType *metric, uint64_t val = 1)
     {
       ink_assert(metric);
-      metric->fetch_add(val, MEMORY_ORDER);
+      metric->_value.fetch_add(val, MEMORY_ORDER);
     }
 
     static void
     decrement(AtomicType *metric, uint64_t val = 1)
     {
       ink_assert(metric);
-      metric->fetch_sub(val, MEMORY_ORDER);
+      metric->_value.fetch_sub(val, MEMORY_ORDER);
     }
 
     static int64_t
-    read(AtomicType *metric)
+    load(AtomicType *metric)
     {
       ink_assert(metric);
-      return metric->load();
+      return metric->_value.load();
     }
 
     static void
-    write(AtomicType *metric, int64_t val)
+    store(AtomicType *metric, int64_t val)
     {
       ink_assert(metric);
-      return metric->store(val);
+      return metric->_value.store(val);
     }
 
   }; // class Gauge
@@ -326,9 +353,12 @@ public:
   class Counter
   {
   public:
-    using self_type  = Counter;
-    using AtomicType = Metrics::AtomicType;
-    using SpanType   = Metrics::SpanType;
+    using self_type = Counter;
+    using SpanType  = Metrics::SpanType;
+
+    class AtomicType : public Metrics::AtomicType
+    {
+    };
 
     static Metrics::IdType
     create(const std::string_view name)
@@ -343,7 +373,7 @@ public:
     {
       auto &instance = Metrics::instance();
 
-      return instance.lookup(instance._create(name));
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
     }
 
     static Metrics::Counter::SpanType
@@ -358,28 +388,21 @@ public:
     increment(AtomicType *metric, uint64_t val = 1)
     {
       ink_assert(metric);
-      metric->fetch_add(val, MEMORY_ORDER);
+      metric->_value.fetch_add(val, MEMORY_ORDER);
     }
 
     static void
     decrement(AtomicType *metric, uint64_t val = 1)
     {
       ink_assert(metric);
-      metric->fetch_sub(val, MEMORY_ORDER);
+      metric->_value.fetch_sub(val, MEMORY_ORDER);
     }
 
     static int64_t
-    read(AtomicType *metric)
+    load(AtomicType *metric)
     {
       ink_assert(metric);
-      return metric->load();
-    }
-
-    static void
-    write(AtomicType *metric, int64_t val)
-    {
-      ink_assert(metric);
-      return metric->store(val);
+      return metric->_value.load();
     }
 
   }; // class Counter

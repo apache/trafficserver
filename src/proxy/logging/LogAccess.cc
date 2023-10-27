@@ -220,7 +220,7 @@ LogAccess::marshal_record(char *record, char *buf)
     ts::Metrics::IdType mid = metrics[record];
 
     if (mid != ts::Metrics::NOT_FOUND) {
-      int64_t val = metrics[mid];
+      int64_t val = metrics[mid].load();
 
       out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
       ink_assert(out_buf);

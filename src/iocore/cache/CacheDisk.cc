@@ -29,8 +29,8 @@ CacheDisk::incrErrors(const AIOCallback *io)
   if (0 == this->num_errors) {
     /* This it the first read/write error on this span since ATS started.
      * Move the newly failing span from "online" to "failing" bucket. */
-    Metrics::Counter::decrement(cache_rsb.span_online);
-    Metrics::Counter::increment(cache_rsb.span_failing);
+    Metrics::Gauge::decrement(cache_rsb.span_online);
+    Metrics::Gauge::increment(cache_rsb.span_failing);
   }
   this->num_errors++;
 

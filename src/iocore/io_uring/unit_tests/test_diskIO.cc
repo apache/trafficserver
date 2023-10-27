@@ -269,10 +269,10 @@ TEST_CASE("net_io", "[io_uring]")
 
   Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
 
-  uint64_t completions_before = Metrics::Counter::read(completed);
+  uint64_t completions_before = Metrics::Counter::load(completed);
   uint64_t needed             = 2;
 
-  while ((Metrics::Counter::read(completed) - completions_before) < needed) {
+  while ((Metrics::Counter::load(completed) - completions_before) < needed) {
     ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 

@@ -60,10 +60,10 @@ SSLPeriodicMetricsUpdate()
     }
   }
 
-  Metrics::Counter::write(ssl_rsb.user_agent_sessions, sessions);
-  Metrics::Counter::write(ssl_rsb.user_agent_session_hit, hits);
-  Metrics::Counter::write(ssl_rsb.user_agent_session_miss, misses);
-  Metrics::Counter::write(ssl_rsb.user_agent_session_timeout, timeouts);
+  Metrics::Gauge::store(ssl_rsb.user_agent_sessions, sessions);
+  Metrics::Gauge::store(ssl_rsb.user_agent_session_hit, hits);
+  Metrics::Gauge::store(ssl_rsb.user_agent_session_miss, misses);
+  Metrics::Gauge::store(ssl_rsb.user_agent_session_timeout, timeouts);
 }
 
 static void
@@ -126,26 +126,26 @@ SSLInitializeStatistics()
   ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
   ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
   ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
-  ssl_rsb.total_tickets_renewed  = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed"); // ToDo: Not used?
-  ssl_rsb.total_tickets_verified = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
-  ssl_rsb.total_tickets_verified_old_key = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");
-  ssl_rsb.total_tlsv1                    = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv1");
-  ssl_rsb.total_tlsv11                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv11");
-  ssl_rsb.total_tlsv12                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv12");
-  ssl_rsb.total_tlsv13                   = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv13");
-  ssl_rsb.user_agent_bad_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_bad_cert");
-  ssl_rsb.user_agent_cert_verify_failed  = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_cert_verify_failed");
-  ssl_rsb.user_agent_decryption_failed   = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed");
-  ssl_rsb.user_agent_expired_cert        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_expired_cert");
-  ssl_rsb.user_agent_other_errors        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
-  ssl_rsb.user_agent_revoked_cert        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
-  ssl_rsb.user_agent_session_hit         = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_session_hit");
-  ssl_rsb.user_agent_session_miss        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_session_miss");
-  ssl_rsb.user_agent_session_timeout     = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_session_timeout");
-  ssl_rsb.user_agent_sessions            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_sessions");
-  ssl_rsb.user_agent_unknown_ca          = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_ca");
-  ssl_rsb.user_agent_unknown_cert        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_cert");
-  ssl_rsb.user_agent_wrong_version       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
+  ssl_rsb.total_tickets_renewed              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed");
+  ssl_rsb.total_tickets_verified             = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
+  ssl_rsb.total_tickets_verified_old_key     = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");
+  ssl_rsb.total_tlsv1                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv1");
+  ssl_rsb.total_tlsv11                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv11");
+  ssl_rsb.total_tlsv12                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv12");
+  ssl_rsb.total_tlsv13                       = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_tlsv13");
+  ssl_rsb.user_agent_bad_cert                = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_bad_cert");
+  ssl_rsb.user_agent_cert_verify_failed      = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_cert_verify_failed");
+  ssl_rsb.user_agent_decryption_failed       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed");
+  ssl_rsb.user_agent_expired_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_expired_cert");
+  ssl_rsb.user_agent_other_errors            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
+  ssl_rsb.user_agent_revoked_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
+  ssl_rsb.user_agent_session_hit             = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_hit");
+  ssl_rsb.user_agent_session_miss            = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_miss");
+  ssl_rsb.user_agent_session_timeout         = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_timeout");
+  ssl_rsb.user_agent_sessions                = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_sessions");
+  ssl_rsb.user_agent_unknown_ca              = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_ca");
+  ssl_rsb.user_agent_unknown_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_cert");
+  ssl_rsb.user_agent_wrong_version           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not

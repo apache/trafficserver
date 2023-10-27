@@ -367,8 +367,8 @@ dir_clean_bucket(Dir *b, int s, Stripe *vol)
             dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
-        Metrics::Counter::decrement(cache_rsb.direntries_used);
-        Metrics::Counter::decrement(vol->cache_vol->vol_rsb.direntries_used);
+        Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.direntries_used);
       }
       e = dir_delete_entry(e, p, s, vol);
       continue;
@@ -403,8 +403,8 @@ dir_clear_range(off_t start, off_t end, Stripe *vol)
   for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
-      Metrics::Counter::decrement(cache_rsb.direntries_used);
-      Metrics::Counter::decrement(vol->cache_vol->vol_rsb.direntries_used);
+      Metrics::Gauge::decrement(cache_rsb.direntries_used);
+      Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.direntries_used);
       dir_set_offset(e, 0); // delete
     }
   }
@@ -439,8 +439,8 @@ freelist_clean(int s, Stripe *vol)
     for (int l = 0; l < DIR_DEPTH; l++) {
       Dir *e = dir_bucket_row(b, l);
       if (dir_head(e) && !(n++ % 10)) {
-        Metrics::Counter::decrement(cache_rsb.direntries_used);
-        Metrics::Counter::decrement(vol->cache_vol->vol_rsb.direntries_used);
+        Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.direntries_used);
         dir_set_offset(e, 0); // delete
       }
     }
@@ -567,8 +567,8 @@ Lagain:
             // may not accurately reflect the number of documents
             // having the same first_key
             DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-            Metrics::Counter::increment(cache_rsb.directory_collision_count);
-            Metrics::Counter::increment(vol->cache_vol->vol_rsb.directory_collision_count);
+            Metrics::Counter::increment(cache_rsb.directory_collision);
+            Metrics::Counter::increment(vol->cache_vol->vol_rsb.directory_collision);
           }
           goto Lcont;
         }
@@ -580,8 +580,8 @@ Lagain:
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < vol->len);
           return 1;
         } else { // delete the invalid entry
-          Metrics::Counter::decrement(cache_rsb.direntries_used);
-          Metrics::Counter::decrement(vol->cache_vol->vol_rsb.direntries_used);
+          Metrics::Gauge::decrement(cache_rsb.direntries_used);
+          Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.direntries_used);
           e = dir_delete_entry(e, p, s, vol);
           continue;
         }
@@ -595,8 +595,8 @@ Lagain:
   }
   if (collision) { // last collision no longer in the list, retry
     DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-    Metrics::Counter::increment(cache_rsb.directory_collision_count);
-    Metrics::Counter::increment(vol->cache_vol->vol_rsb.directory_collision_count);
+    Metrics::Counter::increment(cache_rsb.directory_collision);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.directory_collision);
     collision = nullptr;
     goto Lagain;
   }
@@ -667,8 +667,8 @@ Lfill:
        bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   vol->header->dirty = 1;
-  Metrics::Counter::increment(cache_rsb.direntries_used);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_used);
+  Metrics::Gauge::increment(cache_rsb.direntries_used);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.direntries_used);
 
   return 1;
 }
@@ -718,8 +718,8 @@ Lagain:
   // get from this row first
   e = b;
   if (dir_is_empty(e)) {
-    Metrics::Counter::increment(cache_rsb.direntries_used);
-    Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_used);
+    Metrics::Gauge::increment(cache_rsb.direntries_used);
+    Metrics::Gauge::increment(vol->cache_vol->vol_rsb.direntries_used);
     goto Lfill;
   }
   for (l = 1; l < DIR_DEPTH; l++) {
@@ -735,8 +735,8 @@ Lagain:
     goto Lagain;
   }
 Llink:
-  Metrics::Counter::increment(cache_rsb.direntries_used);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.direntries_used);
+  Metrics::Gauge::increment(cache_rsb.direntries_used);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.direntries_used);
   // as with dir_insert above, need to insert new entries at the tail of the linked list
   Dir *prev, *last;
 
@@ -784,8 +784,8 @@ dir_delete(const CacheKey *key, Stripe *vol, Dir *del)
       }
 #endif
       if (dir_compare_tag(e, key) && dir_offset(e) == dir_offset(del)) {
-        Metrics::Counter::decrement(cache_rsb.direntries_used);
-        Metrics::Counter::decrement(vol->cache_vol->vol_rsb.direntries_used);
+        Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.direntries_used);
         dir_delete_entry(e, p, s, vol);
         CHECK_DIR(d);
         return 1;

@@ -57,12 +57,10 @@ Metrics::_create(std::string_view name)
     return it->second;
   }
 
-  Metrics::IdType id              = _makeId(_cur_blob, _cur_off);
-  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob];
-  Metrics::NameStorage &names     = std::get<0>(*blob);
-  Metrics::AtomicStorage &atomics = std::get<1>(*blob);
+  Metrics::IdType id             = _makeId(_cur_blob, _cur_off);
+  Metrics::NamesAndAtomics *blob = _blobs[_cur_blob];
+  Metrics::NameStorage &names    = std::get<0>(*blob);
 
-  atomics[_cur_off].store(0);
   names[_cur_off] = std::make_tuple(std::string(name), id);
   _lookups.emplace(std::get<0>(names[_cur_off]), id);
 
@@ -86,7 +84,7 @@ Metrics::lookup(const std::string_view name) const
   return NOT_FOUND;
 }
 
-Metrics::Counter::AtomicType *
+Metrics::AtomicType *
 Metrics::lookup(Metrics::IdType id, std::string_view *name) const
 {
   auto [blob_ix, offset]         = _splitID(id);
@@ -136,8 +134,6 @@ Metrics::_createSpan(size_t size, Metrics::IdType *id)
   Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob];
   Metrics::AtomicStorage &atomics = std::get<1>(*blob);
   Metrics::SpanType span          = Metrics::SpanType(&atomics[_cur_off], size);
-
-  std::fill(span.begin(), span.end(), 0);
 
   if (id) {
     *id = span_start;

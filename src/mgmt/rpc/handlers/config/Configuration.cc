@@ -196,8 +196,8 @@ reload_config(std::string_view const &id, YAML::Node const &params)
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
 
-  metrics[reconf_time] = time(nullptr);
-  metrics[reconf_req]  = 0;
+  metrics[reconf_time].store(time(nullptr));
+  metrics[reconf_req].store(0);
 
   return resp;
 }

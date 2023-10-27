@@ -112,10 +112,8 @@ struct Conf {
 using SPtrConstConf = std::shared_ptr<const Conf>;
 using ParsedSNIConf = std::unordered_map<SPtrConstDst, SPtrConstConf, DstHash, DstKeyEqual>;
 
-enum class Stat {
-  INIT_LIST_SIZE = 0,
-  OPEN_LIST_SIZE,
-  HIT,
+enum class CounterStat {
+  HIT = 0,
   MISS,
   HANDSHAKE_TIME,
   HANDSHAKE_COUNT,
@@ -123,7 +121,15 @@ enum class Stat {
   LAST_ENTRY,
 };
 
-using StatsIds          = std::array<Metrics::Counter::AtomicType *, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
+enum class GaugeStat {
+  INIT_LIST_SIZE = 0,
+  OPEN_LIST_SIZE,
+  LAST_ENTRY,
+};
+
+using CounterIds        = std::array<Metrics::Counter::AtomicType *, static_cast<size_t>(PreWarm::CounterStat::LAST_ENTRY)>;
+using GaugeIds          = std::array<Metrics::Gauge::AtomicType *, static_cast<size_t>(PreWarm::GaugeStat::LAST_ENTRY)>;
+using StatsIds          = std::tuple<CounterIds, GaugeIds>;
 using SPtrConstStatsIds = std::shared_ptr<const StatsIds>;
 using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, DstHash, DstKeyEqual>;
 } // namespace PreWarm

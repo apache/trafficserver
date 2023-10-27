@@ -66,7 +66,7 @@ is_server_draining()
   ts::Metrics &metrics = ts::Metrics::instance();
   static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
 
-  return (metrics[drain_id] != 0);
+  return (metrics[drain_id].load() != 0);
 }
 
 static void
@@ -76,7 +76,7 @@ set_server_drain(bool drain)
   static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
 
   TSSystemState::drain(drain);
-  metrics[drain_id] = TSSystemState::is_draining() ? 1 : 0;
+  metrics[drain_id].store(TSSystemState::is_draining() ? 1 : 0);
 }
 
 ts::Rv<YAML::Node>

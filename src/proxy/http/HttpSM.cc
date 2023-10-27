@@ -5472,7 +5472,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // Atomically read the current number of connections and check to see
   // if we have gone above the max allowed.
   if (t_state.http_config_param->server_max_connections > 0) {
-    if (Metrics::Counter::read(http_rsb.current_server_connections) >= t_state.http_config_param->server_max_connections) {
+    if (Metrics::Counter::load(http_rsb.current_server_connections) >= t_state.http_config_param->server_max_connections) {
       httpSessionManager.purge_keepalives();
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.
