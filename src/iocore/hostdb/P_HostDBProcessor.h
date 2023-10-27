@@ -37,7 +37,7 @@
 #include "tscore/PendingAction.h"
 #include "api/Metrics.h"
 
-using ts::Metrics;
+using ts::Metrics::Counter;
 
 //
 // Data
@@ -120,13 +120,13 @@ struct HostEnt;
 
 // Stats
 struct HostDBStatsBlock {
-  ts::Metrics::IntType *total_lookups;
-  ts::Metrics::IntType *total_hits;
-  ts::Metrics::IntType *total_serve_stale;
-  ts::Metrics::IntType *ttl;
-  ts::Metrics::IntType *ttl_expires;
-  ts::Metrics::IntType *re_dns_on_reload;
-  ts::Metrics::IntType *insert_duplicate_to_pending_dns;
+  Counter::AtomicType *total_lookups;
+  Counter::AtomicType *total_hits;
+  Counter::AtomicType *total_serve_stale;
+  Counter::AtomicType *ttl;
+  Counter::AtomicType *ttl_expires;
+  Counter::AtomicType *re_dns_on_reload;
+  Counter::AtomicType *insert_duplicate_to_pending_dns;
 };
 
 extern HostDBStatsBlock hostdb_rsb;

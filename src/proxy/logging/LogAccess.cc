@@ -216,11 +216,11 @@ LogAccess::marshal_record(char *record, char *buf)
   // Since, for now at least, String metrics are still in librecords, do that lookup
   // first, and only do the new metrics lookup on a miss.
   if (RecGetRecordDataType(record, &stype) != REC_ERR_OKAY) {
-    ts::Metrics &intm          = ts::Metrics::getInstance();
-    ts::Metrics::IdType metric = intm[record];
+    ts::Metrics::Counter &metrics    = ts::Metrics::Counter::getInstance();
+    ts::Metrics::Counter::IdType mid = metrics[record];
 
-    if (metric != ts::Metrics::NOT_FOUND) {
-      int64_t val = intm[metric];
+    if (mid != ts::Metrics::Counter::NOT_FOUND) {
+      int64_t val = metrics[mid];
 
       out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
       ink_assert(out_buf);

@@ -985,10 +985,10 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
   case TS_OCSP_CERTSTATUS_GOOD:
     break;
   case TS_OCSP_CERTSTATUS_REVOKED:
-    Metrics::increment(ssl_rsb.ocsp_revoked_cert);
+    Counter::increment(ssl_rsb.ocsp_revoked_cert);
     break;
   case TS_OCSP_CERTSTATUS_UNKNOWN:
-    Metrics::increment(ssl_rsb.ocsp_unknown_cert);
+    Counter::increment(ssl_rsb.ocsp_unknown_cert);
     break;
   default:
     break;
@@ -1281,10 +1281,10 @@ ocsp_update()
               ink_mutex_release(&cinf->stapling_mutex);
               if (stapling_refresh_response(cinf, &resp)) {
                 Debug("ssl_ocsp", "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                Metrics::increment(ssl_rsb.ocsp_refreshed_cert);
+                Counter::increment(ssl_rsb.ocsp_refreshed_cert);
               } else {
                 Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                Metrics::increment(ssl_rsb.ocsp_refresh_cert_failure);
+                Counter::increment(ssl_rsb.ocsp_refresh_cert_failure);
               }
             } else {
               ink_mutex_release(&cinf->stapling_mutex);

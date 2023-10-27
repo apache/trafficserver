@@ -30,75 +30,75 @@
 
 #include "api/Metrics.h"
 
-using ts::Metrics;
+using ts::Metrics::Counter;
 
 // For some odd reason, these have to be initialized with nullptr, because the order
 // of initialization and how we load certs is weird... In reality only the metric
 // for ssl_rsb.total_ticket_keys_renewed needs this initialization, but lets be
 // consistent at least.
 struct SSLStatsBlock {
-  ts::Metrics::IntType *early_data_received_count          = nullptr;
-  ts::Metrics::IntType *error_async                        = nullptr;
-  ts::Metrics::IntType *error_ssl                          = nullptr;
-  ts::Metrics::IntType *error_syscall                      = nullptr;
-  ts::Metrics::IntType *ocsp_refresh_cert_failure          = nullptr;
-  ts::Metrics::IntType *ocsp_refreshed_cert                = nullptr;
-  ts::Metrics::IntType *ocsp_revoked_cert                  = nullptr;
-  ts::Metrics::IntType *ocsp_unknown_cert                  = nullptr;
-  ts::Metrics::IntType *origin_server_bad_cert             = nullptr;
-  ts::Metrics::IntType *origin_server_cert_verify_failed   = nullptr;
-  ts::Metrics::IntType *origin_server_decryption_failed    = nullptr;
-  ts::Metrics::IntType *origin_server_expired_cert         = nullptr;
-  ts::Metrics::IntType *origin_server_other_errors         = nullptr;
-  ts::Metrics::IntType *origin_server_revoked_cert         = nullptr;
-  ts::Metrics::IntType *origin_server_unknown_ca           = nullptr;
-  ts::Metrics::IntType *origin_server_unknown_cert         = nullptr;
-  ts::Metrics::IntType *origin_server_wrong_version        = nullptr;
-  ts::Metrics::IntType *origin_session_cache_hit           = nullptr;
-  ts::Metrics::IntType *origin_session_cache_miss          = nullptr;
-  ts::Metrics::IntType *origin_session_reused_count        = nullptr;
-  ts::Metrics::IntType *session_cache_eviction             = nullptr;
-  ts::Metrics::IntType *session_cache_hit                  = nullptr;
-  ts::Metrics::IntType *session_cache_lock_contention      = nullptr;
-  ts::Metrics::IntType *session_cache_miss                 = nullptr;
-  ts::Metrics::IntType *session_cache_new_session          = nullptr;
-  ts::Metrics::IntType *sni_name_set_failure               = nullptr;
-  ts::Metrics::IntType *total_attempts_handshake_count_in  = nullptr;
-  ts::Metrics::IntType *total_attempts_handshake_count_out = nullptr;
-  ts::Metrics::IntType *total_dyn_def_tls_record_count     = nullptr;
-  ts::Metrics::IntType *total_dyn_max_tls_record_count     = nullptr;
-  ts::Metrics::IntType *total_dyn_redo_tls_record_count    = nullptr;
-  ts::Metrics::IntType *total_handshake_time               = nullptr;
-  ts::Metrics::IntType *total_sslv3                        = nullptr;
-  ts::Metrics::IntType *total_success_handshake_count_in   = nullptr;
-  ts::Metrics::IntType *total_success_handshake_count_out  = nullptr;
-  ts::Metrics::IntType *total_ticket_keys_renewed          = nullptr;
-  ts::Metrics::IntType *total_tickets_created              = nullptr;
-  ts::Metrics::IntType *total_tickets_not_found            = nullptr;
-  ts::Metrics::IntType *total_tickets_renewed              = nullptr;
-  ts::Metrics::IntType *total_tickets_verified_old_key     = nullptr;
-  ts::Metrics::IntType *total_tickets_verified             = nullptr;
-  ts::Metrics::IntType *total_tlsv1                        = nullptr;
-  ts::Metrics::IntType *total_tlsv11                       = nullptr;
-  ts::Metrics::IntType *total_tlsv12                       = nullptr;
-  ts::Metrics::IntType *total_tlsv13                       = nullptr;
-  ts::Metrics::IntType *user_agent_bad_cert                = nullptr;
-  ts::Metrics::IntType *user_agent_cert_verify_failed      = nullptr;
-  ts::Metrics::IntType *user_agent_decryption_failed       = nullptr;
-  ts::Metrics::IntType *user_agent_expired_cert            = nullptr;
-  ts::Metrics::IntType *user_agent_other_errors            = nullptr;
-  ts::Metrics::IntType *user_agent_revoked_cert            = nullptr;
-  ts::Metrics::IntType *user_agent_session_hit             = nullptr;
-  ts::Metrics::IntType *user_agent_session_miss            = nullptr;
-  ts::Metrics::IntType *user_agent_session_timeout         = nullptr;
-  ts::Metrics::IntType *user_agent_sessions                = nullptr;
-  ts::Metrics::IntType *user_agent_unknown_ca              = nullptr;
-  ts::Metrics::IntType *user_agent_unknown_cert            = nullptr;
-  ts::Metrics::IntType *user_agent_wrong_version           = nullptr;
+  Counter::AtomicType *early_data_received_count          = nullptr;
+  Counter::AtomicType *error_async                        = nullptr;
+  Counter::AtomicType *error_ssl                          = nullptr;
+  Counter::AtomicType *error_syscall                      = nullptr;
+  Counter::AtomicType *ocsp_refresh_cert_failure          = nullptr;
+  Counter::AtomicType *ocsp_refreshed_cert                = nullptr;
+  Counter::AtomicType *ocsp_revoked_cert                  = nullptr;
+  Counter::AtomicType *ocsp_unknown_cert                  = nullptr;
+  Counter::AtomicType *origin_server_bad_cert             = nullptr;
+  Counter::AtomicType *origin_server_cert_verify_failed   = nullptr;
+  Counter::AtomicType *origin_server_decryption_failed    = nullptr;
+  Counter::AtomicType *origin_server_expired_cert         = nullptr;
+  Counter::AtomicType *origin_server_other_errors         = nullptr;
+  Counter::AtomicType *origin_server_revoked_cert         = nullptr;
+  Counter::AtomicType *origin_server_unknown_ca           = nullptr;
+  Counter::AtomicType *origin_server_unknown_cert         = nullptr;
+  Counter::AtomicType *origin_server_wrong_version        = nullptr;
+  Counter::AtomicType *origin_session_cache_hit           = nullptr;
+  Counter::AtomicType *origin_session_cache_miss          = nullptr;
+  Counter::AtomicType *origin_session_reused_count        = nullptr;
+  Counter::AtomicType *session_cache_eviction             = nullptr;
+  Counter::AtomicType *session_cache_hit                  = nullptr;
+  Counter::AtomicType *session_cache_lock_contention      = nullptr;
+  Counter::AtomicType *session_cache_miss                 = nullptr;
+  Counter::AtomicType *session_cache_new_session          = nullptr;
+  Counter::AtomicType *sni_name_set_failure               = nullptr;
+  Counter::AtomicType *total_attempts_handshake_count_in  = nullptr;
+  Counter::AtomicType *total_attempts_handshake_count_out = nullptr;
+  Counter::AtomicType *total_dyn_def_tls_record_count     = nullptr;
+  Counter::AtomicType *total_dyn_max_tls_record_count     = nullptr;
+  Counter::AtomicType *total_dyn_redo_tls_record_count    = nullptr;
+  Counter::AtomicType *total_handshake_time               = nullptr;
+  Counter::AtomicType *total_sslv3                        = nullptr;
+  Counter::AtomicType *total_success_handshake_count_in   = nullptr;
+  Counter::AtomicType *total_success_handshake_count_out  = nullptr;
+  Counter::AtomicType *total_ticket_keys_renewed          = nullptr;
+  Counter::AtomicType *total_tickets_created              = nullptr;
+  Counter::AtomicType *total_tickets_not_found            = nullptr;
+  Counter::AtomicType *total_tickets_renewed              = nullptr;
+  Counter::AtomicType *total_tickets_verified_old_key     = nullptr;
+  Counter::AtomicType *total_tickets_verified             = nullptr;
+  Counter::AtomicType *total_tlsv1                        = nullptr;
+  Counter::AtomicType *total_tlsv11                       = nullptr;
+  Counter::AtomicType *total_tlsv12                       = nullptr;
+  Counter::AtomicType *total_tlsv13                       = nullptr;
+  Counter::AtomicType *user_agent_bad_cert                = nullptr;
+  Counter::AtomicType *user_agent_cert_verify_failed      = nullptr;
+  Counter::AtomicType *user_agent_decryption_failed       = nullptr;
+  Counter::AtomicType *user_agent_expired_cert            = nullptr;
+  Counter::AtomicType *user_agent_other_errors            = nullptr;
+  Counter::AtomicType *user_agent_revoked_cert            = nullptr;
+  Counter::AtomicType *user_agent_session_hit             = nullptr;
+  Counter::AtomicType *user_agent_session_miss            = nullptr;
+  Counter::AtomicType *user_agent_session_timeout         = nullptr;
+  Counter::AtomicType *user_agent_sessions                = nullptr;
+  Counter::AtomicType *user_agent_unknown_ca              = nullptr;
+  Counter::AtomicType *user_agent_unknown_cert            = nullptr;
+  Counter::AtomicType *user_agent_wrong_version           = nullptr;
 };
 
 extern SSLStatsBlock ssl_rsb;
-extern std::unordered_map<std::string, Metrics::IntType *> cipher_map;
+extern std::unordered_map<std::string, Counter::AtomicType *> cipher_map;
 
 // Initialize SSL statistics.
 void SSLInitializeStatistics();

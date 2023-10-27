@@ -120,10 +120,10 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
     // sent without data and we should retry.
     const sockaddr *dst = reinterpret_cast<const sockaddr *>(BIO_get_data(bio));
 
-    Metrics::increment(net_rsb.fastopen_attempts);
+    Counter::increment(net_rsb.fastopen_attempts);
     err = SocketManager::sendto(fd, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
     if (err >= 0) {
-      Metrics::increment(net_rsb.fastopen_successes);
+      Counter::increment(net_rsb.fastopen_successes);
     }
 
     BIO_set_data(bio, nullptr);

@@ -393,8 +393,8 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
-ConfigUpdateCbTable *global_config_cbs = nullptr;
-static ts::Metrics &global_api_metrics = ts::Metrics::getInstance();
+ConfigUpdateCbTable *global_config_cbs          = nullptr;
+static ts::Metrics::Counter &global_api_metrics = ts::Metrics::Counter::getInstance();
 
 static char traffic_server_version[128] = "";
 static int ts_major_version             = 0;
@@ -4027,7 +4027,7 @@ tsapi::c::TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
   if (res == REC_ERR_FAIL) {
     int id = global_api_metrics.lookup(var_name);
 
-    if (id == ts::Metrics::NOT_FOUND) {
+    if (id == ts::Metrics::Counter::NOT_FOUND) {
       return TS_ERROR;
     } else {
       *result = global_api_metrics[id].load();
@@ -4046,7 +4046,7 @@ tsapi::c::TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
   if (res == REC_ERR_FAIL) {
     int id = global_api_metrics.lookup(var_name);
 
-    if (id == ts::Metrics::NOT_FOUND) {
+    if (id == ts::Metrics::Counter::NOT_FOUND) {
       return TS_ERROR;
     } else {
       *result = global_api_metrics[id].load();
@@ -6165,20 +6165,20 @@ tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 int
 tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_client_connections);
+  return Counter::read(http_rsb.current_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentActiveClientConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_active_client_connections);
+  return Counter::read(http_rsb.current_active_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 {
-  int64_t total  = Metrics::read(http_rsb.current_client_connections);
-  int64_t active = Metrics::read(http_rsb.current_active_client_connections);
+  int64_t total  = Counter::read(http_rsb.current_client_connections);
+  int64_t active = Counter::read(http_rsb.current_active_client_connections);
 
   if (total >= active) {
     return static_cast<int>(total - active);
@@ -6190,13 +6190,13 @@ tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 int
 tsapi::c::TSHttpCurrentCacheConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_cache_connections);
+  return Counter::read(http_rsb.current_cache_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentServerConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_server_connections);
+  return Counter::read(http_rsb.current_server_connections);
 }
 
 /* HTTP alternate selection */
@@ -6999,9 +6999,9 @@ tsapi::c::TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 tsapi::c::TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int id = global_api_metrics.newMetric(the_name);
+  int id = global_api_metrics.create(the_name);
 
-  if (id == ts::Metrics::NOT_FOUND) {
+  if (id == ts::Metrics::Counter::NOT_FOUND) {
     return TS_ERROR;
   }
 
@@ -7012,14 +7012,14 @@ void
 tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_add(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics[id].fetch_add(amount, ts::Metrics::Counter::MEMORY_ORDER);
 }
 
 void
 tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_sub(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics[id].fetch_sub(amount, ts::Metrics::Counter::MEMORY_ORDER);
 }
 
 tsapi::c::TSMgmtInt
@@ -7044,7 +7044,7 @@ tsapi::c::TSStatFindName(const char *name, int *idp)
 
   int id = global_api_metrics.lookup(name);
 
-  if (id == ts::Metrics::NOT_FOUND) {
+  if (id == ts::Metrics::Counter::NOT_FOUND) {
     return TS_ERROR;
   } else {
     *idp = id;

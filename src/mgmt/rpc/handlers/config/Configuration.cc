@@ -184,9 +184,9 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 ts::Rv<YAML::Node>
 reload_config(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Metrics &intm       = ts::Metrics::getInstance();
-  static auto reconf_time = intm.lookup("proxy.process.proxy.reconfigure_time");
-  static auto reconf_req  = intm.lookup("proxy.process.proxy.reconfigure_required");
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
+  static auto reconf_time       = metrics.lookup("proxy.process.proxy.reconfigure_time");
+  static auto reconf_req        = metrics.lookup("proxy.process.proxy.reconfigure_required");
   ts::Rv<YAML::Node> resp;
   Debug("RPC", "invoke plugin callbacks");
   // if there is any error, report it back.
@@ -196,8 +196,8 @@ reload_config(std::string_view const &id, YAML::Node const &params)
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
 
-  intm[reconf_time] = time(nullptr);
-  intm[reconf_req]  = 0;
+  metrics[reconf_time] = time(nullptr);
+  metrics[reconf_req]  = 0;
 
   return resp;
 }

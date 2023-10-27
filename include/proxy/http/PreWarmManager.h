@@ -39,6 +39,8 @@
 
 #include "api/Metrics.h"
 
+using ts::Metrics::Counter;
+
 // tscore
 #include "tscore/CryptoHash.h"
 #include "tscore/ink_hrtime.h"
@@ -121,7 +123,7 @@ enum class Stat {
   LAST_ENTRY,
 };
 
-using StatsIds          = std::array<ts::Metrics::IntType *, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
+using StatsIds          = std::array<Counter::AtomicType *, static_cast<size_t>(PreWarm::Stat::LAST_ENTRY)>;
 using SPtrConstStatsIds = std::shared_ptr<const StatsIds>;
 using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, DstHash, DstKeyEqual>;
 } // namespace PreWarm

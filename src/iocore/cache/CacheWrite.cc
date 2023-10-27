@@ -257,10 +257,10 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
                                                       (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
 
   if (agg_error || max_doc_error) {
-    Metrics::increment(cache_rsb.write_backlog_failure);
-    Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
-    Metrics::increment(cache_rsb.status[op_type].failure);
-    Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
+    Counter::increment(cache_rsb.write_backlog_failure);
+    Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+    Counter::increment(cache_rsb.status[op_type].failure);
+    Counter::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
     vol->agg_todo_size -= agg_len;
     io.aio_result       = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
@@ -441,8 +441,8 @@ new_DocEvacuator(int nbytes, Stripe *vol)
 {
   CacheEvacuateDocVC *c = new_CacheEvacuateDocVC(vol);
   c->op_type            = static_cast<int>(CacheOpType::Evacuate);
-  Metrics::increment(cache_rsb.status[c->op_type].active);
-  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Counter::increment(cache_rsb.status[c->op_type].active);
+  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->buf         = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   c->vol         = vol;
   c->f.evacuator = 1;
@@ -744,8 +744,8 @@ agg_copy(char *p, CacheVC *vc)
 
 // ToDo: Why are these for debug only ?
 #ifdef DEBUG
-        Metrics::increment(cache_rsb.write_backlog_failure);
-        Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+        Counter::increment(cache_rsb.write_backlog_failure);
+        Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
 #endif
       }
       if (vc->f.rewrite_resident_alt) {
@@ -786,8 +786,8 @@ agg_copy(char *p, CacheVC *vc)
     int l    = vc->vol->round_to_approx_size(doc->len);
 
 #ifdef DEBUG
-    Metrics::increment(cache_rsb.gc_frags_evacuated);
-    Metrics::increment(vol->cache_vol->vol_rsb.gc_frags_evacuated);
+    Counter::increment(cache_rsb.gc_frags_evacuated);
+    Counter::increment(vol->cache_vol->vol_rsb.gc_frags_evacuated);
 #endif
 
     doc->sync_serial  = vc->vol->header->sync_serial;
@@ -874,8 +874,8 @@ Stripe::agg_wrap()
   dir_clean_vol(this);
   {
     Stripe *vol = this;
-    Metrics::increment(cache_rsb.directory_wrap);
-    Metrics::increment(vol->cache_vol->vol_rsb.directory_wrap);
+    Counter::increment(cache_rsb.directory_wrap);
+    Counter::increment(vol->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", vol->cache_vol->vol_number, vol->hash_text.get());
   }
   periodic_scan();
@@ -1056,8 +1056,8 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
     DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
 
-    Metrics::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
-    Metrics::increment(vol->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
+    Counter::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
+    Counter::increment(vol->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
   }
   if (f.close_complete) {
     recursive++;
@@ -1508,8 +1508,8 @@ Lsuccess:
   return callcont(CACHE_EVENT_OPEN_WRITE);
 
 Lfailure:
-  Metrics::increment(cache_rsb.status[op_type].failure);
-  Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
+  Counter::increment(cache_rsb.status[op_type].failure);
+  Counter::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
 Lcancel:
   if (od) {
@@ -1532,8 +1532,8 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
     return free_CacheVC(this);
   }
   if (((err = vol->open_write_lock(this, false, 1)) > 0)) {
-    Metrics::increment(cache_rsb.status[op_type].failure);
-    Metrics::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
+    Counter::increment(cache_rsb.status[op_type].failure);
+    Counter::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
     free_CacheVC(this);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
     return EVENT_DONE;
@@ -1570,8 +1570,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->op_type  = static_cast<int>(CacheOpType::Write);
   c->vol      = key_to_vol(key, hostname, host_len);
   Stripe *vol = c->vol;
-  Metrics::increment(cache_rsb.status[c->op_type].active);
-  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Counter::increment(cache_rsb.status[c->op_type].active);
+  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = frag_type;
   /*
@@ -1594,8 +1594,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 
   if ((res = c->vol->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
-    Metrics::increment(cache_rsb.status[c->op_type].failure);
-    Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
+    Counter::increment(cache_rsb.status[c->op_type].failure);
+    Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-res);
     free_CacheVC(c);
     return ACTION_RESULT_DONE;
@@ -1690,8 +1690,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->op_type = static_cast<int>(CacheOpType::Write);
   }
 
-  Metrics::increment(cache_rsb.status[c->op_type].active);
-  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Counter::increment(cache_rsb.status[c->op_type].active);
+  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   // coverity[Y2K38_SAFETY:FALSE]
   c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
 
@@ -1742,8 +1742,8 @@ Lmiss:
   return ACTION_RESULT_DONE;
 
 Lfailure:
-  Metrics::increment(cache_rsb.status[c->op_type].failure);
-  Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
+  Counter::increment(cache_rsb.status[c->op_type].failure);
+  Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
   if (c->od) {
     c->openWriteCloseDir(EVENT_IMMEDIATE, nullptr);

@@ -563,40 +563,40 @@ Http2::init()
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, max_header_list_size}));
 
   // Setup statistics
-  ts::Metrics &intm = ts::Metrics::getInstance();
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
 
-  http2_rsb.current_client_session_count           = intm.newMetricPtr("proxy.process.http2.current_client_connections");
-  http2_rsb.current_server_session_count           = intm.newMetricPtr("proxy.process.http2.current_server_connections");
-  http2_rsb.current_active_client_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_client_connections");
-  http2_rsb.current_active_server_connection_count = intm.newMetricPtr("proxy.process.http2.current_active_server_connections");
-  http2_rsb.current_client_stream_count            = intm.newMetricPtr("proxy.process.http2.current_client_streams");
-  http2_rsb.current_server_stream_count            = intm.newMetricPtr("proxy.process.http2.current_server_streams");
-  http2_rsb.total_client_stream_count              = intm.newMetricPtr("proxy.process.http2.total_client_streams");
-  http2_rsb.total_server_stream_count              = intm.newMetricPtr("proxy.process.http2.total_server_streams");
-  http2_rsb.total_transactions_time                = intm.newMetricPtr("proxy.process.http2.total_transactions_time");
-  http2_rsb.total_client_connection_count          = intm.newMetricPtr("proxy.process.http2.total_client_connections");
-  http2_rsb.total_server_connection_count          = intm.newMetricPtr("proxy.process.http2.total_server_connections");
-  http2_rsb.stream_errors_count                    = intm.newMetricPtr("proxy.process.http2.stream_errors");
-  http2_rsb.connection_errors_count                = intm.newMetricPtr("proxy.process.http2.connection_errors");
-  http2_rsb.session_die_default                    = intm.newMetricPtr("proxy.process.http2.session_die_default");
-  http2_rsb.session_die_other                      = intm.newMetricPtr("proxy.process.http2.session_die_other");
-  http2_rsb.session_die_active                     = intm.newMetricPtr("proxy.process.http2.session_die_active");
-  http2_rsb.session_die_inactive                   = intm.newMetricPtr("proxy.process.http2.session_die_inactive");
-  http2_rsb.session_die_eos                        = intm.newMetricPtr("proxy.process.http2.session_die_eos");
-  http2_rsb.session_die_error                      = intm.newMetricPtr("proxy.process.http2.session_die_error");
-  http2_rsb.session_die_high_error_rate            = intm.newMetricPtr("proxy.process.http2.session_die_high_error_rate");
-  http2_rsb.max_settings_per_frame_exceeded        = intm.newMetricPtr("proxy.process.http2.max_settings_per_frame_exceeded");
-  http2_rsb.max_settings_per_minute_exceeded       = intm.newMetricPtr("proxy.process.http2.max_settings_per_minute_exceeded");
+  http2_rsb.current_client_session_count           = metrics.createPtr("proxy.process.http2.current_client_connections");
+  http2_rsb.current_server_session_count           = metrics.createPtr("proxy.process.http2.current_server_connections");
+  http2_rsb.current_active_client_connection_count = metrics.createPtr("proxy.process.http2.current_active_client_connections");
+  http2_rsb.current_active_server_connection_count = metrics.createPtr("proxy.process.http2.current_active_server_connections");
+  http2_rsb.current_client_stream_count            = metrics.createPtr("proxy.process.http2.current_client_streams");
+  http2_rsb.current_server_stream_count            = metrics.createPtr("proxy.process.http2.current_server_streams");
+  http2_rsb.total_client_stream_count              = metrics.createPtr("proxy.process.http2.total_client_streams");
+  http2_rsb.total_server_stream_count              = metrics.createPtr("proxy.process.http2.total_server_streams");
+  http2_rsb.total_transactions_time                = metrics.createPtr("proxy.process.http2.total_transactions_time");
+  http2_rsb.total_client_connection_count          = metrics.createPtr("proxy.process.http2.total_client_connections");
+  http2_rsb.total_server_connection_count          = metrics.createPtr("proxy.process.http2.total_server_connections");
+  http2_rsb.stream_errors_count                    = metrics.createPtr("proxy.process.http2.stream_errors");
+  http2_rsb.connection_errors_count                = metrics.createPtr("proxy.process.http2.connection_errors");
+  http2_rsb.session_die_default                    = metrics.createPtr("proxy.process.http2.session_die_default");
+  http2_rsb.session_die_other                      = metrics.createPtr("proxy.process.http2.session_die_other");
+  http2_rsb.session_die_active                     = metrics.createPtr("proxy.process.http2.session_die_active");
+  http2_rsb.session_die_inactive                   = metrics.createPtr("proxy.process.http2.session_die_inactive");
+  http2_rsb.session_die_eos                        = metrics.createPtr("proxy.process.http2.session_die_eos");
+  http2_rsb.session_die_error                      = metrics.createPtr("proxy.process.http2.session_die_error");
+  http2_rsb.session_die_high_error_rate            = metrics.createPtr("proxy.process.http2.session_die_high_error_rate");
+  http2_rsb.max_settings_per_frame_exceeded        = metrics.createPtr("proxy.process.http2.max_settings_per_frame_exceeded");
+  http2_rsb.max_settings_per_minute_exceeded       = metrics.createPtr("proxy.process.http2.max_settings_per_minute_exceeded");
   http2_rsb.max_settings_frames_per_minute_exceeded =
-    intm.newMetricPtr("proxy.process.http2.max_settings_frames_per_minute_exceeded");
-  http2_rsb.max_ping_frames_per_minute_exceeded = intm.newMetricPtr("proxy.process.http2.max_ping_frames_per_minute_exceeded");
+    metrics.createPtr("proxy.process.http2.max_settings_frames_per_minute_exceeded");
+  http2_rsb.max_ping_frames_per_minute_exceeded = metrics.createPtr("proxy.process.http2.max_ping_frames_per_minute_exceeded");
   http2_rsb.max_priority_frames_per_minute_exceeded =
-    intm.newMetricPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
+    metrics.createPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
   http2_rsb.max_rst_stream_frames_per_minute_exceeded =
-    intm.newMetricPtr("proxy.process.http2.max_rst_stream_frames_per_minute_exceeded");
-  http2_rsb.insufficient_avg_window_update      = intm.newMetricPtr("proxy.process.http2.insufficient_avg_window_update");
-  http2_rsb.max_concurrent_streams_exceeded_in  = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
-  http2_rsb.max_concurrent_streams_exceeded_out = intm.newMetricPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
+    metrics.createPtr("proxy.process.http2.max_rst_stream_frames_per_minute_exceeded");
+  http2_rsb.insufficient_avg_window_update      = metrics.createPtr("proxy.process.http2.insufficient_avg_window_update");
+  http2_rsb.max_concurrent_streams_exceeded_in  = metrics.createPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
+  http2_rsb.max_concurrent_streams_exceeded_out = metrics.createPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
 
   http2_init();
 }

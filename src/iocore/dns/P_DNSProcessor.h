@@ -31,8 +31,6 @@
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/eventsystem/Event.h"
 
-#include "api/Metrics.h"
-
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_inet.h"
@@ -45,12 +43,9 @@
 
 #include "ts/DbgCtl.h"
 
-#include <swoc/IPEndpoint.h>
+#include "api/Metrics.h"
 
-#include <cstdint>
-#include <cstring>
-
-using ts::Metrics;
+using ts::Metrics::Counter;
 
 #define MAX_NAMED                       32
 #define DEFAULT_DNS_RETRIES             5
@@ -102,17 +97,17 @@ extern unsigned int dns_sequence_number;
 
 // Stats
 struct DNSStatsBlock {
-  ts::Metrics::IntType *fail_time;
-  ts::Metrics::IntType *in_flight;
-  ts::Metrics::IntType *lookup_fail;
-  ts::Metrics::IntType *lookup_success;
-  ts::Metrics::IntType *max_retries_exceeded;
-  ts::Metrics::IntType *response_time;
-  ts::Metrics::IntType *retries;
-  ts::Metrics::IntType *success_time;
-  ts::Metrics::IntType *tcp_reset;
-  ts::Metrics::IntType *tcp_retries;
-  ts::Metrics::IntType *total_lookups;
+  Counter::AtomicType *fail_time;
+  Counter::AtomicType *in_flight;
+  Counter::AtomicType *lookup_fail;
+  Counter::AtomicType *lookup_success;
+  Counter::AtomicType *max_retries_exceeded;
+  Counter::AtomicType *response_time;
+  Counter::AtomicType *retries;
+  Counter::AtomicType *success_time;
+  Counter::AtomicType *tcp_reset;
+  Counter::AtomicType *tcp_retries;
+  Counter::AtomicType *total_lookups;
 };
 
 struct HostEnt;

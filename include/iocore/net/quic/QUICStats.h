@@ -24,10 +24,11 @@
 #pragma once
 
 #include "api/Metrics.h"
-using ts::Metrics;
+
+using ts::Metrics::Counter;
 
 struct QuicStatsBlock {
-  Metrics::IntType *total_packets_sent;
+  Counter::AtomicType *total_packets_sent;
 };
 
 extern QuicStatsBlock quic_rsb;

@@ -63,20 +63,20 @@ namespace err = rpc::handlers::errors;
 static bool
 is_server_draining()
 {
-  ts::Metrics &intm    = ts::Metrics::getInstance();
-  static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
+  static auto drain_id          = metrics.lookup("proxy.process.proxy.draining");
 
-  return (intm[drain_id] != 0);
+  return (metrics[drain_id] != 0);
 }
 
 static void
 set_server_drain(bool drain)
 {
-  ts::Metrics &intm    = ts::Metrics::getInstance();
-  static auto drain_id = intm.lookup("proxy.process.proxy.draining");
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
+  static auto drain_id          = metrics.lookup("proxy.process.proxy.draining");
 
   TSSystemState::drain(drain);
-  intm[drain_id] = TSSystemState::is_draining() ? 1 : 0;
+  metrics[drain_id] = TSSystemState::is_draining() ? 1 : 0;
 }
 
 ts::Rv<YAML::Node>

@@ -107,12 +107,12 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
-  ts::Metrics &intm = ts::Metrics::getInstance();
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
 
-  aio_rsb.read_count  = intm.newMetricPtr("proxy.process.cache.aio.read_count");
-  aio_rsb.write_count = intm.newMetricPtr("proxy.process.cache.aio.write_count");
-  aio_rsb.kb_read     = intm.newMetricPtr("proxy.process.cache.aio.KB_read");
-  aio_rsb.kb_write    = intm.newMetricPtr("proxy.process.cache.aio.KB_write");
+  aio_rsb.read_count  = metrics.createPtr("proxy.process.cache.aio.read_count");
+  aio_rsb.write_count = metrics.createPtr("proxy.process.cache.aio.write_count");
+  aio_rsb.kb_read     = metrics.createPtr("proxy.process.cache.aio.KB_read");
+  aio_rsb.kb_write    = metrics.createPtr("proxy.process.cache.aio.KB_write");
 
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
@@ -442,11 +442,11 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-        Metrics::increment(aio_rsb.write_count);
-        Metrics::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
+        Counter::increment(aio_rsb.write_count);
+        Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
       } else {
-        Metrics::increment(aio_rsb.read_count);
-        Metrics::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
+        Counter::increment(aio_rsb.read_count);
+        Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
       }
       cache_op(reinterpret_cast<AIOCallbackInternal *>(op));
       ink_atomic_increment(&my_aio_req->requests_queued, -1);
@@ -578,11 +578,11 @@ AIOCallbackInternal::handle_complete(io_uring_cqe *cqe)
 
   if (op->aio_result > 0) {
     if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-      Metrics::increment(aio_rsb.write_count);
-      Metrics::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
+      Counter::increment(aio_rsb.write_count);
+      Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
     } else {
-      Metrics::increment(aio_rsb.read_count);
-      Metrics::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
+      Counter::increment(aio_rsb.read_count);
+      Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
     }
   }
 

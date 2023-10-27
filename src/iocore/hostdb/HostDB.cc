@@ -510,7 +510,7 @@ probe(HostDBHash const &hash, bool ignore_timeout)
       return NO_RECORD;
       // if we aren't ignoring timeouts, and we are past it-- then remove the record
     } else if (!ignore_timeout && record->is_ip_timeout() && !record->serve_stale_but_revalidate()) {
-      Metrics::increment(hostdb_rsb.ttl_expires);
+      Counter::increment(hostdb_rsb.ttl_expires);
       return NO_RECORD;
     }
   }
@@ -518,7 +518,7 @@ probe(HostDBHash const &hash, bool ignore_timeout)
   // If the record is stale, but we want to revalidate-- lets start that up
   if ((!ignore_timeout && record->is_ip_configured_stale() && record->record_type != HostDBType::HOST) ||
       (record->is_ip_timeout() && record->serve_stale_but_revalidate())) {
-    Metrics::increment(hostdb_rsb.total_serve_stale);
+    Counter::increment(hostdb_rsb.total_serve_stale);
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
       Dbg(dbg_ctl_hostdb, "%s",
           swoc::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
@@ -556,11 +556,11 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
   } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
     force_dns = hostdb_re_dns_on_reload;
     if (force_dns) {
-      Metrics::increment(hostdb_rsb.re_dns_on_reload);
+      Counter::increment(hostdb_rsb.re_dns_on_reload);
     }
   }
 
-  Metrics::increment(hostdb_rsb.total_lookups);
+  Counter::increment(hostdb_rsb.total_lookups);
 
   if (!hostdb_enable ||                                       // if the HostDB is disabled,
       (hash.host_name && !*hash.host_name) ||                 // or host_name is empty string
@@ -604,7 +604,7 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
           } else {
             Dbg(dbg_ctl_hostdb, "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
           }
-          Metrics::increment(hostdb_rsb.total_hits);
+          Counter::increment(hostdb_rsb.total_hits);
           if (cb_process_result) {
             (cont->*cb_process_result)(r.get());
           } else {
@@ -749,7 +749,7 @@ HostDBProcessor::iterate(Continuation *cont)
   ink_assert(cont->mutex->thread_holding == this_ethread());
   EThread *thread = cont->mutex->thread_holding;
 
-  Metrics::increment(hostdb_rsb.total_lookups);
+  Counter::increment(hostdb_rsb.total_lookups);
 
   HostDBContinuation *c = hostDBContAllocator.alloc();
   HostDBContinuation::Options copt;
@@ -814,7 +814,7 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
       }
       break;
     }
-    Metrics::increment(hostdb_rsb.ttl, answer_ttl.count());
+    Counter::increment(hostdb_rsb.ttl, answer_ttl.count());
 
     // update the TTL
     record->ip_timestamp        = hostdb_current_timestamp;
@@ -1184,7 +1184,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
     Ptr<HostDBRecord> r = probe(hash, false);
 
     if (r) {
-      Metrics::increment(hostdb_rsb.total_hits);
+      Counter::increment(hostdb_rsb.total_hits);
     }
 
     if (action.continuation && r) {
@@ -1212,7 +1212,7 @@ HostDBContinuation::set_check_pending_dns()
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
-    Metrics::increment(hostdb_rsb.insert_duplicate_to_pending_dns);
+    Counter::increment(hostdb_rsb.insert_duplicate_to_pending_dns);
     Dbg(dbg_ctl_hostdb, "Skip the insertion of the same continuation to pending dns");
     return false;
   }
@@ -1790,15 +1790,15 @@ ink_hostdb_init(ts::ModuleVersion v)
   //
   // Register stats
   //
-  ts::Metrics &intm = ts::Metrics::getInstance();
+  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
 
-  hostdb_rsb.total_lookups                   = intm.newMetricPtr("proxy.process.hostdb.total_lookups");
-  hostdb_rsb.total_hits                      = intm.newMetricPtr("proxy.process.hostdb.total_hits");
-  hostdb_rsb.total_serve_stale               = intm.newMetricPtr("proxy.process.hostdb.total_serve_stale");
-  hostdb_rsb.ttl                             = intm.newMetricPtr("proxy.process.hostdb.ttl");
-  hostdb_rsb.ttl_expires                     = intm.newMetricPtr("proxy.process.hostdb.ttl_expires");
-  hostdb_rsb.re_dns_on_reload                = intm.newMetricPtr("proxy.process.hostdb.re_dns_on_reload");
-  hostdb_rsb.insert_duplicate_to_pending_dns = intm.newMetricPtr("proxy.process.hostdb.insert_duplicate_to_pending_dns");
+  hostdb_rsb.total_lookups                   = metrics.createPtr("proxy.process.hostdb.total_lookups");
+  hostdb_rsb.total_hits                      = metrics.createPtr("proxy.process.hostdb.total_hits");
+  hostdb_rsb.total_serve_stale               = metrics.createPtr("proxy.process.hostdb.total_serve_stale");
+  hostdb_rsb.ttl                             = metrics.createPtr("proxy.process.hostdb.ttl");
+  hostdb_rsb.ttl_expires                     = metrics.createPtr("proxy.process.hostdb.ttl_expires");
+  hostdb_rsb.re_dns_on_reload                = metrics.createPtr("proxy.process.hostdb.re_dns_on_reload");
+  hostdb_rsb.insert_duplicate_to_pending_dns = metrics.createPtr("proxy.process.hostdb.insert_duplicate_to_pending_dns");
 
   ts_host_res_global_init();
 }

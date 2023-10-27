@@ -39,7 +39,7 @@
 
 #include "api/Metrics.h"
 
-using ts::Metrics;
+using ts::Metrics::Counter;
 
 // for debugging
 // #define AIO_STATS 1
@@ -133,10 +133,10 @@ public:
 #endif
 
 struct AIOStatsBlock {
-  Metrics::IntType *read_count;
-  Metrics::IntType *kb_read;
-  Metrics::IntType *write_count;
-  Metrics::IntType *kb_write;
+  Counter::AtomicType *read_count;
+  Counter::AtomicType *kb_read;
+  Counter::AtomicType *write_count;
+  Counter::AtomicType *kb_write;
 };
 
 extern AIOStatsBlock aio_rsb;
