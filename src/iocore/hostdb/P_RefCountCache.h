@@ -428,21 +428,19 @@ RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items
                                 const std::string metrics_prefix)
   : header(RefCountCacheHeader(object_version))
 {
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
   this->max_size       = size;
   this->max_items      = items;
   this->num_partitions = num_partitions;
 
-  this->rsb.refcountcache_current_items        = metrics.createPtr((metrics_prefix + "current_items").c_str());
-  this->rsb.refcountcache_current_size         = metrics.createPtr((metrics_prefix + "current_size").c_str());
-  this->rsb.refcountcache_total_inserts        = metrics.createPtr((metrics_prefix + "total_inserts").c_str());
-  this->rsb.refcountcache_total_failed_inserts = metrics.createPtr((metrics_prefix + "total_failed_inserts").c_str());
-  this->rsb.refcountcache_total_lookups        = metrics.createPtr((metrics_prefix + "total_lookups").c_str());
-  this->rsb.refcountcache_total_hits           = metrics.createPtr((metrics_prefix + "total_hits").c_str());
-  this->rsb.refcountcache_last_sync_time       = metrics.createPtr((metrics_prefix + "last_sync.time").c_str());
-  this->rsb.refcountcache_last_total_items     = metrics.createPtr((metrics_prefix + "last_sync.total_items").c_str());
-  this->rsb.refcountcache_last_total_size      = metrics.createPtr((metrics_prefix + "last_sync.total_size").c_str());
+  this->rsb.refcountcache_current_items        = Counter::CreatePtr((metrics_prefix + "current_items").c_str());
+  this->rsb.refcountcache_current_size         = Counter::CreatePtr((metrics_prefix + "current_size").c_str());
+  this->rsb.refcountcache_total_inserts        = Counter::CreatePtr((metrics_prefix + "total_inserts").c_str());
+  this->rsb.refcountcache_total_failed_inserts = Counter::CreatePtr((metrics_prefix + "total_failed_inserts").c_str());
+  this->rsb.refcountcache_total_lookups        = Counter::CreatePtr((metrics_prefix + "total_lookups").c_str());
+  this->rsb.refcountcache_total_hits           = Counter::CreatePtr((metrics_prefix + "total_hits").c_str());
+  this->rsb.refcountcache_last_sync_time       = Counter::CreatePtr((metrics_prefix + "last_sync.time").c_str());
+  this->rsb.refcountcache_last_total_items     = Counter::CreatePtr((metrics_prefix + "last_sync.total_items").c_str());
+  this->rsb.refcountcache_last_total_size      = Counter::CreatePtr((metrics_prefix + "last_sync.total_size").c_str());
 
   // Now lets create all the partitions
   this->partitions.reserve(num_partitions);

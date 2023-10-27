@@ -107,12 +107,10 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
-  aio_rsb.read_count  = metrics.createPtr("proxy.process.cache.aio.read_count");
-  aio_rsb.write_count = metrics.createPtr("proxy.process.cache.aio.write_count");
-  aio_rsb.kb_read     = metrics.createPtr("proxy.process.cache.aio.KB_read");
-  aio_rsb.kb_write    = metrics.createPtr("proxy.process.cache.aio.KB_write");
+  aio_rsb.read_count  = Counter::CreatePtr("proxy.process.cache.aio.read_count");
+  aio_rsb.write_count = Counter::CreatePtr("proxy.process.cache.aio.write_count");
+  aio_rsb.kb_read     = Counter::CreatePtr("proxy.process.cache.aio.KB_read");
+  aio_rsb.kb_write    = Counter::CreatePtr("proxy.process.cache.aio.KB_write");
 
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);

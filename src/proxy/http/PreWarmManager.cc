@@ -1149,7 +1149,7 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       Counter::AtomicType *metric           = nullptr;
 
       if (stats_id == ts::Metrics::Counter::NOT_FOUND) {
-        metric = metrics.createPtr(name);
+        metric = Counter::CreatePtr(name);
 
         if (metric == nullptr) {
           Error("couldn't register stat name=%s", name);

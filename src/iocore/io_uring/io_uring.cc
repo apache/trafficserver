@@ -46,8 +46,8 @@ struct IOUringStatsBlock {
 
 static IOUringStatsBlock io_uring_rsb = []() {
   auto &intm = Metrics::getInstance();
-  return IOUringStatsBlock{metrics.createPtr("proxy.process.io_uring.submitted"),
-                           metrics.createPtr("proxy.process.io_uring.completed")};
+  return IOUringStatsBlock{Counter::CreatePtr("proxy.process.io_uring.submitted"),
+                           Counter::CreatePtr("proxy.process.io_uring.completed")};
 }();
 
 void

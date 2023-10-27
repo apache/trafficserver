@@ -1907,19 +1907,17 @@ ink_dns_init(ts::ModuleVersion v)
   //
   // Register statistics callbacks
   //
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
-  dns_rsb.fail_time            = metrics.createPtr("proxy.process.dns.fail_time");
-  dns_rsb.in_flight            = metrics.createPtr("proxy.process.dns.in_flight");
-  dns_rsb.lookup_fail          = metrics.createPtr("proxy.process.dns.lookup_failures");
-  dns_rsb.lookup_success       = metrics.createPtr("proxy.process.dns.lookup_successes");
-  dns_rsb.max_retries_exceeded = metrics.createPtr("proxy.process.dns.max_retries_exceeded");
-  dns_rsb.response_time        = metrics.createPtr("proxy.process.dns.lookup_time");
-  dns_rsb.retries              = metrics.createPtr("proxy.process.dns.retries");
-  dns_rsb.success_time         = metrics.createPtr("proxy.process.dns.success_time");
-  dns_rsb.tcp_reset            = metrics.createPtr("proxy.process.dns.tcp_reset");
-  dns_rsb.tcp_retries          = metrics.createPtr("proxy.process.dns.tcp_retries");
-  dns_rsb.total_lookups        = metrics.createPtr("proxy.process.dns.total_dns_lookups");
+  dns_rsb.fail_time            = Counter::CreatePtr("proxy.process.dns.fail_time");
+  dns_rsb.in_flight            = Counter::CreatePtr("proxy.process.dns.in_flight");
+  dns_rsb.lookup_fail          = Counter::CreatePtr("proxy.process.dns.lookup_failures");
+  dns_rsb.lookup_success       = Counter::CreatePtr("proxy.process.dns.lookup_successes");
+  dns_rsb.max_retries_exceeded = Counter::CreatePtr("proxy.process.dns.max_retries_exceeded");
+  dns_rsb.response_time        = Counter::CreatePtr("proxy.process.dns.lookup_time");
+  dns_rsb.retries              = Counter::CreatePtr("proxy.process.dns.retries");
+  dns_rsb.success_time         = Counter::CreatePtr("proxy.process.dns.success_time");
+  dns_rsb.tcp_reset            = Counter::CreatePtr("proxy.process.dns.tcp_reset");
+  dns_rsb.tcp_retries          = Counter::CreatePtr("proxy.process.dns.tcp_retries");
+  dns_rsb.total_lookups        = Counter::CreatePtr("proxy.process.dns.total_dns_lookups");
 }
 
 #if TS_HAS_TESTS

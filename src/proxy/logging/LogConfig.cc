@@ -508,32 +508,31 @@ LogConfig::register_stat_callbacks()
   //
   // events
   //
-  ts::Metrics::Counter &metrics             = ts::Metrics::Counter::getInstance();
-  log_rsb.event_log_error_skip              = metrics.createPtr("proxy.process.log.event_log_error_skip");
-  log_rsb.event_log_error_ok                = metrics.createPtr("proxy.process.log.event_log_error_ok");
-  log_rsb.event_log_error_aggr              = metrics.createPtr("proxy.process.log.event_log_error_aggr");
-  log_rsb.event_log_error_full              = metrics.createPtr("proxy.process.log.event_log_error_full");
-  log_rsb.event_log_error_fail              = metrics.createPtr("proxy.process.log.event_log_error_fail");
-  log_rsb.event_log_access_ok               = metrics.createPtr("proxy.process.log.event_log_access_ok");
-  log_rsb.event_log_access_skip             = metrics.createPtr("proxy.process.log.event_log_access_skip");
-  log_rsb.event_log_access_aggr             = metrics.createPtr("proxy.process.log.event_log_access_aggr");
-  log_rsb.event_log_access_full             = metrics.createPtr("proxy.process.log.event_log_access_full");
-  log_rsb.event_log_access_fail             = metrics.createPtr("proxy.process.log.event_log_access_fail");
-  log_rsb.num_sent_to_network               = metrics.createPtr("proxy.process.log.num_sent_to_network");
-  log_rsb.num_lost_before_sent_to_network   = metrics.createPtr("proxy.process.log.num_lost_before_sent_to_network");
-  log_rsb.num_received_from_network         = metrics.createPtr("proxy.process.log.num_received_from_network");
-  log_rsb.num_flush_to_disk                 = metrics.createPtr("proxy.process.log.num_flush_to_disk");
-  log_rsb.num_lost_before_flush_to_disk     = metrics.createPtr("proxy.process.log.num_lost_before_flush_to_disk");
-  log_rsb.bytes_lost_before_preproc         = metrics.createPtr("proxy.process.log.bytes_lost_before_preproc");
-  log_rsb.bytes_sent_to_network             = metrics.createPtr("proxy.process.log.bytes_sent_to_network");
-  log_rsb.bytes_lost_before_sent_to_network = metrics.createPtr("proxy.process.log.bytes_lost_before_sent_to_network");
-  log_rsb.bytes_received_from_network       = metrics.createPtr("proxy.process.log.bytes_received_from_network");
-  log_rsb.bytes_flush_to_disk               = metrics.createPtr("proxy.process.log.bytes_flush_to_disk");
-  log_rsb.bytes_lost_before_flush_to_disk   = metrics.createPtr("proxy.process.log.bytes_lost_before_flush_to_disk");
-  log_rsb.bytes_written_to_disk             = metrics.createPtr("proxy.process.log.bytes_written_to_disk");
-  log_rsb.bytes_lost_before_written_to_disk = metrics.createPtr("proxy.process.log.bytes_lost_before_written_to_disk");
-  log_rsb.log_files_open                    = metrics.createPtr("proxy.process.log.log_files_open");
-  log_rsb.log_files_space_used              = metrics.createPtr("proxy.process.log.log_files_space_used");
+  log_rsb.event_log_error_skip              = Counter::CreatePtr("proxy.process.log.event_log_error_skip");
+  log_rsb.event_log_error_ok                = Counter::CreatePtr("proxy.process.log.event_log_error_ok");
+  log_rsb.event_log_error_aggr              = Counter::CreatePtr("proxy.process.log.event_log_error_aggr");
+  log_rsb.event_log_error_full              = Counter::CreatePtr("proxy.process.log.event_log_error_full");
+  log_rsb.event_log_error_fail              = Counter::CreatePtr("proxy.process.log.event_log_error_fail");
+  log_rsb.event_log_access_ok               = Counter::CreatePtr("proxy.process.log.event_log_access_ok");
+  log_rsb.event_log_access_skip             = Counter::CreatePtr("proxy.process.log.event_log_access_skip");
+  log_rsb.event_log_access_aggr             = Counter::CreatePtr("proxy.process.log.event_log_access_aggr");
+  log_rsb.event_log_access_full             = Counter::CreatePtr("proxy.process.log.event_log_access_full");
+  log_rsb.event_log_access_fail             = Counter::CreatePtr("proxy.process.log.event_log_access_fail");
+  log_rsb.num_sent_to_network               = Counter::CreatePtr("proxy.process.log.num_sent_to_network");
+  log_rsb.num_lost_before_sent_to_network   = Counter::CreatePtr("proxy.process.log.num_lost_before_sent_to_network");
+  log_rsb.num_received_from_network         = Counter::CreatePtr("proxy.process.log.num_received_from_network");
+  log_rsb.num_flush_to_disk                 = Counter::CreatePtr("proxy.process.log.num_flush_to_disk");
+  log_rsb.num_lost_before_flush_to_disk     = Counter::CreatePtr("proxy.process.log.num_lost_before_flush_to_disk");
+  log_rsb.bytes_lost_before_preproc         = Counter::CreatePtr("proxy.process.log.bytes_lost_before_preproc");
+  log_rsb.bytes_sent_to_network             = Counter::CreatePtr("proxy.process.log.bytes_sent_to_network");
+  log_rsb.bytes_lost_before_sent_to_network = Counter::CreatePtr("proxy.process.log.bytes_lost_before_sent_to_network");
+  log_rsb.bytes_received_from_network       = Counter::CreatePtr("proxy.process.log.bytes_received_from_network");
+  log_rsb.bytes_flush_to_disk               = Counter::CreatePtr("proxy.process.log.bytes_flush_to_disk");
+  log_rsb.bytes_lost_before_flush_to_disk   = Counter::CreatePtr("proxy.process.log.bytes_lost_before_flush_to_disk");
+  log_rsb.bytes_written_to_disk             = Counter::CreatePtr("proxy.process.log.bytes_written_to_disk");
+  log_rsb.bytes_lost_before_written_to_disk = Counter::CreatePtr("proxy.process.log.bytes_lost_before_written_to_disk");
+  log_rsb.log_files_open                    = Counter::CreatePtr("proxy.process.log.log_files_open");
+  log_rsb.log_files_space_used              = Counter::CreatePtr("proxy.process.log.log_files_space_used");
 }
 
 /*-------------------------------------------------------------------------

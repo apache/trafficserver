@@ -430,7 +430,7 @@ public:
 
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
-    memory_rss = metrics.createPtr("proxy.process.traffic_server.memory.rss");
+    memory_rss = Counter::CreatePtr("proxy.process.traffic_server.memory.rss");
   }
 
   ~MemoryLimit() override { mutex = nullptr; }

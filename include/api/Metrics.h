@@ -85,9 +85,6 @@ namespace Metrics
       ink_release_assert(0 == create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
     }
 
-    // Singleton
-    static Counter &getInstance();
-
     // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
     // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
     IdType create(const std::string_view name);
@@ -153,6 +150,24 @@ namespace Metrics
     }
 
     // Static methods to encapsulate access to the atomic's
+    static Counter &getInstance();
+
+    static IdType
+    Create(const std::string_view name)
+    {
+      auto &instance = getInstance();
+
+      return instance.create(name);
+    }
+
+    static AtomicType *
+    CreatePtr(const std::string_view name)
+    {
+      auto &instance = getInstance();
+
+      return instance.lookup(instance.create(name));
+    }
+
     static void
     increment(AtomicType *metric, uint64_t val = 1)
     {

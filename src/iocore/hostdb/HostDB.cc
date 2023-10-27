@@ -1790,15 +1790,13 @@ ink_hostdb_init(ts::ModuleVersion v)
   //
   // Register stats
   //
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
-  hostdb_rsb.total_lookups                   = metrics.createPtr("proxy.process.hostdb.total_lookups");
-  hostdb_rsb.total_hits                      = metrics.createPtr("proxy.process.hostdb.total_hits");
-  hostdb_rsb.total_serve_stale               = metrics.createPtr("proxy.process.hostdb.total_serve_stale");
-  hostdb_rsb.ttl                             = metrics.createPtr("proxy.process.hostdb.ttl");
-  hostdb_rsb.ttl_expires                     = metrics.createPtr("proxy.process.hostdb.ttl_expires");
-  hostdb_rsb.re_dns_on_reload                = metrics.createPtr("proxy.process.hostdb.re_dns_on_reload");
-  hostdb_rsb.insert_duplicate_to_pending_dns = metrics.createPtr("proxy.process.hostdb.insert_duplicate_to_pending_dns");
+  hostdb_rsb.total_lookups                   = Counter::CreatePtr("proxy.process.hostdb.total_lookups");
+  hostdb_rsb.total_hits                      = Counter::CreatePtr("proxy.process.hostdb.total_hits");
+  hostdb_rsb.total_serve_stale               = Counter::CreatePtr("proxy.process.hostdb.total_serve_stale");
+  hostdb_rsb.ttl                             = Counter::CreatePtr("proxy.process.hostdb.ttl");
+  hostdb_rsb.ttl_expires                     = Counter::CreatePtr("proxy.process.hostdb.ttl_expires");
+  hostdb_rsb.re_dns_on_reload                = Counter::CreatePtr("proxy.process.hostdb.re_dns_on_reload");
+  hostdb_rsb.insert_duplicate_to_pending_dns = Counter::CreatePtr("proxy.process.hostdb.insert_duplicate_to_pending_dns");
 
   ts_host_res_global_init();
 }

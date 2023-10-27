@@ -80,58 +80,56 @@ configure_net()
 static inline void
 register_net_stats()
 {
-  ts::Metrics::Counter &metrics = ts::Metrics::Counter::getInstance();
-
-  net_rsb.accepts_currently_open                    = metrics.createPtr("proxy.process.net.accepts_currently_open");
-  net_rsb.calls_to_read                             = metrics.createPtr("proxy.process.net.calls_to_read");
-  net_rsb.calls_to_read_nodata                      = metrics.createPtr("proxy.process.net.calls_to_read_nodata");
-  net_rsb.calls_to_readfromnet                      = metrics.createPtr("proxy.process.net.calls_to_readfromnet");
-  net_rsb.calls_to_write                            = metrics.createPtr("proxy.process.net.calls_to_write");
-  net_rsb.calls_to_write_nodata                     = metrics.createPtr("proxy.process.net.calls_to_write_nodata");
-  net_rsb.calls_to_writetonet                       = metrics.createPtr("proxy.process.net.calls_to_writetonet");
-  net_rsb.connections_currently_open                = metrics.createPtr("proxy.process.net.connections_currently_open");
-  net_rsb.connections_throttled_in                  = metrics.createPtr("proxy.process.net.connections_throttled_in");
-  net_rsb.connections_throttled_out                 = metrics.createPtr("proxy.process.net.connections_throttled_out");
-  net_rsb.tunnel_total_client_connections_blind_tcp = metrics.createPtr("proxy.process.tunnel.total_client_connections_blind_tcp");
+  net_rsb.accepts_currently_open                    = Counter::CreatePtr("proxy.process.net.accepts_currently_open");
+  net_rsb.calls_to_read                             = Counter::CreatePtr("proxy.process.net.calls_to_read");
+  net_rsb.calls_to_read_nodata                      = Counter::CreatePtr("proxy.process.net.calls_to_read_nodata");
+  net_rsb.calls_to_readfromnet                      = Counter::CreatePtr("proxy.process.net.calls_to_readfromnet");
+  net_rsb.calls_to_write                            = Counter::CreatePtr("proxy.process.net.calls_to_write");
+  net_rsb.calls_to_write_nodata                     = Counter::CreatePtr("proxy.process.net.calls_to_write_nodata");
+  net_rsb.calls_to_writetonet                       = Counter::CreatePtr("proxy.process.net.calls_to_writetonet");
+  net_rsb.connections_currently_open                = Counter::CreatePtr("proxy.process.net.connections_currently_open");
+  net_rsb.connections_throttled_in                  = Counter::CreatePtr("proxy.process.net.connections_throttled_in");
+  net_rsb.connections_throttled_out                 = Counter::CreatePtr("proxy.process.net.connections_throttled_out");
+  net_rsb.tunnel_total_client_connections_blind_tcp = Counter::CreatePtr("proxy.process.tunnel.total_client_connections_blind_tcp");
   net_rsb.tunnel_current_client_connections_blind_tcp =
-    metrics.createPtr("proxy.process.tunnel.current_client_connections_blind_tcp");
-  net_rsb.tunnel_total_server_connections_blind_tcp = metrics.createPtr("proxy.process.tunnel.total_server_connections_blind_tcp");
+    Counter::CreatePtr("proxy.process.tunnel.current_client_connections_blind_tcp");
+  net_rsb.tunnel_total_server_connections_blind_tcp = Counter::CreatePtr("proxy.process.tunnel.total_server_connections_blind_tcp");
   net_rsb.tunnel_current_server_connections_blind_tcp =
-    metrics.createPtr("proxy.process.tunnel.current_server_connections_blind_tcp");
+    Counter::CreatePtr("proxy.process.tunnel.current_server_connections_blind_tcp");
   net_rsb.tunnel_total_client_connections_tls_tunnel =
-    metrics.createPtr("proxy.process.tunnel.total_client_connections_tls_tunnel");
+    Counter::CreatePtr("proxy.process.tunnel.total_client_connections_tls_tunnel");
   net_rsb.tunnel_current_client_connections_tls_tunnel =
-    metrics.createPtr("proxy.process.tunnel.current_client_connections_tls_tunnel");
+    Counter::CreatePtr("proxy.process.tunnel.current_client_connections_tls_tunnel");
   net_rsb.tunnel_total_client_connections_tls_forward =
-    metrics.createPtr("proxy.process.tunnel.total_client_connections_tls_forward");
+    Counter::CreatePtr("proxy.process.tunnel.total_client_connections_tls_forward");
   net_rsb.tunnel_current_client_connections_tls_forward =
-    metrics.createPtr("proxy.process.tunnel.current_client_connections_tls_forward");
+    Counter::CreatePtr("proxy.process.tunnel.current_client_connections_tls_forward");
   net_rsb.tunnel_total_client_connections_tls_partial_blind =
-    metrics.createPtr("proxy.process.tunnel.total_client_connections_tls_partial_blind");
+    Counter::CreatePtr("proxy.process.tunnel.total_client_connections_tls_partial_blind");
   net_rsb.tunnel_current_client_connections_tls_partial_blind =
-    metrics.createPtr("proxy.process.tunnel.current_client_connections_tls_partial_blind");
-  net_rsb.tunnel_total_client_connections_tls_http = metrics.createPtr("proxy.process.tunnel.total_client_connections_tls_http");
+    Counter::CreatePtr("proxy.process.tunnel.current_client_connections_tls_partial_blind");
+  net_rsb.tunnel_total_client_connections_tls_http = Counter::CreatePtr("proxy.process.tunnel.total_client_connections_tls_http");
   net_rsb.tunnel_current_client_connections_tls_http =
-    metrics.createPtr("proxy.process.tunnel.current_client_connections_tls_http");
-  net_rsb.tunnel_total_server_connections_tls   = metrics.createPtr("proxy.process.tunnel.total_server_connections_tls");
-  net_rsb.tunnel_current_server_connections_tls = metrics.createPtr("proxy.process.tunnel.current_server_connections_tls");
-  net_rsb.default_inactivity_timeout_applied    = metrics.createPtr("proxy.process.net.default_inactivity_timeout_applied");
-  net_rsb.default_inactivity_timeout_count      = metrics.createPtr("proxy.process.net.default_inactivity_timeout_count");
-  net_rsb.fastopen_attempts                     = metrics.createPtr("proxy.process.net.fastopen_out.attempts");
-  net_rsb.fastopen_successes                    = metrics.createPtr("proxy.process.net.fastopen_out.successes");
-  net_rsb.handler_run                           = metrics.createPtr("proxy.process.net.net_handler_run");
-  net_rsb.inactivity_cop_lock_acquire_failure   = metrics.createPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
-  net_rsb.keep_alive_queue_timeout_count        = metrics.createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
-  net_rsb.keep_alive_queue_timeout_total        = metrics.createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
-  net_rsb.read_bytes                            = metrics.createPtr("proxy.process.net.read_bytes");
-  net_rsb.read_bytes_count                      = metrics.createPtr("proxy.process.net.read_bytes_count");
-  net_rsb.requests_max_throttled_in             = metrics.createPtr("proxy.process.net.max.requests_throttled_in");
-  net_rsb.socks_connections_currently_open      = metrics.createPtr("proxy.process.socks.connections_currently_open");
-  net_rsb.socks_connections_successful          = metrics.createPtr("proxy.process.socks.connections_successful");
-  net_rsb.socks_connections_unsuccessful        = metrics.createPtr("proxy.process.socks.connections_unsuccessful");
-  net_rsb.tcp_accept                            = metrics.createPtr("proxy.process.tcp.total_accepts");
-  net_rsb.write_bytes                           = metrics.createPtr("proxy.process.net.write_bytes");
-  net_rsb.write_bytes_count                     = metrics.createPtr("proxy.process.net.write_bytes_count");
+    Counter::CreatePtr("proxy.process.tunnel.current_client_connections_tls_http");
+  net_rsb.tunnel_total_server_connections_tls   = Counter::CreatePtr("proxy.process.tunnel.total_server_connections_tls");
+  net_rsb.tunnel_current_server_connections_tls = Counter::CreatePtr("proxy.process.tunnel.current_server_connections_tls");
+  net_rsb.default_inactivity_timeout_applied    = Counter::CreatePtr("proxy.process.net.default_inactivity_timeout_applied");
+  net_rsb.default_inactivity_timeout_count      = Counter::CreatePtr("proxy.process.net.default_inactivity_timeout_count");
+  net_rsb.fastopen_attempts                     = Counter::CreatePtr("proxy.process.net.fastopen_out.attempts");
+  net_rsb.fastopen_successes                    = Counter::CreatePtr("proxy.process.net.fastopen_out.successes");
+  net_rsb.handler_run                           = Counter::CreatePtr("proxy.process.net.net_handler_run");
+  net_rsb.inactivity_cop_lock_acquire_failure   = Counter::CreatePtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.keep_alive_queue_timeout_count        = Counter::CreatePtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
+  net_rsb.keep_alive_queue_timeout_total        = Counter::CreatePtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
+  net_rsb.read_bytes                            = Counter::CreatePtr("proxy.process.net.read_bytes");
+  net_rsb.read_bytes_count                      = Counter::CreatePtr("proxy.process.net.read_bytes_count");
+  net_rsb.requests_max_throttled_in             = Counter::CreatePtr("proxy.process.net.max.requests_throttled_in");
+  net_rsb.socks_connections_currently_open      = Counter::CreatePtr("proxy.process.socks.connections_currently_open");
+  net_rsb.socks_connections_successful          = Counter::CreatePtr("proxy.process.socks.connections_successful");
+  net_rsb.socks_connections_unsuccessful        = Counter::CreatePtr("proxy.process.socks.connections_unsuccessful");
+  net_rsb.tcp_accept                            = Counter::CreatePtr("proxy.process.tcp.total_accepts");
+  net_rsb.write_bytes                           = Counter::CreatePtr("proxy.process.net.write_bytes");
+  net_rsb.write_bytes_count                     = Counter::CreatePtr("proxy.process.net.write_bytes_count");
 }
 
 void
