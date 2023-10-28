@@ -218,6 +218,27 @@ struct Stripe : public Continuation {
 
   int aggWriteDone(int event, Event *e);
   int aggWrite(int event, void *e);
+
+  /**
+   * Copies virtual connection buffers into the aggregate write buffer.
+   *
+   * Pending write data will only be copied while space remains in the aggregate
+   * write buffer. The copy will stop at the first pending write that does
+   * not fit in the remaining space. Note that the total size of each pending
+   * write must not be greater than the total aggregate write buffer size.
+   *
+   * After each virtual connection's buffer is successfully copied, it will
+   * receive mutually-exclusive post-handling based on the connection type:
+   *
+   *     - sync (only if CacheVC::f.use_first_key): inserted into sync queue
+   *     - evacuator: handler invoked - probably evacuateDocDone
+   *     - otherwise: inserted into tocall for handler to be scheduled later
+   *
+   * @param tocall Out parameter; a queue of virtual connections with handlers that need to
+   *     invoked at the end of aggWrite.
+   * @see aggWrite
+   */
+  void aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall);
   void agg_wrap();
 
   int evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e);
