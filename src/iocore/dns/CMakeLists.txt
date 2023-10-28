@@ -21,7 +21,7 @@ add_library(ts::inkdns ALIAS inkdns)
 target_include_directories(
   inkdns
   PUBLIC "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/src/iocore/net"
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 target_link_libraries(
