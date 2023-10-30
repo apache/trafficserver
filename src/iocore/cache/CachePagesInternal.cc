@@ -154,7 +154,7 @@ ShowCacheInternal::showVolConnections(int event, Event *e)
       vc->key.string(url);
     CHECK_SHOW(show("<tr>"
                     "<td>%s</td>" // operation
-                    "<td>%s</td>" // Vol
+                    "<td>%s</td>" // Stripe
                     "<td>%s</td>" // URL/Hash
                     "<td>%d</td>"
                     "<td>%s</td>"

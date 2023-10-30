@@ -43,7 +43,7 @@ extern int cache_config_max_disk_errors;
 #define STORE_BLOCKS_PER_VOL (VOL_BLOCK_SIZE / STORE_BLOCK_SIZE)
 #define DISK_HEADER_MAGIC    0xABCD1237
 
-/* each disk vol block has a corresponding Vol object */
+/* each disk vol block has a corresponding Stripe object */
 struct CacheDisk;
 
 struct DiskStripeBlock {

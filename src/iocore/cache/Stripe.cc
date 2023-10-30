@@ -140,7 +140,7 @@ struct StripeInitInfo {
 };
 
 ////
-// Vol
+// Stripe
 //
 
 int

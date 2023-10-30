@@ -120,7 +120,7 @@ int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *vol);
 // when we are asked about the highest interesting offset.
 /* Make map of what blocks in partition are used.
  *
- * d - Vol to make a map of. */
+ * d - Stripe to make a map of. */
 static char *
 make_vol_map(Stripe *vol)
 {

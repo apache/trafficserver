@@ -139,7 +139,7 @@ struct SpanHeader {
 
 /** Stripe data, serialized format.
 
-    @internal nee VolHeadFooter
+    @internal StripeHeaderFooter
  */
 // the counterpart of this structure in ATS is called StripeHeaderFooter
 class StripeMeta

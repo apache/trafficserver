@@ -27,9 +27,9 @@ Data Structures
 
    hide empty members
 
-   CacheHostRecord *-- "*" Stripe : Vol >
+   CacheHostRecord *-- "*" Stripe : stripe >
    CacheHostRecord *-- "*" CacheVol : cp >
-   CacheVol *-- "*" Stripe : Vol >
+   CacheVol *-- "*" Stripe : stripe >
 
 .. var:: size_t STORE_BLOCK_SIZE = 8192
 
