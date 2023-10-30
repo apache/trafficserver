@@ -40,7 +40,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install libmagick++-dev libncurses-dev libpcre2-dev libbrotli-dev libluajit-5.1-dev luajit libjansson-dev libcjose-dev libmaxminddb-dev libgeoip-dev
+        sudo apt install libmagick++-dev libncurses-dev libpcre2-dev libbrotli-dev libluajit-5.1-dev luajit libjansson-dev libcjose-dev libmaxminddb-dev libgeoip-dev ninja-build
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
@@ -67,9 +67,8 @@ jobs:
 
     - run: |
          echo "Run, Build Application using script"
-         autoreconf -fiv
-         ./configure --enable-experimental-plugins
-         make
+         cmake -B build --preset ci
+         cmake --build build -v
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
