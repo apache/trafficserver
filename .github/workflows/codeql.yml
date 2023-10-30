@@ -67,9 +67,10 @@ jobs:
 
     - run: |
          echo "Run, Build Application using script"
-         autoreconf -fiv
-         ./configure --enable-experimental-plugins
-         make
+         export CC="clang"
+         export CXX="clang++"
+         cmake -B build --preset ci
+         cmake --build build -v
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
