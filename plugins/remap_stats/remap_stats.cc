@@ -252,7 +252,14 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "txn data", &(config->txn_slot));
+TSArgIndex index;
+TSReturnCode result = TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "txn data", &index);
+if (result != TS_SUCCESS) {
+    // handle the error, log it, or take appropriate action.
+    // you might return an error code or throw an exception.
+} else {
+    config->txn_slot = index;
+}
 
   // this is to mark the transaction as successfully remapped
   TSCont const post_remap_cont = TSContCreate(handle_post_remap, nullptr);
