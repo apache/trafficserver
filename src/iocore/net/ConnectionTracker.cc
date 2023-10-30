@@ -23,59 +23,63 @@
 
 #include <algorithm>
 #include <deque>
+#include "iocore/net/ConnectionTracker.h"
 #include "tscpp/util/ts_bw_format.h"
 #include "../../records/P_RecDefs.h"
 #include "proxy/http/HttpConfig.h"
-#include "proxy/http/HttpConnectionCount.h"
 
 using namespace std::literals;
 
 extern void Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie);
 
-OutboundConnTrack::Imp OutboundConnTrack::_imp;
+ConnectionTracker::Imp ConnectionTracker::_imp;
 
-OutboundConnTrack::GlobalConfig *OutboundConnTrack::_global_config{nullptr};
+ConnectionTracker::GlobalConfig *ConnectionTracker::_global_config{nullptr};
 
-const MgmtConverter OutboundConnTrack::MAX_CONV(
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::max) *>(data)); },
-  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
+const MgmtConverter ConnectionTracker::MAX_SERVER_CONV(
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::server_max) *>(data)); },
+  [](void *data, MgmtInt i) -> void {
+    *static_cast<decltype(TxnConfig::server_max) *>(data) = static_cast<decltype(TxnConfig::server_max)>(i);
+  });
 
-const MgmtConverter OutboundConnTrack::MIN_CONV(
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::min) *>(data)); },
-  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i); });
+const MgmtConverter ConnectionTracker::MIN_SERVER_CONV(
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::server_min) *>(data)); },
+  [](void *data, MgmtInt i) -> void {
+    *static_cast<decltype(TxnConfig::server_min) *>(data) = static_cast<decltype(TxnConfig::server_min)>(i);
+  });
 
 // Do integer and string conversions.
-const MgmtConverter OutboundConnTrack::MATCH_CONV{
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::match) *>(data)); },
+const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::server_match) *>(data)); },
   [](void *data, MgmtInt i) -> void {
     // Problem - the InkAPITest requires being able to set an arbitrary value, so this can either
     // correctly clamp or pass the regression tests. Currently it passes the tests.
     //    *static_cast<decltype(TxnConfig::match) *>(data) = std::clamp(static_cast<decltype(TxnConfig::match)>(i), MATCH_IP,
     //    MATCH_BOTH);
-    *static_cast<decltype(TxnConfig::match) *>(data) = static_cast<decltype(TxnConfig::match)>(i);
+    *static_cast<decltype(TxnConfig::server_match) *>(data) = static_cast<decltype(TxnConfig::server_match)>(i);
   },
   nullptr,
   nullptr,
   [](const void *data) -> std::string_view {
-    auto t = *static_cast<const OutboundConnTrack::MatchType *>(data);
-    return t < 0 || t > OutboundConnTrack::MATCH_BOTH ? "Invalid"sv : OutboundConnTrack::MATCH_TYPE_NAME[t];
+    auto t = *static_cast<const ConnectionTracker::MatchType *>(data);
+    return t < 0 || t > ConnectionTracker::MATCH_BOTH ? "Invalid"sv : ConnectionTracker::MATCH_TYPE_NAME[t];
   },
   [](void *data, std::string_view src) -> void {
-    OutboundConnTrack::MatchType t;
-    if (OutboundConnTrack::lookup_match_type(src, t)) {
-      *static_cast<OutboundConnTrack::MatchType *>(data) = t;
+    ConnectionTracker::MatchType t;
+    if (ConnectionTracker::lookup_match_type(src, t)) {
+      *static_cast<ConnectionTracker::MatchType *>(data) = t;
     } else {
-      OutboundConnTrack::Warning_Bad_Match_Type(src);
+      ConnectionTracker::Warning_Bad_Match_Type(src);
     }
   }};
 
-const std::array<std::string_view, static_cast<int>(OutboundConnTrack::MATCH_BOTH) + 1> OutboundConnTrack::MATCH_TYPE_NAME{
+const std::array<std::string_view, static_cast<int>(ConnectionTracker::MATCH_BOTH) + 1> ConnectionTracker::MATCH_TYPE_NAME{
   {"ip"sv, "port"sv, "host"sv, "both"sv}
 };
 
 // Make sure the clock is millisecond resolution or finer.
-static_assert(OutboundConnTrack::Group::Clock::period::num == 1);
-static_assert(OutboundConnTrack::Group::Clock::period::den >= 1000);
+static_assert(ConnectionTracker::Group::Clock::period::num == 1);
+static_assert(ConnectionTracker::Group::Clock::period::den >= 1000);
 
 // Configuration callback functions.
 namespace
@@ -83,10 +87,10 @@ namespace
 bool
 Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
+  auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
-    config->min = data.rec_int;
+    config->server_min = data.rec_int;
     return true;
   }
   return false;
@@ -95,10 +99,10 @@ Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void
 bool
 Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
+  auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
-    config->max = data.rec_int;
+    config->server_max = data.rec_int;
     return true;
   }
   return false;
@@ -107,19 +111,19 @@ Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void
 bool
 Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
+  auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
   if (RECD_STRING == dtype) {
-    OutboundConnTrack::MatchType match_type;
+    ConnectionTracker::MatchType match_type;
     std::string_view tag{data.rec_string};
-    if (OutboundConnTrack::lookup_match_type(tag, match_type)) {
-      config->match = match_type;
+    if (ConnectionTracker::lookup_match_type(tag, match_type)) {
+      config->server_match = match_type;
       return true;
     } else {
-      OutboundConnTrack::Warning_Bad_Match_Type(tag);
+      ConnectionTracker::Warning_Bad_Match_Type(tag);
     }
   } else {
-    Warning("Invalid type for '%s' - must be 'INT'", OutboundConnTrack::CONFIG_VAR_MATCH.data());
+    Warning("Invalid type for '%s' - must be 'INT'", ConnectionTracker::CONFIG_SERVER_VAR_MATCH.data());
   }
   return false;
 }
@@ -127,10 +131,10 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
 bool
 Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype && data.rec_int >= 0) {
-    config->alert_delay = std::chrono::seconds(data.rec_int);
+    config->server_alert_delay = std::chrono::seconds(data.rec_int);
     return true;
   }
   return false;
@@ -139,37 +143,37 @@ Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData da
 } // namespace
 
 void
-OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
+ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn)
 {
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
-  Enable_Config_Var(CONFIG_VAR_MIN, &Config_Update_Conntrack_Min, txn);
-  Enable_Config_Var(CONFIG_VAR_MAX, &Config_Update_Conntrack_Max, txn);
-  Enable_Config_Var(CONFIG_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
-  Enable_Config_Var(CONFIG_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MIN, &Config_Update_Conntrack_Min, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
 }
 
-OutboundConnTrack::TxnState
-OutboundConnTrack::obtain(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr)
+ConnectionTracker::TxnState
+ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr)
 {
   TxnState zret;
   CryptoHash hash;
   CryptoContext().hash_immediate(hash, fqdn.data(), fqdn.size());
-  Group::Key key{addr, hash, txn_cnf.match};
+  Group::Key key{addr, hash, txn_cnf.server_match};
   std::lock_guard<std::mutex> lock(_imp._mutex); // Table lock
   auto loc = _imp._table.find(key);
   if (loc != _imp._table.end()) {
     zret._g = loc;
   } else {
-    zret._g = new Group(key, fqdn, txn_cnf.min);
+    zret._g = new Group(key, fqdn, txn_cnf.server_min);
     _imp._table.insert(zret._g);
   }
   return zret;
 }
 
 bool
-OutboundConnTrack::Group::equal(const Key &lhs, const Key &rhs)
+ConnectionTracker::Group::equal(const Key &lhs, const Key &rhs)
 {
   bool zret = false;
   if (lhs._match_type == rhs._match_type) {
@@ -199,7 +203,7 @@ OutboundConnTrack::Group::equal(const Key &lhs, const Key &rhs)
 }
 
 bool
-OutboundConnTrack::Group::should_alert(std::time_t *lat)
+ConnectionTracker::Group::should_alert(std::time_t *lat)
 {
   bool zret = false;
   // This is a bit clunky because the goal is to store just the tick count as an atomic.
@@ -207,7 +211,7 @@ OutboundConnTrack::Group::should_alert(std::time_t *lat)
   Ticker last_tick{_last_alert};                  // Load the most recent alert time in ticks.
   TimePoint last{TimePoint::duration{last_tick}}; // Most recent alert time in a time_point.
   TimePoint now = Clock::now();                   // Current time_point.
-  if (last + _global_config->alert_delay <= now) {
+  if (last + _global_config->server_alert_delay <= now) {
     // it's been long enough, swap out our time for the last time. The winner of this swap
     // does the actual alert, leaving its current time as the last alert time.
     zret = _last_alert.compare_exchange_strong(last_tick, now.time_since_epoch().count());
@@ -219,13 +223,13 @@ OutboundConnTrack::Group::should_alert(std::time_t *lat)
 }
 
 std::time_t
-OutboundConnTrack::Group::get_last_alert_epoch_time() const
+ConnectionTracker::Group::get_last_alert_epoch_time() const
 {
   return Clock::to_time_t(TimePoint{TimePoint::duration{Ticker{_last_alert}}});
 }
 
 void
-OutboundConnTrack::get(std::vector<Group const *> &groups)
+ConnectionTracker::get(std::vector<Group const *> &groups)
 {
   std::lock_guard<std::mutex> lock(_imp._mutex); // TABLE LOCK
   groups.resize(0);
@@ -236,7 +240,7 @@ OutboundConnTrack::get(std::vector<Group const *> &groups)
 }
 
 std::string
-OutboundConnTrack::to_json_string()
+ConnectionTracker::to_json_string()
 {
   std::string text;
   size_t extent = 0;
@@ -277,7 +281,7 @@ OutboundConnTrack::to_json_string()
 }
 
 void
-OutboundConnTrack::dump(FILE *f)
+ConnectionTracker::dump(FILE *f)
 {
   std::vector<Group const *> groups;
 
@@ -298,30 +302,12 @@ OutboundConnTrack::dump(FILE *f)
   }
 }
 
-struct ShowConnectionCount : public ShowCont {
-  ShowConnectionCount(Continuation *c, HTTPHdr *h) : ShowCont(c, h) { SET_HANDLER(&ShowConnectionCount::showHandler); }
-  int
-  showHandler(int event, Event *e)
-  {
-    CHECK_SHOW(show(OutboundConnTrack::to_json_string().c_str()));
-    return completeJson(event, e);
-  }
-};
-
-Action *
-register_ShowConnectionCount(Continuation *c, HTTPHdr *h)
-{
-  ShowConnectionCount *s = new ShowConnectionCount(c, h);
-  this_ethread()->schedule_imm(s);
-  return &s->action;
-}
-
 bool
-OutboundConnTrack::lookup_match_type(std::string_view tag, OutboundConnTrack::MatchType &type)
+ConnectionTracker::lookup_match_type(std::string_view tag, ConnectionTracker::MatchType &type)
 {
   // Search the array for the tag.
-  for (OutboundConnTrack::MatchType idx :
-       {OutboundConnTrack::MATCH_IP, OutboundConnTrack::MATCH_PORT, OutboundConnTrack::MATCH_HOST, OutboundConnTrack::MATCH_BOTH}) {
+  for (ConnectionTracker::MatchType idx :
+       {ConnectionTracker::MATCH_IP, ConnectionTracker::MATCH_PORT, ConnectionTracker::MATCH_HOST, ConnectionTracker::MATCH_BOTH}) {
     if (tag == MATCH_TYPE_NAME[idx]) {
       type = idx;
       return true;
@@ -331,10 +317,10 @@ OutboundConnTrack::lookup_match_type(std::string_view tag, OutboundConnTrack::Ma
 }
 
 void
-OutboundConnTrack::Warning_Bad_Match_Type(std::string_view tag)
+ConnectionTracker::Warning_Bad_Match_Type(std::string_view tag)
 {
   swoc::LocalBufferWriter<256> w;
-  w.print("Invalid value '{}' for '{}' - must be one of", tag, CONFIG_VAR_MATCH);
+  w.print("Invalid value '{}' for '{}' - must be one of", tag, CONFIG_SERVER_VAR_MATCH);
   for (auto n : MATCH_TYPE_NAME) {
     w.write(" '"sv);
     w.write(n);
@@ -345,7 +331,7 @@ OutboundConnTrack::Warning_Bad_Match_Type(std::string_view tag)
 }
 
 void
-OutboundConnTrack::TxnState::Note_Unblocked(const TxnConfig *config, int count, sockaddr const *addr)
+ConnectionTracker::TxnState::Note_Unblocked(const TxnConfig *config, int count, sockaddr const *addr)
 {
   time_t lat; // last alert time (epoch seconds)
 
@@ -353,23 +339,25 @@ OutboundConnTrack::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
     auto blocked = _g->_blocked.exchange(0);
     swoc::LocalBufferWriter<256> w;
     w.print("upstream unblocked: [{}] count={} limit={} group=({}) blocked={} upstream={}\0",
-            swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->max, *_g, blocked, addr);
+            swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->server_max, *_g, blocked, addr);
     Debug(DEBUG_TAG, "%s", w.data());
     Note("%s", w.data());
   }
 }
 
 void
-OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, sockaddr const *addr,
-                                          char const *debug_tag)
+ConnectionTracker::TxnState::Warn_Blocked(int max_connections, int64_t id, int count, sockaddr const *addr, char const *debug_tag)
 {
   bool alert_p = _g->should_alert();
   auto blocked = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();
 
   if (alert_p || debug_tag) {
     swoc::LocalBufferWriter<256> w;
-    w.print("[{}] too many connections: count={} limit={} group=({}) blocked={} upstream={}\0", sm_id, count, config->max, *_g,
-            blocked, addr);
+    if (id > 1) {
+      w.print("[{}] ", id);
+    }
+    w.print("too many connections: count={} limit={} group=({}) blocked={} upstream={}\0", count, max_connections, *_g, blocked,
+            addr);
 
     if (debug_tag) {
       Debug(debug_tag, "%s", w.data());
@@ -383,30 +371,30 @@ OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id
 namespace swoc
 {
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::MatchType type)
+bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::MatchType type)
 {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, static_cast<unsigned int>(type));
   } else {
-    bwformat(w, spec, OutboundConnTrack::MATCH_TYPE_NAME[type]);
+    bwformat(w, spec, ConnectionTracker::MATCH_TYPE_NAME[type]);
   }
   return w;
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group::Key const &key)
+bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group::Key const &key)
 {
   switch (key._match_type) {
-  case OutboundConnTrack::MATCH_BOTH:
+  case ConnectionTracker::MATCH_BOTH:
     w.print("{:s} {},{}", key._match_type, key._addr, key._hash);
     break;
-  case OutboundConnTrack::MATCH_HOST:
+  case ConnectionTracker::MATCH_HOST:
     w.print("{:s} {}", key._match_type, key._hash);
     break;
-  case OutboundConnTrack::MATCH_PORT:
+  case ConnectionTracker::MATCH_PORT:
     w.print("{:s} {}", key._match_type, key._addr);
     break;
-  case OutboundConnTrack::MATCH_IP:
+  case ConnectionTracker::MATCH_IP:
     w.print("{:s} {::a}", key._match_type, key._addr);
     break;
   }
@@ -414,19 +402,19 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group::Key c
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group const &g)
+bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group const &g)
 {
   switch (g._match_type) {
-  case OutboundConnTrack::MATCH_BOTH:
+  case ConnectionTracker::MATCH_BOTH:
     w.print("{:s} {},{}", g._match_type, g._addr, g._fqdn);
     break;
-  case OutboundConnTrack::MATCH_HOST:
+  case ConnectionTracker::MATCH_HOST:
     w.print("{:s} {}", g._match_type, g._fqdn);
     break;
-  case OutboundConnTrack::MATCH_PORT:
+  case ConnectionTracker::MATCH_PORT:
     w.print("{:s} {}", g._match_type, g._addr);
     break;
-  case OutboundConnTrack::MATCH_IP:
+  case ConnectionTracker::MATCH_IP:
     w.print("{:s} {::a}", g._match_type, g._addr);
     break;
   }

@@ -24,8 +24,8 @@
 #pragma once
 
 #include <unordered_map>
+#include "iocore/net/ConnectionTracker.h"
 #include "proxy/hdrs/HTTP.h"
-#include "proxy/http/HttpConnectionCount.h"
 
 namespace ts
 {

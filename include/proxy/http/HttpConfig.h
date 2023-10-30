@@ -48,10 +48,10 @@
 #include "tscore/ink_resolver.h"
 #include "tscore/Regex.h"
 #include "tscpp/util/ts_bw.h"
-#include "proxy/http/HttpProxyAPIEnums.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/ConnectionTracker.h"
+#include "iocore/net/SessionSharingAPIEnums.h"
 #include "records/RecProcess.h"
-#include "proxy/http/HttpConnectionCount.h"
 #include "tscpp/util/ts_ip.h"
 #include "api/Metrics.h"
 
@@ -638,7 +638,7 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_water_mark = 32768;
   MgmtInt slow_log_threshold        = 0;
 
-  OutboundConnTrack::TxnConfig outbound_conntrack;
+  ConnectionTracker::TxnConfig connection_tracker_config;
 
   MgmtInt plugin_vc_default_buffer_index      = BUFFER_SIZE_INDEX_32K;
   MgmtInt plugin_vc_default_buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
@@ -771,7 +771,7 @@ public:
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
-  OutboundConnTrack::GlobalConfig global_outbound_conntrack;
+  ConnectionTracker::GlobalConfig global_connection_tracker_config;
 
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;

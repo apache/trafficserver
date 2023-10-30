@@ -994,7 +994,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_alpn_protocols, "proxy.config.ssl.client.alpn_protocols");
   HttpEstablishStaticConfigByte(c.scheme_proto_mismatch_policy, "proxy.config.ssl.client.scheme_proto_mismatch_policy");
 
-  OutboundConnTrack::config_init(&c.global_outbound_conntrack, &c.oride.outbound_conntrack);
+  ConnectionTracker::config_init(&c.global_connection_tracker_config, &c.oride.connection_tracker_config);
 
   MUTEX_TRY_LOCK(lock, http_config_cont->mutex, this_ethread());
   if (!lock.is_locked()) {
@@ -1037,8 +1037,8 @@ HttpConfig::reconfigure()
 
   params->server_max_connections                = m_master.server_max_connections;
   params->max_websocket_connections             = m_master.max_websocket_connections;
-  params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
-  params->global_outbound_conntrack             = m_master.global_outbound_conntrack;
+  params->oride.connection_tracker_config       = m_master.oride.connection_tracker_config;
+  params->global_connection_tracker_config      = m_master.global_connection_tracker_config;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
   params->oride.tunnel_activity_check_period    = m_master.oride.tunnel_activity_check_period;
@@ -1048,10 +1048,11 @@ HttpConfig::reconfigure()
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
-  if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
+  if (params->oride.connection_tracker_config.server_max > 0 &&
+      params->oride.connection_tracker_config.server_max < params->oride.connection_tracker_config.server_min) {
     Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
-            OutboundConnTrack::CONFIG_VAR_MAX.data(), ts::filename::RECORDS);
-    params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
+            ConnectionTracker::CONFIG_SERVER_VAR_MAX.data(), ts::filename::RECORDS);
+    params->oride.connection_tracker_config.server_min = params->oride.connection_tracker_config.server_max;
   }
 
   params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;

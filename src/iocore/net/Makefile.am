@@ -150,6 +150,7 @@ libinknet_a_SOURCES = \
 	BoringSSLUtils.cc \
 	BoringSSLUtils.h \
 	Connection.cc \
+	ConnectionTracker.cc \
 	EventIO.h \
 	EventIO.cc \
 	I_Net.h \

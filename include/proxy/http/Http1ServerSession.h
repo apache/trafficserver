@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "proxy/http/HttpConnectionCount.h"
-#include "proxy/http/HttpProxyAPIEnums.h"
+#include "iocore/net/ConnectionTracker.h"
+#include "iocore/net/SessionSharingAPIEnums.h"
 #include "proxy/PoolableSession.h"
 #include "proxy/http/Http1ServerTransaction.h"
 

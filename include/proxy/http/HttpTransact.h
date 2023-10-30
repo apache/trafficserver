@@ -76,8 +76,8 @@ using ink_time_t = time_t;
 struct HttpConfigParams;
 class HttpSM;
 
+#include "iocore/net/ConnectionTracker.h"
 #include "tscore/InkErrno.h"
-#include "proxy/http/HttpConnectionCount.h"
 
 #define UNKNOWN_INTERNAL_ERROR (INK_START_ERRNO - 1)
 
@@ -717,7 +717,7 @@ public:
     CacheLookupInfo cache_info;
     ResolveInfo dns_info;
     RedirectInfo redirect_info;
-    OutboundConnTrack::TxnState outbound_conn_track_state;
+    ConnectionTracker::TxnState outbound_conn_track_state;
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
