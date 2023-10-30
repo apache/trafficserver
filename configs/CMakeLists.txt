@@ -19,7 +19,7 @@
 install(
   CODE "set(CONFIG_SOURCE_GLOBS \"${CMAKE_BINARY_DIR}/configs/*.default\" \"${CMAKE_SOURCE_DIR}/configs/*.default\")"
 )
-install(CODE "set(CONFIG_DEST_PATH \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_SYSCONFDIR}\")")
+install(CODE "set(CONFIG_DEST_PATH \"${CMAKE_INSTALL_SYSCONFDIR}\")")
 
 install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install_configs.cmake)
 
