@@ -1426,7 +1426,7 @@ struct ShowStats : public Continuation {
     int64_t d_nw   = Metrics::Counter::load(net_rsb.write_bytes_count) - last_nw;
     last_nw       += d_nw;
 
-    int64_t d_o = Metrics::Counter::load(net_rsb.connections_currently_open);
+    int64_t d_o = Metrics::Gauge::load(net_rsb.connections_currently_open);
     int64_t d_p = Metrics::Counter::load(net_rsb.handler_run) - last_p;
 
     last_p += d_p;

@@ -77,12 +77,12 @@ const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT             = 15;
 
 // Statistics
 struct Http2StatsBlock {
-  Metrics::Counter::AtomicType *current_client_session_count;
-  Metrics::Counter::AtomicType *current_server_session_count;
-  Metrics::Counter::AtomicType *current_active_client_connection_count;
-  Metrics::Counter::AtomicType *current_active_server_connection_count;
-  Metrics::Counter::AtomicType *current_client_stream_count;
-  Metrics::Counter::AtomicType *current_server_stream_count;
+  Metrics::Gauge::AtomicType *current_client_session_count;
+  Metrics::Gauge::AtomicType *current_server_session_count;
+  Metrics::Gauge::AtomicType *current_active_client_connection_count;
+  Metrics::Gauge::AtomicType *current_active_server_connection_count;
+  Metrics::Gauge::AtomicType *current_client_stream_count;
+  Metrics::Gauge::AtomicType *current_server_stream_count;
   Metrics::Counter::AtomicType *total_client_stream_count;
   Metrics::Counter::AtomicType *total_server_stream_count;
   Metrics::Counter::AtomicType *total_transactions_time;

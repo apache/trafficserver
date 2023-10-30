@@ -107,7 +107,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
 
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
-    Metrics::Counter::increment(http_rsb.current_cache_connections);
+    Metrics::Gauge::increment(http_rsb.current_cache_connections);
     ink_assert((cache_read_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
     if (cache_read_vc) {
       // redirect follow in progress, close the previous cache_read_vc
@@ -186,7 +186,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
-    Metrics::Counter::increment(http_rsb.current_cache_connections);
+    Metrics::Gauge::increment(http_rsb.current_cache_connections);
     ink_assert(cache_write_vc == nullptr);
     cache_write_vc = static_cast<CacheVConnection *>(data);
     open_write_cb  = true;

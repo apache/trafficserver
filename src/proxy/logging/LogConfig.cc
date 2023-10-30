@@ -531,7 +531,7 @@ LogConfig::register_stat_callbacks()
   log_rsb.bytes_lost_before_flush_to_disk   = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_flush_to_disk");
   log_rsb.bytes_written_to_disk             = Metrics::Counter::createPtr("proxy.process.log.bytes_written_to_disk");
   log_rsb.bytes_lost_before_written_to_disk = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_written_to_disk");
-  log_rsb.log_files_open                    = Metrics::Counter::createPtr("proxy.process.log.log_files_open");
+  log_rsb.log_files_open                    = Metrics::Gauge::createPtr("proxy.process.log.log_files_open");
   log_rsb.log_files_space_used              = Metrics::Gauge::createPtr("proxy.process.log.log_files_space_used");
 }
 

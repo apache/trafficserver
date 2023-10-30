@@ -28,7 +28,7 @@ enum class CacheOpType { Lookup = 0, Read, Write, Update, Remove, Evacuate, Scan
 
 struct CacheStatsBlock {
   struct {
-    Metrics::Counter::AtomicType *active  = nullptr;
+    Metrics::Gauge::AtomicType *active    = nullptr;
     Metrics::Counter::AtomicType *success = nullptr;
     Metrics::Counter::AtomicType *failure = nullptr;
   } status[static_cast<int>(CacheOpType::Last)];
@@ -38,7 +38,7 @@ struct CacheStatsBlock {
   Metrics::Gauge::AtomicType *bytes_used              = nullptr;
   Metrics::Gauge::AtomicType *bytes_total             = nullptr;
   Metrics::Gauge::AtomicType *stripes                 = nullptr;
-  Metrics::Counter::AtomicType *ram_cache_bytes       = nullptr;
+  Metrics::Gauge::AtomicType *ram_cache_bytes         = nullptr;
   Metrics::Gauge::AtomicType *ram_cache_bytes_total   = nullptr;
   Metrics::Gauge::AtomicType *direntries_total        = nullptr;
   Metrics::Gauge::AtomicType *direntries_used         = nullptr;

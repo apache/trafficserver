@@ -1601,7 +1601,7 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
         c->alive = false;
-        Metrics::Counter::decrement(http_rsb.current_cache_connections);
+        Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       } else if (c->self_producer) {
         chain_abort_cache_write(c->self_producer);
       }
@@ -1715,7 +1715,7 @@ HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
   switch (t) {
   case HT_CACHE_READ:
   case HT_CACHE_WRITE:
-    Metrics::Counter::decrement(http_rsb.current_cache_connections);
+    Metrics::Gauge::decrement(http_rsb.current_cache_connections);
     break;
   default:
     // Handled here:
@@ -1740,7 +1740,7 @@ HttpTunnel::mark_tls_tunnel_active()
   }
 
   _tls_tunnel_active = true;
-  Metrics::Counter::increment(http_rsb.tunnel_current_active_connections);
+  Metrics::Gauge::increment(http_rsb.tunnel_current_active_connections);
 
   _schedule_tls_tunnel_activity_check_event();
 }
@@ -1753,7 +1753,7 @@ HttpTunnel::mark_tls_tunnel_inactive()
   }
 
   _tls_tunnel_active = false;
-  Metrics::Counter::decrement(http_rsb.tunnel_current_active_connections);
+  Metrics::Gauge::decrement(http_rsb.tunnel_current_active_connections);
 
   if (_tls_tunnel_activity_check_event) {
     _tls_tunnel_activity_check_event->cancel();

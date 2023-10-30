@@ -130,25 +130,25 @@ static void
 register_cache_stats(CacheStatsBlock *rsb, const std::string prefix)
 {
   // These are special, in that we have 7 x 3 metrics here in a structure based on cache operation done
-  rsb->status[static_cast<int>(CacheOpType::Lookup)].active    = Metrics::Counter::createPtr(prefix + ".lookup.active");
+  rsb->status[static_cast<int>(CacheOpType::Lookup)].active    = Metrics::Gauge::createPtr(prefix + ".lookup.active");
   rsb->status[static_cast<int>(CacheOpType::Lookup)].success   = Metrics::Counter::createPtr(prefix + ".lookup.success");
   rsb->status[static_cast<int>(CacheOpType::Lookup)].failure   = Metrics::Counter::createPtr(prefix + ".lookup.failure");
-  rsb->status[static_cast<int>(CacheOpType::Read)].active      = Metrics::Counter::createPtr(prefix + ".read.active");
+  rsb->status[static_cast<int>(CacheOpType::Read)].active      = Metrics::Gauge::createPtr(prefix + ".read.active");
   rsb->status[static_cast<int>(CacheOpType::Read)].success     = Metrics::Counter::createPtr(prefix + ".read.success");
   rsb->status[static_cast<int>(CacheOpType::Read)].failure     = Metrics::Counter::createPtr(prefix + ".read.failure");
-  rsb->status[static_cast<int>(CacheOpType::Write)].active     = Metrics::Counter::createPtr(prefix + ".write.active");
+  rsb->status[static_cast<int>(CacheOpType::Write)].active     = Metrics::Gauge::createPtr(prefix + ".write.active");
   rsb->status[static_cast<int>(CacheOpType::Write)].success    = Metrics::Counter::createPtr(prefix + ".write.success");
   rsb->status[static_cast<int>(CacheOpType::Write)].failure    = Metrics::Counter::createPtr(prefix + ".write.failure");
-  rsb->status[static_cast<int>(CacheOpType::Update)].active    = Metrics::Counter::createPtr(prefix + ".update.active");
+  rsb->status[static_cast<int>(CacheOpType::Update)].active    = Metrics::Gauge::createPtr(prefix + ".update.active");
   rsb->status[static_cast<int>(CacheOpType::Update)].success   = Metrics::Counter::createPtr(prefix + ".update.success");
   rsb->status[static_cast<int>(CacheOpType::Update)].failure   = Metrics::Counter::createPtr(prefix + ".update.failure");
-  rsb->status[static_cast<int>(CacheOpType::Remove)].active    = Metrics::Counter::createPtr(prefix + ".remove.active");
+  rsb->status[static_cast<int>(CacheOpType::Remove)].active    = Metrics::Gauge::createPtr(prefix + ".remove.active");
   rsb->status[static_cast<int>(CacheOpType::Remove)].success   = Metrics::Counter::createPtr(prefix + ".remove.success");
   rsb->status[static_cast<int>(CacheOpType::Remove)].failure   = Metrics::Counter::createPtr(prefix + ".remove.failure");
-  rsb->status[static_cast<int>(CacheOpType::Evacuate)].active  = Metrics::Counter::createPtr(prefix + ".evacuate.active");
+  rsb->status[static_cast<int>(CacheOpType::Evacuate)].active  = Metrics::Gauge::createPtr(prefix + ".evacuate.active");
   rsb->status[static_cast<int>(CacheOpType::Evacuate)].success = Metrics::Counter::createPtr(prefix + ".evacuate.success");
   rsb->status[static_cast<int>(CacheOpType::Evacuate)].failure = Metrics::Counter::createPtr(prefix + ".evacuate.failure");
-  rsb->status[static_cast<int>(CacheOpType::Scan)].active      = Metrics::Counter::createPtr(prefix + ".scan.active");
+  rsb->status[static_cast<int>(CacheOpType::Scan)].active      = Metrics::Gauge::createPtr(prefix + ".scan.active");
   rsb->status[static_cast<int>(CacheOpType::Scan)].success     = Metrics::Counter::createPtr(prefix + ".scan.success");
   rsb->status[static_cast<int>(CacheOpType::Scan)].failure     = Metrics::Counter::createPtr(prefix + ".scan.failure");
 
@@ -162,7 +162,7 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string prefix)
   rsb->bytes_total           = Metrics::Gauge::createPtr(prefix + ".bytes_total");
   rsb->stripes               = Metrics::Gauge::createPtr(prefix + ".stripes");
   rsb->ram_cache_bytes_total = Metrics::Gauge::createPtr(prefix + ".ram_cache.total_bytes");
-  rsb->ram_cache_bytes       = Metrics::Counter::createPtr(prefix + ".ram_cache.bytes_used");
+  rsb->ram_cache_bytes       = Metrics::Gauge::createPtr(prefix + ".ram_cache.bytes_used");
   rsb->ram_cache_hits        = Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
   rsb->ram_cache_misses      = Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
   rsb->pread_count           = Metrics::Counter::createPtr(prefix + ".pread_count");
@@ -1199,8 +1199,8 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = type;
   c->f.lookup           = 1;
@@ -1241,8 +1241,8 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
   c->vio.op    = VIO::NONE;
   c->frag_type = type;
   c->op_type   = static_cast<int>(CacheOpType::Remove);
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->vol                = vol;
   c->dir                = result;

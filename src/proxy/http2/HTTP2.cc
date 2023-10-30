@@ -563,14 +563,14 @@ Http2::init()
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, max_header_list_size}));
 
   // Setup statistics
-  http2_rsb.current_client_session_count = Metrics::Counter::createPtr("proxy.process.http2.current_client_connections");
-  http2_rsb.current_server_session_count = Metrics::Counter::createPtr("proxy.process.http2.current_server_connections");
+  http2_rsb.current_client_session_count = Metrics::Gauge::createPtr("proxy.process.http2.current_client_connections");
+  http2_rsb.current_server_session_count = Metrics::Gauge::createPtr("proxy.process.http2.current_server_connections");
   http2_rsb.current_active_client_connection_count =
-    Metrics::Counter::createPtr("proxy.process.http2.current_active_client_connections");
+    Metrics::Gauge::createPtr("proxy.process.http2.current_active_client_connections");
   http2_rsb.current_active_server_connection_count =
-    Metrics::Counter::createPtr("proxy.process.http2.current_active_server_connections");
-  http2_rsb.current_client_stream_count      = Metrics::Counter::createPtr("proxy.process.http2.current_client_streams");
-  http2_rsb.current_server_stream_count      = Metrics::Counter::createPtr("proxy.process.http2.current_server_streams");
+    Metrics::Gauge::createPtr("proxy.process.http2.current_active_server_connections");
+  http2_rsb.current_client_stream_count      = Metrics::Gauge::createPtr("proxy.process.http2.current_client_streams");
+  http2_rsb.current_server_stream_count      = Metrics::Gauge::createPtr("proxy.process.http2.current_server_streams");
   http2_rsb.total_client_stream_count        = Metrics::Counter::createPtr("proxy.process.http2.total_client_streams");
   http2_rsb.total_server_stream_count        = Metrics::Counter::createPtr("proxy.process.http2.total_server_streams");
   http2_rsb.total_transactions_time          = Metrics::Counter::createPtr("proxy.process.http2.total_transactions_time");

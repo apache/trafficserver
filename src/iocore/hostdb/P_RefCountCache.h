@@ -51,8 +51,8 @@ static constexpr ts::VersionNumber REFCOUNTCACHE_VERSION(1, 0);
 
 // Stats
 struct RefCountCacheBlock {
-  Metrics::Counter::AtomicType *refcountcache_current_items;
-  Metrics::Counter::AtomicType *refcountcache_current_size;
+  Metrics::Gauge::AtomicType *refcountcache_current_items;
+  Metrics::Gauge::AtomicType *refcountcache_current_size;
   Metrics::Counter::AtomicType *refcountcache_total_inserts;
   Metrics::Counter::AtomicType *refcountcache_total_failed_inserts;
   Metrics::Counter::AtomicType *refcountcache_total_lookups;
@@ -247,8 +247,8 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   this->item_map.insert(val);
   this->size += val->meta.size;
   this->items++;
-  Metrics::Counter::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
-  Metrics::Counter::increment(this->rsb->refcountcache_current_items);
+  Metrics::Gauge::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
+  Metrics::Gauge::increment(this->rsb->refcountcache_current_items);
 }
 
 template <class C>
@@ -273,8 +273,8 @@ RefCountCachePartition<C>::dealloc_entry(hash_type::iterator ptr)
   this->size -= ptr->meta.size;
   this->items--;
 
-  Metrics::Counter::decrement(this->rsb->refcountcache_current_size, ptr->meta.size);
-  Metrics::Counter::decrement(this->rsb->refcountcache_current_items);
+  Metrics::Gauge::decrement(this->rsb->refcountcache_current_size, ptr->meta.size);
+  Metrics::Gauge::decrement(this->rsb->refcountcache_current_items);
 
   // remove from expiry queue
   if (ptr->expiry_entry != nullptr) {
@@ -432,8 +432,8 @@ RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items
   this->max_items      = items;
   this->num_partitions = num_partitions;
 
-  this->rsb.refcountcache_current_items        = Metrics::Counter::createPtr((metrics_prefix + "current_items").c_str());
-  this->rsb.refcountcache_current_size         = Metrics::Counter::createPtr((metrics_prefix + "current_size").c_str());
+  this->rsb.refcountcache_current_items        = Metrics::Gauge::createPtr((metrics_prefix + "current_items").c_str());
+  this->rsb.refcountcache_current_size         = Metrics::Gauge::createPtr((metrics_prefix + "current_size").c_str());
   this->rsb.refcountcache_total_inserts        = Metrics::Counter::createPtr((metrics_prefix + "total_inserts").c_str());
   this->rsb.refcountcache_total_failed_inserts = Metrics::Counter::createPtr((metrics_prefix + "total_failed_inserts").c_str());
   this->rsb.refcountcache_total_lookups        = Metrics::Counter::createPtr((metrics_prefix + "total_lookups").c_str());

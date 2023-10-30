@@ -61,8 +61,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
       c->op_type = static_cast<int>(CacheOpType::Read);
-      Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->first_key = c->key = c->earliest_key = *key;
       c->vol                                  = vol;
       c->frag_type                            = type;
@@ -131,8 +131,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
       c->vol                                  = vol;
       c->vio.op                               = VIO::READ;
       c->op_type                              = static_cast<int>(CacheOpType::Read);
-      Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
       c->params    = params;

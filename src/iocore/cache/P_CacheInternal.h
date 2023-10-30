@@ -187,8 +187,8 @@ free_CacheVC(CacheVC *cont)
   Stripe *vol       = cont->vol;
 
   if (vol) {
-    Metrics::Counter::decrement(cache_rsb.status[cont->op_type].active);
-    Metrics::Counter::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
+    Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
+    Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
     if (cont->closed > 0) {
       Metrics::Counter::increment(cache_rsb.status[cont->op_type].success);
       Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);

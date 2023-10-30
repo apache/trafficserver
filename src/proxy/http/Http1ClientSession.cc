@@ -118,7 +118,7 @@ Http1ClientSession::free()
 #endif
 
   if (conn_decrease) {
-    Metrics::Counter::decrement(http_rsb.current_client_connections);
+    Metrics::Gauge::decrement(http_rsb.current_client_connections);
     conn_decrease = false;
   }
 
@@ -154,7 +154,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   schedule_event = nullptr;
 
-  Metrics::Counter::increment(http_rsb.current_client_connections);
+  Metrics::Gauge::increment(http_rsb.current_client_connections);
   conn_decrease = true;
   Metrics::Counter::increment(http_rsb.total_client_connections);
   if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TRANSPORT_SSL) {
@@ -513,12 +513,12 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 void
 Http1ClientSession::increment_current_active_connections_stat()
 {
-  Metrics::Counter::increment(http_rsb.current_active_client_connections);
+  Metrics::Gauge::increment(http_rsb.current_active_client_connections);
 }
 void
 Http1ClientSession::decrement_current_active_connections_stat()
 {
-  Metrics::Counter::decrement(http_rsb.current_active_client_connections);
+  Metrics::Gauge::decrement(http_rsb.current_active_client_connections);
 }
 
 void

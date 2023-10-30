@@ -163,8 +163,8 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
-  Metrics::Counter::decrement(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
-  Metrics::Counter::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
+  Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
+  Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
 
   DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " FREED", e->key.slice32(3), e->auxkey);
   e->data = nullptr;
@@ -212,8 +212,8 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64
   lru.enqueue(e);
   bytes += ENTRY_OVERHEAD + data->block_size();
   objects++;
-  Metrics::Counter::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
+  Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
   while (bytes > max_bytes) {
     RamCacheLRUEntry *ee = lru.dequeue();
     if (ee) {

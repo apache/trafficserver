@@ -1031,14 +1031,14 @@ SSLNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
-    Metrics::Counter::decrement(net_rsb.connections_currently_open);
+    Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
   con.close();
 
   if (is_tunnel_endpoint()) {
     ink_assert(get_context() != NET_VCONNECTION_UNSET);
 
-    Metrics::Counter::decrement(([&]() -> Metrics::Counter::AtomicType * {
+    Metrics::Gauge::decrement(([&]() -> Metrics::Gauge::AtomicType * {
       if (get_context() == NET_VCONNECTION_IN) {
         switch (get_tunnel_type()) {
         case SNIRoutingType::BLIND:
@@ -1986,7 +1986,8 @@ SSLNetVConnection::_in_context_tunnel()
 {
   ink_assert(get_context() == NET_VCONNECTION_IN);
 
-  Metrics::Counter::AtomicType *t, *c;
+  Metrics::Counter::AtomicType *t;
+  Metrics::Gauge::AtomicType *c;
 
   switch (get_tunnel_type()) {
   case SNIRoutingType::BLIND:
@@ -2007,7 +2008,7 @@ SSLNetVConnection::_in_context_tunnel()
     break;
   }
   Metrics::Counter::increment(t);
-  Metrics::Counter::increment(c);
+  Metrics::Gauge::increment(c);
 }
 
 void
@@ -2019,7 +2020,7 @@ SSLNetVConnection::_out_context_tunnel()
   ink_assert(get_tunnel_type() == SNIRoutingType::NONE);
 
   Metrics::Counter::increment(net_rsb.tunnel_total_server_connections_tls);
-  Metrics::Counter::increment(net_rsb.tunnel_current_server_connections_tls);
+  Metrics::Gauge::increment(net_rsb.tunnel_current_server_connections_tls);
 }
 
 void

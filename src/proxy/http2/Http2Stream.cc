@@ -1030,10 +1030,10 @@ void
 Http2Stream::increment_transactions_stat()
 {
   if (this->is_outbound_connection()) {
-    Metrics::Counter::increment(http2_rsb.current_server_stream_count);
+    Metrics::Gauge::increment(http2_rsb.current_server_stream_count);
     Metrics::Counter::increment(http2_rsb.total_server_stream_count);
   } else {
-    Metrics::Counter::increment(http2_rsb.current_client_stream_count);
+    Metrics::Gauge::increment(http2_rsb.current_client_stream_count);
     Metrics::Counter::increment(http2_rsb.total_client_stream_count);
   }
 }
@@ -1042,9 +1042,9 @@ void
 Http2Stream::decrement_transactions_stat()
 {
   if (this->is_outbound_connection()) {
-    Metrics::Counter::decrement(http2_rsb.current_server_stream_count);
+    Metrics::Gauge::decrement(http2_rsb.current_server_stream_count);
   } else {
-    Metrics::Counter::decrement(http2_rsb.current_client_stream_count);
+    Metrics::Gauge::decrement(http2_rsb.current_client_stream_count);
   }
 }
 

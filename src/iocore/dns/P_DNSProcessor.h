@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <cstring>
+
 #include "iocore/dns/DNSProcessor.h"
 #include "P_DNSConnection.h"
 
@@ -42,6 +45,8 @@
 #include "tscore/Ptr.h"
 
 #include "ts/DbgCtl.h"
+
+#include <swoc/IPEndpoint.h>
 
 #include "api/Metrics.h"
 
@@ -98,7 +103,7 @@ extern unsigned int dns_sequence_number;
 // Stats
 struct DNSStatsBlock {
   Metrics::Counter::AtomicType *fail_time;
-  Metrics::Counter::AtomicType *in_flight;
+  Metrics::Gauge::AtomicType *in_flight;
   Metrics::Counter::AtomicType *lookup_fail;
   Metrics::Counter::AtomicType *lookup_success;
   Metrics::Counter::AtomicType *max_retries_exceeded;

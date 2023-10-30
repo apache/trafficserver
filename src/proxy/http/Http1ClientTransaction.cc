@@ -59,11 +59,11 @@ Http1ClientTransaction::allow_half_open() const
 void
 Http1ClientTransaction::increment_transactions_stat()
 {
-  Metrics::Counter::increment(http_rsb.current_client_transactions);
+  Metrics::Gauge::increment(http_rsb.current_client_transactions);
 }
 
 void
 Http1ClientTransaction::decrement_transactions_stat()
 {
-  Metrics::Counter::decrement(http_rsb.current_client_transactions);
+  Metrics::Gauge::decrement(http_rsb.current_client_transactions);
 }

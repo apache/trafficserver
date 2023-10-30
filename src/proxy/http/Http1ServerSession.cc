@@ -80,7 +80,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   con_id = ProxySession::next_connection_id();
 
   magic = HTTP_SS_MAGIC_ALIVE;
-  Metrics::Counter::increment(http_rsb.current_server_connections);
+  Metrics::Gauge::increment(http_rsb.current_server_connections);
   Metrics::Counter::increment(http_rsb.total_server_connections);
 
   if (iobuf == nullptr) {
@@ -110,7 +110,7 @@ Http1ServerSession::do_io_close(int alerrno)
       w.print("[{}] session close: nevtc {:x}", con_id, _vc);
     }
 
-    Metrics::Counter::decrement(http_rsb.current_server_connections);
+    Metrics::Gauge::decrement(http_rsb.current_server_connections);
 
     // Update upstream connection tracking data if present.
     this->release_outbound_connection_tracking();
@@ -125,7 +125,7 @@ Http1ServerSession::do_io_close(int alerrno)
     _vc = nullptr;
 
     if (to_parent_proxy) {
-      Metrics::Counter::decrement(http_rsb.current_parent_proxy_connections);
+      Metrics::Gauge::decrement(http_rsb.current_parent_proxy_connections);
     }
   }
 

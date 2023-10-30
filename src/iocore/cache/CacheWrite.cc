@@ -441,8 +441,8 @@ new_DocEvacuator(int nbytes, Stripe *vol)
 {
   CacheEvacuateDocVC *c = new_CacheEvacuateDocVC(vol);
   c->op_type            = static_cast<int>(CacheOpType::Evacuate);
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->buf         = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   c->vol         = vol;
   c->f.evacuator = 1;
@@ -1570,8 +1570,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->op_type  = static_cast<int>(CacheOpType::Write);
   c->vol      = key_to_vol(key, hostname, host_len);
   Stripe *vol = c->vol;
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = frag_type;
   /*
@@ -1690,8 +1690,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->op_type = static_cast<int>(CacheOpType::Write);
   }
 
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   // coverity[Y2K38_SAFETY:FALSE]
   c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
 

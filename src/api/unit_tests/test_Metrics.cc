@@ -57,22 +57,24 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[fooid].load() == 1);
   }
 
-  SECTION("operator[]")
+  SECTION("operator[] & store")
   {
-    m[0].store(42);
+    auto storeid = Metrics::Gauge::create("store");
 
-    REQUIRE(m[0].load() == 42);
+    m[storeid].store(42);
+
+    REQUIRE(m[storeid].load() == 42);
   }
 
   SECTION("Span allocation")
   {
     ts::Metrics::IdType span_id;
-    auto fooid = Metrics::Counter::create("foo"); // To see that span_id gets to 2
+    auto fooid = m.lookup("foo");
     auto span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
     REQUIRE(fooid == 1);
-    REQUIRE(span_id == 2);
+    REQUIRE(span_id == 3);
 
     m.rename(span_id + 0, "span.0");
     m.rename(span_id + 1, "span.1");

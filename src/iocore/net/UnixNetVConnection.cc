@@ -1212,7 +1212,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   // Did not fail, increment connection count
-  Metrics::Counter::increment(net_rsb.connections_currently_open);
+  Metrics::Gauge::increment(net_rsb.connections_currently_open);
   ink_release_assert(con.fd != NO_FD);
 
   // Setup a timeout callback handler.
@@ -1290,14 +1290,14 @@ UnixNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
-    Metrics::Counter::decrement(net_rsb.connections_currently_open);
+    Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
   con.close();
 
   if (is_tunnel_endpoint()) {
     Debug("iocore_net", "Freeing UnixNetVConnection that is tunnel endpoint");
 
-    Metrics::Counter::decrement(([&]() -> Metrics::Counter::AtomicType * {
+    Metrics::Gauge::decrement(([&]() -> Metrics::Gauge::AtomicType * {
       switch (get_context()) {
       case NET_VCONNECTION_IN:
         return net_rsb.tunnel_current_client_connections_blind_tcp;
@@ -1534,12 +1534,12 @@ void
 UnixNetVConnection::_in_context_tunnel()
 {
   Metrics::Counter::increment(net_rsb.tunnel_total_client_connections_blind_tcp);
-  Metrics::Counter::increment(net_rsb.tunnel_current_client_connections_blind_tcp);
+  Metrics::Gauge::increment(net_rsb.tunnel_current_client_connections_blind_tcp);
 }
 
 void
 UnixNetVConnection::_out_context_tunnel()
 {
   Metrics::Counter::increment(net_rsb.tunnel_total_server_connections_blind_tcp);
-  Metrics::Counter::increment(net_rsb.tunnel_current_server_connections_blind_tcp);
+  Metrics::Gauge::increment(net_rsb.tunnel_current_server_connections_blind_tcp);
 }

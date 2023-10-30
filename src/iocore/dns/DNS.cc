@@ -824,7 +824,7 @@ DNSHandler::rr_failure(int ndx)
         ++(e->retries); // give them another chance
       }
       --in_flight;
-      Metrics::Counter::decrement(dns_rsb.in_flight);
+      Metrics::Gauge::decrement(dns_rsb.in_flight);
     }
   } else {
     // move outstanding requests that were sent to this nameserver to another
@@ -835,7 +835,7 @@ DNSHandler::rr_failure(int ndx)
           ++(e->retries); // give them another chance
         }
         --in_flight;
-        Metrics::Counter::decrement(dns_rsb.in_flight);
+        Metrics::Gauge::decrement(dns_rsb.in_flight);
       }
     }
   }
@@ -1217,7 +1217,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   e->which_ns          = h->name_server;
   e->once_written_flag = true;
   ++h->in_flight;
-  Metrics::Counter::increment(dns_rsb.in_flight);
+  Metrics::Gauge::increment(dns_rsb.in_flight);
 
   e->send_time = ink_get_hrtime();
 
@@ -1302,7 +1302,7 @@ DNSEntry::mainEvent(int event, Event *e)
       Dbg(dbg_ctl_dns, "marking %s as not-written", qname);
       written_flag = false;
       --(dnsH->in_flight);
-      Metrics::Counter::decrement(dns_rsb.in_flight);
+      Metrics::Gauge::decrement(dns_rsb.in_flight);
     }
     timeout = nullptr;
     dns_result(dnsH, this, result_ent.get(), true);
@@ -1559,7 +1559,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   //
   e->written_flag = false;
   --(handler->in_flight);
-  Metrics::Counter::decrement(dns_rsb.in_flight);
+  Metrics::Gauge::decrement(dns_rsb.in_flight);
   // These are rolling averages
   ink_hrtime diff = (ink_get_hrtime() - e->send_time) / HRTIME_MSECOND;
 
@@ -1908,7 +1908,7 @@ ink_dns_init(ts::ModuleVersion v)
   // Register statistics callbacks
   //
   dns_rsb.fail_time            = Metrics::Counter::createPtr("proxy.process.dns.fail_time");
-  dns_rsb.in_flight            = Metrics::Counter::createPtr("proxy.process.dns.in_flight");
+  dns_rsb.in_flight            = Metrics::Gauge::createPtr("proxy.process.dns.in_flight");
   dns_rsb.lookup_fail          = Metrics::Counter::createPtr("proxy.process.dns.lookup_failures");
   dns_rsb.lookup_success       = Metrics::Counter::createPtr("proxy.process.dns.lookup_successes");
   dns_rsb.max_retries_exceeded = Metrics::Counter::createPtr("proxy.process.dns.max_retries_exceeded");

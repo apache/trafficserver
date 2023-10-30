@@ -261,7 +261,7 @@ register_stat_callbacks()
 {
   http_rsb.background_fill_bytes_aborted     = Metrics::Counter::createPtr("proxy.process.http.background_fill_bytes_aborted");
   http_rsb.background_fill_bytes_completed   = Metrics::Counter::createPtr("proxy.process.http.background_fill_bytes_completed");
-  http_rsb.background_fill_current_count     = Metrics::Counter::createPtr("proxy.process.http.background_fill_current_count");
+  http_rsb.background_fill_current_count     = Metrics::Gauge::createPtr("proxy.process.http.background_fill_current_count");
   http_rsb.background_fill_total_count       = Metrics::Counter::createPtr("proxy.process.http.background_fill_total_count");
   http_rsb.broken_server_connections         = Metrics::Counter::createPtr("proxy.process.http.broken_server_connections");
   http_rsb.cache_deletes                     = Metrics::Counter::createPtr("proxy.process.http.cache_deletes");
@@ -289,13 +289,13 @@ register_stat_callbacks()
   http_rsb.cache_writes                      = Metrics::Counter::createPtr("proxy.process.http.cache_writes");
   http_rsb.completed_requests                = Metrics::Counter::createPtr("proxy.process.http.completed_requests");
   http_rsb.connect_requests                  = Metrics::Counter::createPtr("proxy.process.http.connect_requests");
-  http_rsb.current_active_client_connections = Metrics::Counter::createPtr("proxy.process.http.current_active_client_connections");
-  http_rsb.current_cache_connections         = Metrics::Counter::createPtr("proxy.process.http.current_cache_connections");
-  http_rsb.current_client_connections        = Metrics::Counter::createPtr("proxy.process.http.current_client_connections");
-  http_rsb.current_client_transactions       = Metrics::Counter::createPtr("proxy.process.http.current_client_transactions");
-  http_rsb.current_parent_proxy_connections  = Metrics::Counter::createPtr("proxy.process.http.current_parent_proxy_connections");
-  http_rsb.current_server_connections        = Metrics::Counter::createPtr("proxy.process.http.current_server_connections");
-  http_rsb.current_server_transactions       = Metrics::Counter::createPtr("proxy.process.http.current_server_transactions");
+  http_rsb.current_active_client_connections = Metrics::Gauge::createPtr("proxy.process.http.current_active_client_connections");
+  http_rsb.current_cache_connections         = Metrics::Gauge::createPtr("proxy.process.http.current_cache_connections");
+  http_rsb.current_client_connections        = Metrics::Gauge::createPtr("proxy.process.http.current_client_connections");
+  http_rsb.current_client_transactions       = Metrics::Gauge::createPtr("proxy.process.http.current_client_transactions");
+  http_rsb.current_parent_proxy_connections  = Metrics::Gauge::createPtr("proxy.process.http.current_parent_proxy_connections");
+  http_rsb.current_server_connections        = Metrics::Gauge::createPtr("proxy.process.http.current_server_connections");
+  http_rsb.current_server_transactions       = Metrics::Gauge::createPtr("proxy.process.http.current_server_transactions");
   http_rsb.delete_requests                   = Metrics::Counter::createPtr("proxy.process.http.delete_requests");
   http_rsb.disallowed_post_100_continue      = Metrics::Counter::createPtr("proxy.process.http.disallowed_post_100_continue");
   http_rsb.dns_lookup_begin_time             = Metrics::Counter::createPtr("proxy.process.http.milestone.dns_lookup_begin");
@@ -378,7 +378,7 @@ register_stat_callbacks()
   http_rsb.parent_proxy_request_total_bytes  = Metrics::Counter::createPtr("proxy.process.http.parent_proxy_request_total_bytes");
   http_rsb.parent_proxy_response_total_bytes = Metrics::Counter::createPtr("proxy.process.http.parent_proxy_response_total_bytes");
   http_rsb.parent_proxy_transaction_time     = Metrics::Counter::createPtr("proxy.process.http.parent_proxy_transaction_time");
-  http_rsb.pooled_server_connections         = Metrics::Counter::createPtr("proxy.process.http.pooled_server_connections");
+  http_rsb.pooled_server_connections         = Metrics::Gauge::createPtr("proxy.process.http.pooled_server_connections");
   http_rsb.post_body_too_large               = Metrics::Counter::createPtr("proxy.process.http.post_body_too_large");
   http_rsb.post_requests                     = Metrics::Counter::createPtr("proxy.process.http.post_requests");
   http_rsb.proxy_loop_detected               = Metrics::Counter::createPtr("proxy.process.http.http_proxy_loop_detected");
@@ -484,7 +484,7 @@ register_stat_callbacks()
   http_rsb.total_transactions_time           = Metrics::Counter::createPtr("proxy.process.http.total_transactions_time");
   http_rsb.total_x_redirect                  = Metrics::Counter::createPtr("proxy.process.http.total_x_redirect_count");
   http_rsb.trace_requests                    = Metrics::Counter::createPtr("proxy.process.http.trace_requests");
-  http_rsb.tunnel_current_active_connections = Metrics::Counter::createPtr("proxy.process.tunnel.current_active_connections");
+  http_rsb.tunnel_current_active_connections = Metrics::Gauge::createPtr("proxy.process.tunnel.current_active_connections");
   http_rsb.tunnels                           = Metrics::Counter::createPtr("proxy.process.http.tunnels");
   http_rsb.ua_begin_time                     = Metrics::Counter::createPtr("proxy.process.http.milestone.ua_begin");
   http_rsb.ua_begin_write_time               = Metrics::Counter::createPtr("proxy.process.http.milestone.ua_begin_write");
@@ -534,7 +534,7 @@ register_stat_callbacks()
   http_rsb.user_agent_response_header_total_size =
     Metrics::Counter::createPtr("proxy.process.http.user_agent_response_header_total_size");
   http_rsb.websocket_current_active_client_connections =
-    Metrics::Counter::createPtr("proxy.process.http.websocket.current_active_client_connections");
+    Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
 }
 
 static bool

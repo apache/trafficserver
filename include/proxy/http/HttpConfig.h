@@ -64,7 +64,7 @@ struct HttpStatsBlock {
   // Need two stats for these for counts and times
   Metrics::Counter::AtomicType *background_fill_bytes_aborted;
   Metrics::Counter::AtomicType *background_fill_bytes_completed;
-  Metrics::Counter::AtomicType *background_fill_current_count;
+  Metrics::Gauge::AtomicType *background_fill_current_count;
   Metrics::Counter::AtomicType *background_fill_total_count;
   Metrics::Counter::AtomicType *broken_server_connections;
   Metrics::Counter::AtomicType *cache_deletes;
@@ -92,13 +92,13 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_writes;
   Metrics::Counter::AtomicType *completed_requests;
   Metrics::Counter::AtomicType *connect_requests;
-  Metrics::Counter::AtomicType *current_active_client_connections;
-  Metrics::Counter::AtomicType *current_cache_connections;
-  Metrics::Counter::AtomicType *current_client_connections;
-  Metrics::Counter::AtomicType *current_client_transactions;
-  Metrics::Counter::AtomicType *current_parent_proxy_connections;
-  Metrics::Counter::AtomicType *current_server_connections;
-  Metrics::Counter::AtomicType *current_server_transactions;
+  Metrics::Gauge::AtomicType *current_active_client_connections;
+  Metrics::Gauge::AtomicType *current_cache_connections;
+  Metrics::Gauge::AtomicType *current_client_connections;
+  Metrics::Gauge::AtomicType *current_client_transactions;
+  Metrics::Gauge::AtomicType *current_parent_proxy_connections;
+  Metrics::Gauge::AtomicType *current_server_connections;
+  Metrics::Gauge::AtomicType *current_server_transactions;
   Metrics::Counter::AtomicType *delete_requests;
   Metrics::Counter::AtomicType *disallowed_post_100_continue;
   Metrics::Counter::AtomicType *dns_lookup_begin_time;
@@ -164,7 +164,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *parent_proxy_request_total_bytes;
   Metrics::Counter::AtomicType *parent_proxy_response_total_bytes;
   Metrics::Counter::AtomicType *parent_proxy_transaction_time;
-  Metrics::Counter::AtomicType *pooled_server_connections;
+  Metrics::Gauge::AtomicType *pooled_server_connections;
   Metrics::Counter::AtomicType *post_body_too_large;
   Metrics::Counter::AtomicType *post_requests;
   Metrics::Counter::AtomicType *proxy_loop_detected;
@@ -265,7 +265,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_transactions_time;
   Metrics::Counter::AtomicType *total_x_redirect;
   Metrics::Counter::AtomicType *trace_requests;
-  Metrics::Counter::AtomicType *tunnel_current_active_connections;
+  Metrics::Gauge::AtomicType *tunnel_current_active_connections;
   Metrics::Counter::AtomicType *tunnels;
   Metrics::Counter::AtomicType *ua_begin_time;
   Metrics::Counter::AtomicType *ua_begin_write_time;
@@ -302,7 +302,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *user_agent_request_header_total_size;
   Metrics::Counter::AtomicType *user_agent_response_document_total_size;
   Metrics::Counter::AtomicType *user_agent_response_header_total_size;
-  Metrics::Counter::AtomicType *websocket_current_active_client_connections;
+  Metrics::Gauge::AtomicType *websocket_current_active_client_connections;
 };
 
 enum CacheOpenWriteFailAction_t {

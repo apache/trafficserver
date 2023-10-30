@@ -35,14 +35,14 @@
 using ts::Metrics;
 
 struct NetStatsBlock {
-  Metrics::Counter::AtomicType *accepts_currently_open;
+  Metrics::Gauge::AtomicType *accepts_currently_open;
   Metrics::Counter::AtomicType *calls_to_read_nodata;
   Metrics::Counter::AtomicType *calls_to_read;
   Metrics::Counter::AtomicType *calls_to_readfromnet;
   Metrics::Counter::AtomicType *calls_to_write_nodata;
   Metrics::Counter::AtomicType *calls_to_write;
   Metrics::Counter::AtomicType *calls_to_writetonet;
-  Metrics::Counter::AtomicType *connections_currently_open;
+  Metrics::Gauge::AtomicType *connections_currently_open;
   Metrics::Counter::AtomicType *connections_throttled_in;
   Metrics::Counter::AtomicType *connections_throttled_out;
   Metrics::Counter::AtomicType *default_inactivity_timeout_applied;
@@ -58,20 +58,20 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *read_bytes_count;
   Metrics::Counter::AtomicType *requests_max_throttled_in;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_blind_tcp;
-  Metrics::Counter::AtomicType *tunnel_current_client_connections_blind_tcp;
+  Metrics::Gauge::AtomicType *tunnel_current_client_connections_blind_tcp;
   Metrics::Counter::AtomicType *tunnel_total_server_connections_blind_tcp;
-  Metrics::Counter::AtomicType *tunnel_current_server_connections_blind_tcp;
+  Metrics::Gauge::AtomicType *tunnel_current_server_connections_blind_tcp;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_tunnel;
-  Metrics::Counter::AtomicType *tunnel_current_client_connections_tls_tunnel;
+  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_tunnel;
   Metrics::Counter::AtomicType *tunnel_total_server_connections_tls;
-  Metrics::Counter::AtomicType *tunnel_current_server_connections_tls;
+  Metrics::Gauge::AtomicType *tunnel_current_server_connections_tls;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_forward;
-  Metrics::Counter::AtomicType *tunnel_current_client_connections_tls_forward;
+  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_forward;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_partial_blind;
-  Metrics::Counter::AtomicType *tunnel_current_client_connections_tls_partial_blind;
+  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_partial_blind;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_http;
-  Metrics::Counter::AtomicType *tunnel_current_client_connections_tls_http;
-  Metrics::Counter::AtomicType *socks_connections_currently_open;
+  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_http;
+  Metrics::Gauge::AtomicType *socks_connections_currently_open;
   Metrics::Counter::AtomicType *socks_connections_successful;
   Metrics::Counter::AtomicType *socks_connections_unsuccessful;
   Metrics::Counter::AtomicType *tcp_accept;

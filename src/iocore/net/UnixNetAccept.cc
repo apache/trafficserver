@@ -88,7 +88,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
 
     count++;
-    Metrics::Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Gauge::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -355,7 +355,7 @@ NetAccept::do_blocking_accept(EThread *t)
     }
 
     count++;
-    Metrics::Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Gauge::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -410,14 +410,14 @@ NetAccept::acceptEvent(int event, void *ep)
   if (lock.is_locked()) {
     if (action_->cancelled) {
       e->cancel();
-      Metrics::Counter::decrement(net_rsb.accepts_currently_open);
+      Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       delete this;
       return EVENT_DONE;
     }
 
     int res;
     if ((res = accept_fn(this, e, false)) < 0) {
-      Metrics::Counter::decrement(net_rsb.accepts_currently_open);
+      Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
       Warning("Traffic Server may be unable to accept more network"
@@ -512,7 +512,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     ink_release_assert(vc);
 
     count++;
-    Metrics::Counter::increment(net_rsb.connections_currently_open);
+    Metrics::Gauge::increment(net_rsb.connections_currently_open);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -560,7 +560,7 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  Metrics::Counter::decrement(net_rsb.accepts_currently_open);
+  Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }
@@ -577,7 +577,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   }
 
   // Don't think this ever happens ...
-  Metrics::Counter::decrement(net_rsb.accepts_currently_open);
+  Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
   delete this;
   return EVENT_DONE;
 }

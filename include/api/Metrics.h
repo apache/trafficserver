@@ -54,12 +54,12 @@ private:
     virtual ~AtomicType() = default;
 
     int64_t
-    load()
+    load() const
     {
       return _value.load();
     }
 
-    // ToDo: This is a little sketchy
+    // ToDo: This is a little sketchy, but needed for the old InkAPI metrics.
     void
     store(int64_t val)
     {
@@ -389,13 +389,6 @@ public:
     {
       ink_assert(metric);
       metric->_value.fetch_add(val, MEMORY_ORDER);
-    }
-
-    static void
-    decrement(AtomicType *metric, uint64_t val = 1)
-    {
-      ink_assert(metric);
-      metric->_value.fetch_sub(val, MEMORY_ORDER);
     }
 
     static int64_t

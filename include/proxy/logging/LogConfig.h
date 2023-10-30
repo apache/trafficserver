@@ -60,7 +60,7 @@ struct LogsStatsBlock {
   Metrics::Counter::AtomicType *bytes_lost_before_flush_to_disk;
   Metrics::Counter::AtomicType *bytes_written_to_disk;
   Metrics::Counter::AtomicType *bytes_lost_before_written_to_disk;
-  Metrics::Counter::AtomicType *log_files_open;
+  Metrics::Gauge::AtomicType *log_files_open;
   Metrics::Gauge::AtomicType *log_files_space_used;
 };
 

@@ -2649,7 +2649,7 @@ Http2ConnectionState::_adjust_concurrent_stream()
     return max_concurrent_streams;
   }
 
-  int64_t current_client_streams = Metrics::Counter::load(http2_rsb.current_client_stream_count);
+  int64_t current_client_streams = Metrics::Gauge::load(http2_rsb.current_client_stream_count);
 
   Http2ConDebug(session, "current client streams: %" PRId64, current_client_streams);
 

@@ -1609,7 +1609,7 @@ HttpSM::handle_api_return()
       // a blind tunnel.
       IOBufferReader *initial_data = nullptr;
       if (t_state.is_websocket) {
-        Metrics::Counter::increment(http_rsb.websocket_current_active_client_connections);
+        Metrics::Gauge::increment(http_rsb.websocket_current_active_client_connections);
         if (server_txn) {
           initial_data = server_txn->get_remote_reader();
         }
@@ -1726,7 +1726,7 @@ HttpSM::create_server_txn(PoolableSession *new_session)
     server_txn->attach_transaction(this);
     if (t_state.current.request_to == ResolveInfo::PARENT_PROXY) {
       new_session->to_parent_proxy = true;
-      Metrics::Counter::increment(http_rsb.current_parent_proxy_connections);
+      Metrics::Gauge::increment(http_rsb.current_parent_proxy_connections);
       Metrics::Counter::increment(http_rsb.total_parent_proxy_connections);
     } else {
       new_session->to_parent_proxy = false;
@@ -3009,7 +3009,7 @@ HttpSM::tunnel_handler(int event, void *data)
   terminate_sm = true;
 
   if (unlikely(t_state.is_websocket)) {
-    Metrics::Counter::decrement(http_rsb.websocket_current_active_client_connections);
+    Metrics::Gauge::decrement(http_rsb.websocket_current_active_client_connections);
   }
 
   return 0;
@@ -3202,7 +3202,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   // If we had a ground fill, check update our status
   if (background_fill == BACKGROUND_FILL_STARTED) {
     background_fill = p->read_success ? BACKGROUND_FILL_COMPLETED : BACKGROUND_FILL_ABORTED;
-    Metrics::Counter::decrement(http_rsb.background_fill_current_count);
+    Metrics::Gauge::decrement(http_rsb.background_fill_current_count);
   }
   // We handled the event.  Now either shutdown the connection or
   //   setup it up for keep-alive
@@ -3449,7 +3449,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       // There is another consumer (cache write) so
       //  detach the user agent
       if (background_fill == BACKGROUND_FILL_STARTED) {
-        Metrics::Counter::increment(http_rsb.background_fill_current_count);
+        Metrics::Gauge::increment(http_rsb.background_fill_current_count);
         Metrics::Counter::increment(http_rsb.background_fill_total_count);
 
         ink_assert(c->is_downstream_from(server_txn));
@@ -3688,7 +3688,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
     break;
   }
 
-  Metrics::Counter::decrement(http_rsb.current_cache_connections);
+  Metrics::Gauge::decrement(http_rsb.current_cache_connections);
   return 0;
 }
 
@@ -3743,7 +3743,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     server_response_body_bytes = c->bytes_written;
   }
 
-  Metrics::Counter::decrement(http_rsb.current_cache_connections);
+  Metrics::Gauge::decrement(http_rsb.current_cache_connections);
   return 0;
 }
 
@@ -5472,7 +5472,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // Atomically read the current number of connections and check to see
   // if we have gone above the max allowed.
   if (t_state.http_config_param->server_max_connections > 0) {
-    if (Metrics::Counter::load(http_rsb.current_server_connections) >= t_state.http_config_param->server_max_connections) {
+    if (Metrics::Gauge::load(http_rsb.current_server_connections) >= t_state.http_config_param->server_max_connections) {
       httpSessionManager.purge_keepalives();
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.

@@ -223,7 +223,7 @@ LogFile::open_file()
     }
   }
 
-  Metrics::Counter::increment(log_rsb.log_files_open);
+  Metrics::Gauge::increment(log_rsb.log_files_open);
 
   Debug("log", "exiting LogFile::open_file(), file=%s presumably open", m_name);
   return LOG_FILE_NO_ERROR;
@@ -244,7 +244,7 @@ LogFile::close_file()
         Error("Error closing LogFile %s: %s.", m_name, strerror(errno));
       } else {
         Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
-        Metrics::Counter::decrement(log_rsb.log_files_open);
+        Metrics::Gauge::decrement(log_rsb.log_files_open);
       }
       m_fd = -1;
     } else if (m_log) {
@@ -252,7 +252,7 @@ LogFile::close_file()
         Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
       } else {
         Debug("log-file", "LogFile %s is closed", m_log->get_name());
-        Metrics::Counter::decrement(log_rsb.log_files_open);
+        Metrics::Gauge::decrement(log_rsb.log_files_open);
       }
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
