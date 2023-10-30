@@ -93,7 +93,7 @@ extern int cache_config_ram_cache_cutoff;
 /* Next block with some data in it in this partition.  Returns end of partition if no more
  * locations.
  *
- * d - Vol
+ * d - Stripe
  * vol_map - precalculated map
  * offset - offset to start looking at (and data at this location has not been read yet). */
 static off_t

@@ -133,7 +133,7 @@ Data Structures
 
    * Timestamps for request and response from :term:`origin server`.
 
-.. class:: Vol
+.. class:: Stripe
 
    This represents a :term:`storage unit` inside a :term:`cache volume`.
 
@@ -302,7 +302,7 @@ Data Structures
       In use or free flag - set if the span block is not in use by a cache volume.
 
 
-.. class:: VolHeaderFooter
+.. class:: StripeHeaderFooter
 
    .. member:: unsigned int magic
 
@@ -372,7 +372,7 @@ Data Structures
 
    .. member:: int vol_number
 
-      Identification number of the stripe (:class:`Vol`)
+      Identification number of the stripe (:class:`Stripe`)
 
    .. member:: uint64_t size
 

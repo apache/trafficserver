@@ -363,7 +363,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *vol)
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
-        Dbg(dbg_ctl_dir_clean, "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
+        Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
             dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {

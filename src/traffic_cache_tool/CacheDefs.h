@@ -141,7 +141,7 @@ struct SpanHeader {
 
     @internal nee VolHeadFooter
  */
-// the counterpart of this structure in ATS is called VolHeaderFooter
+// the counterpart of this structure in ATS is called StripeHeaderFooter
 class StripeMeta
 {
 public:

@@ -61,7 +61,7 @@ libinkcache_a_SOURCES = \
 	RamCacheCLFUS.cc \
 	RamCacheLRU.cc \
 	Store.cc \
-	Vol.cc
+	Stripe.cc
 
 if BUILD_TESTS
 libinkcache_a_SOURCES += \
