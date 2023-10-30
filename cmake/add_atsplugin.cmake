@@ -22,7 +22,7 @@ function(add_atsplugin name)
   target_link_libraries(${name} PRIVATE ts::tsapi)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
-  install(TARGETS ${name} DESTINATION libexec/trafficserver)
+  install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
 endfunction()
 
 if(APPLE)

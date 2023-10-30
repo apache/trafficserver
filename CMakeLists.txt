@@ -41,6 +41,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 
+include(layout)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(DEBUG _DEBUG)
 endif()
@@ -694,8 +696,8 @@ add_custom_target(
 )
 
 # Create an empty directories for ATS runtime
-install(DIRECTORY DESTINATION var/log/trafficserver)
-install(DIRECTORY DESTINATION var/trafficserver)
+install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LOGDIR})
+install(DIRECTORY DESTINATION ${CMAKE_INSTALL_RUNSTATEDIR})
 
 # Display build summary
 include(CMakePrintHelpers)

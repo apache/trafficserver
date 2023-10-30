@@ -19,7 +19,7 @@
 install(
   CODE "set(CONFIG_SOURCE_GLOBS \"${CMAKE_BINARY_DIR}/configs/*.default\" \"${CMAKE_SOURCE_DIR}/configs/*.default\")"
 )
-install(CODE "set(CONFIG_DEST_PATH \"${CMAKE_INSTALL_PREFIX}/etc/trafficserver\")")
+install(CODE "set(CONFIG_DEST_PATH \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_SYSCONFDIR}\")")
 
 install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install_configs.cmake)
 
@@ -27,5 +27,5 @@ file(GLOB BODY_FACTORY_FILES body_factory/default/*)
 list(FILTER BODY_FACTORY_FILES EXCLUDE REGEX Makefile.*)
 
 foreach(BODY_FACTORY_FILE ${BODY_FACTORY_FILES})
-  install(FILES ${BODY_FACTORY_FILE} DESTINATION etc/trafficserver/body_factory/default)
+  install(FILES ${BODY_FACTORY_FILE} DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/body_factory/default)
 endforeach()
