@@ -67,7 +67,11 @@ macro(add_cache_test name)
 endmacro()
 
 macro(add_net_test name)
-  add_executable(${name} ${CMAKE_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc ${ARGN})
+  add_executable(${name}
+    ${CMAKE_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc
+    ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
+    ${ARGN})
+  target_link_libraries(${name} PRIVATE ts::tsapicore ts::inknet ts::configmanager ts::tsapi ts::inknet ts::configmanager)
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
@@ -121,7 +125,9 @@ add_test(
 )
 
 add_net_test(
-  test_net "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests/test_ProxyProtocol.cc"
+  test_net
+  "${CMAKE_SOURCE_DIR}/src/iocore/net/NetVCTest.cc"
+  "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests/test_ProxyProtocol.cc"
   "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests/test_SSLSNIConfig.cc"
   "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests/test_YamlSNIConfig.cc"
   "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests/unit_test_main.cc"

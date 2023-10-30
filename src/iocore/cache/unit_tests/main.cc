@@ -24,6 +24,7 @@
 #include "tscore/ink_config.h"
 #include <string_view>
 #include "proxy/HttpAPIHooks.h"
+#include "proxy/StatPages.h"
 #include "iocore/net/SSLAPIHooks.h"
 
 #define CATCH_CONFIG_MAIN
