@@ -109,7 +109,7 @@ public:
 
     @note Serializable.
 
-    @internal nee @c DiskVolBlock
+    @internal nee @c DiskStripeBlock
  */
 struct CacheStripeDescriptor {
   Bytes offset;         // offset of start of stripe from start of span.
@@ -128,7 +128,7 @@ struct CacheStripeDescriptor {
 struct SpanHeader {
   static constexpr uint32_t MAGIC = 0xABCD1237;
   uint32_t magic;
-  uint32_t num_volumes;      /* number of discrete volumes (DiskVol) */
+  uint32_t num_volumes;      /* number of discrete volumes (DiskStripe) */
   uint32_t num_free;         /* number of disk volume blocks free */
   uint32_t num_used;         /* number of disk volume blocks in use */
   uint32_t num_diskvol_blks; /* number of disk volume blocks */

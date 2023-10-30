@@ -272,18 +272,18 @@ Data Structures
 
       The number of volume blocks in the span.
 
-   .. member:: DiskVolBlock vol_info[1]
+   .. member:: DiskStripeBlock vol_info[1]
 
       A flexible array. The actual length of this array is :code:`num_diskvol_blks` and each element describes
       a span block.
 
-.. class:: DiskVolBlock
+.. class:: DiskStripeBlock
 
-   A description of a span stripe (Vol) block . This is a serialized data structure.
+   A description of a span stripe (Stripe) block . This is a serialized data structure.
 
    .. member:: uint64_t offset
 
-      Offset in the span of the start of the span stripe (Vol) block, in bytes.
+      Offset in the span of the start of the span stripe (Stripe) block, in bytes.
 
    .. member:: uint64_t len
 
@@ -350,21 +350,21 @@ Data Structures
       for a segment, in the same order as the segments in the directory.
 
 
-.. class:: DiskVolBlockQueue
+.. class:: DiskStripeBlockQueue
 
-   .. member:: DiskVolBlock* b
+   .. member:: DiskStripeBlock* b
 
    .. member:: int new_block
 
-      Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Vol`)
+      Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Stripe`)
 
-   .. member:: LINK<DiskVolBlockQueue> link
+   .. member:: LINK<DiskStripeBlockQueue> link
 
 
-.. class:: DiskVol
+.. class:: DiskStripe
 
    Describes the Disk that contains the stripe identified by vol_number. This class also contains the queue
-   containing all the DiskVolBlock
+   containing all the DiskStripeBlock
 
    .. member:: int num_volblocks
 
@@ -382,7 +382,7 @@ Data Structures
 
       The disk containing the stripe
 
-   .. member:: Queue<DiskVolBlockQueue> dpb_queue
+   .. member:: Queue<DiskStripeBlockQueue> dpb_queue
 
 .. enum:: CacheType
 
@@ -407,13 +407,13 @@ Data Structures
 
    .. member:: int num_vols
 
-      Number of stripes(:class:`Vol`) contained in this volume
+      Number of stripes(:class:`Stripe`) contained in this volume
 
-   .. member:: Vol** vols
+   .. member:: Stripe** vols
 
-      :class:`Vol` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
+      :class:`Stripe` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
 
-   .. member:: DiskVol** disk_vols
+   .. member:: DiskStripe** disk_vols
 
       disk_vols contain references to the disks of all the stripes in this volume
 
@@ -464,7 +464,7 @@ Data Structures
 
    .. function:: Stripe * key_to_vol(const char * key, const char * host, int host_len)
 
-      Compute the stripe (:code:`Vol*`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
+      Compute the stripe (:code:`Stripe *`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
       used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe
       assignment slot is determined by taking bits 64..83 (20 bits) of the cache :arg:`key` modulo
       the stripe assignment array count (:code:`VOL_HASH_TABLE_SIZE`). These bits are the third 32

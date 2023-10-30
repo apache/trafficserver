@@ -254,14 +254,14 @@ execute_and_verify()
         int m_vols = 0;
         for (d_no = 0; d_no < gndisks; d_no++) {
           if (cachep->disk_vols[d_no]) {
-            DiskVol *dp = cachep->disk_vols[d_no];
-            // DiskVols and CacheVols should match
+            DiskStripe *dp = cachep->disk_vols[d_no];
+            // DiskStripes and CacheVols should match
             REQUIRE(dp->vol_number == cachep->vol_number);
 
             /* check the diskvolblock queue */
-            DiskVolBlockQueue *dpbq = dp->dpb_queue.head;
+            DiskStripeBlockQueue *dpbq = dp->dpb_queue.head;
             while (dpbq) {
-              // DiskVol and DiskVolBlocks should match
+              // DiskStripe and DiskStripeBlocks should match
               REQUIRE(dpbq->b->number == cachep->vol_number);
               dpbq = dpbq->link.next;
             }
@@ -269,7 +269,7 @@ execute_and_verify()
             m_vols += dp->num_volblocks;
           }
         }
-        // Num volumes in CacheVol and DiskVol should match
+        // Num volumes in CacheVol and DiskStripe should match
         REQUIRE(m_vols == cachep->num_vols);
 
         matched++;

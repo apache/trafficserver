@@ -76,7 +76,7 @@ struct Cache;
 struct Stripe;
 struct CacheDisk;
 struct StripeInitInfo;
-struct DiskVol;
+struct DiskStripe;
 struct CacheVol;
 class CacheEvacuateDocVC;
 
@@ -268,13 +268,13 @@ struct AIO_failure_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number        = -1;
-  int scheme            = 0;
-  off_t size            = 0;
-  int num_vols          = 0;
-  bool ramcache_enabled = true;
-  Stripe **vols         = nullptr;
-  DiskVol **disk_vols   = nullptr;
+  int vol_number         = -1;
+  int scheme             = 0;
+  off_t size             = 0;
+  int num_vols           = 0;
+  bool ramcache_enabled  = true;
+  Stripe **vols          = nullptr;
+  DiskStripe **disk_vols = nullptr;
   LINK(CacheVol, link);
   // per volume stats
   CacheStatsBlock vol_rsb;
