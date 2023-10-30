@@ -23,9 +23,32 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
-#include "tscore/PendingAction.h"
+#include "iocore/dns/DNSProcessor.h"
+#include "P_DNSConnection.h"
+
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+
 #include "api/Metrics.h"
+
+#include "tscore/ink_apidefs.h"
+#include "tscore/ink_hrtime.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_rand.h"
+#include "tscore/ink_resolver.h"
+#include "tscore/List.h"
+#include "tscore/PendingAction.h"
+#include "tscore/Ptr.h"
+
+#include "ts/DbgCtl.h"
+
+#include <swoc/IPEndpoint.h>
+
+#include <cstdint>
+#include <cstring>
 
 using ts::Metrics;
 

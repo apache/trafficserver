@@ -33,6 +33,13 @@
 #include "iocore/dns/DNSEventIO.h"
 #include "iocore/dns/DNSProcessor.h"
 
+#include "tscore/ink_platform.h"
+#include "tscore/ink_rand.h"
+#include "tscore/List.h"
+#include "tscore/Ptr.h"
+
+#include <swoc/IPEndpoint.h>
+
 //
 // Connection
 //
