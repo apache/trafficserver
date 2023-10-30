@@ -28,6 +28,8 @@ target_link_libraries(
           libswoc
 )
 
+install(TARGETS traffic_logstats)
+
 if(BUILD_TESTING)
   add_test(
     NAME test_logstats_json
