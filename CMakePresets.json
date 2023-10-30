@@ -18,6 +18,27 @@
       }
     },
     {
+      "name": "layout-defaults",
+      "displayName": "Default install layout paths",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_INSTALL_BINDIR": "bin",
+        "CMAKE_INSTALL_SBINDIR": "bin",
+        "CMAKE_INSTALL_LIBDIR": "lib",
+        "CMAKE_INSTALL_SYSCONFDIR": "etc/trafficserver",
+        "CMAKE_INSTALL_DATAROOTDIR": "share",
+        "CMAKE_INSTALL_DATADIR": "${CMAKE_INSTALL_DATAROOTDIR}/trafficserver",
+        "CMAKE_INSTALL_INCLUDEDIR": "include",
+        "CMAKE_INSTALL_LIBEXECDIR": "libexec/trafficserver",
+        "CMAKE_INSTALL_LOCALSTATEDIR": "var",
+        "CMAKE_INSTALL_RUNSTATEDIR": "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver",
+        "CMAKE_INSTALL_LOGDIR": "${CMAKE_INSTALL_LOCALSTATEDIR}/log/trafficserver",
+        "CMAKE_INSTALL_MANDIR": "${CMAKE_INSTALL_DATAROOTDIR}/man",
+        "CMAKE_INSTALL_CACHEDIR": "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver",
+        "CMAKE_INSTALL_INFODIR": "${CMAKE_INSTALL_DATAROOTDIR}/info"
+      }
+    },
+    {
       "name": "autest",
       "inherits": ["default"],
       "binaryDir": "${sourceDir}/build-autest",
