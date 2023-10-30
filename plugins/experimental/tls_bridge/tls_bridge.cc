@@ -21,7 +21,7 @@
 
 #include "ts/ts.h"
 #include "swoc/TextView.h"
-#include "regex.h"
+#include "tscore/Regex.h"
 
 using swoc::TextView;
 
@@ -116,7 +116,7 @@ BridgeConfig::load_pair(std::string_view rxp, std::string_view service, swoc::fi
   Regex r;
   // Unfortunately PCRE can only compile null terminated strings...
   std::string pattern{rxp};
-  if (r.compile(pattern.c_str(), Regex::ANCHORED)) {
+  if (r.compile(pattern.c_str(), REFlags::RE_ANCHORED)) {
     _items.emplace_back(rxp, std::move(r), service);
   } else {
     char buff[std::numeric_limits<int>::digits10 + 2] = "";
