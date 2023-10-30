@@ -28,6 +28,10 @@ The header files are located in the ``include/`` directory. There are several su
    The C++ Plugin API. These call functions in the ``libtscppapi.so`` library to directly interact with
    the running |TS| instance.
 
+.. note::
+
+  The C++ Plugin API is deprecated in ATS 10.  It will be removed in ATS 11.
+
 "tscpp/util"
    C++ utilities. These are standalone headers (although they may depend on other headers in the
    same directory). These provide functionality that is used inside the |TS| core logic but has been

@@ -20,6 +20,8 @@
  * @brief A case insensitive comparator that can be used with STL containers.
  */
 
+// The C++ Plugin API is deprecated in ATS 10, and will be removed in ATS 11.
+
 #pragma once
 
 #include <string>

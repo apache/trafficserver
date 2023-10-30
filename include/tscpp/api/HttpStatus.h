@@ -21,6 +21,8 @@
  * @brief Contains an enumeration and printable strings for Http Status codes.
  */
 
+// The C++ Plugin API is deprecated in ATS 10, and will be removed in ATS 11.
+
 #pragma once
 
 #include <string>
