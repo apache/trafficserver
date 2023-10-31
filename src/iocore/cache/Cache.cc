@@ -1266,7 +1266,8 @@ cplist_init()
 {
   cp_list_len = 0;
   for (int i = 0; i < gndisks; i++) {
-    CacheDisk *d    = gdisks[i];
+    CacheDisk *d = gdisks[i];
+    ink_assert(d != nullptr);
     DiskStripe **dp = d->disk_vols;
     for (unsigned int j = 0; j < d->header->num_volumes; j++) {
       ink_assert(dp[j]->dpb_queue.head);
