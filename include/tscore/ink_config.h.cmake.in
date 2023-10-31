@@ -186,6 +186,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_EPOLL
 #cmakedefine01 TS_USE_FAST_SDK
+#cmakedefine01 TS_ENABLE_FIPS
 #cmakedefine01 TS_USE_GET_DH_2048_256
 #cmakedefine01 TS_USE_HELLO_CB
 #cmakedefine01 TS_USE_HWLOC
