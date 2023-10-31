@@ -303,8 +303,8 @@ struct Doc {
   uint32_t unused   : 8; ///< Unused, forced to zero.
   uint32_t sync_serial;
   uint32_t write_serial;
+  uint32_t pinned; ///< pinned until - CAVEAT: use uint32_t instead of time_t for the cache compatibility
   uint32_t checksum;
-  time_t pinned; // pinned until
 #if TS_ENABLE_FIPS == 1
   CryptoHash key; ///< Key for this doc.
 #endif
