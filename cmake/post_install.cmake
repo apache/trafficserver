@@ -15,7 +15,7 @@
 #
 #######################
 
-if($ENV{USER} STREQUAL root)
+if("$ENV{USER}" STREQUAL root)
   foreach(DIR ${CHOWN_DIRS})
     message(STATUS "Changing ${DIR} ownership to ${OWNER_USER}:${OWNER_GROUP}")
     execute_process(
