@@ -15,30 +15,35 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(block_errors)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(cookie_remap)
-add_subdirectory(custom_redirect)
-add_subdirectory(fq_pacing)
-add_subdirectory(geoip_acl)
-add_subdirectory(header_freq)
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
-add_subdirectory(maxmind_acl)
-add_subdirectory(memcache)
-add_subdirectory(memory_profile)
-add_subdirectory(money_trace)
-add_subdirectory(mp4)
-add_subdirectory(rate_limit)
-add_subdirectory(redo_cache_lookup)
-add_subdirectory(sslheaders)
-add_subdirectory(stek_share)
-add_subdirectory(stream_editor)
-add_subdirectory(system_stats)
-add_subdirectory(tls_bridge)
-add_subdirectory(uri_signing)
-add_subdirectory(url_sig)
+# Findcjose.cmake
+#
+# This will define the following variables
+#
+#     cjose_FOUND
+#     cjose_LIBRARY
+#     cjose_INCLUDE_DIRS
+#
+# and the following imported targets
+#
+#     cjose::cjose
+#
+
+find_library(cjose_LIBRARY NAMES cjose)
+find_path(cjose_INCLUDE_DIR NAMES cjose/cjose.h)
+
+mark_as_advanced(cjose_FOUND cjose_LIBRARY cjose_INCLUDE_DIR)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(cjose
+    REQUIRED_VARS cjose_LIBRARY cjose_INCLUDE_DIR
+)
+
+if(cjose_FOUND)
+    set(cjose_INCLUDE_DIRS ${cjose_INCLUDE_DIR})
+endif()
+
+if(cjose_FOUND AND NOT TARGET cjose::cjose)
+    add_library(cjose::cjose INTERFACE IMPORTED)
+    target_include_directories(cjose::cjose INTERFACE ${cjose_INCLUDE_DIRS})
+    target_link_libraries(cjose::cjose INTERFACE "${cjose_LIBRARY}")
+endif()
