@@ -23,15 +23,18 @@
 #include "tscore/Layout.h"
 
 #include "P_Net.h"
+#include "P_QUICNet.h"
 #include "records/RecHttp.h"
 
 #include "P_QUICNetProcessor.h"
-#include "P_QUICNet.h"
 #include "P_QUICPacketHandler.h"
+#include "P_QUICNetVConnection.h"
 #include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
-#include "iocore/net/quic/QUICResetTokenTable.h"
+
+#include <quiche.h>
 
 //
 // Global Data
@@ -39,21 +42,19 @@
 
 QUICNetProcessor quic_NetProcessor;
 
-namespace
+static void
+debug_log(const char *line, void *argp)
 {
-
-DbgCtl dbg_ctl_quic_ps{"quic_ps"};
-DbgCtl dbg_ctl_udpnet{"udpnet"};
-DbgCtl dbg_ctl_iocore_net_processor{"iocore_net_processor"};
-
-} // end anonymous namespace
+  Debug("vv_quiche", "%s\n", line);
+}
 
 QUICNetProcessor::QUICNetProcessor() {}
 
 QUICNetProcessor::~QUICNetProcessor()
 {
-  // TODO: clear all values before destroy the table.
-  delete this->_ctable;
+  if (this->_quiche_config != nullptr) {
+    quiche_config_free(this->_quiche_config);
+  }
 }
 
 void
@@ -74,10 +75,35 @@ QUICNetProcessor::start(int, size_t stacksize)
   // QUICInitializeLibrary();
   QUICConfig::startup();
   QUICCertConfig::startup();
+  QUICConfig::scoped_config params;
+
+  quiche_enable_debug_logging(debug_log, NULL);
+  this->_quiche_config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
+
+  std::string quic_app_protos = "\02h3\x05h3-29\x05h3-27";
+  if (!params->disable_http_0_9()) {
+    quic_app_protos = "\02h3\x05h3-29\x05hq-29\x05h3-27\x05hq-27\0";
+  }
+  quiche_config_set_application_protos(this->_quiche_config,
+                                       const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(quic_app_protos.c_str())),
+                                       quic_app_protos.size());
+
+  quiche_config_set_max_idle_timeout(this->_quiche_config, params->no_activity_timeout_in());
+  quiche_config_set_max_recv_udp_payload_size(this->_quiche_config, params->get_max_recv_udp_payload_size_in());
+  quiche_config_set_max_send_udp_payload_size(this->_quiche_config, params->get_max_send_udp_payload_size_in());
+  quiche_config_set_initial_max_data(this->_quiche_config, params->initial_max_data_in());
+  quiche_config_set_initial_max_stream_data_bidi_local(this->_quiche_config, params->initial_max_stream_data_bidi_local_in());
+  quiche_config_set_initial_max_stream_data_bidi_remote(this->_quiche_config, params->initial_max_stream_data_bidi_remote_in());
+  quiche_config_set_initial_max_stream_data_uni(this->_quiche_config, params->initial_max_stream_data_uni_in());
+  quiche_config_set_initial_max_streams_bidi(this->_quiche_config, params->initial_max_streams_bidi_in());
+  quiche_config_set_initial_max_streams_uni(this->_quiche_config, params->initial_max_streams_uni_in());
+  quiche_config_set_disable_active_migration(this->_quiche_config, params->disable_active_migration());
+  quiche_config_set_active_connection_id_limit(this->_quiche_config, params->active_cid_limit_in());
+  quiche_config_set_cc_algorithm(this->_quiche_config, QUICHE_CC_RENO);
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
   // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
-  Dbg(dbg_ctl_quick_ps, "%s", TLS1_3_VERSION_DRAFT_TXT);
+  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
 #endif
 
   return 0;
@@ -89,9 +115,8 @@ QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
   if (this->_ctable == nullptr) {
     QUICConfig::scoped_config params;
     this->_ctable = new QUICConnectionTable(params->connection_table_size());
-    this->_rtable = new QUICResetTokenTable();
   }
-  return new QUICPacketHandlerIn(opt, *this->_ctable, *this->_rtable);
+  return new QUICPacketHandlerIn(opt, *this->_ctable, *this->_quiche_config);
 }
 
 NetVConnection *
@@ -108,7 +133,6 @@ QUICNetProcessor::allocate_vc(EThread *t)
       vc->from_accept_thread = true;
     }
   }
-
   vc->ep.syscall = false;
   return vc;
 }
@@ -116,9 +140,10 @@ QUICNetProcessor::allocate_vc(EThread *t)
 Action *
 QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions const &opt)
 {
-  Dbg(dbg_ctl_quick_ps, "connect to server");
+  Debug("quic_ps", "connect to server");
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
+
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
 
   vc->options = opt;
@@ -127,16 +152,15 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   Action *status;
   bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &status, opt);
   if (!result) {
-    vc->free(t);
+    vc->free_thread(t);
     return status;
   }
 
   // Setup UDPConnection
   UnixUDPConnection *con = new UnixUDPConnection(fd);
-  Dbg(dbg_ctl_quick_ps, "con=%p fd=%d", con, fd);
+  Debug("quic_ps", "con=%p fd=%d", con, fd);
 
-  this->_rtable                        = new QUICResetTokenTable();
-  QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut(*this->_rtable);
+  QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut();
   if (opt.local_ip.isValid()) {
     con->setBinding(opt.local_ip, opt.local_port);
   }
@@ -146,16 +170,16 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   PollDescriptor *pd = pc->pollDescriptor;
 
   errno   = 0;
-  int res = con->ep.start(pd, con, EVENTIO_READ);
+  int res = con->ep.start(pd, con, get_UDPNetHandler(cont->getThreadAffinity()), EVENTIO_READ);
   if (res < 0) {
-    Dbg(dbg_ctl_udpnet, "Error: %s (%d)", strerror(errno), errno);
+    Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
   }
 
   // Setup QUICNetVConnection
   QUICConnectionId client_dst_cid;
   client_dst_cid.randomize();
   // vc->init set handler of vc `QUICNetVConnection::startEvent`
-  vc->init(QUIC_SUPPORTED_VERSIONS[0], client_dst_cid, client_dst_cid, con, packet_handler, this->_rtable);
+  vc->init(QUIC_SUPPORTED_VERSIONS[0], client_dst_cid, client_dst_cid, con, packet_handler);
   packet_handler->init(vc);
 
   // Connection ID will be changed
@@ -191,10 +215,9 @@ Action *
 QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
 {
   // UnixNetProcessor *this_unp = static_cast<UnixNetProcessor *>(this);
-  Dbg(dbg_ctl_iocore_net_processor, "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
-      opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
+        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
-  ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
   // char thr_name[MAX_THREAD_NAME_LENGTH];
@@ -204,7 +227,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   if (accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
   }
-  Metrics::Counter::increment(net_rsb.accepts_currently_open);
+  Metrics::Gauge::increment(net_rsb.accepts_currently_open);
 
   if (opt.localhost_only) {
     accept_ip.setToLoopback(opt.ip_family);

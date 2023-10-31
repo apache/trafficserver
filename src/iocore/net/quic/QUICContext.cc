@@ -23,91 +23,8 @@
 
 #include "iocore/net/quic/QUICContext.h"
 #include "iocore/net/quic/QUICConnection.h"
-#include "iocore/net/quic/QUICLossDetector.h"
-#include "iocore/net/quic/QUICPacketProtectionKeyInfo.h"
 
-class QUICCCConfigQCP : public QUICCCConfig
-{
-public:
-  virtual ~QUICCCConfigQCP() {}
-  QUICCCConfigQCP(const QUICConfigParams *params) : _params(params) {}
-
-  uint32_t
-  initial_window() const override
-  {
-    return this->_params->cc_initial_window();
-  }
-
-  uint32_t
-  minimum_window() const override
-  {
-    return this->_params->cc_minimum_window();
-  }
-
-  float
-  loss_reduction_factor() const override
-  {
-    return this->_params->cc_loss_reduction_factor();
-  }
-
-  uint32_t
-  persistent_congestion_threshold() const override
-  {
-    return this->_params->cc_persistent_congestion_threshold();
-  }
-
-private:
-  const QUICConfigParams *_params;
-};
-
-class QUICLDConfigQCP : public QUICLDConfig
-{
-public:
-  virtual ~QUICLDConfigQCP() {}
-  QUICLDConfigQCP(const QUICConfigParams *params) : _params(params) {}
-
-  uint32_t
-  packet_threshold() const override
-  {
-    return this->_params->ld_packet_threshold();
-  }
-
-  float
-  time_threshold() const override
-  {
-    return this->_params->ld_time_threshold();
-  }
-
-  ink_hrtime
-  granularity() const override
-  {
-    return this->_params->ld_granularity();
-  }
-
-  ink_hrtime
-  initial_rtt() const override
-  {
-    return this->_params->ld_initial_rtt();
-  }
-
-private:
-  const QUICConfigParams *_params;
-};
-
-#if TS_HAS_QUICHE
 QUICContext::QUICContext(QUICConnectionInfoProvider *info) : _connection_info(info) {}
-#else
-QUICContext::QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
-                         QUICPathManager *path_manager)
-  : _connection_info(info),
-    _key_info(key_info),
-    _rtt_provider(rtt),
-    _path_manager(path_manager),
-    _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
-    _cc_config(std::make_unique<QUICCCConfigQCP>(_config))
-{
-}
-#endif
 
 QUICConnectionInfoProvider *
 QUICContext::connection_info() const
@@ -120,36 +37,3 @@ QUICContext::config() const
 {
   return _config;
 }
-
-#if TS_HAS_QUICHE
-#else
-QUICPacketProtectionKeyInfoProvider *
-QUICContext::key_info() const
-{
-  return _key_info;
-}
-
-QUICRTTProvider *
-QUICContext::rtt_provider() const
-{
-  return _rtt_provider;
-}
-
-QUICLDConfig &
-QUICContext::ld_config() const
-{
-  return *_ld_config;
-}
-
-QUICCCConfig &
-QUICContext::cc_config() const
-{
-  return *_cc_config;
-}
-
-QUICPathManager *
-QUICContext::path_manager() const
-{
-  return _path_manager;
-}
-#endif

@@ -65,21 +65,10 @@ private:
 };
 
 // TODO: QUICUnidirectionalStream should be used if there
-#if TS_HAS_QUICHE
-class TestQUICStream : public QUICStreamImpl
-#else
-class TestQUICStream : public QUICBidirectionalStream
-#endif
+class TestQUICStream : public QUICStream
 {
 public:
-  TestQUICStream(QUICStreamId sid)
-#if TS_HAS_QUICHE
-    : QUICStreamImpl(new MockQUICConnectionInfoProvider(), sid)
-#else
-    : QUICBidirectionalStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid, 65536, 65536)
-#endif
-  {
-  }
+  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICConnectionInfoProvider(), sid) {}
 
   void
   write(const uint8_t *buf, size_t buf_len, QUICOffset offset, bool last)
