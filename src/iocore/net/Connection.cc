@@ -229,7 +229,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && !opt.f_mptcp && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;
   }
 
@@ -239,7 +239,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !opt.f_mptcp &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
   }
@@ -261,28 +261,17 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0) {
+  if (NetProcessor::accept_mss > 0 && !opt.f_mptcp) {
     if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
       goto Lerror;
     }
   }
 #endif
 
-  if (opt.f_mptcp) {
-#if MPTCP_ENABLED
-    if (setsockopt_on(fd, IPPROTO_TCP, MPTCP_ENABLED) < 0) {
-      Error("[Server::listen] Unable to enable MPTCP socket-option [%d] %s\n", errno, strerror(errno));
-      goto Lerror;
-    }
-#else
-    Error("[Server::listen] Multipath TCP requested but not configured on this host\n");
-#endif
-  }
-
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+  if (opt.defer_accept > 0 && !opt.f_mptcp && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
     // FIXME: should we go to the error
     // goto error;
     Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
@@ -344,6 +333,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   ink_assert(fd == NO_FD);
   int res = 0;
   int namelen;
+  int prot = IPPROTO_TCP;
 
   if (!ats_is_ip(&accept_addr)) {
     ats_ip4_set(&addr, INADDR_ANY, 0);
@@ -351,7 +341,12 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     ats_ip_copy(&addr, &accept_addr);
   }
 
-  fd = res = SocketManager::socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
+  if (opt.f_mptcp) {
+    Debug("connection", "Define socket with MPTCP");
+    prot = IPPROTO_MPTCP;
+  }
+
+  fd = res = SocketManager::socket(addr.sa.sa_family, SOCK_STREAM, prot);
   if (res < 0) {
     goto Lerror;
   }
@@ -361,7 +356,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     goto Lerror;
   }
 
-  if ((res = SocketManager::ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
+  if ((res = SocketManager::ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), prot)) < 0) {
     goto Lerror;
   }
 
@@ -388,6 +383,7 @@ Lerror:
     fd = NO_FD;
   }
 
-  Fatal("Could not bind or listen to port %d (error: %d)", ats_ip_port_host_order(&addr), res);
+  Fatal("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
+        prot == IPPROTO_MPTCP, errno, strerror(errno), res);
   return res;
 }
