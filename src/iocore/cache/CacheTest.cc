@@ -298,13 +298,11 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
     return;
   }
 
-  EThread *thread = this_ethread();
-
   CACHE_SM(t, write_test, { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); });
   write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
   write_test.nbytes               = 100;
-  rand_CacheKey(&write_test.key, thread->mutex);
+  rand_CacheKey(&write_test.key);
 
   CACHE_SM(t, lookup_test, { cacheProcessor.lookup(this, &key); });
   lookup_test.expect_event = CACHE_EVENT_LOOKUP;
@@ -330,7 +328,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   CACHE_SM(t, remove_fail_test, { cacheProcessor.remove(this, &key); });
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
-  rand_CacheKey(&remove_fail_test.key, thread->mutex);
+  rand_CacheKey(&remove_fail_test.key);
 
   CACHE_SM(
     t, replace_write_test,
@@ -343,7 +341,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   replace_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
   replace_write_test.nbytes               = 100;
-  rand_CacheKey(&replace_write_test.key, thread->mutex);
+  rand_CacheKey(&replace_write_test.key);
 
   CACHE_SM(
     t, replace_test,
@@ -387,7 +385,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   large_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   large_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
   large_write_test.nbytes               = 10000000;
-  rand_CacheKey(&large_write_test.key, thread->mutex);
+  rand_CacheKey(&large_write_test.key);
 
   CACHE_SM(
     t, pread_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() override {
