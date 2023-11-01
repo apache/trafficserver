@@ -119,10 +119,6 @@ if BUILD_STEK_SHARE_PLUGIN
 include experimental/stek_share/Makefile.inc
 endif
 
-if HAS_KYOTOCABINET
-include experimental/cache_key_genid/Makefile.inc
-endif
-
 if BUILD_IMAGE_MAGICK_PLUGINS
 include experimental/magick/Makefile.inc
 endif
