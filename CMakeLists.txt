@@ -701,6 +701,12 @@ add_custom_target(
 # Create an empty directories for ATS runtime
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LOGDIR})
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_RUNSTATEDIR})
+install(DIRECTORY DESTINATION ${CMAKE_INSTALL_CACHEDIR})
+
+install(CODE "set(OWNER_USER ${TS_PKGSYSUSER})")
+install(CODE "set(OWNER_GROUP ${TS_PKGSYSGROUP})")
+install(CODE "set(CHOWN_DIRS ${CMAKE_INSTALL_LOGDIR} ${CMAKE_INSTALL_RUNSTATEDIR} ${CMAKE_INSTALL_CACHEDIR})")
+install(SCRIPT cmake/post_install.cmake)
 
 # Display build summary
 include(CMakePrintHelpers)
