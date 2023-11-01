@@ -34,6 +34,10 @@ extern "C" {
 #include "../match.h"
 #include "../config.h"
 
+#include "tscore/Version.h"
+
+AppVersionInfo appVersionInfo;
+
 static char const *const testConfig =
   R"(
 {

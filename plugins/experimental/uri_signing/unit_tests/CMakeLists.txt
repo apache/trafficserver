@@ -28,14 +28,24 @@ add_executable(
   ${PROJECT_SOURCE_DIR}/parse.cc
   ${PROJECT_SOURCE_DIR}/timing.cc
   ${PROJECT_SOURCE_DIR}/uri_signing.cc
+	${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 target_compile_definitions(uri_signing_test PRIVATE UNITTEST)
 target_include_directories(uri_signing_test PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(
-  test_content_range
+  uri_signing_test
   PRIVATE
   catch2::catch2
   jansson::jansson
   cjose::cjose
+	ts::tsapi
+	ts::http
+	ts::hdrs
+	ts::proxy
+	ts::configmanager
+	ts::logging
+	ts::inknet
+	OpenSSL::SSL
+	OpenSSL::Crypto
 )
 add_test(NAME uri_signing_test COMMAND uri_signing_test)

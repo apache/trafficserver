@@ -15,6 +15,8 @@
 #
 #######################
 
+project(uri_signing)
+
 add_atsplugin(
   uri_signing
   common.cc
@@ -35,3 +37,7 @@ target_link_libraries(
   PUBLIC
   jansson::jansson
 )
+
+if(BUILD_TESTING)
+  add_subdirectory(unit_tests)
+endif()
