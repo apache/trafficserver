@@ -153,7 +153,7 @@ extern CacheSync *cacheDirSync;
 // Function Prototypes
 int cache_write(CacheVC *, CacheHTTPInfoVector *);
 int get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
-CacheEvacuateDocVC *new_DocEvacuator(int nbytes, Vol *vol);
+CacheEvacuateDocVC *new_DocEvacuator(int nbytes, Stripe *vol);
 
 // inline Functions
 
@@ -184,7 +184,7 @@ free_CacheVC(CacheVC *cont)
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex = cont->mutex.get();
-  Vol *vol          = cont->vol;
+  Stripe *vol       = cont->vol;
 
   if (vol) {
     Metrics::decrement(cache_rsb.status[cont->op_type].active);
@@ -373,7 +373,7 @@ CacheVC::writer_done()
 }
 
 inline int
-Vol::close_write(CacheVC *cont)
+Stripe::close_write(CacheVC *cont)
 {
 #ifdef CACHE_STAT_PAGES
   ink_assert(stat_cache_vcs.head);
@@ -385,9 +385,9 @@ Vol::close_write(CacheVC *cont)
 
 // Returns 0 on success or a positive error code on failure
 inline int
-Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
+Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  Vol *vol       = this;
+  Stripe *vol    = this;
   bool agg_error = false;
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && agg_todo_size > cache_config_agg_write_backlog);
@@ -415,7 +415,7 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 inline int
-Vol::close_write_lock(CacheVC *cont)
+Stripe::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -426,7 +426,7 @@ Vol::close_write_lock(CacheVC *cont)
 }
 
 inline int
-Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
+Stripe::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -437,7 +437,7 @@ Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 inline OpenDirEntry *
-Vol::open_read_lock(CryptoHash *key, EThread *t)
+Stripe::open_read_lock(CryptoHash *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
   if (!lock.is_locked()) {
@@ -447,7 +447,7 @@ Vol::open_read_lock(CryptoHash *key, EThread *t)
 }
 
 inline int
-Vol::begin_read_lock(CacheVC *cont)
+Stripe::begin_read_lock(CacheVC *cont)
 {
 // no need for evacuation as the entire document is already in memory
 #ifndef CACHE_STAT_PAGES
@@ -465,7 +465,7 @@ Vol::begin_read_lock(CacheVC *cont)
 }
 
 inline int
-Vol::close_read_lock(CacheVC *cont)
+Stripe::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -476,7 +476,7 @@ Vol::close_read_lock(CacheVC *cont)
 }
 
 inline int
-dir_delete_lock(CacheKey *key, Vol *vol, ProxyMutex *m, Dir *del)
+dir_delete_lock(CacheKey *key, Stripe *vol, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, vol->mutex, thread);
@@ -487,7 +487,7 @@ dir_delete_lock(CacheKey *key, Vol *vol, ProxyMutex *m, Dir *del)
 }
 
 inline int
-dir_insert_lock(CacheKey *key, Vol *vol, Dir *to_part, ProxyMutex *m)
+dir_insert_lock(CacheKey *key, Stripe *vol, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, vol->mutex, thread);
@@ -498,7 +498,7 @@ dir_insert_lock(CacheKey *key, Vol *vol, Dir *to_part, ProxyMutex *m)
 }
 
 inline int
-dir_overwrite_lock(CacheKey *key, Vol *vol, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
+dir_overwrite_lock(CacheKey *key, Stripe *vol, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, vol->mutex, thread);
@@ -570,7 +570,7 @@ CacheRemoveCont::event_handler(int event, void *data)
 }
 
 struct CacheHostRecord;
-struct Vol;
+struct Stripe;
 class CacheHostTable;
 
 struct Cache {
@@ -607,7 +607,7 @@ struct Cache {
 
   int open_done();
 
-  Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
+  Stripe *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
   Cache() {}
 };

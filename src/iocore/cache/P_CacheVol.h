@@ -38,7 +38,7 @@
 #define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
-// Vol (volumes)
+// Stripe (volumes)
 #define VOL_MAGIC                    0xF1D0F00D
 #define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
 #define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
@@ -73,14 +73,14 @@
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 struct Cache;
-struct Vol;
+struct Stripe;
 struct CacheDisk;
-struct VolInitInfo;
-struct DiskVol;
+struct StripeInitInfo;
+struct DiskStripe;
 struct CacheVol;
 class CacheEvacuateDocVC;
 
-struct VolHeaderFooter {
+struct StripteHeaderFooter {
   unsigned int magic;
   ts::VersionNumber version;
   time_t create_time;
@@ -125,26 +125,26 @@ struct EvacuationBlock {
   LINK(EvacuationBlock, link);
 };
 
-struct Vol : public Continuation {
+struct Stripe : public Continuation {
   char *path = nullptr;
   ats_scoped_str hash_text;
   CryptoHash hash_id;
   int fd = -1;
 
-  char *raw_dir           = nullptr;
-  Dir *dir                = nullptr;
-  VolHeaderFooter *header = nullptr;
-  VolHeaderFooter *footer = nullptr;
-  int segments            = 0;
-  off_t buckets           = 0;
-  off_t recover_pos       = 0;
-  off_t prev_recover_pos  = 0;
-  off_t scan_pos          = 0;
-  off_t skip              = 0; // start of headers
-  off_t start             = 0; // start of data
-  off_t len               = 0;
-  off_t data_blocks       = 0;
-  int hit_evacuate_window = 0;
+  char *raw_dir               = nullptr;
+  Dir *dir                    = nullptr;
+  StripteHeaderFooter *header = nullptr;
+  StripteHeaderFooter *footer = nullptr;
+  int segments                = 0;
+  off_t buckets               = 0;
+  off_t recover_pos           = 0;
+  off_t prev_recover_pos      = 0;
+  off_t scan_pos              = 0;
+  off_t skip                  = 0; // start of headers
+  off_t start                 = 0; // start of data
+  off_t len                   = 0;
+  off_t data_blocks           = 0;
+  int hit_evacuate_window     = 0;
   AIOCallbackInternal io;
 
   Queue<CacheVC, Continuation::Link_link> agg;
@@ -163,7 +163,7 @@ struct Vol : public Continuation {
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
   CacheEvacuateDocVC *doc_evacuator = nullptr;
 
-  VolInitInfo *init_info = nullptr;
+  StripeInitInfo *init_info = nullptr;
 
   CacheDisk *disk            = nullptr;
   Cache *cache               = nullptr;
@@ -250,15 +250,15 @@ struct Vol : public Continuation {
   off_t vol_offset_to_offset(off_t pos) const;
   off_t vol_relative_length(off_t start_offset) const;
 
-  Vol() : Continuation(new_ProxyMutex())
+  Stripe() : Continuation(new_ProxyMutex())
   {
     open_dir.mutex = mutex;
     agg_buffer     = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
     memset(agg_buffer, 0, AGG_SIZE);
-    SET_HANDLER(&Vol::aggWrite);
+    SET_HANDLER(&Stripe::aggWrite);
   }
 
-  ~Vol() override { ats_free(agg_buffer); }
+  ~Stripe() override { ats_free(agg_buffer); }
 };
 
 struct AIO_failure_handler : public Continuation {
@@ -268,13 +268,13 @@ struct AIO_failure_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number        = -1;
-  int scheme            = 0;
-  off_t size            = 0;
-  int num_vols          = 0;
-  bool ramcache_enabled = true;
-  Vol **vols            = nullptr;
-  DiskVol **disk_vols   = nullptr;
+  int vol_number         = -1;
+  int scheme             = 0;
+  off_t size             = 0;
+  int num_vols           = 0;
+  bool ramcache_enabled  = true;
+  Stripe **vols          = nullptr;
+  DiskStripe **disk_vols = nullptr;
   LINK(CacheVol, link);
   // per volume stats
   CacheStatsBlock vol_rsb;
@@ -318,7 +318,7 @@ struct Doc {
 
 // Global Data
 
-extern Vol **gvol;
+extern Stripe **gvol;
 extern std::atomic<int> gnvol;
 extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
@@ -328,81 +328,81 @@ extern unsigned short *vol_hash_table;
 // inline Functions
 
 inline int
-Vol::headerlen() const
+Stripe::headerlen() const
 {
-  return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
+  return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
 }
 
 inline Dir *
-Vol::dir_segment(int s) const
+Stripe::dir_segment(int s) const
 {
   return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 inline size_t
-Vol::dirlen() const
+Stripe::dirlen() const
 {
   return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
-         ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+         ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
 }
 
 inline int
-Vol::direntries() const
+Stripe::direntries() const
 {
   return this->buckets * DIR_DEPTH * this->segments;
 }
 
 inline int
-Vol::vol_out_of_phase_valid(Dir *e) const
+Stripe::vol_out_of_phase_valid(Dir *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Vol::vol_out_of_phase_agg_valid(Dir *e) const
+Stripe::vol_out_of_phase_agg_valid(Dir *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Vol::vol_out_of_phase_write_valid(Dir *e) const
+Stripe::vol_out_of_phase_write_valid(Dir *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->write_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Vol::vol_in_phase_valid(Dir *e) const
+Stripe::vol_in_phase_valid(Dir *e) const
 {
   return (dir_offset(e) - 1 < ((this->header->write_pos + this->agg_buf_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline off_t
-Vol::vol_offset(Dir *e) const
+Stripe::vol_offset(Dir *e) const
 {
   return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline off_t
-Vol::offset_to_vol_offset(off_t pos) const
+Stripe::offset_to_vol_offset(off_t pos) const
 {
   return ((pos - this->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
 
 inline off_t
-Vol::vol_offset_to_offset(off_t pos) const
+Stripe::vol_offset_to_offset(off_t pos) const
 {
   return this->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline int
-Vol::vol_in_phase_agg_buf_valid(Dir *e) const
+Stripe::vol_in_phase_agg_buf_valid(Dir *e) const
 {
   return (this->vol_offset(e) >= this->header->write_pos && this->vol_offset(e) < (this->header->write_pos + this->agg_buf_pos));
 }
 
 // length of the partition not including the offset of location 0.
 inline off_t
-Vol::vol_relative_length(off_t start_offset) const
+Stripe::vol_relative_length(off_t start_offset) const
 {
   return (this->len + this->skip) - start_offset;
 }
@@ -437,13 +437,13 @@ Doc::data()
   return this->hdr() + hlen;
 }
 
-int vol_dir_clear(Vol *vol);
-int vol_init(Vol *vol, char *s, off_t blocks, off_t skip, bool clear);
+int vol_dir_clear(Stripe *vol);
+int vol_init(Stripe *vol, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 
 inline EvacuationBlock *
-evacuation_block_exists(Dir *dir, Vol *p)
+evacuation_block_exists(Dir *dir, Stripe *p)
 {
   auto bucket = dir_evac_bucket(dir);
   if (p->evac_bucket_valid(bucket)) {
@@ -456,7 +456,7 @@ evacuation_block_exists(Dir *dir, Vol *p)
 }
 
 inline void
-Vol::cancel_trigger()
+Stripe::cancel_trigger()
 {
   if (trigger) {
     trigger->cancel_action();
@@ -488,13 +488,13 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 }
 
 inline OpenDirEntry *
-Vol::open_read(const CryptoHash *key) const
+Stripe::open_read(const CryptoHash *key) const
 {
   return open_dir.open_read(key);
 }
 
 inline int
-Vol::within_hit_evacuate_window(Dir *xdir) const
+Stripe::within_hit_evacuate_window(Dir *xdir) const
 {
   off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
@@ -506,26 +506,26 @@ Vol::within_hit_evacuate_window(Dir *xdir) const
 }
 
 inline uint32_t
-Vol::round_to_approx_size(uint32_t l) const
+Stripe::round_to_approx_size(uint32_t l) const
 {
   uint32_t ll = round_to_approx_dir_size(l);
   return ROUND_TO_SECTOR(this, ll);
 }
 
 inline bool
-Vol::evac_bucket_valid(off_t bucket) const
+Stripe::evac_bucket_valid(off_t bucket) const
 {
   return (bucket >= 0 && bucket < evacuate_size);
 }
 
 inline int
-Vol::is_io_in_progress() const
+Stripe::is_io_in_progress() const
 {
   return io.aiocb.aio_fildes != AIO_NOT_IN_PROGRESS;
 }
 
 inline void
-Vol::set_io_not_in_progress()
+Stripe::set_io_not_in_progress()
 {
   io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
 }

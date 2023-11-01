@@ -308,7 +308,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 }
 
 EvacuationBlock *
-Vol::force_evacuate_head(Dir *evac_dir, int pinned)
+Stripe::force_evacuate_head(Dir *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
@@ -339,7 +339,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 }
 
 void
-Vol::scan_for_pinned_documents()
+Stripe::scan_for_pinned_documents()
 {
   if (cache_config_permit_pinning) {
     // we can't evacuate anything between header->write_pos and
@@ -375,7 +375,7 @@ Vol::scan_for_pinned_documents()
    eventProcessor.schedule_xxx().
    */
 int
-Vol::aggWriteDone(int event, Event *e)
+Stripe::aggWriteDone(int event, Event *e)
 {
   cancel_trigger();
 
@@ -437,7 +437,7 @@ Vol::aggWriteDone(int event, Event *e)
 }
 
 CacheEvacuateDocVC *
-new_DocEvacuator(int nbytes, Vol *vol)
+new_DocEvacuator(int nbytes, Stripe *vol)
 {
   CacheEvacuateDocVC *c = new_CacheEvacuateDocVC(vol);
   c->op_type            = static_cast<int>(CacheOpType::Evacuate);
@@ -452,7 +452,7 @@ new_DocEvacuator(int nbytes, Vol *vol)
 }
 
 static int
-evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
+evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Stripe *vol)
 {
   Dir dir, *last_collision = nullptr;
   int i = 0;
@@ -489,7 +489,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
 }
 
 int
-Vol::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
+Stripe::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 
@@ -507,7 +507,7 @@ Vol::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 }
 
 int
-Vol::evacuateDocReadDone(int event, Event *e)
+Stripe::evacuateDocReadDone(int event, Event *e)
 {
   cancel_trigger();
   if (event != AIO_EVENT_DONE) {
@@ -601,7 +601,7 @@ Ldone:
 }
 
 int
-Vol::evac_range(off_t low, off_t high, int evac_phase)
+Stripe::evac_range(off_t low, off_t high, int evac_phase)
 {
   off_t s = this->offset_to_vol_offset(low);
   off_t e = this->offset_to_vol_offset(high);
@@ -637,7 +637,7 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
       io.action        = this;
       io.thread        = AIO_CALLBACK_THREAD_ANY;
       DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
-      SET_HANDLER(&Vol::evacuateDocReadDone);
+      SET_HANDLER(&Stripe::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
     }
@@ -648,8 +648,8 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
 static int
 agg_copy(char *p, CacheVC *vc)
 {
-  Vol *vol = vc->vol;
-  off_t o  = vol->header->write_pos + vol->agg_buf_pos;
+  Stripe *vol = vc->vol;
+  off_t o     = vol->header->write_pos + vol->agg_buf_pos;
 
   if (!vc->f.evacuator) {
     Doc *doc                   = reinterpret_cast<Doc *>(p);
@@ -803,7 +803,7 @@ agg_copy(char *p, CacheVC *vc)
 }
 
 inline void
-Vol::evacuate_cleanup_blocks(int i)
+Stripe::evacuate_cleanup_blocks(int i)
 {
   EvacuationBlock *b = evac_bucket_valid(i) ? evacuate[i].head : nullptr;
   while (b) {
@@ -821,7 +821,7 @@ Vol::evacuate_cleanup_blocks(int i)
 }
 
 void
-Vol::evacuate_cleanup()
+Stripe::evacuate_cleanup()
 {
   int64_t eo = ((header->write_pos - start) / CACHE_BLOCK_SIZE) + 1;
   int64_t e  = dir_offset_evac_bucket(eo);
@@ -852,7 +852,7 @@ Vol::evacuate_cleanup()
 }
 
 void
-Vol::periodic_scan()
+Stripe::periodic_scan()
 {
   evacuate_cleanup();
   scan_for_pinned_documents();
@@ -863,7 +863,7 @@ Vol::periodic_scan()
 }
 
 void
-Vol::agg_wrap()
+Stripe::agg_wrap()
 {
   header->write_pos = start;
   header->phase     = !header->phase;
@@ -873,7 +873,7 @@ Vol::agg_wrap()
   dir_lookaside_cleanup(this);
   dir_clean_vol(this);
   {
-    Vol *vol = this;
+    Stripe *vol = this;
     Metrics::increment(cache_rsb.directory_wrap);
     Metrics::increment(vol->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", vol->cache_vol->vol_number, vol->hash_text.get());
@@ -889,7 +889,7 @@ Vol::agg_wrap()
    the eventProcessor to schedule events
 */
 int
-Vol::aggWrite(int event, void * /* e ATS_UNUSED */)
+Stripe::aggWrite(int event, void * /* e ATS_UNUSED */)
 {
   ink_assert(!is_io_in_progress());
 
@@ -996,7 +996,7 @@ Lagain:
     for reads proceed independently.
    */
   io.thread = AIO_CALLBACK_THREAD_AIO;
-  SET_HANDLER(&Vol::aggWriteDone);
+  SET_HANDLER(&Stripe::aggWriteDone);
   ink_aio_write(&io);
 
 Lwait:
@@ -1560,10 +1560,10 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   intptr_t res = 0;
   CacheVC *c   = new_CacheVC(cont);
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
-  c->vio.op  = VIO::WRITE;
-  c->op_type = static_cast<int>(CacheOpType::Write);
-  c->vol     = key_to_vol(key, hostname, host_len);
-  Vol *vol   = c->vol;
+  c->vio.op   = VIO::WRITE;
+  c->op_type  = static_cast<int>(CacheOpType::Write);
+  c->vol      = key_to_vol(key, hostname, host_len);
+  Stripe *vol = c->vol;
   Metrics::increment(cache_rsb.status[c->op_type].active);
   Metrics::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
@@ -1642,7 +1642,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   c->earliest_key = c->key;
   c->frag_type    = CACHE_FRAG_TYPE_HTTP;
   c->vol          = key_to_vol(key, hostname, host_len);
-  Vol *vol        = c->vol;
+  Stripe *vol     = c->vol;
   c->info         = info;
   if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*

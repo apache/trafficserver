@@ -213,7 +213,7 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-dir_init_segment(int s, Vol *vol)
+dir_init_segment(int s, Stripe *vol)
 {
   vol->header->freelist[s] = 0;
   Dir *seg                 = vol->dir_segment(s);
@@ -230,7 +230,7 @@ dir_init_segment(int s, Vol *vol)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-dir_bucket_loop_fix(Dir *start_dir, int s, Vol *vol)
+dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *vol)
 {
   if (!dir_bucket_loop_check(start_dir, vol->dir_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
@@ -241,7 +241,7 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Vol *vol)
 }
 
 int
-dir_freelist_length(Vol *vol, int s)
+dir_freelist_length(Stripe *vol, int s)
 {
   int free = 0;
   Dir *seg = vol->dir_segment(s);
@@ -257,7 +257,7 @@ dir_freelist_length(Vol *vol, int s)
 }
 
 int
-dir_bucket_length(Dir *b, int s, Vol *vol)
+dir_bucket_length(Dir *b, int s, Stripe *vol)
 {
   Dir *e   = b;
   int i    = 0;
@@ -277,7 +277,7 @@ dir_bucket_length(Dir *b, int s, Vol *vol)
 }
 
 int
-check_dir(Vol *vol)
+check_dir(Stripe *vol)
 {
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
@@ -300,7 +300,7 @@ check_dir(Vol *vol)
 }
 
 inline void
-unlink_from_freelist(Dir *e, int s, Vol *vol)
+unlink_from_freelist(Dir *e, int s, Stripe *vol)
 {
   Dir *seg = vol->dir_segment(s);
   Dir *p   = dir_from_offset(dir_prev(e), seg);
@@ -316,7 +316,7 @@ unlink_from_freelist(Dir *e, int s, Vol *vol)
 }
 
 inline Dir *
-dir_delete_entry(Dir *e, Dir *p, int s, Vol *vol)
+dir_delete_entry(Dir *e, Dir *p, int s, Stripe *vol)
 {
   Dir *seg           = vol->dir_segment(s);
   int no             = dir_next(e);
@@ -346,7 +346,7 @@ dir_delete_entry(Dir *e, Dir *p, int s, Vol *vol)
 }
 
 inline void
-dir_clean_bucket(Dir *b, int s, Vol *vol)
+dir_clean_bucket(Dir *b, int s, Stripe *vol)
 {
   Dir *e = b, *p = nullptr;
   Dir *seg = vol->dir_segment(s);
@@ -363,7 +363,7 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
-        Dbg(dbg_ctl_dir_clean, "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
+        Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
             dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
@@ -379,7 +379,7 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 }
 
 void
-dir_clean_segment(int s, Vol *vol)
+dir_clean_segment(int s, Stripe *vol)
 {
   Dir *seg = vol->dir_segment(s);
   for (int64_t i = 0; i < vol->buckets; i++) {
@@ -389,7 +389,7 @@ dir_clean_segment(int s, Vol *vol)
 }
 
 void
-dir_clean_vol(Vol *vol)
+dir_clean_vol(Stripe *vol)
 {
   for (int64_t i = 0; i < vol->segments; i++) {
     dir_clean_segment(i, vol);
@@ -398,7 +398,7 @@ dir_clean_vol(Vol *vol)
 }
 
 void
-dir_clear_range(off_t start, off_t end, Vol *vol)
+dir_clear_range(off_t start, off_t end, Stripe *vol)
 {
   for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
@@ -425,7 +425,7 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 }
 
 void
-freelist_clean(int s, Vol *vol)
+freelist_clean(int s, Stripe *vol)
 {
   dir_clean_segment(s, vol);
   if (vol->header->freelist[s]) {
@@ -449,7 +449,7 @@ freelist_clean(int s, Vol *vol)
 }
 
 inline Dir *
-freelist_pop(int s, Vol *vol)
+freelist_pop(int s, Stripe *vol)
 {
   Dir *seg = vol->dir_segment(s);
   Dir *e   = dir_from_offset(vol->header->freelist[s], seg);
@@ -471,7 +471,7 @@ freelist_pop(int s, Vol *vol)
 }
 
 int
-dir_segment_accounted(int s, Vol *vol, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
+dir_segment_accounted(int s, Stripe *vol, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
 {
   int free = dir_freelist_length(vol, s);
   int used = 0, empty = 0;
@@ -524,7 +524,7 @@ dir_segment_accounted(int s, Vol *vol, int offby, int *f, int *u, int *et, int *
 }
 
 void
-dir_free_entry(Dir *e, int s, Vol *vol)
+dir_free_entry(Dir *e, int s, Stripe *vol)
 {
   Dir *seg        = vol->dir_segment(s);
   unsigned int fo = vol->header->freelist[s];
@@ -537,7 +537,7 @@ dir_free_entry(Dir *e, int s, Vol *vol)
 }
 
 int
-dir_probe(const CacheKey *key, Vol *vol, Dir *result, Dir **last_collision)
+dir_probe(const CacheKey *key, Stripe *vol, Dir *result, Dir **last_collision)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int s    = key->slice32(0) % vol->segments;
@@ -606,7 +606,7 @@ Lagain:
 }
 
 int
-dir_insert(const CacheKey *key, Vol *vol, Dir *to_part)
+dir_insert(const CacheKey *key, Stripe *vol, Dir *to_part)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int s  = key->slice32(0) % vol->segments, l;
@@ -674,7 +674,7 @@ Lfill:
 }
 
 int
-dir_overwrite(const CacheKey *key, Vol *vol, Dir *dir, Dir *overwrite, bool must_overwrite)
+dir_overwrite(const CacheKey *key, Stripe *vol, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int s          = key->slice32(0) % vol->segments, l;
@@ -761,7 +761,7 @@ Lfill:
 }
 
 int
-dir_delete(const CacheKey *key, Vol *vol, Dir *del)
+dir_delete(const CacheKey *key, Stripe *vol, Dir *del)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int s    = key->slice32(0) % vol->segments;
@@ -801,7 +801,7 @@ dir_delete(const CacheKey *key, Vol *vol, Dir *del)
 // Lookaside Cache
 
 int
-dir_lookaside_probe(const CacheKey *key, Vol *vol, Dir *result, EvacuationBlock **eblock)
+dir_lookaside_probe(const CacheKey *key, Stripe *vol, Dir *result, EvacuationBlock **eblock)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int i              = key->slice32(3) % LOOKASIDE_SIZE;
@@ -824,7 +824,7 @@ dir_lookaside_probe(const CacheKey *key, Vol *vol, Dir *result, EvacuationBlock 
 }
 
 int
-dir_lookaside_insert(EvacuationBlock *eblock, Vol *vol, Dir *to)
+dir_lookaside_insert(EvacuationBlock *eblock, Stripe *vol, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
   DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
@@ -843,7 +843,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Vol *vol, Dir *to)
 }
 
 int
-dir_lookaside_fixup(const CacheKey *key, Vol *vol)
+dir_lookaside_fixup(const CacheKey *key, Stripe *vol)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int i              = key->slice32(3) % LOOKASIDE_SIZE;
@@ -866,7 +866,7 @@ dir_lookaside_fixup(const CacheKey *key, Vol *vol)
 }
 
 void
-dir_lookaside_cleanup(Vol *vol)
+dir_lookaside_cleanup(Stripe *vol)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   for (auto &i : vol->lookaside) {
@@ -889,7 +889,7 @@ dir_lookaside_cleanup(Vol *vol)
 }
 
 void
-dir_lookaside_remove(const CacheKey *key, Vol *vol)
+dir_lookaside_remove(const CacheKey *key, Stripe *vol)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int i              = key->slice32(3) % LOOKASIDE_SIZE;
@@ -931,7 +931,7 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
 }
 
 uint64_t
-dir_entries_used(Vol *vol)
+dir_entries_used(Stripe *vol)
 {
   uint64_t full  = 0;
   uint64_t sfull = 0;
@@ -978,7 +978,7 @@ sync_cache_dir_on_shutdown()
     // dont release the volume's lock, there could
     // be another aggWrite in progress
     MUTEX_TAKE_LOCK(gvol[i]->mutex, t);
-    Vol *vol = gvol[i];
+    Stripe *vol = gvol[i];
 
     if (DISK_BAD(vol->disk)) {
       Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", vol->hash_text.get());
@@ -1090,7 +1090,7 @@ Lrestart:
     return EVENT_CONT;
   }
 
-  Vol *vol = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
+  Stripe *vol = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
@@ -1122,7 +1122,7 @@ Lrestart:
       goto Ldone;
     }
 
-    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
     size_t dirlen = vol->dirlen();
     if (!writepos) {
       // start

@@ -43,10 +43,10 @@ extern int cache_config_max_disk_errors;
 #define STORE_BLOCKS_PER_VOL (VOL_BLOCK_SIZE / STORE_BLOCK_SIZE)
 #define DISK_HEADER_MAGIC    0xABCD1237
 
-/* each disk vol block has a corresponding Vol object */
+/* each disk vol block has a corresponding Stripe object */
 struct CacheDisk;
 
-struct DiskVolBlock {
+struct DiskStripeBlock {
   uint64_t offset; // offset in bytes from the start of the disk
   uint64_t len;    // length in store blocks
   int number;
@@ -54,30 +54,30 @@ struct DiskVolBlock {
   unsigned int free : 1;
 };
 
-struct DiskVolBlockQueue {
-  DiskVolBlock *b = nullptr;
-  int new_block   = 0; /* whether an existing vol or a new one */
-  LINK(DiskVolBlockQueue, link);
+struct DiskStripeBlockQueue {
+  DiskStripeBlock *b = nullptr;
+  int new_block      = 0; /* whether an existing vol or a new one */
+  LINK(DiskStripeBlockQueue, link);
 
-  DiskVolBlockQueue() {}
+  DiskStripeBlockQueue() {}
 };
 
-struct DiskVol {
+struct DiskStripe {
   int num_volblocks; /* number of disk volume blocks in this volume */
   int vol_number;    /* the volume number of this volume */
   uint64_t size;     /* size in store blocks */
   CacheDisk *disk;
-  Queue<DiskVolBlockQueue> dpb_queue;
+  Queue<DiskStripeBlockQueue> dpb_queue;
 };
 
 struct DiskHeader {
   unsigned int magic;
-  unsigned int num_volumes;      /* number of discrete volumes (DiskVol) */
+  unsigned int num_volumes;      /* number of discrete volumes (DiskStripe) */
   unsigned int num_free;         /* number of disk volume blocks free */
   unsigned int num_used;         /* number of disk volume blocks in use */
   unsigned int num_diskvol_blks; /* number of disk volume blocks */
   uint64_t num_blocks;
-  DiskVolBlock vol_info[1];
+  DiskStripeBlock vol_info[1];
 };
 
 struct CacheDisk : public Continuation {
@@ -93,8 +93,8 @@ struct CacheDisk : public Continuation {
   int fd                  = -1;
   off_t free_space        = 0;
   off_t wasted_space      = 0;
-  DiskVol **disk_vols     = nullptr;
-  DiskVol *free_blocks    = nullptr;
+  DiskStripe **disk_vols  = nullptr;
+  DiskStripe *free_blocks = nullptr;
   int num_errors          = 0;
   int cleared             = 0;
   bool read_only_p        = false;
@@ -116,10 +116,10 @@ struct CacheDisk : public Continuation {
   int openDone(int event, void *data);
   int sync();
   int syncDone(int event, void *data);
-  DiskVolBlock *create_volume(int number, off_t size, int scheme);
+  DiskStripeBlock *create_volume(int number, off_t size, int scheme);
   int delete_volume(int number);
   int delete_all_volumes();
   void update_header();
-  DiskVol *get_diskvol(int vol_number);
+  DiskStripe *get_diskvol(int vol_number);
   void incrErrors(const AIOCallback *io);
 };

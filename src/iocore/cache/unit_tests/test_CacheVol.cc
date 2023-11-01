@@ -254,14 +254,14 @@ execute_and_verify()
         int m_vols = 0;
         for (d_no = 0; d_no < gndisks; d_no++) {
           if (cachep->disk_vols[d_no]) {
-            DiskVol *dp = cachep->disk_vols[d_no];
-            // DiskVols and CacheVols should match
+            DiskStripe *dp = cachep->disk_vols[d_no];
+            // DiskStripes and CacheVols should match
             REQUIRE(dp->vol_number == cachep->vol_number);
 
             /* check the diskvolblock queue */
-            DiskVolBlockQueue *dpbq = dp->dpb_queue.head;
+            DiskStripeBlockQueue *dpbq = dp->dpb_queue.head;
             while (dpbq) {
-              // DiskVol and DiskVolBlocks should match
+              // DiskStripe and DiskStripeBlocks should match
               REQUIRE(dpbq->b->number == cachep->vol_number);
               dpbq = dpbq->link.next;
             }
@@ -269,7 +269,7 @@ execute_and_verify()
             m_vols += dp->num_volblocks;
           }
         }
-        // Num volumes in CacheVol and DiskVol should match
+        // Num volumes in CacheVol and DiskStripe should match
         REQUIRE(m_vols == cachep->num_vols);
 
         matched++;
@@ -285,9 +285,10 @@ execute_and_verify()
   for (int i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
     if (dbg_ctl_cache_hosting.on()) {
-      Dbg(dbg_ctl_cache_hosting, "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
+      Dbg(dbg_ctl_cache_hosting, "Disk: %d: Stripe Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks,
+          d->free_space);
       for (int j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        Dbg(dbg_ctl_cache_hosting, "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        Dbg(dbg_ctl_cache_hosting, "\tStripe: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (int j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
         Dbg(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,

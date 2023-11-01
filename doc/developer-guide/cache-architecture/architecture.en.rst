@@ -126,7 +126,7 @@ span of bytes. Internally each stripe is treated almost entirely independently.
 The data structures described in this section are duplicated for each stripe.
 
 Internally the term *volume* is used for these stripes and implemented primarily
-in :cpp:class:`Vol`. What a user thinks of as a volume (and what this document
+in :cpp:class:`Stripe`. What a user thinks of as a volume (and what this document
 calls a *cache volume*) is represented by :cpp:class:`CacheVol`.
 
 .. note::
@@ -259,7 +259,7 @@ Storage Layout
 The storage layout is the stripe metadata followed by cached content. The
 metadata consists of three parts: the stripe header, the directory, and the
 stripe footer. The metadata is stored twice. The header and the footer are
-instances of :cpp:class:`VolHeaderFooter`. This is a stub structure which can
+instances of :cpp:class:`StripeHeaderFooter`. This is a stub structure which can
 have a trailing variable sized array. This array is used as the segment free
 list roots in the directory. Each contains the segment index of the first
 element of the free list for the segment. The footer is a copy of the header
@@ -280,11 +280,11 @@ start
    The offset for the start of the content, after the stripe metadata.
 
 length
-   Total number of bytes in the stripe. :cpp:member:`Vol::len`.
+   Total number of bytes in the stripe. :cpp:member:`Stripe::len`.
 
 data length
    Total number of blocks in the stripe available for content storage.
-   :cpp:member:`Vol::data_blocks`.
+   :cpp:member:`Stripe::data_blocks`.
 
 .. note::
 
@@ -292,14 +292,14 @@ data length
    there are at least three different metrics (bytes, cache blocks, store
    blocks) used in various places.
 
-The header for a stripe is a variably sized instance of :class:`VolHeaderFooter`.
+The header for a stripe is a variably sized instance of :class:`StripeHeaderFooter`.
 The variable trailing section contains the head indices of the directory entry
 free lists for the segments.
 
 .. figure:: images/stripe-header.svg
    :align: center
 
-The trailing :member:`VolHeaderFooter::freelist` array overlays the disk storage with
+The trailing :member:`StripeHeaderFooter::freelist` array overlays the disk storage with
 an entry for every segment, even though the array is declared to have length `1`.
 Each free list entry is a 16 bit value that is the index of the first directory entry
 in the free list for that segment. E.g. :code:`freelist[4]` is the index of the
@@ -505,7 +505,7 @@ Disk Failure
 
 The cache is designed to be relatively resistant to disk failures. Because each
 :term:`storage unit` in each :term:`cache volume` is mostly independent, the
-loss of a disk simply means that the corresponding :cpp:class:`Vol` instances
+loss of a disk simply means that the corresponding :cpp:class:`Stripe` instances
 (one per cache volume that uses the storage unit) becomes unusable. The primary
 issue is updating the volume assignment table to both preserve assignments for
 objects on still operational volumes while distributing the assignments from the
@@ -778,7 +778,7 @@ The basic steps to a cache lookup are:
 
 #. The cache stripe is determined (based on the cache key).
 
-   The :term:`cache key` is used as a hash key in to an array of :cpp:class:`Vol` instances by
+   The :term:`cache key` is used as a hash key in to an array of :cpp:class:`Stripe` instances by
    :func:`Cache::key_to_vol`. The construction and arrangement of this array is the essence of how
    volumes are assigned.
 
@@ -939,7 +939,7 @@ Aggregation Buffer
 ------------------
 
 Disk writes to cache are handled through an *aggregation buffer*. There is one
-for each :cpp:class:`Vol` instance. To minimize the number of system calls data
+for each :cpp:class:`Stripe` instance. To minimize the number of system calls data
 is written to disk in units of roughly :ref:`target fragment size <target-fragment-size>`
 bytes. The algorithm used is simple: data is piled up in the aggregation buffer
 until no more will fit without going over the target fragment size, at which
@@ -974,11 +974,11 @@ In some cases this is not acceptable and the object is *evacuated* by reading
 it from the cache and then writing it back to cache which moves the physical
 storage of the object from in front of the write cursor to behind the write
 cursor. Objects that are evacuated are handled in this way based on data in
-stripe data structures (attached to the :cpp:class:`Vol` instance).
+stripe data structures (attached to the :cpp:class:`Stripe` instance).
 
 Evacuation data structures are defined by dividing up the volume content into
 a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` bytes.
-The :cpp:member:`Vol::evacuate` member is an array with an element for each
+The :cpp:member:`Stripe::evacuate` member is an array with an element for each
 evacuation region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock`
 instances. Each instance contains a :cpp:class:`Dir` that specifies the fragment
 to evacuate. It is assumed that an evacuation block is placed in the evacuation
@@ -1004,14 +1004,14 @@ if the count goes to zero. If the ``EvacuationBlock`` already exists with a
 count of zero, the count is not modified and the number of readers is not
 tracked, so the evacuation is valid as long as the object exists.
 
-Evacuation is driven by cache writes, essentially in :cpp:member:`Vol::aggWrite`.
+Evacuation is driven by cache writes, essentially in :cpp:member:`Stripe::aggWrite`.
 This method processes the pending cache virtual connections that are trying to
 write to the stripe. Some of these may be evacuation virtual connections. If so
 then the completion callback for that virtual connection is called as the data
 is put in to the aggregation buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue
-or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` is called
+or the aggregation buffer filling) then :cpp:member:`Stripe::evac_range` is called
 to clear the range to be overwritten plus an additional :c:macro:`EVACUATION_SIZE`
 range. The buckets covering that range are checked. If there are any items in
 the buckets a new cache virtual connection (a *doc evacuator*) is created and
@@ -1021,7 +1021,7 @@ the read completes it is checked for validity and if valid, the cache virtual
 connection for it is placed at the front of the write queue for the stripe and
 the write aggregation resumed.
 
-Before doing a write, the method :cpp:member:`Vol::evac_range()` is called to
+Before doing a write, the method :cpp:member:`Stripe::evac_range()` is called to
 start an evacuation. If any fragments are found in the buckets in the range the
 earliest such fragment (smallest offset, closest to the write cursor) is
 selected and read from disk and the aggregation buffer write is suspended. The

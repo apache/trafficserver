@@ -33,7 +33,7 @@ add_library(
   RamCacheCLFUS.cc
   RamCacheLRU.cc
   Store.cc
-  Vol.cc
+  Stripe.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 
