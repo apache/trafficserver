@@ -42,7 +42,7 @@
 #if DEBUG
 #include "api/Metrics.h"
 #endif
-#include "api/Version.h"
+#include "tscore/Version.h"
 
 // inkevent
 #include "iocore/eventsystem/Continuation.h"

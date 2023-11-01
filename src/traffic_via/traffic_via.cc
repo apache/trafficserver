@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include <cstdio>
 #include <cstring>
 #include <iostream>

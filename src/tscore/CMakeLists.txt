@@ -60,6 +60,7 @@ add_library(
   TextBuffer.cc
   Throttler.cc
   Tokenizer.cc
+  Version.cc
   X509HostnameValidator.cc
   hugepages.cc
   ink_args.cc
@@ -159,6 +160,7 @@ if(BUILD_TESTING)
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
     unit_tests/unit_test_main.cc
+    unit_tests/test_Version.cc
   )
   target_link_libraries(
     test_tscore

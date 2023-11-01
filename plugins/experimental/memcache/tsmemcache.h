@@ -26,7 +26,7 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/Net.h"
 #include "iocore/cache/Cache.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 
 #include "ts/ts.h" // plugin header
 #include "protocol_binary.h"

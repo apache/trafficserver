@@ -35,7 +35,7 @@
 #include "tscore/Diags.h"
 #include "api/Metrics.h"
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/logging/Log.h"
 #include "proxy/hdrs/URL.h"

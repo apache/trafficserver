@@ -60,7 +60,7 @@
 #include "tscore/ParseRules.h"
 #include "tscore/ink_time.h"
 #include "tscore/ink_args.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "swoc/TextView.h"
 #include "tscore/Random.h"
 

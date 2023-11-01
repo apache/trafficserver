@@ -35,7 +35,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_resolver.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 
 #include <cstdint>
 #include <string_view>

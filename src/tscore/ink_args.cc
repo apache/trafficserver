@@ -31,7 +31,7 @@ Process arguments
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Diags.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "tscore/ink_file.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"

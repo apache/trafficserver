@@ -27,7 +27,7 @@
 
  ***************************************************************************/
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_sys_control.h"

@@ -24,7 +24,7 @@
 #include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_cap.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_syslog.h"
 #include "records/RecProcess.h"

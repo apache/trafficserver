@@ -43,7 +43,6 @@ add_library(
   FetchSM.cc
   LifecycleAPIHooks.cc
   DbgCtl.cc
-  Version.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
@@ -58,7 +57,6 @@ endif()
 if(BUILD_TESTING)
   add_executable(test_ApiCore
     unit_tests/test_Metrics.cc
-    unit_tests/test_Version.cc
   )
 
   target_link_libraries(test_ApiCore PRIVATE tsapicore tscore catch2::catch2)

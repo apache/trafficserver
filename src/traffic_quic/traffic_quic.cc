@@ -24,7 +24,7 @@
 #include "tscore/ink_string.h"
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"
-#include "api/Version.h"
+#include "tscore/Version.h"
 
 #include "records/RecordsConfig.h"
 #include "proxy/hdrs/URL.h"

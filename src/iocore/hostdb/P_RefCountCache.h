@@ -32,7 +32,7 @@
 #include "tscore/List.h"
 #include "tscore/ink_hrtime.h"
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "tscpp/util/TsSharedMutex.h"
 
 #include "api/Metrics.h"

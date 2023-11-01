@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"

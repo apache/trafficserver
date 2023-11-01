@@ -24,7 +24,7 @@
 
 #include "proxy/logging/LogAccess.h"
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/hdrs/MIME.h"
 #include "iocore/utils/Machine.h"

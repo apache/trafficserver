@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-#include "api/Version.h"
+#include "tscore/Version.h"
 #include "swoc/swoc_file.h"
 
 #include "tscore/ink_platform.h"
