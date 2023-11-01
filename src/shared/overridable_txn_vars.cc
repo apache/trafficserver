@@ -23,6 +23,8 @@
 
 #include "shared/overridable_txn_vars.h"
 
+#include "iocore/net/ConnectionTracker.h"
+
 const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>>
   ts::Overridable_Txn_Vars({
     {"proxy.config.srv_enabled",                                       {TS_CONFIG_SRV_ENABLED, TS_RECORDDATATYPE_INT}                           },
