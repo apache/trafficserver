@@ -293,7 +293,6 @@ HostDBInfo::invalidate()
 class HostDBRecord : public RefCountObj
 {
   friend struct HostDBContinuation;
-  friend struct ShowHostDB;
   using self_type = HostDBRecord;
 
   /// Size of the IO buffer block owned by @a this.

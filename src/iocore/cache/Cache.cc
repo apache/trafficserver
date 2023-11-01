@@ -25,7 +25,6 @@
 
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"
-#include "proxy/StatPages.h"
 
 #include "tscore/Filenames.h"
 
@@ -1100,8 +1099,6 @@ Cache::open_done()
 {
   Action *register_ShowCache(Continuation * c, HTTPHdr * h);
   Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
-  statPagesManager.register_http("cache", register_ShowCache);
-  statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;

@@ -46,7 +46,6 @@
 #include "proxy/ControlMatcher.h"
 #include "proxy/ReverseProxy.h"
 #include "proxy/http/HttpBodyFactory.h"
-#include "proxy/StatPages.h"
 #include "proxy/IPAllow.h"
 #include "iocore/utils/Machine.h"
 
@@ -1576,12 +1575,6 @@ HttpTransact::HandleRequest(State *s)
   // the scheduled update code depends on this info.
   if (is_request_cache_lookupable(s)) {
     s->cache_info.action = CACHE_DO_LOOKUP;
-  }
-
-  // If the hostname is "$internal$" then this is a request for
-  // internal proxy information.
-  if (handle_internal_request(s, &s->hdr_info.client_request)) {
-    TRANSACT_RETURN(SM_ACTION_INTERNAL_REQUEST, nullptr);
   }
 
   if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
@@ -3500,49 +3493,6 @@ HttpTransact::HandleUpdateCachedObjectContinue(State *s)
   ink_assert(s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE);
   s->cache_info.action = s->saved_update_cache_action;
   s->next_action       = s->saved_update_next_action;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : HandleStatPage
-// Description: called from the state machine when a response is received
-//
-// Details    :
-//
-//
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleStatPage(State *s)
-{
-  HTTPStatus status;
-
-  if (s->internal_msg_buffer) {
-    status = HTTP_STATUS_OK;
-  } else {
-    status = HTTP_STATUS_NOT_FOUND;
-  }
-
-  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status);
-
-  ///////////////////////////
-  // insert content-length //
-  ///////////////////////////
-  s->hdr_info.client_response.set_content_length(s->internal_msg_buffer_size);
-
-  if (s->internal_msg_buffer_type) {
-    int len = strlen(s->internal_msg_buffer_type);
-
-    if (len > 0) {
-      s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, s->internal_msg_buffer_type, len);
-    }
-  } else {
-    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/plain", 10);
-  }
-
-  s->cache_info.action = CACHE_DO_NO_ACTION;
-  s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5526,31 +5476,6 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 #endif
 
   return NO_RESPONSE_HEADER_ERROR;
-}
-
-bool
-HttpTransact::handle_internal_request(State * /* s ATS_UNUSED */, HTTPHdr *incoming_hdr)
-{
-  URL *url;
-
-  ink_assert(incoming_hdr->type_get() == HTTP_TYPE_REQUEST);
-
-  if (incoming_hdr->method_get_wksidx() != HTTP_WKSIDX_GET) {
-    return false;
-  }
-
-  url = incoming_hdr->url_get();
-
-  int scheme = url->scheme_get_wksidx();
-  if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS) {
-    return false;
-  }
-
-  if (!statPagesManager.is_stat_page(url)) {
-    return false;
-  }
-
-  return true;
 }
 
 bool

@@ -246,9 +246,6 @@ struct CacheVC : public CacheVConnection {
   AIOCallbackInternal io;
   int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
-#ifdef CACHE_STAT_PAGES
-  LINK(CacheVC, stat_link);
-#endif
   // end Region B
 
   // Start Region C

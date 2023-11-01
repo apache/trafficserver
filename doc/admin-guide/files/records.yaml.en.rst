@@ -2684,50 +2684,6 @@ Customizable User Response Pages
    ``2`` Suppress response pages only for internal traffic.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
-
-   Specifies which http Inspector UI endpoints to allow within :file:`remap.config`:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Disable all http UI endpoints.
-   ``1`` Enable only Cache Inspector endpoints.
-   ``2`` Enable only stats endpoints.
-   ``3`` Enable all http UI endpoints.
-   ===== ======================================================================
-
-   To enable any endpoint there needs to be an entry in :file:`remap.config` which
-   specifically enables it. Such a line would look like: ::
-
-        map / http://{cache}
-
-   The following are the cache endpoints:
-
-   ================ ===========================================================
-   Name             Description
-   ================ ===========================================================
-   ``cache``        UI to interact with the cache.
-   ================ ===========================================================
-
-   The following are the stats endpoints:
-
-   ================== =========================================================
-   Name               Description
-   ================== =========================================================
-   ``cache-internal`` Statistics about cache evacuation and volumes.
-   ``hostdb``         Lookups against the hostdb.
-   ``http``           HTTPSM details, this endpoint is also gated by
-                      :ts:cv:`proxy.config.http.enable_http_info`.
-   ``net``            Lookup and listing of open connections.
-   ================== =========================================================
-
-.. ts:cv:: CONFIG proxy.config.http.enable_http_info INT 0
-
-   Enables (``1``) or disables (``0``) access to an endpoint within
-   :ts:cv:`proxy.config.http_ui_enabled` which shows details about inflight
-   transactions (HttpSM).
-
 DNS
 ===
 

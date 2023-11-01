@@ -58,7 +58,6 @@
 
 struct HttpTunnelProducer;
 class HttpSM;
-class HttpPagesHandler;
 using HttpSMHandler = int (HttpSM::*)(int, void *);
 
 struct HttpTunnelConsumer;
@@ -248,8 +247,6 @@ struct HttpTunnelProducer {
 
 class HttpTunnel : public Continuation
 {
-  friend class HttpPagesHandler;
-
   /** Data for implementing flow control across a tunnel.
 
       The goal is to bound the amount of data buffered for a

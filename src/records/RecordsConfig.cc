@@ -72,9 +72,6 @@ static const RecordElement RecordsConfig[] =
   //# 0 == CLOCK_REALTIME, change carefully
   {RECT_CONFIG, "proxy.config.system_clock", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]+", RECA_NULL}
   ,
-  //# 0 = disable
-  {RECT_CONFIG, "proxy.config.http_ui_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
@@ -357,8 +354,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.plugin.vc.default_buffer_index", RECD_INT, "8", RECU_DYNAMIC, RR_NULL, RECC_STR, "^([0-9]|1[0-4])$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.plugin.vc.default_buffer_water_mark", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.enable_http_info", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.server_max_connections", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,

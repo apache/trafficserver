@@ -3457,25 +3457,12 @@ msgstr ""
 msgid "``http``"
 msgstr ""
 
-#: ../../../admin-guide/files/records.yaml.en.rst:2228
-msgid ""
-"HTTPSM details, this endpoint is also gated by :ts:cv:`proxy.config.http."
-"enable_http_info`."
-msgstr ""
-
 #: ../../../admin-guide/files/records.yaml.en.rst:2230
 msgid "``net``"
 msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2230
 msgid "Lookup and listing of open connections."
-msgstr ""
-
-#: ../../../admin-guide/files/records.yaml.en.rst:2235
-msgid ""
-"Enables (``1``) or disables (``0``) access to an endpoint within :ts:cv:"
-"`proxy.config.http_ui_enabled` which shows details about inflight "
-"transactions (HttpSM)."
 msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2240

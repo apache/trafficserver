@@ -37,7 +37,6 @@
 #include "tscore/ink_config.h"
 #include "proxy/http/remap/AclFiltering.h"
 #include "proxy/hdrs/URL.h"
-#include "proxy/http/remap/RemapHitCount.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "proxy/http/remap/PluginFactory.h"
 #include "tscpp/util/Regex.h"

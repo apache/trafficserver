@@ -23,8 +23,6 @@ add_library(
   CacheEvacuateDocVC.cc
   CacheHosting.cc
   CacheHttp.cc
-  CachePages.cc
-  CachePagesInternal.cc
   CacheRead.cc
   CacheVC.cc
   CacheVol.cc

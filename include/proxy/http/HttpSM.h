@@ -172,7 +172,6 @@ public:
 
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
-  friend class HttpPagesHandler;
   friend class HttpTransact;
 
 public:
@@ -248,9 +247,6 @@ public:
   //  before calling
   int state_api_callback(int event, void *data);
   int state_api_callout(int event, void *data);
-
-  // Used for Http Stat Pages
-  HttpTunnel *get_tunnel();
 
   // Debugging routines to dump the SM history, hdrs
   void dump_state_on_assert();
@@ -354,7 +350,6 @@ private:
   int state_hostdb_lookup(int event, void *data);
   int state_hostdb_reverse_lookup(int event, void *data);
   int state_mark_os_down(int event, void *data);
-  int state_handle_stat_page(int event, void *data);
   int state_auth_callback(int event, void *data);
   int state_add_to_list(int event, void *data);
   int state_remove_from_list(int event, void *data);
@@ -659,12 +654,6 @@ inline bool
 HttpSM::is_post_transform_request()
 {
   return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
-}
-
-inline HttpTunnel *
-HttpSM::get_tunnel()
-{
-  return &tunnel;
 }
 
 inline bool

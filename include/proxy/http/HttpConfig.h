@@ -761,9 +761,7 @@ public:
   MgmtByte reverse_proxy_enabled = 0;
   MgmtByte url_remap_required    = 1;
 
-  MgmtByte errors_log_error_pages = 1;
-  MgmtByte enable_http_info       = 0;
-
+  MgmtByte errors_log_error_pages   = 1;
   MgmtByte redirection_host_no_port = 1;
 
   MgmtByte send_100_continue_response = 0;

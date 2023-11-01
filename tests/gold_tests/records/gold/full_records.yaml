@@ -188,7 +188,6 @@ ts:
     doc_in_cache_skip_dns: 1
     down_server:
       cache_time: 60
-    enable_http_info: 0
     enable_http_stats: 1
     enabled: 1
     errors:
@@ -326,7 +325,6 @@ ts:
     max_settings: 10
     num_placeholders: 100
     qpack_blocked_streams: 0
-  http_ui_enabled: 0
   incoming_ip_to_bind: null
   log:
     ascii_buffer_size: 36864

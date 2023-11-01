@@ -341,37 +341,6 @@ Then, to push the object, post the object using the PUSH method: ::
 
 .. _inspecting-the-cache:
 
-Inspecting the Cache
-====================
-
-Traffic Server provides a Cache Inspector utility that enables you to
-view, delete, and invalidate URLs in the cache (HTTP only). The Cache
-Inspector utility is a powerful tool that's capable of deleting all
-the objects in your cache. Therefore, make sure that only authorized
-administrators are allowed to access this utility through proper use
-of the ``@src_ip`` option in :file:`remap.config` and the instructions
-detailed in :ref:`admin-controlling-access`.
-
-Accessing the Cache Inspector Utility
--------------------------------------
-
-To access the Cache Inspector utility:
-
-#. Set :ts:cv:`proxy.config.http_ui_enabled` to ``1``.
-#. To access the cache inspector in reverse proxy mode, you must add a
-   remap rule to :file:`remap.config` to expose the URL. This should be
-   restricted to a limited set of hosts using the ``@src_ip`` option.
-   To restrict access to the network 172.28.56.0/24, use ::
-
-      map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
-
-#. Reload the Traffic Server configuration by running :option:`traffic_ctl config reload`.
-#. Open your web browser and go to the following URL::
-
-      http://yourhost/myCI/
-
-   You will now be presented with the Cache Inspector interface.
-
 Using the Cache Inspector Utility
 ---------------------------------
 
