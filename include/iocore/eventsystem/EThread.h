@@ -26,7 +26,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"

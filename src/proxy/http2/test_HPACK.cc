@@ -37,8 +37,6 @@ const static int MAX_TABLE_SIZE          = 4096;
 
 using namespace std;
 
-AppVersionInfo appVersionInfo;
-
 static int cmd_disable_freelist = 0;
 static char cmd_input_dir[512]  = "";
 static char cmd_output_dir[512] = "";
@@ -396,8 +394,8 @@ REGRESSION_TEST(HPACK_Encoding)(RegressionTest *t, int /* atype ATS_UNUSED */, i
 int
 main(int argc, const char **argv)
 {
-  appVersionInfo.setup(PACKAGE_NAME, "test_HPACK", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  auto &version = AppVersionInfo::setup_version("test_HPACK");
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
 

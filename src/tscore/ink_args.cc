@@ -31,7 +31,7 @@ Process arguments
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Diags.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "tscore/ink_file.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
@@ -80,7 +80,7 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
   const char *arg = nullptr;
 
   if (arg_is_version_flag(&argument_descriptions[i])) {
-    ink_fputln(stdout, appinfo->FullVersionInfoStr);
+    ink_fputln(stdout, appinfo->full_version());
     exit(0);
   }
 
@@ -207,7 +207,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
   //
   // Grab Command Line Arguments
   //
-  program_name = appinfo->AppStr;
+  program_name = appinfo->application();
   while (*++argv) {
     // Hack for supporting '-' as a file argument.
     if (strcmp(*argv, "-") == 0) {

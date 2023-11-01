@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/ink_inet.h"
 #include "iocore/net/NetVCOptions.h"

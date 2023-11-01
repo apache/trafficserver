@@ -55,7 +55,7 @@
 
 #include "tscore/Layout.h"
 #include "tscore/ink_args.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "tscore/runroot.h"
 
 using namespace std;
@@ -389,8 +389,7 @@ main(int argc, const char **argv)
   bool absolute  = false;
   string url;
 
-  AppVersionInfo version;
-  version.setup(PACKAGE_NAME, "traffic_top", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("traffic_top");
 
   const ArgumentDescription argument_descriptions[] = {
     {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},

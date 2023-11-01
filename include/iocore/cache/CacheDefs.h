@@ -25,7 +25,7 @@
 
 #include "iocore/eventsystem/Event.h"
 #include "iocore/eventsystem/VConnection.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "tscore/CryptoHash.h"
 
 #define CACHE_INIT_FAILED  -1

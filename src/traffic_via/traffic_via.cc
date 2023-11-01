@@ -23,7 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -38,8 +38,6 @@
 #endif
 
 #define SUBSTRING_VECTOR_COUNT 30 // Should be multiple of 3
-
-static AppVersionInfo appVersionInfo;
 
 struct VIA {
   VIA(const char *t) : title(t) {}
@@ -105,7 +103,7 @@ detailViaLookup(char flag)
     break;
   default:
     viaTable = nullptr;
-    fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character", flag);
+    fprintf(stderr, "%s: %s: %c\n", AppVersionInfo::get_version().application(), "Invalid VIA header character", flag);
     break;
   }
 
@@ -176,7 +174,7 @@ standardViaLookup(char flag)
     break;
   default:
     viaTable = nullptr;
-    fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character", flag);
+    fprintf(stderr, "%s: %s: %c\n", AppVersionInfo::get_version().application(), "Invalid VIA header character", flag);
     break;
   }
 
@@ -307,7 +305,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   bool opStatus;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_via", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("traffic_via");
 
   /* see 'ink_args.h' for meanings of the various fields */
   ArgumentDescription argument_descriptions[] = {
@@ -315,7 +313,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     HELP_ARGUMENT_DESCRIPTION(),
   };
 
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   for (unsigned i = 0; i < n_file_arguments; ++i) {
     if (strcmp(file_arguments[i], "-") == 0) {

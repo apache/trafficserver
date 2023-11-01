@@ -60,7 +60,7 @@
 #include "tscore/ParseRules.h"
 #include "tscore/ink_time.h"
 #include "tscore/ink_args.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "swoc/TextView.h"
 #include "tscore/Random.h"
 
@@ -109,8 +109,6 @@
 
 #define JTEST_DONE 0
 #define JTEST_CONT 1
-
-static AppVersionInfo appVersionInfo;
 
 static const char *hexdigits      = "0123456789ABCDEFabcdef";
 static const char *dontunescapify = "#;/?+=&:@%";
@@ -3633,7 +3631,7 @@ get_defered_urls(FILE *fp)
 int
 main(int argc __attribute__((unused)), const char *argv[])
 {
-  appVersionInfo.setup(PACKAGE_NAME, "jtest", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("jtest");
 
   /* for QA -- we want to be able to tail an output file
    * during execution "nohup jtest -P pxy -p prt &"
@@ -3642,7 +3640,7 @@ main(int argc __attribute__((unused)), const char *argv[])
 
   fd = (FD *)malloc(MAXFDS * sizeof(FD));
   memset(static_cast<void *>(fd), 0, MAXFDS * sizeof(FD));
-  process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
+  process_args(&version, argument_descriptions, n_argument_descriptions, argv);
 
   if (!drand_seed) {
     ts::Random::seed((long)time(nullptr));

@@ -43,6 +43,7 @@ add_library(
   FetchSM.cc
   LifecycleAPIHooks.cc
   DbgCtl.cc
+  Version.cc
 )
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
@@ -55,9 +56,12 @@ if(APPLE)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(test_Metrics test_Metrics.cc)
+  add_executable(test_ApiCore
+    unit_tests/test_Metrics.cc
+    unit_tests/test_Version.cc
+  )
 
-  target_link_libraries(test_Metrics PRIVATE tsapicore tscore catch2::catch2)
+  target_link_libraries(test_ApiCore PRIVATE tsapicore tscore catch2::catch2)
 
-  add_test(NAME test_Metrics COMMAND $<TARGET_FILE:test_Metrics>)
+  add_test(NAME test_ApiCore COMMAND $<TARGET_FILE:test_ApiCore>)
 endif()

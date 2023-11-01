@@ -60,7 +60,6 @@ add_library(
   TextBuffer.cc
   Throttler.cc
   Tokenizer.cc
-  Version.cc
   X509HostnameValidator.cc
   hugepages.cc
   ink_args.cc
@@ -111,7 +110,7 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
-target_link_libraries(tscore PUBLIC OpenSSL::Crypto PCRE::PCRE libswoc yaml-cpp::yaml-cpp resolv::resolv)
+target_link_libraries(tscore PUBLIC OpenSSL::Crypto PCRE::PCRE libswoc yaml-cpp::yaml-cpp resolv::resolv ts::tsapicore)
 
 if(TS_USE_POSIX_CAP)
   target_link_libraries(tscore PUBLIC cap::cap)
@@ -153,7 +152,6 @@ if(BUILD_TESTING)
     unit_tests/test_Regex.cc
     unit_tests/test_Throttler.cc
     unit_tests/test_Tokenizer.cc
-    unit_tests/test_Version.cc
     unit_tests/test_arena.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc

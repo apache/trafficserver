@@ -31,6 +31,6 @@
 #pragma once
 
 #include "iocore/dns/SplitDNSProcessor.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 
 static constexpr ts::ModuleVersion SPLITDNS_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);

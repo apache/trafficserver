@@ -60,7 +60,6 @@ benchmark_LogObject_LDADD = \
 #include <condition_variable>
 #include <chrono>
 
-AppVersionInfo appVersionInfo;
 static char bind_stdout[512] = "";
 static char bind_stderr[512] = "";
 

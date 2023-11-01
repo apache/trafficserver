@@ -32,7 +32,7 @@
 #include "swoc/TextView.h"
 #include "tscpp/util/ts_errata.h"
 
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "tscore/ink_memory.h"
 #include "tscore/Regex.h"
 #include "tscore/ink_file.h"

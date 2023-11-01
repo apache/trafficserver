@@ -22,8 +22,9 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 #include "tscore/ink_string.h"
+#include "tscore/ink_file.h"
 
 AppVersionInfo::AppVersionInfo()
 {
@@ -125,4 +126,34 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
            BldNumStr, BldDateStr, BldTimeStr);
 
   defined = 1;
+}
+
+void
+AppVersionInfo::setup(const char *name)
+{
+  setup(PACKAGE_NAME, name, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+}
+
+static AppVersionInfo appVersionInfo;
+
+const AppVersionInfo &
+AppVersionInfo::get_version()
+{
+  if (!appVersionInfo.defined) {
+    appVersionInfo.setup("<unknown>");
+  }
+  return appVersionInfo;
+}
+
+const AppVersionInfo &
+AppVersionInfo::setup_version(const char *name)
+{
+  appVersionInfo.setup(name);
+  return appVersionInfo;
+}
+
+void
+AppVersionInfo::print_version()
+{
+  ink_fputln(stdout, get_version().FullVersionInfoStr);
 }

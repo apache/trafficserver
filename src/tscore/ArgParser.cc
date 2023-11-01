@@ -23,7 +23,7 @@
 
 #include "tscore/ArgParser.h"
 #include "tscore/ink_file.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 
 #include <iostream>
 #include <set>
@@ -125,9 +125,8 @@ void
 ArgParser::Command::version_message() const
 {
   // unified version message of ATS
-  AppVersionInfo appVersionInfo;
-  appVersionInfo.setup(PACKAGE_NAME, _name.c_str(), PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-  ink_fputln(stdout, appVersionInfo.FullVersionInfoStr);
+  AppVersionInfo::setup_version(_name.c_str());
+  AppVersionInfo::print_version();
   exit(0);
 }
 

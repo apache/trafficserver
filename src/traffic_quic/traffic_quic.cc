@@ -24,7 +24,7 @@
 #include "tscore/ink_string.h"
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"
-#include "tscore/Version.h"
+#include "api/Version.h"
 
 #include "records/RecordsConfig.h"
 #include "proxy/hdrs/URL.h"
@@ -56,8 +56,7 @@ main(int argc, const char **argv)
   Layout::create();
 
   // Set up the application version info
-  AppVersionInfo appVersionInfo;
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_quic", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("traffic_quic");
 
   QUICClientConfig config;
 
@@ -79,7 +78,7 @@ main(int argc, const char **argv)
   };
 
   // Process command line arguments and dump into variables
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   if (config.http3) {
     config.http0_9 = false;

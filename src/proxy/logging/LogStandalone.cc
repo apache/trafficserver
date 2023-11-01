@@ -27,6 +27,7 @@
 
  ***************************************************************************/
 
+#include "api/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_sys_control.h"
@@ -47,7 +48,6 @@ static char error_tags[1024]  = "";
 static char action_tags[1024] = "";
 
 static DiagsConfig *diagsConfig = nullptr;
-AppVersionInfo appVersionInfo;
 
 /*-------------------------------------------------------------------------
   init_system
@@ -57,7 +57,7 @@ AppVersionInfo appVersionInfo;
 static void
 logging_crash_handler(int signo, siginfo_t *info, void *ptr)
 {
-  signal_format_siginfo(signo, info, appVersionInfo.AppStr);
+  signal_format_siginfo(signo, info, AppVersionInfo::get_version().application());
   signal_crash_handler(signo, info, ptr);
 }
 
@@ -68,8 +68,9 @@ init_system(bool notify_syslog)
 
   signal_register_crash_handler(logging_crash_handler);
   if (notify_syslog) {
-    syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
-    syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
+    auto &version = AppVersionInfo::get_version();
+    syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", version.application());
+    syslog(LOG_NOTICE, "NOTE: %s Version: %s", version.application(), version.full_version());
   }
 }
 
@@ -89,19 +90,14 @@ initialize_process_manager()
   //
   // Define version info records
   //
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr,
-                        RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr,
-                        RECP_NON_PERSISTENT);
-  //    RecRegisterStatString(RECT_PROCESS,
-  //                         "proxy.process.version.server.build_compile_flags",
-  //                         appVersionInfo.BldCompileFlagsStr,
-  //                         RECP_NON_PERSISTENT);
+  auto &version = AppVersionInfo::get_version();
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", version.version(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", version.full_version(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", version.build_number(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", version.build_time(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", version.build_date(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", version.build_machine(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", version.build_person(), RECP_NON_PERSISTENT);
 }
 
 /*-------------------------------------------------------------------------

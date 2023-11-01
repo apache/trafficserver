@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "api/Version.h"
 #include "swoc/swoc_file.h"
 
 #include "tscore/ink_platform.h"
@@ -194,8 +195,6 @@ static int cmd_block = 0;
 // 0: delay accept, wait for cache initialization.
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache = 0;
-
-AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
   {"net_threads",       'n', "Number of Net Threads",                                                                               "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr},
@@ -583,7 +582,8 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
     return;
   }
 
-  signal_format_siginfo(signo, info, appVersionInfo.AppStr);
+  auto &version = AppVersionInfo::get_version();
+  signal_format_siginfo(signo, info, version.application());
 
 #if TS_HAS_PROFILER
   HeapProfilerDump("/tmp/ts_end.hprof");
@@ -607,8 +607,9 @@ init_system()
   signal_register_default_handler(proxy_signal_handler);
   signal_register_crash_handler(signal_crash_handler);
 
-  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
-  syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
+  auto &version = AppVersionInfo::get_version();
+  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", version.application());
+  syslog(LOG_NOTICE, "NOTE: %s Version: %s", version.application(), version.full_version());
 
   //
   // Delimit file Descriptors
@@ -679,15 +680,14 @@ initialize_process_manager()
   //
   // Define version info records
   //
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr,
-                        RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr,
-                        RECP_NON_PERSISTENT);
+  auto &version = AppVersionInfo::get_version();
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", version.version(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", version.full_version(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", version.build_number(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", version.build_time(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", version.build_date(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", version.build_machine(), RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", version.build_person(), RECP_NON_PERSISTENT);
 }
 
 extern void initializeRegistry();
@@ -1590,13 +1590,14 @@ chdir_root()
 {
   std::string prefix = Layout::get()->prefix;
 
+  auto &version = AppVersionInfo::get_version();
   if (chdir(prefix.c_str()) < 0) {
-    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix.c_str(), errno,
+    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", version.application(), prefix.c_str(), errno,
             strerror(errno));
-    fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", appVersionInfo.AppStr);
+    fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", version.application());
     ::exit(1);
   } else {
-    printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix.c_str());
+    printf("%s: using root directory '%s'\n", version.application(), prefix.c_str());
   }
 }
 
@@ -1779,7 +1780,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   pcre_free   = ats_free;
 
   // Define the version info
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("traffic_server");
 
   runroot_handler(argv);
   // Before accessing file system initialize Layout engine
@@ -1791,7 +1792,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
             [](ArgumentDescription const &a, ArgumentDescription const &b) { return 0 > strcasecmp(a.name, b.name); });
 
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
   command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;

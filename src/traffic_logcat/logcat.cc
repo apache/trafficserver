@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "api/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"
@@ -255,7 +256,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 
   // build the application information structure
   //
-  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version(PROGRAM_NAME);
 
   runroot_handler(argv);
   // Before accessing file system initialize Layout engine
@@ -263,7 +264,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   // process command-line arguments
   //
   output_file[0] = 0;
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   // check that only one of the -o and -a options was specified
   //

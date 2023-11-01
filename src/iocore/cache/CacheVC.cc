@@ -42,6 +42,7 @@
 #if DEBUG
 #include "api/Metrics.h"
 #endif
+#include "api/Version.h"
 
 // inkevent
 #include "iocore/eventsystem/Continuation.h"
@@ -55,7 +56,6 @@
 #include "tscpp/api/HttpStatus.h"
 
 // tscore
-#include "tscore/Version.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"

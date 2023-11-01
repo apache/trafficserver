@@ -24,14 +24,13 @@
 
 #include "proxy/logging/LogAccess.h"
 
+#include "api/Version.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/hdrs/MIME.h"
 #include "iocore/utils/Machine.h"
 #include "proxy/logging/LogFormat.h"
 #include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
-
-extern AppVersionInfo appVersionInfo;
 
 char INVALID_STR[] = "!INVALID_STR!";
 
@@ -1462,9 +1461,10 @@ LogAccess::marshal_proxy_provided_cert(char *buf)
 int
 LogAccess::marshal_version_build_number(char *buf)
 {
-  int len = LogAccess::strlen(appVersionInfo.BldNumStr);
+  auto &version = AppVersionInfo::get_version();
+  int len       = LogAccess::strlen(version.build_number());
   if (buf) {
-    marshal_str(buf, appVersionInfo.BldNumStr, len);
+    marshal_str(buf, version.build_number(), len);
   }
   return len;
 }
@@ -1475,9 +1475,10 @@ LogAccess::marshal_version_build_number(char *buf)
 int
 LogAccess::marshal_version_string(char *buf)
 {
-  int len = LogAccess::strlen(appVersionInfo.VersionStr);
+  auto &version = AppVersionInfo::get_version();
+  int len       = LogAccess::strlen(version.version());
   if (buf) {
-    marshal_str(buf, appVersionInfo.VersionStr, len);
+    marshal_str(buf, version.version(), len);
   }
   return len;
 }

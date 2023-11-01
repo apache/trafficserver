@@ -128,7 +128,7 @@ add_net_test(
 )
 set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
 target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
-target_link_libraries(test_net PRIVATE hdrs proxy)
+target_link_libraries(test_net PRIVATE hdrs proxy ts::tsapicore)
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/src/iocore/net/NetVCTest.cc ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests/test_IOBuffer.cc)

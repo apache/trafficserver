@@ -135,7 +135,7 @@ ModuleVersion::check(ModuleVersion const &that)
 
 class AppVersionInfo
 {
-public:
+private:
   int defined;
   char PkgStr[128];
   char AppStr[128];
@@ -148,7 +148,59 @@ public:
   char BldCompileFlagsStr[128];
   char FullVersionInfoStr[256];
 
+public:
   AppVersionInfo();
   void setup(const char *pkg_name, const char *app_name, const char *app_version, const char *build_date, const char *build_time,
              const char *build_machine, const char *build_person, const char *build_cflags);
+  void setup(const char *app_name);
+
+  const char *
+  package() const
+  {
+    return PkgStr;
+  }
+  const char *
+  application() const
+  {
+    return AppStr;
+  }
+  const char *
+  version() const
+  {
+    return VersionStr;
+  }
+  const char *
+  build_number() const
+  {
+    return BldNumStr;
+  }
+  const char *
+  build_time() const
+  {
+    return BldTimeStr;
+  }
+  const char *
+  build_date() const
+  {
+    return BldDateStr;
+  }
+  const char *
+  build_machine() const
+  {
+    return BldMachineStr;
+  }
+  const char *
+  build_person() const
+  {
+    return BldPersonStr;
+  }
+  const char *
+  full_version() const
+  {
+    return FullVersionInfoStr;
+  }
+
+  static const AppVersionInfo &get_version();
+  static const AppVersionInfo &setup_version(const char *name);
+  static void print_version();
 };
