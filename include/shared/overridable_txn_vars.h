@@ -23,9 +23,10 @@
 
 #pragma once
 
+#include "ts/apidefs.h"
+
+#include <string_view>
 #include <unordered_map>
-#include "iocore/net/ConnectionTracker.h"
-#include "proxy/hdrs/HTTP.h"
 
 namespace ts
 {
