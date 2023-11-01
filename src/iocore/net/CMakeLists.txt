@@ -22,6 +22,7 @@ add_library(
   BIO_fastopen.cc
   BoringSSLUtils.cc
   Connection.cc
+  ConnectionTracker.cc
   EventIO.cc
   Inline.cc
   YamlSNIConfig.cc

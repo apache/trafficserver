@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "iocore/net/ConnectionTracker.h"
 #include "proxy/ProxySession.h"
 
 class PoolableSession : public ProxySession
@@ -74,7 +75,7 @@ public:
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
   TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
 
-  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
+  void enable_outbound_connection_tracking(ConnectionTracker::Group *group);
   void release_outbound_connection_tracking();
 
   void attach_hostname(const char *hostname);
@@ -89,7 +90,7 @@ public:
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
-  OutboundConnTrack::Group *conn_track_group = nullptr;
+  ConnectionTracker::Group *conn_track_group = nullptr;
 
   virtual IOBufferReader *get_remote_reader() = 0;
 
@@ -209,7 +210,7 @@ PoolableSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs
 }
 
 inline void
-PoolableSession::enable_outbound_connection_tracking(OutboundConnTrack::Group *group)
+PoolableSession::enable_outbound_connection_tracking(ConnectionTracker::Group *group)
 {
   ink_assert(nullptr == conn_track_group);
   conn_track_group = group;

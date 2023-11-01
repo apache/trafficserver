@@ -40,8 +40,7 @@
 #include "swoc/bwf_fwd.h"
 #include "swoc/TextView.h"
 #include <tscore/MgmtDefs.h>
-#include "proxy/http/HttpProxyAPIEnums.h"
-#include "proxy/Show.h"
+#include "iocore/net/SessionSharingAPIEnums.h"
 
 /**
  * Singleton class to keep track of the number of outbound connections.
@@ -49,13 +48,13 @@
  * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
  * session matching setting. Tracking data is stored for each group.
  */
-class OutboundConnTrack
+class ConnectionTracker
 {
-  using self_type = OutboundConnTrack; ///< Self reference type.
+  using self_type = ConnectionTracker; ///< Self reference type.
 
 public:
   // Non-copyable.
-  OutboundConnTrack(const self_type &)    = delete;
+  ConnectionTracker(const self_type &)    = delete;
   self_type &operator=(const self_type &) = delete;
 
   /// Definition of an upstream server group equivalence class.
@@ -71,23 +70,23 @@ public:
 
   /// Per transaction configuration values.
   struct TxnConfig {
-    int max{0};                ///< Maximum concurrent connections.
-    int min{0};                ///< Minimum keepalive connections.
-    MatchType match{MATCH_IP}; ///< Match type.
+    int server_max{0};                ///< Maximum concurrent server connections.
+    int server_min{0};                ///< Minimum keepalive server connections.
+    MatchType server_match{MATCH_IP}; ///< Server match type.
   };
 
   /** Static configuration values. */
   struct GlobalConfig {
-    std::chrono::seconds alert_delay{60}; ///< Alert delay in seconds.
+    std::chrono::seconds server_alert_delay{60}; ///< Alert delay in seconds.
   };
 
   // The names of the configuration values.
   // Unfortunately these are not used in RecordsConfig.cc so that must be made consistent by hand.
   // Note: These need to be @c constexpr or there are static initialization ordering risks.
-  static constexpr std::string_view CONFIG_VAR_MAX{"proxy.config.http.per_server.connection.max"};
-  static constexpr std::string_view CONFIG_VAR_MIN{"proxy.config.http.per_server.connection.min"};
-  static constexpr std::string_view CONFIG_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
-  static constexpr std::string_view CONFIG_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_MAX{"proxy.config.http.per_server.connection.max"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_MIN{"proxy.config.http.per_server.connection.min"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"};
 
   /// A record for the outbound connection count.
   /// These are stored per outbound session equivalence class, as determined by the session matching.
@@ -118,7 +117,7 @@ public:
     // Counting data.
     std::atomic<int> _count{0};         ///< Number of outbound connections.
     std::atomic<int> _count_max{0};     ///< largest observed @a count value.
-    std::atomic<int> _blocked{0};       ///< Number of outbound connections blocked since last alert.
+    std::atomic<int> _blocked{0};       ///< Number of connections blocked since last alert.
     std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
@@ -130,6 +129,7 @@ public:
      * Construct from @c Key because the use cases do a table lookup first so the @c Key is already constructed.
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
+     * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
      */
     Group(Key const &key, std::string_view fqdn, int min_keep_alive);
     /// Key equality checker.
@@ -182,22 +182,22 @@ public:
 
     /** Generate a Warning that a connection was blocked.
      *
-     * @param config Transaction local configuration.
-     * @param sm_id State machine ID to display in Warning.
+     * @param max_connections The maximum configured number of connections for the group.
+     * @param sm_id ID to display in Warning.
      * @param count Count value to display in Warning.
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
      */
-    void Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+    void Warn_Blocked(int max_connections, int64_t id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
   };
 
-  /** Get or create the @c Group for the specified session properties.
+  /** Get or create the @c Group for the specified outbound session properties.
    * @param txn_cnf The transaction local configuration.
    * @param fqdn The fully qualified domain name of the upstream.
    * @param addr The IP address of the upstream.
    * @return A @c Group for the arguments, existing if possible and created if not.
    */
-  static TxnState obtain(TxnConfig const &txn_cnf, std::string_view fqdn, const IpEndpoint &addr);
+  static TxnState obtain_outbound(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr);
 
   /** Get the currently existing groups.
    * @param [out] groups parameter - pointers to the groups are pushed in to this container.
@@ -244,9 +244,9 @@ public:
   static void Warning_Bad_Match_Type(std::string_view tag);
 
   // Converters for overridable values for use in the TS API.
-  static const MgmtConverter MIN_CONV;
-  static const MgmtConverter MAX_CONV;
-  static const MgmtConverter MATCH_CONV;
+  static const MgmtConverter MIN_SERVER_CONV;
+  static const MgmtConverter MAX_SERVER_CONV;
+  static const MgmtConverter SERVER_MATCH_CONV;
 
 protected:
   static GlobalConfig *_global_config; ///< Global configuration data.
@@ -278,13 +278,13 @@ protected:
   Imp &instance();
 };
 
-inline OutboundConnTrack::Imp &
-OutboundConnTrack::instance()
+inline ConnectionTracker::Imp &
+ConnectionTracker::instance()
 {
   return _imp;
 }
 
-inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn, int min_keep_alive)
+inline ConnectionTracker::Group::Group(Key const &key, std::string_view fqdn, int min_keep_alive)
   : _hash(key._hash), _match_type(key._match_type), min_keep_alive_conns(min_keep_alive), _key{_addr, _hash, _match_type}
 {
   // store the host name if relevant.
@@ -300,7 +300,7 @@ inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn, in
 }
 
 inline uint64_t
-OutboundConnTrack::Group::hash(const Key &key)
+ConnectionTracker::Group::hash(const Key &key)
 {
   switch (key._match_type) {
   case MATCH_IP:
@@ -317,20 +317,20 @@ OutboundConnTrack::Group::hash(const Key &key)
 }
 
 inline bool
-OutboundConnTrack::TxnState::is_active()
+ConnectionTracker::TxnState::is_active()
 {
   return nullptr != _g;
 }
 
 inline int
-OutboundConnTrack::TxnState::reserve()
+ConnectionTracker::TxnState::reserve()
 {
   _reserved_p = true;
   return ++_g->_count;
 }
 
 inline void
-OutboundConnTrack::TxnState::release()
+ConnectionTracker::TxnState::release()
 {
   if (_reserved_p) {
     _reserved_p = false;
@@ -338,22 +338,22 @@ OutboundConnTrack::TxnState::release()
   }
 }
 
-inline OutboundConnTrack::Group *
-OutboundConnTrack::TxnState::drop()
+inline ConnectionTracker::Group *
+ConnectionTracker::TxnState::drop()
 {
   _reserved_p = false;
   return _g;
 }
 
 inline int
-OutboundConnTrack::TxnState::enqueue()
+ConnectionTracker::TxnState::enqueue()
 {
   _queued_p = true;
   return ++_g->_in_queue;
 }
 
 inline void
-OutboundConnTrack::TxnState::dequeue()
+ConnectionTracker::TxnState::dequeue()
 {
   if (_queued_p) {
     _queued_p = false;
@@ -362,7 +362,7 @@ OutboundConnTrack::TxnState::dequeue()
 }
 
 inline void
-OutboundConnTrack::TxnState::clear()
+ConnectionTracker::TxnState::clear()
 {
   if (_g) {
     this->dequeue();
@@ -372,7 +372,7 @@ OutboundConnTrack::TxnState::clear()
 }
 
 inline void
-OutboundConnTrack::TxnState::update_max_count(int count)
+ConnectionTracker::TxnState::update_max_count(int count)
 {
   auto cmax = _g->_count_max.load();
   if (count > cmax) {
@@ -381,48 +381,46 @@ OutboundConnTrack::TxnState::update_max_count(int count)
 }
 
 inline void
-OutboundConnTrack::TxnState::blocked()
+ConnectionTracker::TxnState::blocked()
 {
   ++_g->_blocked;
 }
 
 /* === Linkage === */
 inline auto
-OutboundConnTrack::Linkage::next_ptr(value_type *value) -> value_type *&
+ConnectionTracker::Linkage::next_ptr(value_type *value) -> value_type *&
 {
   return value->_next;
 }
 
 inline auto
-OutboundConnTrack::Linkage::prev_ptr(value_type *value) -> value_type *&
+ConnectionTracker::Linkage::prev_ptr(value_type *value) -> value_type *&
 {
   return value->_prev;
 }
 
 inline uint64_t
-OutboundConnTrack::Linkage::hash_of(key_type key)
+ConnectionTracker::Linkage::hash_of(key_type key)
 {
   return Group::hash(key);
 }
 
 inline auto
-OutboundConnTrack::Linkage::key_of(value_type *value) -> key_type
+ConnectionTracker::Linkage::key_of(value_type *value) -> key_type
 {
   return value->_key;
 }
 
 inline bool
-OutboundConnTrack::Linkage::equal(key_type lhs, key_type rhs)
+ConnectionTracker::Linkage::equal(key_type lhs, key_type rhs)
 {
   return Group::equal(lhs, rhs);
 }
 /* === */
 
-Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
-
 namespace swoc
 {
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::MatchType type);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group::Key const &key);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group const &g);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::MatchType type);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group::Key const &key);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group const &g);
 } // namespace swoc

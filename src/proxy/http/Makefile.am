@@ -56,8 +56,6 @@ libhttp_a_SOURCES = \
 	Http1ServerTransaction.cc \
 	HttpConfig.cc \
 	HttpConfig.h \
-	HttpConnectionCount.cc \
-	HttpConnectionCount.h \
 	HttpDebugNames.cc \
 	HttpDebugNames.h \
 	HttpPages.cc \

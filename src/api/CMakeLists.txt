@@ -29,7 +29,7 @@ set(TSAPI_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/ts/experimental.h
 )
 
-target_link_libraries(tsapi PRIVATE ts::tscore)
+target_link_libraries(tsapi PRIVATE libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSSL::SSL)
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 add_library(

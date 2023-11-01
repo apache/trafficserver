@@ -56,6 +56,7 @@
 #include "records/RecCore.h"
 #include "../iocore/net/P_SSLConfig.h"
 #include "../iocore/net/P_SSLClientUtils.h"
+#include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLInternal.h"
@@ -8300,16 +8301,16 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->allow_half_open, conv);
     break;
   case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX:
-    ret  = &overridableHttpConfig->outbound_conntrack.max;
-    conv = &OutboundConnTrack::MAX_CONV;
+    ret  = &overridableHttpConfig->connection_tracker_config.server_max;
+    conv = &ConnectionTracker::MAX_SERVER_CONV;
     break;
   case TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS:
-    ret  = &overridableHttpConfig->outbound_conntrack.min;
-    conv = &OutboundConnTrack::MIN_CONV;
+    ret  = &overridableHttpConfig->connection_tracker_config.server_min;
+    conv = &ConnectionTracker::MIN_SERVER_CONV;
     break;
   case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH:
-    ret  = &overridableHttpConfig->outbound_conntrack.match;
-    conv = &OutboundConnTrack::MATCH_CONV;
+    ret  = &overridableHttpConfig->connection_tracker_config.server_match;
+    conv = &ConnectionTracker::SERVER_MATCH_CONV;
     break;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     ret  = &overridableHttpConfig->host_res_data;
