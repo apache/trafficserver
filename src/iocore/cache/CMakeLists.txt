@@ -46,7 +46,7 @@ target_include_directories(inkcache PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 
 target_link_libraries(
   inkcache
-  PUBLIC ts::aio ts::hdrs ts::http ts::inkevent ts::tscore
+  PUBLIC ts::aio ts::hdrs ts::inkevent ts::tscore
   PRIVATE ts::proxy fastlz ZLIB::ZLIB
 )
 

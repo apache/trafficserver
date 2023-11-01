@@ -45,6 +45,45 @@
     Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
+class HttpConfigAccessorImpl : public HttpConfigAccessor
+{
+public:
+  HttpConfigAccessorImpl(const OverridableHttpConfigParams &params) : HttpConfigAccessor(), _params(params) {}
+
+  int8_t
+  get_ignore_accept_mismatch() const override
+  {
+    return this->_params.ignore_accept_mismatch;
+  }
+
+  int8_t
+  get_ignore_accept_charset_mismatch() const override
+  {
+    return this->_params.ignore_accept_charset_mismatch;
+  }
+
+  int8_t
+  get_ignore_accept_encoding_mismatch() const override
+  {
+    return this->_params.ignore_accept_encoding_mismatch;
+  }
+
+  int8_t
+  get_ignore_accept_language_mismatch() const override
+  {
+    return this->_params.ignore_accept_language_mismatch;
+  }
+
+  const char *
+  get_global_user_agent_header() const override
+  {
+    return this->_params.global_user_agent_header;
+  }
+
+private:
+  const OverridableHttpConfigParams &_params;
+};
+
 HttpCacheAction::HttpCacheAction() {}
 
 void
@@ -297,7 +336,8 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   }
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
+  HttpConfigAccessorImpl params{*this->http_params};
+  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &params, this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
