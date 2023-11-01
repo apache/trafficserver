@@ -208,6 +208,45 @@ public:
   }
 
 private:
+  class HttpConfigAccessorImpl : public HttpConfigAccessor
+  {
+  public:
+    HttpConfigAccessorImpl(const OverridableHttpConfigParams *params) : HttpConfigAccessor(), _params(params) {}
+
+    int8_t
+    get_ignore_accept_mismatch() const override
+    {
+      return this->_params->ignore_accept_mismatch;
+    }
+
+    int8_t
+    get_ignore_accept_charset_mismatch() const override
+    {
+      return this->_params->ignore_accept_charset_mismatch;
+    }
+
+    int8_t
+    get_ignore_accept_encoding_mismatch() const override
+    {
+      return this->_params->ignore_accept_encoding_mismatch;
+    }
+
+    int8_t
+    get_ignore_accept_language_mismatch() const override
+    {
+      return this->_params->ignore_accept_language_mismatch;
+    }
+
+    const char *
+    get_global_user_agent_header() const override
+    {
+      return this->_params->global_user_agent_header;
+    }
+
+  private:
+    const OverridableHttpConfigParams *_params = nullptr;
+  };
+
   void do_schedule_in();
   Action *do_cache_open_read(const HttpCacheKey &);
 
@@ -221,10 +260,10 @@ private:
   bool open_write_cb = false;
 
   // Open read parameters
-  int open_read_tries                            = 0;
-  HTTPHdr *read_request_hdr                      = nullptr;
-  const OverridableHttpConfigParams *http_params = nullptr;
-  time_t read_pin_in_cache                       = 0;
+  int open_read_tries       = 0;
+  HTTPHdr *read_request_hdr = nullptr;
+  HttpConfigAccessorImpl http_params{nullptr};
+  time_t read_pin_in_cache = 0;
 
   // Open write parameters
   bool retry_write            = true;
