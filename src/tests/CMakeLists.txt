@@ -71,7 +71,7 @@ macro(add_net_test name)
     ${CMAKE_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc
     ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
     ${ARGN})
-  target_link_libraries(${name} PRIVATE ts::tsapicore ts::inknet ts::configmanager ts::tsapi ts::inknet ts::configmanager)
+  target_link_libraries(${name} PRIVATE ts::tsapicore ts::inknet ts::configmanager ts::tsapi ts::inknet ts::http ts::configmanager)
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
