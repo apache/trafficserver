@@ -37,6 +37,5 @@ target_link_libraries(
   catch2::catch2
   jansson::jansson
   cjose::cjose
-  PCRE::PCRE
 )
 add_test(NAME uri_signing_test COMMAND uri_signing_test)

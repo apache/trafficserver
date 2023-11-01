@@ -30,8 +30,8 @@ add_atsplugin(
 
 target_link_libraries(
   uri_signing
-	PRIVATE
-	cjose::cjose
-	jansson::jansson
-	PCRE::PCRE
+  PRIVATE
+  cjose::cjose
+  PUBLIC
+  jansson::jansson
 )
