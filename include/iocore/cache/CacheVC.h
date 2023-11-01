@@ -49,7 +49,6 @@
 #include <cstdint>
 
 struct Stripe;
-struct Vol;
 class HttpConfigAccessor;
 
 struct CacheVC : public CacheVConnection {
