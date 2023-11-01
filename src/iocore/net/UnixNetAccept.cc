@@ -24,6 +24,7 @@
 #include <tscore/TSSystemState.h>
 #include <tscore/ink_defs.h>
 
+#include "iocore/net/ConnectionTracker.h"
 #include "P_Net.h"
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
@@ -94,7 +95,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
         inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, con.addr,
                                      is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
         con.close();
-        Metrics::increment(net_rsb.per_client_connections_throttled_in);
+        Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
         continue;
       }
       conn_track_group = inbound_tracker.drop();
@@ -104,6 +105,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     if (!vc) {
       goto Ldone; // note: @a con will clean up the socket when it goes out of scope.
     }
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -371,7 +373,7 @@ NetAccept::do_blocking_accept(EThread *t)
         inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, con.addr,
                                      is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
         con.close();
-        Metrics::increment(net_rsb.per_client_connections_throttled_in);
+        Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
         continue;
       }
       conn_track_group = inbound_tracker.drop();
@@ -388,6 +390,7 @@ NetAccept::do_blocking_accept(EThread *t)
     if (unlikely(!vc)) {
       return -1;
     }
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -487,6 +490,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     socklen_t sz = sizeof(con.addr);
     int fd       = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
+    std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
     if (likely(fd >= 0)) {
       // check for throttle
@@ -507,7 +511,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
           inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, con.addr,
                                        is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
           con.close();
-          Metrics::increment(net_rsb.per_client_connections_throttled_in);
+          Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
           continue;
         }
         conn_track_group = inbound_tracker.drop();
@@ -561,6 +565,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
     ink_release_assert(vc);
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);

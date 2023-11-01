@@ -507,6 +507,23 @@ Network
    between `proxy.config.net.max_connections_in` and `proxy.config.net.max_requests_in`
    is the amount of maximum idle (keepalive) connections |TS| will maintain.
 
+.. ts:cv:: CONFIG proxy.config.net.per_client.max_connections_in INT 0
+   :reloadable:
+
+   The total number of concurrent client connections that |TS| will accept from
+   a given client. Any received connections from a client beyond this limit will
+   be immediately closed.  Once the number of concurrent client connections
+   drops below this configured value, |TS| will begin accepting new connections
+   while the number of concurrent connections remains below this limit. A value
+   of 0 disables the per client concurrent connection limit.
+
+.. ts:cv:: CONFIG proxy.config.http.per_client.connection.alert_delay INT 60
+   :reloadable:
+   :units: seconds
+
+   Throttle alerts per client group to be no more often than this many seconds. Summary
+   data is provided per alert to allow log scrubbing to generate accurate data.
+
 .. ts:cv:: CONFIG proxy.config.net.max_requests_in INT 0
 
    The total number of concurrent requests or active client connections

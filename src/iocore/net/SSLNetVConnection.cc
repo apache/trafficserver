@@ -1031,6 +1031,7 @@ SSLNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
+    release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
   con.close();

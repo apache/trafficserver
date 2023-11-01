@@ -22,10 +22,15 @@
 */
 
 #include "P_Net.h"
+
+#include "P_NetAccept.h"
+#include "iocore/net/ConnectionTracker.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
 
 #include <termios.h>
+
+#include <utility>
 
 #define STATE_VIO_OFFSET   ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
@@ -1290,6 +1295,7 @@ UnixNetVConnection::free_thread(EThread *t)
 
   // close socket fd
   if (con.fd != NO_FD) {
+    release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
   con.close();
@@ -1446,6 +1452,23 @@ UnixNetVConnection::remove_from_active_queue()
     nh->remove_from_active_queue(this);
   } else {
     ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+  }
+}
+
+void
+UnixNetVConnection::enable_inbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group)
+{
+  ink_assert(nullptr == conn_track_group);
+  conn_track_group = std::move(group);
+}
+
+void
+UnixNetVConnection::release_inbound_connection_tracking()
+{
+  // Update upstream connection tracking data if present.
+  if (conn_track_group) {
+    conn_track_group->release();
+    conn_track_group.reset();
   }
 }
 

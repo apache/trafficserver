@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <deque>
+#include "P_Net.h" // For Metrics.
 #include "iocore/net/ConnectionTracker.h"
 #include "records/RecCore.h"
 #include "tscpp/util/ts_bw_format.h"
@@ -30,7 +31,8 @@
 
 using namespace std::literals;
 
-ConnectionTracker::Imp ConnectionTracker::_imp;
+ConnectionTracker::TableSingleton ConnectionTracker::_inbound_table;
+ConnectionTracker::TableSingleton ConnectionTracker::_outbound_table;
 
 ConnectionTracker::GlobalConfig *ConnectionTracker::_global_config{nullptr};
 
@@ -127,15 +129,28 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
 }
 
 bool
-Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
+Config_Update_Conntrack_Server_Alert_Delay_Helper(const char *name, RecDataT dtype, RecData data, void *cookie,
+                                                  std::chrono::seconds &alert_delay)
 {
-  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
-
   if (RECD_INT == dtype && data.rec_int >= 0) {
-    config->server_alert_delay = std::chrono::seconds(data.rec_int);
+    alert_delay = std::chrono::seconds(data.rec_int);
     return true;
   }
   return false;
+}
+
+bool
+Config_Update_Conntrack_Server_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+  return Config_Update_Conntrack_Server_Alert_Delay_Helper(name, dtype, data, cookie, config->server_alert_delay);
+}
+
+bool
+Config_Update_Conntrack_Client_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+  return Config_Update_Conntrack_Server_Alert_Delay_Helper(name, dtype, data, cookie, config->client_alert_delay);
 }
 
 } // namespace
@@ -146,10 +161,31 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
+  Enable_Config_Var(CONFIG_CLIENT_VAR_ALERT_DELAY, &Config_Update_Conntrack_Client_Alert_Delay, config_cb, global);
   Enable_Config_Var(CONFIG_SERVER_VAR_MIN, &Config_Update_Conntrack_Min, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
-  Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Server_Alert_Delay, config_cb, global);
+}
+
+ConnectionTracker::TxnState
+ConnectionTracker::obtain_inbound(IpEndpoint const &addr)
+{
+  TxnState zret;
+  CryptoHash hash;
+  Group::Key key{addr, hash, MatchType::MATCH_IP};
+  std::lock_guard<std::mutex> lock(_inbound_table._mutex); // Table lock
+  auto loc = _inbound_table._table.find(key);
+  if (loc != _inbound_table._table.end()) {
+    zret._g = loc->second;
+  } else {
+    zret._g = std::make_shared<Group>(Group::DirectionType::INBOUND, key, "", 0);
+    // Note that we must use zret._g's key, not the above key, because Key's
+    // members are references to the Group's members. Thus the above key's
+    // members are invalid after this function.
+    _inbound_table._table.insert(std::make_pair(zret._g->_key, zret._g));
+  }
+  return zret;
 }
 
 ConnectionTracker::TxnState
@@ -159,15 +195,44 @@ ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fq
   CryptoHash hash;
   CryptoContext().hash_immediate(hash, fqdn.data(), fqdn.size());
   Group::Key key{addr, hash, txn_cnf.server_match};
-  std::lock_guard<std::mutex> lock(_imp._mutex); // Table lock
-  auto loc = _imp._table.find(key);
-  if (loc != _imp._table.end()) {
-    zret._g = loc;
+  std::lock_guard<std::mutex> lock(_outbound_table._mutex); // Table lock
+  auto loc = _outbound_table._table.find(key);
+  if (loc != _outbound_table._table.end()) {
+    zret._g = loc->second;
   } else {
-    zret._g = new Group(key, fqdn, txn_cnf.server_min);
-    _imp._table.insert(zret._g);
+    zret._g = std::make_shared<Group>(Group::DirectionType::OUTBOUND, key, fqdn, txn_cnf.server_min);
+    // Note that we must use zret._g's key, not the above key, because Key's
+    // members are references to the Group's members. Thus the above key's
+    // members are invalid after this function.
+    _outbound_table._table.insert(std::make_pair(zret._g->_key, zret._g));
   }
   return zret;
+}
+
+ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive)
+  : _direction{direction},
+    _hash(key._hash),
+    _match_type(key._match_type),
+    _min_keep_alive_conns(min_keep_alive),
+    _key{_addr, _hash, _match_type},
+    _alert_delay{direction == DirectionType::INBOUND ? _global_config->client_alert_delay : _global_config->server_alert_delay}
+{
+  Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
+  // store the host name if relevant.
+  if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {
+    _fqdn.assign(fqdn);
+  }
+  // store the IP address if relevant.
+  if (MATCH_HOST == _match_type) {
+    _addr.setToAnyAddr(AF_INET);
+  } else {
+    ats_ip_copy(_addr, key._addr);
+  }
+}
+
+ConnectionTracker::Group::~Group()
+{
+  Metrics::Gauge::decrement(net_rsb.connection_tracker_table_size);
 }
 
 bool
@@ -209,7 +274,7 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
   Ticker last_tick{_last_alert};                  // Load the most recent alert time in ticks.
   TimePoint last{TimePoint::duration{last_tick}}; // Most recent alert time in a time_point.
   TimePoint now = Clock::now();                   // Current time_point.
-  if (last + _global_config->server_alert_delay <= now) {
+  if (last + _alert_delay <= now) {
     // it's been long enough, swap out our time for the last time. The winner of this swap
     // does the actual alert, leaving its current time as the last alert time.
     zret = _last_alert.compare_exchange_strong(last_tick, now.time_since_epoch().count());
@@ -220,6 +285,27 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
   return zret;
 }
 
+void
+ConnectionTracker::Group::release()
+{
+  if (_count >= 0) {
+    --_count;
+    if (_count == 0) {
+      TableSingleton &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
+      std::lock_guard<std::mutex> lock(table._mutex); // Table lock
+      if (_count > 0) {
+        // Someone else grabbed the Group between our last check and taking the
+        // lock.
+        return;
+      }
+      table._table.erase(_key);
+    }
+  } else {
+    // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
+    Error("Number of tracked connections should be greater than or equal to zero: %u", _count.load());
+  }
+}
+
 std::time_t
 ConnectionTracker::Group::get_last_alert_epoch_time() const
 {
@@ -227,18 +313,18 @@ ConnectionTracker::Group::get_last_alert_epoch_time() const
 }
 
 void
-ConnectionTracker::get(std::vector<Group const *> &groups)
+ConnectionTracker::get_outbound_groups(std::vector<std::shared_ptr<Group const>> &groups)
 {
-  std::lock_guard<std::mutex> lock(_imp._mutex); // TABLE LOCK
+  std::lock_guard<std::mutex> lock(_outbound_table._mutex); // TABLE LOCK
   groups.resize(0);
-  groups.reserve(_imp._table.count());
-  for (Group const &g : _imp._table) {
-    groups.push_back(&g);
+  groups.reserve(_outbound_table._table.size());
+  for (auto &&[key, group] : _outbound_table._table) {
+    groups.push_back(group);
   }
 }
 
 std::string
-ConnectionTracker::to_json_string()
+ConnectionTracker::outbound_to_json_string()
 {
   std::string text;
   size_t extent = 0;
@@ -256,13 +342,13 @@ ConnectionTracker::to_json_string()
   };
 
   swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
-  std::vector<Group const *> groups;
+  std::vector<std::shared_ptr<Group const>> groups;
 
-  self_type::get(groups);
+  self_type::get_outbound_groups(groups);
 
   null_bw.print(header_fmt, groups.size()).extent();
   for (auto g : groups) {
-    printer(null_bw, g);
+    printer(null_bw, g.get());
   }
   extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
 
@@ -271,7 +357,7 @@ ConnectionTracker::to_json_string()
   w.restrict(trailer.size());
   w.print(header_fmt, groups.size());
   for (auto g : groups) {
-    printer(w, g);
+    printer(w, g.get());
   }
   w.restore(trailer.size());
   w.write(trailer);
@@ -281,16 +367,16 @@ ConnectionTracker::to_json_string()
 void
 ConnectionTracker::dump(FILE *f)
 {
-  std::vector<Group const *> groups;
+  std::vector<std::shared_ptr<Group const>> groups;
 
-  self_type::get(groups);
+  self_type::get_outbound_groups(groups);
 
   if (groups.size()) {
-    fprintf(f, "\nUpstream Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
+    fprintf(f, "\nPeer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
-    for (Group const *g : groups) {
+    for (std::shared_ptr<Group const> g : groups) {
       swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
@@ -336,8 +422,8 @@ ConnectionTracker::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
   if (_g->_blocked > 0 && _g->should_alert(&lat)) {
     auto blocked = _g->_blocked.exchange(0);
     swoc::LocalBufferWriter<256> w;
-    w.print("upstream unblocked: [{}] count={} limit={} group=({}) blocked={} upstream={}\0",
-            swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->server_max, *_g, blocked, addr);
+    w.print("Peer unblocked: [{}] count={} limit={} group=({}) blocked={} peer={}\0", swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv),
+            count, config->server_max, *_g, blocked, addr);
     Debug(DEBUG_TAG, "%s", w.data());
     Note("%s", w.data());
   }
@@ -354,8 +440,7 @@ ConnectionTracker::TxnState::Warn_Blocked(int max_connections, int64_t id, int c
     if (id > 1) {
       w.print("[{}] ", id);
     }
-    w.print("too many connections: count={} limit={} group=({}) blocked={} upstream={}\0", count, max_connections, *_g, blocked,
-            addr);
+    w.print("too many connections: count={} limit={} group=({}) blocked={} peer={}\0", count, max_connections, *_g, blocked, addr);
 
     if (debug_tag) {
       Debug(debug_tag, "%s", w.data());

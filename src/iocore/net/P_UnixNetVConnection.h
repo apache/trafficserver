@@ -31,7 +31,10 @@
 
 #pragma once
 
+#include <memory>
+
 #include "tscore/ink_sock.h"
+#include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
@@ -102,6 +105,15 @@ public:
   // The constructor is public just to avoid compile errors.      //
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
+
+  /** Track this inbound connection for limiting per client connections.
+
+   * @param[in] group ConnectionTracker group to track this connection in.
+   */
+  void enable_inbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group);
+
+  /** Release the inbound connection tracking for this connection. */
+  void release_inbound_connection_tracking();
 
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
@@ -250,6 +262,10 @@ private:
 
   inline static DbgCtl _dbg_ctl_socket{"socket"};
   inline static DbgCtl _dbg_ctl_socket_mptcp{"socket_mptcp"};
+
+  /** The shared group across all connections for this IP to track incoming
+   * connections for connection limiting. */
+  std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
@@ -333,7 +349,10 @@ UnixNetVConnection::cancel_active_timeout()
   next_activity_timeout_at = 0;
 }
 
-inline UnixNetVConnection::~UnixNetVConnection() {}
+inline UnixNetVConnection::~UnixNetVConnection()
+{
+  release_inbound_connection_tracking();
+}
 
 inline SOCKET
 UnixNetVConnection::get_socket()
