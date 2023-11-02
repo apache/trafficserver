@@ -37,6 +37,19 @@
       }
     },
     {
+      "name": "release",
+      "displayName": "Release build",
+      "description": "Release build with Ninja generator",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
+        "CMAKE_INSTALL_PREFIX": "/opt/ats",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON"
+      }
+    },
+    {
       "name": "autest",
       "inherits": ["default"],
       "binaryDir": "${sourceDir}/build-autest",
