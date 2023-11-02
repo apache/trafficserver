@@ -167,7 +167,7 @@ is_empty(char *s)
 */
 int
 HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPHdr *client_request,
-                                        const OverridableHttpConfigParams *http_config_params)
+                                        const HttpConfigAccessor *http_config_params)
 {
   time_t current_age, best_age = CacheHighAgeWatermark;
   time_t t_now         = 0;
@@ -287,7 +287,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
 
 */
 float
-HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams *http_config_param, HTTPHdr *client_request,
+HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_config_param, HTTPHdr *client_request,
                                               HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   // For PURGE requests, any alternate is good really.
@@ -320,7 +320,7 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
   content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
   // Accept: header
-  if (http_config_param->ignore_accept_mismatch & vary_skip_mask) {
+  if (http_config_param->get_ignore_accept_mismatch() & vary_skip_mask) {
     // Ignore it
     q[0] = 1.0;
   } else {
@@ -336,7 +336,7 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
 
   if (q[0] >= 0.0) {
     // Accept-Charset: header
-    if (http_config_param->ignore_accept_charset_mismatch & vary_skip_mask) {
+    if (http_config_param->get_ignore_accept_charset_mismatch() & vary_skip_mask) {
       // Ignore it
       q[1] = 1.0;
     } else {
@@ -354,7 +354,7 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
 
     if (q[1] >= 0.0) {
       // Accept-Encoding: header
-      if (http_config_param->ignore_accept_encoding_mismatch & vary_skip_mask) {
+      if (http_config_param->get_ignore_accept_encoding_mismatch() & vary_skip_mask) {
         // Ignore it
         q[2] = 1.0;
       } else {
@@ -373,7 +373,7 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
 
       if (q[2] >= 0.0) {
         // Accept-Language: header
-        if (http_config_param->ignore_accept_language_mismatch & vary_skip_mask) {
+        if (http_config_param->get_ignore_accept_language_mismatch() & vary_skip_mask) {
           // Ignore it
           q[3] = 1.0;
         } else {
@@ -1130,7 +1130,7 @@ language_wildcard:
 
 */
 Variability_t
-HttpTransactCache::CalcVariability(const OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params, HTTPHdr *client_request,
                                    HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   ink_assert(http_config_params != nullptr);
@@ -1170,13 +1170,14 @@ HttpTransactCache::CalcVariability(const OverridableHttpConfigParams *http_confi
         // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
         // we should ignore Vary: User-Agent.                                                 //
         ////////////////////////////////////////////////////////////////////////////////////////
-        if (http_config_params->global_user_agent_header && !strcasecmp(const_cast<char *>(field->str), "User-Agent")) {
+        if (http_config_params->get_global_user_agent_header() && !strcasecmp(const_cast<char *>(field->str), "User-Agent")) {
           continue;
         }
 
         // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
         // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-        if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp(const_cast<char *>(field->str), "Accept-Encoding")) {
+        if (http_config_params->get_ignore_accept_encoding_mismatch() &&
+            !strcasecmp(const_cast<char *>(field->str), "Accept-Encoding")) {
           continue;
         }
 

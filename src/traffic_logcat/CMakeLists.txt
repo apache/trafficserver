@@ -24,6 +24,7 @@ target_link_libraries(
           ts::inknet
           ts::logging
           ts::hdrs
+          ts::http
           ts::tsapicore
           ts::diagsconfig
           ts::configmanager

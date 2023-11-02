@@ -216,6 +216,36 @@ private:
   MIOBuffer *_write_buffer = nullptr;
 };
 
+class MockHttpConfigAccessor : public HttpConfigAccessor
+{
+public:
+  int8_t
+  get_ignore_accept_mismatch() const override
+  {
+    return 0;
+  }
+  int8_t
+  get_ignore_accept_charset_mismatch() const override
+  {
+    return 0;
+  }
+  int8_t
+  get_ignore_accept_encoding_mismatch() const override
+  {
+    return 0;
+  }
+  int8_t
+  get_ignore_accept_language_mismatch() const override
+  {
+    return 0;
+  }
+  const char *
+  get_global_user_agent_header() const override
+  {
+    return "";
+  }
+};
+
 class CacheReadTest : public CacheTestBase
 {
 public:
@@ -250,7 +280,7 @@ private:
   char *_cursor           = nullptr;
   MIOBuffer *_read_buffer = nullptr;
   IOBufferReader *_reader = nullptr;
-  OverridableHttpConfigParams params;
+  MockHttpConfigAccessor params;
 };
 
 // Does the test use stored cache files, or initialize new files?

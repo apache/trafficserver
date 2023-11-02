@@ -297,7 +297,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   }
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
+  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;

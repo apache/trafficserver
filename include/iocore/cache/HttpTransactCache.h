@@ -31,7 +31,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "proxy/http/HttpConfig.h"
+#include "iocore/cache/HttpConfigAccessor.h"
 
 // This is needed since txn_conf->cache_guaranteed_max_lifetime is currently not
 // readily available in the cache. ToDo: We should fix this with TS-1919
@@ -52,9 +52,9 @@ public:
   /////////////////////////////////
 
   static int SelectFromAlternates(CacheHTTPInfoVector *cache_vector_data, HTTPHdr *client_request,
-                                  const OverridableHttpConfigParams *cache_lookup_http_config_params);
+                                  const HttpConfigAccessor *cache_lookup_http_config_params);
 
-  static float calculate_quality_of_match(const OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+  static float calculate_quality_of_match(const HttpConfigAccessor *http_config_params, HTTPHdr *client_request,
                                           HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response);
 
   static float calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field);
@@ -75,7 +75,7 @@ public:
   // variability & server negotiation routines //
   ///////////////////////////////////////////////
 
-  static Variability_t CalcVariability(const OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+  static Variability_t CalcVariability(const HttpConfigAccessor *http_config_params, HTTPHdr *client_request,
                                        HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response);
 
   static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response,

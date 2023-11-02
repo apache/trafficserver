@@ -1918,8 +1918,8 @@ ink_cache_init(ts::ModuleVersion v)
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request,
-                          const OverridableHttpConfigParams *params, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
+                          time_t pin_in_cache, CacheFragType type)
 {
   return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
 }

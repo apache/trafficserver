@@ -28,6 +28,7 @@
 #include "iocore/aio/AIO.h"
 #include "iocore/cache/CacheDefs.h"
 #include "iocore/cache/Store.h"
+#include "iocore/cache/HttpConfigAccessor.h"
 
 static constexpr ts::ModuleVersion CACHE_MODULE_VERSION(1, 0);
 
@@ -51,7 +52,6 @@ enum { RAM_HIT_COMPRESS_NONE = 1, RAM_HIT_COMPRESS_FASTLZ, RAM_HIT_COMPRESS_LIBZ
 struct CacheVC;
 class CacheEvacuateDocVC;
 struct CacheDisk;
-struct OverridableHttpConfigParams;
 class URL;
 class HTTPHdr;
 class HTTPInfo;
@@ -85,7 +85,7 @@ struct CacheProcessor : public Processor {
                  const char *hostname = nullptr, int host_len = 0);
   Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const OverridableHttpConfigParams *params,
+  Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                     time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);

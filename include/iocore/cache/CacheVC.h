@@ -49,6 +49,7 @@
 #include <cstdint>
 
 struct Stripe;
+class HttpConfigAccessor;
 
 struct CacheVC : public CacheVConnection {
   CacheVC();
@@ -264,7 +265,7 @@ struct CacheVC : public CacheVConnection {
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
-  const OverridableHttpConfigParams *params;
+  const HttpConfigAccessor *params;
   int header_len;        // for communicating with agg_copy
   int frag_len;          // for communicating with agg_copy
   uint32_t write_len;    // for communicating with agg_copy
