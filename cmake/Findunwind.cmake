@@ -29,7 +29,7 @@
 #
 
 find_library(unwind_LIBRARY NAMES unwind)
-find_path(unwind_INCLUDE_DIR NAMES unwind.h)
+find_path(unwind_INCLUDE_DIR NAMES libunwind.h libunwind/libunwind.h)
 
 mark_as_advanced(unwind_FOUND unwind_LIBRARY unwind_INCLUDE_DIR)
 

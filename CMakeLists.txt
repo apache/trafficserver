@@ -315,14 +315,6 @@ elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
 endif()
 
-if(ENABLE_UNWIND)
-  find_package(unwind)
-  if(unwind_FOUND)
-    link_libraries(unwind::unwind)
-  endif()
-  set(TS_USE_REMOTE_UNWINDING ${unwind_FOUND})
-endif()
-
 if(ENABLE_QUICHE)
   find_package(quiche REQUIRED)
 
