@@ -38,8 +38,14 @@ target_link_libraries(
   catch2::catch2
   jansson::jansson
   cjose::cjose
-  ts::http
   ts::tsapi
-  ts::tscpputil
+  ts::http
+  ts::hdrs
+  ts::proxy
+  ts::configmanager
+  ts::logging
+  ts::inknet
+  OpenSSL::SSL
+  OpenSSL::Crypto
 )
 add_test(NAME uri_signing_test COMMAND uri_signing_test)
