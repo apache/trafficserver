@@ -60,6 +60,8 @@ CacheTestHandler::handle_cache_event(int event, CacheTestBase *base)
     base->close();
     delete this;
     break;
+  case CACHE_EVENT_OPEN_READ_RWW:
+    break;
   case CACHE_EVENT_OPEN_READ_FAILED:
   case CACHE_EVENT_OPEN_WRITE_FAILED:
   case VC_EVENT_ERROR:
