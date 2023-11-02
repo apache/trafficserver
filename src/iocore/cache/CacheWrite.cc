@@ -22,6 +22,7 @@
  */
 
 #include "P_Cache.h"
+#include "iocore/cache/AggregateWriteBuffer.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"
 
 #define UINT_WRAP_LTE(_x, _y) (((_y) - (_x)) < INT_MAX)  // exploit overflow
@@ -213,7 +214,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
      agg queue. And if !f.evac_vector && !f.update the alternate->object_size
      is set to vc->total_len
    - f.readers.  If set, assumes that this is an evacuation, so the write
-     is not aborted even if vol->agg_todo_size > agg_write_backlog
+     is not aborted even if vol->get_agg_todo_size() > agg_write_backlog
    - f.evacuator. If this is an evacuation.
    - f.rewrite_resident_alt. The resident alternate is rewritten.
    - f.update. Used only if the write_vector needs to be written to disk.
@@ -246,10 +247,10 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 
   set_agg_write_in_progress();
   POP_HANDLER;
-  agg_len             = vol->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
-  vol->agg_todo_size += agg_len;
-  bool agg_error      = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
-                    (!f.readers && (vol->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
+  agg_len = vol->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
+  vol->add_agg_todo(agg_len);
+  bool agg_error = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
+                    (!f.readers && (vol->get_agg_todo_size() > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
   agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
@@ -261,8 +262,8 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
     Metrics::Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
     Metrics::Counter::increment(cache_rsb.status[op_type].failure);
     Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[op_type].failure);
-    vol->agg_todo_size -= agg_len;
-    io.aio_result       = AIO_SOFT_FAILURE;
+    vol->add_agg_todo(-agg_len);
+    io.aio_result = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
       return EVENT_RETURN;
     }
@@ -270,9 +271,9 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
   }
   ink_assert(agg_len <= AGG_SIZE);
   if (f.evac_vector) {
-    vol->agg.push(this);
+    vol->get_pending_writers().push(this);
   } else {
-    vol->agg.enqueue(this);
+    vol->get_pending_writers().enqueue(this);
   }
   if (!vol->is_io_in_progress()) {
     return vol->aggWrite(event, this);
@@ -396,7 +397,7 @@ Stripe::aggWriteDone(int event, Event *e)
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
       periodic_scan();
     }
-    agg_buf_pos = 0;
+    this->write_buffer.reset_buffer_pos();
     header->write_serial++;
   } else {
     // delete all the directory entries that we inserted
@@ -407,13 +408,13 @@ Stripe::aggWriteDone(int event, Event *e)
         (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
-    for (int done = 0; done < agg_buf_pos;) {
-      Doc *doc = reinterpret_cast<Doc *>(agg_buffer + done);
+    for (int done = 0; done < this->write_buffer.get_buffer_pos();) {
+      Doc *doc = reinterpret_cast<Doc *>(this->write_buffer.get_buffer() + done);
       dir_set_offset(&del_dir, header->write_pos + done);
       dir_delete(&doc->key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
-    agg_buf_pos = 0;
+    this->write_buffer.reset_buffer_pos();
   }
   set_io_not_in_progress();
   // callback ready sync CacheVCs
@@ -430,7 +431,7 @@ Stripe::aggWriteDone(int event, Event *e)
     dir_sync_waiting = false;
     cacheDirSync->handleEvent(EVENT_IMMEDIATE, nullptr);
   }
-  if (agg.head || sync.head) {
+  if (this->write_buffer.get_pending_writers().head || sync.head) {
     return aggWrite(event, e);
   }
   return EVENT_CONT;
@@ -493,16 +494,16 @@ Stripe::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 
-  evacuator->agg_len  = round_to_approx_size((reinterpret_cast<Doc *>(evacuator->buf->data()))->len);
-  agg_todo_size      += evacuator->agg_len;
+  evacuator->agg_len = round_to_approx_size((reinterpret_cast<Doc *>(evacuator->buf->data()))->len);
+  this->write_buffer.add_bytes_pending_aggregation(evacuator->agg_len);
   /* insert the evacuator after all the other evacuators */
-  CacheVC *cur   = static_cast<CacheVC *>(agg.head);
+  CacheVC *cur   = static_cast<CacheVC *>(this->write_buffer.get_pending_writers().head);
   CacheVC *after = nullptr;
   for (; cur && cur->f.evacuator; cur = (CacheVC *)cur->link.next) {
     after = cur;
   }
   ink_assert(evacuator->agg_len <= AGG_SIZE);
-  agg.insert(evacuator, after);
+  this->write_buffer.get_pending_writers().insert(evacuator, after);
   return aggWrite(event, e);
 }
 
@@ -649,7 +650,7 @@ static int
 agg_copy(char *p, CacheVC *vc)
 {
   Stripe *vol = vc->vol;
-  off_t o     = vol->header->write_pos + vol->agg_buf_pos;
+  off_t o     = vol->header->write_pos + vol->get_agg_buf_pos();
 
   if (!vc->f.evacuator) {
     Doc *doc                   = reinterpret_cast<Doc *>(p);
@@ -902,8 +903,8 @@ Lagain:
   this->aggregate_pending_writes(tocall);
 
   // if we got nothing...
-  if (!agg_buf_pos) {
-    if (!agg.head && !sync.head) { // nothing to get
+  if (!this->write_buffer.get_buffer_pos()) {
+    if (!this->write_buffer.get_pending_writers().head && !sync.head) { // nothing to get
       return EVENT_CONT;
     }
     if (header->write_pos == start) {
@@ -911,21 +912,21 @@ Lagain:
       Note("write aggregation exceeds vol size");
       ink_assert(!tocall.head);
       ink_assert(false);
-      while ((c = agg.dequeue())) {
-        agg_todo_size -= c->agg_len;
+      while ((c = this->get_pending_writers().dequeue())) {
+        this->write_buffer.add_bytes_pending_aggregation(-c->agg_len);
         eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
       }
       return EVENT_CONT;
     }
     // start back
-    if (agg.head) {
+    if (this->get_pending_writers().head) {
       agg_wrap();
       goto Lagain;
     }
   }
 
   // evacuate space
-  off_t end = header->write_pos + agg_buf_pos + EVACUATION_SIZE;
+  off_t end = header->write_pos + this->write_buffer.get_buffer_pos() + EVACUATION_SIZE;
   if (evac_range(header->write_pos, end, !header->phase) < 0) {
     goto Lwait;
   }
@@ -935,18 +936,19 @@ Lagain:
     }
   }
 
-  // if agg.head, then we are near the end of the disk, so
+  // if write_buffer.get_pending_writers.head, then we are near the end of the disk, so
   // write down the aggregation in whatever size it is.
-  if (agg_buf_pos < AGG_HIGH_WATER && !agg.head && !sync.head && !dir_sync_waiting) {
+  if (this->write_buffer.get_buffer_pos() < AGG_HIGH_WATER && !this->write_buffer.get_pending_writers().head && !sync.head &&
+      !dir_sync_waiting) {
     goto Lwait;
   }
 
   // write sync marker
-  if (!agg_buf_pos) {
+  if (!this->write_buffer.get_buffer_pos()) {
     ink_assert(sync.head);
-    int l       = round_to_approx_size(sizeof(Doc));
-    agg_buf_pos = l;
-    Doc *d      = reinterpret_cast<Doc *>(agg_buffer);
+    int l = round_to_approx_size(sizeof(Doc));
+    this->write_buffer.seek(l);
+    Doc *d = reinterpret_cast<Doc *>(this->write_buffer.get_buffer());
     memset(static_cast<void *>(d), 0, sizeof(Doc));
     d->magic        = DOC_MAGIC;
     d->len          = l;
@@ -955,12 +957,12 @@ Lagain:
   }
 
   // set write limit
-  header->agg_pos = header->write_pos + agg_buf_pos;
+  header->agg_pos = header->write_pos + this->write_buffer.get_buffer_pos();
 
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_offset = header->write_pos;
-  io.aiocb.aio_buf    = agg_buffer;
-  io.aiocb.aio_nbytes = agg_buf_pos;
+  io.aiocb.aio_buf    = this->write_buffer.get_buffer();
+  io.aiocb.aio_nbytes = this->write_buffer.get_buffer_pos();
   io.action           = this;
   /*
     Callback on AIO thread so that we can issue a new write ASAP
@@ -986,22 +988,22 @@ Lwait:
 void
 Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall)
 {
-  for (auto *c = static_cast<CacheVC *>(this->agg.head); c;) {
+  for (auto *c = static_cast<CacheVC *>(this->write_buffer.get_pending_writers().head); c;) {
     int writelen = c->agg_len;
     // [amc] this is checked multiple places, on here was it strictly less.
     ink_assert(writelen <= AGG_SIZE);
-    if (this->agg_buf_pos + writelen > AGG_SIZE ||
-        this->header->write_pos + this->agg_buf_pos + writelen > (this->skip + this->len)) {
+    if (this->write_buffer.get_buffer_pos() + writelen > AGG_SIZE ||
+        this->header->write_pos + this->write_buffer.get_buffer_pos() + writelen > (this->skip + this->len)) {
       break;
     }
-    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->agg_buf_pos, this->header->write_pos + this->agg_buf_pos,
-         c->first_key.slice32(0));
-    int wrotelen = agg_copy(this->agg_buffer + this->agg_buf_pos, c);
+    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->write_buffer.get_buffer_pos(),
+         this->header->write_pos + this->write_buffer.get_buffer_pos(), c->first_key.slice32(0));
+    int wrotelen = agg_copy(this->write_buffer.get_buffer() + this->write_buffer.get_buffer_pos(), c);
     ink_assert(writelen == wrotelen);
-    this->agg_todo_size -= writelen;
-    this->agg_buf_pos   += writelen;
-    CacheVC *n           = (CacheVC *)c->link.next;
-    this->agg.dequeue();
+    this->write_buffer.add_bytes_pending_aggregation(-writelen);
+    this->write_buffer.add_buffer_pos(writelen);
+    CacheVC *n = (CacheVC *)c->link.next;
+    this->write_buffer.get_pending_writers().dequeue();
     if (c->f.sync && c->f.use_first_key) {
       CacheVC *last = this->sync.tail;
       while (last && UINT_WRAP_LT(c->write_serial, last->write_serial)) {

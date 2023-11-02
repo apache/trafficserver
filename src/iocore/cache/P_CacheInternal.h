@@ -372,7 +372,7 @@ Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   Stripe *vol    = this;
   bool agg_error = false;
   if (!cont->f.remove) {
-    agg_error = (!cont->f.update && agg_todo_size > cache_config_agg_write_backlog);
+    agg_error = (!cont->f.update && this->get_agg_todo_size() > cache_config_agg_write_backlog);
 #ifdef CACHE_AGG_FAIL_RATE
     agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
@@ -546,7 +546,7 @@ CacheRemoveCont::event_handler(int event, void *data)
 }
 
 struct CacheHostRecord;
-struct Stripe;
+class Stripe;
 class CacheHostTable;
 
 struct Cache {

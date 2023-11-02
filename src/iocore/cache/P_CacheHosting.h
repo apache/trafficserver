@@ -30,7 +30,7 @@
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
-struct Stripe;
+class Stripe;
 struct CacheVol;
 
 struct CacheHostResult;
