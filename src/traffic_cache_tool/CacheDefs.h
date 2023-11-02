@@ -34,7 +34,7 @@
 
 #include "tscore/Version.h"
 #include "tscore/ink_memory.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
 

@@ -28,12 +28,14 @@
 #include <vector>
 #include <memory>
 
-#include "tscore/ink_config.h"
+#include "swoc/MemSpan.h"
 
-#ifdef HAVE_PCRE_PCRE_H
+#if __has_include("pcre/pcre.h")
 #include <pcre/pcre.h>
-#else
+#elif __has_include("pcre.h")
 #include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
 #endif
 
 /// Match flags for regular expression evaluation.
@@ -89,6 +91,20 @@ public:
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
   bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
+
+  /** Execute the regular expression.
+   *
+   * @param str String to match against.
+   * @param ovector Capture results.
+   * @param ovecsize Number of elements in @a ovector.
+   * @return @c true if the pattern matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   *
+   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
+   * be a multiple of 3 and at least three times the number of desired capture groups.
+   */
+  bool exec(std::string_view str, swoc::MemSpan<int> groups) const;
 
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();

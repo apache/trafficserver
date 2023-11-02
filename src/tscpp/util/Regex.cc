@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include <array>
+#include "tscpp/util/Regex.h"
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_thread.h"
-#include "tscore/ink_memory.h"
-#include "tscore/Regex.h"
+#include <array>
+#include <assert.h>
+
+#include "tscore/ink_memory.h" // ats_pagesize()
 
 #ifdef PCRE_CONFIG_JIT
 /*
@@ -48,6 +48,7 @@ struct JitStackCleanup {
     }
   }
 };
+
 thread_local JitStackCleanup jsc;
 
 pcre_jit_stack *
@@ -124,7 +125,7 @@ bool
 Regex::exec(std::string_view const &str) const
 {
   std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
-  return this->exec(str, ovector.data(), ovector.size());
+  return this->exec(str, ovector);
 }
 
 bool
@@ -134,6 +135,12 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 
   rv = pcre_exec(regex, regex_extra, str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
   return rv > 0;
+}
+
+bool
+Regex::exec(std::string_view str, swoc::MemSpan<int> groups) const
+{
+  return 0 < pcre_exec(regex, regex_extra, str.data(), int(str.size()), 0, 0, groups.data(), int(groups.count()));
 }
 
 Regex::~Regex()
@@ -172,7 +179,7 @@ DFA::build(std::string_view const &pattern, unsigned flags)
 int
 DFA::compile(std::string_view const &pattern, unsigned flags)
 {
-  ink_assert(_patterns.empty());
+  assert(_patterns.empty());
   this->build(pattern, flags);
   return _patterns.size();
 }

@@ -46,7 +46,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscpp/util/ts_bw.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/ConnectionTracker.h"

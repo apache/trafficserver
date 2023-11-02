@@ -28,7 +28,7 @@
 #include <cstring>
 #include <iostream>
 #include <string_view>
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 
 /// XXX Use DFA or Regex wrappers?
 #ifdef HAVE_PCRE_PCRE_H

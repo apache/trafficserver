@@ -54,7 +54,6 @@ add_library(
   MatcherUtils.cc
   ParseRules.cc
   Random.cc
-  Regex.cc
   Regression.cc
   SourceLocation.cc
   TextBuffer.cc
@@ -150,7 +149,6 @@ if(BUILD_TESTING)
     unit_tests/test_PriorityQueue.cc
     unit_tests/test_Ptr.cc
     unit_tests/test_Random.cc
-    unit_tests/test_Regex.cc
     unit_tests/test_Throttler.cc
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
