@@ -4783,61 +4783,6 @@ removed in the future without prior notice.
 
    This value will be advertised as ``max_ack_delay`` Transport Parameter.
 
-
-.. ts:cv:: CONFIG proxy.config.quic.loss_detection.packet_threshold INT 3
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.loss_detection.time_threshold FLOAT 1.25
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.loss_detection.granularity INT 1
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.loss_detection.initial_rtt INT 1
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.max_datagram_size INT 1200
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.initial_window INT 12000
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.minimum_window INT 2400
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.loss_reduction_factor FLOAT 0.5
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.persistent_congestion_threshold INT 2
-   :reloadable:
-
-   This is just for debugging. Do not change it from the default value unless
-   you really understand what this is.
-
 .. ts:cv:: CONFIG proxy.config.quic.active_cid_limit_in INT 2
    :reloadable:
 
