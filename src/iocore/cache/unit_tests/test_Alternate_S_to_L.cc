@@ -135,6 +135,8 @@ public:
       base->do_io_read();
       validate_content_type(base);
       break;
+    case CACHE_EVENT_OPEN_READ_RWW:
+      break;
     case VC_EVENT_READ_READY:
       base->reenable();
       break;
