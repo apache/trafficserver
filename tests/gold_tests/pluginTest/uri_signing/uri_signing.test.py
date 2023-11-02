@@ -77,7 +77,8 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'uri_signing|http',
-    #  'proxy.config.diags.debug.tags': 'uri_signing',
+    # 'proxy.config.plugin.dynamic_reload_mode': 0,
+    # 'proxy.config.diags.debug.tags': 'uri_signing',
 })
 
 # Use unchanged incoming URL.
@@ -203,7 +204,6 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-
 
 # 12 - Check missing iss from the payload
 tr = Test.AddTestRun("Missing iss field in the payload")

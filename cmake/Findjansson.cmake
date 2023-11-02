@@ -15,32 +15,35 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(block_errors)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(cookie_remap)
-add_subdirectory(custom_redirect)
-add_subdirectory(fq_pacing)
-add_subdirectory(geoip_acl)
-add_subdirectory(header_freq)
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
-add_subdirectory(maxmind_acl)
-add_subdirectory(memcache)
-add_subdirectory(memory_profile)
-add_subdirectory(money_trace)
-add_subdirectory(mp4)
-add_subdirectory(rate_limit)
-add_subdirectory(redo_cache_lookup)
-add_subdirectory(sslheaders)
-add_subdirectory(stek_share)
-add_subdirectory(stream_editor)
-add_subdirectory(system_stats)
-add_subdirectory(tls_bridge)
-if(USE_CJOSE AND USE_JANSSON)
-  add_subdirectory(uri_signing)
+# Findjansson.cmake
+#
+# This will define the following variables
+#
+#     jansson_FOUND
+#     jansson_LIBRARY
+#     jansson_INCLUDE_DIRS
+#
+# and the following imported targets
+#
+#     jansson::jansson
+#
+
+find_library(jansson_LIBRARY NAMES jansson)
+find_path(jansson_INCLUDE_DIR NAMES jansson.h)
+
+mark_as_advanced(jansson_FOUND jansson_LIBRARY jansson_INCLUDE_DIR)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(jansson
+    REQUIRED_VARS jansson_LIBRARY jansson_INCLUDE_DIR
+)
+
+if(jansson_FOUND)
+    set(jansson_INCLUDE_DIRS ${jansson_INCLUDE_DIR})
 endif()
-add_subdirectory(url_sig)
+
+if(jansson_FOUND AND NOT TARGET jansson::jansson)
+    add_library(jansson::jansson INTERFACE IMPORTED)
+    target_include_directories(jansson::jansson INTERFACE ${jansson_INCLUDE_DIRS})
+    target_link_libraries(jansson::jansson INTERFACE "${jansson_LIBRARY}")
+endif()
