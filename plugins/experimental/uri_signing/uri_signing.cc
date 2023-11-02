@@ -154,17 +154,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   static char const *const package = "URISigningPackage";
 
-  struct timer t;
-  start_timer(&t);
-
-  const int max_cpi          = 20;
-  int64_t checkpoints[20]    = {0};
-  int cpi                    = 0;
   int url_ct                 = 0;
   const char *url            = nullptr;
   char *strip_uri            = nullptr;
   TSRemapStatus status       = TSREMAP_NO_REMAP;
-  bool checked_auth          = false;
   struct jwt *jwt            = nullptr;
   int checked_cookies        = 0;
   size_t client_cookie_sz_ct = 0;
@@ -174,29 +167,31 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   size_t strip_ct            = 0;
   cjose_jws_t *jws           = nullptr;
 
-  auto check_cookies = [&](bool more) -> bool {
-    if (!more) {
-      /* There is no valid token in the url */
+  // check the pristine url for a jws, strip if requested
+  // continue if valid auth_directive found (passthrough)
+  // check url for valid jwt
+  // else check all cookies for valid jwt
+  // else 403
+
+  // caller must check
+  auto check_next_cookie = [&]() -> bool {
+    if (0 == checked_cookies) { // first call
+      // There is no valid token in the url
       strncpy(strip_uri, url, url_ct);
       strip_ct = url_ct;
       ++checked_cookies;
 
-      TSMLoc field;
-      TSMBuffer buffer;
-      TSMLoc hdr;
+      TSMBuffer buffer = nullptr;
+      TSMLoc hdr       = TS_NULL_MLOC;
 
       if (TSHttpTxnClientReqGet(txnp, &buffer, &hdr) == TS_ERROR) {
         return false;
       }
 
-      field = TSMimeHdrFieldFind(buffer, hdr, "Cookie", 6);
+      TSMLoc field = TSMimeHdrFieldFind(buffer, hdr, "Cookie", 6);
       if (field == TS_NULL_MLOC) {
         TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
-        if (!checked_auth) {
-          return true;
-        } else {
-          return false;
-        }
+        return false;
       }
 
       client_cookie = TSMimeHdrFieldValueStringGet(buffer, hdr, field, 0, &client_cookie_ct);
@@ -205,34 +200,29 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
 
       if (!client_cookie || !client_cookie_ct) {
-        if (!checked_auth) {
-          return true;
-        } else {
-          return false;
-        }
+        return false;
       }
       client_cookie_sz_ct = client_cookie_ct;
-    }
-    if (cpi < max_cpi) {
-      checkpoints[cpi++] = mark_timer(&t);
     }
     jws = get_jws_from_cookie(&client_cookie, &client_cookie_sz_ct, package);
     return true;
   };
 
-  TSMBuffer mbuf;
-  TSMLoc ul;
-  TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
+  // function start
+
+  // Check the pristine url
+  TSMBuffer mbuf        = NULL;
+  TSMLoc ul             = TS_NULL_MLOC;
+  TSReturnCode const rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
   if (rc != TS_SUCCESS) {
     PluginError("Failed call to TSHttpTxnPristineUrlGet()");
     goto fail;
   }
-  url = TSUrlStringGet(mbuf, ul, &url_ct);
 
+  url = TSUrlStringGet(mbuf, ul, &url_ct);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, ul);
 
   PluginDebug("Processing request for %.*s.", url_ct, url);
-  checkpoints[cpi++] = mark_timer(&t);
 
   strip_size = url_ct + 1;
   strip_uri  = static_cast<char *>(TSmalloc(strip_size));
@@ -240,57 +230,50 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   jws = get_jws_from_uri(url, url_ct, package, strip_uri, strip_size, &strip_ct);
 
-  checkpoints[cpi++] = mark_timer(&t);
-  if (!jws) {
-    if (!check_cookies(false)) {
-      goto fail;
-    }
-  } else {
-    /* There has been a JWS found in the url */
-    /* Strip the token from the URL for upstream if configured to do so */
-    if (config_strip_token(static_cast<struct config *>(ih))) {
-      if (static_cast<int>(strip_ct) != url_ct) {
-        int map_url_ct      = 0;
-        char *map_url       = nullptr;
-        char *map_strip_uri = nullptr;
-        map_url             = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &map_url_ct);
+  // if jws found in uri strip if configured
+  if (nullptr != jws) {
+    if (config_strip_token(static_cast<struct config *>(ih)) && static_cast<int>(strip_ct) != url_ct) {
+      int map_url_ct      = 0;
+      char *map_url       = nullptr;
+      char *map_strip_uri = nullptr;
+      map_url             = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &map_url_ct);
 
-        PluginDebug("Stripping Token from requestUrl: %s", map_url);
+      PluginDebug("Stripping Token from requestUrl: %s", map_url);
 
-        int map_strip_size = map_url_ct + 1;
-        map_strip_uri      = static_cast<char *>(TSmalloc(map_strip_size));
-        memset(map_strip_uri, 0, map_strip_size);
-        size_t map_strip_ct = 0;
+      int map_strip_size = map_url_ct + 1;
+      map_strip_uri      = static_cast<char *>(TSmalloc(map_strip_size));
+      memset(map_strip_uri, 0, map_strip_size);
+      size_t map_strip_ct = 0;
 
-        cjose_jws_t *map_jws = get_jws_from_uri(map_url, map_url_ct, package, map_strip_uri, map_strip_size, &map_strip_ct);
-        cjose_jws_release(map_jws);
+      cjose_jws_t *map_jws = get_jws_from_uri(map_url, map_url_ct, package, map_strip_uri, map_strip_size, &map_strip_ct);
+      cjose_jws_release(map_jws);
 
-        char const *strip_uri_start = map_strip_uri;
+      char const *strip_uri_start = map_strip_uri;
 
-        /* map_strip_uri is null terminated */
-        size_t const mlen         = strlen(strip_uri_start);
-        char const *strip_uri_end = strip_uri_start + mlen;
+      /* map_strip_uri is null terminated */
+      size_t const mlen         = strlen(strip_uri_start);
+      char const *strip_uri_end = strip_uri_start + mlen;
 
-        PluginDebug("Stripping token from upstream url to: %.*s", (int)mlen, strip_uri_start);
+      PluginDebug("Stripping token from upstream url to: %.*s", (int)mlen, strip_uri_start);
 
-        TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, &strip_uri_start, strip_uri_end);
-        if (map_url != nullptr) {
-          TSfree(map_url);
-        }
-        if (map_strip_uri != nullptr) {
-          TSfree(map_strip_uri);
-        }
-
-        if (parse_rc != TS_PARSE_DONE) {
-          PluginDebug("Error in TSUrlParse");
-          goto fail;
-        }
-        status = TSREMAP_DID_REMAP;
+      TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, &strip_uri_start, strip_uri_end);
+      if (map_url != nullptr) {
+        TSfree(map_url);
       }
+      if (map_strip_uri != nullptr) {
+        TSfree(map_strip_uri);
+      }
+
+      if (parse_rc != TS_PARSE_DONE) {
+        PluginDebug("Error in TSUrlParse");
+        goto fail;
+      }
+      status = TSREMAP_DID_REMAP;
     }
   }
-  /* Check auth_dir and pass through if configured */
-  if (uri_matches_auth_directive(static_cast<struct config *>(ih), url, url_ct)) {
+
+  // Check auth_dir and pass through if configured
+  if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
     PluginDebug("Auth directive matched for %.*s", url_ct, url);
     if (url != nullptr) {
       TSfree((void *)url);
@@ -300,32 +283,32 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
     return TSREMAP_NO_REMAP;
   }
-  checked_auth = true;
 
-  if (!jws) {
-    goto fail;
+  // check if valid jwt can be found in the uri jws
+  if (nullptr != jws) {
+    jwt = validate_jws(jws, static_cast<struct config *>(ih), strip_uri, strip_ct);
+    cjose_jws_release(jws);
+    jws = nullptr;
   }
 
-  if (cpi < max_cpi) {
-    checkpoints[cpi++] = mark_timer(&t);
+  // if no jws in url, check all cookies
+  while (nullptr == jwt) {
+    // no more cookies or no more jws from the cookie
+    if (!check_next_cookie() || nullptr == jws) {
+      goto fail;
+    }
+
+    jwt = validate_jws(jws, static_cast<struct config *>(ih), strip_uri, strip_ct);
+    cjose_jws_release(jws);
+    jws = nullptr;
   }
 
-  jwt = validate_jws(jws, static_cast<struct config *>(ih), strip_uri, strip_ct);
-  cjose_jws_release(jws);
-
-  if (cpi < max_cpi) {
-    checkpoints[cpi++] = mark_timer(&t);
-  }
-  if (jwt || check_cookies(checked_cookies)) {
-    /* There has been a validated JWT found in either the cookie or url */
-
+  // There has been a validated JWT found in either the cookie or url
+  if (nullptr != jwt) {
     struct signer *signer = config_signer(static_cast<struct config *>(ih));
     char *cookie          = renew(jwt, signer->issuer, signer->jwk, signer->alg, package, strip_uri, strip_ct);
     jwt_delete(jwt);
 
-    if (cpi < max_cpi) {
-      checkpoints[cpi++] = mark_timer(&t);
-    }
     if (cookie) {
       PluginDebug("Scheduling cookie callback for %.*s", url_ct, url);
       TSCont cont = cont_new(cookie);
@@ -333,13 +316,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     } else {
       PluginDebug("No cookie scheduled for %.*s", url_ct, url);
     }
-
-    int64_t last_mark = 0;
-    for (int i = 0; i < cpi; ++i) {
-      PluginDebug("Spent %" PRId64 " ns in checkpoint %d.", checkpoints[i] - last_mark, i);
-      last_mark = checkpoints[i];
-    }
-    PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
 
     TSfree((void *)url);
     if (strip_uri != nullptr) {
@@ -351,7 +327,6 @@ fail:
   TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
   if (url != nullptr) {
     PluginDebug("Invalid JWT for %.*s", url_ct, url);
-    PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
     TSfree((void *)url);
   }
   if (strip_uri != nullptr) {
