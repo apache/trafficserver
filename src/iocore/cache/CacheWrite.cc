@@ -899,35 +899,7 @@ Stripe::aggWrite(int event, void * /* e ATS_UNUSED */)
   cancel_trigger();
 
 Lagain:
-  // calculate length of aggregated write
-  for (c = static_cast<CacheVC *>(agg.head); c;) {
-    int writelen = c->agg_len;
-    // [amc] this is checked multiple places, on here was it strictly less.
-    ink_assert(writelen <= AGG_SIZE);
-    if (agg_buf_pos + writelen > AGG_SIZE || header->write_pos + agg_buf_pos + writelen > (skip + len)) {
-      break;
-    }
-    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", agg_buf_pos, header->write_pos + agg_buf_pos,
-         c->first_key.slice32(0));
-    int wrotelen = agg_copy(agg_buffer + agg_buf_pos, c);
-    ink_assert(writelen == wrotelen);
-    agg_todo_size -= writelen;
-    agg_buf_pos   += writelen;
-    CacheVC *n     = (CacheVC *)c->link.next;
-    agg.dequeue();
-    if (c->f.sync && c->f.use_first_key) {
-      CacheVC *last = sync.tail;
-      while (last && UINT_WRAP_LT(c->write_serial, last->write_serial)) {
-        last = (CacheVC *)last->link.prev;
-      }
-      sync.insert(c, last);
-    } else if (c->f.evacuator) {
-      c->handleEvent(AIO_EVENT_DONE, nullptr);
-    } else {
-      tocall.enqueue(c);
-    }
-    c = n;
-  }
+  this->aggregate_pending_writes(tocall);
 
   // if we got nothing...
   if (!agg_buf_pos) {
@@ -1009,6 +981,40 @@ Lwait:
     }
   }
   return ret;
+}
+
+void
+Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall)
+{
+  for (auto *c = static_cast<CacheVC *>(this->agg.head); c;) {
+    int writelen = c->agg_len;
+    // [amc] this is checked multiple places, on here was it strictly less.
+    ink_assert(writelen <= AGG_SIZE);
+    if (this->agg_buf_pos + writelen > AGG_SIZE ||
+        this->header->write_pos + this->agg_buf_pos + writelen > (this->skip + this->len)) {
+      break;
+    }
+    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->agg_buf_pos, this->header->write_pos + this->agg_buf_pos,
+         c->first_key.slice32(0));
+    int wrotelen = agg_copy(this->agg_buffer + this->agg_buf_pos, c);
+    ink_assert(writelen == wrotelen);
+    this->agg_todo_size -= writelen;
+    this->agg_buf_pos   += writelen;
+    CacheVC *n           = (CacheVC *)c->link.next;
+    this->agg.dequeue();
+    if (c->f.sync && c->f.use_first_key) {
+      CacheVC *last = this->sync.tail;
+      while (last && UINT_WRAP_LT(c->write_serial, last->write_serial)) {
+        last = (CacheVC *)last->link.prev;
+      }
+      this->sync.insert(c, last);
+    } else if (c->f.evacuator) {
+      c->handleEvent(AIO_EVENT_DONE, nullptr);
+    } else {
+      tocall.enqueue(c);
+    }
+    c = n;
+  }
 }
 
 int
