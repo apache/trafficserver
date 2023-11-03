@@ -203,7 +203,7 @@ Building
 
 To build from source, you will need these libraries installed:
 
-  - `cjose <https://github.com/cisco/cjose>`_
+  - `cjose <https://github.com/OpenIDC/cjose>`_
   - `jansson <https://github.com/akheron/jansson>`_
   - pcre
   - OpenSSL
@@ -253,7 +253,7 @@ If using local cjose:
 .. code-block:: Bash
 
     cd ${HOME}/git
-    git clone https://github.com/cisco/cjose.git
+    git clone https://github.com/OpenIDC/cjose.git
     cd cjose
     autoreconf -i
     ./configure --with-jansson=${HOME}/git/jansson --disable-shared CC="gcc -fpic"

@@ -26,8 +26,6 @@ add_executable(
   ${PROJECT_SOURCE_DIR}/match.cc
   ${PROJECT_SOURCE_DIR}/normalize.cc
   ${PROJECT_SOURCE_DIR}/parse.cc
-  ${PROJECT_SOURCE_DIR}/timing.cc
-  ${PROJECT_SOURCE_DIR}/uri_signing.cc
 )
 target_compile_definitions(uri_signing_test PRIVATE UNITTEST)
 target_include_directories(uri_signing_test PRIVATE ${PROJECT_SOURCE_DIR})
