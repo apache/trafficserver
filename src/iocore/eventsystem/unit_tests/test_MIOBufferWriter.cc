@@ -42,7 +42,7 @@ struct MIOBuffer {
 
 #define UNIT_TEST_BUFFER_WRITER
 #include "iocore/eventsystem/MIOBufferWriter.h"
-#include "MIOBufferWriter.cc"
+#include "../MIOBufferWriter.cc"
 
 IOBufferBlock iobb[1];
 unsigned int iobbIdx{0};

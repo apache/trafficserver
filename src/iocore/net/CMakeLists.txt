@@ -94,7 +94,7 @@ if(TS_USE_QUIC)
   target_link_libraries(inknet PUBLIC quiche::quiche ts::quic)
 endif()
 
-if(BUILD_REGRESSION_TESTING)
+if(BUILD_REGRESSION_TESTING OR BUILD_TESTING)
   target_sources(inknet PRIVATE NetVCTest.cc)
 endif()
 
@@ -102,20 +102,38 @@ target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 
 target_link_libraries(
   inknet
-  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL
+  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL ts::tsapicommon
   PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
 )
 
+# Is this necessary?
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(inknet PUBLIC ts::inkuring)
 endif()
 
-# Fails to link because of circular dep with proxy (ParentSelection)
-# add_executable(test_net unit_tests/test_ProxyProtocol.cc)
-# target_link_libraries(test_net records_p inknet inkevent tscore yaml-cpp libswoc)
-# target_include_directories(test_net PRIVATE
-#         ${CMAKE_SOURCE_DIR}/include
-#         ${CMAKE_SOURCE_DIR}/iocore/net
-#         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-#         ${CATCH_INCLUDE_DIR}
-# )
+if(BUILD_TESTING)
+  add_executable(test_net
+    libinknet_stub.cc
+    NetVCTest.cc
+    unit_tests/test_ProxyProtocol.cc
+    unit_tests/test_SSLSNIConfig.cc
+    unit_tests/test_YamlSNIConfig.cc
+    unit_tests/unit_test_main.cc
+  )
+  target_link_libraries(test_net
+    PRIVATE
+    ts::tsapicore
+    ts::inknet
+    ts::configmanager
+    ts::inknet
+    ts::http
+    ts::configmanager
+    ts::overridable_txn_vars
+    ts::hdrs
+    ts::proxy
+    catch2::catch2
+  )
+  set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
+  target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
+  add_test(NAME test_net COMMAND test_net)
+endif()

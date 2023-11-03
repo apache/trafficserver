@@ -46,7 +46,7 @@ endif()
 target_link_libraries(
   proxy
   PUBLIC ts::inkcache ts::inkevent ts::tsapicore ts::tscore
-  PRIVATE ts::jsonrpc_protocol ts::inkutils
+  PRIVATE ts::jsonrpc_protocol ts::inkutils ts::tsapicommon
 )
 
 add_subdirectory(hdrs)

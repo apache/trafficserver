@@ -24,3 +24,13 @@ target_link_libraries(aio PUBLIC ts::inkevent ts::tscore)
 if(TS_USE_LINUX_IO_URING)
   target_link_libraries(aio PUBLIC ts::inkuring)
 endif()
+
+if(BUILD_TESTING)
+  add_executable(test_AIO test_AIO.cc)
+  target_link_libraries(test_AIO ts::aio)
+  add_test(
+    NAME test_AIO
+    COMMAND $<TARGET_FILE:test_AIO>
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/iocore/aio
+  )
+endif()

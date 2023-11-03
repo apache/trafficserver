@@ -46,7 +46,7 @@ add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 target_link_libraries(
   rpcpublichandlers
   PUBLIC ts::overridable_txn_vars ts::tscore
-  PRIVATE ts::inkcache ts::proxy ts::tsapicore
+  PRIVATE ts::inkcache ts::proxy ts::tsapicore ts::tsapicommon
 )
 
 if(BUILD_TESTING)
