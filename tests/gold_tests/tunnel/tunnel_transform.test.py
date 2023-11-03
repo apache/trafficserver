@@ -18,6 +18,10 @@
 
 import os
 import subprocess
+import sys
+from ports import get_port
+import re
+
 Test.Summary = '''
 Test the reported type of HTTP transactions and tunnels
 '''
@@ -62,17 +66,32 @@ ts.Disk.sni_yaml.AddLines([
     "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
 ])
 
+# Set up simple forwarding proxy to keep track of TLS bytes for both
+# directions
+tr = Test.AddTestRun("Run dumb proxy and send tunnel request.")
+tr.Setup.CopyAs('dumb_proxy.py', tr.RunDirectory)
+dumb_proxy = tr.Processes.Process(
+    f'dumb-proxy')
+proxy_port = get_port(dumb_proxy, "listening_port")
+dumb_proxy.Command = f'{sys.executable} dumb_proxy.py --listening_port {proxy_port} --forwarding_port {ts.Variables.ssl_port}'
+dumb_proxy.StartBefore(Test.Processes.ts)
+dumb_proxy.Ready = When.PortOpenv4(proxy_port)
+dumb_proxy.ReturnCode = 0
+# Record the log file path for later verification.
+proxy_output = dumb_proxy.Streams.stdout.AbsPath
+
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
 cmd_tunnel = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
-    ts.Variables.ssl_port)
+    proxy_port)
 
 # Send the tunnel request
-tr = Test.AddTestRun("send tunnel request")
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = cmd_tunnel
 tr.Processes.Default.ReturnCode = 0
+tr.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(dumb_proxy)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -116,30 +135,32 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-check_input_range = '''
-val=`traffic_ctl metric get tunnel_transform.ua.bytes_sent | cut -d ' ' -f 2; test $val -gt 700
-'''
+
+def get_expected_bytes(path_to_proxy_output, key):
+    # Construct the regex pattern.
+    pattern = re.compile(rf'{re.escape(key)}:\s+(\d+)')
+    with open(path_to_proxy_output, 'r') as file:
+        log_content = file.read()
+    bytes_transferred = 0
+    match = pattern.search(log_content)
+    if match:
+        bytes_transferred = int(match.group(1))
+    return bytes_transferred
 
 
-def check_range(path, lo, hi):
-    f = open(path, 'r')
+def check_byte_count(plugin_metric_path, proxy_output_path, key):
+    expected_bytes = get_expected_bytes(proxy_output_path, key)
+    f = open(plugin_metric_path, 'r')
     content = f.read()
     values = content.split()
     f.close()
     if len(values) == 2:
         val = int(values[1])
-        return val > lo and val < hi, "Check range", "Out of range"
+        return val == expected_bytes, "Check byte count", "Byte count does not match the expected value"
     else:
-        return false, "Check range", "Out of range"
+        return False, "Check byte count", "Unexpected metrics output format"
 
 
-# Ideally, I'd like to cross check the number of TLS bytes received from UA and
-# received from OS to the curl command.  The debug output lists the number of
-# non record data bytes, but it does not enumerate the number of bytes sent in the records
-# as far as I can tell.  The size of the data record will be different from that plain text
-# size due to padding etc.  Leaving the test with the hard coded values for now.  Hopefully,
-# some bright soul can come along later and make this a better test.
-# Perhaps adding a netcat based test case could do that.
 tr = Test.AddTestRun("Fetch bytes sent")
 tr.Processes.Default.Command = "traffic_ctl metric get tunnel_transform.ua.bytes_sent"
 tr.Processes.Default.ReturnCode = 0
@@ -155,7 +176,9 @@ tr2.Processes.Default.ReturnCode = 0
 tr2.Processes.Default.Env = ts.Env
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
-tr2.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path1, 700, 800))
+tr2.Processes.Default.Streams.stdout = Testers.Lambda(
+    lambda info, tester: check_byte_count(
+        path1, proxy_output, 'client-to-server'))
 
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath
 
@@ -165,4 +188,4 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_range(path2, 1990, 2100))
+tr.Processes.Default.Streams.stdout = Testers.Lambda(lambda info, tester: check_byte_count(path2, proxy_output, 'server-to-client'))
