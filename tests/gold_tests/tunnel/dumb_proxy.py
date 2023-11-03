@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--forwarding_port',
         type=int,
-        help='Server\'s port to forward to.')
+        help='Server port to forward to.')
 
     return parser.parse_args()
 
@@ -75,20 +75,10 @@ def forward(source, destination, is_client_to_server):
         else:
             thread_local_data.server_to_client_bytes += len(data)
     # Forwarding done. Print the number of bytes transferred in the direction.
-    print_transmitted_bytes_if_any(is_client_to_server)
-
-
-def print_transmitted_bytes_if_any(is_client_to_server):
-    """Print the number of bytes transferred in the direction if any.
-
-    :param is_client_to_server: True if forwarding from client to server.
-    """
-    if is_client_to_server:
-        if thread_local_data.client_to_server_bytes > 0:
-            print(f"client-to-server: {thread_local_data.client_to_server_bytes}")
-    else:
-        if thread_local_data.server_to_client_bytes > 0:
-            print(f"server-to-client: {thread_local_data.server_to_client_bytes}")
+    if thread_local_data.client_to_server_bytes > 0:
+        print(f"client-to-server: {thread_local_data.client_to_server_bytes}")
+    elif thread_local_data.server_to_client_bytes > 0:
+        print(f"server-to-client: {thread_local_data.server_to_client_bytes}")
 
 
 def start_bidirectional_forwarding(client_socket, forwarding_port):
