@@ -50,6 +50,7 @@
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSTunnelSupport.h"
 #include "proxy/http/HttpPages.h"

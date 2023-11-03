@@ -50,6 +50,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
+#include "iocore/net/NetProcessor.h"
 
 struct NetVCOptions;
 

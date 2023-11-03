@@ -26,6 +26,7 @@
 #include "../../iocore/net/P_Net.h"
 #include "iocore/utils/Machine.h"
 #include "proxy/IPAllow.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/QUICSupport.h"
 
 #include "proxy/http3/Http09App.h"
