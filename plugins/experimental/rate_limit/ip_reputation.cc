@@ -299,7 +299,7 @@ SieveLru::dump()
   TSAssert(_initialized);
 
   for (uint32_t i = 0; i < _num_buckets + 1; ++i) {
-    long long cnt = 0, sum = 0;
+    int64_t cnt = 0, sum = 0;
     auto lru = _buckets[i];
 
     std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
@@ -310,7 +310,7 @@ SieveLru::dump()
       sum += count;
 #if 0
       if (0 == i) { // Also dump the content of the top bucket
-        std::cout << "\t" << key << "; Count=" << count << ", Bucket=" << bucket << std::endl;
+        std::cout << "\t" << key << "; Count=" << count << ", Bucket=" << bucket << "\n";
       }
 #endif
     }
