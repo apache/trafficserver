@@ -385,22 +385,3 @@ SNIConfig::set_on_reconfigure_callback(std::function<void()> cb)
 {
   SNIConfig::on_reconfigure = cb;
 }
-
-// See if any of the client-side actions would trigger for this combination of servername and client IP
-// host_sni_policy is an in/out parameter.  It starts with the global policy from the records.yaml
-// setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
-// contains a host_sni_policy entry
-bool
-SNIConfig::test_client_action(const char *servername, in_port_t dest_incoming_port, const IpEndpoint &ep, int &host_sni_policy)
-{
-  bool retval = false;
-  SNIConfig::scoped_config params;
-
-  auto const &actions = params->get(servername, dest_incoming_port);
-  if (actions.first) {
-    for (auto &&item : *actions.first) {
-      retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);
-    }
-  }
-  return retval;
-}

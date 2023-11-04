@@ -55,6 +55,7 @@ public:
   void on_servername(SSL *ssl, int *al, void *arg);
 
   const char *get_sni_server_name() const;
+  bool would_have_actions_for(const char *servername, IpEndpoint remote, int &enforcement_policy);
 
   struct HintsFromSNI {
     std::optional<uint32_t> http2_buffer_water_mark;

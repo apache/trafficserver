@@ -143,9 +143,6 @@ public:
    */
   static void set_on_reconfigure_callback(std::function<void()> cb);
 
-  static bool test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep,
-                                 int &enforcement_policy);
-
 private:
   static int _configid;
   static std::function<void()> on_reconfigure;
