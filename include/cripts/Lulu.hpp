@@ -271,15 +271,36 @@ class string : public std::string
   using self_type  = string;
 
 public:
-  using std::string::string; // ToDo: Why can't I use super_type:: here ?
-  using super_type::operator=;
+  using std::string::string;
+
   // ToDo: This broke when switching to swoc::TextView
   // using std::string::operator Cript::string_view;
   using super_type::operator+=;
   using super_type::operator[];
 
+  self_type& operator=(const self_type& str)
+  {
+    super_type::operator=(str);
+    return *this;
+  }
+
+  self_type& operator=(const Cript::string_view& str)
+  {
+    super_type::operator=(str);
+    return *this;
+  }
+
+  self_type& operator=(const char *str)
+  {
+    super_type::operator=(str);
+    return *this;
+  }
+
+  string(const self_type &that) : super_type(that) {}
+
   // This allows for a std::string to be moved to a Cript::string
   string(super_type &&that) : super_type(std::move(that)) {}
+  string(self_type &&that) : super_type(std::move(that)) {}
 
   // ToDo: This seems to be ambiquous with STL implementation
   //  operator Cript::string_view() const { return {this->c_str(), this->size()}; }

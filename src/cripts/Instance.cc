@@ -46,7 +46,7 @@ Cript::Instance::initialize(int argc, char *argv[], const char *filename)
   }
 
   if (period != Cript::string::npos) {
-    plugin_debug_tag = plugin_debug_tag.substr(slash + 1, period - slash - 1);
+    plugin_debug_tag = std::string_view(plugin_debug_tag.substr(slash + 1, period - slash - 1));
   }
 
   dbg_ctl_cript.set(plugin_debug_tag.c_str());
