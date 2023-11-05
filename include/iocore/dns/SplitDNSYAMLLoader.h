@@ -29,9 +29,11 @@
 #include <swoc/swoc_file.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstdio>
 #include <ostream>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 namespace splitdns
 {
@@ -44,15 +46,13 @@ namespace yaml
 
     SplitDNSYAMLLoader(std::string const &content, SplitDNS &out) { this->current_node = YAML::Load(content); }
 
-    static void
-    load(std::string const &content, SplitDNS &out, std::ostream &errorstream)
+    static swoc::Errata
+    load(std::string const &content, SplitDNS &out)
     {
       self_type loader{content, out};
       loader.setUpSplitDNSFromYAMLTree();
-      if (!loader.err.is_ok()) {
-        loader.err.note("While loading SplitDNS configuration.");
-        errorstream << loader.err;
-      }
+      // A swoc::Errata may not be copied so we have to explicitly move it.
+      return std::move(loader.err);
     }
 
   private:
@@ -68,7 +68,9 @@ namespace yaml
     std::error_code ec;
     auto content{swoc::file::load(config_filename, ec)};
     if (ec.value() == 0) {
-      SplitDNSYAMLLoader::load(content, out, errorstream);
+      if (auto err{SplitDNSYAMLLoader::load(content, out)}; !err.is_ok()) {
+        errorstream << err << "While loading " << config_filename << ".\n";
+      }
     } else {
       errorstream << "Failed to load " << config_filename << '.';
     }

@@ -25,6 +25,20 @@
 
 #include "tscpp/util/ts_errata.h"
 
+#include <swoc/Errata.h>
+#include <yaml-cpp/yaml.h>
+
+#include <sstream>
+#include <string>
+
+static std::string
+mark_to_error_message(YAML::Mark mark)
+{
+  std::stringstream ss;
+  ss << "At line " << mark.line << " column " << mark.column << '.';
+  return ss.str();
+}
+
 namespace splitdns
 {
 namespace yaml
@@ -34,8 +48,10 @@ namespace yaml
   {
     if (!this->current_node["dns"]) {
       this->err = swoc::Errata(ERRATA_ERROR, "Root tag 'dns' not found.");
-    } else {
+      this->err.note(mark_to_error_message(this->current_node.Mark()));
+    } else if (!this->current_node["dns"]["split"]) {
       this->err = swoc::Errata(ERRATA_ERROR, "Tag 'split' not found.");
+      this->err.note(mark_to_error_message(this->current_node["dns"].Mark()));
     }
   }
 } // namespace yaml

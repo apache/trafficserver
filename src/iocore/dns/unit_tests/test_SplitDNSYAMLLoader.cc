@@ -27,6 +27,13 @@
 #include <catch.hpp>
 
 #include <sstream>
+#include <string_view>
+
+static bool
+error_contains(std::string_view error, std::string_view substr)
+{
+  return error.find(substr) != std::string_view::npos;
+}
 
 TEST_CASE("loading a YAML config file")
 {
@@ -51,17 +58,25 @@ TEST_CASE("loading a YAML config file")
 
   SECTION("Given wrong-root.yaml does not have root 'dns', "
           "when we try to load the SplitDNS from it, "
-          "we should get \"Root tag 'dns' not found. While parsing wrong-root.yaml.\"")
+          "we should get the specified error.")
   {
     splitdns::yaml::load("wrong-root.yaml", got, errorstream);
-    CHECK(errorstream.str() == "Failed to load wrong-root.yaml. Root tag 'dns' not found.");
+    auto got{errorstream.str()};
+    INFO(got);
+    CHECK(error_contains(got, "Root tag 'dns' not found."));
+    CHECK(error_contains(got, "At line 0 column 0."));
+    CHECK(error_contains(got, "While loading wrong-root.yaml."));
   }
 
   SECTION("Given wrong-subroot.yaml does not have subroot 'split', "
           "when we try to load the SplitDNS from it, "
-          "we should get \"Tag 'split' not found. While parsing wrong-subroot.yaml.\"")
+          "we should get the specified error.")
   {
     splitdns::yaml::load("wrong-subroot.yaml", got, errorstream);
-    REQUIRE(errorstream.str() == "Failed to load wrong-subroot.yaml. Tag 'split' not found.");
+    auto got{errorstream.str()};
+    INFO(got);
+    CHECK(error_contains(got, "Tag 'split' not found."));
+    CHECK(error_contains(got, "At line 1 column 2."));
+    CHECK(error_contains(got, "While loading wrong-subroot.yaml."));
   }
 }
