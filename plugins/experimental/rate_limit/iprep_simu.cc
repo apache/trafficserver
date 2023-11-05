@@ -71,7 +71,7 @@ splitArg(std::string str)
       end = start;
     }
   } else {
-    std::cerr << "Malformed argument: " << str << std::endl;
+    std::cerr << "Malformed argument: " << str << "\n";
   }
 
   return {start, end, incr};
@@ -108,11 +108,11 @@ parseArgs(int argc, char **argv)
     switch (c) {
     case 'h':
     case '?':
-      std::cerr << "usage: iprep_simu -b|--buckets <size>[-<end bucket range>[/<increment>]]" << std::endl;
-      std::cerr << "                  -s|--size <bucket size>[-<end bucket size range>[/<increment>]]" << std::endl;
-      std::cerr << "                  -t|--threshold <bucket num>[-<end bucket num range>[/<increment>]]" << std::endl;
-      std::cerr << "                  [-p|--perma <permablock>[-<end permablock range>[/<increment>]]]" << std::endl;
-      std::cerr << "                 [-h|--help" << std::endl;
+      std::cerr << "usage: iprep_simu -b|--buckets <size>[-<end bucket range>[/<increment>]]\n";
+      std::cerr << "                  -s|--size <bucket size>[-<end bucket size range>[/<increment>]]\n";
+      std::cerr << "                  -t|--threshold <bucket num>[-<end bucket num range>[/<increment>]]\n";
+      std::cerr << "                  [-p|--perma <permablock>[-<end permablock range>[/<increment>]]]\n";
+      std::cerr << "                 [-h|--help\n";
       exit(0);
       break;
     case 'b':
@@ -186,13 +186,13 @@ loadFile(const std::string &fname, IpMap &all_ips, IpList &ips)
   }
 
   std::cout << std::setprecision(3);
-  std::cout << "Total number of requests: " << ips.size() << std::endl;
-  std::cout << "\tGood requests: " << good_requests << " (" << 100.0 * good_requests / ips.size() << "%)" << std::endl;
-  std::cout << "\tBad requests: " << bad_requests << " (" << 100.0 * bad_requests / ips.size() << "%)" << std::endl;
-  std::cout << "Unique IPs in set: " << all_ips.size() << std::endl;
-  std::cout << "\tGood IPs: " << good_ips << " (" << 100.0 * good_ips / all_ips.size() << "%)" << std::endl;
-  std::cout << "\tBad IPs: " << bad_ips << " (" << 100.0 * bad_ips / all_ips.size() << "%)" << std::endl;
-  std::cout << std::endl;
+  std::cout << "Total number of requests: " << ips.size() << "\n";
+  std::cout << "\tGood requests: " << good_requests << " (" << 100.0 * good_requests / ips.size() << "%)\n";
+  std::cout << "\tBad requests: " << bad_requests << " (" << 100.0 * bad_requests / ips.size() << "%)\n";
+  std::cout << "Unique IPs in set: " << all_ips.size() << "\n";
+  std::cout << "\tGood IPs: " << good_ips << " (" << 100.0 * good_ips / all_ips.size() << "%)\n";
+  std::cout << "\tBad IPs: " << bad_ips << " (" << 100.0 * bad_ips / all_ips.size() << "%)\n";
+  std::cout << "\n";
 
   return {good_requests, bad_requests};
 }
@@ -200,7 +200,8 @@ loadFile(const std::string &fname, IpMap &all_ips, IpList &ips)
 int
 main(int argc, char *argv[])
 {
-  auto options = parseArgs(argc, argv);
+  std::string name = "simulator";
+  auto options     = parseArgs(argc, argv);
 
   // All remaining arguments should be files, so lets process them one by one
   for (int file_num = optind; file_num < argc; ++file_num) {
@@ -218,8 +219,9 @@ main(int argc, char *argv[])
           for (uint32_t permablock  = options.start_permablock; permablock <= options.end_permablock;
                permablock          += options.incr_permablock) {
             // Setup the buckets and metrics for this loop
-            IpReputation::SieveLru ipt(buckets, size);
-
+            // ToDo: This needs to be initialized, with a YAML or something
+            // IpReputation::SieveLru ipt(buckets, size);
+            auto ipt   = new IpReputation::SieveLru(name);
             auto start = std::chrono::system_clock::now();
 
             // Some metrics
@@ -233,14 +235,14 @@ main(int argc, char *argv[])
             for (auto iter : ips) {
               auto &[ip, data]       = *iter;
               auto &[count, status]  = data;
-              auto [bucket, cur_cnt] = ipt.increment(ip);
+              auto [bucket, cur_cnt] = ipt->increment(ip);
 
               // Currently we only allow perma-blocking on items in bucket 1, so check for that first.
-              if (cur_cnt > permablock && bucket == ipt.lastBucket()) {
-                bucket = ipt.block(ip);
+              if (cur_cnt > permablock && bucket == ipt->lastBucket()) {
+                bucket = ipt->block(ip);
               }
 
-              if (bucket == ipt.blockBucket()) {
+              if (bucket == ipt->blockBucket()) {
                 if (!status) {
                   ++good_perm_blocked;
                 } else {
@@ -267,36 +269,35 @@ main(int argc, char *argv[])
             uint32_t total_perm_blocked = bad_perm_blocked + good_perm_blocked;
             uint32_t total_allowed      = bad_allowed + good_allowed;
 
-            // ipt.dump();
+            // ipt->dump();
 
             std::chrono::duration<double> elapsed_seconds = end - start;
 
             std::cout << "Running with size=" << size << ", buckets=" << buckets << ", threshold=" << threshold
-                      << ", permablock=" << permablock << std::endl;
-            std::cout << "Processing time: " << elapsed_seconds.count() << std::endl;
-            std::cout << "Denied requests: " << total_blocked + total_perm_blocked << std::endl;
+                      << ", permablock=" << permablock << "\n";
+            std::cout << "Processing time: " << elapsed_seconds.count() << "\n";
+            std::cout << "Denied requests: " << total_blocked + total_perm_blocked << "\n";
             std::cout << "\tGood requests denied: " << good_blocked + good_perm_blocked << " ("
-                      << 100.0 * (good_blocked + good_perm_blocked) / good_requests << "%)" << std::endl;
+                      << 100.0 * (good_blocked + good_perm_blocked) / good_requests << "%)\n";
             std::cout << "\tBad requests denied: " << bad_blocked + bad_perm_blocked << " ("
-                      << 100.0 * (bad_blocked + bad_perm_blocked) / bad_requests << "%)" << std::endl;
-            std::cout << "Allowed requests: " << total_allowed << std::endl;
+                      << 100.0 * (bad_blocked + bad_perm_blocked) / bad_requests << "%)\n";
+            std::cout << "Allowed requests: " << total_allowed << "\n";
             std::cout << "\tGood requests allowed: " << good_allowed << " (" << 100.0 * good_allowed / good_requests << "%)"
-                      << std::endl;
+                      << "\n";
             std::cout << "\tBad requests allowed: " << bad_allowed << " (" << 100.0 * bad_allowed / bad_requests << "%)"
-                      << std::endl;
+                      << "\n";
             if (permablock) {
-              std::cout << "Permanently blocked IPs: " << ipt.bucketSize(ipt.blockBucket()) << std::endl;
+              std::cout << "Permanently blocked IPs: " << ipt->bucketSize(ipt->blockBucket()) << "\n";
               std::cout << "\tGood requests permanently denied: " << good_perm_blocked << " ("
-                        << 100.0 * good_perm_blocked / good_requests << "%)" << std::endl;
+                        << 100.0 * good_perm_blocked / good_requests << "%)\n";
               std::cout << "\tBad requests permanently denied: " << bad_perm_blocked << " ("
-                        << 100.0 * bad_perm_blocked / bad_requests << "%)" << std::endl;
+                        << 100.0 * bad_perm_blocked / bad_requests << "%)\n";
             }
             std::cout << "Estimated score (lower is better): "
                       << 100.0 * ((100.0 * good_blocked / good_requests + 100.0 * bad_allowed / bad_requests) /
                                   (100.0 * good_allowed / good_requests + 100.0 * bad_blocked / bad_requests))
-                      << std::endl;
-            std::cout << "Memory used for IP Reputation data: " << ipt.memoryUsed() / (1024.0 * 1024.0) << "MB" << std::endl
-                      << std::endl;
+                      << "\n";
+            std::cout << "Memory used for IP Reputation data: " << ipt->memoryUsed() / (1024.0 * 1024.0) << "MB\n\n";
           }
         }
       }
