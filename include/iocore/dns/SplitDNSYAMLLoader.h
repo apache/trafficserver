@@ -42,10 +42,6 @@ namespace yaml
   class SplitDNSYAMLLoader
   {
   public:
-    using self_type = SplitDNSYAMLLoader;
-
-    SplitDNSYAMLLoader(std::string const &content, SplitDNS &out) { this->current_node = YAML::Load(content); }
-
     static swoc::Errata
     load(std::string const &content, SplitDNS &out)
     {
@@ -56,8 +52,12 @@ namespace yaml
     }
 
   private:
+    using self_type = SplitDNSYAMLLoader;
+
     YAML::Node current_node;
     swoc::Errata err;
+
+    SplitDNSYAMLLoader(std::string const &content, SplitDNS &out) { this->current_node = YAML::Load(content); }
 
     void setUpSplitDNSFromYAMLTree();
   };
