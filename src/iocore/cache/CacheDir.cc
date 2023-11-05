@@ -997,21 +997,7 @@ sync_cache_dir_on_shutdown()
     // dont worry about the cachevc s in the agg queue
     // directories have not been inserted for these writes
     if (vol->get_agg_buf_pos()) {
-      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", vol->hash_text.get());
-
-      // set write limit
-      vol->header->agg_pos = vol->header->write_pos + vol->get_agg_buf_pos();
-
-      int r = pwrite(vol->fd, vol->get_agg_buffer(), vol->get_agg_buf_pos(), vol->header->write_pos);
-      if (r != vol->get_agg_buf_pos()) {
-        ink_assert(!"flushing agg buffer failed");
-        continue;
-      }
-      vol->header->last_write_pos  = vol->header->write_pos;
-      vol->header->write_pos      += vol->get_agg_buf_pos();
-      ink_assert(vol->header->write_pos == vol->header->agg_pos);
-      vol->reset_agg_buf_pos();
-      vol->header->write_serial++;
+      vol->flush_aggregate_write_buffer();
     }
 
     if (buflen < dirlen) {
