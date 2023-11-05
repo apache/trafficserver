@@ -927,9 +927,7 @@ Stripe::flush_aggregate_write_buffer()
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 
-  int r = pwrite(this->fd, this->_write_buffer.get_buffer(), this->_write_buffer.get_buffer_pos(), this->header->write_pos);
-  if (r != this->_write_buffer.get_buffer_pos()) {
-    ink_assert(!"flushing agg buffer failed");
+  if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
     return false;
   }
   this->header->last_write_pos  = this->header->write_pos;
