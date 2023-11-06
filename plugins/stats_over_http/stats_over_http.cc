@@ -737,9 +737,12 @@ init:
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
 
   /* Create continuation for management updates to re-read config file */
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
-  TSContDataSet(config_cont, (void *)config_holder);
-  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
+  if (config_holder->config_path != nullptr) {
+    config_cont = TSContCreate(config_handler, TSMutexCreate());
+    TSContDataSet(config_cont, (void *)config_holder);
+    TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
+  }
+
   Dbg(dbg_ctl, "stats module registered with path %s", config_holder->config->stats_path.c_str());
 
 done:
