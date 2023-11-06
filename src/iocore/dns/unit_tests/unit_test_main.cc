@@ -34,8 +34,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-inline static constexpr int test_threads{1};
-
 class EventProcessorListener final : public Catch::TestEventListenerBase
 {
 public:
