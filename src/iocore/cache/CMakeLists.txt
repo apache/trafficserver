@@ -63,7 +63,7 @@ if(BUILD_TESTING)
       unit_tests/CacheTestHandler.cc
       ${ARGN}
     )
-    target_link_libraries(${name} PRIVATE ts::proxy ts::inknet ts::tsapicore catch2::catch2)
+    target_link_libraries(${name} PRIVATE ts::inkcache catch2::catch2)
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
   endmacro()
 
@@ -102,6 +102,6 @@ if(BUILD_TESTING)
     )
   add_cache_test(Update_L_to_S unit_tests/test_Update_L_to_S.cc)
   add_cache_test(Update_S_to_L unit_tests/test_Update_S_to_L.cc)
-  #add_cache_test(Update_Header unit_tests/test_Update_Header.cc)
+  add_cache_test(Update_Header unit_tests/test_Update_header.cc)
 
 endif()

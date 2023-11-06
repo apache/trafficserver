@@ -122,15 +122,7 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_net
     PRIVATE
-    ts::tsapicore
     ts::inknet
-    ts::configmanager
-    ts::inknet
-    ts::http
-    ts::configmanager
-    ts::overridable_txn_vars
-    ts::hdrs
-    ts::proxy
     catch2::catch2
   )
   set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
