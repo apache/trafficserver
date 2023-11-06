@@ -18,17 +18,9 @@
 add_executable(traffic_logcat logcat.cc)
 target_link_libraries(
   traffic_logcat
-  PRIVATE ts::tsapi
-          ts::overridable_txn_vars
-          ts::proxy
-          ts::inknet
-          ts::logging
-          ts::hdrs
-          ts::http
-          ts::tsapicore
+  PRIVATE ts::logging
+          ts::tscore
           ts::diagsconfig
           ts::inkevent
-          ts::configmanager
-          libswoc
 )
 install(TARGETS traffic_logcat)

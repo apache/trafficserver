@@ -21,12 +21,9 @@ target_link_libraries(
   traffic_layout
   PRIVATE ts::inkevent
           ts::records
-          OpenSSL::Crypto
           yaml-cpp::yaml-cpp
           ts::tscore
           ts::tsapicore
-          PCRE::PCRE
-          ${OPENSSL_LIBRARY}
 )
 
 if(TS_USE_HWLOC)
