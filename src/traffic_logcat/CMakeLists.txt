@@ -27,6 +27,7 @@ target_link_libraries(
           ts::http
           ts::tsapicore
           ts::diagsconfig
+          ts::inkevent
           ts::configmanager
           libswoc
 )
