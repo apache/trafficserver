@@ -47,9 +47,10 @@
 /**
  * Singleton class to keep track of the number of inbound and outbound connections.
  *
- * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
- * session matching setting. Tracking data is stored for each group. Inbound connections always
- * only match on IP.
+ * Outbound connections are divided into equivalence classes called "groups"
+ * here. For outbound connections, groups will vary based on the session
+ * matching configuration.  For inbound connections, a group is always based on
+ * the remote IP address.  Tracking data is stored for each group.
  */
 class ConnectionTracker
 {
@@ -114,14 +115,14 @@ public:
 
     enum class DirectionType { INBOUND, OUTBOUND };
 
-    DirectionType _direction;           ///< Whether the group is for inbound or outbound connections.
-    IpEndpoint _addr;                   ///< Remote IP address.
-    CryptoHash _hash;                   ///< Hash of the FQDN.
-    MatchType _match_type{MATCH_IP};    ///< Type of matching.
-    std::string _fqdn;                  ///< Expanded FQDN, set if matching on FQDN.
-    int _min_keep_alive_conns{0};       /// < Min keep alive conns on this server group
-    Key _key;                           ///< Pre-assembled key which references the following members.
-    std::chrono::seconds &_alert_delay; ///< Alert delay in seconds.
+    DirectionType _direction;                 ///< Whether the group is for inbound or outbound connections.
+    IpEndpoint _addr;                         ///< Remote IP address.
+    CryptoHash _hash;                         ///< Hash of the FQDN.
+    MatchType _match_type{MATCH_IP};          ///< Type of matching.
+    std::string _fqdn;                        ///< Expanded FQDN, set if matching on FQDN.
+    int _min_keep_alive_conns{0};             /// < Min keep alive conns on this server group
+    Key _key;                                 ///< Pre-assembled key which references the following members.
+    std::chrono::seconds const &_alert_delay; ///< A reference to client or server alert_delay depending upon connection direction.
 
     // Counting data.
     std::atomic<int> _count{0};         ///< Number of inbound or outbound connections.

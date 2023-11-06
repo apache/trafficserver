@@ -511,18 +511,20 @@ Network
    :reloadable:
 
    The total number of concurrent client connections that |TS| will accept from
-   a given client. Any received connections from a client beyond this limit will
-   be immediately closed.  Once the number of concurrent client connections
-   drops below this configured value, |TS| will begin accepting new connections
-   while the number of concurrent connections remains below this limit. A value
-   of 0 disables the per client concurrent connection limit.
+   a given client IP address. Any received connections from a client beyond this
+   limit will be immediately closed.  Once the number of concurrent client
+   connections drops below this configured value, |TS| will begin accepting new
+   connections from that IP while the number of concurrent connections remains
+   below this limit. A value of 0 disables the per client concurrent connection
+   limit.
 
 .. ts:cv:: CONFIG proxy.config.http.per_client.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
 
-   Throttle alerts per client group to be no more often than this many seconds. Summary
-   data is provided per alert to allow log scrubbing to generate accurate data.
+   Throttle alerts per client IP address to be no more often than this many
+   seconds. Summary data is provided per alert to allow log scrubbing to
+   generate accurate data.
 
 .. ts:cv:: CONFIG proxy.config.net.max_requests_in INT 0
 
