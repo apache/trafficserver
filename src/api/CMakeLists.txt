@@ -55,9 +55,7 @@ if(APPLE)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(test_ApiCore
-    unit_tests/test_Metrics.cc
-  )
+  add_executable(test_ApiCore unit_tests/test_Metrics.cc)
 
   target_link_libraries(test_ApiCore PRIVATE tsapicore tscore catch2::catch2)
 

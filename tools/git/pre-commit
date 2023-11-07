@@ -45,18 +45,25 @@ fi
 
 source "$GIT_TOP/tools/autopep8.sh"
 if [ ! -d ${AUTOPEP8_VENV} ]; then
-    echo "Run \"make autopep8\""
+    echo "Run \"cmake --build <build_dir> --target autopep8\""
     exit 1
 fi
-source ${AUTOPEP8_VENV}/bin/activate
+
+source "$GIT_TOP/tools/cmake-format.sh"
+if [ ! -d ${CMAKE_FORMAT_VENV} ]; then
+    echo "Run \"cmake --build <build_dir> --target autopep8\""
+    exit 1
+fi
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
 autopep8_patch_file=$(mktemp -t autopep8.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $autopep8_patch_file" 0 1 2 3 5 15
+cmake_format_patch_file=$(mktemp -t cmake-format.XXXXXXXXXX)
+trap "rm -f $clang_patch_file $autopep8_patch_file $cmake_format_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yamlcpp|swoc)" | while read file; do
+source ${AUTOPEP8_VENV}/bin/activate
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" | while read file; do
     case "$file" in
     *.cc | *.c | *.h | *.h.in)
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
@@ -75,12 +82,20 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(yam
         ;;
     esac
 done
+deactivate
+
+# Now repeat the above for CMakeLists.txt files.
+source ${CMAKE_FORMAT_VENV}/bin/activate
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep CMakeLists.txt | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" | while read file; do
+    cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
+done
+deactivate
 
 if [ -s "$clang_patch_file" ]; then
     echo "The commit is not accepted, because clang-format does not match current"
     echo "requirements. Easiest to fix this is to run:"
     echo
-    echo "    $ make -j clang-format"
+    echo "    $ cmake --build <build_dir> --target format"
     exit 1
 else
     echo "This commit complies with the current clang-format indentation rules."
@@ -91,14 +106,24 @@ if [ -s "$autopep8_patch_file" ]; then
     echo "The commit is not accepted because autopep8 reports issues with it."
     echo "The easiest way to fix this is to run:"
     echo
-    echo "    $ make autopep8"
+    echo "    $ cmake --build <build_dir> --target format"
     exit 1
 else
     echo "This commit complies with the current autopep8 formatting rules."
     echo
 fi
 
+if [ -s "$cmake_format_patch_file" ]; then
+    echo "The commit is not accepted because cmake-format reports issues with it."
+    echo "The easiest way to fix this is to run:"
+    echo
+    echo "    $ cmake --build <build_dir> --target format"
+    exit 1
+else
+    echo "This commit complies with the current cmake-format formatting rules."
+    echo
+fi
+
 # Cleanup before exit
-deactivate
 rm -f "$clang_patch_file" "$autopep8_patch_file"
 exit 0

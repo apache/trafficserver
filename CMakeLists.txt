@@ -329,9 +329,8 @@ if(ENABLE_QUICHE)
 endif()
 
 # for the plugin system
-find_package(nuraft)  # experimental stek_share
-find_package(maxminddb)  # Header_rewrite experimental/maxmind_acl
-
+find_package(nuraft) # experimental stek_share
+find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
 
 if(ENABLE_ASAN)
   add_compile_options(-fsanitize=address)
@@ -624,7 +623,10 @@ if(ENABLE_EXAMPLE)
 endif()
 
 if(ENABLE_DOCS)
-  set(DOC_LANG en CACHE STRING "Document language option")
+  set(DOC_LANG
+      en
+      CACHE STRING "Document language option"
+  )
   add_subdirectory(doc)
 endif()
 add_subdirectory(rc)
@@ -682,10 +684,18 @@ add_custom_target(
   VERBATIM
 )
 
-# Add a format target that depends upon both clang-format and autopep8.
+add_custom_target(
+  cmake-format
+  ${CMAKE_SOURCE_DIR}/tools/cmake-format.sh ${CMAKE_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "formatting CMakeLists.txt files"
+  VERBATIM
+)
+
+# Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format autopep8
+  DEPENDS clang-format autopep8 cmake-format
   COMMENT "formatting all files"
 )
 

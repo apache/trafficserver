@@ -32,10 +32,8 @@ add_atsplugin(
 
 target_link_libraries(
   uri_signing
-  PRIVATE
-  cjose::cjose
-  PUBLIC
-  jansson::jansson
+  PRIVATE cjose::cjose
+  PUBLIC jansson::jansson
 )
 
 if(BUILD_TESTING)
