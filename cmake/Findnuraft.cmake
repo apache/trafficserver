@@ -15,11 +15,32 @@
 #
 #######################
 
-if(nuraft_FOUND)
-  add_atsplugin(stek_share common.cc log_store.cc stek_share.cc stek_utils.cc)
+# Findnuraft.cmake
+#
+# This will define the following variables
+#
+#     nuraft_FOUND
+#
+# and the following imported targets
+#
+#     nuraft::nuraft
+#
 
-  target_include_directories(stek_share PRIVATE nuraft::nuraft OpenSSL::SSL yaml-cpp::yaml-cpp)
-  target_link_libraries(stek_share PRIVATE nuraft::nuraft OpenSSL::SSL yaml-cpp::yaml-cpp)
-else()
-  message(STATUS "skipping stek_share plugin (missing nuraft)")
+find_library(nuraft_LIBRARY nuraft)
+find_path(
+  nuraft_INCLUDE_DIR
+  NAMES libnuraft/nuraft.hxx
+)
+
+mark_as_advanced(nuraft_FOUND nuraft_LIBRARY nuraft_INCLUDE_DIR)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(nuraft REQUIRED_VARS nuraft_LIBRARY nuraft_INCLUDE_DIR)
+
+# Add the library but only add libraries if nuraft is found
+add_library(nuraft::nuraft INTERFACE IMPORTED)
+if(nuraft_FOUND)
+  set(nuraft_INCLUDE_DIRS ${nuraft_INCLUDE_DIR})
+  target_include_directories(nuraft::nuraft INTERFACE ${nuraft_INCLUDE_DIRS})
+  target_link_libraries(nuraft::nuraft INTERFACE ${nuraft_LIBRARY})
 endif()
