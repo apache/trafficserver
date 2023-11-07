@@ -197,6 +197,7 @@ struct Stripe : public Continuation {
   int close_read(CacheVC *cont) const;
   int close_read_lock(CacheVC *cont);
 
+  int clear_dir_aio();
   int clear_dir();
 
   int init(char *s, off_t blocks, off_t dir_skip, bool clear);
@@ -282,6 +283,9 @@ struct Stripe : public Continuation {
   ~Stripe() override { ats_free(agg_buffer); }
 
 private:
+  void _clear_init();
+  void _init_dir();
+  void _init_data_internal();
   void _init_data();
 };
 
@@ -460,9 +464,6 @@ Doc::data()
 {
   return this->hdr() + hlen;
 }
-
-int vol_dir_clear(Stripe *vol);
-int vol_init(Stripe *vol, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 

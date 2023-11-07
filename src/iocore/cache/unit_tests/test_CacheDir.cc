@@ -88,7 +88,7 @@ public:
       return EVENT_DONE;
     }
 
-    vol_dir_clear(vol);
+    vol->clear_dir();
 
     // coverity[var_decl]
     Dir dir;
@@ -235,7 +235,7 @@ public:
       CHECK(!check_dir(vol));
 #endif
     }
-    vol_dir_clear(vol);
+    vol->clear_dir();
 
     // Teardown
     test_done();
