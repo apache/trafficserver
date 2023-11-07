@@ -48,14 +48,14 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 int
 CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  ink_assert(this->vol->mutex->thread_holding == this_ethread());
+  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   Doc *doc = reinterpret_cast<Doc *>(this->buf->data());
   DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0),
        (int)dir_offset(&this->overwrite_dir), (int)dir_phase(&this->overwrite_dir), (int)dir_offset(&this->dir),
        (int)dir_phase(&this->dir));
   int i = dir_evac_bucket(&this->overwrite_dir);
   // nasty beeping race condition, need to have the EvacuationBlock here
-  EvacuationBlock *b = this->vol->evac_bucket_valid(i) ? this->vol->evacuate[i].head : nullptr;
+  EvacuationBlock *b = this->stripe->evac_bucket_valid(i) ? this->stripe->evacuate[i].head : nullptr;
   for (; b; b = b->link.next) {
     if (dir_offset(&b->dir) == dir_offset(&this->overwrite_dir)) {
       // If the document is single fragment (although not tied to the vector),
@@ -80,17 +80,17 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
                evac->earliest_key.slice32(0));
           EvacuationBlock *eblock = nullptr;
           Dir dir_tmp;
-          dir_lookaside_probe(&evac->earliest_key, this->vol, &dir_tmp, &eblock);
+          dir_lookaside_probe(&evac->earliest_key, this->stripe, &dir_tmp, &eblock);
           if (eblock) {
             CacheEvacuateDocVC *earliest_evac  = eblock->earliest_evacuator;
             earliest_evac->total_len          += doc->data_len();
             if (earliest_evac->total_len == earliest_evac->doc_len) {
-              dir_lookaside_fixup(&evac->earliest_key, this->vol);
+              dir_lookaside_fixup(&evac->earliest_key, this->stripe);
               free_CacheVC(earliest_evac);
             }
           }
         }
-        dir_overwrite(&doc->key, this->vol, &this->dir, &this->overwrite_dir);
+        dir_overwrite(&doc->key, this->stripe, &this->dir, &this->overwrite_dir);
       }
       // if the tag in the overwrite_dir matches the first_key in the
       // document, then it has to be the vector. We guarantee that
@@ -105,15 +105,15 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           OpenDirEntry *cod;
           DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %d", (int)doc->first_key.slice32(0),
                (int)dir_offset(&this->overwrite_dir));
-          if ((cod = this->vol->open_read(&doc->first_key))) {
+          if ((cod = this->stripe->open_read(&doc->first_key))) {
             // writer  exists
             DDbg(dbg_ctl_cache_evac, "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
                  (int)dir_offset(&cod->first_dir), (int)dir_offset(&this->dir));
             cod->first_dir = this->dir;
           }
-          if (dir_overwrite(&doc->first_key, this->vol, &this->dir, &this->overwrite_dir)) {
+          if (dir_overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
             int64_t o = dir_offset(&this->overwrite_dir), n = dir_offset(&this->dir);
-            this->vol->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
+            this->stripe->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
           }
         } else {
           DDbg(dbg_ctl_cache_evac, "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&this->overwrite_dir));
@@ -122,8 +122,8 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           this->total_len    += doc->data_len();
           this->first_key     = doc->first_key;
           this->earliest_dir  = this->dir;
-          if (dir_probe(&this->first_key, this->vol, &this->dir, &last_collision) > 0) {
-            dir_lookaside_insert(b, this->vol, &this->earliest_dir);
+          if (dir_probe(&this->first_key, this->stripe, &this->dir, &last_collision) > 0) {
+            dir_lookaside_insert(b, this->stripe, &this->earliest_dir);
             // read the vector
             SET_HANDLER(&CacheEvacuateDocVC::evacuateReadHead);
             int ret = do_read_call(&this->first_key);
@@ -144,7 +144,7 @@ int
 CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   // The evacuator vc shares the lock with the volition mutex
-  ink_assert(this->vol->mutex->thread_holding == this_ethread());
+  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   cancel_trigger();
   Doc *doc                     = reinterpret_cast<Doc *>(this->buf->data());
   CacheHTTPInfo *alternate_tmp = nullptr;
@@ -152,7 +152,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
     goto Ldone;
   }
   // a directory entry which is no longer valid may have been overwritten
-  if (!dir_valid(this->vol, &this->dir)) {
+  if (!dir_valid(this->stripe, &this->dir)) {
     last_collision = nullptr;
     goto Lcollision;
   }
@@ -188,12 +188,12 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
   if (doc_len == this->total_len) {
     // the whole document has been evacuated. Insert the directory
     // entry in the directory.
-    dir_lookaside_fixup(&earliest_key, this->vol);
+    dir_lookaside_fixup(&earliest_key, this->stripe);
     return free_CacheVC(this);
   }
   return EVENT_CONT;
 Lcollision:
-  if (dir_probe(&this->first_key, this->vol, &this->dir, &last_collision)) {
+  if (dir_probe(&this->first_key, this->stripe, &this->dir, &last_collision)) {
     int ret = do_read_call(&this->first_key);
     if (ret == EVENT_RETURN) {
       return handleEvent(AIO_EVENT_DONE, nullptr);
@@ -201,6 +201,6 @@ Lcollision:
     return ret;
   }
 Ldone:
-  dir_lookaside_remove(&earliest_key, this->vol);
+  dir_lookaside_remove(&earliest_key, this->stripe);
   return free_CacheVC(this);
 }

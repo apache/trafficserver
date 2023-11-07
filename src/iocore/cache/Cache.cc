@@ -1202,7 +1202,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
   c->first_key = c->key = *key;
   c->frag_type          = type;
   c->f.lookup           = 1;
-  c->vol                = stripe;
+  c->stripe             = stripe;
   c->last_collision     = nullptr;
 
   if (c->handleEvent(EVENT_INTERVAL, nullptr) == EVENT_CONT) {
@@ -1242,7 +1242,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
   Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
-  c->vol                = stripe;
+  c->stripe             = stripe;
   c->dir                = result;
   c->f.remove           = 1;
 

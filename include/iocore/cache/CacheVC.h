@@ -109,8 +109,8 @@ struct CacheVC : public CacheVConnection {
   int
   get_volume_number() const override
   {
-    if (vol && vol->cache_vol) {
-      return vol->cache_vol->vol_number;
+    if (stripe && stripe->cache_vol) {
+      return stripe->cache_vol->vol_number;
     }
 
     return -1;
@@ -119,8 +119,8 @@ struct CacheVC : public CacheVConnection {
   const char *
   get_disk_path() const override
   {
-    if (vol && vol->disk) {
-      return vol->disk->path;
+    if (stripe && stripe->disk) {
+      return stripe->disk->path;
     }
 
     return nullptr;
@@ -176,7 +176,7 @@ struct CacheVC : public CacheVConnection {
 
   int removeEvent(int event, Event *e);
 
-  int scanVol(int event, Event *e);
+  int scanStripe(int event, Event *e);
   int scanObject(int event, Event *e);
   int scanUpdateDone(int event, Event *e);
   int scanOpenWrite(int event, Event *e);
@@ -265,7 +265,7 @@ struct CacheVC : public CacheVConnection {
   uint32_t write_len;    // for communicating with agg_copy
   uint32_t agg_len;      // for communicating with aggWrite
   uint32_t write_serial; // serial of the final write for SYNC
-  Stripe *vol;
+  Stripe *stripe;
   Dir *last_collision;
   Event *trigger;
   CacheKey *read_key;
@@ -320,7 +320,7 @@ struct CacheVC : public CacheVConnection {
   };
   // BTF optimization used to skip reading stuff in cache partition that doesn't contain any
   // dir entries.
-  char *scan_vol_map;
+  char *scan_stripe_map;
   // BTF fix to handle objects that overlapped over two different reads,
   // this is how much we need to back up the buffer to get the start of the overlapping object.
   off_t scan_fix_buffer_offset;
