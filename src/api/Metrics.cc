@@ -85,7 +85,7 @@ Metrics::lookup(const std::string_view name) const
 }
 
 Metrics::AtomicType *
-Metrics::lookup(Metrics::IdType id, std::string_view *name) const
+Metrics::lookup(Metrics::IdType id, std::string_view *out_name) const
 {
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
@@ -96,11 +96,28 @@ Metrics::lookup(Metrics::IdType id, std::string_view *name) const
     offset = 0;
   }
 
-  if (name) {
-    *name = std::get<0>(std::get<0>(*blob)[offset]);
+  if (out_name) {
+    *out_name = std::get<0>(std::get<0>(*blob)[offset]);
   }
 
   return &((std::get<1>(*blob)[offset]));
+}
+
+Metrics::AtomicType *
+Metrics::lookup(const std::string_view name, Metrics::IdType *out_id) const
+{
+  Metrics::IdType id          = lookup(name);
+  Metrics::AtomicType *result = nullptr;
+
+  if (id != NOT_FOUND) {
+    result = lookup(id);
+  }
+
+  if (nullptr != out_id) {
+    *out_id = id;
+  }
+
+  return result;
 }
 
 std::string_view

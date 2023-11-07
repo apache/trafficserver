@@ -91,14 +91,12 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
   SECTION("lookup")
   {
-    auto nm = m.lookupPtr("notametric");
-    REQUIRE(!nm);
+    auto nm = m.lookup("notametric");
+    REQUIRE(nm == ts::Metrics::NOT_FOUND);
 
-    auto mid = Metrics::Counter::create("ametric");
-    auto fm  = m.lookupPtr("ametric");
-    REQUIRE(fm.has_value());
-    REQUIRE(fm.value());
-    REQUIRE(fm.value() == m.lookup(mid));
-    REQUIRE(m.lookup("ametric") == mid);
+    auto mid  = Metrics::Counter::create("ametric");
+    auto fmid = m.lookup("ametric");
+
+    REQUIRE(mid == fmid);
   }
 }

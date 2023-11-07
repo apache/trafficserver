@@ -1152,8 +1152,7 @@ _makeName(const PreWarm::SPtrConstDst &dst, std::string_view statname, char *nam
 void
 PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 {
-  int stats_counter    = 0;
-  ts::Metrics &metrics = ts::Metrics::instance();
+  int stats_counter = 0;
 
   for (auto &entry : parsed_conf) {
     const PreWarm::SPtrConstDst &dst = entry.first;
@@ -1166,24 +1165,15 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 
       _makeName(dst, COUNTER_STAT_ENTRIES[j], name, sizeof(name));
 
-      ts::Metrics::IdType stats_id         = metrics.lookup(name);
-      Metrics::Counter::AtomicType *metric = nullptr;
+      auto metric = Metrics::Counter::createPtr(name); // This will do a lookup if it already exists
 
-      if (stats_id == ts::Metrics::NOT_FOUND) {
-        metric = Metrics::Counter::createPtr(name);
-
-        if (metric == nullptr) {
-          Error("couldn't register counter stat name=%s", name);
-        } else {
-          ++stats_counter;
-        }
+      if (metric == nullptr) {
+        Error("couldn't register counter stat name=%s", name);
       } else {
-        metric = dynamic_cast<Metrics::Counter::AtomicType *>(metrics.lookup(stats_id));
+        ++stats_counter;
+        counters[j] = metric;
+        Debug("v_prewarm_init", "conter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
       }
-
-      counters[j] = metric;
-
-      Debug("v_prewarm_init", "conter stat id=%d name=%s", stats_id, name);
     }
 
     // Gauges next
@@ -1192,24 +1182,15 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 
       _makeName(dst, GAUGE_STAT_ENTRIES[j], name, sizeof(name));
 
-      ts::Metrics::IdType stats_id       = metrics.lookup(name);
-      Metrics::Gauge::AtomicType *metric = nullptr;
+      auto metric = Metrics::Gauge::createPtr(name); // This will do a lookup if it already exists
 
-      if (stats_id == ts::Metrics::NOT_FOUND) {
-        metric = Metrics::Gauge::createPtr(name);
-
-        if (metric == nullptr) {
-          Error("couldn't register gauge stat name=%s", name);
-        } else {
-          ++stats_counter;
-        }
+      if (metric == nullptr) {
+        Error("couldn't register gauge stat name=%s", name);
       } else {
-        metric = dynamic_cast<Metrics::Gauge::AtomicType *>(metrics.lookup(stats_id));
+        ++stats_counter;
+        gauges[j] = metric;
+        Debug("v_prewarm_init", "gauge stat id=%d name=%s", Metrics::Gauge::lookup(name), name);
       }
-
-      gauges[j] = metric;
-
-      Debug("v_prewarm_init", "gauge stat id=%d name=%s", stats_id, name);
     }
 
     _stats_id_map[dst] = std::make_shared<const PreWarm::StatsIds>(ids);

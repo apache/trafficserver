@@ -221,10 +221,8 @@ dump_summary()
   printf("IO_URING results\n");
   printf("-----------------\n");
 
-  auto &m = Metrics::getInstance();
-
-  Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
-  Metrics::Counter::AtomicType *submitted = m.lookup(m.lookup("proxy.process.io_uring.submitted"));
+  auto completed = Metrics::Counter::lookup("proxy.process.io_uring.completed", nullptr);
+  auto completed = Metrics::Counter::lookup("proxy.process.io_uring.submitted", nullptr);
 
   printf("submissions: %lu\n", Metrics::Gauge::load(submitted));
   printf("completions: %lu\n", Metrics::Gauge::load(completed));

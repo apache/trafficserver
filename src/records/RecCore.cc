@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <deque>
+#include <utility>
+
 #include "swoc/swoc_file.h"
 
 #include "tscore/ink_platform.h"

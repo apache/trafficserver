@@ -24,7 +24,6 @@
 #pragma once
 
 #include <array>
-#include <optional>
 #include <unordered_map>
 #include <tuple>
 #include <mutex>
@@ -50,8 +49,7 @@ private:
     friend class Metrics;
 
   public:
-    AtomicType()          = default;
-    virtual ~AtomicType() = default;
+    AtomicType() = default;
 
     int64_t
     load() const
@@ -113,18 +111,8 @@ public:
   // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
   IdType lookup(const std::string_view name) const;
-  AtomicType *lookup(IdType id, std::string_view *name = nullptr) const;
-
-  std::optional<AtomicType *>
-  lookupPtr(const std::string_view name) const
-  {
-    IdType id = lookup(name);
-    if (id != NOT_FOUND) {
-      return lookup(id);
-    }
-    return std::nullopt;
-  }
-
+  AtomicType *lookup(const std::string_view name, IdType *out_id) const;
+  AtomicType *lookup(IdType id, std::string_view *out_name = nullptr) const;
   bool rename(IdType id, const std::string_view name);
 
   AtomicType &
@@ -296,6 +284,30 @@ public:
     {
     };
 
+    static IdType
+    lookup(const std::string_view name)
+    {
+      auto &instance = Metrics::instance();
+
+      return instance.lookup(name);
+    }
+
+    static AtomicType *
+    lookup(const IdType id, std::string_view *out_name = nullptr)
+    {
+      auto &instance = Metrics::instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(id, out_name));
+    }
+
+    static AtomicType *
+    lookup(const std::string_view name, IdType *id)
+    {
+      auto &instance = Metrics::instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(name, id));
+    }
+
     static Metrics::IdType
     create(const std::string_view name)
     {
@@ -335,7 +347,7 @@ public:
     }
 
     static int64_t
-    load(AtomicType *metric)
+    load(const AtomicType *metric)
     {
       ink_assert(metric);
       return metric->_value.load();
@@ -359,6 +371,30 @@ public:
     class AtomicType : public Metrics::AtomicType
     {
     };
+
+    static IdType
+    lookup(const std::string_view name)
+    {
+      auto &instance = Metrics::instance();
+
+      return instance.lookup(name);
+    }
+
+    static AtomicType *
+    lookup(const IdType id, std::string_view *out_name = nullptr)
+    {
+      auto &instance = Metrics::instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(id, out_name));
+    }
+
+    static AtomicType *
+    lookup(const std::string_view name, IdType *id)
+    {
+      auto &instance = Metrics::instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(name, id));
+    }
 
     static Metrics::IdType
     create(const std::string_view name)
@@ -392,7 +428,7 @@ public:
     }
 
     static int64_t
-    load(AtomicType *metric)
+    load(const AtomicType *metric)
     {
       ink_assert(metric);
       return metric->_value.load();
