@@ -25,6 +25,7 @@
 #pragma once
 #define _I_EventSystem_h
 
+#include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 

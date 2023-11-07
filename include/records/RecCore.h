@@ -83,7 +83,7 @@ RecErrT _RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_def
 #define RecRegisterStatFloat(rec_type, name, data_default, persist_type) \
   _RecRegisterStatFloat((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
 
-RecErrT _RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
+RecErrT _RecRegisterStatString(RecT rec_type, const char *name, RecStringConst data_default, RecPersistT persist_type);
 #define RecRegisterStatString(rec_type, name, data_default, persist_type) \
   _RecRegisterStatString((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
 

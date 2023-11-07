@@ -35,6 +35,7 @@
 #include "swoc/bwf_std.h"
 
 #include <fstream>
+#include <iterator>
 
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
@@ -66,8 +67,11 @@ _RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, Re
 }
 
 RecErrT
-_RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
+_RecRegisterStatString(RecT rec_type, const char *name, RecStringConst data_in, RecPersistT persist_type)
 {
+  // NOTE(cmcfarlen): RecRegisterState calls RecDataSet which call strdup on the string data.
+  // therefore, this const cast will not be modified nor escape the stack past here.
+  char *data_default = const_cast<char *>(data_in);
   REC_REGISTER_STAT_XXX(rec_string, RECD_STRING);
 }
 

@@ -36,8 +36,6 @@
 
 static constexpr int NO_FD = swoc::file::NO_FD;
 
-extern AppVersionInfo appVersionInfo;
-
 static pid_t crash_logger_pid = -1;
 static int crash_logger_fd    = NO_FD;
 
@@ -171,6 +169,6 @@ crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
   }
 
   // Log the signal, dump a stack trace and core.
-  signal_format_siginfo(signo, info, appVersionInfo.AppStr); // XXX Add timestamp ...
+  signal_format_siginfo(signo, info, AppVersionInfo::get_version().application()); // XXX Add timestamp ...
   signal_crash_handler(signo, info, ctx);
 }

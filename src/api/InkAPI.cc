@@ -32,10 +32,10 @@
 #include "tscore/Encoding.h"
 #include "tscore/PluginUserArgs.h"
 #include "tscore/Layout.h"
-#include "tscore/Version.h"
 #include "tscore/Diags.h"
 #include "api/Metrics.h"
 
+#include "tscore/Version.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/logging/Log.h"
 #include "proxy/hdrs/URL.h"
@@ -105,8 +105,6 @@
   _HDR.m_heap = ((HdrHeapSDKHandle *)_BUF_PTR)->m_heap; \
   _HDR.m_http = (HTTPHdrImpl *)_OBJ_PTR;                \
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
-
-extern AppVersionInfo appVersionInfo;
 
 /** Reservation for a user arg.
  */
@@ -1398,7 +1396,7 @@ api_init()
     global_config_cbs = new ConfigUpdateCbTable;
 
     // Setup the version string for returning to plugins
-    ink_strlcpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
+    ink_strlcpy(traffic_server_version, AppVersionInfo::get_version().version(), sizeof(traffic_server_version));
     // Extract the elements.
     // coverity[secure_coding]
     if (sscanf(traffic_server_version, "%d.%d.%d", &ts_major_version, &ts_minor_version, &ts_patch_version) != 3) {

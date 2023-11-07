@@ -222,9 +222,7 @@ RegressionTest::main(int /* argc */, const char **argv, int level)
     {"regression_list", 'l', "List Regression Tests",              "T",    &regression_list,  "PROXY_REGRESSION_LIST", nullptr},
   };
 
-  AppVersionInfo version;
-
-  version.setup(PACKAGE_NAME, progname(argv[0]), PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version(progname(argv[0]));
 
   process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 

@@ -43,7 +43,6 @@ static char *user         = nullptr;
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
 extern char __pid_size_static_assert[sizeof(pid_t) == sizeof(int) ? 0 : -1];
 
-static AppVersionInfo appVersionInfo;
 static const ArgumentDescription argument_descriptions[] = {
   {"target", '-', "Target process ID",                         "I",  &target_pid,   nullptr, nullptr},
   {"host",   '-', "Host triplet for the process being logged", "S*", &host_triplet, nullptr, nullptr},
@@ -141,10 +140,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
 
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_crashlog", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  auto &version = AppVersionInfo::setup_version("traffic_crashlog");
 
   // Process command line arguments and dump into variables
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   // XXX This is a hack. traffic_manager starts traffic_server with the euid of the admin user. We are still
   // privileged, but won't be able to open files in /proc or ptrace the target. This really should be fixed
@@ -182,7 +181,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       facility = LOG_DAEMON;
     }
 
-    openlog(appVersionInfo.AppStr, LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
+    openlog(version.application(), LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
     diags()->config.outputs[DL_Debug].to_syslog     = true;
     diags()->config.outputs[DL_Status].to_syslog    = true;
     diags()->config.outputs[DL_Note].to_syslog      = true;

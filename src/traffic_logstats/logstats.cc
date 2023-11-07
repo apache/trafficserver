@@ -661,7 +661,7 @@ void
 CommandLineArgs::parse_arguments(const char **argv)
 {
   // process command-line arguments
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
+  process_args(&AppVersionInfo::get_version(), argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
@@ -2434,7 +2434,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   struct flock lck;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  AppVersionInfo::setup_version(PROGRAM_NAME);
 
   runroot_handler(argv);
   // Before accessing file system initialize Layout engine

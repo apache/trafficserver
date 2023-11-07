@@ -27,10 +27,6 @@
 
 #include "proxy/HttpAPIHooks.h"
 
-#include "tscore/Version.h"
-
-AppVersionInfo appVersionInfo;
-
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
 {

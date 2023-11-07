@@ -51,15 +51,15 @@ TEST_CASE("AppVersionInfo", "[libts][version]")
     // If not empty BUILD_NUMBER overrides any result, in this case run only
     // this test (the rest will always fail).
     info.setup("Apache Traffic Server", "traffic_server", "5.2.1", bench[0][0], bench[0][1], "build_slave", "builder", "");
-    if (0 != std::strcmp(info.BldNumStr, bench[0][2])) {
-      std::printf(errMsgFormat, bench[0][2], info.BldNumStr);
+    if (0 != std::strcmp(info.build_number(), bench[0][2])) {
+      std::printf(errMsgFormat, bench[0][2], info.build_number());
       CHECK(false);
     }
   } else {
     for (int i = 1; i < benchSize; i++) {
       info.setup("Apache Traffic Server", "traffic_server", "5.2.1", bench[i][0], bench[i][1], "build_slave", "builder", "");
-      if (0 != std::strcmp(info.BldNumStr, bench[i][2])) {
-        std::printf(errMsgFormat, bench[i][2], info.BldNumStr);
+      if (0 != std::strcmp(info.build_number(), bench[i][2])) {
+        std::printf(errMsgFormat, bench[i][2], info.build_number());
         CHECK(false);
       }
     }
