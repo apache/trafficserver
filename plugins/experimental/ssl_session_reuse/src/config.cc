@@ -59,7 +59,7 @@ Config::loadConfig(const std::string &filename)
 
   int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : ts::NO_FD);
   struct stat info;
-  if (fd > 0 && 0 == fstat(fd, &info)) {
+  if (fd >= 0 && 0 == fstat(fd, &info)) {
     size_t n = info.st_size;
     std::string config_data;
     config_data.resize(n);
@@ -82,11 +82,12 @@ Config::loadConfig(const std::string &filename)
       }
     }
 
+    close(fd);
+
     m_noConfig      = false;
     success         = true;
     m_alreadyLoaded = true;
   }
-  close(fd);
 
   return success;
 }
