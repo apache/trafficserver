@@ -330,6 +330,8 @@ endif()
 
 # for the plugin system
 find_package(nuraft)  # experimental stek_share
+find_package(maxminddb)  # Header_rewrite experimental/maxmind_acl
+
 
 if(ENABLE_ASAN)
   add_compile_options(-fsanitize=address)

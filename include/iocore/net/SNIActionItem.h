@@ -32,7 +32,8 @@
 
 #include <vector>
 #include <optional>
-#include "iocore/net/TLSSNISupport.h"
+#include <openssl/ssl.h>
+
 #include "tscore/ink_inet.h"
 #include "ts/DbgCtl.h"
 

@@ -29,7 +29,6 @@
 #include <memory>
 #include <cstdint>
 
-#include "iocore/net/SNIActionPerformer.h"
 #include "iocore/net/SSLTypes.h"
 
 #include "tscpp/util/ts_ip.h"
@@ -73,6 +72,8 @@ TSDECL(host_sni_policy);
 TSDECL(http2_initial_window_size_in);
 TSDECL(server_max_early_data);
 #undef TSDECL
+
+class ActionItem;
 
 struct YamlSNIConfig {
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };

@@ -38,7 +38,9 @@
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 
-#include "P_SNIActionPerformer.h"
+#include "SNIActionPerformer.h"
+#include "P_SSLConfig.h"
+#include "P_SSLNetVConnection.h"
 
 #include "tscpp/util/ts_ip.h"
 

@@ -40,7 +40,7 @@
 #include "tscpp/util/ts_ip.h"
 
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "iocore/net/SNIActionPerformer.h"
+#include "iocore/net/SNIActionItem.h"
 #include "iocore/net/YamlSNIConfig.h"
 
 #include <functional>

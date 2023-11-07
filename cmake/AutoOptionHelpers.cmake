@@ -21,17 +21,20 @@ set(GLOBAL_AUTO_OPTION_VARS "")
 
 function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION _DEFAULT)
   add_custom_target(${_NAME}_target)
-  set_target_properties(${_NAME}_target
-    PROPERTIES
-      AUTO_OPTION_FEATURE_VAR ${_FEATURE_VAR}
-  )
+  set_target_properties(${_NAME}_target PROPERTIES AUTO_OPTION_FEATURE_VAR ${_FEATURE_VAR})
 
-  set(${_NAME} ${_DEFAULT} CACHE STRING "${_DESCRIPTION}")
+  set(${_NAME}
+      ${_DEFAULT}
+      CACHE STRING "${_DESCRIPTION}"
+  )
   set_property(CACHE ${_NAME} PROPERTY STRINGS AUTO ON OFF)
 
   set(LOCAL_AUTO_OPTION_VARS ${GLOBAL_AUTO_OPTION_VARS})
   list(APPEND LOCAL_AUTO_OPTION_VARS "${_NAME}")
-  set(GLOBAL_AUTO_OPTION_VARS ${LOCAL_AUTO_OPTION_VARS} PARENT_SCOPE)
+  set(GLOBAL_AUTO_OPTION_VARS
+      ${LOCAL_AUTO_OPTION_VARS}
+      PARENT_SCOPE
+  )
 endfunction()
 
 macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
@@ -40,7 +43,6 @@ macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
   else()
     set(STRICTNESS REQUIRED)
   endif()
-
 
   foreach(PACKAGE_NAME ${_PACKAGE_DEPENDS})
     find_package(${PACKAGE_NAME} ${STRICTNESS})
@@ -97,12 +99,7 @@ endmacro()
 #
 # PACKAGE_DEPENDS is a list of packages that are required for the feature.
 macro(auto_option _FEATURE_NAME)
-  cmake_parse_arguments(ARG
-    ""
-    "DESCRIPTION;DEFAULT;FEATURE_VAR"
-    "PACKAGE_DEPENDS;HEADER_DEPENDS"
-    ${ARGN}
-  )
+  cmake_parse_arguments(ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR" "PACKAGE_DEPENDS;HEADER_DEPENDS" ${ARGN})
 
   set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
   if(ARG_FEATURE_VAR)
@@ -135,7 +132,8 @@ endmacro()
 # Prints a colorized summary of one auto option.
 function(PRINT_AUTO_OPTION _NAME)
   string(ASCII 27 ESC)
-  set(COLOR_RED   "${ESC}[31m")
+  set(HINT "")
+  set(COLOR_RED "${ESC}[31m")
   set(COLOR_GREEN "${ESC}[32m")
   set(COLOR_RESET "${ESC}[m")
 
@@ -157,10 +155,11 @@ function(PRINT_AUTO_OPTION _NAME)
       set(COLOR ${COLOR_RED})
     else()
       set(RESET "")
+      set(HINT "(hint: add -D${_NAME}=ON to enable)")
     endif()
   endif()
 
-  message(STATUS "${FEATURE}: ${COLOR}${FEATURE_VALUE}${RESET} (${OPTION_VALUE})")
+  message(STATUS "${FEATURE}: ${COLOR}${FEATURE_VALUE}${RESET} (${OPTION_VALUE}) ${HINT}")
 endfunction()
 
 # Prints out a colorized summary of all auto options.
