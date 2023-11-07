@@ -54,11 +54,11 @@ regress_rand_CacheKey(const CacheKey *key)
 }
 
 void
-dir_corrupt_bucket(Dir *b, int s, Stripe *vol)
+dir_corrupt_bucket(Dir *b, int s, Stripe *stripe)
 {
-  int l    = (static_cast<int>(dir_bucket_length(b, s, vol) * ts::Random::drandom()));
+  int l    = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
   Dir *e   = b;
-  Dir *seg = vol->dir_segment(s);
+  Dir *seg = stripe->dir_segment(s);
   for (int i = 0; i < l; i++) {
     ink_release_assert(e);
     e = next_dir(e, seg);
@@ -80,15 +80,15 @@ public:
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
     REQUIRE(gnvol >= 1);
 
-    Stripe *vol     = gvol[0];
+    Stripe *stripe  = gvol[0];
     EThread *thread = this_ethread();
-    MUTEX_TRY_LOCK(lock, vol->mutex, thread);
+    MUTEX_TRY_LOCK(lock, stripe->mutex, thread);
     if (!lock.is_locked()) {
       CONT_SCHED_LOCK_RETRY(this);
       return EVENT_DONE;
     }
 
-    vol->clear_dir();
+    stripe->clear_dir();
 
     // coverity[var_decl]
     Dir dir;
@@ -97,20 +97,20 @@ public:
     dir_set_head(&dir, true);
     dir_set_offset(&dir, 1);
 
-    vol->header->agg_pos = vol->header->write_pos += 1024;
+    stripe->header->agg_pos = stripe->header->write_pos += 1024;
 
     CacheKey key;
     rand_CacheKey(&key);
 
-    int s    = key.slice32(0) % vol->segments, i, j;
-    Dir *seg = vol->dir_segment(s);
+    int s    = key.slice32(0) % stripe->segments, i, j;
+    Dir *seg = stripe->dir_segment(s);
 
     // test insert
     int inserted = 0;
-    int free     = dir_freelist_length(vol, s);
+    int free     = dir_freelist_length(stripe, s);
     int n        = free;
     while (n--) {
-      if (!dir_insert(&key, vol, &dir)) {
+      if (!dir_insert(&key, stripe, &dir)) {
         break;
       }
       inserted++;
@@ -118,13 +118,13 @@ public:
     CHECK(static_cast<unsigned int>(inserted - free) <= 1);
 
     // test delete
-    for (i = 0; i < vol->buckets; i++) {
+    for (i = 0; i < stripe->buckets; i++) {
       for (j = 0; j < DIR_DEPTH; j++) {
         dir_set_offset(dir_bucket_row(dir_bucket(i, seg), j), 0); // delete
       }
     }
-    dir_clean_segment(s, vol);
-    int newfree = dir_freelist_length(vol, s);
+    dir_clean_segment(s, stripe);
+    int newfree = dir_freelist_length(stripe, s);
     CHECK(static_cast<unsigned int>(newfree - free) <= 1);
 
     // test insert-delete
@@ -132,7 +132,7 @@ public:
     ttime = ink_get_hrtime();
     for (i = 0; i < newfree; i++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, vol, &dir);
+      dir_insert(&key, stripe, &dir);
     }
     uint64_t us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -145,7 +145,7 @@ public:
     for (i = 0; i < newfree; i++) {
       Dir *last_collision = nullptr;
       regress_rand_CacheKey(&key);
-      CHECK(dir_probe(&key, vol, &dir, &last_collision));
+      CHECK(dir_probe(&key, stripe, &dir, &last_collision));
     }
     us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -154,9 +154,9 @@ public:
       Dbg(dbg_ctl_cache_dir_test, "probe rate = %d / second", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
     }
 
-    for (int c = 0; c < vol->direntries() * 0.75; c++) {
+    for (int c = 0; c < stripe->direntries() * 0.75; c++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, vol, &dir);
+      dir_insert(&key, stripe, &dir);
     }
 
     Dir dir1;
@@ -223,19 +223,19 @@ public:
 #else
       // test corruption detection
       rand_CacheKey(&key);
-      s1 = key.slice32(0) % vol->segments;
-      b1 = key.slice32(1) % vol->buckets;
+      s1 = key.slice32(0) % stripe->segments;
+      b1 = key.slice32(1) % stripe->buckets;
 
-      dir_insert(&key, vol, &dir1);
-      dir_insert(&key, vol, &dir1);
-      dir_insert(&key, vol, &dir1);
-      dir_insert(&key, vol, &dir1);
-      dir_insert(&key, vol, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
-      CHECK(!check_dir(vol));
+      dir_insert(&key, stripe, &dir1);
+      dir_insert(&key, stripe, &dir1);
+      dir_insert(&key, stripe, &dir1);
+      dir_insert(&key, stripe, &dir1);
+      dir_insert(&key, stripe, &dir1);
+      dir_corrupt_bucket(dir_bucket(b1, stripe->dir_segment(s1)), s1, stripe);
+      CHECK(!check_dir(stripe));
 #endif
     }
-    vol->clear_dir();
+    stripe->clear_dir();
 
     // Teardown
     test_done();

@@ -78,20 +78,20 @@ struct CacheDisk : public Continuation {
   char *path         = nullptr;
   int header_len     = 0;
   AIOCallbackInternal io;
-  off_t len               = 0; // in blocks (STORE_BLOCK)
-  off_t start             = 0;
-  off_t skip              = 0;
-  off_t num_usable_blocks = 0;
-  int hw_sector_size      = 0;
-  int fd                  = -1;
-  off_t free_space        = 0;
-  off_t wasted_space      = 0;
-  DiskStripe **disk_vols  = nullptr;
-  DiskStripe *free_blocks = nullptr;
-  int num_errors          = 0;
-  int cleared             = 0;
-  bool read_only_p        = false;
-  bool online             = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
+  off_t len                 = 0; // in blocks (STORE_BLOCK)
+  off_t start               = 0;
+  off_t skip                = 0;
+  off_t num_usable_blocks   = 0;
+  int hw_sector_size        = 0;
+  int fd                    = -1;
+  off_t free_space          = 0;
+  off_t wasted_space        = 0;
+  DiskStripe **disk_stripes = nullptr;
+  DiskStripe *free_blocks   = nullptr;
+  int num_errors            = 0;
+  int cleared               = 0;
+  bool read_only_p          = false;
+  bool online = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
   int forced_volume_num = -1;      ///< Volume number for this disk.

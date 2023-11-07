@@ -77,7 +77,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     start = skip + header_len;
   }
 
-  disk_vols         = static_cast<DiskStripe **>(ats_calloc((l / MIN_STRIPE_SIZE + 1), sizeof(DiskStripe *)));
+  disk_stripes      = static_cast<DiskStripe **>(ats_calloc((l / MIN_STRIPE_SIZE + 1), sizeof(DiskStripe *)));
   header_len        = ROUND_TO_STORE_BLOCK(header_len);
   start             = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
@@ -114,11 +114,11 @@ CacheDisk::~CacheDisk()
     ats_free(path);
     for (int i = 0; i < static_cast<int>(header->num_volumes); i++) {
       DiskStripeBlockQueue *q = nullptr;
-      while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
+      while (disk_stripes[i] && (q = (disk_stripes[i]->dpb_queue.pop()))) {
         delete q;
       }
     }
-    ats_free(disk_vols);
+    ats_free(disk_stripes);
     free(header);
   }
   if (free_blocks) {
@@ -324,20 +324,20 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   unsigned int i;
   /* add it to its disk_vol */
   for (i = 0; i < header->num_volumes; i++) {
-    if (disk_vols[i]->vol_number == number) {
-      disk_vols[i]->dpb_queue.enqueue(q);
-      disk_vols[i]->num_volblocks++;
-      disk_vols[i]->size += q->b->len;
+    if (disk_stripes[i]->vol_number == number) {
+      disk_stripes[i]->dpb_queue.enqueue(q);
+      disk_stripes[i]->num_volblocks++;
+      disk_stripes[i]->size += q->b->len;
       break;
     }
   }
   if (i == header->num_volumes) {
-    disk_vols[i]                = new DiskStripe();
-    disk_vols[i]->num_volblocks = 1;
-    disk_vols[i]->vol_number    = number;
-    disk_vols[i]->disk          = this;
-    disk_vols[i]->dpb_queue.enqueue(q);
-    disk_vols[i]->size = q->b->len;
+    disk_stripes[i]                = new DiskStripe();
+    disk_stripes[i]->num_volblocks = 1;
+    disk_stripes[i]->vol_number    = number;
+    disk_stripes[i]->disk          = this;
+    disk_stripes[i]->dpb_queue.enqueue(q);
+    disk_stripes[i]->size = q->b->len;
     header->num_volumes++;
   }
   return p;
@@ -348,9 +348,9 @@ CacheDisk::delete_volume(int number)
 {
   unsigned int i;
   for (i = 0; i < header->num_volumes; i++) {
-    if (disk_vols[i]->vol_number == number) {
+    if (disk_stripes[i]->vol_number == number) {
       DiskStripeBlockQueue *q;
-      for (q = disk_vols[i]->dpb_queue.head; q;) {
+      for (q = disk_stripes[i]->dpb_queue.head; q;) {
         DiskStripeBlock *p  = q->b;
         p->type             = CACHE_NONE_TYPE;
         p->free             = 1;
@@ -358,18 +358,18 @@ CacheDisk::delete_volume(int number)
         header->num_free++;
         header->num_used--;
         DiskStripeBlockQueue *temp_q = q->link.next;
-        disk_vols[i]->dpb_queue.remove(q);
+        disk_stripes[i]->dpb_queue.remove(q);
         free_blocks->dpb_queue.enqueue(q);
         q = temp_q;
       }
-      free_blocks->num_volblocks += disk_vols[i]->num_volblocks;
-      free_blocks->size          += disk_vols[i]->size;
+      free_blocks->num_volblocks += disk_stripes[i]->num_volblocks;
+      free_blocks->size          += disk_stripes[i]->size;
 
-      delete disk_vols[i];
+      delete disk_stripes[i];
 
       /* move all the other disk vols */
       for (unsigned int j = i; j < (header->num_volumes - 1); j++) {
-        disk_vols[j] = disk_vols[j + 1];
+        disk_stripes[j] = disk_stripes[j + 1];
       }
       header->num_volumes--;
       return 0;
@@ -410,23 +410,23 @@ CacheDisk::update_header()
     }
     int vol_number = header->vol_info[i].number;
     for (j = 0; j < n; j++) {
-      if (disk_vols[j]->vol_number == vol_number) {
-        disk_vols[j]->dpb_queue.enqueue(dpbq);
+      if (disk_stripes[j]->vol_number == vol_number) {
+        disk_stripes[j]->dpb_queue.enqueue(dpbq);
         dpbq_referenced = true;
-        disk_vols[j]->num_volblocks++;
-        disk_vols[j]->size += dpbq->b->len;
+        disk_stripes[j]->num_volblocks++;
+        disk_stripes[j]->size += dpbq->b->len;
         break;
       }
     }
     if (j == n) {
       // did not find a matching volume number. create a new
       // one
-      disk_vols[j]                = new DiskStripe();
-      disk_vols[j]->vol_number    = vol_number;
-      disk_vols[j]->disk          = this;
-      disk_vols[j]->num_volblocks = 1;
-      disk_vols[j]->size          = dpbq->b->len;
-      disk_vols[j]->dpb_queue.enqueue(dpbq);
+      disk_stripes[j]                = new DiskStripe();
+      disk_stripes[j]->vol_number    = vol_number;
+      disk_stripes[j]->disk          = this;
+      disk_stripes[j]->num_volblocks = 1;
+      disk_stripes[j]->size          = dpbq->b->len;
+      disk_stripes[j]->dpb_queue.enqueue(dpbq);
       dpbq_referenced = true;
       n++;
     }
@@ -444,8 +444,8 @@ CacheDisk::get_diskvol(int vol_number)
 {
   unsigned int i;
   for (i = 0; i < header->num_volumes; i++) {
-    if (disk_vols[i]->vol_number == vol_number) {
-      return disk_vols[i];
+    if (disk_stripes[i]->vol_number == vol_number) {
+      return disk_stripes[i];
     }
   }
   return nullptr;

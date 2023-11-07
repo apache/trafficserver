@@ -49,22 +49,22 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
   }
   ink_assert(caches[type] == this);
 
-  Stripe *vol = key_to_vol(key, hostname, host_len);
+  Stripe *stripe = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = nullptr;
   ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od  = nullptr;
   CacheVC *c        = nullptr;
   {
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
       c->op_type = static_cast<int>(CacheOpType::Read);
       Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
       c->first_key = c->key = c->earliest_key = *key;
-      c->vol                                  = vol;
+      c->vol                                  = stripe;
       c->frag_type                            = type;
       c->od                                   = od;
     }
@@ -91,7 +91,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
   }
 Lmiss:
   Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -117,22 +117,22 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  Stripe *vol = key_to_vol(key, hostname, host_len);
+  Stripe *stripe = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = nullptr;
   ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od  = nullptr;
   CacheVC *c        = nullptr;
 
   {
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
       c            = new_CacheVC(cont);
       c->first_key = c->key = c->earliest_key = *key;
-      c->vol                                  = vol;
+      c->vol                                  = stripe;
       c->vio.op                               = VIO::READ;
       c->op_type                              = static_cast<int>(CacheOpType::Read);
       Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
       c->params    = params;
@@ -164,7 +164,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
 Lmiss:
   Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:

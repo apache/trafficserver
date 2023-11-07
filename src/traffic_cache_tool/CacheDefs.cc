@@ -422,15 +422,15 @@ dir_compare_tag(const CacheDirEntry *e, const CryptoHash *key)
 }
 
 int
-vol_in_phase_valid(Stripe *d, CacheDirEntry *e)
+vol_in_phase_valid(Stripe *stripe, CacheDirEntry *e)
 {
-  return (dir_offset(e) - 1 < ((d->_meta[0][0].write_pos + d->agg_buf_pos - d->_start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 < ((stripe->_meta[0][0].write_pos + stripe->agg_buf_pos - stripe->_start) / CACHE_BLOCK_SIZE));
 }
 
 int
-vol_out_of_phase_valid(Stripe *d, CacheDirEntry *e)
+vol_out_of_phase_valid(Stripe *stripe, CacheDirEntry *e)
 {
-  return (dir_offset(e) - 1 >= ((d->_meta[0][0].agg_pos - d->_start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((stripe->_meta[0][0].agg_pos - stripe->_start) / CACHE_BLOCK_SIZE));
 }
 
 bool
