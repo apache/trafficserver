@@ -280,6 +280,9 @@ struct Stripe : public Continuation {
   }
 
   ~Stripe() override { ats_free(agg_buffer); }
+
+private:
+  void _init_data();
 };
 
 struct AIO_failure_handler : public Continuation {

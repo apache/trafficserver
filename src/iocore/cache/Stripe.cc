@@ -37,30 +37,6 @@ DbgCtl dbg_ctl_cache_init{"cache_init"};
 short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 
 void
-vol_init_data_internal(Stripe *vol)
-{
-  // step1: calculate the number of entries.
-  off_t total_entries = (vol->len - (vol->start - vol->skip)) / cache_config_min_average_object_size;
-  // step2: calculate the number of buckets
-  off_t total_buckets = total_entries / DIR_DEPTH;
-  // step3: calculate the number of segments, no segment has more than 16384 buckets
-  vol->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
-  // step4: divide total_buckets into segments on average.
-  vol->buckets = (total_buckets + vol->segments - 1) / vol->segments;
-  // step5: set the start pointer.
-  vol->start = vol->skip + 2 * vol->dirlen();
-}
-
-void
-vol_init_data(Stripe *vol)
-{
-  // iteratively calculate start + buckets
-  vol_init_data_internal(vol);
-  vol_init_data_internal(vol);
-  vol_init_data_internal(vol);
-}
-
-void
 vol_init_dir(Stripe *vol)
 {
   int b, s, l;
@@ -250,7 +226,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   // successive approximation, directory/meta data eats up some storage
   start = dir_skip;
-  vol_init_data(this);
+  this->_init_data();
   data_blocks         = (len - (start - skip)) / STORE_BLOCK_SIZE;
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 
@@ -915,4 +891,19 @@ Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this p
   printf("\n");
 
   return 0;
+}
+
+void
+Stripe::_init_data()
+{
+  // step1: calculate the number of entries.
+  off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
+  // step2: calculate the number of buckets
+  off_t total_buckets = total_entries / DIR_DEPTH;
+  // step3: calculate the number of segments, no segment has more than 16384 buckets
+  this->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  // step4: divide total_buckets into segments on average.
+  this->buckets = (total_buckets + this->segments - 1) / this->segments;
+  // step5: set the start pointer.
+  this->start = this->skip + 2 * this->dirlen();
 }
