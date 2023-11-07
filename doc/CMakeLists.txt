@@ -33,26 +33,24 @@ configure_file(manpages.cmake.in.py manpages.py)
 add_custom_target(
   generate_docs_setup
   COMMENT "Copy static files to build directory"
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/static
-          ${CMAKE_CURRENT_BINARY_DIR}/static
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/static ${CMAKE_CURRENT_BINARY_DIR}/static
 )
 
 # generate svg files from uml files
 set(UML_FILES
-  uml/JsonRPCManager.uml
-  uml/TLS-Bridge-Messages.uml
-  uml/TLS-Bridge-Plugin.uml
-  uml/hdr-heap-class.plantuml
-  uml/hdr-heap-str-alloc.plantuml
-  uml/host-resolve.plantuml
-  uml/l4-basic-sequence.uml
-  uml/l4-example-cdn-layout.uml
-  uml/l4-pre-warming-overview.uml
-  uml/l4-sni-routing-seq.uml
-  uml/l4-tcp-routing.uml
-  uml/traffic_ctl-class-diagram.uml
-  uml/url_rewrite.plantuml
+    uml/JsonRPCManager.uml
+    uml/TLS-Bridge-Messages.uml
+    uml/TLS-Bridge-Plugin.uml
+    uml/hdr-heap-class.plantuml
+    uml/hdr-heap-str-alloc.plantuml
+    uml/host-resolve.plantuml
+    uml/l4-basic-sequence.uml
+    uml/l4-example-cdn-layout.uml
+    uml/l4-pre-warming-overview.uml
+    uml/l4-sni-routing-seq.uml
+    uml/l4-tcp-routing.uml
+    uml/traffic_ctl-class-diagram.uml
+    uml/url_rewrite.plantuml
 )
 # unfortunately, sphinx can't look else for files than its source directory
 # so these files must be create in the source tree
@@ -61,16 +59,13 @@ foreach(UML ${UML_FILES})
   list(APPEND SVG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg
-    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
+    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg
+            ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
     DEPENDS ${UML}
     VERBATIM
   )
 endforeach()
-add_custom_target(
-  generate_svg_from_uml
-  DEPENDS
-  ${SVG_FILES}
-)
+add_custom_target(generate_svg_from_uml DEPENDS ${SVG_FILES})
 
 # Docs are built with python so we need a target to setup pipenv
 set(RUNPIPENV PIPENV_PIPFILE=${CMAKE_CURRENT_SOURCE_DIR}/Pipfile ${PipEnv})

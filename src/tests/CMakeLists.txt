@@ -67,11 +67,20 @@ macro(add_cache_test name)
 endmacro()
 
 macro(add_net_test name)
-  add_executable(${name}
-    ${CMAKE_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc
-    ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
-    ${ARGN})
-  target_link_libraries(${name} PRIVATE ts::tsapicore ts::inknet ts::configmanager ts::tsapi ts::inknet ts::http ts::configmanager)
+  add_executable(
+    ${name} ${CMAKE_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
+            ${ARGN}
+  )
+  target_link_libraries(
+    ${name}
+    PRIVATE ts::tsapicore
+            ts::inknet
+            ts::configmanager
+            ts::tsapi
+            ts::inknet
+            ts::http
+            ts::configmanager
+  )
   add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
@@ -136,7 +145,10 @@ set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
 target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
 target_link_libraries(test_net PRIVATE hdrs proxy ts::tsapicore)
 
-add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/src/iocore/net/NetVCTest.cc ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests/test_EventSystem.cc)
+add_stubbed_test(
+  EventSystem ${CMAKE_SOURCE_DIR}/src/iocore/net/NetVCTest.cc
+  ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests/test_EventSystem.cc
+)
 target_link_libraries(EventSystem PRIVATE ts::inknet)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
 
