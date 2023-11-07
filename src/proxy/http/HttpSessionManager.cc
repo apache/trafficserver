@@ -264,8 +264,8 @@ ServerSessionPool::eventHandler(int event, void *data)
       // origin, then reset the timeouts on our end and do not close the connection
       if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == PoolableSession::KA_POOLED &&
           s->conn_track_group) {
-        Debug("http_ss", "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->min_keep_alive_conns);
-        bool connection_count_below_min = s->conn_track_group->_count <= s->conn_track_group->min_keep_alive_conns;
+        Debug("http_ss", "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->_min_keep_alive_conns);
+        bool connection_count_below_min = s->conn_track_group->_count <= s->conn_track_group->_min_keep_alive_conns;
 
         if (connection_count_below_min) {
           Debug("http_ss",
