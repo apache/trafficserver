@@ -102,7 +102,7 @@ target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 
 target_link_libraries(
   inknet
-  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL ts::tsapicommon
+  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL ts::tsapibackend
   PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
 )
 

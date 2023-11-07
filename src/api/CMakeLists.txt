@@ -38,7 +38,7 @@ target_link_libraries(tsapi PRIVATE libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSS
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
-add_library(tsapicommon
+add_library(tsapibackend
   ConfigUpdateCbTable.cc # configmanager
   InkContInternal.cc # proxy, http
   InkVConnInternal.cc # proxy, http
@@ -47,8 +47,8 @@ add_library(tsapicommon
   LifecycleAPIHooks.cc # proxy, http
   HttpHookState.cc # proxy, http
 )
-add_library(ts::tsapicommon ALIAS tsapicommon)
-target_link_libraries(tsapicommon
+add_library(ts::tsapibackend ALIAS tsapibackend)
+target_link_libraries(tsapibackend
   PUBLIC ts::inknet ts::http
   PRIVATE ts::proxy ts::hdrs ts::tscore)
 
@@ -62,7 +62,7 @@ add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-install(TARGETS tsapi tsapicore tsapicommon PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapi tsapicore tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
