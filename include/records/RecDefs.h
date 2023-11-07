@@ -27,6 +27,8 @@
 #include "tscore/ink_rwlock.h"
 #include "records/RecMutex.h"
 
+#include <functional>
+
 //-------------------------------------------------------------------------
 // Error Values
 //-------------------------------------------------------------------------
@@ -179,6 +181,8 @@ struct RecRawStatBlock {
 //-------------------------------------------------------------------------
 // RecCore Callback Types
 //-------------------------------------------------------------------------
-using RecConfigUpdateCb = int (*)(const char *, RecDataT, RecData, void *);
+
+using RecConfigUpdateCb = std::function<int(const char *, RecDataT, RecData, void *)>;
 using RecStatUpdateFunc = int (*)(const char *, RecDataT, RecData *, RecRawStatBlock *, int, void *);
 using RecRawStatSyncCb  = int (*)(const char *, RecDataT, RecData *, RecRawStatBlock *, int);
+using RecContextCb      = bool(const char *, RecDataT, RecData, void *);

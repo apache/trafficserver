@@ -24,13 +24,11 @@
 #include <algorithm>
 #include <deque>
 #include "iocore/net/ConnectionTracker.h"
+#include "records/RecCore.h"
 #include "tscpp/util/ts_bw_format.h"
 #include "../../records/P_RecDefs.h"
-#include "proxy/http/HttpConfig.h"
 
 using namespace std::literals;
-
-extern void Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie);
 
 ConnectionTracker::Imp ConnectionTracker::_imp;
 
@@ -143,15 +141,15 @@ Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData da
 } // namespace
 
 void
-ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn)
+ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb)
 {
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
-  Enable_Config_Var(CONFIG_SERVER_VAR_MIN, &Config_Update_Conntrack_Min, txn);
-  Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, txn);
-  Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
-  Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MIN, &Config_Update_Conntrack_Min, config_cb, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, config_cb, global);
 }
 
 ConnectionTracker::TxnState
