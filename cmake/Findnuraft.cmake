@@ -27,20 +27,19 @@
 #
 
 find_library(nuraft_LIBRARY nuraft)
-find_path(
-  nuraft_INCLUDE_DIR
-  NAMES libnuraft/nuraft.hxx
-)
+find_path(nuraft_INCLUDE_DIR NAMES libnuraft/nuraft.hxx)
 
 mark_as_advanced(nuraft_FOUND nuraft_LIBRARY nuraft_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(nuraft REQUIRED_VARS nuraft_LIBRARY nuraft_INCLUDE_DIR)
 
-# Add the library but only add libraries if nuraft is found
-add_library(nuraft::nuraft INTERFACE IMPORTED)
-if(nuraft_FOUND)
-  set(nuraft_INCLUDE_DIRS ${nuraft_INCLUDE_DIR})
-  target_include_directories(nuraft::nuraft INTERFACE ${nuraft_INCLUDE_DIRS})
-  target_link_libraries(nuraft::nuraft INTERFACE ${nuraft_LIBRARY})
+if(nuraft_FOUND AND NOT TARGET nuraft::nuraft)
+  # Add the library but only add libraries if nuraft is found
+  add_library(nuraft::nuraft INTERFACE IMPORTED)
+  if(nuraft_FOUND)
+    set(nuraft_INCLUDE_DIRS ${nuraft_INCLUDE_DIR})
+    target_include_directories(nuraft::nuraft INTERFACE ${nuraft_INCLUDE_DIRS})
+    target_link_libraries(nuraft::nuraft INTERFACE ${nuraft_LIBRARY})
+  endif()
 endif()
