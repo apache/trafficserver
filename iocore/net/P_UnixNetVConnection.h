@@ -331,7 +331,7 @@ UnixNetVConnection::set_mptcp_state()
   Debug("socket_mptcp", "MPTCP_INFO and struct mptcp_info defined");
   if (0 == safe_getsockopt(con.fd, SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {
     if (minfo_len > 0) {
-      Debug("socket_mptcp", "MPTCP socket state (remote key received): %d",
+      Debug("socket_mptcp", "MPTCP socket state (remote key received): %ld",
             (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED));
       mptcp_state = (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED);
       return;
