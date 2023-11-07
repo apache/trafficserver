@@ -38,6 +38,10 @@
 #include "P_NetAccept.h"
 #include "NetEvent.h"
 
+#if HAVE_STRUCT_MPTCP_INFO_SUBFLOWS
+#include <linux/mptcp.h>
+#endif
+
 class UnixNetVConnection;
 class NetHandler;
 struct PollDescriptor;
@@ -317,8 +321,26 @@ UnixNetVConnection::set_mptcp_state()
     Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
     mptcp_state = mptcp_enabled > 0 ? true : false;
   } else {
-    Debug("socket_mptcp", "MPTCP failed getsockopt(): %s", strerror(errno));
+    Debug("socket_mptcp", "MPTCP failed getsockopt(MPTCP_ENABLED): %s", strerror(errno));
   }
+
+#if defined(HAVE_STRUCT_MPTCP_INFO_SUBFLOWS) && defined(MPTCP_INFO) && MPTCP_INFO == 1
+  struct mptcp_info minfo;
+  int minfo_len = sizeof(minfo);
+
+  Debug("socket_mptcp", "MPTCP_INFO and struct mptcp_info defined");
+  if (0 == safe_getsockopt(con.fd, SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {
+    if (minfo_len > 0) {
+      Debug("socket_mptcp", "MPTCP socket state (remote key received): %d",
+            (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED));
+      mptcp_state = (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED);
+      return;
+    }
+  } else {
+    mptcp_state = 0;
+    Debug("socket_mptcp", "MPTCP failed getsockopt(%d, MPTCP_INFO): %s", con.fd, strerror(errno));
+  }
+#endif
 }
 
 inline ink_hrtime

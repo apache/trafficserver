@@ -89,12 +89,16 @@ static bool
 mptcp_supported()
 {
   ats_scoped_fd fd(::open("/proc/sys/net/mptcp/mptcp_enabled", O_RDONLY));
+  // Newer kernel mptcp config
+  ats_scoped_fd fd_new(::open("/proc/sys/net/mptcp/enabled", O_RDONLY));
   int value = 0;
+  TextBuffer buffer(16);
 
-  if (fd) {
-    TextBuffer buffer(16);
-
+  if (fd > 0) {
     buffer.slurp(fd.get());
+    value = atoi(buffer.bufPtr());
+  } else if (fd_new > 0) {
+    buffer.slurp(fd_new.get());
     value = atoi(buffer.bufPtr());
   }
 
