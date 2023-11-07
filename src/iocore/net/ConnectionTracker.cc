@@ -288,9 +288,8 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
 void
 ConnectionTracker::Group::release()
 {
-  if (_count >= 0) {
-    --_count;
-    if (_count == 0) {
+  if (_count > 0) {
+    if (--_count == 0) {
       TableSingleton &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
       std::lock_guard<std::mutex> lock(table._mutex); // Table lock
       if (_count > 0) {
