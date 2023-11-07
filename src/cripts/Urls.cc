@@ -103,7 +103,7 @@ Url::Path::getSV()
 
     std::copy(_segments.begin(), _segments.end(), std::ostream_iterator<Cript::string_view>(path, "/"));
     _storage.reserve(_size);
-    _storage = path.str();
+    _storage = std::string_view(path.str());
     if (_storage.size() > 0) {
       _storage.pop_back(); // Removes the trailing /
     }

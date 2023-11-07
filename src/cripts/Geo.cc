@@ -33,40 +33,29 @@ enum Qualifiers {
 Cript::string
 get_geo_string(const sockaddr *addr, Qualifiers q)
 {
+  ink_release_assert(gMaxMindDB != nullptr);
+  ink_release_assert(addr != nullptr);
+
   Cript::string ret = "(unknown)";
   int mmdb_error;
-
-  if (gMaxMindDB == nullptr) {
-    TSDebug("Cripts", "MaxMind not initialized; using default value");
-    return ret;
-  }
-
-  if (addr == nullptr) {
-    TSDebug("Cripts", "client addr not initialized; using default value");
-    return ret;
-  }
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
-    TSDebug("Cripts", "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
     return ret;
   }
 
   MMDB_entry_data_list_s *entry_data_list = nullptr;
   if (!result.found_entry) {
-    TSDebug("Cripts", "No entry for this IP was found");
     return ret;
   }
 
   int status = MMDB_get_entry_data_list(&result.entry, &entry_data_list);
   if (MMDB_SUCCESS != status) {
-    TSDebug("Cripts", "Error looking up entry data: %s", MMDB_strerror(status));
     return ret;
   }
 
   if (entry_data_list == nullptr) {
-    TSDebug("Cripts", "No data found");
     return ret;
   }
 
@@ -79,7 +68,7 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
     field_name = "autonomous_system_organization";
     break;
   default:
-    TSDebug("Cripts", "Unsupported field %d", q);
+    Error("Cripts: Unsupported field %d", q);
     return ret;
     break;
   }
@@ -88,7 +77,6 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
 
   status = MMDB_get_value(&result.entry, &entry_data, field_name, NULL);
   if (MMDB_SUCCESS != status) {
-    TSDebug("Cripts", "Error on get value ASN value: %s", MMDB_strerror(status));
     return ret;
   }
   ret = Cript::string(entry_data.utf8_string, entry_data.data_size);

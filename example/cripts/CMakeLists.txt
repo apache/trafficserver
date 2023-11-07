@@ -41,5 +41,5 @@ set(cript-includes -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/lib/swoc/
 
 add_custom_target(
   cripts-clang-tidy COMMAND clang-tidy --config-file ${PROJECT_SOURCE_DIR}/tools/cripts/clang-tidy.conf --fix
-                            ${PROJECT_SOURCE_DIR}/plugins/cripts/example1.cc -- -std=c++17 ${cript-includes}
+                            ${PROJECT_SOURCE_DIR}/example/cripts/example1.cc -- -std=c++17 ${cript-includes}
 )

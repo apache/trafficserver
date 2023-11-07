@@ -387,7 +387,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     wrap_plugin_init(api_info, true, CaseArg);
   }
 
-  TSDebug("Cript", "Remap plugin %s is successfully initialized", __BASE_FILE__);
+  // TSDebug("Cript", "Remap plugin %s is successfully initialized", __BASE_FILE__);
 
   return TS_SUCCESS;
 }

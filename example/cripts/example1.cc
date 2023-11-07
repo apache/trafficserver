@@ -27,7 +27,7 @@ static Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
 // This is called only when the plugin is initialized
 do_init()
 {
-  TSDebug("Cript", "Hello, example1 plugin is being initialized");
+  // TSDebug("Cript", "Hello, example1 plugin is being initialized");
 }
 
 do_create_instance()
