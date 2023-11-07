@@ -65,6 +65,9 @@ public:
   static float calculate_quality_of_accept_encoding_match(MIMEField *accept_field, MIMEField *content_field,
                                                           MIMEField *cached_accept_field = nullptr);
 
+  static ink_time_t calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
+                                           ink_time_t base_response_date, ink_time_t now);
+
   // 'encoding_identifier' is a nul-terminated string.
   static bool match_content_encoding(MIMEField *accept_field, const char *encoding_identifier);
 

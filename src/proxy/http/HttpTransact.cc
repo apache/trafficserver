@@ -5994,9 +5994,9 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   }
   // See how old the document really is.  We don't want create a
   //   stale content museum of documents that are no longer available
-  time_t current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
-                                                                   s->cache_info.object_read->response_received_time_get(),
-                                                                   cached_response, cached_response->get_date(), s->current.now);
+  time_t current_age = HttpTransactCache::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
+                                                                 s->cache_info.object_read->response_received_time_get(),
+                                                                 cached_response, cached_response->get_date(), s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
     TxnDebug("http_trans", "document age is too large %" PRId64, (int64_t)current_age);
@@ -7347,8 +7347,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   fresh_limit   = calculate_document_freshness_limit(s, cached_obj_response, response_date, &heuristic);
   ink_assert(fresh_limit >= 0);
 
-  current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
-                                                            response_date, s->current.now);
+  current_age = HttpTransactCache::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
+                                                          response_date, s->current.now);
 
   // First check overflow status
   // Second if current_age is under the max, use the smaller value

@@ -363,74 +363,6 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, 
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Name       : calculate_document_age()
-// Description: returns age of document
-//
-// Input      :
-// Output     : ink_time_t age
-//
-// Details    :
-//   Algorithm is straight out of March 1998 1.1 specs, Section 13.2.3
-//
-///////////////////////////////////////////////////////////////////////////////
-ink_time_t
-HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
-                                            ink_time_t base_response_date, ink_time_t now)
-{
-  ink_time_t age_value              = base_response->get_age();
-  ink_time_t date_value             = 0;
-  ink_time_t apparent_age           = 0;
-  ink_time_t corrected_received_age = 0;
-  ink_time_t response_delay         = 0;
-  ink_time_t corrected_initial_age  = 0;
-  ink_time_t current_age            = 0;
-  ink_time_t resident_time          = 0;
-  ink_time_t now_value              = 0;
-
-  ink_time_t tmp_value = 0;
-
-  tmp_value  = base_response_date;
-  date_value = (tmp_value > 0) ? tmp_value : 0;
-
-  // Deal with clock skew. Sigh.
-  //
-  // TODO solve this global clock problem
-  now_value = std::max(now, response_time);
-
-  ink_assert(response_time >= 0);
-  ink_assert(request_time >= 0);
-  ink_assert(response_time >= request_time);
-  ink_assert(now_value >= response_time);
-
-  if (date_value > 0) {
-    apparent_age = std::max(static_cast<time_t>(0), (response_time - date_value));
-  }
-  if (age_value < 0) {
-    current_age = -1; // Overflow from Age: header
-  } else {
-    corrected_received_age = std::max(apparent_age, age_value);
-    response_delay         = response_time - request_time;
-    corrected_initial_age  = corrected_received_age + response_delay;
-    resident_time          = now_value - response_time;
-    current_age            = corrected_initial_age + resident_time;
-  }
-
-  Debug("http_age", "[calculate_document_age] age_value:              %" PRId64, (int64_t)age_value);
-  Debug("http_age", "[calculate_document_age] date_value:             %" PRId64, (int64_t)date_value);
-  Debug("http_age", "[calculate_document_age] response_time:          %" PRId64, (int64_t)response_time);
-  Debug("http_age", "[calculate_document_age] now:                    %" PRId64, (int64_t)now);
-  Debug("http_age", "[calculate_document_age] now (fixed):            %" PRId64, (int64_t)now_value);
-  Debug("http_age", "[calculate_document_age] apparent_age:           %" PRId64, (int64_t)apparent_age);
-  Debug("http_age", "[calculate_document_age] corrected_received_age: %" PRId64, (int64_t)corrected_received_age);
-  Debug("http_age", "[calculate_document_age] response_delay:         %" PRId64, (int64_t)response_delay);
-  Debug("http_age", "[calculate_document_age] corrected_initial_age:  %" PRId64, (int64_t)corrected_initial_age);
-  Debug("http_age", "[calculate_document_age] resident_time:          %" PRId64, (int64_t)resident_time);
-  Debug("http_age", "[calculate_document_age] current_age:            %" PRId64, (int64_t)current_age);
-
-  return current_age;
-}
-
 bool
 HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp, bool ignore_no_store_and_no_cache_directives)
 {
@@ -658,7 +590,7 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
                                                              ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing)
 {
   ink_time_t date        = base->get_date();
-  ink_time_t current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
+  ink_time_t current_age = HttpTransactCache::calculate_document_age(request_sent_time, response_received_time, base, date, now);
 
   outgoing->set_age(current_age); // set_age() deals with overflow properly, so pass it along
 
