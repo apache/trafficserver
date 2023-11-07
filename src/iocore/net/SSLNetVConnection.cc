@@ -37,9 +37,9 @@
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLNetVConnection.h"
-#include "iocore/net/BIO_fastopen.h"
+#include "BIO_fastopen.h"
 #include "iocore/net/SSLAPIHooks.h"
-#include "iocore/net/SSLStats.h"
+#include "SSLStats.h"
 #include "iocore/net/TLSALPNSupport.h"
 
 #include <netinet/in.h>

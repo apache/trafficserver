@@ -23,7 +23,7 @@
  */
 
 #include "iocore/net/TLSBasicSupport.h"
-#include "iocore/net/SSLStats.h"
+#include "SSLStats.h"
 
 int TLSBasicSupport::_ex_data_index = -1;
 

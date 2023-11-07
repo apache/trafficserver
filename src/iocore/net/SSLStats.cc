@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/SSLStats.h"
+#include "SSLStats.h"
 
 #include <openssl/err.h>
 

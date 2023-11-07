@@ -28,7 +28,7 @@
 #include "iocore/net/SSLAPIHooks.h"
 
 #include "P_SSLConfig.h"
-#include "iocore/net/SSLStats.h"
+#include "SSLStats.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
