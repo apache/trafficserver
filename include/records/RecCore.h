@@ -121,7 +121,32 @@ RecErrT RecLinkConfigCounter(const char *name, RecCounter *rec_counter);
 RecErrT RecLinkConfigString(const char *name, RecString *rec_string);
 RecErrT RecLinkConfigByte(const char *name, RecByte *rec_byte);
 
-RecErrT RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
+RecErrT RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb const &update_cb, void *cookie);
+
+/** Enable a dynamic configuration variable.
+ *
+ * @param name Configuration var name.
+ * @param record_cb Callback to do the actual update of the master record.
+ * @param config_cb Callback to invoke when the configuration variable is updated.
+ * @param cookie Extra data for @a cb
+ *
+ * The purpose of this is to unite the different ways and times a configuration variable needs
+ * to be loaded. These are
+ * - Process start.
+ * - Dynamic update.
+ * - Plugin API update.
+ *
+ * @a record_cb is expected to perform the update. It must return a @c bool which is
+ * - @c true if the value was changed.
+ * - @c false if the value was not changed.
+ *
+ * Based on that, a run time configuration update is triggered or not.
+ *
+ * In addition, this invokes @a record_cb and passes it the information in the configuration variable
+ * global table in order to perform the initial loading of the value. No update is triggered for
+ * that call as it is not needed.
+ */
+void Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, RecConfigUpdateCb const &config_cb, void *cookie);
 
 //-------------------------------------------------------------------------
 // Record Reading/Writing

@@ -438,7 +438,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
       if ((r->config_meta.update_required & update_required_type) && (r->config_meta.update_cb_list)) {
         RecConfigUpdateCbList *cur_callback = nullptr;
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
-          (*(cur_callback->update_cb))(r->name, r->data_type, r->data, cur_callback->update_cookie);
+          cur_callback->update_cb(r->name, r->data_type, r->data, cur_callback->update_cookie);
         }
         r->config_meta.update_required = r->config_meta.update_required & ~update_required_type;
       }

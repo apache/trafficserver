@@ -31,6 +31,7 @@
 #include <sstream>
 #include <tuple>
 #include <mutex>
+#include "records/RecCore.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_mutex.h"
@@ -221,8 +222,9 @@ public:
    *
    * @param config The storage for the global configuration data.
    * @param txn The storage for the default per transaction data.
+   * @param config_cb The callback to invoke when a configuration is updated.
    */
-  static void config_init(GlobalConfig *global, TxnConfig *txn);
+  static void config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb);
 
   /// Tag used for debugging output.
   static constexpr char const *const DEBUG_TAG{"conn_track"};

@@ -56,10 +56,16 @@ enum RecEntryT {
   RECE_RECORD,
 };
 
-using RecConfigUpdateCbList = struct RecConfigCbList_t {
+struct RecConfigUpdateCbList {
+  RecConfigUpdateCbList() {}
+  RecConfigUpdateCbList(RecConfigUpdateCb const &update_cb, void *update_cookie)
+    : update_cb(update_cb), update_cookie(update_cookie)
+  {
+  }
+
   RecConfigUpdateCb update_cb;
-  void *update_cookie;
-  struct RecConfigCbList_t *next;
+  void *update_cookie         = nullptr;
+  RecConfigUpdateCbList *next = nullptr;
 };
 
 using RecStatUpdateFuncList = struct RecStatUpdateFuncList_t {
