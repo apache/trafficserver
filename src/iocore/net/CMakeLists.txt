@@ -102,7 +102,13 @@ target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 
 target_link_libraries(
   inknet
-  PUBLIC ts::inkevent ts::proxy ts::records ts::tscore OpenSSL::Crypto OpenSSL::SSL ts::tsapibackend
+  PUBLIC ts::inkevent
+         ts::proxy
+         ts::records
+         ts::tscore
+         OpenSSL::Crypto
+         OpenSSL::SSL
+         ts::tsapibackend
   PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
 )
 
@@ -112,19 +118,11 @@ if(TS_USE_LINUX_IO_URING)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(test_net
-    libinknet_stub.cc
-    NetVCTest.cc
-    unit_tests/test_ProxyProtocol.cc
-    unit_tests/test_SSLSNIConfig.cc
-    unit_tests/test_YamlSNIConfig.cc
-    unit_tests/unit_test_main.cc
+  add_executable(
+    test_net libinknet_stub.cc NetVCTest.cc unit_tests/test_ProxyProtocol.cc unit_tests/test_SSLSNIConfig.cc
+             unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
   )
-  target_link_libraries(test_net
-    PRIVATE
-    ts::inknet
-    catch2::catch2
-  )
+  target_link_libraries(test_net PRIVATE ts::inknet catch2::catch2)
   set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
   target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
   add_test(NAME test_net COMMAND test_net)

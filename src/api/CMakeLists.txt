@@ -16,10 +16,7 @@
 #######################
 
 # plugin api *only*
-add_library(tsapi SHARED
-  InkAPI.cc
-  InkIOCoreAPI.cc
-  FetchSM.cc # OSCP stapling
+add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc FetchSM.cc # OSCP stapling
 )
 add_library(ts::tsapi ALIAS tsapi)
 
@@ -38,7 +35,8 @@ target_link_libraries(tsapi PRIVATE libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSS
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
-add_library(tsapibackend
+add_library(
+  tsapibackend
   ConfigUpdateCbTable.cc # configmanager
   InkContInternal.cc # proxy, http
   InkVConnInternal.cc # proxy, http
@@ -48,16 +46,14 @@ add_library(tsapibackend
   HttpHookState.cc # proxy, http
 )
 add_library(ts::tsapibackend ALIAS tsapibackend)
-target_link_libraries(tsapibackend
+target_link_libraries(
+  tsapibackend
   PUBLIC ts::inknet ts::http
-  PRIVATE ts::proxy ts::hdrs ts::tscore)
+  PRIVATE ts::proxy ts::hdrs ts::tscore
+)
 
 # Items that even tscore can depend on
-add_library(
-  tsapicore
-  Metrics.cc
-  DbgCtl.cc
-)
+add_library(tsapicore Metrics.cc DbgCtl.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
