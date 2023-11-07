@@ -40,11 +40,11 @@ class AggregateWriteBuffer
 public:
   AggregateWriteBuffer()
   {
-    this->buffer = static_cast<char *>(ats_memalign(ats_pagesize(), AGG_SIZE));
-    memset(this->buffer, 0, AGG_SIZE);
+    this->_buffer = static_cast<char *>(ats_memalign(ats_pagesize(), AGG_SIZE));
+    memset(this->_buffer, 0, AGG_SIZE);
   }
 
-  ~AggregateWriteBuffer() { ats_free(this->buffer); }
+  ~AggregateWriteBuffer() { ats_free(this->_buffer); }
 
   AggregateWriteBuffer(AggregateWriteBuffer const &)            = delete;
   AggregateWriteBuffer &operator=(AggregateWriteBuffer const &) = delete;
@@ -63,40 +63,40 @@ public:
   void add_bytes_pending_aggregation(int size);
 
 private:
-  Queue<CacheVC, Continuation::Link_link> pending_writers;
-  char *buffer                  = nullptr;
-  int bytes_pending_aggregation = 0;
-  int buffer_pos                = 0;
+  Queue<CacheVC, Continuation::Link_link> _pending_writers;
+  char *_buffer                  = nullptr;
+  int _bytes_pending_aggregation = 0;
+  int _buffer_pos                = 0;
 };
 
 inline Queue<CacheVC, Continuation::Link_link> &
 AggregateWriteBuffer::get_pending_writers()
 {
-  return this->pending_writers;
+  return this->_pending_writers;
 }
 
 inline char *
 AggregateWriteBuffer::get_buffer()
 {
-  return this->buffer;
+  return this->_buffer;
 }
 
 inline int
 AggregateWriteBuffer::get_buffer_pos() const
 {
-  return this->buffer_pos;
+  return this->_buffer_pos;
 }
 
 inline void
 AggregateWriteBuffer::add_buffer_pos(int size)
 {
-  this->buffer_pos += size;
+  this->_buffer_pos += size;
 }
 
 inline void
 AggregateWriteBuffer::seek(int offset)
 {
-  this->buffer_pos = offset;
+  this->_buffer_pos = offset;
 }
 
 inline void
@@ -108,11 +108,11 @@ AggregateWriteBuffer::reset_buffer_pos()
 inline int
 AggregateWriteBuffer::get_bytes_pending_aggregation() const
 {
-  return this->bytes_pending_aggregation;
+  return this->_bytes_pending_aggregation;
 }
 
 inline void
 AggregateWriteBuffer::add_bytes_pending_aggregation(int size)
 {
-  this->bytes_pending_aggregation += size;
+  this->_bytes_pending_aggregation += size;
 }

@@ -291,7 +291,7 @@ private:
   void _init_data_internal();
   void _init_data();
 
-  AggregateWriteBuffer write_buffer;
+  AggregateWriteBuffer _write_buffer;
 };
 
 struct AIO_failure_handler : public Continuation {
@@ -406,7 +406,7 @@ Stripe::vol_out_of_phase_write_valid(Dir *e) const
 inline int
 Stripe::vol_in_phase_valid(Dir *e) const
 {
-  return (dir_offset(e) - 1 < ((this->header->write_pos + this->write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 < ((this->header->write_pos + this->_write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline off_t
@@ -431,7 +431,7 @@ inline int
 Stripe::vol_in_phase_agg_buf_valid(Dir *e) const
 {
   return (this->vol_offset(e) >= this->header->write_pos &&
-          this->vol_offset(e) < (this->header->write_pos + this->write_buffer.get_buffer_pos()));
+          this->vol_offset(e) < (this->header->write_pos + this->_write_buffer.get_buffer_pos()));
 }
 
 // length of the partition not including the offset of location 0.
@@ -564,35 +564,35 @@ Stripe::set_io_not_in_progress()
 inline Queue<CacheVC, Continuation::Link_link> &
 Stripe::get_pending_writers()
 {
-  return this->write_buffer.get_pending_writers();
+  return this->_write_buffer.get_pending_writers();
 }
 
 inline char *
 Stripe::get_agg_buffer()
 {
-  return this->write_buffer.get_buffer();
+  return this->_write_buffer.get_buffer();
 }
 
 inline int
 Stripe::get_agg_buf_pos() const
 {
-  return this->write_buffer.get_buffer_pos();
+  return this->_write_buffer.get_buffer_pos();
 }
 
 inline void
 Stripe::reset_agg_buf_pos()
 {
-  this->write_buffer.reset_buffer_pos();
+  this->_write_buffer.reset_buffer_pos();
 }
 
 inline int
 Stripe::get_agg_todo_size() const
 {
-  return this->write_buffer.get_bytes_pending_aggregation();
+  return this->_write_buffer.get_bytes_pending_aggregation();
 }
 
 inline void
 Stripe::add_agg_todo(int size)
 {
-  this->write_buffer.add_bytes_pending_aggregation(size);
+  this->_write_buffer.add_bytes_pending_aggregation(size);
 }
