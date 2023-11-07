@@ -15,10 +15,14 @@
 #
 #######################
 
-add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
+if(maxminddb_FOUND)
 
-target_include_directories(maxmind_acl PRIVATE ${PCRE_INCLUDE_DIR})
+  add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
 
-find_package(maxminddb REQUIRED)
+  target_include_directories(maxmind_acl PRIVATE ${PCRE_INCLUDE_DIR})
 
-target_link_libraries(maxmind_acl PRIVATE libswoc yaml-cpp::yaml-cpp maxminddb::maxminddb)
+  target_link_libraries(maxmind_acl PRIVATE libswoc yaml-cpp::yaml-cpp maxminddb::maxminddb)
+
+else()
+  message(STATUS "skipping maxmind_acl plugin (missing maxminddb)")
+endif()

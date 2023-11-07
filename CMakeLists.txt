@@ -328,6 +328,9 @@ if(ENABLE_QUICHE)
   endif()
 endif()
 
+# for the plugin system
+find_package(maxminddb)  # Header_rewrite experimental/maxmind_acl
+
 if(ENABLE_ASAN)
   add_compile_options(-fsanitize=address)
   add_link_options(-fsanitize=address)
