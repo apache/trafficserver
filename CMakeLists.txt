@@ -682,10 +682,18 @@ add_custom_target(
   VERBATIM
 )
 
-# Add a format target that depends upon both clang-format and autopep8.
+add_custom_target(
+  cmake-format
+  ${CMAKE_SOURCE_DIR}/tools/cmake-format.sh ${CMAKE_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "formatting CMakeLists.txt files"
+  VERBATIM
+)
+
+# Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format autopep8
+  DEPENDS clang-format autopep8 cmake-format
   COMMENT "formatting all files"
 )
 
