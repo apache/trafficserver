@@ -18,7 +18,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Update theese VERSION variables with the new desired autopep8 tag when a new
+# Update these VERSION variables with the new desired autopep8 tag when a new
 # autopep8 version is desired.
 # See:
 # https://github.com/hhatto/autopep8/tags
