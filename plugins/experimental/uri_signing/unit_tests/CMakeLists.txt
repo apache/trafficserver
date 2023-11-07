@@ -43,6 +43,7 @@ target_link_libraries(
           ts::configmanager
           ts::logging
           ts::inknet
+          ts::overridable_txn_vars
           OpenSSL::SSL
           OpenSSL::Crypto
 )
