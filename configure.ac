@@ -2156,7 +2156,6 @@ AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct tcp_info.tcpi_data_segs_out], [], [], [#include <linux/tcp.h>])
-AC_CHECK_MEMBER([struct mptcp_info.mptcpi_subflows], [], [], [#include <linux/mptcp.h>])
 
 if test "x${ac_cv_member_struct_sockaddr_sa_len}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
@@ -2176,11 +2175,6 @@ fi
 if test "x${ac_cv_member_struct_tcp_info_tcpi_data_segs_out}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_LINUX_TCP_INFO, 1,
             [Whether struct tcp_info have the tcpi_data_segs_{in,out} member])
-fi
-
-if test "x${ac_cv_member_struct_mptcp_info_mptcpi_subflows}" = "xyes"; then
-    AC_DEFINE(HAVE_STRUCT_MPTCP_INFO_SUBFLOWS, 1,
-            [Whether struct mptcp_info have the mptcpi_subflows member])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
