@@ -26,7 +26,7 @@
 #include "records/RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
-#include "iocore/net/SSLStats.h"
+#include "SSLStats.h"
 #include "P_SSLNetProcessor.h"
 #include "P_SSLNetAccept.h"
 #include "P_SSLNetVConnection.h"

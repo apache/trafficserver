@@ -22,7 +22,7 @@
 // Borrowed from Envoy
 // https://github.com/envoyproxy/envoy/blob/329b2491949fc52f4dc5c4a778ea158bfe6fe979/source/extensions/transport_sockets/tls/context_impl.cc#L962
 
-#include "iocore/net/BoringSSLUtils.h"
+#include "BoringSSLUtils.h"
 
 #ifdef OPENSSL_IS_BORINGSSL
 namespace BoringSSLUtils

@@ -41,7 +41,7 @@
 
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
-#include "iocore/net/SSLSessionTicket.h"
+#include "SSLSessionTicket.h"
 
 #include <unordered_map>
 #include <utility>
