@@ -15,7 +15,9 @@
 #
 #######################
 
-add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
+# plugin api *only*
+add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc FetchSM.cc # OSCP stapling
+)
 add_library(ts::tsapi ALIAS tsapi)
 
 set(TSAPI_PUBLIC_HEADERS
@@ -32,23 +34,31 @@ set(TSAPI_PUBLIC_HEADERS
 target_link_libraries(tsapi PRIVATE libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSSL::SSL)
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
+# Items common between api and other ts libraries
 add_library(
-  tsapicore STATIC
-  APIHook.cc
-  APIHooks.cc
-  Metrics.cc
-  ConfigUpdateCbTable.cc
-  InkContInternal.cc
-  InkVConnInternal.cc
-  FetchSM.cc
-  LifecycleAPIHooks.cc
-  DbgCtl.cc
+  tsapibackend
+  ConfigUpdateCbTable.cc # configmanager
+  InkContInternal.cc # proxy, http
+  InkVConnInternal.cc # proxy, http
+  APIHook.cc # iocore
+  APIHooks.cc # proxy
+  LifecycleAPIHooks.cc # proxy, http
+  HttpHookState.cc # proxy, http
 )
+add_library(ts::tsapibackend ALIAS tsapibackend)
+target_link_libraries(
+  tsapibackend
+  PUBLIC ts::inknet ts::http
+  PRIVATE ts::proxy ts::hdrs ts::tscore
+)
+
+# Items that even tscore can depend on
+add_library(tsapicore Metrics.cc DbgCtl.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 target_link_libraries(tsapicore PRIVATE ts::tscore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-install(TARGETS tsapi PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapi tsapicore tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)

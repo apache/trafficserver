@@ -17,17 +17,7 @@
 
 add_executable(traffic_layout engine.cc file_system.cc info.cc traffic_layout.cc)
 
-target_link_libraries(
-  traffic_layout
-  PRIVATE ts::inkevent
-          ts::records
-          OpenSSL::Crypto
-          yaml-cpp::yaml-cpp
-          ts::tscore
-          ts::tsapicore
-          PCRE::PCRE
-          ${OPENSSL_LIBRARY}
-)
+target_link_libraries(traffic_layout PRIVATE ts::inkevent ts::records yaml-cpp::yaml-cpp ts::tscore ts::tsapicore)
 
 if(TS_USE_HWLOC)
   target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
