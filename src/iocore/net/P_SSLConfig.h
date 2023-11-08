@@ -39,7 +39,7 @@
 #include "tscore/ink_inet.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 
-#include "iocore/net/SSLSessionCache.h"
+#include "SSLSessionCache.h"
 #include "iocore/net/YamlSNIConfig.h"
 
 #include "P_SSLUtils.h"

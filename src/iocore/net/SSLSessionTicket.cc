@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/SSLSessionTicket.h"
+#include "SSLSessionTicket.h"
 
 #if TS_HAS_TLS_SESSION_TICKET
 

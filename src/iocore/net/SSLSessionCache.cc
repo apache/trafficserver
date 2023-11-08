@@ -20,7 +20,7 @@
  */
 
 #include "P_SSLConfig.h"
-#include "iocore/net/SSLSessionCache.h"
+#include "SSLSessionCache.h"
 #include "SSLStats.h"
 
 #include <cstring>

@@ -48,8 +48,8 @@
 #include "P_SSLCertLookup.h"
 #include "P_TLSKeyLogger.h"
 #include "iocore/net/SSLDiags.h"
-#include "iocore/net/SSLSessionCache.h"
-#include "iocore/net/SSLSessionTicket.h"
+#include "SSLSessionCache.h"
+#include "SSLSessionTicket.h"
 #include "iocore/net/YamlSNIConfig.h"
 
 int SSLConfig::config_index                                 = 0;
