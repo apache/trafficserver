@@ -484,8 +484,8 @@ private:
   class _Send_recv : private Send_to_vconn, private Recv_from_vconn
   {
   public:
-    _Send_recv(TSVConn vconn_, std::shared_ptr<File_deleter> f_del, int n_groups_send, int n_group_bytes, bool allow_send_error,
-               int n_bytes_recv)
+    _Send_recv(TSVConn vconn_, std::shared_ptr<File_deleter> const &f_del, int n_groups_send, int n_group_bytes,
+               bool allow_send_error, int n_bytes_recv)
       : Send_to_vconn{vconn_, n_groups_send * n_group_bytes}, Recv_from_vconn(vconn_), _f_del{f_del}
     {
       Dbg(dbg_ctl, "n_groups_send=%d n_group_bytes=%d allow_send_error=%c, n_bytes_recv=%d inst=%p", n_groups_send, n_group_bytes,
