@@ -1674,8 +1674,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
        close
        c) Delete an alternate
        The vector may need to be deleted (if there was only one alternate) or
-       rewritten (if there were more than one alternate). The deletion of the
-       vector is done in openWriteRemoveVector.
+       rewritten (if there were more than one alternate).
        HTTP OPERATIONS
        open_write with info set
        close
