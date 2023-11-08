@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "iocore/net/NetVConnection.h"
 #include "tscore/ink_config.h"
 #include "tscore/EventNotify.h"
 #include "tscore/Layout.h"
@@ -617,42 +618,43 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       Dbg(dbg_ctl_ssl, "Restart for allow plain");
       return;
     }
-    // If we have flipped to blind tunnel, don't read ahead
-    if (this->handShakeReader) {
-      if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-        // Now in blind tunnel. Set things up to read what is in the buffer
-        // Must send the READ_COMPLETE here before considering
-        // forwarding on the handshake buffer, so the
-        // SSLNextProtocolTrampoline has a chance to do its
-        // thing before forwarding the buffers.
-        this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+    // If we have flipped to blind tunnel, don't read ahead. We check for a
+    // non-error return first, though, because if TLS has already failed with
+    // the CLIENT_HELLO, then there is no need to continue toward the origin
+    // with the blind tunnel.
+    if (ret != EVENT_ERROR && this->handShakeReader && this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+      // Now in blind tunnel. Set things up to read what is in the buffer
+      // Must send the READ_COMPLETE here before considering
+      // forwarding on the handshake buffer, so the
+      // SSLNextProtocolTrampoline has a chance to do its
+      // thing before forwarding the buffers.
+      this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
 
-        // If the handshake isn't set yet, this means the tunnel
-        // decision was make in the SNI callback.  We must move
-        // the client hello message back into the standard read.vio
-        // so it will get forwarded onto the origin server
-        if (!this->getSSLHandShakeComplete()) {
-          this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
+      // If the handshake isn't set yet, this means the tunnel
+      // decision was make in the SNI callback.  We must move
+      // the client hello message back into the standard read.vio
+      // so it will get forwarded onto the origin server
+      if (!this->getSSLHandShakeComplete()) {
+        this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
 
-          // Copy over all data already read in during the SSL_accept
-          // (the client hello message)
-          NetState *s             = &this->read;
-          MIOBufferAccessor &buf  = s->vio.buffer;
-          int64_t r               = buf.writer()->write(this->handShakeHolder);
-          s->vio.nbytes          += r;
-          s->vio.ndone           += r;
+        // Copy over all data already read in during the SSL_accept
+        // (the client hello message)
+        NetState *s             = &this->read;
+        MIOBufferAccessor &buf  = s->vio.buffer;
+        int64_t r               = buf.writer()->write(this->handShakeHolder);
+        s->vio.nbytes          += r;
+        s->vio.ndone           += r;
 
-          // Clean up the handshake buffers
-          this->free_handshake_buffers();
+        // Clean up the handshake buffers
+        this->free_handshake_buffers();
 
-          if (r > 0) {
-            // Kick things again, so the data that was copied into the
-            // vio.read buffer gets processed
-            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-          }
+        if (r > 0) {
+          // Kick things again, so the data that was copied into the
+          // vio.read buffer gets processed
+          this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
         }
-        return; // Leave if we are tunneling
       }
+      return; // Leave if we are tunneling
     }
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
