@@ -252,6 +252,7 @@ public:
 class SNI_IpAllow : public ActionItem
 {
   swoc::IPRangeSet ip_addrs;
+  std::string server_name;
 
 public:
   SNI_IpAllow(std::string &ip_allow_list, const std::string &servername);

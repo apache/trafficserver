@@ -346,7 +346,7 @@ TLSValidProtocols::SNIAction(SSL &ssl, const Context & /* ctx */) const
   return SSL_TLSEXT_ERR_OK;
 }
 
-SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &servername)
+SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &servername) : server_name(servername)
 {
   swoc::TextView content{ip_allow_list};
   if (content && content[0] == '@') {
@@ -373,12 +373,12 @@ SNI_IpAllow::load(swoc::TextView content, swoc::TextView server_name)
   while (!content.ltrim(delim).empty()) {
     swoc::TextView token{content.take_prefix_at(delim)};
     if (swoc::IPRange r; r.load(token)) {
-      Dbg(dbg_ctl_ssl_sni, "%.*s is not a valid format", static_cast<int>(token.size()), token.data());
-      break;
-    } else {
       Dbg(dbg_ctl_ssl_sni, "%.*s added to the ip_allow token %.*s", static_cast<int>(token.size()), token.data(),
           int(server_name.size()), server_name.data());
       ip_addrs.fill(r);
+    } else {
+      Dbg(dbg_ctl_ssl_sni, "%.*s is not a valid format", static_cast<int>(token.size()), token.data());
+      break;
     }
   }
 }
@@ -399,7 +399,7 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const &ctx) const
     return SSL_TLSEXT_ERR_OK;
   } else {
     swoc::LocalBufferWriter<256> w;
-    w.print("{} is not allowed - denying connection\0", ip);
+    w.print("{} is not allowed for {} - denying connection\0", ip, server_name);
     Dbg(dbg_ctl_ssl_sni, "%s", w.data());
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
