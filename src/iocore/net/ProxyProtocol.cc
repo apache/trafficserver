@@ -22,15 +22,14 @@
  */
 
 #include "iocore/net/ProxyProtocol.h"
-
-#include "iocore/eventsystem/EventSystem.h"
-#include "iocore/net/NetVConnection.h"
+#include "tscore/Diags.h"
 
 #include "tscpp/util/ts_bw.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_inet.h"
 #include "swoc/TextView.h"
+#include "swoc/bwf_base.h"
 
 namespace
 {

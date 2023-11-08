@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/eventsystem/EventSystem.h" // must be included before I_EThread.h
-#include "iocore/eventsystem/EThread.h"
-#include "iocore/eventsystem/Thread.h"
+#include "iocore/eventsystem/EventSystem.h"
 #include "../P_SSLConfig.h"
 #include "records/RecordsConfig.h"
 #include "iocore/net/SSLAPIHooks.h"

@@ -23,7 +23,8 @@
 
 #include "proxy/hdrs/HuffmanCodec.h"
 #include "proxy/http2/HPACK.h"
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Thread.h"
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string>

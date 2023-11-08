@@ -22,14 +22,13 @@
  */
 
 #include <algorithm>
-#include <sstream>
 #include <iomanip>
 #include <iostream>
 
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
-#include "iocore/eventsystem/EventSystem.h"
+#include <random>
 #include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;
