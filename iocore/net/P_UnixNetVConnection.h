@@ -319,7 +319,8 @@ UnixNetVConnection::set_mptcp_state()
 
   if (0 == safe_getsockopt(con.fd, IPPROTO_TCP, MPTCP_ENABLED, (char *)&mptcp_enabled, &mptcp_enabled_size)) {
     Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
-    mptcp_state = mptcp_enabled > 0 ? true : false;
+    mptcp_state = (mptcp_enabled > 0);
+    return;
   } else {
     Debug("socket_mptcp", "MPTCP failed getsockopt(MPTCP_ENABLED): %s", strerror(errno));
   }
