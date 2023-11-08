@@ -1,0 +1,105 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+    version: '1.0'
+
+sessions:
+
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: block.me.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  #
+  # This request should be blocked per sni.yaml ip_allow.
+  #
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, block.me.com ]
+        - [ :path, /pictures/flower.jpeg ]
+        - [ uuid, blocked-request ]
+
+    #
+    # The request should not make it to the server and the client should simply
+    # receive a connection close.
+    #
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, blocked-response ]
+      content:
+        size: 3432
+
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: allow.me.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  #
+  # This request, on the other hand, should be allowed.
+  #
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, allow.me.com ]
+        - [ :path, /pictures/flower.jpeg ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, allowed-request ]
+      content:
+        size: 399
+
+    proxy-request:
+      url:
+      - [ path, { value: flower.jpeg, as: contains } ]
+
+    #
+    # The request should not make it to the server and the client should simply
+    # receive a connection close.
+    #
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, allowed-response ]
+      content:
+        size: 35
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]
+        - [ X-Response, { value: allowed-response, as: equal } ]
