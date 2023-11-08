@@ -52,6 +52,7 @@ DbgCtl dbg_ctl_cache_vol_test{"cache_vol_test"};
 /* Test the cache volume with different configurations */
 #define MEGS_128              (128 * 1024 * 1024)
 #define ROUND_TO_VOL_SIZE(_x) (((_x) + (MEGS_128 - 1)) & ~(MEGS_128 - 1))
+
 static int configs = 4;
 
 Queue<CacheVol> saved_cp_list;
@@ -78,12 +79,12 @@ create_config(int num)
     for (i = 0; i < gndisks; i++) {
       CacheDisk *d = gdisks[i];
       int blocks   = d->num_usable_blocks;
-      if (blocks < STORE_BLOCKS_PER_VOL) {
+      if (blocks < STORE_BLOCKS_PER_STRIPE) {
         Warning("Cannot run Cache_vol regression: not enough disk space");
         return 0;
       }
       /* create 128 MB volumes */
-      for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
+      for (; blocks >= STORE_BLOCKS_PER_STRIPE; blocks -= STORE_BLOCKS_PER_STRIPE) {
         if (vol_num > 255) {
           break;
         }
@@ -111,8 +112,8 @@ create_config(int num)
     for (i = 0; i < gndisks; i++) {
       off_t vol_blocks = gdisks[i]->num_usable_blocks;
       /* round down the blocks to the nearest
-         multiple of STORE_BLOCKS_PER_VOL */
-      vol_blocks   = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
+         multiple of STORE_BLOCKS_PER_STRIPE */
+      vol_blocks   = (vol_blocks / STORE_BLOCKS_PER_STRIPE) * STORE_BLOCKS_PER_STRIPE;
       total_space += vol_blocks;
     }
 
@@ -157,8 +158,8 @@ create_config(int num)
     for (i = 0; i < gndisks; i++) {
       off_t vol_blocks = gdisks[i]->num_usable_blocks;
       /* round down the blocks to the nearest
-         multiple of STORE_BLOCKS_PER_VOL */
-      vol_blocks   = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
+         multiple of STORE_BLOCKS_PER_STRIPE */
+      vol_blocks   = (vol_blocks / STORE_BLOCKS_PER_STRIPE) * STORE_BLOCKS_PER_STRIPE;
       total_space += vol_blocks;
 
       if (num == 2) {
@@ -177,8 +178,8 @@ create_config(int num)
       if (vol_num > 255) {
         break;
       }
-      off_t modu = MAX_VOL_SIZE;
-      if (total_space < (MAX_VOL_SIZE >> STORE_BLOCK_SHIFT)) {
+      off_t modu = MAX_STRIPE_SIZE;
+      if (total_space < (MAX_STRIPE_SIZE >> STORE_BLOCK_SHIFT)) {
         modu = total_space * STORE_BLOCK_SIZE;
       }
 

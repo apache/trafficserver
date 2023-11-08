@@ -905,21 +905,21 @@ build_vol_hash_table(CacheHostRecord *cp)
   unsigned int *forvol   = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
   unsigned int *gotvol   = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
   unsigned int *rnd      = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  unsigned short *ttable = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE));
+  unsigned short *ttable = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * STRIPE_HASH_TABLE_SIZE));
   unsigned short *old_table;
   unsigned int *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
   unsigned int rtable_size     = 0;
 
   // estimate allocation
   for (int i = 0; i < num_vols; i++) {
-    forvol[i]          = (VOL_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
+    forvol[i]          = (STRIPE_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
     used              += forvol[i];
-    rtable_entries[i]  = p[i]->len / VOL_HASH_ALLOC_SIZE;
+    rtable_entries[i]  = p[i]->len / STRIPE_HASH_ALLOC_SIZE;
     rtable_size       += rtable_entries[i];
     gotvol[i]          = 0;
   }
   // spread around the excess
-  int extra = VOL_HASH_TABLE_SIZE - used;
+  int extra = STRIPE_HASH_TABLE_SIZE - used;
   for (int i = 0; i < extra; i++) {
     forvol[i % num_vols]++;
   }
@@ -929,8 +929,8 @@ build_vol_hash_table(CacheHostRecord *cp)
     rnd[i]     = static_cast<unsigned int>(x);
   }
   // initialize table to "empty"
-  for (int i = 0; i < VOL_HASH_TABLE_SIZE; i++) {
-    ttable[i] = VOL_HASH_EMPTY;
+  for (int i = 0; i < STRIPE_HASH_TABLE_SIZE; i++) {
+    ttable[i] = STRIPE_HASH_EMPTY;
   }
   // generate random numbers proportional to allocation
   rtable_pair *rtable = static_cast<rtable_pair *>(ats_malloc(sizeof(rtable_pair) * rtable_size));
@@ -945,11 +945,11 @@ build_vol_hash_table(CacheHostRecord *cp)
   ink_assert(rindex == (int)rtable_size);
   // sort (rand #, vol $ pairs)
   qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
-  unsigned int width = (1LL << 32) / VOL_HASH_TABLE_SIZE;
+  unsigned int width = (1LL << 32) / STRIPE_HASH_TABLE_SIZE;
   unsigned int pos; // target position to allocate
   // select vol with closest random number for each bucket
   int i = 0; // index moving through the random numbers
-  for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
+  for (int j = 0; j < STRIPE_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width; // position to select closest to
     while (pos > rtable[i].rval && i < static_cast<int>(rtable_size) - 1) {
       i++;
@@ -1482,7 +1482,7 @@ cplist_reconfigure()
       }
       if (gdisks[i]->cleared) {
         uint64_t free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
-        int vols            = (free_space / MAX_VOL_SIZE) + 1;
+        int vols            = (free_space / MAX_STRIPE_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
           Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
@@ -1511,7 +1511,7 @@ cplist_reconfigure()
 
     /* change percentages in the config partitions to absolute value */
     off_t tot_space_in_blks = 0;
-    off_t blocks_per_vol    = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
+    off_t blocks_per_vol    = STORE_BLOCKS_PER_STRIPE;
     /* sum up the total space available on all the disks.
        round down the space to 128 megabytes */
     for (int i = 0; i < gndisks; i++) {
@@ -1701,7 +1701,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
 {
   static int curr_vol  = 0; // FIXME: this will not reinitialize correctly
   off_t to_create      = size_in_blocks;
-  off_t blocks_per_vol = VOL_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
+  off_t blocks_per_vol = STRIPE_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
   int full_disks       = 0;
 
   cp->vol_number = volume_number;
@@ -1783,7 +1783,7 @@ Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 
-  uint32_t h                      = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
+  uint32_t h                      = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
   unsigned short *hash_table      = hosttable->gen_host_rec.vol_hash_table;
   const CacheHostRecord *host_rec = &hosttable->gen_host_rec;
 

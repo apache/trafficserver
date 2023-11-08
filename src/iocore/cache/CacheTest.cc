@@ -474,7 +474,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   // See what the difference is
   int to = 0, from = 0;
   int then = 0, now = 0;
-  for (int i = 0; i < VOL_HASH_TABLE_SIZE; ++i) {
+  for (int i = 0; i < STRIPE_HASH_TABLE_SIZE; ++i) {
     if (hr1.vol_hash_table[i] == sample_idx) {
       ++then;
     }
@@ -492,7 +492,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   rprintf(t,
           "Cache stability difference - "
           "delta = %d of %d : %d to, %d from, originally %d slots, now %d slots (net gain = %d/%d)\n",
-          to + from, VOL_HASH_TABLE_SIZE, to, from, then, now, now - then, to - from);
+          to + from, STRIPE_HASH_TABLE_SIZE, to, from, then, now, now - then, to - from);
   *pstatus = REGRESSION_TEST_PASSED;
 
   hr1.vols = nullptr;
