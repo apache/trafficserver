@@ -36,66 +36,6 @@ DbgCtl dbg_ctl_cache_init{"cache_init"};
 // This is the oldest version number that is still usable.
 short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 
-void
-vol_init_data_internal(Stripe *vol)
-{
-  // step1: calculate the number of entries.
-  off_t total_entries = (vol->len - (vol->start - vol->skip)) / cache_config_min_average_object_size;
-  // step2: calculate the number of buckets
-  off_t total_buckets = total_entries / DIR_DEPTH;
-  // step3: calculate the number of segments, no segment has more than 16384 buckets
-  vol->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
-  // step4: divide total_buckets into segments on average.
-  vol->buckets = (total_buckets + vol->segments - 1) / vol->segments;
-  // step5: set the start pointer.
-  vol->start = vol->skip + 2 * vol->dirlen();
-}
-
-void
-vol_init_data(Stripe *vol)
-{
-  // iteratively calculate start + buckets
-  vol_init_data_internal(vol);
-  vol_init_data_internal(vol);
-  vol_init_data_internal(vol);
-}
-
-void
-vol_init_dir(Stripe *vol)
-{
-  int b, s, l;
-
-  for (s = 0; s < vol->segments; s++) {
-    vol->header->freelist[s] = 0;
-    Dir *seg                 = vol->dir_segment(s);
-    for (l = 1; l < DIR_DEPTH; l++) {
-      for (b = 0; b < vol->buckets; b++) {
-        Dir *bucket = dir_bucket(b, seg);
-        dir_free_entry(dir_bucket_row(bucket, l), s, vol);
-      }
-    }
-  }
-}
-
-void
-vol_clear_init(Stripe *vol)
-{
-  size_t dir_len = vol->dirlen();
-  memset(vol->raw_dir, 0, dir_len);
-  vol_init_dir(vol);
-  vol->header->magic          = VOL_MAGIC;
-  vol->header->version._major = CACHE_DB_MAJOR_VERSION;
-  vol->header->version._minor = CACHE_DB_MINOR_VERSION;
-  vol->scan_pos = vol->header->agg_pos = vol->header->write_pos = vol->start;
-  vol->header->last_write_pos                                   = vol->header->write_pos;
-  vol->header->phase                                            = 0;
-  vol->header->cycle                                            = 0;
-  vol->header->create_time                                      = time(nullptr);
-  vol->header->dirty                                            = 0;
-  vol->sector_size = vol->header->sector_size = vol->disk->hw_sector_size;
-  *vol->footer                                = *vol->header;
-}
-
 int
 compare_ushort(void const *a, void const *b)
 {
@@ -103,19 +43,6 @@ compare_ushort(void const *a, void const *b)
 }
 
 } // namespace
-
-int
-vol_dir_clear(Stripe *d)
-{
-  size_t dir_len = d->dirlen();
-  vol_clear_init(d);
-
-  if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
-    Warning("unable to clear cache directory '%s'", d->hash_text.get());
-    return -1;
-  }
-  return 0;
-}
 
 struct StripeInitInfo {
   off_t recover_pos;
@@ -209,11 +136,14 @@ Stripe::close_read(CacheVC *cont) const
   return 1;
 }
 
+/**
+  Add AIO task to clear Dir.
+ */
 int
-Stripe::clear_dir()
+Stripe::clear_dir_aio()
 {
   size_t dir_len = this->dirlen();
-  vol_clear_init(this);
+  this->_clear_init();
 
   SET_HANDLER(&Stripe::handle_dir_clear);
 
@@ -225,6 +155,24 @@ Stripe::clear_dir()
   io.thread           = AIO_CALLBACK_THREAD_ANY;
   io.then             = nullptr;
   ink_assert(ink_aio_write(&io));
+
+  return 0;
+}
+
+/**
+  Clear Dir directly. This is mainly used by unit tests. The clear_dir_aio() is the suitable function in most cases.
+ */
+int
+Stripe::clear_dir()
+{
+  size_t dir_len = this->dirlen();
+  this->_clear_init();
+
+  if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
+    Warning("unable to clear cache directory '%s'", this->hash_text.get());
+    return -1;
+  }
+
   return 0;
 }
 
@@ -250,7 +198,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   // successive approximation, directory/meta data eats up some storage
   start = dir_skip;
-  vol_init_data(this);
+  this->_init_data();
   data_blocks         = (len - (start - skip)) / STORE_BLOCK_SIZE;
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 
@@ -276,7 +224,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
-    return clear_dir();
+    return clear_dir_aio();
   }
 
   init_info           = new StripeInitInfo();
@@ -345,7 +293,7 @@ Stripe::handle_dir_read(int event, void *data)
   if (event == AIO_EVENT_DONE) {
     if (!op->ok()) {
       Note("Directory read failed: clearing cache directory %s", this->hash_text.get());
-      clear_dir();
+      clear_dir_aio();
       return EVENT_DONE;
     }
   }
@@ -358,7 +306,7 @@ Stripe::handle_dir_read(int event, void *data)
          VOL_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version._major,
          CACHE_DB_MAJOR_VERSION);
     Note("clearing cache directory '%s'", hash_text.get());
-    clear_dir();
+    clear_dir_aio();
     return EVENT_DONE;
   }
   CHECK_DIR(this);
@@ -668,7 +616,7 @@ Lclear:
   free(static_cast<char *>(io.aiocb.aio_buf));
   delete init_info;
   init_info = nullptr;
-  clear_dir();
+  clear_dir_aio();
   return EVENT_CONT;
 }
 
@@ -700,7 +648,7 @@ Stripe::handle_header_read(int event, void *data)
       i = static_cast<StripteHeaderFooter *>(op->aiocb.aio_buf);
       if (!op->ok()) {
         Note("Header read failed: clearing cache directory %s", this->hash_text.get());
-        clear_dir();
+        clear_dir_aio();
         return EVENT_DONE;
       }
       op = op->then;
@@ -734,7 +682,7 @@ Stripe::handle_header_read(int event, void *data)
       Note("no good directory, clearing '%s' since sync_serials on both A and B copies are invalid", hash_text.get());
       Note("Header A: %d\nFooter A: %d\n Header B: %d\n Footer B %d\n", hf[0]->sync_serial, hf[1]->sync_serial, hf[2]->sync_serial,
            hf[3]->sync_serial);
-      clear_dir();
+      clear_dir_aio();
       delete init_info;
       init_info = nullptr;
     }
@@ -915,4 +863,64 @@ Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this p
   printf("\n");
 
   return 0;
+}
+
+void
+Stripe::_clear_init()
+{
+  size_t dir_len = this->dirlen();
+  memset(this->raw_dir, 0, dir_len);
+  this->_init_dir();
+  this->header->magic          = VOL_MAGIC;
+  this->header->version._major = CACHE_DB_MAJOR_VERSION;
+  this->header->version._minor = CACHE_DB_MINOR_VERSION;
+  this->scan_pos = this->header->agg_pos = this->header->write_pos = this->start;
+  this->header->last_write_pos                                     = this->header->write_pos;
+  this->header->phase                                              = 0;
+  this->header->cycle                                              = 0;
+  this->header->create_time                                        = time(nullptr);
+  this->header->dirty                                              = 0;
+  this->sector_size = this->header->sector_size = this->disk->hw_sector_size;
+  *this->footer                                 = *this->header;
+}
+
+void
+Stripe::_init_dir()
+{
+  int b, s, l;
+
+  for (s = 0; s < this->segments; s++) {
+    this->header->freelist[s] = 0;
+    Dir *seg                  = this->dir_segment(s);
+    for (l = 1; l < DIR_DEPTH; l++) {
+      for (b = 0; b < this->buckets; b++) {
+        Dir *bucket = dir_bucket(b, seg);
+        dir_free_entry(dir_bucket_row(bucket, l), s, this);
+      }
+    }
+  }
+}
+
+void
+Stripe::_init_data_internal()
+{
+  // step1: calculate the number of entries.
+  off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
+  // step2: calculate the number of buckets
+  off_t total_buckets = total_entries / DIR_DEPTH;
+  // step3: calculate the number of segments, no segment has more than 16384 buckets
+  this->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  // step4: divide total_buckets into segments on average.
+  this->buckets = (total_buckets + this->segments - 1) / this->segments;
+  // step5: set the start pointer.
+  this->start = this->skip + 2 * this->dirlen();
+}
+
+void
+Stripe::_init_data()
+{
+  // iteratively calculate start + buckets
+  this->_init_data_internal();
+  this->_init_data_internal();
+  this->_init_data_internal();
 }
