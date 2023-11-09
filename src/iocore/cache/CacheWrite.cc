@@ -692,7 +692,7 @@ agg_copy(char *p, CacheVC *vc)
       } else { // the vector is being written by itself
         if (vc->earliest_key.is_zero()) {
           do {
-            rand_CacheKey(&doc->key, vc->vol->mutex);
+            rand_CacheKey(&doc->key);
           } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
         } else {
           prev_CacheKey(&doc->key, &vc->earliest_key);
@@ -1582,7 +1582,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
      or the earliest_key based on the dir_tag.
    */
   do {
-    rand_CacheKey(&c->key, cont->mutex);
+    rand_CacheKey(&c->key);
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
   c->earliest_key     = c->key;
   c->info             = nullptr;
@@ -1643,7 +1643,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
      or the earliest_key based on the dir_tag.
    */
   do {
-    rand_CacheKey(&c->key, cont->mutex);
+    rand_CacheKey(&c->key);
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
   c->earliest_key = c->key;
   c->frag_type    = CACHE_FRAG_TYPE_HTTP;

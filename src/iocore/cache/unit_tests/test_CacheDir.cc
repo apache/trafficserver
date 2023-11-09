@@ -100,7 +100,7 @@ public:
     vol->header->agg_pos = vol->header->write_pos += 1024;
 
     CacheKey key;
-    rand_CacheKey(&key, thread->mutex);
+    rand_CacheKey(&key);
 
     int s    = key.slice32(0) % vol->segments, i, j;
     Dir *seg = vol->dir_segment(s);
@@ -167,7 +167,7 @@ public:
     for (int ntimes = 0; ntimes < 10; ntimes++) {
 #ifdef LOOP_CHECK_MODE
       // dir_probe in bucket with loop
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
@@ -175,7 +175,7 @@ public:
       Dir *last_collision = 0;
       dir_probe(&key, vol, &dir, &last_collision);
 
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
@@ -184,7 +184,7 @@ public:
       dir_probe(&key, vol, &dir, &last_collision);
 
       // dir_overwrite in bucket with loop
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       CacheKey key1;
@@ -198,7 +198,7 @@ public:
       dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 1);
 
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1       = key.slice32(0) % vol->segments;
       b1       = key.slice32(1) % vol->buckets;
       key.b[1] = 23;
@@ -206,14 +206,14 @@ public:
       dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 0);
 
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1        = key.slice32(0) % vol->segments;
       Dir *seg1 = vol->dir_segment(s1);
       // dir_freelist_length in freelist with loop
       dir_corrupt_bucket(dir_from_offset(vol->header->freelist[s], seg1), s1, vol);
       dir_freelist_length(vol, s1);
 
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       // dir_bucket_length in bucket with loop
@@ -222,7 +222,7 @@ public:
       CHECK(check_dir(vol));
 #else
       // test corruption detection
-      rand_CacheKey(&key, thread->mutex);
+      rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
 

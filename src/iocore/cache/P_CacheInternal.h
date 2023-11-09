@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "iocore/eventsystem/Continuation.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
 
@@ -508,10 +509,11 @@ dir_overwrite_lock(CacheKey *key, Stripe *vol, Dir *to_part, ProxyMutex *m, Dir 
   return dir_overwrite(key, vol, to_part, overwrite, must_overwrite);
 }
 
-void inline rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)
+void inline rand_CacheKey(CacheKey *next_key)
 {
-  next_key->b[0] = mutex->thread_holding->generator.random();
-  next_key->b[1] = mutex->thread_holding->generator.random();
+  EThread *ethread = this_ethread();
+  next_key->b[0]   = ethread->generator.random();
+  next_key->b[1]   = ethread->generator.random();
 }
 
 extern const uint8_t CacheKey_next_table[256];
