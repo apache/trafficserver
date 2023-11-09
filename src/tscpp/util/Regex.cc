@@ -26,15 +26,13 @@
 #include <array>
 #include <assert.h>
 
-#include "tscore/ink_memory.h" // ats_pagesize()
-
-#if __has_include("pcre/pcre.h")
+#if __has_include(<pcre/pcre.h>)
 #include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
 #else
-#error "Unable to locate PCRE heeader"
+#include <pcre.h>
 #endif
+
+#include "tscore/ink_memory.h" // ats_pagesize()
 
 namespace
 {
