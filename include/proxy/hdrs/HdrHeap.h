@@ -35,7 +35,7 @@
 #include "tscore/Ptr.h"
 #include "tscore/ink_assert.h"
 #include "swoc/Scalar.h"
-#include <cstring>
+#include "proxy/hdrs/HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,
 // so their (address & HDR_PTR_ALIGNMENT_MASK) == 0

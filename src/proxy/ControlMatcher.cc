@@ -28,25 +28,17 @@
  *
  ****************************************************************************/
 
-#include <sys/types.h>
-
 #include "swoc/bwf_ip.h"
 #include "swoc/swoc_file.h"
 
-#include "tscore/ink_config.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
-#include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ControlMatcher.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ParentSelection.h"
 #include "tscore/HostLookup.h"
 #include "proxy/hdrs/HTTP.h"
-#include "proxy/hdrs/URL.h"
-#include "../iocore/eventsystem/P_EventSystem.h"
-#include "../iocore/net/P_Net.h"
-#include "../iocore/cache/P_Cache.h"
-#include "../iocore/dns/P_SplitDNS.h"
+#include "../iocore/dns/P_SplitDNSProcessor.h"
 
 /****************************************************************
  *   Place all template instantiations at the bottom of the file

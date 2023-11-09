@@ -36,6 +36,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Allocator.h"
 
+class EThread;
+
 extern int thread_freelist_high_watermark;
 extern int thread_freelist_low_watermark;
 extern int cmd_disable_pfreelist;
