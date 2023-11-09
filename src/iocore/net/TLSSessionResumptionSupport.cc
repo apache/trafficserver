@@ -165,7 +165,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 
     // Double check the timeout
     if (is_ssl_session_timed_out(session)) {
-      Metrics::increment(ssl_rsb.session_cache_miss);
+      Metrics::Counter::increment(ssl_rsb.session_cache_miss);
 // Due to bug in openssl, the timeout is checked, but only removed
 // from the openssl built-in hash table.  The external remove cb is not called
 #if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
@@ -174,12 +174,12 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
       SSL_SESSION_free(session);
       session = nullptr;
     } else {
-      Metrics::increment(ssl_rsb.session_cache_hit);
+      Metrics::Counter::increment(ssl_rsb.session_cache_hit);
       this->_setSSLSessionCacheHit(true);
       this->_setSSLCurveNID(exdata->curve);
     }
   } else {
-    Metrics::increment(ssl_rsb.session_cache_miss);
+    Metrics::Counter::increment(ssl_rsb.session_cache_miss);
   }
   return session;
 }
@@ -193,16 +193,16 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
   if (shared_sess != nullptr) {
     // Double check the timeout
     if (is_ssl_session_timed_out(shared_sess.get())) {
-      Metrics::increment(ssl_rsb.origin_session_cache_miss);
+      Metrics::Counter::increment(ssl_rsb.origin_session_cache_miss);
       origin_sess_cache->remove_session(lookup_key);
       shared_sess.reset();
     } else {
-      Metrics::increment(ssl_rsb.origin_session_cache_hit);
+      Metrics::Counter::increment(ssl_rsb.origin_session_cache_hit);
       this->_setSSLOriginSessionCacheHit(true);
       this->_setSSLCurveNID(curve);
     }
   } else {
-    Metrics::increment(ssl_rsb.origin_session_cache_miss);
+    Metrics::Counter::increment(ssl_rsb.origin_session_cache_miss);
   }
   return shared_sess;
 }
@@ -248,7 +248,7 @@ TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblo
 #endif
 
   Debug("ssl_session_ticket", "create ticket for a new session.");
-  Metrics::increment(ssl_rsb.total_tickets_created);
+  Metrics::Counter::increment(ssl_rsb.total_tickets_created);
   return 1;
 }
 
@@ -284,10 +284,10 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
 
       Debug("ssl_session_ticket", "verify the ticket for an existing session.");
       // Increase the total number of decrypted tickets.
-      Metrics::increment(ssl_rsb.total_tickets_verified);
+      Metrics::Counter::increment(ssl_rsb.total_tickets_verified);
 
       if (i != 0) { // The number of tickets decrypted with "older" keys.
-        Metrics::increment(ssl_rsb.total_tickets_verified_old_key);
+        Metrics::Counter::increment(ssl_rsb.total_tickets_verified_old_key);
       }
 
       this->_setSSLSessionCacheHit(true);
@@ -305,7 +305,7 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
   }
 
   Debug("ssl_session_ticket", "keyname is not consistent.");
-  Metrics::increment(ssl_rsb.total_tickets_not_found);
+  Metrics::Counter::increment(ssl_rsb.total_tickets_not_found);
   return 0;
 }
 

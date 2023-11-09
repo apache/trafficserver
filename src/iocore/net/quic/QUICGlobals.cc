@@ -73,10 +73,10 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 void
 QUIC::_register_stats()
 {
-  ts::Metrics &intm = ts::Metrics::getInstance();
+  ts::Metrics::Counter &metrics = ts::Metrics::instance();
   // Transferred packet counts
-  quic_rsb.total_packets_sent = intm.newMetricPtr("proxy.process.quic.total_packets_sent");
+  quic_rsb.total_packets_sent = Metrics::Counter::createPtr("proxy.process.quic.total_packets_sent");
 
-  // quic_rsb.total_packets_retransmitted = intm.newMetricPtr("proxy.process.quic.total_packets_retransmitted");
-  // quic_rsb.total_packets_received      = intm.newMetricPtr("proxy.process.quic.total_packets_received");
+  // quic_rsb.total_packets_retransmitted = Metrics::Counter::createPtr("proxy.process.quic.total_packets_retransmitted");
+  // quic_rsb.total_packets_received      = Metrics::Counter::createPtr("proxy.process.quic.total_packets_received");
 }

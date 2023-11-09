@@ -160,7 +160,7 @@ public:
   abort_read()
   {
     if (cache_read_vc) {
-      Metrics::decrement(http_rsb.current_cache_connections);
+      Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       cache_read_vc->do_io_close(0); // passing zero as aborting read is not an error
       cache_read_vc = nullptr;
     }
@@ -169,7 +169,7 @@ public:
   abort_write()
   {
     if (cache_write_vc) {
-      Metrics::decrement(http_rsb.current_cache_connections);
+      Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       cache_write_vc->do_io_close(0); // passing zero as aborting write is not an error
       cache_write_vc = nullptr;
     }
@@ -178,7 +178,7 @@ public:
   close_write()
   {
     if (cache_write_vc) {
-      Metrics::decrement(http_rsb.current_cache_connections);
+      Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       cache_write_vc->do_io_close();
       cache_write_vc = nullptr;
     }
@@ -187,7 +187,7 @@ public:
   close_read()
   {
     if (cache_read_vc) {
-      Metrics::decrement(http_rsb.current_cache_connections);
+      Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       cache_read_vc->do_io_close();
       cache_read_vc = nullptr;
     }

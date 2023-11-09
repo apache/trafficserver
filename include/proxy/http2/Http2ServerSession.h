@@ -72,13 +72,13 @@ public:
   void
   increment_current_active_connections_stat() override
   {
-    Metrics::increment(http2_rsb.current_active_server_connection_count);
+    Metrics::Gauge::increment(http2_rsb.current_active_server_connection_count);
   }
 
   void
   decrement_current_active_connections_stat() override
   {
-    Metrics::decrement(http2_rsb.current_active_server_connection_count);
+    Metrics::Gauge::decrement(http2_rsb.current_active_server_connection_count);
   }
 
   // noncopyable

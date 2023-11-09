@@ -1570,7 +1570,7 @@ QUICNetVConnection::_state_common_send_packet()
     this->_context->trigger(QUICContext::CallbackEvent::METRICS_UPDATE, this->_congestion_controller->congestion_window(),
                             this->_congestion_controller->bytes_in_flight(), this->_congestion_controller->current_ssthresh());
 
-    Metrics::increment(quic_rsb.total_packets_sent_stat, packet_count);
+    Metrics::Counter::increment(quic_rsb.total_packets_sent_stat, packet_count);
     net_activity(this, this_ethread());
   }
 

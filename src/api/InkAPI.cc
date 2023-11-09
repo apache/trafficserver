@@ -394,7 +394,7 @@ namespace c
 } // end namespace tsapi
 
 ConfigUpdateCbTable *global_config_cbs = nullptr;
-static ts::Metrics &global_api_metrics = ts::Metrics::getInstance();
+static ts::Metrics &global_api_metrics = ts::Metrics::instance();
 
 static char traffic_server_version[128] = "";
 static int ts_major_version             = 0;
@@ -6165,20 +6165,20 @@ tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 int
 tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_client_connections);
+  return Metrics::Gauge::load(http_rsb.current_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentActiveClientConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_active_client_connections);
+  return Metrics::Gauge::load(http_rsb.current_active_client_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 {
-  int64_t total  = Metrics::read(http_rsb.current_client_connections);
-  int64_t active = Metrics::read(http_rsb.current_active_client_connections);
+  int64_t total  = Metrics::Gauge::load(http_rsb.current_client_connections);
+  int64_t active = Metrics::Gauge::load(http_rsb.current_active_client_connections);
 
   if (total >= active) {
     return static_cast<int>(total - active);
@@ -6190,13 +6190,13 @@ tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 int
 tsapi::c::TSHttpCurrentCacheConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_cache_connections);
+  return Metrics::Gauge::load(http_rsb.current_cache_connections);
 }
 
 int
 tsapi::c::TSHttpCurrentServerConnectionsGet()
 {
-  return Metrics::read(http_rsb.current_server_connections);
+  return Metrics::Gauge::load(http_rsb.current_server_connections);
 }
 
 /* HTTP alternate selection */
@@ -6999,7 +6999,7 @@ tsapi::c::TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 tsapi::c::TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int id = global_api_metrics.newMetric(the_name);
+  int id = Metrics::Gauge::create(the_name); // Gauges allows for all "int" operations
 
   if (id == ts::Metrics::NOT_FOUND) {
     return TS_ERROR;
@@ -7012,14 +7012,14 @@ void
 tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_add(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics.increment(id, amount);
 }
 
 void
 tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  global_api_metrics[id].fetch_sub(amount, ts::Metrics::MEMORY_ORDER);
+  global_api_metrics.decrement(id, amount);
 }
 
 tsapi::c::TSMgmtInt

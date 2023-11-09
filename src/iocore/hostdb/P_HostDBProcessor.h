@@ -120,13 +120,13 @@ struct HostEnt;
 
 // Stats
 struct HostDBStatsBlock {
-  ts::Metrics::IntType *total_lookups;
-  ts::Metrics::IntType *total_hits;
-  ts::Metrics::IntType *total_serve_stale;
-  ts::Metrics::IntType *ttl;
-  ts::Metrics::IntType *ttl_expires;
-  ts::Metrics::IntType *re_dns_on_reload;
-  ts::Metrics::IntType *insert_duplicate_to_pending_dns;
+  Metrics::Counter::AtomicType *total_lookups;
+  Metrics::Counter::AtomicType *total_hits;
+  Metrics::Counter::AtomicType *total_serve_stale;
+  Metrics::Counter::AtomicType *ttl;
+  Metrics::Counter::AtomicType *ttl_expires;
+  Metrics::Counter::AtomicType *re_dns_on_reload;
+  Metrics::Counter::AtomicType *insert_duplicate_to_pending_dns;
 };
 
 extern HostDBStatsBlock hostdb_rsb;

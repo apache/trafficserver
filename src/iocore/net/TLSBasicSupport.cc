@@ -167,5 +167,5 @@ TLSBasicSupport::_record_tls_handshake_end_time()
   const ink_hrtime ssl_handshake_time = this->_tls_handshake_end_time - this->_tls_handshake_begin_time;
 
   Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
-  Metrics::increment(ssl_rsb.total_handshake_time, ssl_handshake_time);
+  Metrics::Counter::increment(ssl_rsb.total_handshake_time, ssl_handshake_time);
 }

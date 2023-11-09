@@ -508,32 +508,31 @@ LogConfig::register_stat_callbacks()
   //
   // events
   //
-  ts::Metrics &intm                         = ts::Metrics::getInstance();
-  log_rsb.event_log_error_skip              = intm.newMetricPtr("proxy.process.log.event_log_error_skip");
-  log_rsb.event_log_error_ok                = intm.newMetricPtr("proxy.process.log.event_log_error_ok");
-  log_rsb.event_log_error_aggr              = intm.newMetricPtr("proxy.process.log.event_log_error_aggr");
-  log_rsb.event_log_error_full              = intm.newMetricPtr("proxy.process.log.event_log_error_full");
-  log_rsb.event_log_error_fail              = intm.newMetricPtr("proxy.process.log.event_log_error_fail");
-  log_rsb.event_log_access_ok               = intm.newMetricPtr("proxy.process.log.event_log_access_ok");
-  log_rsb.event_log_access_skip             = intm.newMetricPtr("proxy.process.log.event_log_access_skip");
-  log_rsb.event_log_access_aggr             = intm.newMetricPtr("proxy.process.log.event_log_access_aggr");
-  log_rsb.event_log_access_full             = intm.newMetricPtr("proxy.process.log.event_log_access_full");
-  log_rsb.event_log_access_fail             = intm.newMetricPtr("proxy.process.log.event_log_access_fail");
-  log_rsb.num_sent_to_network               = intm.newMetricPtr("proxy.process.log.num_sent_to_network");
-  log_rsb.num_lost_before_sent_to_network   = intm.newMetricPtr("proxy.process.log.num_lost_before_sent_to_network");
-  log_rsb.num_received_from_network         = intm.newMetricPtr("proxy.process.log.num_received_from_network");
-  log_rsb.num_flush_to_disk                 = intm.newMetricPtr("proxy.process.log.num_flush_to_disk");
-  log_rsb.num_lost_before_flush_to_disk     = intm.newMetricPtr("proxy.process.log.num_lost_before_flush_to_disk");
-  log_rsb.bytes_lost_before_preproc         = intm.newMetricPtr("proxy.process.log.bytes_lost_before_preproc");
-  log_rsb.bytes_sent_to_network             = intm.newMetricPtr("proxy.process.log.bytes_sent_to_network");
-  log_rsb.bytes_lost_before_sent_to_network = intm.newMetricPtr("proxy.process.log.bytes_lost_before_sent_to_network");
-  log_rsb.bytes_received_from_network       = intm.newMetricPtr("proxy.process.log.bytes_received_from_network");
-  log_rsb.bytes_flush_to_disk               = intm.newMetricPtr("proxy.process.log.bytes_flush_to_disk");
-  log_rsb.bytes_lost_before_flush_to_disk   = intm.newMetricPtr("proxy.process.log.bytes_lost_before_flush_to_disk");
-  log_rsb.bytes_written_to_disk             = intm.newMetricPtr("proxy.process.log.bytes_written_to_disk");
-  log_rsb.bytes_lost_before_written_to_disk = intm.newMetricPtr("proxy.process.log.bytes_lost_before_written_to_disk");
-  log_rsb.log_files_open                    = intm.newMetricPtr("proxy.process.log.log_files_open");
-  log_rsb.log_files_space_used              = intm.newMetricPtr("proxy.process.log.log_files_space_used");
+  log_rsb.event_log_error_skip              = Metrics::Counter::createPtr("proxy.process.log.event_log_error_skip");
+  log_rsb.event_log_error_ok                = Metrics::Counter::createPtr("proxy.process.log.event_log_error_ok");
+  log_rsb.event_log_error_aggr              = Metrics::Counter::createPtr("proxy.process.log.event_log_error_aggr");
+  log_rsb.event_log_error_full              = Metrics::Counter::createPtr("proxy.process.log.event_log_error_full");
+  log_rsb.event_log_error_fail              = Metrics::Counter::createPtr("proxy.process.log.event_log_error_fail");
+  log_rsb.event_log_access_ok               = Metrics::Counter::createPtr("proxy.process.log.event_log_access_ok");
+  log_rsb.event_log_access_skip             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_skip");
+  log_rsb.event_log_access_aggr             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_aggr");
+  log_rsb.event_log_access_full             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_full");
+  log_rsb.event_log_access_fail             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_fail");
+  log_rsb.num_sent_to_network               = Metrics::Counter::createPtr("proxy.process.log.num_sent_to_network");
+  log_rsb.num_lost_before_sent_to_network   = Metrics::Counter::createPtr("proxy.process.log.num_lost_before_sent_to_network");
+  log_rsb.num_received_from_network         = Metrics::Counter::createPtr("proxy.process.log.num_received_from_network");
+  log_rsb.num_flush_to_disk                 = Metrics::Counter::createPtr("proxy.process.log.num_flush_to_disk");
+  log_rsb.num_lost_before_flush_to_disk     = Metrics::Counter::createPtr("proxy.process.log.num_lost_before_flush_to_disk");
+  log_rsb.bytes_lost_before_preproc         = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_preproc");
+  log_rsb.bytes_sent_to_network             = Metrics::Counter::createPtr("proxy.process.log.bytes_sent_to_network");
+  log_rsb.bytes_lost_before_sent_to_network = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_sent_to_network");
+  log_rsb.bytes_received_from_network       = Metrics::Counter::createPtr("proxy.process.log.bytes_received_from_network");
+  log_rsb.bytes_flush_to_disk               = Metrics::Counter::createPtr("proxy.process.log.bytes_flush_to_disk");
+  log_rsb.bytes_lost_before_flush_to_disk   = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_flush_to_disk");
+  log_rsb.bytes_written_to_disk             = Metrics::Counter::createPtr("proxy.process.log.bytes_written_to_disk");
+  log_rsb.bytes_lost_before_written_to_disk = Metrics::Counter::createPtr("proxy.process.log.bytes_lost_before_written_to_disk");
+  log_rsb.log_files_open                    = Metrics::Gauge::createPtr("proxy.process.log.log_files_open");
+  log_rsb.log_files_space_used              = Metrics::Gauge::createPtr("proxy.process.log.log_files_space_used");
 }
 
 /*-------------------------------------------------------------------------
@@ -659,7 +658,7 @@ LogConfig::update_space_used()
   //
   m_space_used           = total_space_used;
   m_partition_space_left = partition_space_left;
-  Metrics::write(log_rsb.log_files_space_used, m_space_used);
+  Metrics::Gauge::store(log_rsb.log_files_space_used, m_space_used);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
   Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);

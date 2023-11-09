@@ -191,9 +191,9 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
     count++;
   }
 
-  Metrics::increment(cache_rsb.hdr_vector_marshal);
-  Metrics::increment(cache_rsb.hdr_marshal, count);
-  Metrics::increment(cache_rsb.hdr_marshal_bytes, buf - start);
+  Metrics::Counter::increment(cache_rsb.hdr_vector_marshal);
+  Metrics::Counter::increment(cache_rsb.hdr_marshal, count);
+  Metrics::Counter::increment(cache_rsb.hdr_marshal_bytes, buf - start);
 
   return buf - start;
 }

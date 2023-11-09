@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <deque>
+#include <utility>
+
 #include "swoc/swoc_file.h"
 
 #include "tscore/ink_platform.h"
@@ -35,9 +38,6 @@
 #include "tscore/Layout.h"
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"
-
-#include <deque>
-#include <utility>
 
 using ts::Metrics;
 
@@ -513,11 +513,11 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err       = REC_ERR_FAIL;
-  ts::Metrics &intm = ts::Metrics::getInstance();
-  auto it           = intm.find(name);
+  RecErrT err          = REC_ERR_FAIL;
+  ts::Metrics &metrics = ts::Metrics::instance();
+  auto it              = metrics.find(name);
 
-  if (it != intm.end()) {
+  if (it != metrics.end()) {
     RecRecord r;
     auto &&[name, val] = *it;
 
@@ -567,7 +567,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   tmp.rec_type  = RECT_ALL;
   tmp.data_type = RECD_INT;
 
-  for (auto &&[name, val] : ts::Metrics::getInstance()) {
+  for (auto &&[name, val] : ts::Metrics::instance()) {
     if (regex.match(name.data()) >= 0) {
       tmp.name         = name.data();
       tmp.data.rec_int = val;
@@ -899,7 +899,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
   // Dump all new metrics as well (no "type" for them)
   RecData datum;
 
-  for (auto &&[name, val] : ts::Metrics::getInstance()) {
+  for (auto &&[name, val] : ts::Metrics::instance()) {
     datum.rec_int = val;
     callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
   }

@@ -97,7 +97,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Fatal("Please disable accept_threads or exec_thread.listen");
   }
 
-  Metrics::increment(net_rsb.accepts_currently_open);
+  Metrics::Gauge::increment(net_rsb.accepts_currently_open);
 
   // We've handled the config stuff at start up, but there are a few cases
   // we must handle at this point.

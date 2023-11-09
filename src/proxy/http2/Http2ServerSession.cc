@@ -61,7 +61,7 @@ Http2ServerSession::free()
 {
   auto mutex_thread = this->mutex->thread_holding;
   if (Http2CommonSession::common_free(this)) {
-    Metrics::decrement(http2_rsb.current_server_session_count);
+    Metrics::Gauge::decrement(http2_rsb.current_server_session_count);
     THREAD_FREE(this, http2ServerSessionAllocator, mutex_thread);
   }
 }
@@ -96,8 +96,8 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 {
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
 
-  Metrics::increment(http2_rsb.current_server_session_count);
-  Metrics::increment(http2_rsb.total_server_connection_count);
+  Metrics::Gauge::increment(http2_rsb.current_server_session_count);
+  Metrics::Counter::increment(http2_rsb.total_server_connection_count);
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.

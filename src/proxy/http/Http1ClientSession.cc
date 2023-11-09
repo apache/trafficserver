@@ -118,7 +118,7 @@ Http1ClientSession::free()
 #endif
 
   if (conn_decrease) {
-    Metrics::decrement(http_rsb.current_client_connections);
+    Metrics::Gauge::decrement(http_rsb.current_client_connections);
     conn_decrease = false;
   }
 
@@ -154,26 +154,26 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   schedule_event = nullptr;
 
-  Metrics::increment(http_rsb.current_client_connections);
+  Metrics::Gauge::increment(http_rsb.current_client_connections);
   conn_decrease = true;
-  Metrics::increment(http_rsb.total_client_connections);
+  Metrics::Counter::increment(http_rsb.total_client_connections);
   if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TRANSPORT_SSL) {
-    Metrics::increment(http_rsb.https_total_client_connections);
+    Metrics::Counter::increment(http_rsb.https_total_client_connections);
   }
 
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
-  Metrics::increment(http_rsb.total_incoming_connections);
+  Metrics::Counter::increment(http_rsb.total_incoming_connections);
 
   // check what type of socket address we just accepted
   // by looking at the address family value of sockaddr_storage
   // and logging to stat system
   switch (new_vc->get_remote_addr()->sa_family) {
   case AF_INET:
-    Metrics::increment(http_rsb.total_client_connections_ipv4);
+    Metrics::Counter::increment(http_rsb.total_client_connections_ipv4);
     break;
   case AF_INET6:
-    Metrics::increment(http_rsb.total_client_connections_ipv6);
+    Metrics::Counter::increment(http_rsb.total_client_connections_ipv6);
     break;
   default:
     // don't do anything if the address family is not ipv4 or ipv6
@@ -513,12 +513,12 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 void
 Http1ClientSession::increment_current_active_connections_stat()
 {
-  Metrics::increment(http_rsb.current_active_client_connections);
+  Metrics::Gauge::increment(http_rsb.current_active_client_connections);
 }
 void
 Http1ClientSession::decrement_current_active_connections_stat()
 {
-  Metrics::decrement(http_rsb.current_active_client_connections);
+  Metrics::Gauge::decrement(http_rsb.current_active_client_connections);
 }
 
 void

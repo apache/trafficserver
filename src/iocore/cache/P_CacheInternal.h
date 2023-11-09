@@ -187,11 +187,11 @@ free_CacheVC(CacheVC *cont)
   Stripe *vol       = cont->vol;
 
   if (vol) {
-    Metrics::decrement(cache_rsb.status[cont->op_type].active);
-    Metrics::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
+    Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
+    Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.status[cont->op_type].active);
     if (cont->closed > 0) {
-      Metrics::increment(cache_rsb.status[cont->op_type].success);
-      Metrics::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);
+      Metrics::Counter::increment(cache_rsb.status[cont->op_type].success);
+      Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[cont->op_type].success);
     } // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());
@@ -397,8 +397,8 @@ Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
 
   if (agg_error) {
-    Metrics::increment(cache_rsb.write_backlog_failure);
-    Metrics::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
+    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    Metrics::Counter::increment(vol->cache_vol->vol_rsb.write_backlog_failure);
 
     return ECACHE_WRITE_FAIL;
   }

@@ -25,10 +25,11 @@
 #include "catch.hpp"
 
 #include "api/Metrics.h"
+using ts::Metrics;
 
 TEST_CASE("Metrics", "[libtsapi][Metrics]")
 {
-  ts::Metrics m;
+  auto &m = Metrics::instance();
 
   SECTION("iterator")
   {
@@ -46,7 +47,7 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
   SECTION("New metric")
   {
-    auto fooid = m.newMetric("foo");
+    auto fooid = Metrics::Counter::create("foo");
 
     REQUIRE(fooid == 1);
     REQUIRE(m.name(fooid) == "foo");
@@ -56,22 +57,24 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[fooid].load() == 1);
   }
 
-  SECTION("operator[]")
+  SECTION("operator[] & store")
   {
-    m[0].store(42);
+    auto storeid = Metrics::Gauge::create("store");
 
-    REQUIRE(m[0].load() == 42);
+    m[storeid].store(42);
+
+    REQUIRE(m[storeid].load() == 42);
   }
 
   SECTION("Span allocation")
   {
     ts::Metrics::IdType span_id;
-    auto fooid = m.newMetric("foo"); // To see that span_id gets to 2
-    auto span  = m.newMetricSpan(17, &span_id);
+    auto fooid = m.lookup("foo");
+    auto span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
     REQUIRE(fooid == 1);
-    REQUIRE(span_id == 2);
+    REQUIRE(span_id == 3);
 
     m.rename(span_id + 0, "span.0");
     m.rename(span_id + 1, "span.1");
@@ -88,14 +91,12 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
   SECTION("lookup")
   {
-    auto nm = m.lookupPtr("notametric");
-    REQUIRE(!nm);
+    auto nm = m.lookup("notametric");
+    REQUIRE(nm == ts::Metrics::NOT_FOUND);
 
-    auto mid = m.newMetric("ametric");
-    auto fm  = m.lookupPtr("ametric");
-    REQUIRE(fm.has_value());
-    REQUIRE(fm.value());
-    REQUIRE(fm.value() == m.lookup(mid));
-    REQUIRE(m.lookup("ametric") == mid);
+    auto mid  = Metrics::Counter::create("ametric");
+    auto fmid = m.lookup("ametric");
+
+    REQUIRE(mid == fmid);
   }
 }

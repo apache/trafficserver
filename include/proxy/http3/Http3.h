@@ -26,6 +26,8 @@
 #include "tscore/ink_defs.h"
 #include "api/Metrics.h"
 
+using ts::Metrics;
+
 extern const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE;
 extern const uint32_t HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE;
 extern const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS;
@@ -39,9 +41,9 @@ public:
 
 // Statistics
 struct Http3StatsBlock {
-  // Example: Metrics::IntType *current_client_session_count;
+  // Example: Metrics::Counter::AtomicType *current_client_session_count;
   // Once created, e.g.
-  // Metrics::increment(http3_rsb.current_client_session_count);
+  // Metrics::Counter::increment(http3_rsb.current_client_session_count);
 };
 
 extern Http3StatsBlock http3_rsb; // Container for statistics.

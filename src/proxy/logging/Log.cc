@@ -1170,7 +1170,7 @@ Log::access(LogAccess *lad)
     this_sample = sample++;
     if (this_sample && this_sample % Log::config->sampling_frequency) {
       Debug("log", "sampling, skipping this entry ...");
-      Metrics::increment(log_rsb.event_log_access_skip);
+      Metrics::Counter::increment(log_rsb.event_log_access_skip);
       ret = Log::SKIP;
       goto done;
     } else {
@@ -1181,7 +1181,7 @@ Log::access(LogAccess *lad)
 
   if (Log::config->log_object_manager.get_num_objects() == 0) {
     Debug("log", "no log objects, skipping this entry ...");
-    Metrics::increment(log_rsb.event_log_access_skip);
+    Metrics::Counter::increment(log_rsb.event_log_access_skip);
     ret = Log::SKIP;
     goto done;
   }
@@ -1225,19 +1225,19 @@ Log::va_error(const char *format, va_list ap)
 
     switch (ret_val) {
     case Log::LOG_OK:
-      Metrics::increment(log_rsb.event_log_error_ok);
+      Metrics::Counter::increment(log_rsb.event_log_error_ok);
       break;
     case Log::SKIP:
-      Metrics::increment(log_rsb.event_log_error_skip);
+      Metrics::Counter::increment(log_rsb.event_log_error_skip);
       break;
     case Log::AGGR:
-      Metrics::increment(log_rsb.event_log_error_aggr);
+      Metrics::Counter::increment(log_rsb.event_log_error_aggr);
       break;
     case Log::FULL:
-      Metrics::increment(log_rsb.event_log_error_full);
+      Metrics::Counter::increment(log_rsb.event_log_error_full);
       break;
     case Log::FAIL:
-      Metrics::increment(log_rsb.event_log_error_fail);
+      Metrics::Counter::increment(log_rsb.event_log_error_fail);
       break;
     default:
       ink_release_assert(!"Unexpected result");
@@ -1246,7 +1246,7 @@ Log::va_error(const char *format, va_list ap)
     return ret_val;
   }
 
-  Metrics::increment(log_rsb.event_log_error_skip);
+  Metrics::Counter::increment(log_rsb.event_log_error_skip);
 
   return ret_val;
 }
@@ -1349,7 +1349,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       if (!logfile->is_open()) {
         SiteThrottledWarning("File:%s was closed, have dropped (%d) bytes.", logfile->get_name(), total_bytes);
 
-        Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes);
+        Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes);
         delete fdata;
         continue;
       }
@@ -1365,7 +1365,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.", logfile->get_name(),
                 (total_bytes - bytes_written));
 
-          Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
+          Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
         }
 
@@ -1375,14 +1375,14 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           SiteThrottledError("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(),
                              total_bytes - bytes_written, bytes_written, strerror(errno));
 
-          Metrics::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
+          Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
         }
         Debug("log", "Successfully wrote some stuff to %s", logfile->get_name());
         bytes_written += len;
       }
 
-      Metrics::increment(log_rsb.bytes_written_to_disk, bytes_written);
+      Metrics::Counter::increment(log_rsb.bytes_written_to_disk, bytes_written);
 
       if (logfile->m_log) {
         ink_atomic_increment(&logfile->m_log->m_bytes_written, bytes_written);

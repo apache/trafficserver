@@ -25,6 +25,11 @@ A plugin can create statistics (metrics) that are accessible in the same way as 
 statistics. In general monitoring the behavior of plugins in production is easier to do in this way
 in contrast to processing log files.
 
+   .. note::
+
+      These APIs are deprecated as of ATS v10.0.0, and will likely be removed in v11. Instead,
+      use the new APIs in `Metrics.h` diretly.
+
 Synopsis
 ========
 

@@ -117,7 +117,7 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
   ink_assert(e->vc);
   if (e->in_tunnel == false) {
     if (e->vc_type == HTTP_SERVER_VC) {
-      Metrics::increment(http_rsb.origin_shutdown_cleanup_entry);
+      Metrics::Counter::increment(http_rsb.origin_shutdown_cleanup_entry);
     }
     e->vc->do_io_close();
     e->vc = nullptr;

@@ -51,15 +51,15 @@ static constexpr ts::VersionNumber REFCOUNTCACHE_VERSION(1, 0);
 
 // Stats
 struct RefCountCacheBlock {
-  Metrics::IntType *refcountcache_current_items;
-  Metrics::IntType *refcountcache_current_size;
-  Metrics::IntType *refcountcache_total_inserts;
-  Metrics::IntType *refcountcache_total_failed_inserts;
-  Metrics::IntType *refcountcache_total_lookups;
-  Metrics::IntType *refcountcache_total_hits;
-  Metrics::IntType *refcountcache_last_sync_time;
-  Metrics::IntType *refcountcache_last_total_items;
-  Metrics::IntType *refcountcache_last_total_size;
+  Metrics::Gauge::AtomicType *refcountcache_current_items;
+  Metrics::Gauge::AtomicType *refcountcache_current_size;
+  Metrics::Counter::AtomicType *refcountcache_total_inserts;
+  Metrics::Counter::AtomicType *refcountcache_total_failed_inserts;
+  Metrics::Counter::AtomicType *refcountcache_total_lookups;
+  Metrics::Counter::AtomicType *refcountcache_total_hits;
+  Metrics::Counter::AtomicType *refcountcache_last_sync_time;
+  Metrics::Counter::AtomicType *refcountcache_last_total_items;
+  Metrics::Counter::AtomicType *refcountcache_last_total_size;
 };
 
 struct RefCountCacheItemMeta {
@@ -204,10 +204,10 @@ template <class C>
 Ptr<C>
 RefCountCachePartition<C>::get(uint64_t key)
 {
-  Metrics::increment(this->rsb->refcountcache_total_lookups);
+  Metrics::Counter::increment(this->rsb->refcountcache_total_lookups);
   if (auto it = this->item_map.find(key); it != this->item_map.end()) {
     // found
-    Metrics::increment(this->rsb->refcountcache_total_hits);
+    Metrics::Counter::increment(this->rsb->refcountcache_total_hits);
     return make_ptr(static_cast<C *>(it->item.get()));
   } else {
     return Ptr<C>();
@@ -218,7 +218,7 @@ template <class C>
 void
 RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
 {
-  Metrics::increment(this->rsb->refcountcache_total_inserts);
+  Metrics::Counter::increment(this->rsb->refcountcache_total_inserts);
   size += sizeof(C);
   // Remove any colliding entries
   this->erase(key);
@@ -226,7 +226,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   // if we are full, and can't make space-- then don't store the item
   if (this->is_full() && !this->make_space_for(size)) {
     Dbg(dbg_ctl, "partition %d is full-- not storing item key=%" PRIu64, this->part_num, key);
-    Metrics::increment(this->rsb->refcountcache_total_failed_inserts);
+    Metrics::Counter::increment(this->rsb->refcountcache_total_failed_inserts);
     return;
   }
 
@@ -247,8 +247,8 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   this->item_map.insert(val);
   this->size += val->meta.size;
   this->items++;
-  Metrics::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
-  Metrics::increment(this->rsb->refcountcache_current_items);
+  Metrics::Gauge::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
+  Metrics::Gauge::increment(this->rsb->refcountcache_current_items);
 }
 
 template <class C>
@@ -273,8 +273,8 @@ RefCountCachePartition<C>::dealloc_entry(hash_type::iterator ptr)
   this->size -= ptr->meta.size;
   this->items--;
 
-  Metrics::decrement(this->rsb->refcountcache_current_size, ptr->meta.size);
-  Metrics::decrement(this->rsb->refcountcache_current_items);
+  Metrics::Gauge::decrement(this->rsb->refcountcache_current_size, ptr->meta.size);
+  Metrics::Gauge::decrement(this->rsb->refcountcache_current_items);
 
   // remove from expiry queue
   if (ptr->expiry_entry != nullptr) {
@@ -428,21 +428,19 @@ RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items
                                 const std::string metrics_prefix)
   : header(RefCountCacheHeader(object_version))
 {
-  ts::Metrics &intm = ts::Metrics::getInstance();
-
   this->max_size       = size;
   this->max_items      = items;
   this->num_partitions = num_partitions;
 
-  this->rsb.refcountcache_current_items        = intm.newMetricPtr((metrics_prefix + "current_items").c_str());
-  this->rsb.refcountcache_current_size         = intm.newMetricPtr((metrics_prefix + "current_size").c_str());
-  this->rsb.refcountcache_total_inserts        = intm.newMetricPtr((metrics_prefix + "total_inserts").c_str());
-  this->rsb.refcountcache_total_failed_inserts = intm.newMetricPtr((metrics_prefix + "total_failed_inserts").c_str());
-  this->rsb.refcountcache_total_lookups        = intm.newMetricPtr((metrics_prefix + "total_lookups").c_str());
-  this->rsb.refcountcache_total_hits           = intm.newMetricPtr((metrics_prefix + "total_hits").c_str());
-  this->rsb.refcountcache_last_sync_time       = intm.newMetricPtr((metrics_prefix + "last_sync.time").c_str());
-  this->rsb.refcountcache_last_total_items     = intm.newMetricPtr((metrics_prefix + "last_sync.total_items").c_str());
-  this->rsb.refcountcache_last_total_size      = intm.newMetricPtr((metrics_prefix + "last_sync.total_size").c_str());
+  this->rsb.refcountcache_current_items        = Metrics::Gauge::createPtr((metrics_prefix + "current_items").c_str());
+  this->rsb.refcountcache_current_size         = Metrics::Gauge::createPtr((metrics_prefix + "current_size").c_str());
+  this->rsb.refcountcache_total_inserts        = Metrics::Counter::createPtr((metrics_prefix + "total_inserts").c_str());
+  this->rsb.refcountcache_total_failed_inserts = Metrics::Counter::createPtr((metrics_prefix + "total_failed_inserts").c_str());
+  this->rsb.refcountcache_total_lookups        = Metrics::Counter::createPtr((metrics_prefix + "total_lookups").c_str());
+  this->rsb.refcountcache_total_hits           = Metrics::Counter::createPtr((metrics_prefix + "total_hits").c_str());
+  this->rsb.refcountcache_last_sync_time       = Metrics::Counter::createPtr((metrics_prefix + "last_sync.time").c_str());
+  this->rsb.refcountcache_last_total_items     = Metrics::Counter::createPtr((metrics_prefix + "last_sync.total_items").c_str());
+  this->rsb.refcountcache_last_total_size      = Metrics::Counter::createPtr((metrics_prefix + "last_sync.total_size").c_str());
 
   // Now lets create all the partitions
   this->partitions.reserve(num_partitions);

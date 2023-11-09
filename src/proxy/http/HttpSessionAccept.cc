@@ -81,8 +81,8 @@ HttpSessionAccept::mainEvent(int event, void *data)
   /////////////////
   if (((long)data) == -ECONNABORTED) {
     // FIX: add time to user_agent_hangup
-    Metrics::increment(http_rsb.ua_counts_errors_pre_accept_hangups);
-    // Metrics::increment(http_rsb.ua_msecs_errors_pre_accept_hangups, 0); // ToDo: Weird, but we added 0 here before
+    Metrics::Counter::increment(http_rsb.ua_counts_errors_pre_accept_hangups);
+    // Metrics::Counter::increment(http_rsb.ua_msecs_errors_pre_accept_hangups, 0); // ToDo: Weird, but we added 0 here before
   }
 
   ink_abort("HTTP accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));

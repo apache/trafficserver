@@ -66,7 +66,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
       ink_atomic_increment(&_num_flush_buffers, -1);
       Warning("Dropping log buffer, can't keep up.");
-      Metrics::increment(log_rsb.bytes_lost_before_preproc, b->header()->byte_count);
+      Metrics::Counter::increment(log_rsb.bytes_lost_before_preproc, b->header()->byte_count);
       delete b;
     } else {
       new_q.push(b);
@@ -1349,15 +1349,15 @@ LogObjectManager::log(LogAccess *lad)
   // The if-statement should keep step with the priority order.
   //
   if (unlikely(ret & Log::FAIL)) {
-    Metrics::increment(log_rsb.event_log_access_fail);
+    Metrics::Counter::increment(log_rsb.event_log_access_fail);
   } else if (unlikely(ret & Log::FULL)) {
-    Metrics::increment(log_rsb.event_log_access_full);
+    Metrics::Counter::increment(log_rsb.event_log_access_full);
   } else if (likely(ret & Log::LOG_OK)) {
-    Metrics::increment(log_rsb.event_log_access_ok);
+    Metrics::Counter::increment(log_rsb.event_log_access_ok);
   } else if (unlikely(ret & Log::AGGR)) {
-    Metrics::increment(log_rsb.event_log_access_aggr);
+    Metrics::Counter::increment(log_rsb.event_log_access_aggr);
   } else if (likely(ret & Log::SKIP)) {
-    Metrics::increment(log_rsb.event_log_access_skip);
+    Metrics::Counter::increment(log_rsb.event_log_access_skip);
   } else {
     ink_release_assert(!"Unexpected result");
   }

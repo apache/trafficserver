@@ -133,10 +133,10 @@ public:
 #endif
 
 struct AIOStatsBlock {
-  Metrics::IntType *read_count;
-  Metrics::IntType *kb_read;
-  Metrics::IntType *write_count;
-  Metrics::IntType *kb_write;
+  Metrics::Counter::AtomicType *read_count;
+  Metrics::Counter::AtomicType *kb_read;
+  Metrics::Counter::AtomicType *write_count;
+  Metrics::Counter::AtomicType *kb_write;
 };
 
 extern AIOStatsBlock aio_rsb;

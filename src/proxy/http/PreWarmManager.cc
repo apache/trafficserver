@@ -85,16 +85,19 @@ parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 //
 constexpr std::string_view STAT_NAME_PREFIX = "proxy.process.tunnel.prewarm"sv;
 
-// the order is the same as PreWarm::Stat
+// the order is the same as PreWarm::CounterStat / GaugeStat
 // clang-format off
-constexpr std::string_view STAT_ENTRIES[] = {
-  "current_init"sv,
-  "current_open"sv,
+constexpr std::string_view COUNTER_STAT_ENTRIES[] = {
   "total_hit"sv,
   "total_miss"sv,
   "total_handshake_time"sv,
   "total_handshake_count"sv,
   "total_retry"sv,
+};
+
+constexpr std::string_view GAUGE_STAT_ENTRIES[] = {
+  "current_init"sv,
+  "current_open"sv,
 };
 // clang-format on
 
@@ -138,7 +141,9 @@ PreWarmSM::retry()
   ink_hrtime delay = HRTIME_SECONDS(1 << _retry_counter);
   ++_retry_counter;
 
-  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::RETRY)));
+  auto &[counters, _] = *_stats_ids;
+
+  ts::Metrics::Counter::increment(counters[static_cast<int>(PreWarm::CounterStat::RETRY)]);
 
   EThread *ethread = this_ethread();
   _retry_event     = ethread->schedule_in_local(this, delay, EVENT_IMMEDIATE);
@@ -628,8 +633,10 @@ PreWarmSM::_record_handshake_time()
     return;
   }
 
-  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_TIME)), duration);
-  ts::Metrics::increment(_stats_ids->at(static_cast<int>(PreWarm::Stat::HANDSHAKE_COUNT)), 1);
+  auto &[counters, _] = *_stats_ids;
+
+  ts::Metrics::Counter::increment(counters[static_cast<int>(PreWarm::CounterStat::HANDSHAKE_TIME)], duration);
+  ts::Metrics::Counter::increment(counters[static_cast<int>(PreWarm::CounterStat::HANDSHAKE_COUNT)]);
 }
 
 ////
@@ -702,10 +709,12 @@ PreWarmQueue::state_running(int event, void *data)
             dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
             (int)info.open_list->size());
 
-      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
-      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), info.open_list->size());
-      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::HIT)), info.stat.hit);
-      ts::Metrics::increment(info.stats_ids->at(static_cast<int>(PreWarm::Stat::MISS)), info.stat.miss);
+      auto &[counters, gauges] = *info.stats_ids;
+
+      ts::Metrics::Gauge::store(gauges[static_cast<int>(PreWarm::GaugeStat::INIT_LIST_SIZE)], info.init_list->size());
+      ts::Metrics::Gauge::store(gauges[static_cast<int>(PreWarm::GaugeStat::OPEN_LIST_SIZE)], info.open_list->size());
+      ts::Metrics::Counter::increment(counters[static_cast<int>(PreWarm::CounterStat::HIT)], info.stat.hit);
+      ts::Metrics::Counter::increment(counters[static_cast<int>(PreWarm::CounterStat::MISS)], info.stat.miss);
 
       // clear PreWarmQueue::Stat
       info.stat.miss = 0;
@@ -927,8 +936,10 @@ PreWarmQueue::_reconfigure()
   // free unexisting entries
   for (auto &[dst, info] : _map) {
     if (auto entry = new_conf_list.find(dst); entry == new_conf_list.end()) {
-      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), 0);
-      ts::Metrics::write(info.stats_ids->at(static_cast<int>(PreWarm::Stat::OPEN_LIST_SIZE)), 0);
+      auto &[_, gauges] = *info.stats_ids;
+
+      ts::Metrics::Gauge::store(gauges[static_cast<int>(PreWarm::GaugeStat::INIT_LIST_SIZE)], 0);
+      ts::Metrics::Gauge::store(gauges[static_cast<int>(PreWarm::GaugeStat::OPEN_LIST_SIZE)], 0);
 
       _make_queue_empty(info.init_list);
       delete info.init_list;
@@ -1122,48 +1133,64 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
    Create stats per pool.
    Registered stats id is stored in _stat_id_map.
  */
+
+// This is a little helper, since this is reused twice for making counters and gauges
+void
+_makeName(const PreWarm::SPtrConstDst &dst, std::string_view statname, char *name, size_t namesize)
+{
+  if (dst->alpn_index != SessionProtocolNameRegistry::INVALID) {
+    std::string_view alpn_name = alpn_name_for_stat(dst->alpn_index);
+
+    snprintf(name, namesize, "%s.%.*s:%d.tls.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()), dst->host.data(),
+             dst->port, alpn_name.data(), statname.data());
+  } else {
+    snprintf(name, namesize, "%s.%.*s:%d.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()), dst->host.data(),
+             dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp", statname.data());
+  }
+}
+
 void
 PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 {
   int stats_counter = 0;
 
-  ts::Metrics &intm = ts::Metrics::getInstance();
-
   for (auto &entry : parsed_conf) {
     const PreWarm::SPtrConstDst &dst = entry.first;
-
     PreWarm::StatsIds ids;
-    for (int j = 0; j < static_cast<int>(PreWarm::Stat::LAST_ENTRY); ++j) {
+    auto &[counters, gauges] = ids;
+
+    // First the Counters
+    for (int j = 0; j < static_cast<int>(PreWarm::CounterStat::LAST_ENTRY); ++j) {
       char name[STAT_NAME_BUF_LEN];
 
-      if (dst->alpn_index != SessionProtocolNameRegistry::INVALID) {
-        std::string_view alpn_name = alpn_name_for_stat(dst->alpn_index);
+      _makeName(dst, COUNTER_STAT_ENTRIES[j], name, sizeof(name));
 
-        snprintf(name, sizeof(name), "%s.%.*s:%d.tls.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, alpn_name.data(), STAT_ENTRIES[j].data());
+      auto metric = Metrics::Counter::createPtr(name); // This will do a lookup if it already exists
+
+      if (metric == nullptr) {
+        Error("couldn't register counter stat name=%s", name);
       } else {
-        snprintf(name, sizeof(name), "%s.%.*s:%d.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp", STAT_ENTRIES[j].data());
+        ++stats_counter;
+        counters[j] = metric;
+        Debug("v_prewarm_init", "conter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
       }
+    }
 
-      ts::Metrics::IdType stats_id = intm.lookup(name);
-      ts::Metrics::IntType *metric = nullptr;
+    // Gauges next
+    for (int j = 0; j < static_cast<int>(PreWarm::GaugeStat::LAST_ENTRY); ++j) {
+      char name[STAT_NAME_BUF_LEN];
 
-      if (stats_id == ts::Metrics::NOT_FOUND) {
-        metric = intm.newMetricPtr(name);
+      _makeName(dst, GAUGE_STAT_ENTRIES[j], name, sizeof(name));
 
-        if (metric == nullptr) {
-          Error("couldn't register stat name=%s", name);
-        } else {
-          ++stats_counter;
-        }
+      auto metric = Metrics::Gauge::createPtr(name); // This will do a lookup if it already exists
+
+      if (metric == nullptr) {
+        Error("couldn't register gauge stat name=%s", name);
       } else {
-        metric = intm.lookup(stats_id);
+        ++stats_counter;
+        gauges[j] = metric;
+        Debug("v_prewarm_init", "gauge stat id=%d name=%s", Metrics::Gauge::lookup(name), name);
       }
-
-      ids[j] = metric;
-
-      Debug("v_prewarm_init", "stat id=%d name=%s", stats_id, name);
     }
 
     _stats_id_map[dst] = std::make_shared<const PreWarm::StatsIds>(ids);

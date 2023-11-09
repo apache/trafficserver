@@ -455,7 +455,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
               ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
               if (!new_vc) {
                 // Close out to_return, we were't able to get a connection
-                Metrics::increment(http_rsb.origin_shutdown_migration_failure);
+                Metrics::Counter::increment(http_rsb.origin_shutdown_migration_failure);
                 to_return->do_io_close();
                 to_return = nullptr;
                 retval    = HSM_NOT_FOUND;
@@ -536,7 +536,7 @@ ServerSessionPool::removeSession(PoolableSession *to_remove)
   }
   m_fqdn_pool.erase(to_remove);
   if (m_ip_pool.erase(to_remove)) {
-    Metrics::decrement(http_rsb.pooled_server_connections);
+    Metrics::Gauge::decrement(http_rsb.pooled_server_connections);
   }
   if (is_debug_tag_set("http_ss")) {
     Debug("http_ss", "After Remove session %p m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, m_fqdn_pool.count(),
@@ -552,7 +552,7 @@ ServerSessionPool::addSession(PoolableSession *ss)
   // put it in the pools.
   m_ip_pool.insert(ss);
   m_fqdn_pool.insert(ss);
-  Metrics::increment(http_rsb.pooled_server_connections);
+  Metrics::Gauge::increment(http_rsb.pooled_server_connections);
 
   if (is_debug_tag_set("http_ss")) {
     char peer_ip[INET6_ADDRPORTSTRLEN];

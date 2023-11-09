@@ -37,7 +37,5 @@ Http3::init()
   // Example (remove comments here when addding)
   //
   // Setup statistics
-  // ts::Metrics &intm = ts::Metrics::getInstance();
-  //
-  // http3_rsb.current_client_session_count = intm.newMetricPtr("proxy.process.http3.current_client_connections");
+  // http3_rsb.current_client_session_count = Metrics::Gauge::createPtr("proxy.process.http3.current_client_connections");
 }
