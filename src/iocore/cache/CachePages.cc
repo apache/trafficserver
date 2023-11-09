@@ -26,6 +26,15 @@
 #include "proxy/Show.h"
 #include "iocore/eventsystem/Tasks.h"
 #include "proxy/CacheControl.h"
+
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 namespace
 {
 

@@ -30,14 +30,6 @@
 
 #include "swoc/MemSpan.h"
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
-
 /// Match flags for regular expression evaluation.
 enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
@@ -110,8 +102,12 @@ public:
   int get_capture_count();
 
 private:
-  pcre *regex             = nullptr;
-  pcre_extra *regex_extra = nullptr;
+  // @internal - Because the PCRE header is badly done, we can't forward declare the PCRE
+  // enough to use as pointers. For some reason the header defines in name only a struct and
+  // then aliases it to the standard name, rather than simply declare the latter in name only.
+  // The goal is completely wrap PCRE and not include that header in client code.
+  void *regex       = nullptr; ///< Compiled expression.
+  void *regex_extra = nullptr; ///< Extra information about the expression.
 };
 
 /** Deterministic Finite state Automata container.

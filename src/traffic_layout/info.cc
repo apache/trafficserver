@@ -31,6 +31,14 @@
 #include "info.h"
 #include "iocore/eventsystem/RecProcess.h"
 
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #if TS_USE_HWLOC
 #include <hwloc.h>
 #endif

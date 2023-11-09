@@ -17,6 +17,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #include "mgmt/rpc/handlers/common/RecordsUtils.h"
 
 #include <system_error>

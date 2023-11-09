@@ -37,6 +37,14 @@
 #include <strings.h>
 #include <memory>
 
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #include "tscpp/util/ts_ip.h"
 
 #include "iocore/eventsystem/ConfigProcessor.h"

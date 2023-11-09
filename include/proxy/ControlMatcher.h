@@ -97,6 +97,14 @@
 #include "tscpp/util/Regex.h"
 #include "proxy/hdrs/URL.h"
 
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #include <swoc/swoc_ip.h>
 
 #ifdef HAVE_CTYPE_H
