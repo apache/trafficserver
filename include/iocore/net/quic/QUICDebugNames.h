@@ -26,7 +26,6 @@
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICEvents.h"
 #include "iocore/net/quic/QUICTransportParameters.h"
-#include "iocore/net/quic/QUICStreamState.h"
 
 class QUICDebugNames
 {
@@ -36,9 +35,6 @@ public:
   static const char *error_class(QUICErrorClass cls);
   static const char *error_code(uint16_t code);
   static const char *transport_parameter_id(QUICTransportParameterId id);
-  static const char *stream_state(const QUICSendStreamState state);
-  static const char *stream_state(const QUICReceiveStreamState state);
-  static const char *stream_state(const QUICBidirectionalStreamState state);
   static const char *quic_event(int event);
   static const char *key_phase(QUICKeyPhase phase);
   static const char *encryption_level(QUICEncryptionLevel level);

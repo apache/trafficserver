@@ -32,7 +32,6 @@
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/quic/QUICConnection.h"
 
-#include "iocore/net/quic/QUICTLS.h"
 #include <openssl/ssl.h>
 
 #define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)
@@ -73,7 +72,6 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 void
 QUIC::_register_stats()
 {
-  ts::Metrics::Counter &metrics = ts::Metrics::instance();
   // Transferred packet counts
   quic_rsb.total_packets_sent = Metrics::Counter::createPtr("proxy.process.quic.total_packets_sent");
 

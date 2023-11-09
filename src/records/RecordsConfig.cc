@@ -1434,28 +1434,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.disable_http_0_9", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
 
-  // Constants of Loss Detection
-  {RECT_CONFIG, "proxy.config.quic.loss_detection.packet_threshold", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.loss_detection.time_threshold", RECD_FLOAT, "1.25", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.loss_detection.granularity", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.loss_detection.initial_rtt", RECD_INT, "500", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-
-  // Constatns of Congestion Control
-  {RECT_CONFIG, "proxy.config.quic.congestion_control.max_datagram_size", RECD_INT, "1200", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.congestion_control.initial_window", RECD_INT, "12000", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.congestion_control.minimum_window", RECD_INT, "2400", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.congestion_control.loss_reduction_factor", RECD_FLOAT, "0.5", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[\\.0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.congestion_control.persistent_congestion_threshold", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[\\.0-9]+$", RECA_NULL}
-  ,
-
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.config.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

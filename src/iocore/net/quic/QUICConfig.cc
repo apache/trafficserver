@@ -162,24 +162,6 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
   REC_EstablishStaticConfigInt32U(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
 
-  // Loss Detection
-  REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
-  REC_EstablishStaticConfigFloat(this->_ld_time_threshold, "proxy.config.quic.loss_detection.time_threshold");
-
-  uint32_t timeout = 0;
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.granularity");
-  this->_ld_granularity = HRTIME_MSECONDS(timeout);
-
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.initial_rtt");
-  this->_ld_initial_rtt = HRTIME_MSECONDS(timeout);
-
-  // Congestion Control
-  REC_EstablishStaticConfigInt32U(this->_cc_initial_window, "proxy.config.quic.congestion_control.initial_window");
-  REC_EstablishStaticConfigInt32U(this->_cc_minimum_window, "proxy.config.quic.congestion_control.minimum_window");
-  REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor, "proxy.config.quic.congestion_control.loss_reduction_factor");
-  REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
-                                  "proxy.config.quic.congestion_control.persistent_congestion_threshold");
-
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
 
@@ -411,54 +393,6 @@ shared_SSL_CTX
 QUICConfigParams::client_ssl_ctx() const
 {
   return this->_client_ssl_ctx;
-}
-
-uint32_t
-QUICConfigParams::ld_packet_threshold() const
-{
-  return _ld_packet_threshold;
-}
-
-float
-QUICConfigParams::ld_time_threshold() const
-{
-  return _ld_time_threshold;
-}
-
-ink_hrtime
-QUICConfigParams::ld_granularity() const
-{
-  return _ld_granularity;
-}
-
-ink_hrtime
-QUICConfigParams::ld_initial_rtt() const
-{
-  return _ld_initial_rtt;
-}
-
-uint32_t
-QUICConfigParams::cc_initial_window() const
-{
-  return _cc_initial_window;
-}
-
-uint32_t
-QUICConfigParams::cc_minimum_window() const
-{
-  return _cc_minimum_window;
-}
-
-float
-QUICConfigParams::cc_loss_reduction_factor() const
-{
-  return _cc_loss_reduction_factor;
-}
-
-uint32_t
-QUICConfigParams::cc_persistent_congestion_threshold() const
-{
-  return _cc_persistent_congestion_threshold;
 }
 
 uint8_t

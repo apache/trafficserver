@@ -25,8 +25,61 @@
 
 #include "tscore/ink_config.h"
 
-#if TS_HAS_QUICHE
-#include "P_QUICNetProcessor_quiche.h"
-#else
-#include "P_QUICNetProcessor_native.h"
-#endif
+/****************************************************************************
+
+  QUICNetProcessor.h
+
+  The Quiche version of the UnixNetProcessor class.  The majority of the logic
+  is in UnixNetProcessor.  QUICNetProcessor provides the following:
+
+  * QUIC library initialization through the start() method.
+  * Allocation of a QUICNetVConnection through the allocate_vc virtual method.
+
+  Possibly another pass through could simplify the allocate_vc logic too, but
+  I think I will stop here for now.
+
+ ****************************************************************************/
+#pragma once
+
+#include "tscore/ink_platform.h"
+#include "P_Net.h"
+#include "iocore/net/quic/QUICConnectionTable.h"
+#include <quiche.h>
+
+class UnixNetVConnection;
+struct NetAccept;
+
+//////////////////////////////////////////////////////////////////
+//
+//  class QUICNetProcessor
+//
+//////////////////////////////////////////////////////////////////
+class QUICNetProcessor : public UnixNetProcessor
+{
+public:
+  QUICNetProcessor();
+  virtual ~QUICNetProcessor();
+
+  void init() override;
+  int start(int, size_t stacksize) override;
+
+  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions const &opts) override;
+
+  NetVConnection *allocate_vc(EThread *t) override;
+
+  Action *main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt) override;
+
+  off_t quicPollCont_offset;
+
+protected:
+  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
+
+private:
+  QUICNetProcessor(const QUICNetProcessor &);
+  QUICNetProcessor &operator=(const QUICNetProcessor &);
+
+  QUICConnectionTable *_ctable  = nullptr;
+  quiche_config *_quiche_config = nullptr;
+};
+
+extern QUICNetProcessor quic_NetProcessor;

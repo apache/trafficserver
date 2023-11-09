@@ -25,8 +25,68 @@
 
 #include "tscore/ink_config.h"
 
-#if TS_HAS_QUICHE
-#include "P_QUICPacketHandler_quiche.h"
-#else
-#include "P_QUICPacketHandler_native.h"
-#endif
+#include "tscore/ink_platform.h"
+#include "P_Connection.h"
+#include "P_NetAccept.h"
+#include <quiche.h>
+
+class QUICNetVConnection;
+class QUICConnectionTable;
+class QUICClosedConCollector;
+
+class QUICPacketHandler
+{
+public:
+  QUICPacketHandler();
+  virtual ~QUICPacketHandler();
+
+  void send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size = 0);
+  void close_connection(QUICNetVConnection *conn);
+
+protected:
+  Event *_collector_event                       = nullptr;
+  QUICClosedConCollector *_closed_con_collector = nullptr;
+
+  virtual Continuation *_get_continuation() = 0;
+
+  virtual void _recv_packet(int event, UDPPacket *udpPacket) = 0;
+};
+
+class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
+{
+public:
+  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable, quiche_config &config);
+  ~QUICPacketHandlerIn();
+
+  // NetAccept
+  virtual NetProcessor *getNetProcessor() const override;
+  virtual NetAccept *clone() const override;
+  virtual int acceptEvent(int event, void *e) override;
+  void init_accept(EThread *t) override;
+
+protected:
+  // QUICPacketHandler
+  Continuation *_get_continuation() override;
+
+private:
+  QUICConnectionTable &_ctable;
+  quiche_config &_quiche_config;
+
+  void _recv_packet(int event, UDPPacket *udpPacket) override;
+};
+
+class QUICPacketHandlerOut : public Continuation, public QUICPacketHandler
+{
+public:
+  QUICPacketHandlerOut(){};
+  ~QUICPacketHandlerOut(){};
+
+  void init(QUICNetVConnection *vc);
+
+protected:
+  // QUICPacketHandler
+  Continuation *_get_continuation() override;
+
+private:
+  void _recv_packet(int event, UDPPacket *udp_packet) override;
+};

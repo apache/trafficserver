@@ -28,14 +28,10 @@
 #include "../../../../src/iocore/eventsystem/P_VConnection.h"
 #include "iocore/eventsystem/Event.h"
 
-#include "iocore/net/quic/QUICFrame.h"
-#include "iocore/net/quic/QUICStreamState.h"
-#include "iocore/net/quic/QUICFlowController.h"
-#include "iocore/net/quic/QUICIncomingFrameBuffer.h"
-#include "iocore/net/quic/QUICFrameGenerator.h"
 #include "iocore/net/quic/QUICConnection.h"
-#include "iocore/net/quic/QUICFrameRetransmitter.h"
 #include "iocore/net/quic/QUICDebugNames.h"
+
+#include <quiche.h>
 
 class QUICStreamAdapter;
 class QUICStreamStateListener;
@@ -49,23 +45,26 @@ class QUICStream
 public:
   QUICStream() {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
-  virtual ~QUICStream();
+  ~QUICStream();
 
   QUICStreamId id() const;
   const QUICConnectionInfoProvider *connection_info();
   QUICStreamDirection direction() const;
   bool is_bidirectional() const;
 
-  virtual QUICOffset final_offset() const = 0;
+  QUICOffset final_offset() const;
 
-  virtual void stop_sending(QUICStreamErrorUPtr error) = 0;
-  virtual void reset(QUICStreamErrorUPtr error)        = 0;
+  void stop_sending(QUICStreamErrorUPtr error);
+  void reset(QUICStreamErrorUPtr error);
+
+  void receive_data(quiche_conn *quiche_con);
+  void send_data(quiche_conn *quiche_con);
 
   /*
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
    */
-  virtual void on_read() = 0;
-  virtual void on_eos()  = 0;
+  void on_read();
+  void on_eos();
 
   /**
    * Set an adapter to read/write data from/to this stream
@@ -74,12 +73,15 @@ public:
    * to access data in the  way the applications wants.
    */
   void set_io_adapter(QUICStreamAdapter *adapter);
-  virtual void _on_adapter_updated(){};
+
+  LINK(QUICStream, link);
 
 protected:
   QUICConnectionInfoProvider *_connection_info = nullptr;
   QUICStreamId _id                             = 0;
   QUICStreamAdapter *_adapter                  = nullptr;
+  uint64_t _received_bytes                     = 0;
+  uint64_t _sent_bytes                         = 0;
 };
 
 class QUICStreamStateListener

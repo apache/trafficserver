@@ -70,7 +70,9 @@ extern "C" int plock(int);
 #include "tscore/signals.h"
 #include "../iocore/eventsystem/P_EventSystem.h"
 #include "../iocore/net/P_Net.h"
+#if TS_HAS_QUICHE
 #include "../iocore/net/P_QUICNetProcessor.h"
+#endif
 #include "../iocore/net/P_UDPNet.h"
 #include "../iocore/dns/P_DNS.h"
 #include "../iocore/dns/P_SplitDNS.h"

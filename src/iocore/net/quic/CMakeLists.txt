@@ -26,9 +26,8 @@ add_library(
   QUICTypes.cc
   QUICIntUtil.cc
   QUICStream.cc
-  QUICStream_quiche.cc
+  QUICStream.cc
   QUICStreamManager.cc
-  QUICStreamManager_quiche.cc
   QUICStreamAdapter.cc
   QUICStreamVCAdapter.cc
 )

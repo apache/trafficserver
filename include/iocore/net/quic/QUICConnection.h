@@ -25,7 +25,7 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/NetVConnection.h"
-#include "iocore/net/quic/QUICFrameHandler.h"
+#include "iocore/net/quic/QUICTypes.h"
 
 class QUICApplication;
 class QUICStreamManager;
@@ -59,12 +59,11 @@ public:
   virtual bool is_at_anti_amplification_limit() const          = 0;
   virtual bool is_address_validation_completed() const         = 0;
   virtual bool is_handshake_completed() const                  = 0;
-  virtual bool has_keys_for(QUICPacketNumberSpace space) const = 0;
   virtual QUICVersion negotiated_version() const               = 0;
   virtual std::string_view negotiated_application_name() const = 0;
 };
 
-class QUICConnection : public QUICFrameHandler, public QUICConnectionInfoProvider
+class QUICConnection : public QUICConnectionInfoProvider
 {
 public:
   virtual QUICStreamManager *stream_manager()                       = 0;

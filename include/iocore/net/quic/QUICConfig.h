@@ -82,19 +82,6 @@ public:
   uint32_t get_max_send_udp_payload_size_in() const;
   uint32_t get_max_send_udp_payload_size_out() const;
 
-  // Loss Detection
-  uint32_t ld_packet_threshold() const;
-  float ld_time_threshold() const;
-  ink_hrtime ld_granularity() const;
-  ink_hrtime ld_initial_rtt() const;
-
-  // Congestion Control
-  uint32_t cc_max_datagram_size() const;
-  uint32_t cc_initial_window() const;
-  uint32_t cc_minimum_window() const;
-  float cc_loss_reduction_factor() const;
-  uint32_t cc_persistent_congestion_threshold() const;
-
   static int connection_table_size();
   static uint8_t scid_len();
 
@@ -153,18 +140,6 @@ private:
   uint32_t _max_send_udp_payload_size_out = 0;
 
   uint32_t _disable_http_0_9 = 1;
-
-  // [draft-17 recovery] 6.4.1.  Constants of interest
-  uint32_t _ld_packet_threshold = 3;
-  float _ld_time_threshold      = 1.25;
-  ink_hrtime _ld_granularity    = HRTIME_MSECONDS(1);
-  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(500);
-
-  // [draft-11 recovery] 4.7.1.  Constants of interest
-  uint32_t _cc_initial_window                  = 1200 * 10;
-  uint32_t _cc_minimum_window                  = 1200 * 2;
-  float _cc_loss_reduction_factor              = 0.5;
-  uint32_t _cc_persistent_congestion_threshold = 3;
 };
 
 class QUICConfig

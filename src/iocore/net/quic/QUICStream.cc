@@ -22,8 +22,8 @@
  */
 
 #include "iocore/net/quic/QUICStream.h"
-
 #include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/net/quic/QUICStreamAdapter.h"
 
 constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 
@@ -59,5 +59,69 @@ void
 QUICStream::set_io_adapter(QUICStreamAdapter *adapter)
 {
   this->_adapter = adapter;
-  this->_on_adapter_updated();
+}
+
+QUICOffset
+QUICStream::final_offset() const
+{
+  return 0;
+}
+
+void
+QUICStream::stop_sending(QUICStreamErrorUPtr error)
+{
+}
+
+void
+QUICStream::reset(QUICStreamErrorUPtr error)
+{
+}
+
+void
+QUICStream::on_read()
+{
+}
+
+void
+QUICStream::on_eos()
+{
+}
+
+void
+QUICStream::receive_data(quiche_conn *quiche_con)
+{
+  uint8_t buf[4096];
+  bool fin;
+  ssize_t read_len = 0;
+
+  while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin)) > 0) {
+    this->_adapter->write(this->_received_bytes, buf, read_len, fin);
+    this->_received_bytes += read_len;
+  }
+
+  this->_adapter->encourge_read();
+}
+
+void
+QUICStream::send_data(quiche_conn *quiche_con)
+{
+  bool fin    = false;
+  ssize_t len = 0;
+
+  len = quiche_conn_stream_capacity(quiche_con, this->_id);
+  if (len <= 0) {
+    return;
+  }
+  Ptr<IOBufferBlock> block = this->_adapter->read(len);
+  if (this->_adapter->total_len() == this->_sent_bytes + block->size()) {
+    fin = true;
+  }
+  if (block->size() > 0 || fin) {
+    ssize_t written_len =
+      quiche_conn_stream_send(quiche_con, this->_id, reinterpret_cast<uint8_t *>(block->start()), block->size(), fin);
+    if (written_len >= 0) {
+      this->_sent_bytes += written_len;
+    }
+  }
+  this->_adapter->encourge_write();
 }
