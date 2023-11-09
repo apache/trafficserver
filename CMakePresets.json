@@ -142,6 +142,19 @@
       }
     },
     {
+      "name": "ci-rocky-quiche",
+      "displayName": "CI Rocky Quiche",
+      "description": "CI Pipeline config for Rocky Linux (quiche build)",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/boringssl",
+        "quiche_ROOT": "/opt/quiche",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+	"ENABLE_QUICHE": true
+      }
+    },
+
+    {
       "name": "ci-fedora-autest",
       "displayName": "CI Fedora Quiche Autest",
       "description": "CI Pipeline config for Fedora Linux (autest build)",
