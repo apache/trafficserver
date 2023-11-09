@@ -117,7 +117,8 @@
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/boringssl",
         "quiche_ROOT": "/opt/quiche",
-        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche"
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+	"ENABLE_QUICHE": true
       }
     },
     {
