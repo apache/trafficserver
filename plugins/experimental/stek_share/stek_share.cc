@@ -40,6 +40,8 @@
 
 using raft_result = nuraft::cmd_result<nuraft::ptr<nuraft::buffer>>;
 
+static DbgCtl dbg_ctl{PLUGIN_NAME};
+
 PluginThreads plugin_threads;
 
 static STEKShareServer stek_share_server;
