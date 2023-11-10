@@ -306,7 +306,7 @@ Data Structures
 
    .. member:: unsigned int magic
 
-      Container for a magic value, ``VOL_MAGIC``, to indicate the instance is valid.
+      Container for a magic value, ``STRIPE_MAGIC``, to indicate the instance is valid.
 
    .. member:: VersionNumber version
 
@@ -467,7 +467,7 @@ Data Structures
       Compute the stripe (:code:`Stripe *`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
       used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe
       assignment slot is determined by taking bits 64..83 (20 bits) of the cache :arg:`key` modulo
-      the stripe assignment array count (:code:`VOL_HASH_TABLE_SIZE`). These bits are the third 32
+      the stripe assignment array count (:code:`STRIPE_HASH_TABLE_SIZE`). These bits are the third 32
       bit slice of the :arg:`key` less the bottom :code:`DIR_TAG_WIDTH` (12) bits.
 
 .. rubric:: Footnotes

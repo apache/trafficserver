@@ -38,21 +38,22 @@
 #define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
-// Stripe (volumes)
-#define VOL_MAGIC                    0xF1D0F00D
+// Stripe
+#define STRIPE_MAGIC                 0xF1D0F00D
 #define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
 #define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define AGG_SIZE                     (4 * 1024 * 1024) // 4MB
-#define AGG_HIGH_WATER               (AGG_SIZE / 2)    // 2MB
-#define EVACUATION_SIZE              (2 * AGG_SIZE)    // 8MB
-#define MAX_VOL_SIZE                 ((off_t)512 * 1024 * 1024 * 1024 * 1024)
-#define MAX_VOL_BLOCKS               (MAX_VOL_SIZE / CACHE_BLOCK_SIZE)
-#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc)) // true max
+#define AGG_SIZE                     (4 * 1024 * 1024)   // 4MB
+#define AGG_HIGH_WATER               (AGG_SIZE / 2)      // 2MB
+#define EVACUATION_SIZE              (2 * AGG_SIZE)      // 8MB
+#define STRIPE_BLOCK_SIZE            (1024 * 1024 * 128) // 128MB
+#define MIN_STRIPE_SIZE              STRIPE_BLOCK_SIZE
+#define MAX_STRIPE_SIZE              ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
+#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc))                 // true max
 #define LEAVE_FREE                   DEFAULT_MAX_BUFFER_SIZE
 #define PIN_SCAN_EVERY               16 // scan every 1/16 of disk
-#define VOL_HASH_TABLE_SIZE          32707
-#define VOL_HASH_EMPTY               0xFFFF
-#define VOL_HASH_ALLOC_SIZE          (8 * 1024 * 1024) // one chance per this unit
+#define STRIPE_HASH_TABLE_SIZE       32707
+#define STRIPE_HASH_EMPTY            0xFFFF
+#define STRIPE_HASH_ALLOC_SIZE       (8 * 1024 * 1024) // one chance per this unit
 #define LOOKASIDE_SIZE               256
 #define EVACUATION_BUCKET_SIZE       (2 * EVACUATION_SIZE) // 16MB
 #define RECOVERY_SIZE                EVACUATION_SIZE       // 8MB
@@ -60,6 +61,7 @@
 #define AIO_AGG_WRITE_IN_PROGRESS    -2
 #define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
+#define STORE_BLOCKS_PER_STRIPE      (STRIPE_BLOCK_SIZE / STORE_BLOCK_SIZE)
 
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e)        dir_offset_evac_bucket(dir_offset(_e))

@@ -949,7 +949,7 @@ Cache::build_stripe_hash_table()
   unsigned int *forvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
   unsigned int *gotvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
   unsigned int *rnd            = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
-  unsigned short *ttable       = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE));
+  unsigned short *ttable       = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * STRIPE_HASH_TABLE_SIZE));
   unsigned int *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
   unsigned int rtable_size     = 0;
   int i                        = 0;
@@ -968,21 +968,21 @@ Cache::build_stripe_hash_table()
   }
   i = 0;
   for (auto &elt : globalVec_stripe) {
-    forvol[i]  = total ? static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total : 0;
+    forvol[i]  = total ? static_cast<int64_t>(STRIPE_HASH_TABLE_SIZE * elt->_len) / total : 0;
     used      += forvol[i];
     gotvol[i]  = 0;
     i++;
   }
 
   // spread around the excess
-  int extra = VOL_HASH_TABLE_SIZE - used;
+  int extra = STRIPE_HASH_TABLE_SIZE - used;
   for (int i = 0; i < extra; i++) {
     forvol[i % num_stripes]++;
   }
 
   // initialize table to "empty"
-  for (int i = 0; i < VOL_HASH_TABLE_SIZE; i++) {
-    ttable[i] = VOL_HASH_EMPTY;
+  for (int i = 0; i < STRIPE_HASH_TABLE_SIZE; i++) {
+    ttable[i] = STRIPE_HASH_EMPTY;
   }
 
   // generate random numbers proportional to allocation
@@ -998,11 +998,11 @@ Cache::build_stripe_hash_table()
   assert(rindex == (int)rtable_size);
   // sort (rand #, vol $ pairs)
   qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
-  unsigned int width = (1LL << 32) / VOL_HASH_TABLE_SIZE;
+  unsigned int width = (1LL << 32) / STRIPE_HASH_TABLE_SIZE;
   unsigned int pos; // target position to allocate
   // select vol with closest random number for each bucket
   i = 0; // index moving through the random numbers
-  for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
+  for (int j = 0; j < STRIPE_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width; // position to select closest to
     while (pos > rtable[i].rval && i < static_cast<int>(rtable_size) - 1) {
       i++;
@@ -1025,7 +1025,7 @@ Cache::build_stripe_hash_table()
 Stripe *
 Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
 {
-  uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
+  uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
   return globalVec_stripe[stripes_hash_table[h]];
 }
 

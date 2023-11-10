@@ -356,18 +356,18 @@ using ts::CacheStripeDescriptor;
 using ts::CacheDirEntry;
 using ts::Doc;
 
-constexpr int ESTIMATED_OBJECT_SIZE     = 8000;
-constexpr int DEFAULT_HW_SECTOR_SIZE    = 512;
-constexpr int VOL_HASH_TABLE_SIZE       = 32707;
-constexpr unsigned short VOL_HASH_EMPTY = 65535;
-constexpr int DIR_TAG_WIDTH             = 12;
-constexpr int DIR_DEPTH                 = 4;
-constexpr int SIZEOF_DIR                = 10;
-constexpr int MAX_ENTRIES_PER_SEGMENT   = (1 << 16);
-constexpr int DIR_SIZE_WIDTH            = 6;
-constexpr int DIR_BLOCK_SIZES           = 4;
-constexpr int CACHE_BLOCK_SHIFT         = 9;
-constexpr int CACHE_BLOCK_SIZE          = (1 << CACHE_BLOCK_SHIFT); // 512, smallest sector size
+constexpr int ESTIMATED_OBJECT_SIZE        = 8000;
+constexpr int DEFAULT_HW_SECTOR_SIZE       = 512;
+constexpr int STRIPE_HASH_TABLE_SIZE       = 32707;
+constexpr unsigned short STRIPE_HASH_EMPTY = 65535;
+constexpr int DIR_TAG_WIDTH                = 12;
+constexpr int DIR_DEPTH                    = 4;
+constexpr int SIZEOF_DIR                   = 10;
+constexpr int MAX_ENTRIES_PER_SEGMENT      = (1 << 16);
+constexpr int DIR_SIZE_WIDTH               = 6;
+constexpr int DIR_BLOCK_SIZES              = 4;
+constexpr int CACHE_BLOCK_SHIFT            = 9;
+constexpr int CACHE_BLOCK_SIZE             = (1 << CACHE_BLOCK_SHIFT); // 512, smallest sector size
 
 namespace ct
 {

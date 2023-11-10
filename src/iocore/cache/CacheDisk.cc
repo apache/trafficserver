@@ -22,6 +22,7 @@
  */
 
 #include "P_Cache.h"
+#include "P_CacheVol.h"
 
 void
 CacheDisk::incrErrors(const AIOCallback *io)
@@ -68,15 +69,15 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   uint64_t l;
   for (int i = 0; i < 3; i++) {
     l = (len * STORE_BLOCK_SIZE) - (start - skip);
-    if (l >= MIN_VOL_SIZE) {
-      header_len = sizeof(DiskHeader) + (l / MIN_VOL_SIZE - 1) * sizeof(DiskStripeBlock);
+    if (l >= MIN_STRIPE_SIZE) {
+      header_len = sizeof(DiskHeader) + (l / MIN_STRIPE_SIZE - 1) * sizeof(DiskStripeBlock);
     } else {
       header_len = sizeof(DiskHeader);
     }
     start = skip + header_len;
   }
 
-  disk_vols         = static_cast<DiskStripe **>(ats_calloc((l / MIN_VOL_SIZE + 1), sizeof(DiskStripe *)));
+  disk_vols         = static_cast<DiskStripe **>(ats_calloc((l / MIN_STRIPE_SIZE + 1), sizeof(DiskStripe *)));
   header_len        = ROUND_TO_STORE_BLOCK(header_len);
   start             = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
@@ -262,10 +263,10 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     return nullptr;
   }
 
-  off_t max_blocks = MAX_VOL_SIZE >> STORE_BLOCK_SHIFT;
+  off_t max_blocks = MAX_STRIPE_SIZE >> STORE_BLOCK_SHIFT;
   size_in_blocks   = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
-  int blocks_per_vol = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
+  int blocks_per_vol = STORE_BLOCKS_PER_STRIPE;
   //  ink_assert(!(size_in_blocks % blocks_per_vol));
   DiskStripeBlock *p = nullptr;
   for (; q; q = q->link.next) {

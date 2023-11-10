@@ -192,7 +192,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path     = ats_strdup(s);
   len      = blocks * STORE_BLOCK_SIZE;
-  ink_assert(len <= MAX_VOL_SIZE);
+  ink_assert(len <= MAX_STRIPE_SIZE);
   skip             = dir_skip;
   prev_recover_pos = 0;
 
@@ -298,12 +298,12 @@ Stripe::handle_dir_read(int event, void *data)
     }
   }
 
-  if (!(header->magic == VOL_MAGIC && footer->magic == VOL_MAGIC && CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version._major &&
-        header->version._major <= CACHE_DB_MAJOR_VERSION)) {
+  if (!(header->magic == STRIPE_MAGIC && footer->magic == STRIPE_MAGIC &&
+        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version._major && header->version._major <= CACHE_DB_MAJOR_VERSION)) {
     Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
-    Note("VOL_MAGIC %d\n header magic: %d\n footer_magic %d\n CACHE_DB_MAJOR_VERSION_COMPATIBLE %d\n major version %d\n"
+    Note("STRIPE_MAGIC %d\n header magic: %d\n footer_magic %d\n CACHE_DB_MAJOR_VERSION_COMPATIBLE %d\n major version %d\n"
          "CACHE_DB_MAJOR_VERSION %d\n",
-         VOL_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version._major,
+         STRIPE_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version._major,
          CACHE_DB_MAJOR_VERSION);
     Note("clearing cache directory '%s'", hash_text.get());
     clear_dir_aio();
@@ -871,7 +871,7 @@ Stripe::_clear_init()
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
   this->_init_dir();
-  this->header->magic          = VOL_MAGIC;
+  this->header->magic          = STRIPE_MAGIC;
   this->header->version._major = CACHE_DB_MAJOR_VERSION;
   this->header->version._minor = CACHE_DB_MINOR_VERSION;
   this->scan_pos = this->header->agg_pos = this->header->write_pos = this->start;
