@@ -1,22 +1,25 @@
 #
-# volume.config
+# volume.yaml
 #
 # Documentation:
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/volume.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/volume.yaml.en.html
 #
 # This file specifies the various volumes, their sizes and the
 # protocol they belong to. Use this file in conjunction with the
 # hosting.config file.
 #
-#  Each line consists of a tag value pair.
-#    volume=<volume_number> scheme=<protocol_type> size=<volume_size>
+# YAML-based Configuration file
+#   Format:
+#     volume: <volume_number>
+#     scheme: <protocol_type>
+#     size: <volume_size>
 #
 #  volume_number can be any value between 1 and 255.
 #  This limits the maximum number of volumes to 255.
 #  Volume number 0 is reserved for the special free volume.
-#  Each line MUST have a distinct volume number.
+#  Each entry MUST have a distinct volume number.
 #
-#  The only scheme currently supported is 'http.
+#  The only scheme currently supported is 'http'.
 #
 #  volume_size can either be specified in percentage of the total
 #  cache space or absolute value. It must be a multiple of 128 Megabytes,
@@ -29,6 +32,11 @@
 #  disk (assuming each disk has enough free space available).
 #
 # To create one volume of size 10% of the total cache space and
-# another 1 Gig  volume,
-#  volume=1 scheme=http size=10%
-#  volume=2 scheme=http size=1024
+# another 1 Gig volume,
+#  volumes:
+#    - volume=1
+#      scheme=http
+#      size=10%
+#    - volume=2
+#      scheme=http
+#      size=1024

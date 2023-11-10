@@ -34,6 +34,7 @@ add_library(
   RamCacheLRU.cc
   Store.cc
   Stripe.cc
+  YamlCacheConfig.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 

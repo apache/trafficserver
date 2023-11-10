@@ -39,7 +39,7 @@ dist_sysconf_DATA =	\
 	splitdns.config.default \
 	ssl_multicert.config.default \
 	strategies.yaml.default \
-	volume.config.default \
+	volume.yaml.default \
 	jsonrpc.yaml.default
 
 install-exec-hook:

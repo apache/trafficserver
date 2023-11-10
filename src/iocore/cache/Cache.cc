@@ -22,13 +22,13 @@
  */
 
 #include "iocore/cache/Cache.h"
+#include "iocore/cache/YamlCacheConfig.h"
 
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"
 #include "proxy/StatPages.h"
 
 #include "tscore/Filenames.h"
-
 #include "../../records/P_RecProcess.h"
 
 #ifdef AIO_FAULT_INJECTION
@@ -319,7 +319,16 @@ CacheProcessor::start_internal(int flags)
   gndisks = 0;
   ink_aio_set_err_callback(new AIO_failure_handler());
 
-  config_volumes.read_config_file();
+  {
+    ats_scoped_str config_path;
+
+    config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
+    ink_release_assert(config_path);
+
+    Note("%s loading ...", ts::filename::VOLUME);
+
+    YamlVolumeConfig::load(config_volumes, config_path.get());
+  }
 
   /*
    create CacheDisk objects for each span in the configuration file and store in gdisks
@@ -526,7 +535,7 @@ CacheProcessor::diskInitialized()
   }
 
   if (res == -1) {
-    /* problems initializing the volume.config. Punt */
+    /* problems initializing the volume.yaml. Punt */
     gnvol = 0;
     cacheInitialized();
     return;
@@ -1304,7 +1313,7 @@ static int fillExclusiveDisks(CacheVol *cp);
 void
 cplist_update()
 {
-  /* go through cplist and delete volumes that are not in the volume.config */
+  /* go through cplist and delete volumes that are not in the volume.yaml */
   CacheVol *cp = cp_list.head;
   ConfigVol *config_vol;
 

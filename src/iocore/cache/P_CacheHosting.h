@@ -25,6 +25,7 @@
 #include <memory>
 #include <shared_mutex>
 #include "P_Cache.h"
+#include "iocore/cache/CacheDefs.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 
@@ -288,24 +289,23 @@ private:
   ReplaceablePtr<CacheHostTable> *ppt;
 };
 
-/* list of volumes in the volume.config file */
+/* list of volumes in the volume.yaml file */
 struct ConfigVol {
-  int number;
-  CacheType scheme;
-  off_t size;
-  bool in_percent;
-  bool ramcache_enabled;
-  int percent;
-  CacheVol *cachep;
+  int number            = 0;
+  CacheType scheme      = CACHE_NONE_TYPE;
+  off_t size            = 0;
+  bool in_percent       = false;
+  bool ramcache_enabled = true;
+  int percent           = 0;
+
+  CacheVol *cachep = nullptr;
   LINK(ConfigVol, link);
 };
 
 struct ConfigVolumes {
-  int num_volumes;
-  int num_http_volumes;
+  int num_volumes      = 0;
+  int num_http_volumes = 0;
   Queue<ConfigVol> cp_queue;
-  void read_config_file();
-  void BuildListFromString(char *config_file_path, char *file_buf);
 
   void
   clear_all()
