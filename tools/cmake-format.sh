@@ -58,11 +58,11 @@ function main() {
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
   files_filtered=${tmp_dir}/git_files_filtered.txt
-  git ls-tree -r HEAD --name-only ${DIR} | grep CMakeLists.txt | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" > ${files}
+  git ls-tree -r HEAD --name-only ${DIR} | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" > ${files}
   # Add to the above any newly added staged files.
   git diff --cached --name-only --diff-filter=A >> ${files}
   # But probably not all the new staged files are CMakeLists.txt files:
-  grep -E 'CMakeLists.txt' ${files} > ${files_filtered}
+  grep -E 'CMakeLists.txt|.cmake$' ${files} > ${files_filtered}
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
   sed -i'.bak' 's:^:\./:' ${files_filtered}
