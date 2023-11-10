@@ -24,7 +24,9 @@
 #include <tscore/TSSystemState.h>
 #include <tscore/ink_defs.h>
 
+#include "iocore/net/ConnectionTracker.h"
 #include "P_Net.h"
+#include "tscore/ink_inet.h"
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
@@ -33,6 +35,35 @@ namespace
 
 DbgCtl dbg_ctl_iocore_net{"iocore_net"};
 DbgCtl dbg_ctl_iocore_net_accept_start{"iocore_net_accept_start"};
+
+/** Check and handle if the number of client connections exceeds the configured max.
+ *
+ * @param[in] addr The client address of the new incoming connection.
+ * @param[out] conn_track_group The connection tracker group associated with the
+ * new incoming connection if connections are being tracked.
+ *
+ * @return true if the connection should be accepted, false otherwise.
+ */
+bool
+handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<ConnectionTracker::Group> &conn_track_group)
+{
+  int const client_max = NetHandler::get_per_client_max_connections_in();
+  if (client_max > 0) {
+    auto inbound_tracker     = ConnectionTracker::obtain_inbound(addr);
+    auto const tracked_count = inbound_tracker.reserve();
+    if (tracked_count > client_max) {
+      // close the connection as we are in per client connection throttle state
+      inbound_tracker.release();
+      inbound_tracker.blocked();
+      inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, addr,
+                                   is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
+      Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
+      return false;
+    }
+    conn_track_group = inbound_tracker.drop();
+  }
+  return true;
+}
 
 } // end anonymous namespace
 
@@ -82,10 +113,17 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
     Metrics::Counter::increment(net_rsb.tcp_accept);
 
+    std::shared_ptr<ConnectionTracker::Group> conn_track_group;
+    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+      con.close();
+      continue;
+    }
+
     vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
     if (!vc) {
       goto Ldone; // note: @a con will clean up the socket when it goes out of scope.
     }
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -341,6 +379,11 @@ NetAccept::do_blocking_accept(EThread *t)
       Metrics::Counter::increment(net_rsb.connections_throttled_in);
       continue;
     }
+    std::shared_ptr<ConnectionTracker::Group> conn_track_group;
+    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+      con.close();
+      continue;
+    }
 
     if (TSSystemState::is_event_system_shut_down()) {
       return -1;
@@ -353,6 +396,7 @@ NetAccept::do_blocking_accept(EThread *t)
     if (unlikely(!vc)) {
       return -1;
     }
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -452,6 +496,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     socklen_t sz = sizeof(con.addr);
     int fd       = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
+    std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
     if (likely(fd >= 0)) {
       // check for throttle
@@ -459,6 +504,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
         // close the connection as we are in throttle state
         con.close();
         Metrics::Counter::increment(net_rsb.connections_throttled_in);
+        continue;
+      }
+      if (!handle_max_client_connections(con.addr, conn_track_group)) {
+        con.close();
         continue;
       }
       Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", fd);
@@ -510,6 +559,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
     ink_release_assert(vc);
+    vc->enable_inbound_connection_tracking(conn_track_group);
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);

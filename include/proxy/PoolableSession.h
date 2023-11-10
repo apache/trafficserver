@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "iocore/net/ConnectionTracker.h"
 #include "proxy/ProxySession.h"
 
@@ -75,7 +77,7 @@ public:
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
   TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
 
-  void enable_outbound_connection_tracking(ConnectionTracker::Group *group);
+  void enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group);
   void release_outbound_connection_tracking();
 
   void attach_hostname(const char *hostname);
@@ -90,7 +92,7 @@ public:
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
-  ConnectionTracker::Group *conn_track_group = nullptr;
+  std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
   virtual IOBufferReader *get_remote_reader() = 0;
 
@@ -210,10 +212,10 @@ PoolableSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs
 }
 
 inline void
-PoolableSession::enable_outbound_connection_tracking(ConnectionTracker::Group *group)
+PoolableSession::enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group)
 {
   ink_assert(nullptr == conn_track_group);
-  conn_track_group = group;
+  conn_track_group = std::move(group);
 }
 
 inline void
@@ -221,14 +223,8 @@ PoolableSession::release_outbound_connection_tracking()
 {
   // Update upstream connection tracking data if present.
   if (conn_track_group) {
-    if (conn_track_group->_count >= 0) {
-      (conn_track_group->_count)--;
-      conn_track_group = nullptr;
-    } else {
-      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-      Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
-            conn_track_group->_count.load());
-    }
+    conn_track_group->release();
+    conn_track_group.reset();
   }
 }
 
@@ -236,7 +232,8 @@ inline void
 PoolableSession::attach_hostname(const char *hostname)
 {
   if (hostname_hash.is_zero()) {
-    CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
+    CryptoContext().hash_immediate(hostname_hash, static_cast<const unsigned char *>(static_cast<const void *>(hostname)),
+                                   strlen(hostname));
   }
 }
 

@@ -72,7 +72,7 @@ struct ShowConnectionCount : public ShowCont {
   int
   showHandler(int event, Event *e)
   {
-    CHECK_SHOW(show(ConnectionTracker::to_json_string().c_str()));
+    CHECK_SHOW(show(ConnectionTracker::outbound_to_json_string().c_str()));
     return completeJson(event, e);
   }
 };

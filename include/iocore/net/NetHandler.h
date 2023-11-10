@@ -167,6 +167,7 @@ public:
   bool add_to_active_queue(NetEvent *ne);
   void remove_from_active_queue(NetEvent *ne);
   static int get_additional_accepts();
+  static int get_per_client_max_connections_in();
 
   /// Per process initialization logic.
   static void init_for_process();
@@ -236,6 +237,7 @@ private:
   // accept threads are not always on a standard NET thread with a NetHandler
   // that has TS_EVENT_MGMT_UPDATE handling logic.
   static std::atomic<uint32_t> additional_accepts;
+  static std::atomic<uint32_t> per_client_max_connections_in;
 
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
 

@@ -44,6 +44,7 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *calls_to_writetonet;
   Metrics::Gauge::AtomicType *connections_currently_open;
   Metrics::Counter::AtomicType *connections_throttled_in;
+  Metrics::Counter::AtomicType *per_client_connections_throttled_in;
   Metrics::Counter::AtomicType *connections_throttled_out;
   Metrics::Counter::AtomicType *default_inactivity_timeout_applied;
   Metrics::Counter::AtomicType *default_inactivity_timeout_count;
@@ -77,6 +78,7 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *tcp_accept;
   Metrics::Counter::AtomicType *write_bytes;
   Metrics::Counter::AtomicType *write_bytes_count;
+  Metrics::Gauge::AtomicType *connection_tracker_table_size;
 };
 
 extern NetStatsBlock net_rsb;

@@ -1,0 +1,239 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Test Notes:
+# This test makes the server reply slowly over multiple origin connections,
+# allowing client-side connections to build up. This allows us to test our
+# proxy.config.net.per_client.max_connections_in feature. This test assumes that
+# proxy.config.net.per_client.max_connections_in is configured to 3 and assumes
+# the fourth connection will be aborted by ATS.
+#
+# Be aware that Proxy Verifier will perform each of these sessions in parallel,
+# not in serial. Thus, while there are multiple server side delays across the
+# sessions, the delays are not additive. The client side delays are additive
+# though. The replay should take about 3 seconds to complete after the fifth
+# transaction completes.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+- protocol:
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, first-request ]
+        - [ uuid, first-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'first-request', as: equal } ]
+
+    server-response:
+      # Delay for 2 seconds so that this origin connection will exist for 2 seconds.
+      delay: 2s
+
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, first-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'first-response', as: equal } ]
+
+- protocol:
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, second-request ]
+        - [ uuid, second-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'second-request', as: equal } ]
+
+    server-response:
+      # Delay for 2 seconds so that this origin connection will exist for 2 seconds.
+      delay: 2s
+
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, second-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'second-response', as: equal } ]
+
+- protocol:
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/third
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, third-request ]
+        - [ uuid, third-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'third-request', as: equal } ]
+
+    server-response:
+      # Delay for 2 seconds so that this origin connection will exist for 2 seconds.
+      delay: 2s
+
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, third-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'third-response', as: equal } ]
+
+
+- protocol:
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  # Make sure this is the last attempted transaction by giving the above
+  # three transactions, all executed in parallel, a one second head start.
+  # This connection should be aborted.
+  delay: 1s
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/fourth
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, fourth-request ]
+        - [ uuid, fourth-request ]
+
+    # The server should never see this request since ATS will serve a 503
+    # response due to the per_server.connection.max being hit.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, fourth-response ]
+        - [ Connection, close ]
+
+# This one should work because the other transactions should complete.
+# Note that this will delay after the previous 1s delay, so this is really
+# a delay of 3s.
+- protocol:
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  delay: 2s
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/fifth
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, fifth-request ]
+        - [ uuid, fifth-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'fifth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, fifth-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'fifth-response', as: equal } ]
