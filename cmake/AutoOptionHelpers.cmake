@@ -132,7 +132,6 @@ endmacro()
 # Prints a colorized summary of one auto option.
 function(PRINT_AUTO_OPTION _NAME)
   string(ASCII 27 ESC)
-  set(HINT "")
   set(COLOR_RED "${ESC}[31m")
   set(COLOR_GREEN "${ESC}[32m")
   set(COLOR_RESET "${ESC}[m")
@@ -144,15 +143,24 @@ function(PRINT_AUTO_OPTION _NAME)
 
   set(RESET ${COLOR_RESET})
   if(FEATURE_VALUE)
+    # This accounts for both the ON and AUTO cases.
     if(OPTION_VALUE)
       set(COLOR ${COLOR_GREEN})
+      set(HINT "(hint: add -D${_NAME}=OFF to disable)")
     else()
       message(WARNING "${FEATURE} truthy but ${_NAME} isn't!")
       set(COLOR ${COLOR_RED})
+      # There is no sensible hint for this case - things are
+      # on fire.
+      set(HINT "")
     endif()
   else()
+    # This should account only for the AUTO case.
+    # If the option is set to ON but dependencies were
+    # missing, then we should have errored out already.
     if(OPTION_VALUE)
       set(COLOR ${COLOR_RED})
+      set(HINT "(hint: add -D${_NAME}=ON to require)")
     else()
       set(RESET "")
       set(HINT "(hint: add -D${_NAME}=ON to enable)")
