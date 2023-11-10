@@ -104,8 +104,6 @@ auto_option(
 )
 auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
-auto_option(CJOSE PACKAGE_DEPENDS cjose)
-auto_option(JANSSON PACKAGE_DEPENDS jansson)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
@@ -328,8 +326,6 @@ if(ENABLE_QUICHE)
   endif()
 endif()
 
-# for the plugin system
-find_package(nuraft) # experimental stek_share
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
 
 if(ENABLE_ASAN)
@@ -614,6 +610,10 @@ if(ENABLE_FUZZING)
   add_subdirectory(tests/fuzzing)
 endif()
 add_subdirectory(plugins)
+
+# set up auto options for experimental plugins
+include(ExperimentalPlugins)
+
 add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
   add_subdirectory(example)
