@@ -180,7 +180,6 @@ set(ENABLE_TPROXY
 )
 option(ENABLE_QUICHE "Use quiche (default OFF)")
 
-option(ENABLE_WCCP "Use WCCP v2 (default OFF)")
 option(ENABLE_EXAMPLE "Build example directory (default OFF)")
 set(TS_MAX_HOST_NAME_LEN
     256
@@ -206,7 +205,6 @@ option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
-set(TS_HAS_WCCP ${ENABLE_WCCP})
 set(TS_MAX_NUMBER_EVENT_THREADS ${MAX_EVENT_THREADS})
 set(TS_MAX_THREADS_IN_EACH_THREAD_TYPE ${MAX_THREADS_PER_TYPE})
 
@@ -600,10 +598,6 @@ if(CURSES_FOUND)
   add_subdirectory(src/traffic_top)
 endif()
 add_subdirectory(src/traffic_via)
-if(ENABLE_WCCP)
-  add_subdirectory(src/wccp)
-  add_subdirectory(src/traffic_wccp)
-endif()
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()

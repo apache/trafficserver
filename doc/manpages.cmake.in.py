@@ -43,8 +43,6 @@ man_pages = [
         u'Display Traffic Server statistics', None, '1'),
     ('appendices/command-line/traffic_via.en', 'traffic_via',
         u'Traffic Server Via header decoder', None, '1'),
-    ('appendices/command-line/traffic_wccp.en', 'traffic_wccp',
-        u'Traffic Server WCCP client', None, '1'),
     ('appendices/command-line/tspush.en', 'tspush',
         u'Push objects into the Traffic Server cache', None, '1'),
     ('appendices/command-line/tsxs.en', 'tsxs',

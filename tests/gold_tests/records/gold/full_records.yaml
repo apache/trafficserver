@@ -597,9 +597,6 @@ ts:
     remap_required: 1
     strategies:
       filename: strategies.yaml
-  wccp:
-    addr: some
-    services: some
   websocket:
     active_timeout: 3600
     no_activity_timeout: 600

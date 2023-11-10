@@ -174,10 +174,8 @@ trafficserver ............. Top src dir
 │   ├── traffic_server .... Main proxy server
 │   ├── traffic_top ....... Top like tool for viewing Traffic Server statistics
 │   ├── traffic_via ....... Tool for decoding the Traffic Server Via header codes
-│   ├── traffic_wccp ...... Program speaking the client side of the WCCP
 │   ├── tscore ............ Base / core library
 │   ├── tscpp ............. C++ api wrapper for plugin developers
-│   └── wccp .............. WCCP implementation
 ├── tests ................. Different tests for Traffic Server
 ├── tools ................. Directory of various tools
 ├── INSTALL ............... Build and installation guide
@@ -211,7 +209,6 @@ pcre-devel
 ncurses-devel and libcurl-devel(optional, needed for traffic_top)
 libcap-devel (optional, highly recommended)
 hwloc-devel (optional, highly recommended)
-flex (optional, needed for e.g. WCCP)
 ```
 
 ### Ubuntu / Debian
@@ -228,7 +225,6 @@ libcap-dev (optional, highly recommended)
 libhwloc-dev (optional, highly recommended)
 libncurses5-dev (optional, required for e.g.: traffic_top)
 libcurl4-openssl-dev (optional, required for e.g.: traffic_top)
-flex (optional, required for e.g. WCCP)
 ```
 
 ### Alpine Linux

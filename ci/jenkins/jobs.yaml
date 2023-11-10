@@ -48,7 +48,7 @@
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export DEB_BUILD_HARDENING
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -71,7 +71,7 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -138,10 +138,6 @@
             default: '{debug}'
             description: enable runtime debug checks
         - string:
-            name: ENABLE_WCCP
-            default: '{wccp}'
-            description: enable WCCP support
-        - string:
             # Standard regression tests with Debian build hardening compiler flags.
             # See https://wiki.ubuntu.com/Security/HardeningWrapper
             # and https://wiki.debian.org/Hardening.
@@ -170,10 +166,6 @@
             default: '{debug}'
             description: enable runtime debug checks
         - string:
-            name: ENABLE_WCCP
-            default: '{wccp}'
-            description: enable WCCP support
-        - string:
             # Standard regression tests with Debian build hardening compiler flags.
             # See https://wiki.ubuntu.com/Security/HardeningWrapper
             # and https://wiki.debian.org/Hardening.
@@ -198,7 +190,6 @@
     node: centos_5_x64
     builder: linux
     tag: normal
-    wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -234,7 +225,6 @@
     node: centos_5_x86
     builder: linux
     tag: normal
-    wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -269,7 +259,6 @@
     node: centos_6.4_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -309,7 +298,6 @@
     node: centos_6.4_x86
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -344,7 +332,6 @@
     node: fedora_15_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -379,7 +366,6 @@
     node: fedora_15_x86
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -414,7 +400,6 @@
     node: fedora_18_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -449,7 +434,6 @@
     node: fedora_18_x86
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -484,7 +468,6 @@
     node: fedora_rawhide_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -530,7 +513,6 @@
     node: fedora_rawhide_x86
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -565,7 +547,6 @@
     node: freebsd_9.1_x64
     builder: bsd
     tag: normal
-    wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -600,7 +581,6 @@
     node: omnios_x64
     builder: omnios
     tag: normal
-    wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -635,7 +615,6 @@
     node: opensuse_12_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -670,7 +649,6 @@
     node: ubuntu_10.04_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -710,7 +688,6 @@
     node: ubuntu_12.04_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -760,7 +737,6 @@
     node: debian_6_x64
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''
@@ -800,7 +776,6 @@
     node: mac_os_x
     builder: linux
     tag: normal
-    wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
     experimental: ''

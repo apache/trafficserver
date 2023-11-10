@@ -1226,16 +1226,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.client.TLSv1_3.cipher_suites", RECD_STRING, "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
-  //############################################################################
-  //#
-  //# WCCP
-  //#
-  //############################################################################
-  {RECT_LOCAL, "proxy.config.wccp.addr", RECD_STRING, "", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.wccp.services", RECD_STRING, "", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL }
-  ,
-
   //##############################################################################
   //# Plug-in Configuration
   //##############################################################################

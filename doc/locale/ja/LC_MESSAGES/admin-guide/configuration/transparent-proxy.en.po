@@ -211,10 +211,6 @@ msgstr ":doc:`transparent-proxy/bridge.en`"
 msgid ":doc:`transparent-proxy/router-inline.en`"
 msgstr ":doc:`transparent-proxy/router-inline.en`"
 
-#: ../../../admin-guide/configuration/transparent-proxy.en.rst:117
-msgid ":doc:`transparent-proxy/wccp-configuration.en`"
-msgstr ":doc:`transparent-proxy/wccp-configuration.en`"
-
 #~ msgid "="
 #~ msgstr "="
 

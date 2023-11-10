@@ -95,7 +95,6 @@
 
 /* API */
 #define TS_HAS_TESTS @has_tests@
-#define TS_HAS_WCCP @has_wccp@
 
 #define TS_MAX_THREADS_IN_EACH_THREAD_TYPE @max_threads_per_type@
 #define TS_MAX_NUMBER_EVENT_THREADS @max_event_threads@
