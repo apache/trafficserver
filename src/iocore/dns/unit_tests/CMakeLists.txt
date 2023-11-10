@@ -15,26 +15,20 @@
 #
 #######################
 
-add_executable(test_dns
-  stub.cc
-  test_SplitDNSYAMLLoader.cc
-  unit_test_main.cc
+add_executable(test_dns stub.cc test_SplitDNSYAMLLoader.cc unit_test_main.cc)
+
+target_include_directories(
+  test_dns PRIVATE "${PROJECT_SOURCE_DIR}/src/iocore/dns" "${PROJECT_SOURCE_DIR}/src/iocore/net"
+                   "${PROJECT_SOURCE_DIR}/src/proxy"
 )
 
-target_include_directories(test_dns
-  PRIVATE
-    "${PROJECT_SOURCE_DIR}/src/iocore/dns"
-    "${PROJECT_SOURCE_DIR}/src/iocore/net"
-    "${PROJECT_SOURCE_DIR}/src/proxy"
+target_link_libraries(
+  test_dns PRIVATE catch2::catch2 libswoc ts::inkdns ts::configmanager # transitive
+                   yaml-cpp::yaml-cpp
 )
 
-target_link_libraries(test_dns
-  PRIVATE
-    catch2::catch2
-    libswoc
-    ts::inkdns
-    ts::configmanager # transitive
-    yaml-cpp::yaml-cpp
+add_test(
+  NAME test_dns
+  COMMAND test_dns
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
-
-add_test(NAME test_dns COMMAND test_dns WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
