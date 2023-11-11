@@ -28,7 +28,6 @@ AM_CPPFLAGS += \
     @SWOC_INCLUDES@ \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/wccp \
 	$(TS_INCLUDES)
 
 if BUILD_TEST_TOOLS

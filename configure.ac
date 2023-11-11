@@ -388,19 +388,6 @@ AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
 AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
 #
-# WCCP
-#
-AC_MSG_CHECKING([whether to enable WCCP v2 support])
-AC_ARG_ENABLE([wccp],
-  [AS_HELP_STRING([--enable-wccp],[enable WCCP v2])],
-  [],
-  [enable_wccp=no]
-)
-AC_MSG_RESULT([$enable_wccp])
-TS_ARG_ENABLE_VAR([has],[wccp])
-AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
-
-#
 # Cripts
 #
 AC_MSG_CHECKING([whether to enable Cripts support])
@@ -2391,7 +2378,6 @@ AC_CONFIG_FILES([
   iocore/utils/Makefile
   lib/Makefile
   src/tscpp/api/Makefile
-  src/wccp/Makefile
   src/cripts/Makefile
   lib/fastlz/Makefile
   lib/swoc/Makefile

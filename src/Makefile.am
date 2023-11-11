@@ -25,11 +25,6 @@ noinst_PROGRAMS =
 
 SUBDIRS = tscpp/api api
 
-if BUILD_WCCP
-SUBDIRS += wccp
-include traffic_wccp/Makefile.inc
-endif
-
 if BUILD_CRIPTS
 SUBDIRS += cripts
 endif

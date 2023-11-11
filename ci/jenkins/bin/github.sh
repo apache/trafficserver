@@ -24,12 +24,10 @@ INSTALL="${ATS_BUILD_BASEDIR}/install"
 CCACHE=""
 WERROR=""
 DEBUG=""
-WCCP=""
 QUIC=""
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
-[ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
 [ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
 
 mkdir -p ${INSTALL}
@@ -38,7 +36,6 @@ cd src
 echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
-echo "WCCP: $WCCP"
 echo "QUIC: $QUIC"
 
 # Restore verbose shell output
@@ -52,7 +49,6 @@ autoreconf -if
     --enable-experimental-plugins \
     --enable-example-plugins \
     ${CCACHE} \
-    ${WCCP} \
     ${QUIC} \
     ${WERROR} \
     ${DEBUG}

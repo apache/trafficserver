@@ -45,8 +45,6 @@ Transparent Proxying
    transparent-proxy/build.en
    transparent-proxy/bridge.en
    transparent-proxy/router-inline.en
-   transparent-proxy/wccp-configuration.en
-   transparent-proxy/wccp-service-config.en
 
 Transparent Proxying is the ability of a proxy (such as ATS) to
 intercept connections between clients and servers without being visible.
@@ -117,5 +115,3 @@ Some tested scenarios --
 
 -  :doc:`transparent-proxy/bridge.en`
 -  :doc:`transparent-proxy/router-inline.en`
--  :doc:`transparent-proxy/wccp-configuration.en`
-

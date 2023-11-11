@@ -26,8 +26,7 @@ autoreconf -fi
     --enable-ccache \
     --enable-werror \
     --enable-experimental-plugins \
-    --enable-example-plugins \
-    --enable-wccp
+    --enable-example-plugins
 
 ${ATS_MAKE} -j5 V=1
 #${ATS_MAKE} check VERBOSE=Y

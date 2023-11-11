@@ -350,7 +350,6 @@ ts.Disk.remap_config.AddLine(
  * TS_USE_REMOTE_UNWINDING
  * TS_HAS_128BIT_CAS
  * TS_HAS_TESTS
- * TS_HAS_WCCP
 
 ### Condition.HasCurlFeature(feature)
  * feature - The feature to test for
