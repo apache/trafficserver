@@ -21,6 +21,7 @@ import os
 Test.Summary = 'Test loading volume.yaml'
 Test.ContinueOnFail = True
 
+
 class VolumeYamlTest:
     """Test that loading volume.yaml"""
 
@@ -30,7 +31,7 @@ class VolumeYamlTest:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
         self.ts.Disk.volume_config.AddLines(
-'''
+            '''
 volumes:
   - volume: 1
     scheme: http
@@ -41,7 +42,7 @@ volumes:
 '''.split('\n'))
 
         self.ts.Disk.storage_config.AddLines(
-'''
+            '''
 storage 1G
 '''.split('\n'))
 
@@ -57,5 +58,6 @@ storage 1G
 
     def run(self):
         self.checkVolumeMetrics()
+
 
 VolumeYamlTest().run()
