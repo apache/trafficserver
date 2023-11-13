@@ -65,6 +65,6 @@ set(CMAKE_INSTALL_LOGDIR
 )
 set(CMAKE_INSTALL_CACHEDIR
   "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
-    CACHE STRING "logdir"
+    CACHE STRING "cachedir"
 )
 include(GNUInstallDirs)
