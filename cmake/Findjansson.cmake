@@ -34,16 +34,14 @@ find_path(jansson_INCLUDE_DIR NAMES jansson.h)
 mark_as_advanced(jansson_FOUND jansson_LIBRARY jansson_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(jansson
-    REQUIRED_VARS jansson_LIBRARY jansson_INCLUDE_DIR
-)
+find_package_handle_standard_args(jansson REQUIRED_VARS jansson_LIBRARY jansson_INCLUDE_DIR)
 
 if(jansson_FOUND)
-    set(jansson_INCLUDE_DIRS ${jansson_INCLUDE_DIR})
+  set(jansson_INCLUDE_DIRS ${jansson_INCLUDE_DIR})
 endif()
 
 if(jansson_FOUND AND NOT TARGET jansson::jansson)
-    add_library(jansson::jansson INTERFACE IMPORTED)
-    target_include_directories(jansson::jansson INTERFACE ${jansson_INCLUDE_DIRS})
-    target_link_libraries(jansson::jansson INTERFACE "${jansson_LIBRARY}")
+  add_library(jansson::jansson INTERFACE IMPORTED)
+  target_include_directories(jansson::jansson INTERFACE ${jansson_INCLUDE_DIRS})
+  target_link_libraries(jansson::jansson INTERFACE "${jansson_LIBRARY}")
 endif()

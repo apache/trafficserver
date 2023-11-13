@@ -29,21 +29,23 @@
 #
 
 find_library(jemalloc_LIBRARY NAMES jemalloc)
-find_path(jemalloc_INCLUDE_DIR NAMES jemalloc.h PATH_SUFFIXES jemalloc)
+find_path(
+  jemalloc_INCLUDE_DIR
+  NAMES jemalloc.h
+  PATH_SUFFIXES jemalloc
+)
 
 mark_as_advanced(jemalloc_FOUND jemalloc_LIBRARY jemalloc_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(jemalloc
-    REQUIRED_VARS jemalloc_LIBRARY jemalloc_INCLUDE_DIR
-)
+find_package_handle_standard_args(jemalloc REQUIRED_VARS jemalloc_LIBRARY jemalloc_INCLUDE_DIR)
 
 if(jemalloc_FOUND)
-    set(jemalloc_INCLUDE_DIRS ${jemalloc_INCLUDE_DIR})
+  set(jemalloc_INCLUDE_DIRS ${jemalloc_INCLUDE_DIR})
 endif()
 
 if(jemalloc_FOUND AND NOT TARGET jemalloc::jemalloc)
-    add_library(jemalloc::jemalloc INTERFACE IMPORTED)
-    target_include_directories(jemalloc::jemalloc INTERFACE ${jemalloc_INCLUDE_DIRS})
-    target_link_libraries(jemalloc::jemalloc INTERFACE ${jemalloc_LIBRARY})
+  add_library(jemalloc::jemalloc INTERFACE IMPORTED)
+  target_include_directories(jemalloc::jemalloc INTERFACE ${jemalloc_INCLUDE_DIRS})
+  target_link_libraries(jemalloc::jemalloc INTERFACE ${jemalloc_LIBRARY})
 endif()

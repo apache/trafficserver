@@ -34,16 +34,14 @@ find_path(hwloc_INCLUDE_DIR NAMES hwloc.h)
 mark_as_advanced(hwloc_FOUND hwloc_LIBRARY hwloc_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(hwloc
-    REQUIRED_VARS hwloc_LIBRARY hwloc_INCLUDE_DIR
-)
+find_package_handle_standard_args(hwloc REQUIRED_VARS hwloc_LIBRARY hwloc_INCLUDE_DIR)
 
 if(hwloc_FOUND)
-    set(hwloc_INCLUDE_DIRS ${hwloc_INCLUDE_DIR})
+  set(hwloc_INCLUDE_DIRS ${hwloc_INCLUDE_DIR})
 endif()
 
 if(hwloc_FOUND AND NOT TARGET hwloc::hwloc)
-    add_library(hwloc::hwloc INTERFACE IMPORTED)
-    target_include_directories(hwloc::hwloc INTERFACE ${hwloc_INCLUDE_DIRS})
-    target_link_libraries(hwloc::hwloc INTERFACE ${hwloc_LIBRARY})
+  add_library(hwloc::hwloc INTERFACE IMPORTED)
+  target_include_directories(hwloc::hwloc INTERFACE ${hwloc_INCLUDE_DIRS})
+  target_link_libraries(hwloc::hwloc INTERFACE ${hwloc_LIBRARY})
 endif()

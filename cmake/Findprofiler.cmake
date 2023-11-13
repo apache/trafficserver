@@ -29,21 +29,23 @@
 #
 
 find_library(profiler_LIBRARY NAMES profiler)
-find_path(profiler_INCLUDE_DIR NAMES profiler.h PATH_SUFFIXES gperftools)
+find_path(
+  profiler_INCLUDE_DIR
+  NAMES profiler.h
+  PATH_SUFFIXES gperftools
+)
 
 mark_as_advanced(profiler_FOUND profiler_LIBRARY profiler_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(profiler
-    REQUIRED_VARS profiler_LIBRARY profiler_INCLUDE_DIR
-)
+find_package_handle_standard_args(profiler REQUIRED_VARS profiler_LIBRARY profiler_INCLUDE_DIR)
 
 if(profiler_FOUND)
-    set(profiler_INCLUDE_DIRS ${profiler_INCLUDE_DIR})
+  set(profiler_INCLUDE_DIRS ${profiler_INCLUDE_DIR})
 endif()
 
 if(profiler_FOUND AND NOT TARGET profiler::profiler)
-    add_library(gperftools::profiler INTERFACE IMPORTED)
-    target_include_directories(gperftools::profiler INTERFACE "${profiler_INCLUDE_DIRS}")
-    target_link_libraries(gperftools::profiler INTERFACE "${profiler_LIBRARY}")
+  add_library(gperftools::profiler INTERFACE IMPORTED)
+  target_include_directories(gperftools::profiler INTERFACE "${profiler_INCLUDE_DIRS}")
+  target_link_libraries(gperftools::profiler INTERFACE "${profiler_LIBRARY}")
 endif()

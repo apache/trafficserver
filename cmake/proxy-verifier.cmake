@@ -37,39 +37,37 @@ endif()
 
 # Download proxy-verifier
 set(PV_ARCHIVE ${CMAKE_BINARY_DIR}/proxy-verifier/proxy-verifier.tar.gz)
-file(DOWNLOAD
-      https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz
-      ${PV_ARCHIVE}
-      EXPECTED_HASH ${PROXY_VERIFIER_HASH}
-      SHOW_PROGRESS
+file(
+  DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
+  EXPECTED_HASH ${PROXY_VERIFIER_HASH}
+  SHOW_PROGRESS
 )
-file(ARCHIVE_EXTRACT
-        INPUT ${PV_ARCHIVE}
-)
+file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE})
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64" OR
-       CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "amd64" OR
-       CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "i686")
-        set(PV_SUBDIR "linux-amd64")
-      elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" OR
-             CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(PV_SUBDIR "linux-arm64")
-    else()
-        message(FATAL_ERROR "Unknown processor ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-    endif()
+  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"
+     OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "amd64"
+     OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "i686"
+  )
+    set(PV_SUBDIR "linux-amd64")
+  elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    set(PV_SUBDIR "linux-arm64")
+  else()
+    message(FATAL_ERROR "Unknown processor ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  endif()
 elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64" OR
-       CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "amd64" OR
-       CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "i686")
-        set(PV_SUBDIR "darwin-amd64")
-    elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
-        set(PV_SUBDIR "darwin-arm64")
-    else()
-        message(FATAL_ERROR "Unknown processor ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-    endif()
+  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"
+     OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "amd64"
+     OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "i686"
+  )
+    set(PV_SUBDIR "darwin-amd64")
+  elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(PV_SUBDIR "darwin-arm64")
+  else()
+    message(FATAL_ERROR "Unknown processor ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  endif()
 else()
-    message(FATAL_ERROR "Host ${CMAKE_HOST_SYSTEM_NAME} doesnt support running proxy verifier")
+  message(FATAL_ERROR "Host ${CMAKE_HOST_SYSTEM_NAME} doesnt support running proxy verifier")
 endif()
 
 set(PROXY_VERIFIER_PATH ${CMAKE_BINARY_DIR}/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})

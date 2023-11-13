@@ -16,8 +16,8 @@
 #######################
 
 function(CHECK_OPENSSL_IS_BORINGSSL OUT_VAR OPENSSL_INCLUDE_DIR)
-    set(CHECK_PROGRAM
-        "
+  set(CHECK_PROGRAM
+      "
         #include <openssl/base.h>
 
         #ifndef OPENSSL_IS_BORINGSSL
@@ -28,8 +28,8 @@ function(CHECK_OPENSSL_IS_BORINGSSL OUT_VAR OPENSSL_INCLUDE_DIR)
             return 0;
         }
         "
-    )
-    set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
-    include(CheckCXXSourceCompiles)
-    check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
+  )
+  set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
 endfunction()

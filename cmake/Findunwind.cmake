@@ -34,16 +34,14 @@ find_path(unwind_INCLUDE_DIR NAMES libunwind.h libunwind/libunwind.h)
 mark_as_advanced(unwind_FOUND unwind_LIBRARY unwind_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(unwind
-    REQUIRED_VARS unwind_LIBRARY unwind_INCLUDE_DIR
-)
+find_package_handle_standard_args(unwind REQUIRED_VARS unwind_LIBRARY unwind_INCLUDE_DIR)
 
 if(unwind_FOUND)
-    set(unwind_INCLUDE_DIRS ${unwind_INCLUDE_DIR})
+  set(unwind_INCLUDE_DIRS ${unwind_INCLUDE_DIR})
 endif()
 
 if(unwind_FOUND AND NOT TARGET unwind::unwind)
-    add_library(unwind::unwind INTERFACE IMPORTED)
-    target_include_directories(unwind::unwind INTERFACE ${unwind_INCLUDE_DIRS})
-    target_link_libraries(unwind::unwind INTERFACE "${unwind_LIBRARY}")
+  add_library(unwind::unwind INTERFACE IMPORTED)
+  target_include_directories(unwind::unwind INTERFACE ${unwind_INCLUDE_DIRS})
+  target_link_libraries(unwind::unwind INTERFACE "${unwind_LIBRARY}")
 endif()

@@ -29,21 +29,23 @@
 #
 
 find_library(quiche_LIBRARY NAMES quiche)
-find_path(quiche_INCLUDE_DIR NAMES quiche.h PATH_SUFFIXES)
+find_path(
+  quiche_INCLUDE_DIR
+  NAMES quiche.h
+  PATH_SUFFIXES
+)
 
 mark_as_advanced(quiche_FOUND quiche_LIBRARY quiche_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(quiche
-    REQUIRED_VARS quiche_LIBRARY quiche_INCLUDE_DIR
-)
+find_package_handle_standard_args(quiche REQUIRED_VARS quiche_LIBRARY quiche_INCLUDE_DIR)
 
 if(quiche_FOUND)
-    set(quiche_INCLUDE_DIRS "${quiche_INCLUDE_DIR}")
+  set(quiche_INCLUDE_DIRS "${quiche_INCLUDE_DIR}")
 endif()
 
 if(quiche_FOUND AND NOT TARGET quiche::quiche)
-    add_library(quiche::quiche INTERFACE IMPORTED)
-    target_include_directories(quiche::quiche INTERFACE ${quiche_INCLUDE_DIRS})
-    target_link_libraries(quiche::quiche INTERFACE "${quiche_LIBRARY}")
+  add_library(quiche::quiche INTERFACE IMPORTED)
+  target_include_directories(quiche::quiche INTERFACE ${quiche_INCLUDE_DIRS})
+  target_link_libraries(quiche::quiche INTERFACE "${quiche_LIBRARY}")
 endif()
