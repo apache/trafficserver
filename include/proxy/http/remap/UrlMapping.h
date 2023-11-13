@@ -26,13 +26,21 @@
 
 #include <vector>
 
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #include "tscore/ink_config.h"
 #include "proxy/http/remap/AclFiltering.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/http/remap/RemapHitCount.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "proxy/http/remap/PluginFactory.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscore/List.h"
 
 class NextHopSelectionStrategy;

@@ -15,9 +15,9 @@
 #
 #######################
 
-add_library(tscpputil SHARED ts_bwf.cc ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc)
+add_library(tscpputil SHARED ts_bwf.cc ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc Regex.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
-target_link_libraries(tscpputil PUBLIC libswoc yaml-cpp::yaml-cpp ts::tscore)
+target_link_libraries(tscpputil PUBLIC PCRE::PCRE libswoc yaml-cpp::yaml-cpp)
 set(TSCPPUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Bravo.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Convert.h
@@ -26,6 +26,7 @@ set(TSCPPUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/LocalBuffer.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/PostScript.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Strerror.h
+    ${PROJECT_SOURCE_DIR}/include/tscpp/util/Regex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/TsSharedMutex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/YamlCfg.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_bw.h
@@ -43,8 +44,14 @@ install(TARGETS tscpputil PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/
 
 if(BUILD_TESTING)
   add_executable(
-    test_tscpputil unit_tests/test_LocalBuffer.cc unit_tests/test_PostScript.cc unit_tests/test_Strerror.cc
-                   unit_tests/test_ts_meta.cc unit_tests/test_time_parser.cc unit_tests/unit_test_main.cc
+    test_tscpputil
+    unit_tests/test_LocalBuffer.cc
+    unit_tests/test_PostScript.cc
+    unit_tests/test_Strerror.cc
+    unit_tests/test_Regex.cc
+    unit_tests/test_ts_meta.cc
+    unit_tests/test_time_parser.cc
+    unit_tests/unit_test_main.cc
   )
   target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc catch2::catch2)
 

@@ -28,13 +28,7 @@
 #include <vector>
 #include <memory>
 
-#include "tscore/ink_config.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "swoc/MemSpan.h"
 
 /// Match flags for regular expression evaluation.
 enum REFlags {
@@ -90,12 +84,30 @@ public:
    */
   bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
 
+  /** Execute the regular expression.
+   *
+   * @param str String to match against.
+   * @param ovector Capture results.
+   * @param ovecsize Number of elements in @a ovector.
+   * @return @c true if the pattern matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   *
+   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
+   * be a multiple of 3 and at least three times the number of desired capture groups.
+   */
+  bool exec(std::string_view str, swoc::MemSpan<int> groups) const;
+
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();
 
 private:
-  pcre *regex             = nullptr;
-  pcre_extra *regex_extra = nullptr;
+  // @internal - Because the PCRE header is badly done, we can't forward declare the PCRE
+  // enough to use as pointers. For some reason the header defines in name only a struct and
+  // then aliases it to the standard name, rather than simply declare the latter in name only.
+  // The goal is completely wrap PCRE and not include that header in client code.
+  void *regex       = nullptr; ///< Compiled expression.
+  void *regex_extra = nullptr; ///< Extra information about the expression.
 };
 
 /** Deterministic Finite state Automata container.

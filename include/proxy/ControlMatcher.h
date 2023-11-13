@@ -94,8 +94,16 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_defs.h"
 #include "proxy/hdrs/HTTP.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "proxy/hdrs/URL.h"
+
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
 
 #include <swoc/swoc_ip.h>
 

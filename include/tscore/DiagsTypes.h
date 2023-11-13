@@ -39,7 +39,7 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_mutex.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscore/SourceLocation.h"
 
 #include "tscpp/util/ts_diag_levels.h"

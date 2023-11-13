@@ -29,7 +29,7 @@
 #include <cstdio>
 #include <memory>
 
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscore/ink_time.h"
 #include "tscore/Random.h"
 #include "tscpp/util/PostScript.h"

@@ -21,12 +21,32 @@
   limitations under the License.
  */
 
-#include <array>
+#include "tscpp/util/Regex.h"
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_thread.h"
-#include "tscore/ink_memory.h"
-#include "tscore/Regex.h"
+#include <array>
+#include <assert.h>
+
+#if __has_include(<pcre/pcre.h>)
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
+#include "tscore/ink_memory.h" // ats_pagesize()
+
+namespace
+{
+inline pcre *
+as_pcre(void *p)
+{
+  return static_cast<pcre *>(p);
+}
+inline pcre_extra *
+as_extra(void *p)
+{
+  return static_cast<pcre_extra *>(p);
+}
+} // namespace
 
 #ifdef PCRE_CONFIG_JIT
 /*
@@ -48,6 +68,7 @@ struct JitStackCleanup {
     }
   }
 };
+
 thread_local JitStackCleanup jsc;
 
 pcre_jit_stack *
@@ -98,11 +119,11 @@ Regex::compile(const char *pattern, const unsigned flags)
   study_opts |= PCRE_STUDY_JIT_COMPILE;
 #endif
 
-  regex_extra = pcre_study(regex, study_opts, &error);
+  regex_extra = pcre_study(as_pcre(regex), study_opts, &error);
 
 #ifdef PCRE_CONFIG_JIT
   if (regex_extra) {
-    pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
+    pcre_assign_jit_stack(as_extra(regex_extra), &get_jit_stack, nullptr);
   }
 #endif
 
@@ -113,7 +134,7 @@ int
 Regex::get_capture_count()
 {
   int captures = -1;
-  if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &captures) != 0) {
+  if (pcre_fullinfo(as_pcre(regex), as_extra(regex_extra), PCRE_INFO_CAPTURECOUNT, &captures) != 0) {
     return -1;
   }
 
@@ -124,7 +145,7 @@ bool
 Regex::exec(std::string_view const &str) const
 {
   std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
-  return this->exec(str, ovector.data(), ovector.size());
+  return this->exec(str, ovector);
 }
 
 bool
@@ -132,15 +153,22 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 {
   int rv;
 
-  rv = pcre_exec(regex, regex_extra, str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
+  rv = pcre_exec(as_pcre(regex), as_extra(regex_extra), str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
   return rv > 0;
+}
+
+bool
+Regex::exec(std::string_view str, swoc::MemSpan<int> groups) const
+{
+  return 0 <
+         pcre_exec(as_pcre(regex), as_extra(regex_extra), str.data(), int(str.size()), 0, 0, groups.data(), int(groups.count()));
 }
 
 Regex::~Regex()
 {
   if (regex_extra) {
 #ifdef PCRE_CONFIG_JIT
-    pcre_free_study(regex_extra);
+    pcre_free_study(as_extra(regex_extra));
 #else
     pcre_free(regex_extra);
 #endif
@@ -172,7 +200,7 @@ DFA::build(std::string_view const &pattern, unsigned flags)
 int
 DFA::compile(std::string_view const &pattern, unsigned flags)
 {
-  ink_assert(_patterns.empty());
+  assert(_patterns.empty());
   this->build(pattern, flags);
   return _patterns.size();
 }

@@ -26,7 +26,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "tscore/MatcherUtils.h"
-#include "tscore/Regex.h"
+#include "tscpp/util/Regex.h"
 #include "tscore/Trie.h"
 #include "tscore/ink_config.h"
 
