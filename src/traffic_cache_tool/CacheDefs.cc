@@ -730,8 +730,6 @@ Stripe::dir_check()
 
   this->loadMeta();
   this->loadDir();
-  //  uint64_t total_buckets = _segments * _buckets;
-  //  uint64_t total_entries = total_buckets * DIR_DEPTH;
   int frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES] = {{0}};
   int j;
   int stale = 0, in_use = 0, empty = 0;
@@ -739,11 +737,15 @@ Stripe::dir_check()
 
   int max_chain_length = 0;
   int64_t bytes_in_use = 0;
+
+  ink_zero(frag_demographics);
+
   std::cout << "Stripe '[" << hashText << "]'" << std::endl;
   std::cout << "  Directory Bytes: " << _segments * _buckets * SIZEOF_DIR << std::endl;
   std::cout << "  Segments:  " << _segments << std::endl;
   std::cout << "  Buckets per segment:  " << _buckets << std::endl;
   std::cout << "  Entries:  " << _segments * _buckets * DIR_DEPTH << std::endl;
+
   for (int s = 0; s < _segments; s++) {
     CacheDirEntry *seg     = this->dir_segment(s);
     int seg_chain_max      = 0;
