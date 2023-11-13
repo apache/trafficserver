@@ -440,7 +440,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   UnixNetVConnection *vc = nullptr;
   int count              = 0;
-  EThread *t             = e->ethread;
   int additional_accepts = NetHandler::get_additional_accepts();
 
   do {
