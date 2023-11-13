@@ -20,7 +20,6 @@
 # If the config file doesn't exist, the source config file is copied  without the '.default' extension
 # If the config file already exists, the source config file is copied with the '.default' extension
 
-
 file(GLOB CONFIG_FILES ${CONFIG_SOURCE_GLOBS})
 file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFIG_DEST_PATH}")
 
@@ -28,7 +27,7 @@ foreach(CONFIG_FILE ${CONFIG_FILES})
   # remove the '.default' extension from the path
   cmake_path(GET CONFIG_FILE STEM LAST_ONLY CONFIG_FILE_NAME)
   set(DEST_FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFIG_DEST_PATH}/${CONFIG_FILE_NAME}")
-  if (EXISTS ${DEST_FILE})
+  if(EXISTS ${DEST_FILE})
     set(DEST_FILE "${DEST_FILE}.default")
   endif()
   message(STATUS "Installing config: ${DEST_FILE}")

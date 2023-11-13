@@ -33,17 +33,15 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(LuaJIT luajit)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LuaJIT
-    REQUIRED_VARS LuaJIT_LIBRARIES LuaJIT_INCLUDE_DIRS
-)
+find_package_handle_standard_args(LuaJIT REQUIRED_VARS LuaJIT_LIBRARIES LuaJIT_INCLUDE_DIRS)
 
 if(LuaJIT_FOUND)
-    set(LuaJIT_INCLUDE_DIRS ${LuaJIT_INCLUDE_DIR})
+  set(LuaJIT_INCLUDE_DIRS ${LuaJIT_INCLUDE_DIR})
 endif()
 
 if(LuaJIT_FOUND AND NOT TARGET LuaJIT::LuaJIT)
-    add_library(LuaJIT::LuaJIT INTERFACE IMPORTED)
-    target_include_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_INCLUDE_DIRS})
-    target_link_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARY_DIRS})
-    target_link_libraries(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARIES})
+  add_library(LuaJIT::LuaJIT INTERFACE IMPORTED)
+  target_include_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_INCLUDE_DIRS})
+  target_link_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARY_DIRS})
+  target_link_libraries(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARIES})
 endif()

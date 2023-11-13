@@ -34,16 +34,14 @@ find_path(cjose_INCLUDE_DIR NAMES cjose/cjose.h)
 mark_as_advanced(cjose_FOUND cjose_LIBRARY cjose_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(cjose
-    REQUIRED_VARS cjose_LIBRARY cjose_INCLUDE_DIR
-)
+find_package_handle_standard_args(cjose REQUIRED_VARS cjose_LIBRARY cjose_INCLUDE_DIR)
 
 if(cjose_FOUND)
-    set(cjose_INCLUDE_DIRS ${cjose_INCLUDE_DIR})
+  set(cjose_INCLUDE_DIRS ${cjose_INCLUDE_DIR})
 endif()
 
 if(cjose_FOUND AND NOT TARGET cjose::cjose)
-    add_library(cjose::cjose INTERFACE IMPORTED)
-    target_include_directories(cjose::cjose INTERFACE ${cjose_INCLUDE_DIRS})
-    target_link_libraries(cjose::cjose INTERFACE "${cjose_LIBRARY}")
+  add_library(cjose::cjose INTERFACE IMPORTED)
+  target_include_directories(cjose::cjose INTERFACE ${cjose_INCLUDE_DIRS})
+  target_link_libraries(cjose::cjose INTERFACE "${cjose_LIBRARY}")
 endif()

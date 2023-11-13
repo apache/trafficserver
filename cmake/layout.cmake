@@ -15,7 +15,6 @@
 #
 #######################
 
-
 # trafficserver default layout:
 set(CMAKE_INSTALL_BINDIR
     "bin"
@@ -40,12 +39,12 @@ set(CMAKE_INSTALL_SYSCONFDIR
     CACHE STRING "sysconfdir"
 )
 set(CMAKE_INSTALL_LOCALSTATEDIR
-  "var"
-  CACHE STRING "localstatedir"
+    "var"
+    CACHE STRING "localstatedir"
 )
 set(CMAKE_INSTALL_RUNSTATEDIR
-  "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
-  CACHE STRING "runstatedir"
+    "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
+    CACHE STRING "runstatedir"
 )
 set(CMAKE_INSTALL_DATAROOTDIR
     "share"
@@ -60,11 +59,11 @@ set(CMAKE_INSTALL_DOCDIR
     CACHE STRING "docdir"
 )
 set(CMAKE_INSTALL_LOGDIR
-  "${CMAKE_INSTALL_LOCALSTATEDIR}/log/trafficserver"
+    "${CMAKE_INSTALL_LOCALSTATEDIR}/log/trafficserver"
     CACHE STRING "logdir"
 )
 set(CMAKE_INSTALL_CACHEDIR
-  "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
+    "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
     CACHE STRING "cachedir"
 )
 include(GNUInstallDirs)

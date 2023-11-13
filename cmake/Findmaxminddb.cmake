@@ -37,16 +37,14 @@ find_path(maxminddb_INCLUDE_DIR NAMES maxminddb.h)
 mark_as_advanced(maxminddb_FOUND maxminddb_LIBRARY maxminddb_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(maxminddb
-    REQUIRED_VARS maxminddb_LIBRARY maxminddb_INCLUDE_DIR
-)
+find_package_handle_standard_args(maxminddb REQUIRED_VARS maxminddb_LIBRARY maxminddb_INCLUDE_DIR)
 
 if(maxminddb_FOUND)
-    set(maxminddb_INCLUDE_DIRS ${maxminddb_INCLUDE_DIR})
+  set(maxminddb_INCLUDE_DIRS ${maxminddb_INCLUDE_DIR})
 endif()
 
 if(maxminddb_FOUND AND NOT TARGET maxminddb::maxminddb)
-    add_library(maxminddb::maxminddb INTERFACE IMPORTED)
-    target_include_directories(maxminddb::maxminddb INTERFACE ${maxminddb_INCLUDE_DIRS})
-    target_link_libraries(maxminddb::maxminddb INTERFACE "${maxminddb_LIBRARY}")
+  add_library(maxminddb::maxminddb INTERFACE IMPORTED)
+  target_include_directories(maxminddb::maxminddb INTERFACE ${maxminddb_INCLUDE_DIRS})
+  target_link_libraries(maxminddb::maxminddb INTERFACE "${maxminddb_LIBRARY}")
 endif()

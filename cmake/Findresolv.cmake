@@ -21,9 +21,7 @@ find_path(resolv_INCLUDE_DIR resolv.h)
 mark_as_advanced(resolv_FOUND resolv_LIBRARY resolv_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(resolv
-    REQUIRED_VARS resolv_LIBRARY resolv_INCLUDE_DIR
-)
+find_package_handle_standard_args(resolv REQUIRED_VARS resolv_LIBRARY resolv_INCLUDE_DIR)
 
 # Add the library but only add libraries if resolv is found
 add_library(resolv::resolv INTERFACE IMPORTED)

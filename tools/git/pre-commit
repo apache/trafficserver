@@ -86,7 +86,7 @@ deactivate
 
 # Now repeat the above for CMakeLists.txt files.
 source ${CMAKE_FORMAT_VENV}/bin/activate
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep CMakeLists.txt | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" | while read file; do
     cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
 done
 deactivate

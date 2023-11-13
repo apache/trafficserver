@@ -28,24 +28,21 @@
 #     PCRE::PCRE
 #
 
-
-find_path(PCRE_INCLUDE_DIR NAMES pcre.h)# PATH_SUFFIXES pcre)
+find_path(PCRE_INCLUDE_DIR NAMES pcre.h) # PATH_SUFFIXES pcre)
 find_library(PCRE_LIBRARY NAMES pcre)
 
 mark_as_advanced(PCRE_FOUND PCRE_LIBRARY PCRE_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PCRE
-    REQUIRED_VARS PCRE_INCLUDE_DIR PCRE_LIBRARY
-)
+find_package_handle_standard_args(PCRE REQUIRED_VARS PCRE_INCLUDE_DIR PCRE_LIBRARY)
 
 if(PCRE_FOUND)
-    set(PCRE_INCLUDE_DIRS "${PCRE_INCLUDE_DIR}")
-    set(PCRE_LIBRARIES "${PCRE_LIBRARY}")
+  set(PCRE_INCLUDE_DIRS "${PCRE_INCLUDE_DIR}")
+  set(PCRE_LIBRARIES "${PCRE_LIBRARY}")
 endif()
 
 if(PCRE_FOUND AND NOT TARGET PCRE::PCRE)
-    add_library(PCRE::PCRE INTERFACE IMPORTED)
-    target_include_directories(PCRE::PCRE INTERFACE ${PCRE_INCLUDE_DIRS})
-    target_link_libraries(PCRE::PCRE INTERFACE "${PCRE_LIBRARY}")
+  add_library(PCRE::PCRE INTERFACE IMPORTED)
+  target_include_directories(PCRE::PCRE INTERFACE ${PCRE_INCLUDE_DIRS})
+  target_link_libraries(PCRE::PCRE INTERFACE "${PCRE_LIBRARY}")
 endif()
