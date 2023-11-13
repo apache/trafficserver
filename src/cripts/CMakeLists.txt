@@ -19,7 +19,6 @@
 
 # We use fmt with cripts, contrary to ATS / libswoc. We also require PCRE2 and not PCRE,
 # but hopefully ATS will migrate to PCRE2 soon.
-find_package(fmt 8.1 REQUIRED)
 pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 # The source files, globbed so we can drop in local / custom Bundles and extensions.

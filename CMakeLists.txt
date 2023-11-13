@@ -263,6 +263,12 @@ check_include_file(siginfo.h HAVE_SIGINFO_H)
 check_include_file(endian.h HAVE_ENDIAN_H)
 
 # Find libraries
+if(ENABLE_CRIPTS)
+  # needed for cripts
+  # however this might become a general requirement
+  find_package(fmt 8.1 REQUIRED)
+endif()
+
 find_package(Backtrace)
 if(Backtrace_FOUND)
   set(TS_HAS_BACKTRACE TRUE)
