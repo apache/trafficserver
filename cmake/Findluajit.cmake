@@ -15,33 +15,34 @@
 #
 #######################
 
-# FindLuaJIT.cmake
+# Findluajit.cmake
 #
 # This will define the following variables
 #
-#     LuaJIT_FOUND
+#     luajit_FOUND
 #
 # and the following imported targets
 #
-#     LuaJIT::LuaJIT
+#     luajit::luajit
 #
 
-# LuaJIT exports their own config since LuaJIT-1.5.0, but it isn't
-# present in the OpenSUSE libLuaJIT-devel-1.7.1 package and maybe others.
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LuaJIT luajit)
+pkg_check_modules(luajit luajit)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LuaJIT REQUIRED_VARS LuaJIT_LIBRARIES LuaJIT_INCLUDE_DIRS)
+find_package_handle_standard_args(
+  luajit
+  REQUIRED_VARS luajit_INCLUDE_DIRS luajit_LINK_LIBRARIES luajit_LIBRARIES luajit_LIBRARY_DIRS
+  HANDLE_COMPONENTS
+)
 
-if(LuaJIT_FOUND)
-  set(LuaJIT_INCLUDE_DIRS ${LuaJIT_INCLUDE_DIR})
+if(luajit_FOUND)
+  set(luajit_INCLUDE_DIRS ${luajit_INCLUDE_DIR})
 endif()
 
-if(LuaJIT_FOUND AND NOT TARGET LuaJIT::LuaJIT)
-  add_library(LuaJIT::LuaJIT INTERFACE IMPORTED)
-  target_include_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_INCLUDE_DIRS})
-  target_link_directories(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARY_DIRS})
-  target_link_libraries(LuaJIT::LuaJIT INTERFACE ${LuaJIT_LIBRARIES})
+if(luajit_FOUND AND NOT TARGET luajit::luajit)
+  add_library(luajit::luajit INTERFACE IMPORTED)
+  target_include_directories(luajit::luajit INTERFACE ${luajit_INCLUDE_DIRS})
+  target_link_directories(luajit::luajit INTERFACE ${luajit_LIBRARY_DIRS})
+  target_link_libraries(luajit::luajit INTERFACE ${luajit_LIBRARIES})
 endif()
