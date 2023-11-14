@@ -44,8 +44,6 @@ if(BUILD_REGRESSION_TESTING)
   target_sources(http PRIVATE RegressionHttpTransact.cc)
 endif()
 
-target_include_directories(http PRIVATE ${YAMLCPP_INCLUDE_DIR} OpenSSL::SSL)
-
 target_link_libraries(
   http
   PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tsapicore ts::tscore
