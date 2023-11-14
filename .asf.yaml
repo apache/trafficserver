@@ -50,7 +50,7 @@ github:
           - Rocky
           - CentOS
           - Clang-Analyzer
-          - Clang-Format
+          - Format
           - Debian
           - Docs
           - Fedora
