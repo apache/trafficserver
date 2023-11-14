@@ -110,6 +110,34 @@
       }
     },
     {
+      "name": "ci-centos",
+      "displayName": "CI CentOS",
+      "description": "CI Pipeline config for CentOS",
+      "inherits": ["ci"],
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic"
+      }
+    },
+    {
+      "name": "ci-docs",
+      "displayName": "Docs Build",
+      "description": "Presets for CI build of ATS docs",
+      "binaryDir": "${sourceDir}/build-docs",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "ENABLE_DOCS": "ON"
+      }
+    },
+    {
+      "name": "ci-osx",
+      "displayName": "CI OSX",
+      "description": "CI Pipeline config for OSX",
+      "inherits": ["ci"],
+      "generator": "Unix Makefiles"
+    },
+    {
       "name": "ci-rocky",
       "displayName": "CI Rocky",
       "description": "CI Pipeline config for Rocky Linux",
@@ -131,6 +159,15 @@
       }
     },
     {
+      "name": "ci-fedora-cxx20",
+      "displayName": "CI Fedora c++20",
+      "description": "CI Pipeline config for Fedora Linux compiled with c++20",
+      "inherits": ["ci"],
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
       "name": "ci-fedora-quiche",
       "displayName": "CI Fedora Quiche",
       "description": "CI Pipeline config for Fedora Linux (quiche build)",
@@ -149,10 +186,24 @@
       "inherits": ["ci-fedora", "autest"]
     },
     {
+      "name": "ci-freebsd",
+      "displayName": "CI Fedora",
+      "description": "CI Pipeline config for Fedora Linux",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "/tmp/ats",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON"
+      }
+    },
+    {
       "name": "ci-debian",
       "displayName": "CI Debian Hardened Build",
       "description": "CI Pipeline config for Debian with hardening flags",
-      "inherits": ["ci", "hardened"]
+      "inherits": ["ci", "hardened"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic"
+      }
     },
     {
       "name": "ci-ubuntu",
