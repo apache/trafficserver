@@ -296,7 +296,7 @@ endif()
 find_package(PCRE REQUIRED)
 
 include(CheckOpenSSLIsBoringSSL)
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL "1.1.1" REQUIRED)
 check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
 
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
