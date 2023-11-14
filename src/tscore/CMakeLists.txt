@@ -37,64 +37,63 @@ add_library(
   ConsistentHash.cc
   ContFlags.cc
   CryptoHash.cc
-        Diags.cc
-        Encoding.cc
-        EventNotify.cc
-        Extendible.cc
-        Hash.cc
-        HashFNV.cc
-        HashSip.cc
-        HostLookup.cc
-        InkErrno.cc
-        JeMiAllocator.cc
-        Layout.cc
-        LogMessage.cc
-        MMH.cc
-        MatcherUtils.cc
-        ParseRules.cc
-        Random.cc
-
-        Regression.cc
-        SourceLocation.cc
-        TextBuffer.cc
-        Throttler.cc
-        Tokenizer.cc
-        Version.cc
-        X509HostnameValidator.cc
-        hugepages.cc
-        ink_args.cc
-        ink_assert.cc
-        ink_base64.cc
-        ink_cap.cc
-        ink_defs.cc
-        ink_error.cc
-        ink_file.cc
-        ink_hrtime.cc
-        ink_hw.cc
-        ink_inet.cc
-        ink_memory.cc
-        ink_mutex.cc
-        ink_queue.cc
-        ink_queue_utils.cc
-        ink_rand.cc
-        ink_res_init.cc
-        ink_res_mkquery.cc
-        ink_resource.cc
-        ink_rwlock.cc
-        ink_sock.cc
-        ink_sprintf.cc
-        ink_stack_trace.cc
-        ink_string++.cc
-        ink_string.cc
-        ink_sys_control.cc
-        ink_syslog.cc
-        ink_thread.cc
-        ink_time.cc
-        ink_uuid.cc
-        llqueue.cc
-        lockfile.cc
-        runroot.cc
-        signals.cc
+  Diags.cc
+  Encoding.cc
+  EventNotify.cc
+  Extendible.cc
+  Hash.cc
+  HashFNV.cc
+  HashSip.cc
+  HostLookup.cc
+  InkErrno.cc
+  JeMiAllocator.cc
+  Layout.cc
+  LogMessage.cc
+  MMH.cc
+  MatcherUtils.cc
+  ParseRules.cc
+  Random.cc
+  Regression.cc
+  SourceLocation.cc
+  TextBuffer.cc
+  Throttler.cc
+  Tokenizer.cc
+  Version.cc
+  X509HostnameValidator.cc
+  hugepages.cc
+  ink_args.cc
+  ink_assert.cc
+  ink_base64.cc
+  ink_cap.cc
+  ink_defs.cc
+  ink_error.cc
+  ink_file.cc
+  ink_hrtime.cc
+  ink_hw.cc
+  ink_inet.cc
+  ink_memory.cc
+  ink_mutex.cc
+  ink_queue.cc
+  ink_queue_utils.cc
+  ink_rand.cc
+  ink_res_init.cc
+  ink_res_mkquery.cc
+  ink_resource.cc
+  ink_rwlock.cc
+  ink_sock.cc
+  ink_sprintf.cc
+  ink_stack_trace.cc
+  ink_string++.cc
+  ink_string.cc
+  ink_sys_control.cc
+  ink_syslog.cc
+  ink_thread.cc
+  ink_time.cc
+  ink_uuid.cc
+  llqueue.cc
+  lockfile.cc
+  runroot.cc
+  signals.cc
 )
 add_library(ts::tscore ALIAS tscore)
 
@@ -130,7 +129,8 @@ if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(test_tscore
+  add_executable(
+    test_tscore
     unit_tests/test_AcidPtr.cc
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
