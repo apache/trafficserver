@@ -102,7 +102,7 @@ auto_option(
   HEADER_DEPENDS
   "sys/prctl.h"
 )
-auto_option(LUAJIT PACKAGE_DEPENDS LuaJIT)
+auto_option(LUAJIT PACKAGE_DEPENDS luajit)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")

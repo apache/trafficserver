@@ -49,4 +49,4 @@ add_atsplugin(
   ts_lua_constant.cc
 )
 
-target_link_libraries(tslua PRIVATE LuaJIT::LuaJIT OpenSSL::Crypto)
+target_link_libraries(tslua PRIVATE luajit::luajit OpenSSL::Crypto)
