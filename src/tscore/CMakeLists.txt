@@ -110,7 +110,16 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
-target_link_libraries(tscore PUBLIC OpenSSL::Crypto PCRE::PCRE libswoc yaml-cpp::yaml-cpp resolv::resolv ts::tsapicore)
+target_link_libraries(
+  tscore
+  PUBLIC OpenSSL::Crypto
+         PCRE::PCRE
+         libswoc
+         yaml-cpp::yaml-cpp
+         resolv::resolv
+         ts::tsapicore
+         ts::tscpputil
+)
 
 if(TS_USE_POSIX_CAP)
   target_link_libraries(tscore PUBLIC cap::cap)
