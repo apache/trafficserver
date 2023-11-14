@@ -27,13 +27,10 @@
 #include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpSessionAccept.h"
 #include "proxy/ReverseProxy.h"
-#include "proxy/Show.h"
 #include "proxy/http/HttpSessionManager.h"
-#include "proxy/http/remap/RemapHitCount.h"
 #ifdef USE_HTTP_DEBUG_LISTS
 #include "proxy/http/Http1ClientSession.h"
 #endif
-#include "proxy/http/HttpPages.h"
 #include "proxy/http/HttpTunnel.h"
 #include "tscore/Tokenizer.h"
 #include "iocore/net/ConnectionTracker.h"
@@ -66,24 +63,6 @@ bool et_net_threads_ready = false;
 std::mutex etUdpMutex;
 std::condition_variable etUdpCheck;
 bool et_udp_threads_ready = false;
-
-struct ShowConnectionCount : public ShowCont {
-  ShowConnectionCount(Continuation *c, HTTPHdr *h) : ShowCont(c, h) { SET_HANDLER(&ShowConnectionCount::showHandler); }
-  int
-  showHandler(int event, Event *e)
-  {
-    CHECK_SHOW(show(ConnectionTracker::outbound_to_json_string().c_str()));
-    return completeJson(event, e);
-  }
-};
-
-Action *
-register_ShowConnectionCount(Continuation *c, HTTPHdr *h)
-{
-  ShowConnectionCount *s = new ShowConnectionCount(c, h);
-  this_ethread()->schedule_imm(s);
-  return &s->action;
-}
 
 // File / process scope initializations
 static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
@@ -285,7 +264,6 @@ init_accept_HttpProxyServer(int n_accept_threads)
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
 
   init_reverse_proxy();
-  http_pages_init();
 
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_init(&debug_sm_list_mutex);
@@ -380,10 +358,6 @@ start_HttpProxyServer()
     // XXX although we make a good pretence here, I don't believe that NetProcessor::main_accept() ever actually returns
     // NULL. It would be useful to be able to detect errors and spew them here though.
   }
-
-  // Set up stat page for http connection count
-  statPagesManager.register_http("connection_count", register_ShowConnectionCount);
-  statPagesManager.register_http("remap_hits", register_ShowRemapHitCount);
 
   // Alert plugins that connections will be accepted.
   APIHook *hook = g_lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);

@@ -392,7 +392,6 @@ public:
     SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS,
     SM_ACTION_INTERNAL_CACHE_WRITE,
     SM_ACTION_INTERNAL_100_RESPONSE,
-    SM_ACTION_INTERNAL_REQUEST,
     SM_ACTION_SEND_ERROR_CACHE_NOOP,
 
     SM_ACTION_WAIT_FOR_FULL_BODY,
@@ -1001,7 +1000,6 @@ public:
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
-  static void HandleStatPage(State *s);
   static void handle_100_continue_response(State *s);
   static void handle_transform_ready(State *s);
   static void handle_transform_cache_write(State *s);
@@ -1050,7 +1048,6 @@ public:
                                                          char *via_string);
   static bool does_client_request_permit_dns_caching(CacheControlResult *c, HTTPHdr *h);
   static bool does_client_request_permit_storing(CacheControlResult *c, HTTPHdr *h);
-  static bool handle_internal_request(State *s, HTTPHdr *incoming_hdr);
   static bool handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr);
   static void bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request);
 

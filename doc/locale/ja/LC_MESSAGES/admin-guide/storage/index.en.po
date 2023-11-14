@@ -730,10 +730,6 @@ msgstr "キャッシュ検査ユーティリティにアクセスする"
 msgid "To access the Cache Inspector utility:"
 msgstr "キャッシュ検査ユーティリティにアクセスするには :"
 
-#: ../../../admin-guide/storage/index.en.rst:375
-msgid "Set :ts:cv:`proxy.config.http_ui_enabled` to ``1``."
-msgstr ":ts:cv:`proxy.config.http_ui_enabled` を ``1`` に設定。"
-
 #: ../../../admin-guide/storage/index.en.rst:376
 msgid ""
 "To access the cache inspector in reverse proxy mode, you must add a remap "

@@ -92,7 +92,6 @@ extern "C" int plock(int);
 #include "proxy/IPAllow.h"
 #include "proxy/ParentSelection.h"
 #include "proxy/HostStatus.h"
-#include "proxy/StatPages.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HuffmanCodec.h"
 #include "proxy/Plugin.h"
@@ -2031,9 +2030,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   SET_INTERVAL(RecProcess, "proxy.config.config_update_interval_ms", config_update_interval_ms);
   SET_INTERVAL(RecProcess, "proxy.config.raw_stat_sync_interval_ms", raw_stat_sync_interval_ms);
   SET_INTERVAL(RecProcess, "proxy.config.remote_sync_interval_ms", remote_sync_interval_ms);
-
-  // Initialize the stat pages manager
-  statPagesManager.init();
 
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 

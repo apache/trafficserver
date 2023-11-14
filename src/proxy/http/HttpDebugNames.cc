@@ -24,7 +24,6 @@
 #include "iocore/dns/DNSProcessor.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "../../iocore/eventsystem/P_EventSystem.h"
-#include "proxy/StatPages.h"
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/Transform.h"
 #include "proxy/http/HttpSM.h"
@@ -201,12 +200,6 @@ HttpDebugNames::get_event_name(int event)
     return "CACHE_EVENT_UPDATE";
   case CACHE_EVENT_UPDATE_FAILED:
     return "CACHE_EVENT_UPDATE_FAILED";
-
-  case STAT_PAGE_SUCCESS:
-    return "STAT_PAGE_SUCCESS";
-  case STAT_PAGE_FAILURE:
-    return "STAT_PAGE_FAILURE";
-
   case TRANSFORM_READ_READY:
     static_assert(static_cast<int>(TRANSFORM_READ_READY) == static_cast<int>(TS_EVENT_SSL_SESSION_GET));
     return "TRANSFORM_READ_READY/TS_EVENT_SSL_SESSION_GET";
@@ -429,9 +422,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
     return ("SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS");
-
-  case HttpTransact::SM_ACTION_INTERNAL_REQUEST:
-    return ("SM_ACTION_INTERNAL_REQUEST");
 
   case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
     return ("SM_ACTION_SEND_ERROR_CACHE_NOOP");

@@ -150,7 +150,6 @@ struct Stripe : public Continuation {
   AIOCallbackInternal io;
 
   Queue<CacheVC, Continuation::Link_link> agg;
-  Queue<CacheVC, Continuation::Link_link> stat_cache_vcs;
   Queue<CacheVC, Continuation::Link_link> sync;
   char *agg_buffer  = nullptr;
   int agg_todo_size = 0;

@@ -47,8 +47,6 @@ libhttp_remap_a_SOURCES = \
 	NextHopStrategyFactory.cc \
 	RemapConfig.cc \
 	RemapConfig.h \
-	RemapHitCount.cc \
-	RemapHitCount.h \
 	RemapPluginInfo.cc \
 	RemapPluginInfo.h \
 	PluginDso.cc \

@@ -42,9 +42,6 @@ AM_CPPFLAGS += \
 	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
 
-noinst_HEADERS = \
-	Show.h
-
 libproxy_a_SOURCES = \
 	$(PRIVATE_SOURCES_) \
 	CacheControl.cc \
@@ -79,8 +76,6 @@ libproxy_a_SOURCES = \
 	ProxyTransaction.h \
 	ReverseProxy.cc \
 	ReverseProxy.h \
-	StatPages.cc \
-	StatPages.h \
 	Transform.cc \
 	Transform.h
 

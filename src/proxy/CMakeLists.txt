@@ -34,7 +34,6 @@ add_library(
   ProxySession.cc
   ProxyTransaction.cc
   ReverseProxy.cc
-  StatPages.cc
   Transform.cc
 )
 add_library(ts::proxy ALIAS proxy)

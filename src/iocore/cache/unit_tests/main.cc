@@ -24,7 +24,6 @@
 #include "tscore/ink_config.h"
 #include <string_view>
 #include "proxy/HttpAPIHooks.h"
-#include "proxy/StatPages.h"
 #include "iocore/net/SSLAPIHooks.h"
 
 #define CATCH_CONFIG_MAIN
@@ -144,7 +143,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     init_global_http_hooks();
     init_global_ssl_hooks();
 
-    statPagesManager.init(); // mutex needs to be initialized before calling netProcessor.init
     netProcessor.init();
     eventProcessor.start(THREADS);
 

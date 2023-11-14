@@ -930,9 +930,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.plugin_vc_default_buffer_water_mark,
                                     "proxy.config.plugin.vc.default_buffer_water_mark");
 
-  // Stat Page Info
-  HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
-
   HttpEstablishStaticConfigLongLong(c.max_post_size, "proxy.config.http.max_post_size");
   HttpEstablishStaticConfigLongLong(c.max_payload_iobuf_index, "proxy.config.payload.io.max_buffer_index");
   HttpEstablishStaticConfigLongLong(c.max_msg_iobuf_index, "proxy.config.msg.io.max_buffer_index");
@@ -1208,7 +1205,6 @@ HttpConfig::reconfigure()
   params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
   params->oride.default_buffer_size_index  = m_master.oride.default_buffer_size_index;
   params->oride.default_buffer_water_mark  = m_master.oride.default_buffer_water_mark;
-  params->enable_http_info                 = INT_TO_BOOL(m_master.enable_http_info);
   params->oride.body_factory_template_base = ats_strdup(m_master.oride.body_factory_template_base);
   params->oride.body_factory_template_base_len =
     params->oride.body_factory_template_base ? strlen(params->oride.body_factory_template_base) : 0;

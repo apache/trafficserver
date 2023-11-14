@@ -58,8 +58,6 @@ libhttp_a_SOURCES = \
 	HttpConfig.h \
 	HttpDebugNames.cc \
 	HttpDebugNames.h \
-	HttpPages.cc \
-	HttpPages.h \
 	HttpProxyServerMain.cc \
 	HttpProxyServerMain.h \
 	HttpSM.cc \

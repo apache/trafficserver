@@ -75,10 +75,6 @@ Stripe::begin_read(CacheVC *cont) const
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
   ink_assert(mutex->thread_holding == this_ethread());
-#ifdef CACHE_STAT_PAGES
-  ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
-  stat_cache_vcs.enqueue(cont, cont->stat_link);
-#endif
   // no need for evacuation as the entire document is already in memory
   if (cont->f.single_fragment) {
     return 0;
@@ -129,10 +125,7 @@ Stripe::close_read(CacheVC *cont) const
     }
     b = next;
   }
-#ifdef CACHE_STAT_PAGES
-  stat_cache_vcs.remove(cont, cont->stat_link);
-  ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
-#endif
+
   return 1;
 }
 

@@ -63,10 +63,7 @@ new_CacheEvacuateDocVC(Continuation *cont)
   ink_assert(c->trigger == nullptr);
   static DbgCtl dbg_ctl{"cache_new"};
   Dbg(dbg_ctl, "new %p", c);
-#ifdef CACHE_STAT_PAGES
-  ink_assert(!c->stat_link.next);
-  ink_assert(!c->stat_link.prev);
-#endif
   dir_clear(&c->dir);
+
   return c;
 }

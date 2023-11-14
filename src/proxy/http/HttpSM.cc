@@ -38,7 +38,6 @@
 #include "../../iocore/cache/P_Cache.h"
 #include "../../iocore/net/P_Net.h"
 #include "proxy/http/PreWarmConfig.h"
-#include "proxy/StatPages.h"
 #include "proxy/logging/Log.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/PluginVC.h"
@@ -53,7 +52,6 @@
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSTunnelSupport.h"
-#include "proxy/http/HttpPages.h"
 #include "proxy/IPAllow.h"
 
 #include "iocore/net/ProxyProtocol.h"
@@ -314,24 +312,6 @@ HttpSM::do_api_callout()
 int
 HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 {
-  // The list if for stat pages and general debugging
-  //   The config variable exists mostly to allow us to
-  //   measure an performance drop during benchmark runs
-  if (t_state.http_config_param->enable_http_info) {
-    STATE_ENTER(&HttpSM::state_add_to_list, event);
-    ink_assert(event == EVENT_NONE || event == EVENT_INTERVAL);
-
-    int bucket = (static_cast<unsigned int>(sm_id) % HTTP_LIST_BUCKETS);
-
-    MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
-    // the client_vc`s timeout events can be triggered, so we should not
-    // reschedule the http_sm when the lock is not acquired.
-    // FIXME: the sm_list may miss some http_sms when the lock contention
-    if (lock.is_locked()) {
-      HttpSMList[bucket].sm_list.push(this);
-    }
-  }
-
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
   if (do_api_callout() < 0) {
     // Didn't get the hook continuation lock. Clear the read and wait for next event
@@ -349,27 +329,6 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 int
 HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
 {
-  // The config parameters are guaranteed not change
-  //   across the life of a transaction so it safe to
-  //   check the config here and use it determine
-  //   whether we need to strip ourselves off of the
-  //   state page list
-  if (t_state.http_config_param->enable_http_info) {
-    STATE_ENTER(&HttpSM::state_remove_from_list, event);
-    ink_assert(event == EVENT_NONE || event == EVENT_INTERVAL);
-
-    int bucket = (static_cast<unsigned int>(sm_id) % HTTP_LIST_BUCKETS);
-
-    MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
-    if (!lock.is_locked()) {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_remove_from_list);
-      mutex->thread_holding->schedule_in(this, HTTP_LIST_RETRY);
-      return EVENT_DONE;
-    }
-
-    HttpSMList[bucket].sm_list.remove(this);
-  }
-
   // We're now ready to finish off the state machine
   terminate_sm         = true;
   kill_this_async_done = true;
@@ -2397,48 +2356,6 @@ HttpSM::state_mark_os_down(int event, void *data)
   // We either found our entry or we did not.  Either way find
   //  the entry we should use now
   return state_hostdb_lookup(event, data);
-}
-
-//////////////////////////////////////////////////////////////////////////
-//
-//  HttpSM::state_handle_stat_page()
-//
-//////////////////////////////////////////////////////////////////////////
-int
-HttpSM::state_handle_stat_page(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_handle_stat_page, event);
-  switch (event) {
-  case STAT_PAGE_SUCCESS:
-    pending_action = nullptr;
-
-    if (data) {
-      StatPageData *spd = static_cast<StatPageData *>(data);
-
-      t_state.internal_msg_buffer = spd->data;
-      if (spd->type) {
-        t_state.internal_msg_buffer_type = spd->type;
-      } else {
-        t_state.internal_msg_buffer_type = nullptr; // Defaults to text/html
-      }
-      t_state.internal_msg_buffer_size                = spd->length;
-      t_state.internal_msg_buffer_fast_allocator_size = -1;
-    }
-
-    call_transact_and_set_next_state(HttpTransact::HandleStatPage);
-    break;
-
-  case STAT_PAGE_FAILURE:
-    pending_action = nullptr;
-    call_transact_and_set_next_state(HttpTransact::HandleStatPage);
-    break;
-
-  default:
-    ink_release_assert(0);
-    break;
-  }
-
-  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -8117,11 +8034,6 @@ HttpSM::set_next_state()
     setup_error_transfer();
     break;
   }
-
-  case HttpTransact::SM_ACTION_INTERNAL_REQUEST:
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_handle_stat_page);
-    pending_action = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
-    break;
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);

@@ -44,16 +44,9 @@ struct EvacuationBlock;
 #define ALTERNATES 1
 // #define CACHE_LOCK_FAIL_RATE         0.001
 // #define CACHE_AGG_FAIL_RATE          0.005
-// #define CACHE_INSPECTOR_PAGES
 #define MAX_CACHE_VCS_PER_THREAD 500
 
 #define INTEGRAL_FRAGS 4
-
-#ifdef CACHE_INSPECTOR_PAGES
-#ifdef DEBUG
-#define CACHE_STAT_PAGES
-#endif
-#endif
 
 #ifdef DEBUG
 #define DDbg(dbg_ctl, fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
@@ -171,10 +164,6 @@ new_CacheVC(Continuation *cont)
   ink_assert(c->trigger == nullptr);
   static DbgCtl dbg_ctl{"cache_new"};
   Dbg(dbg_ctl, "new %p", c);
-#ifdef CACHE_STAT_PAGES
-  ink_assert(!c->stat_link.next);
-  ink_assert(!c->stat_link.prev);
-#endif
   dir_clear(&c->dir);
   return c;
 }
@@ -226,9 +215,6 @@ free_CacheVC(CacheVC *cont)
   ats_free(cont->scan_vol_map);
 
   memset((char *)&cont->vio, 0, cont->size_to_init);
-#ifdef CACHE_STAT_PAGES
-  ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
-#endif
 #ifdef DEBUG
   SET_CONTINUATION_HANDLER(cont, &CacheVC::dead);
 #endif
@@ -376,11 +362,6 @@ CacheVC::writer_done()
 inline int
 Stripe::close_write(CacheVC *cont)
 {
-#ifdef CACHE_STAT_PAGES
-  ink_assert(stat_cache_vcs.head);
-  stat_cache_vcs.remove(cont, cont->stat_link);
-  ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
-#endif
   return open_dir.close_write(cont);
 }
 
@@ -405,11 +386,6 @@ Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
 
   if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
-#ifdef CACHE_STAT_PAGES
-    ink_assert(cont->mutex->thread_holding == this_ethread());
-    ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
-    stat_cache_vcs.enqueue(cont, cont->stat_link);
-#endif
     return 0;
   }
   return ECACHE_DOC_BUSY;
@@ -450,13 +426,11 @@ Stripe::open_read_lock(CryptoHash *key, EThread *t)
 inline int
 Stripe::begin_read_lock(CacheVC *cont)
 {
-// no need for evacuation as the entire document is already in memory
-#ifndef CACHE_STAT_PAGES
+  // no need for evacuation as the entire document is already in memory
   if (cont->f.single_fragment) {
     return 0;
   }
-#endif
-  // VC is enqueued in stat_cache_vcs in the begin_read call
+
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
   if (!lock.is_locked()) {

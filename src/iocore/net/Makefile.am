@@ -244,7 +244,6 @@ libinknet_a_SOURCES = \
 	UnixConnection.cc \
 	UnixNet.cc \
 	UnixNetAccept.cc \
-	UnixNetPages.cc \
 	UnixNetProcessor.cc \
 	UnixNetVConnection.cc \
 	UnixUDPConnection.cc \

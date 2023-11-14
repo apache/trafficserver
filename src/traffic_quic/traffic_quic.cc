@@ -144,13 +144,6 @@ DNSConnection::trigger()
   ink_assert(false);
 }
 
-#include "proxy/StatPages.h"
-void
-StatPagesManager::register_http(char const *, Action *(*)(Continuation *, HTTPHdr *))
-{
-  //  ink_assert(false);
-}
-
 #include "proxy/ParentSelection.h"
 void
 SocksServerConfig::startup()
@@ -263,7 +256,6 @@ HttpRequestData::get_client_ip()
 
 SslAPIHooks *ssl_hooks             = nullptr;
 LifecycleAPIHooks *lifecycle_hooks = nullptr;
-StatPagesManager statPagesManager;
 
 #include "proxy/http/HttpDebugNames.h"
 const char *
