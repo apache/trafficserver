@@ -1048,6 +1048,23 @@ LocalManager::bindTcpProxyPort(HttpProxyPort &port)
     }
   }
 
+  if (port.m_mptcp == 1) {
+#if MPTCP_ENABLED
+    int err;
+
+    err = setsockopt(port.m_fd, IPPROTO_TCP, MPTCP_ENABLED, &one, sizeof(one));
+    if (err < 0) {
+      mgmt_log("[bindProxyPort] Unable to enable MPTCP: %s\n", strerror(errno));
+      Debug("lm_mptcp", "[bindProxyPort] Unable to enable MPTCP: %s", strerror(errno));
+    } else {
+      mgmt_log("[bindProxyPort] Successfully enabled MPTCP on %d\n", port.m_port);
+      Debug("lm_mptcp", "[bindProxyPort] Successfully enabled MPTCP on %d\n", port.m_port);
+    }
+#else
+    Debug("lm_mptcp", "[bindProxyPort] Multipath TCP requested but not configured on this host");
+#endif
+  }
+
   if (port.m_family == AF_INET6) {
     if (setsockopt(port.m_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
       mgmt_log("[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));

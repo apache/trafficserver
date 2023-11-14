@@ -85,24 +85,23 @@ SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
-static bool
+static int
 mptcp_supported()
 {
   ats_scoped_fd fd(::open("/proc/sys/net/mptcp/mptcp_enabled", O_RDONLY));
   // Newer kernel mptcp config
   ats_scoped_fd fd_new(::open("/proc/sys/net/mptcp/enabled", O_RDONLY));
-  int value = 0;
   TextBuffer buffer(16);
 
   if (fd > 0) {
     buffer.slurp(fd.get());
-    value = atoi(buffer.bufPtr());
+    return (atoi(buffer.bufPtr()) != 0) ? 1 : 0;
   } else if (fd_new > 0) {
     buffer.slurp(fd_new.get());
-    value = atoi(buffer.bufPtr());
+    return (atoi(buffer.bufPtr()) != 0) ? 2 : 0;
   }
 
-  return value != 0;
+  return 0;
 }
 
 void
@@ -445,9 +444,8 @@ HttpProxyPort::processOptions(const char *opts)
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
     } else if (0 == strcasecmp(OPT_MPTCP, item)) {
-      if (mptcp_supported()) {
-        m_mptcp = true;
-      } else {
+      m_mptcp = mptcp_supported();
+      if (m_mptcp == 0) {
         Warning("Multipath TCP requested [%s] in port descriptor '%s' but it is not supported by this host.", item, opts);
       }
     } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {

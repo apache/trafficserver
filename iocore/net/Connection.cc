@@ -42,6 +42,7 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT 32000
+#define MPTCP_V1 2
 
 int
 get_listen_backlog()
@@ -229,7 +230,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && !opt.f_mptcp &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && (opt.f_mptcp != MPTCP_V1) &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
@@ -241,7 +242,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !opt.f_mptcp &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && (opt.f_mptcp != MPTCP_V1) &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
   }
@@ -263,17 +264,29 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0 && !opt.f_mptcp) {
+  if (NetProcessor::accept_mss > 0 && (opt.f_mptcp != MPTCP_V1)) {
     if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
       goto Lerror;
     }
   }
 #endif
 
+  if (opt.f_mptcp == 1) {
+#if MPTCP_ENABLED
+    if (safe_setsockopt(fd, IPPROTO_TCP, MPTCP_ENABLED, SOCKOPT_ON, sizeof(int)) < 0) {
+      Error("[Server::listen] Unable to enable MPTCP socket-option [%d] %s\n", errno, strerror(errno));
+      goto Lerror;
+    }
+#else
+    Error("[Server::listen] Multipath TCP requested but not configured on this host\n");
+#endif
+  }
+
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && !opt.f_mptcp && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+  if (opt.defer_accept > 0 && (opt.f_mptcp != MPTCP_V1) &&
+      setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
     // FIXME: should we go to the error
     // goto error;
     Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
@@ -343,7 +356,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     ats_ip_copy(&addr, &accept_addr);
   }
 
-  if (opt.f_mptcp) {
+  if (opt.f_mptcp == MPTCP_V1) {
     Debug("connection", "Define socket with MPTCP");
     prot = IPPROTO_MPTCP;
   }

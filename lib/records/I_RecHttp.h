@@ -264,8 +264,8 @@ public:
   bool m_outbound_transparent_p = false;
   // True if transparent pass-through is enabled on this port.
   bool m_transparent_passthrough = false;
-  /// True if MPTCP is enabled on this port.
-  bool m_mptcp = false;
+  /// [1, 2] if MPTCP is enabled on this port.
+  int m_mptcp = 0;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
