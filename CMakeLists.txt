@@ -352,7 +352,9 @@ if(EXTERNAL_YAML_CPP)
   message(STATUS "Looking for external yaml-cpp")
   find_package(yaml-cpp "0.8.0" REQUIRED)
   set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
-  FIND_PACKAGE_MESSAGE(yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}")
+  find_package_message(
+    yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}"
+  )
 endif()
 
 # curl is used in traffic_top
