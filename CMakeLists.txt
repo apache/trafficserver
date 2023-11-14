@@ -351,6 +351,8 @@ set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
 if(EXTERNAL_YAML_CPP)
   message(STATUS "Looking for external yaml-cpp")
   find_package(yaml-cpp "0.8.0" REQUIRED)
+  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
+  FIND_PACKAGE_MESSAGE(yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}")
 endif()
 
 # curl is used in traffic_top
@@ -560,8 +562,6 @@ add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-string
 if(NOT EXTERNAL_YAML_CPP)
   include(subproject_version)
   subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
-else()
-  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
 endif()
 
 set(rel_cachedir var/trafficserver)
