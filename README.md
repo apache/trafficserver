@@ -270,15 +270,15 @@ follow the instructions:
 ```
 tar jxvf trafficserver-9.1.3.tar.bz2
 cd trafficserver-9.1.3
-./configure            # configure the build environment to create Makefiles
-make                   # execute the compile
+cmake -B build
+cmake --build build
 ```
 
 This will build with a destination prefix of /usr/local. You can finish
 the installation with
 
 ```
-sudo make install
+sudo cmake --install build
 ```
 
 
