@@ -20,7 +20,7 @@
 
 #define PLUGIN_NAME "uri_signing"
 
-#ifdef URI_SIGNING_UNIT_TEST
+#ifdef UNITTEST
 #include <stdio.h>
 #include <stdarg.h>
 
