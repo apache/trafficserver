@@ -85,9 +85,7 @@ run_session(void *arg)
     return nullptr;
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
   SSL_set_max_proto_version(ssl, TLS1_2_VERSION);
-#endif
 
   SSL_set_fd(ssl, sfd);
 

@@ -188,7 +188,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 }
 
 static SSL_SESSION *
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 #else
 ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
@@ -619,28 +619,6 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
   return ctx;
 }
 
-// SSL_CTX_set_ecdh_auto() is removed by OpenSSL v1.1.0 and ECDH is enabled in default.
-// TODO: remove this function when we drop support of OpenSSL v1.0.2* and lower.
-static SSL_CTX *
-ssl_context_enable_ecdh(SSL_CTX *ctx)
-{
-#if OPENSSL_VERSION_NUMBER < 0x10100000
-
-#if defined(SSL_CTX_set_ecdh_auto)
-  SSL_CTX_set_ecdh_auto(ctx, 1);
-#elif defined(NID_X9_62_prime256v1)
-  EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-
-  if (ecdh) {
-    SSL_CTX_set_tmp_ecdh(ctx, ecdh);
-    EC_KEY_free(ecdh);
-  }
-#endif /* SSL_CTRL_SET_ECDH_AUTO */
-#endif /* OPENSSL_VERSION_NUMBER */
-
-  return ctx;
-}
-
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
@@ -845,7 +823,7 @@ ssl_private_key_validate_exec(const char *cmdLine)
   return bReturn;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 #define ssl_malloc(size, file, line)             ssl_malloc(size)
 #define ssl_realloc(ptr, size, file, line)       ssl_realloc(ptr, size)
 #define ssl_free(ptr, file, line)                ssl_free(ptr)
@@ -1365,8 +1343,6 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     if (!ssl_context_enable_dhe(_params->dhparamsFile, ctx)) {
       goto fail;
     }
-
-    ssl_context_enable_ecdh(ctx);
 
     if (sslMultCertSettings && sslMultCertSettings->dialog) {
       SSLMultiCertConfigLoader::clear_pw_references(ctx);

@@ -71,13 +71,7 @@ static void
 x509_expand_signature(X509 *x509, BIO *bio)
 {
   const ASN1_BIT_STRING *sig;
-#if OPENSSL_VERSION_NUMBER >= 0x010100000
   X509_get0_signature(&sig, nullptr, x509);
-#elif OPENSSL_VERSION_NUMBER >= 0x010002000
-  X509_get0_signature(const_cast<ASN1_BIT_STRING **>(&sig), nullptr, x509);
-#else
-  sig = x509->signature;
-#endif
   const char *ptr = reinterpret_cast<const char *>(sig->data);
   const char *end = ptr + sig->length;
 

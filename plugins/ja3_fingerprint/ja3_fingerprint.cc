@@ -130,90 +130,6 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
   return res[0] ? res : nullptr;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-// Parsing clientHello to get ja3 string
-// No error checking or handling because this should be called after openSSL has done all checks and
-// returned successfully
-static std::string
-custom_get_ja3(SSL *s)
-{
-  Dbg(dbg_ctl, "Entering custom_get_ja3()...");
-  std::string ja3;
-  const unsigned char *p, *d;
-  int i, j, len;
-
-  // ClientHello buf and len
-  d = p  = (unsigned char *)s->init_msg;
-  long n = s->init_num;
-
-  // Get version
-  int version  = (((int)p[0]) << 8) | (int)p[1];
-  ja3         += std::to_string(version) + ',';
-  p           += 2;
-
-  // Skip client random
-  p += SSL3_RANDOM_SIZE;
-
-  // Skip session id
-  j  = *(p++);
-  p += j;
-
-  // No DTLS handling
-
-  // Get cipher suites
-  n2s(p, len);
-  custom_get_ja3_prefixed(2, p, len, ja3);
-  ja3 += ',';
-
-  // Skip compression
-  i  = *(p++);
-  p += i;
-
-  // Get extensions
-  uint16_t type;
-  int size;
-  std::string eclist, ecpflist;
-
-  // Skip length blob
-  p          += 2;
-  bool first  = true;
-  while (p < d + n) {
-    // Each extension blob is comprised of [2bytes] type + [2bytes] size + [size bytes] data
-    n2s(p, type);
-    n2s(p, size);
-
-    // Elliptic curve points
-    if (type == 0x0a) {
-      const unsigned char *sdata = p;
-      n2s(sdata, len);
-      custom_get_ja3_prefixed(2, sdata, len, eclist);
-    }
-    // Elliptic curve point formats
-    else if (type == 0x0b) {
-      const unsigned char *sdata = p;
-      len                        = *(sdata++);
-      custom_get_ja3_prefixed(1, sdata, len, ecpflist);
-    }
-
-    // Update pointer
-    p += size;
-
-    // Update ja3 string with valid extension type
-    if (GREASE_table.find(type) == GREASE_table.end()) {
-      if (!first) {
-        ja3 += '-';
-      }
-      first  = false;
-      ja3   += std::to_string(type);
-    }
-  }
-
-  // Append eclist and ecpflist
-  ja3 += "," + eclist + "," + ecpflist;
-  Dbg(dbg_ctl, "ja3 string: %s", ja3.c_str());
-  return ja3;
-}
-#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
 static std::string
 custom_get_ja3(SSL *s)
 {
@@ -262,9 +178,6 @@ custom_get_ja3(SSL *s)
   ja3 += "," + eclist + "," + ecpflist;
   return ja3;
 }
-#else
-#error OpenSSL cannot be 1.1.0
-#endif
 
 // This function will append value to the last occurrence of field. If none exists, it will
 // create a field and append to the headers
@@ -295,14 +208,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   switch (event) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  case TS_EVENT_SSL_SERVERNAME: {
-#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   case TS_EVENT_SSL_CLIENT_HELLO: {
-#else
-#error OpenSSL cannot be 1.1.0
-#endif
-
     TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
 
     // OpenSSL handle
@@ -452,13 +358,7 @@ TSPluginInit(int argc, const char *argv[])
     // SNI handler
     TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
     TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "used to pass ja3", &ja3_idx);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
-#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
     TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, ja3_cont);
-#else
-#error OpenSSL cannot be 1.1.0
-#endif
     TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, ja3_cont);
     TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(req_hdr_ja3_handler, nullptr));
   }
@@ -481,13 +381,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   // Set up SNI handler for all TLS connections
   TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
   TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
-#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, ja3_cont);
-#else
-#error OpenSSL cannot be 1.1.0
-#endif
   TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, ja3_cont);
 
   return TS_SUCCESS;

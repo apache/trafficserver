@@ -44,11 +44,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 char *
 asn1_string_extract(ASN1_STRING *s)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x010100000
   return reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(s)));
-#else
-  return reinterpret_cast<char *>(ASN1_STRING_data(s));
-#endif
 }
 
 // For 1.0.2, needs access to internal structure
@@ -121,7 +117,7 @@ dump_context(const char *ca_path, const char *ck_path)
 
         // Serial number
         int64_t sn = 0;
-#if !defined(OPENSSL_IS_BORINGSSL) && (OPENSSL_VERSION_NUMBER >= 0x010100000)
+#if !defined(OPENSSL_IS_BORINGSSL)
         ASN1_INTEGER_get_int64(&sn, serial);
 #else
         sn = ASN1_INTEGER_get(serial);

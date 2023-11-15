@@ -249,7 +249,6 @@ KvpAccessToken::parse(const StringView token)
 KvpAccessTokenBuilder::KvpAccessTokenBuilder(const KvpAccessTokenConfig &config, const StringMap &secretsMap)
   : _config(config), _secretsMap(secretsMap)
 {
-  cryptoMagicInit();
 }
 
 void

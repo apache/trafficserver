@@ -163,24 +163,6 @@ urlDecode(const char *in, size_t inLen, char *out, size_t outLen)
   return dst - out;
 }
 
-/* ******* Functions using OpenSSL library ******* */
-
-void
-cryptoMagicInit()
-{
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  OpenSSL_add_all_digests(); /* needed for EVP_get_digestbyname() */
-#endif
-}
-
-void
-cryptoMagicCleanup()
-{
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  EVP_cleanup();
-#endif
-}
-
 /**
  * @brief a helper function to get a human-readable error message in a buffer.
  *

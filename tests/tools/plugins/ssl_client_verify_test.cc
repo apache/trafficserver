@@ -69,12 +69,8 @@ check_names(X509 *cert)
 
       X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
       ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-#if OPENSSL_VERSION_NUMBER >= 0x010100000
-      char *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
-#else
-      char *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_data(cn)), ASN1_STRING_length(cn));
-#endif
-      retval = check_name(subj_name);
+      char *subj_name    = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
+      retval             = check_name(subj_name);
       free(subj_name);
     }
   }
@@ -89,11 +85,7 @@ check_names(X509 *cert)
         name = sk_GENERAL_NAME_value(names, i);
         if (name->type == GEN_DNS) {
           char *dns =
-#if OPENSSL_VERSION_NUMBER >= 0x010100000
             strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(name->d.dNSName)), ASN1_STRING_length(name->d.dNSName));
-#else
-            strndup(reinterpret_cast<const char *>(ASN1_STRING_data(name->d.dNSName)), ASN1_STRING_length(name->d.dNSName));
-#endif
           retval = check_name(dns);
           free(dns);
         }
