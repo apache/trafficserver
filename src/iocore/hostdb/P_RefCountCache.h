@@ -86,7 +86,7 @@ public:
   // Need a no-argument constructor to use the classAllocator
   RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), meta(0, 0) {}
   void
-  set(RefCountObj *i, uint64_t key, unsigned int size, int expire_time)
+  set(RefCountObj *i, uint64_t key, unsigned int size, time_t expire_time)
   {
     this->item = make_ptr(i);
     this->meta = RefCountCacheItemMeta(key, size, expire_time);
@@ -165,7 +165,7 @@ public:
 
   RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RefCountCacheBlock *rsb = nullptr);
   Ptr<C> get(uint64_t key);
-  void put(uint64_t key, C *item, int size = 0, int expire_time = 0);
+  void put(uint64_t key, C *item, int size = 0, time_t expire_time = 0);
   void erase(uint64_t key, ink_time_t expiry_time = -1);
 
   void clear();
@@ -216,7 +216,7 @@ RefCountCachePartition<C>::get(uint64_t key)
 
 template <class C>
 void
-RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
+RefCountCachePartition<C>::put(uint64_t key, C *item, int size, time_t expire_time)
 {
   Metrics::Counter::increment(this->rsb->refcountcache_total_inserts);
   size += sizeof(C);
@@ -236,7 +236,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
 
   // add expiry_entry to expiry queue, if the expire time is positive (otherwise it means don't expire)
   if (expire_time >= 0) {
-    Dbg(dbg_ctl, "partition %d adding entry with expire_time=%d\n", this->part_num, expire_time);
+    Dbg(dbg_ctl, "partition %d adding entry with expire_time=%" PRId64, this->part_num, expire_time);
     PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = expiryQueueEntry.alloc();
     new ((void *)expiry_entry) PriorityQueueEntry<RefCountCacheHashEntry *>(val);
     expiry_queue.push(expiry_entry);
