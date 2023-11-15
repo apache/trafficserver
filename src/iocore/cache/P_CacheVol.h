@@ -26,6 +26,7 @@
 #include "P_CacheDir.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
+#include "iocore/cache/AggregateWriteBuffer.h"
 
 #include "tscore/CryptoHash.h"
 
@@ -75,7 +76,7 @@
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 struct Cache;
-struct Stripe;
+class Stripe;
 struct CacheDisk;
 struct StripeInitInfo;
 struct DiskStripe;
@@ -127,7 +128,9 @@ struct EvacuationBlock {
   LINK(EvacuationBlock, link);
 };
 
-struct Stripe : public Continuation {
+class Stripe : public Continuation
+{
+public:
   char *path = nullptr;
   ats_scoped_str hash_text;
   CryptoHash hash_id;
@@ -149,11 +152,7 @@ struct Stripe : public Continuation {
   int hit_evacuate_window     = 0;
   AIOCallbackInternal io;
 
-  Queue<CacheVC, Continuation::Link_link> agg;
   Queue<CacheVC, Continuation::Link_link> sync;
-  char *agg_buffer  = nullptr;
-  int agg_todo_size = 0;
-  int agg_buf_pos   = 0;
 
   Event *trigger = nullptr;
 
@@ -276,18 +275,23 @@ struct Stripe : public Continuation {
   Stripe() : Continuation(new_ProxyMutex())
   {
     open_dir.mutex = mutex;
-    agg_buffer     = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
-    memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Stripe::aggWrite);
   }
 
-  ~Stripe() override { ats_free(agg_buffer); }
+  Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
+  char *get_agg_buffer();
+  int get_agg_buf_pos() const;
+  void reset_agg_buf_pos();
+  int get_agg_todo_size() const;
+  void add_agg_todo(int size);
 
 private:
   void _clear_init();
   void _init_dir();
   void _init_data_internal();
   void _init_data();
+
+  AggregateWriteBuffer _write_buffer;
 };
 
 struct AIO_failure_handler : public Continuation {
@@ -402,7 +406,7 @@ Stripe::vol_out_of_phase_write_valid(Dir *e) const
 inline int
 Stripe::vol_in_phase_valid(Dir *e) const
 {
-  return (dir_offset(e) - 1 < ((this->header->write_pos + this->agg_buf_pos - this->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 < ((this->header->write_pos + this->_write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline off_t
@@ -426,7 +430,8 @@ Stripe::vol_offset_to_offset(off_t pos) const
 inline int
 Stripe::vol_in_phase_agg_buf_valid(Dir *e) const
 {
-  return (this->vol_offset(e) >= this->header->write_pos && this->vol_offset(e) < (this->header->write_pos + this->agg_buf_pos));
+  return (this->vol_offset(e) >= this->header->write_pos &&
+          this->vol_offset(e) < (this->header->write_pos + this->_write_buffer.get_buffer_pos()));
 }
 
 // length of the partition not including the offset of location 0.
@@ -554,4 +559,40 @@ inline void
 Stripe::set_io_not_in_progress()
 {
   io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
+}
+
+inline Queue<CacheVC, Continuation::Link_link> &
+Stripe::get_pending_writers()
+{
+  return this->_write_buffer.get_pending_writers();
+}
+
+inline char *
+Stripe::get_agg_buffer()
+{
+  return this->_write_buffer.get_buffer();
+}
+
+inline int
+Stripe::get_agg_buf_pos() const
+{
+  return this->_write_buffer.get_buffer_pos();
+}
+
+inline void
+Stripe::reset_agg_buf_pos()
+{
+  this->_write_buffer.reset_buffer_pos();
+}
+
+inline int
+Stripe::get_agg_todo_size() const
+{
+  return this->_write_buffer.get_bytes_pending_aggregation();
+}
+
+inline void
+Stripe::add_agg_todo(int size)
+{
+  this->_write_buffer.add_bytes_pending_aggregation(size);
 }

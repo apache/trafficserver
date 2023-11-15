@@ -31,7 +31,7 @@
 // aio
 #include "iocore/aio/AIO.h"
 
-struct Stripe;
+class Stripe;
 struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
