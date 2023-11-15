@@ -157,7 +157,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 #endif
 
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/src/iocore/cache/unit_tests";
-    Layout::get()->sysconfdir = src_dir;
+    Layout::get()->sysconfdir = std::move(src_dir);
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
