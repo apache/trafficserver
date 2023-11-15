@@ -36,7 +36,7 @@ std::string
 hex_str(std::string const &str)
 {
   std::string hex_str;
-  hex_str.reserve(str.size() * 2);
+  hex_str.resize(str.size() * 2);
   for (unsigned long int i = 0; i < str.size(); ++i) {
     unsigned char c    = str.at(i);
     hex_str[i * 2]     = hex_chars[(c & 0xF0) >> 4];
