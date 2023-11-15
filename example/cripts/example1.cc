@@ -32,15 +32,15 @@ do_init()
 
 do_create_instance()
 {
-  instance.metrics[0] = Metrics::Sum::create("cript.example1.c0");
-  instance.metrics[1] = Metrics::Sum::create("cript.example1.c1");
-  instance.metrics[2] = Metrics::Sum::create("cript.example1.c2");
-  instance.metrics[3] = Metrics::Sum::create("cript.example1.c3");
-  instance.metrics[4] = Metrics::Sum::create("cript.example1.c4");
-  instance.metrics[5] = Metrics::Sum::create("cript.example1.c5");
-  instance.metrics[6] = Metrics::Sum::create("cript.example1.c6");
-  instance.metrics[7] = Metrics::Sum::create("cript.example1.c7");
-  instance.metrics[8] = Metrics::Sum::create("cript.example1.c8"); // This one should resize() the storage
+  instance.metrics[0] = Metrics::Counter::create("cript.example1.c0");
+  instance.metrics[1] = Metrics::Counter::create("cript.example1.c1");
+  instance.metrics[2] = Metrics::Counter::create("cript.example1.c2");
+  instance.metrics[3] = Metrics::Counter::create("cript.example1.c3");
+  instance.metrics[4] = Metrics::Counter::create("cript.example1.c4");
+  instance.metrics[5] = Metrics::Counter::create("cript.example1.c5");
+  instance.metrics[6] = Metrics::Counter::create("cript.example1.c6");
+  instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
+  instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
 
   Bundle::Common::activate().dscp(10).cache_control("max-age=259200");
 }
@@ -229,10 +229,11 @@ do_remap()
   }
 
   // Testing some simple metrics
-  static auto m1 = Metrics::Sum("cript.example1`.m1");
-  static auto m2 = Metrics::Counter("cript.example1`.m2");
+  static auto m1 = Metrics::Gauge("cript.example1.m1");
+  static auto m2 = Metrics::Counter("cript.example1.m2");
 
   m1.increment(100);
+  m1.decrement(10);
   m2.increment();
 
   instance.metrics[0]->increment();

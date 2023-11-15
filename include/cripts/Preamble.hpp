@@ -25,15 +25,15 @@
 #include <chrono>
 #include <climits>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
-
 #include <fmt/core.h>
 
-#include <cripts/Lulu.hpp>
-#include <cripts/Instance.hpp>
-#include <cripts/Error.hpp>
-#include <cripts/Transaction.hpp>
+#include "ts/ts.h"
+#include "ts/remap.h"
+
+#include "cripts/Lulu.hpp"
+#include "cripts/Instance.hpp"
+#include "cripts/Error.hpp"
+#include "cripts/Transaction.hpp"
 
 // This makes it nice and clean when the user of the framework defines the handlers in the cript.
 #define do_remap()           void _do_remap(Cript::Context *context)
@@ -47,24 +47,24 @@
 #define do_create_instance() void _do_create_instance(Cript::InstanceContext *context)
 #define do_delete_instance() void _do_delete_instance(Cript::InstanceContext *context)
 
-#include <cripts/Headers.hpp>
-#include <cripts/Urls.hpp>
-#include <cripts/Configs.hpp>
-#include <cripts/Connections.hpp>
-#include <cripts/UUID.hpp>
-#include <cripts/Matcher.hpp>
-#include <cripts/Time.hpp>
-#include <cripts/Crypto.hpp>
-#include <cripts/Files.hpp>
-#include <cripts/Metrics.hpp>
-#include <cripts/Plugins.hpp>
+#include "cripts/Headers.hpp"
+#include "cripts/Urls.hpp"
+#include "cripts/Configs.hpp"
+#include "cripts/Connections.hpp"
+#include "cripts/UUID.hpp"
+#include "cripts/Matcher.hpp"
+#include "cripts/Time.hpp"
+#include "cripts/Crypto.hpp"
+#include "cripts/Files.hpp"
+#include "cripts/Metrics.hpp"
+#include "cripts/Plugins.hpp"
 
 // This is to make using these more convenient
 using fmt::format;
 using Cript::string;
 
 // This needs to be last
-#include <cripts/Context.hpp>
+#include "cripts/Context.hpp"
 
 // These are globals, making certain operations nice and convenient, without wasting plugin space
 extern Proxy proxy;      // Access to all overridable configurations

@@ -23,11 +23,11 @@
 #include <vector>
 #include <tuple>
 
-#include <swoc/swoc_ip.h>
+#include "swoc/swoc_ip.h"
 
-#include <ts/apidefs.h>
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/apidefs.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 namespace Matcher
 {
@@ -159,7 +159,11 @@ public:
 
     ~Result() { pcre2_match_data_free(_data); }
 
-    explicit operator bool() const { return matched(); }
+    explicit
+    operator bool() const
+    {
+      return matched();
+    }
 
     Cript::StringViewWrapper
     operator[](size_t ix) const

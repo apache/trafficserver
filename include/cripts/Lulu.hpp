@@ -20,16 +20,17 @@
 #include <random>
 #include <filesystem>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
 #include <cstring>
 #include <string>
 #include <string_view>
 #include <charconv>
 #include <type_traits>
 
-#include <swoc/TextView.h>
 #include <fmt/core.h>
+
+#include "swoc/TextView.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 // Silly typedef's for some PODs
 using integer = int64_t;

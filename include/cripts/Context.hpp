@@ -19,10 +19,10 @@
 
 #include <array>
 #include <variant>
-#include <ts/remap.h>
-#include <ts/ts.h>
+#include "ts/remap.h"
+#include "ts/ts.h"
 
-#include <cripts/Instance.hpp>
+#include "cripts/Instance.hpp"
 
 // Some compile time options
 #define USE_CONTEXT_POOL 1

@@ -21,15 +21,16 @@
 #include <string>
 #include <string_view>
 
-#include <ts/ts.h>
-#include <ts/apidefs.h>
+// #include "ts/ts.h"
+// #include "ts/apidefs.h"
+#include "tsutil/Metrics.h"
 
-#include <cripts/Lulu.hpp>
+#include "cripts/Lulu.hpp"
 
 namespace detail
 {
 
-using MetricID = int;
+using MetricID = ts::Metrics::IdType;
 
 class BaseMetrics
 {
@@ -58,8 +59,8 @@ public:
   void
   increment(int64_t inc) const
   {
-    TSReleaseAssert(_id != TS_ERROR);
-    TSStatIntIncrement(_id, inc);
+    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    _metric->increment(inc);
   }
 
   void
@@ -71,8 +72,8 @@ public:
   void
   decrement(int64_t dec) const
   {
-    TSReleaseAssert(_id != TS_ERROR);
-    TSStatIntIncrement(_id, -dec);
+    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    _metric->decrement(dec);
   }
 
   void
@@ -85,24 +86,30 @@ public:
   get() const
   {
     TSReleaseAssert(_id != TS_ERROR);
-    return TSStatIntGet(_id);
+    return _metric->load();
   }
 
   void
   set(int64_t val)
   {
     TSReleaseAssert(_id != TS_ERROR);
-    TSStatIntSet(_id, val);
+    _metric->store(val);
   }
 
-  [[nodiscard]] virtual TSStatSync sync() const = 0;
-
 protected:
-  bool initialize();
+  void
+  _initialize(detail::MetricID id)
+  {
+    static auto &instance = ts::Metrics::instance();
+
+    _id     = id;
+    _metric = instance.lookup(id);
+  }
 
 private:
-  Cript::string _name  = "unknown";
-  detail::MetricID _id = TS_ERROR;
+  ts::Metrics::AtomicType *_metric = nullptr;
+  Cript::string _name              = "unknown";
+  detail::MetricID _id             = ts::Metrics::NOT_FOUND;
 }; // class BaseMetrics
 
 } // namespace detail
@@ -115,66 +122,54 @@ class Counter : public detail::BaseMetrics
   using self_type  = Counter;
 
 public:
-  Counter(const Cript::string_view &name) : super_type(name) { super_type::initialize(); }
+  Counter(const Cript::string_view &name) : super_type(name) {}
 
-  using super_type::increment;
-  using super_type::decrement;
-  // Counters can only increment /decrement by 1
-  void increment(int64_t) = delete;
+  // Counters can only increment, so lets produce some nice compile time erorrs too
   void decrement(int64_t) = delete;
-
-  template <typename T>
-  void
-  increment(T)
-  {
-    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use increment(), consider Metric::Sum instead?");
-  }
+  void set(int64_t val)   = delete;
 
   template <typename T>
   void
   decrement(T)
   {
-    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use decrement(), consider Metric::Sum instead?");
+    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use decrement(), consider Metric::Gauge instead?");
   }
 
-  [[nodiscard]] TSStatSync
-  sync() const override
+  template <typename T>
+  void
+  set(T)
   {
-    return TSStatSync::TS_STAT_SYNC_COUNT;
+    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can not be set to a value), consider Metric::Gauge instead?");
   }
 
   static self_type *
   create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
+    auto id   = ts::Metrics::Counter::create(name);
 
-    TSReleaseAssert(ret->id() != TS_ERROR);
+    ret->_initialize(id);
 
     return ret;
   }
 
 }; // class Counter
 
-class Sum : public detail::BaseMetrics
+class Gauge : public detail::BaseMetrics
 {
   using super_type = detail::BaseMetrics;
-  using self_type  = Sum;
+  using self_type  = Gauge;
 
 public:
-  Sum(const Cript::string_view &name) : super_type(name) { super_type::initialize(); }
-
-  [[nodiscard]] TSStatSync
-  sync() const override
-  {
-    return TSStatSync::TS_STAT_SYNC_SUM;
-  }
+  Gauge(const Cript::string_view &name) : super_type(name) {}
 
   static self_type *
   create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
+    auto id   = ts::Metrics::Gauge::create(name);
 
-    TSReleaseAssert(ret->id() != TS_ERROR);
+    ret->_initialize(id);
 
     return ret;
   }

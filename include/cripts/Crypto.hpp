@@ -25,8 +25,8 @@
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 namespace Crypto
 {

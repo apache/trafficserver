@@ -18,8 +18,9 @@
 #pragma once
 
 #include <ctime>
-#include <ts/remap.h>
-#include <ts/ts.h>
+
+#include "ts/remap.h"
+#include "ts/ts.h"
 
 // This is lame, but until C++20, we're missing important features from
 // std::chrono :-/ Todo: Rewrite this with std::chrono when it has things like
