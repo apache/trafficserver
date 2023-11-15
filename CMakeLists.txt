@@ -191,10 +191,6 @@ set(MAX_THREADS_PER_TYPE
     3072
     CACHE STRING "Max number of threads per event type (default 3072)"
 )
-set(TS_USE_SET_RBIO
-    1
-    CACHE STRING "Use openssl set_rbio (default 1)"
-)
 set(TS_USE_DIAGS
     1
     CACHE STRING "Use diags (default 1)"

@@ -195,7 +195,6 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_POSIX_CAP
 #cmakedefine01 TS_USE_QUIC
 #cmakedefine01 TS_USE_REMOTE_UNWINDING
-#cmakedefine01 TS_USE_SET_RBIO
 #cmakedefine01 TS_USE_TLS13
 #cmakedefine01 TS_USE_TLS_ASYNC
 #cmakedefine01 TS_USE_TPROXY

@@ -59,7 +59,6 @@
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
-#include "iocore/net/SSLInternal.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/Plugin.h"

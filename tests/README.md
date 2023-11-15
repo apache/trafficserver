@@ -342,7 +342,6 @@ ts.Disk.remap_config.AddLine(
  * TS_HAS_SO_MARK
  * TS_HAS_IP_TOS
  * TS_USE_HWLOC
- * TS_USE_SET_RBIO
  * TS_USE_TLS13
  * TS_USE_QUIC
  * TS_HAS_QUICHE
