@@ -320,14 +320,6 @@ cmake --build build-default -t test       # run tests (optional)
 cmake --install build-default             # install
 ```
 
-### Instructions for building on FreeBSD
-
-The only difference is how to run configure and make:
-```
-MAKE=gmake ./configure # make sure that gmake is the make we use
-gmake
-```
-
 ## INSTALLATION
 
 ```
