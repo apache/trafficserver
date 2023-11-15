@@ -45,8 +45,6 @@ man_pages = [
         u'Traffic Server Via header decoder', None, '1'),
     ('appendices/command-line/tspush.en', 'tspush',
         u'Push objects into the Traffic Server cache', None, '1'),
-    ('appendices/command-line/tsxs.en', 'tsxs',
-        u'Traffic Server plugin tool', None, '1'),
 
     # Add all files in the admin-guide/files directory to the list
     # of manual pages

@@ -114,13 +114,6 @@ msgstr ""
 msgid "Restart Traffic Server"
 msgstr ""
 
-#: ../../developer-guide/plugins/getting-started/a-simple-plugin.en.rst:43
-msgid ""
-"The process for compiling a shared library varies with the platform used, "
-"so the Traffic Server API provides the tsxs tool which you can use to "
-"create shared libraries on all the supported Traffic Server platforms."
-msgstr ""
-
 #: ../../developer-guide/plugins/getting-started/a-simple-plugin.en.rst:60
 msgid "This shared library will be your plugin. In order to install it, run"
 msgstr ""
@@ -150,8 +143,4 @@ msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/a-simple-plugin.en.rst:66
 msgid "or the equivalent to ``sudo`` on your platform."
-msgstr ""
-
-#: ../../developer-guide/plugins/getting-started/a-simple-plugin.en.rst:58
-msgid "tsxs can be found in ``trafficserver-dev`` package."
 msgstr ""

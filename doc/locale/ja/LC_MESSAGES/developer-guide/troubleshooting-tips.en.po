@@ -39,13 +39,6 @@ msgstr ""
 msgid "Example"
 msgstr "例"
 
-#: ../../developer-guide/troubleshooting-tips.en.rst:35
-msgid ""
-"The process for compiling a shared library varies with the platform used, "
-"so the Traffic Server API includes the :program:`tsxs` script you can use "
-"to create shared libraries on all supported Traffic Server platforms."
-msgstr ""
-
 #: ../../developer-guide/troubleshooting-tips.en.rst:21
 msgid "This appendix lists the following troubleshooting tips."
 msgstr ""

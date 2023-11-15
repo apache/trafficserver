@@ -52,18 +52,8 @@ msgid ""
 "when building |TS|::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:40
-msgid ""
-"Or use :program:`tsxs` to compile the plugin against your current |TS| "
-"build. To do this, you must ensure that:"
-msgstr ""
-
 #: ../../../admin-guide/plugins/url_sig.en.rst:43
 msgid "Development packages for |TS| are installed."
-msgstr ""
-
-#: ../../../admin-guide/plugins/url_sig.en.rst:45
-msgid "The :program:`tsxs` binary is in your path."
 msgstr ""
 
 #: ../../../admin-guide/plugins/url_sig.en.rst:47

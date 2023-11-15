@@ -36,26 +36,9 @@ if there were no query string at all.
 Installation
 ============
 
-To make this plugin available, you must either enable experimental plugins
-when building |TS|::
+To make this plugin available, you must enable experimental plugins
 
     ./configure --enable-experimental-plugins
-
-Or use :program:`tsxs` to compile the plugin against your current |TS| build.
-To do this, you must ensure that:
-
-#. Development packages for |TS| are installed.
-
-#. The :program:`tsxs` binary is in your path.
-
-#. The version of this plugin you are building, and the version of |TS| against
-   which you are building it are compatible.
-
-Once those conditions are satisfied, enter the source directory for the plugin
-and perform the following::
-
-    make -f Makefile.tsxs
-    make -f Makefile.tsxs install
 
 Configuration
 =============
