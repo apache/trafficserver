@@ -199,9 +199,8 @@ trafficserver ............. Top src dir
 
 ### Fedora / CentOS / RHEL:
 ```
-autoconf
-automake
-libtool
+cmake
+ninja
 pkgconfig
 gcc/g++ or clang/clang++
 openssl-devel
@@ -213,9 +212,8 @@ hwloc-devel (optional, highly recommended)
 
 ### Ubuntu / Debian
 ```
-autoconf
-automake
-libtool
+cmake
+ninja
 pkg-config
 gcc/g++ or clang/clang++
 zlib1g-dev
@@ -233,44 +231,30 @@ build-base
 libexecinfo-dev
 pcre-dev
 libressl-dev
-autoconf
-automake
-libtool
+cmake
+ninja
 linux-headers
 ```
 
 ### macOS (we recommend HomeBrew):
 ```
-autoconf
-automake
+cmake
+ninja
 pkg-config
-libtool
 openssl
 pcre
 ```
 
 ### FreeBSD
 ```
+cmake
+ninja
 devel/gmake
-devel/autoconf
-devel/automake
 devel/pkgconf
-devel/libtool
 security/openssl
 devel/pcre
 textproc/flex (optional, install newer version from ports, fix PATH)
 devel/hwloc (optional, highly recommended)
-```
-
-### OmniOS:
-```
-developer/gcc46
-developer/build/gnu-make
-developer/build/autoconf
-developer/build/automake-111
-developer/build/libtool
-library/security/openssl
-library/pcre
 ```
 
 ## Building from distribution
@@ -303,9 +287,10 @@ sudo make install
 ```
 git clone https://github.com/apache/trafficserver.git   # get the source code from ASF Git repository
 cd trafficserver                                        # enter the checkout directory
-autoreconf -if                                          # generate the configure script and Makefile.in files
-./configure                                             # configure the build environment to create Makefiles
-make                                                    # execute the compile
+cmake --preset default                                  # configure the build
+cmake --build build-default                             # execute the compile
+cmake --build build-default -t test                     # run tests (optional)
+cmake --install build-default                           # install
 ```
 
 ## Instructions for building on EC2
@@ -317,20 +302,22 @@ mkdir -p /mnt          #EC2 Storage Mount, where storage is located
 cd /mnt
 git clone ...          # get the source code from ASF Git repo
 cd trafficserver       # enter the checkout dir
-autoreconf -i --force  # generate the configure script and Makefile.in files
-./configure
-make
+cmake --preset default                                  # configure the build
+cmake --build build-default                                   # execute the compile
+cmake --build build-default -t test
+cmake --install build-default
 ```
 
 ### As root do the following when using Fedora Core 8 kernel
 ```
-mkdir -p /mnt          #EC2 Storage Mount, where storage is located
+mkdir -p /mnt                             #EC2 Storage Mount, where storage is located
 cd /mnt
-git clone ...          # get the source code from ASF Git repo
-cd trafficserver       # enter the checkout dir
-autoreconf -i --force  # generate the configure script and Makefile.in files
-./configure --disable-eventfd
-make
+git clone ...                             # get the source code from ASF Git repo
+cd trafficserver                          # enter the checkout dir
+cmake --preset default                    # configure the build
+cmake --build build-default               # execute the compile
+cmake --build build-default -t test       # run tests (optional)
+cmake --install build-default             # install
 ```
 
 ### Instructions for building on FreeBSD

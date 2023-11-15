@@ -100,10 +100,10 @@ Build Dependencies
 In order to build Traffic Server from source you will need the following
 development tools and libraries installed:
 
+-  cmake
+-  ninja
 -  pkgconfig
--  libtool
 -  gcc (>= 4.3 or clang > 3.0)
--  GNU make
 -  openssl (libssl-dev for Ubuntu 16.04)
 -  pcre (libpcre3-dev for Ubuntu 16.04)
 -  libcap
@@ -116,78 +116,67 @@ development tools and libraries installed:
 If you're building from a git clone, you'll also need:
 
 -  git
--  autoconf
--  automake
+-  cmake
+-  ninja
 -  build-essential (for Ubuntu)
--  libtool (for Ubuntu)
-
-.. _admin-layouts:
-
-Layouts
--------
-
-.. _admin-preparing-the-source-tree:
-
-Preparing the Source Tree
--------------------------
-
-If you are building from a checkout of the Git repository, you will need to
-prepare the source tree by regenerating the configuration scripts. This is
-performed by running::
-
-    autoreconf -if
-
-At the base directory of your local clone.
 
 .. _admin-configuration-options:
 
 Configuration Options
 ---------------------
 
-|TS| uses the standard ``configure`` script method of configuring the source
-tree for building. A full list of available options may always be obtained by
-running the following in the base directory of your unpackaged archive or Git
-working copy::
+|TS| uses ``cmake`` for building from source.  You must specify a build
+directory to get started.
 
-    ./configure --help
+    cmake -B build
 
-#. A ``configure`` script will be generated from ``configure.ac`` which may now
-   be used to configure the source tree for your build. ::
+#. You can configure the build interactively by running ``ccmake``
 
-    ./configure --prefix=/opt/ats
+    ccmake build
 
    By default, Traffic Server will be built to use the ``nobody`` user and group.
-   You may change this with the ``--with-user`` argument to ``configure``::
+   You may change this by setting the ``WITH_USER`` variable::
 
-    ./configure --prefix=/opt/ats --with-user=tserver
+    cmake -B build -DWITH_USER=tserver
 
    If dependencies are not in standard paths (``/usr/local`` or ``/usr``),
-   you may need to pass options to ``configure`` to account for that::
+   you may need to pass options to ``cmake`` to account for that::
 
-    ./configure --prefix=/opt/ats --with-lua=/opt/csw
-
-   Most ``configure`` path-options accept a format of "*INCLUDE_PATH*:*LIBRARY_PATH*"::
-
-    ./configure --prefix=/opt/ats --with-pcre=/opt/csw/include:/opt/csw/lib/amd64
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/ats luajit_ROOT=/opt/csw
 
    If you build |TS| with LLVM toolchain installed in optional path, you need to specify
-   all of them explicitly in some cases. - e.g. ThinLTO by ``--enable-lto``::
+   all of them explicitly in some cases.
 
-    ./configure --prefix=/opt/ats --enable-lto CC=/opt/bin/clang CXX=/opt/bin/clang++ LD=/opt/bin/ld.lld AR=/opt/bin/llvm-ar NM=/opt/bin/llvm-nm RANLIB=/opt/bin/llvm-ranlib
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/ats CC=/opt/bin/clang CXX=/opt/bin/clang++ LDFLAGS=-fuse-ld=lld
+
+   To enable LTO builds, you can set the variable ``CMAKE_INTERPROCEDURAL_OPTIMIZATION`` to ``ON``
+
+   You might be interested in using cmake presets to configure your build.
+   Using presets allows you to save various configurations by name.  Look at the
+   ``CMakePresets.json`` file for examples.  You can add local presets by
+   creating a ``CMakeUserPresets.json`` file.  Here is an example of building
+   |TS| using a preset ::
+
+    cmake --preset default
+    cmake --build build-default
+    cmake --install build-default
+
+   For more information on presets and building with cmake, please see `CMake
+   Reference Documentation <https://cmake.org/cmake/help/latest/>`_
 
 #. Once the source tree has been configured, you may proceed on to building with
-   the generated Makefiles. The ``make check`` command may be used to perform
+   the generated Makefiles. The ``test`` target may be used to perform
    sanity checks on the resulting build, prior to installation, and it is
    recommended that you use this. ::
 
-    make
-    make check
+    cmake --build build
+    cmake --build -t test
 
 #. With the source built and checked, you may now install all of the binaries,
    header files, documentation, and other artifacts to their final locations on
    your system. ::
 
-    sudo make install
+    sudo cmake --install build
 
 #. Finally, it is recommended that you run the regression test suite. Please note
    that the regression tests will only be successful with the default layout. ::
