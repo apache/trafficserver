@@ -60,7 +60,7 @@
 struct ifafilt;
 #include <net/if.h>
 
-#ifdef __has_include(<stdlib.h>)
+#if __has_include(<stdlib.h>)
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #endif
 #include <ctype.h> // NOLINT(modernize-deprecated-headers)
