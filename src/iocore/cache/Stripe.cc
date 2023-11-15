@@ -32,7 +32,6 @@ namespace
 {
 
 DbgCtl dbg_ctl_cache_init{"cache_init"};
-DbgCtl dbg_ctl_cache_dir_sync{"dir_sync"};
 
 // This is the oldest version number that is still usable.
 short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
@@ -922,8 +921,6 @@ Stripe::_init_data()
 bool
 Stripe::flush_aggregate_write_buffer()
 {
-  Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 

@@ -997,6 +997,7 @@ sync_cache_dir_on_shutdown()
     // dont worry about the cachevc s in the agg queue
     // directories have not been inserted for these writes
     if (vol->get_agg_buf_pos()) {
+      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", vol->hash_text.get());
       vol->flush_aggregate_write_buffer();
     }
 
