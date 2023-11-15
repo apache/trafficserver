@@ -18,7 +18,7 @@
 
 #include "common.h"
 
-#ifdef URI_SIGNING_UNIT_TEST
+#ifdef UNITTEST
 
 void
 PrintToStdErr(const char *fmt, ...)
