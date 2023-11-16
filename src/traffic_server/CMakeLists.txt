@@ -38,7 +38,7 @@ target_link_libraries(
           ts::inknet
           ts::records
           ts::inkevent
-          libswoc
+          libswoc::libswoc
           ts::jsonrpc_protocol
           ts::jsonrpc_server
           ts::rpcpublichandlers

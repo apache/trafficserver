@@ -17,4 +17,4 @@
 
 add_autest_plugin(jsonrpc_plugin_handler_test jsonrpc_plugin_handler_test.cc)
 
-target_link_libraries(jsonrpc_plugin_handler_test PRIVATE jsonrpc_protocol libswoc)
+target_link_libraries(jsonrpc_plugin_handler_test PRIVATE jsonrpc_protocol libswoc::libswoc)

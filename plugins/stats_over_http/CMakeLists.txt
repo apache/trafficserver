@@ -17,7 +17,7 @@
 
 add_atsplugin(stats_over_http stats_over_http.cc)
 
-target_link_libraries(stats_over_http PRIVATE libswoc)
+target_link_libraries(stats_over_http PRIVATE libswoc::libswoc)
 
 if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(stats_over_http PRIVATE brotli::brotlienc)

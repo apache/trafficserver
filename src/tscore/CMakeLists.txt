@@ -114,7 +114,7 @@ target_link_libraries(
   tscore
   PUBLIC OpenSSL::Crypto
          PCRE::PCRE
-         libswoc
+         libswoc::libswoc
          yaml-cpp::yaml-cpp
          resolv::resolv
          ts::tsapicore
@@ -171,7 +171,7 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_tscore
-    PRIVATE libswoc
+    PRIVATE libswoc::libswoc
             ts::tscore
             ts::tsapicore
             yaml-cpp::yaml-cpp

@@ -27,7 +27,7 @@ file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/
 add_library(cripts SHARED ${CPP_FILES})
 add_library(ts::cripts ALIAS cripts)
 
-target_link_libraries(cripts libswoc fmt::fmt PkgConfig::PCRE2)
+target_link_libraries(cripts libswoc::libswoc fmt::fmt PkgConfig::PCRE2)
 
 set_target_properties(
   cripts

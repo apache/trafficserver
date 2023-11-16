@@ -19,7 +19,7 @@ project(traffic_dump)
 
 add_atsplugin(traffic_dump json_utils.cc session_data.cc traffic_dump.cc transaction_data.cc)
 
-target_link_libraries(traffic_dump PRIVATE libswoc OpenSSL::SSL)
+target_link_libraries(traffic_dump PRIVATE libswoc::libswoc OpenSSL::SSL)
 
 if(BUILD_TESTING)
   add_subdirectory(unit_tests)

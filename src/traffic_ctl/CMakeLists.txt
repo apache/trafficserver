@@ -20,6 +20,6 @@ add_executable(
               ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
 )
 
-target_link_libraries(traffic_ctl ts::tscore libswoc yaml-cpp::yaml-cpp ts::tsapicore)
+target_link_libraries(traffic_ctl ts::tscore libswoc::libswoc yaml-cpp::yaml-cpp ts::tsapicore)
 
 install(TARGETS traffic_ctl)

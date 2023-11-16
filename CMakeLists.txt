@@ -125,6 +125,7 @@ endif()
 option(ENABLE_AUTEST "Setup autest (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
+option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -355,6 +356,11 @@ if(EXTERNAL_YAML_CPP)
   find_package_message(
     yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}"
   )
+endif()
+
+if(EXTERNAL_LIBSWOC)
+  message(STATUS "Looking for external libswoc")
+  find_package(libswoc REQUIRED)
 endif()
 
 # curl is used in traffic_top

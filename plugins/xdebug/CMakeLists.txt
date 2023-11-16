@@ -16,4 +16,4 @@
 #######################
 
 add_atsplugin(xdebug xdebug.cc)
-target_link_libraries(xdebug PRIVATE libswoc)
+target_link_libraries(xdebug PRIVATE libswoc::libswoc)

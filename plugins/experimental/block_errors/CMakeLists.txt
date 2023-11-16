@@ -19,4 +19,4 @@ project(block_errors)
 
 add_atsplugin(block_errors block_errors.cc)
 
-target_link_libraries(block_errors PRIVATE libswoc)
+target_link_libraries(block_errors PRIVATE libswoc::libswoc)

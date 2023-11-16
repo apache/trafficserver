@@ -41,7 +41,7 @@ add_library(ts::inkevent ALIAS inkevent)
 target_link_libraries(
   inkevent
   PUBLIC ts::records ts::tscore
-  PRIVATE libswoc resolv::resolv # transitive
+  PRIVATE libswoc::libswoc resolv::resolv # transitive
           tscpputil # transitive
           yaml-cpp::yaml-cpp # transitive
 )
@@ -57,7 +57,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_IOBuffer ts::inkevent catch2::catch2)
 
   add_executable(test_MIOBufferWriter unit_tests/test_MIOBufferWriter.cc)
-  target_link_libraries(test_MIOBufferWriter libswoc catch2::catch2)
+  target_link_libraries(test_MIOBufferWriter libswoc::libswoc catch2::catch2)
 
   add_test(NAME test_EventSystem COMMAND test_EventSystem)
   add_test(NAME test_IOBuffer COMMAND test_IOBuffer)

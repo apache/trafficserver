@@ -54,11 +54,11 @@ if(BUILD_TESTING)
   add_test(NAME test_http2 COMMAND test_http2)
 
   add_executable(test_Http2DependencyTree unit_tests/test_Http2DependencyTree.cc)
-  target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc)
+  target_link_libraries(test_Http2DependencyTree PRIVATE catch2::catch2 tscore libswoc::libswoc)
   add_test(NAME test_Http2DependencyTree COMMAND test_Http2DependencyTree)
 
   add_executable(test_Http2FrequencyCounter Http2FrequencyCounter.cc unit_tests/test_Http2FrequencyCounter.cc)
-  target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc)
+  target_link_libraries(test_Http2FrequencyCounter PRIVATE catch2::catch2 tscore inkevent libswoc::libswoc)
   add_test(NAME test_Http2FrequencyCounter COMMAND test_Http2FrequencyCounter)
 
   add_executable(test_HPACK test_HPACK.cc HPACK.cc)
