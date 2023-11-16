@@ -69,8 +69,8 @@ struct MDY {
 };
 
 static MDY *_days_to_mdy_fast_lookup_table = nullptr;
-static unsigned int _days_to_mdy_fast_lookup_table_first_day;
-static unsigned int _days_to_mdy_fast_lookup_table_last_day;
+static time_t _days_to_mdy_fast_lookup_table_first_day;
+static time_t _days_to_mdy_fast_lookup_table_last_day;
 
 /***********************************************************************
  *                                                                     *
@@ -985,11 +985,11 @@ mime_init_date_format_table()
   ////////////////////////////////////////////////////////////////
 
   time_t now_secs;
-  int i, now_days, first_days, last_days, num_days;
+  time_t i, now_days, first_days, last_days, num_days;
   int m = 0, d = 0, y = 0;
 
   time(&now_secs);
-  now_days   = static_cast<int>(now_secs / (60 * 60 * 24));
+  now_days   = static_cast<time_t>(now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
   last_days  = now_days + 366;
   num_days   = last_days - first_days + 1;
@@ -2924,7 +2924,7 @@ mime_format_int64(char *buf, int64_t val, size_t buf_len)
 }
 
 void
-mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
+mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
 {
   static const int DAYS_OFFSET = 25508;
 
@@ -2944,7 +2944,7 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
 
   static const int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
-  int mday, year, month, d, dp;
+  time_t mday, year, month, d, dp;
 
   mday = days_since_jan_1_1970;
 
@@ -2978,7 +2978,7 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
 }
 
 void
-mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
+mime_days_since_epoch_to_mdy(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return)
 {
   ink_assert(_days_to_mdy_fast_lookup_table != nullptr);
 
@@ -2994,7 +2994,7 @@ mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, 
     // of dates that are +/- one year from today.                 //
     ////////////////////////////////////////////////////////////////
 
-    int i     = days_since_jan_1_1970 - _days_to_mdy_fast_lookup_table_first_day;
+    time_t i  = days_since_jan_1_1970 - _days_to_mdy_fast_lookup_table_first_day;
     *m_return = _days_to_mdy_fast_lookup_table[i].m;
     *d_return = _days_to_mdy_fast_lookup_table[i].d;
     *y_return = _days_to_mdy_fast_lookup_table[i].y;

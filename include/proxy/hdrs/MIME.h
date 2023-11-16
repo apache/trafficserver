@@ -919,8 +919,8 @@ int mime_format_uint(char *buf, uint32_t val, size_t buf_len);
 int mime_format_int64(char *buf, int64_t val, size_t buf_len);
 int mime_format_uint64(char *buf, uint64_t val, size_t buf_len);
 
-void mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
-void mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
+void mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
+void mime_days_since_epoch_to_mdy(time_t days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
 int mime_format_date(char *buffer, time_t value);
 
 int32_t mime_parse_int(const char *buf, const char *end = nullptr);
