@@ -16,7 +16,7 @@
 #######################
 
 add_atsplugin(compress compress.cc configuration.cc misc.cc)
-target_link_libraries(compress PRIVATE libswoc)
+target_link_libraries(compress PRIVATE libswoc::libswoc)
 if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(compress PRIVATE brotli::brotlienc)
 endif()

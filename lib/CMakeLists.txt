@@ -29,11 +29,15 @@ if(NOT TARGET yaml-cpp::yaml-cpp)
 endif()
 
 add_subdirectory(fastlz)
-add_subdirectory(swoc)
-set(SWOC_INCLUDE_DIR
-    ${CMAKE_SOURCE_DIR}/lib/swoc/include
-    PARENT_SCOPE
-)
+
+if(NOT EXTERNAL_LIBSWOC)
+  message(STATUS "Using internal libswoc")
+  add_subdirectory(swoc)
+  set(SWOC_INCLUDE_DIR
+      ${CMAKE_SOURCE_DIR}/lib/swoc/include
+      PARENT_SCOPE
+  )
+endif()
 
 add_library(catch2::catch2 INTERFACE IMPORTED GLOBAL)
 target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/catch2")

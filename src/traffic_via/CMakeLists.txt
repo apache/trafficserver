@@ -16,7 +16,7 @@
 #######################
 
 add_executable(traffic_via traffic_via.cc)
-target_link_libraries(traffic_via ts::tscore libswoc ts::tsapicore)
+target_link_libraries(traffic_via ts::tscore libswoc::libswoc ts::tsapicore)
 install(TARGETS traffic_via)
 
 if(BUILD_TESTING)

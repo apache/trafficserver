@@ -51,13 +51,13 @@ target_link_libraries(
 
 if(BUILD_TESTING)
   add_executable(test_jsonrpc jsonrpc/unit_tests/unit_test_main.cc jsonrpc/unit_tests/test_basic_protocol.cc)
-  target_link_libraries(test_jsonrpc ts::tsapicore catch2::catch2 ts::jsonrpc_protocol libswoc)
+  target_link_libraries(test_jsonrpc ts::tsapicore catch2::catch2 ts::jsonrpc_protocol libswoc::libswoc)
   add_test(NAME test_jsonrpc COMMAND test_jsonrpc)
 
   add_executable(
     test_jsonrpcserver server/unit_tests/unit_test_main.cc server/unit_tests/test_rpcserver.cc
                        ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
   )
-  target_link_libraries(test_jsonrpcserver catch2::catch2 ts::jsonrpc_server ts::inkevent libswoc)
+  target_link_libraries(test_jsonrpcserver catch2::catch2 ts::jsonrpc_server ts::inkevent libswoc::libswoc)
   add_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
 endif()

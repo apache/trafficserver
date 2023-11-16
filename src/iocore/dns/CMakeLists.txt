@@ -26,7 +26,7 @@ target_include_directories(
 
 target_link_libraries(
   inkdns
-  PUBLIC libswoc ts::inkevent ts::inkhostdb
+  PUBLIC libswoc::libswoc ts::inkevent ts::inkhostdb
          #ts::inknet cyclic dependency
          ts::proxy ts::tsapicore ts::tscore
 )

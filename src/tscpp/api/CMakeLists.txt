@@ -43,7 +43,7 @@ add_library(
   utils_internal.cc
 )
 add_library(ts::tscppapi ALIAS tscppapi)
-target_link_libraries(tscppapi PUBLIC libswoc yaml-cpp::yaml-cpp)
+target_link_libraries(tscppapi PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp)
 
 if(APPLE)
   target_link_options(tscppapi PRIVATE -undefined dynamic_lookup)

@@ -17,7 +17,7 @@
 
 add_library(tscpputil SHARED ts_bwf.cc ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc Regex.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
-target_link_libraries(tscpputil PUBLIC PCRE::PCRE libswoc yaml-cpp::yaml-cpp)
+target_link_libraries(tscpputil PUBLIC PCRE::PCRE libswoc::libswoc yaml-cpp::yaml-cpp)
 set(TSCPPUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Bravo.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Convert.h
@@ -53,7 +53,7 @@ if(BUILD_TESTING)
     unit_tests/test_time_parser.cc
     unit_tests/unit_test_main.cc
   )
-  target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc catch2::catch2)
+  target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc::libswoc catch2::catch2)
 
   add_test(NAME test_tscpputil COMMAND $<TARGET_FILE:test_tscpputil>)
 endif()

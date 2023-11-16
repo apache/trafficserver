@@ -34,7 +34,7 @@ add_library(ts::hdrs ALIAS hdrs)
 
 target_link_libraries(
   hdrs
-  PUBLIC libswoc ts::tscore
+  PUBLIC libswoc::libswoc ts::tscore
   PRIVATE ts::inkevent ts::tsapicore
 )
 
