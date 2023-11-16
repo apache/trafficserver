@@ -126,13 +126,6 @@ struct ifafilt;
 #include <alloca.h>
 #endif
 
-#if __has_include(<cpio.h>)
-#include <cpio.h>
-#if defined(MAGIC)
-#undef MAGIC
-#endif
-#endif
-
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
