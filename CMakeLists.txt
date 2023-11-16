@@ -216,7 +216,6 @@ include(CheckTypeSize)
 include(CheckSourceCompiles)
 include(CheckStructHasMember)
 
-check_include_file(cpio.h HAVE_CPIO_H)
 check_include_file(dlfcn.h HAVE_DLFCN_H)
 check_include_file(float.h HAVE_FLOAT_H)
 check_include_file(stdlib.h HAVE_STDLIB_H)
