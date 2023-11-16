@@ -157,7 +157,7 @@ using in_addr_t = unsigned int;
 #include <sys/systeminfo.h>
 #endif
 
-#ifdef HAVE_DLFCN_H
+#if __has_include(<dlfcn.h>)
 #include <dlfcn.h>
 #endif
 
