@@ -28,8 +28,8 @@ msgstr ""
 "Generated-By: Babel 2.2.0\n"
 
 #: ../../../developer-guide/api/functions/TSDebug.en.rst:22
-msgid "TSDebug"
-msgstr "TSDebug"
+msgid "Dbg"
+msgstr "Dbg"
 
 #: ../../../developer-guide/api/functions/TSDebug.en.rst:24
 msgid "Traffic Server Debugging APIs."

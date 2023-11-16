@@ -289,10 +289,10 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSAPI.en.rst:103
 msgid ""
 "The names of defined types are mixed-case. For example, :type:`TSHttpSsn` "
-"and :func:`TSHttpTxn`. :func:`TSDebug`"
+"and :func:`TSHttpTxn`. :func:`Dbg`"
 msgstr ""
 "定義された型の名前は大文字小文字が混在します。例えば、:type:`TSHttpSsn` 、:"
-"func:`TSHttpTxn` 、:func:`TSDebug` となります。"
+"func:`TSHttpTxn` 、:func:`Dbg` となります。"
 
 #: ../../developer-guide/api/functions/TSAPI.en.rst:131
 msgid ""
