@@ -4965,6 +4965,7 @@ Sockets
         PACKET_TOS (32)
         TCP_NOTSENT_LOWAT (64)
 
+   Note: TCP_FASTOPEN and TCP_NOTSENT_LOWAT socket options not valid when mptcp is enabled
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
@@ -5019,6 +5020,7 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
+   Note: TCP_MAXSEG socket option not valid when mptcp is enabled
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_in INT 0x0
 
