@@ -34,7 +34,7 @@
 
 #include <unistd.h>
 
-#if HAVE_SYS_TYPES_H
+#if __has_include(<sys/types.h>)
 #include <sys/types.h>
 #endif
 

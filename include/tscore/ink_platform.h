@@ -63,7 +63,7 @@ struct ifafilt;
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #include <ctype.h>  // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
-#ifdef HAVE_SYS_TYPES_H
+#if __has_include(<sys/types.h>)
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H

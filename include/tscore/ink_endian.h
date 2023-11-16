@@ -25,16 +25,11 @@
 
 #include "tscore/ink_config.h"
 
-#ifdef HAVE_SYS_ENDIAN_H
-#include <sys/endian.h>
+#if __has_include(<sys/types.h>)
+#include <sys/types.h>
 #endif
-#ifdef HAVE_MACHINE_ENDIAN_H
-#include <machine/endian.h>
-#endif
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#endif
-#ifdef HAVE_SYS_BYTEORDER_H
+
+#if __has_include(<sys/byteorder.h>)
 #include <sys/byteorder.h>
 #endif
 

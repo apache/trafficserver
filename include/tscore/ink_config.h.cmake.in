@@ -44,15 +44,11 @@
 #cmakedefine HAVE_LINUX_HDREG_H 1
 #cmakedefine HAVE_MALLOC_H 1
 #cmakedefine HAVE_MCHECK_H 1
-#cmakedefine HAVE_MACHINE_ENDIAN_H 1
-#cmakedefine HAVE_SYS_BYTEORDER_H 1
 #cmakedefine HAVE_SYS_DISK_H 1
 #cmakedefine HAVE_SYS_DISKLABEL_H 1
-#cmakedefine HAVE_SYS_ENDIAN_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
 #cmakedefine HAVE_SYS_IOCTL_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
-#cmakedefine HAVE_SYS_TYPES_H 1
 #cmakedefine HAVE_SYS_SOCKIO_H 1
 #cmakedefine HAVE_SYS_STAT_H 1
 #cmakedefine HAVE_SYS_STATFS_H 1
@@ -74,7 +70,6 @@
 #cmakedefine HAVE_ARPA_INET_H 1
 #cmakedefine HAVE_ARPA_NAMESER_H 1
 #cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
-#cmakedefine HAVE_ENDIAN_H 1
 #cmakedefine HAVE_MALLOC_USABLE_SIZE 1
 #cmakedefine HAVE_MCHECK_PEDANTIC 1
 #cmakedefine HAVE_POSIX_FADVISE 1
