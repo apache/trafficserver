@@ -126,7 +126,7 @@ struct ifafilt;
 #include <alloca.h>
 #endif
 
-#ifdef HAVE_CPIO_H
+#if __has_include(<cpio.h>)
 #include <cpio.h>
 #if defined(MAGIC)
 #undef MAGIC
