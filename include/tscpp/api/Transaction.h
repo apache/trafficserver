@@ -49,9 +49,15 @@ namespace utils
  * created and destroyed as they are needed. Transactions should never be saved beyond the
  * scope of the function in which they are delivered otherwise undefined behaviour will result.
  */
-class Transaction : noncopyable
+class Transaction
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Transaction(Transaction const &)            = delete;
+  Transaction &operator=(Transaction const &) = delete;
+
   /**
    * @brief ContextValues are a mechanism to share data between plugins using the atscppapi.
    *

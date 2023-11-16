@@ -25,7 +25,6 @@
 
 #include <string>
 #include <cstdint>
-#include "tscpp/api/noncopyable.h"
 
 namespace atscppapi
 {
@@ -41,9 +40,15 @@ struct UrlState;
  * object using Request::Request(string) which will construct a Url object for them
  * and it can be retrieved via Request::getUrl().
  */
-class Url : noncopyable
+class Url
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Url(Url const &)            = delete;
+  Url &operator=(Url const &) = delete;
+
   /**
    * @warning Url objects should never be constructed by the user.
    * If a user needs to create an unbound Url then they should create a Request

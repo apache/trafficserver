@@ -26,7 +26,6 @@
 #include "ts/ts.h"
 #include "tscpp/api/TransactionPlugin.h"
 #include "utils_internal.h"
-#include "tscpp/api/noncopyable.h"
 #include "logging_internal.h"
 
 using namespace atscppapi;
@@ -35,7 +34,13 @@ using atscppapi::TransactionPlugin;
 /**
  * @private
  */
-struct atscppapi::TransactionPluginState : noncopyable {
+struct atscppapi::TransactionPluginState {
+  /**
+   *  Not copyable
+   */
+  TransactionPluginState(TransactionPluginState const &)            = delete;
+  TransactionPluginState &operator=(TransactionPluginState const &) = delete;
+
   TSCont cont_ = nullptr;
   TSHttpTxn ats_txn_handle_;
   std::shared_ptr<Mutex> mutex_;

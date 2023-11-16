@@ -23,7 +23,6 @@
 #include "tscpp/api/ClientRequest.h"
 #include <cstdlib>
 #include "ts/ts.h"
-#include "tscpp/api/noncopyable.h"
 #include "logging_internal.h"
 
 using namespace atscppapi;
@@ -31,7 +30,13 @@ using namespace atscppapi;
 /**
  * @private
  */
-struct atscppapi::ClientRequestState : noncopyable {
+struct atscppapi::ClientRequestState {
+  /**
+   *  Not copyable
+   */
+  ClientRequestState(ClientRequestState const &)            = delete;
+  ClientRequestState &operator=(ClientRequestState const &) = delete;
+
   TSHttpTxn txn_;
   TSMBuffer pristine_hdr_buf_;
   TSMLoc pristine_url_loc_;

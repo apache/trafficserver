@@ -27,7 +27,6 @@
 #include <cinttypes>
 #include "utils_internal.h"
 #include "logging_internal.h"
-#include "tscpp/api/noncopyable.h"
 #include "tscpp/api/Continuation.h"
 
 #ifndef INT64_MAX
@@ -54,7 +53,13 @@ namespace detail
 /**
  * @private
  */
-struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseCont {
+struct TransformationPluginState : public detail::ResumeAfterPauseCont {
+  /**
+   *  Not copyable
+   */
+  TransformationPluginState(TransformationPluginState const &)            = delete;
+  TransformationPluginState &operator=(TransformationPluginState const &) = delete;
+
   TSVConn vconn_;
   Transaction &transaction_;
   TransformationPlugin &transformation_plugin_;

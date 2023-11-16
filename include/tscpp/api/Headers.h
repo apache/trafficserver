@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "tscpp/api/noncopyable.h"
 #include <string>
 
 namespace atscppapi
@@ -404,9 +403,15 @@ public:
 /**
  * @brief Encapsulates the headers portion of a request or response.
  */
-class Headers : noncopyable
+class Headers
 {
 public:
+  /**
+   * Not copyable.
+   */
+  Headers(Headers const &)            = delete;
+  Headers &operator=(Headers const &) = delete;
+
   /**
    * Constructor for Headers. This creates a "detached" headers, i.e., not tied to any transaction.
    */

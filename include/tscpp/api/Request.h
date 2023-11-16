@@ -27,7 +27,6 @@
 #include "tscpp/api/HttpVersion.h"
 #include "tscpp/api/HttpMethod.h"
 #include "tscpp/api/Url.h"
-#include "tscpp/api/noncopyable.h"
 
 namespace atscppapi
 {
@@ -42,9 +41,15 @@ struct RequestState;
 /**
  * @brief Encapsulates a request.
  */
-class Request : noncopyable
+class Request
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Request(Request const &)            = delete;
+  Request &operator=(Request const &) = delete;
+
   Request();
 
   /**

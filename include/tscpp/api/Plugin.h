@@ -29,7 +29,6 @@
 
 #include "tscpp/api/Request.h"
 #include "tscpp/api/Transaction.h"
-#include "tscpp/api/noncopyable.h"
 
 namespace atscppapi
 {
@@ -43,9 +42,15 @@ namespace atscppapi
  * @see GlobalPlugin
  * @see TransformationPlugin
  */
-class Plugin : noncopyable
+class Plugin
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Plugin(Plugin const &)            = delete;
+  Plugin &operator=(Plugin const &) = delete;
+
   /**
    * A enumeration of the available types of Hooks. These are used with GlobalPlugin::registerHook()
    * and TransactionPlugin::registerHook().

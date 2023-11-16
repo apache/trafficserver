@@ -29,7 +29,6 @@
 #include <string>
 #include <cstring>
 #include "ts/ts.h"
-#include "tscpp/api/noncopyable.h"
 #include "logging_internal.h"
 
 using std::vector;
@@ -42,7 +41,13 @@ using atscppapi::Logger;
 /**
  * @private
  */
-struct atscppapi::LoggerState : noncopyable {
+struct atscppapi::LoggerState {
+  /**
+   *  Not copyable
+   */
+  LoggerState(LoggerState const &)            = delete;
+  LoggerState &operator=(LoggerState const &) = delete;
+
   std::string filename_;
   bool add_timestamp_           = false;
   bool rename_file_             = false;

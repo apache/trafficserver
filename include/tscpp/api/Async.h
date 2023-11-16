@@ -30,8 +30,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include "tscpp/api/noncopyable.h"
-
 namespace atscppapi
 {
 #if !defined(ATSCPPAPI_MUTEX_DEFINED_)
@@ -48,9 +46,15 @@ using Mutex = std::recursive_mutex;
  * is used to dispatch an event to a receiver. This interface exists so that the types in this
  * header file can be defined.
  */
-class AsyncDispatchControllerBase : noncopyable
+class AsyncDispatchControllerBase
 {
 public:
+  /**
+   *  Not copyable
+   */
+  AsyncDispatchControllerBase(AsyncDispatchControllerBase const &)            = delete;
+  AsyncDispatchControllerBase &operator=(AsyncDispatchControllerBase const &) = delete;
+
   /**
    * Dispatches an async event to a receiver.
    *
@@ -181,9 +185,15 @@ private:
  * alive to receive the async complete dispatch. When the receiver dies, this promise is
  * broken and it automatically updates the dispatch controller.
  */
-template <typename AsyncEventReceiverType, typename AsyncProviderType> class AsyncReceiverPromise : noncopyable
+template <typename AsyncEventReceiverType, typename AsyncProviderType> class AsyncReceiverPromise
 {
 public:
+  /**
+   *  Not copyable
+   */
+  AsyncReceiverPromise(AsyncReceiverPromise const &)            = delete;
+  AsyncReceiverPromise &operator=(AsyncReceiverPromise const &) = delete;
+
   AsyncReceiverPromise(std::shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType>> dispatch_controller)
     : dispatch_controller_(dispatch_controller)
   {
@@ -203,9 +213,15 @@ protected:
  * @brief AsyncReceiver is the interface that receivers of async operations must implement. It is
  * templated on the type of the async operation provider.
  */
-template <typename AsyncProviderType> class AsyncReceiver : noncopyable
+template <typename AsyncProviderType> class AsyncReceiver
 {
 public:
+  /**
+   *  Not copyable
+   */
+  AsyncReceiver(AsyncReceiver const &)            = delete;
+  AsyncReceiver &operator=(AsyncReceiver const &) = delete;
+
   /**
    * This method is invoked when the async operation is completed. The
    * mutex provided during the creation of the async operation will be
@@ -234,9 +250,15 @@ private:
 /**
  * @brief This class provides a method to create an async operation.
  */
-class Async : noncopyable
+class Async
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Async(Async const &)            = delete;
+  Async &operator=(Async const &) = delete;
+
   /**
    * This method sets up the dispatch controller to link the async operation provider and
    * receiver and then initiates the operation by invoking the provider.

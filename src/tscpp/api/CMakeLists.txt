@@ -76,7 +76,6 @@ set(TSCPP_API_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/api/TransactionPlugin.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/api/TransformationPlugin.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/api/Url.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/api/noncopyable.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/api/utils.h
 )
 set_target_properties(tscppapi PROPERTIES PUBLIC_HEADER "${TSCPP_API_PUBLIC_HEADERS}")

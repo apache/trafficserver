@@ -21,7 +21,6 @@
  */
 #include "tscpp/api/Url.h"
 #include "ts/ts.h"
-#include "tscpp/api/noncopyable.h"
 #include "logging_internal.h"
 
 using namespace atscppapi;
@@ -30,7 +29,13 @@ using std::string;
 /**
  * @private
  */
-struct atscppapi::UrlState : noncopyable {
+struct atscppapi::UrlState {
+  /**
+   *  Not copyable
+   */
+  UrlState(UrlState const &)            = delete;
+  UrlState &operator=(UrlState const &) = delete;
+
   TSMBuffer hdr_buf_;
   TSMLoc url_loc_;
   UrlState(TSMBuffer hdr_buf, TSMLoc url_loc) : hdr_buf_(hdr_buf), url_loc_(url_loc) {}

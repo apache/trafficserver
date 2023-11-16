@@ -38,7 +38,13 @@ using std::string;
 /**
  * @private
  */
-struct atscppapi::AsyncHttpFetchState : noncopyable {
+struct atscppapi::AsyncHttpFetchState {
+  /**
+   *  Not copyable
+   */
+  AsyncHttpFetchState(AsyncHttpFetchState const &)            = delete;
+  AsyncHttpFetchState &operator=(AsyncHttpFetchState const &) = delete;
+
   std::shared_ptr<Request> request_;
   Response response_;
   string request_body_;

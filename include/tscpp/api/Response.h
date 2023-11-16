@@ -39,9 +39,15 @@ namespace utils
 /**
  * @brief Encapsulates a response.
  */
-class Response : noncopyable
+class Response
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Response(Response const &)            = delete;
+  Response &operator=(Response const &) = delete;
+
   Response();
 
   /** @return HTTP version of the response */

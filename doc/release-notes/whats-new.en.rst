@@ -58,4 +58,6 @@ using cpp:func:`Dbg` and related functions, as in |TS| core code.
 C++ Plugin API Deprecated
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is deprecated in this release.  It will be deleted in ATS 11.
+It is deprecated in this release.  It will be deleted in ATS 11.  The ``noncopyable.h``
+header, with the ``noncopyable`` class, is deleted in this release.  Use the new use of the
+``delete`` keyword, added in C++11, to supress default copy members.

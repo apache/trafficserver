@@ -19,7 +19,6 @@
  * @file Response.cc
  */
 #include "tscpp/api/Response.h"
-#include "tscpp/api/noncopyable.h"
 #include "utils_internal.h"
 #include "logging_internal.h"
 
@@ -31,7 +30,13 @@ namespace atscppapi
 /**
  * @private
  */
-struct ResponseState : noncopyable {
+struct ResponseState {
+  /**
+   *  Not copyable
+   */
+  ResponseState(ResponseState const &)            = delete;
+  ResponseState &operator=(ResponseState const &) = delete;
+
   TSMBuffer hdr_buf_ = nullptr;
   TSMLoc hdr_loc_    = nullptr;
   Headers headers_;

@@ -21,7 +21,6 @@
 
 #include "tscpp/api/Request.h"
 #include "ts/ts.h"
-#include "tscpp/api/noncopyable.h"
 #include "utils_internal.h"
 #include "logging_internal.h"
 
@@ -31,7 +30,13 @@ using std::string;
 /**
  * @private
  */
-struct atscppapi::RequestState : noncopyable {
+struct atscppapi::RequestState {
+  /**
+   *  Not copyable
+   */
+  RequestState(RequestState const &)            = delete;
+  RequestState &operator=(RequestState const &) = delete;
+
   TSMBuffer hdr_buf_ = nullptr;
   TSMLoc hdr_loc_    = nullptr;
   TSMLoc url_loc_    = nullptr;

@@ -31,7 +31,6 @@
 #pragma once
 
 #include <string>
-#include "tscpp/api/noncopyable.h"
 #include "ts/ts.h"
 
 #if !defined(ATSCPPAPI_PRINTFLIKE)
@@ -145,9 +144,15 @@ struct LoggerState;
  *   Apply the patch in TS-1813 to correct log rolling in 3.2.x
  *
  */
-class Logger : noncopyable
+class Logger
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Logger(Logger const &)            = delete;
+  Logger &operator=(Logger const &) = delete;
+
   /**
    * The available log levels
    */

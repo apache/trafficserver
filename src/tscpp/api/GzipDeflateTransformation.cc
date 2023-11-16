@@ -41,7 +41,13 @@ const unsigned int ONE_KB = 1024;
 /**
  * @private
  */
-struct atscppapi::transformations::GzipDeflateTransformationState : noncopyable {
+struct atscppapi::transformations::GzipDeflateTransformationState {
+  /**
+   *  Not copyable
+   */
+  GzipDeflateTransformationState(GzipDeflateTransformationState const &)            = delete;
+  GzipDeflateTransformationState &operator=(GzipDeflateTransformationState const &) = delete;
+
   z_stream z_stream_;
   bool z_stream_initialized_;
   TransformationPlugin::Type transformation_type_;

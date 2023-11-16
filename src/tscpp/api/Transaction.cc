@@ -31,7 +31,6 @@
 #include "tscore/ink_memory.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
-#include "tscpp/api/noncopyable.h"
 
 using std::map;
 using std::string;
@@ -40,7 +39,13 @@ using namespace atscppapi;
 /**
  * @private
  */
-struct atscppapi::TransactionState : noncopyable {
+struct atscppapi::TransactionState {
+  /**
+   *  Not copyable
+   */
+  TransactionState(TransactionState const &)            = delete;
+  TransactionState &operator=(TransactionState const &) = delete;
+
   TSHttpTxn txn_;
   TSEvent event_; ///< Current event being dispatched.
   std::list<TransactionPlugin *> plugins_;

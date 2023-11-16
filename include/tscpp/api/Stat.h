@@ -24,7 +24,6 @@
 #pragma once
 
 #include "ts/apidefs.h"
-#include "tscpp/api/noncopyable.h"
 
 #include <cstdint>
 #include <string>
@@ -48,9 +47,15 @@ namespace atscppapi
  *
  * A full example is available in examples/stat_example/.
  */
-class Stat : noncopyable
+class Stat
 {
 public:
+  /**
+   *  Not copyable
+   */
+  Stat(Stat const &)            = delete;
+  Stat &operator=(Stat const &) = delete;
+
   /**
    * The available Stat types.
    */

@@ -23,7 +23,6 @@
 #include "ts/ts.h"
 #include <cstddef>
 #include <cassert>
-#include "tscpp/api/noncopyable.h"
 #include "utils_internal.h"
 #include "logging_internal.h"
 
@@ -32,7 +31,13 @@ using namespace atscppapi;
 /**
  * @private
  */
-struct atscppapi::GlobalPluginState : noncopyable {
+struct atscppapi::GlobalPluginState {
+  /**
+   *  Not copyable
+   */
+  GlobalPluginState(GlobalPluginState const &)            = delete;
+  GlobalPluginState &operator=(GlobalPluginState const &) = delete;
+
   TSCont cont_ = nullptr;
   GlobalPlugin *global_plugin_;
   bool ignore_internal_transactions_;

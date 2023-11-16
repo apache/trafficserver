@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "ts/ts.h"
-#include "tscpp/api/noncopyable.h"
 
 namespace Gzip
 {
@@ -41,9 +40,15 @@ enum CompressionAlgorithm {
   ALGORITHM_BROTLI  = 4 // For bit manipulations
 };
 
-class HostConfiguration : private atscppapi::noncopyable
+class HostConfiguration
 {
 public:
+  /**
+   *  Not copyable
+   */
+  HostConfiguration(HostConfiguration const &)            = delete;
+  HostConfiguration &operator=(HostConfiguration const &) = delete;
+
   explicit HostConfiguration(const std::string &host)
     : host_(host),
       enabled_(true),
@@ -157,11 +162,17 @@ private:
 
 using HostContainer = std::vector<HostConfiguration *>;
 
-class Configuration : private atscppapi::noncopyable
+class Configuration
 {
   friend class HostConfiguration;
 
 public:
+  /**
+   *  Not copyable
+   */
+  Configuration(Configuration const &)            = delete;
+  Configuration &operator=(Configuration const &) = delete;
+
   static Configuration *Parse(const char *path);
   HostConfiguration *find(const char *host, int host_length);
 

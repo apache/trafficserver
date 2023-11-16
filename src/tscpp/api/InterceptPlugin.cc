@@ -24,7 +24,6 @@
 
 #include "ts/ts.h"
 #include "logging_internal.h"
-#include "tscpp/api/noncopyable.h"
 #include "utils_internal.h"
 
 #include <cstdlib>

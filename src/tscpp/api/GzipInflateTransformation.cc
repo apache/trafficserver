@@ -41,7 +41,13 @@ unsigned int INFLATE_SCALE_FACTOR = 6;
 /**
  * @private
  */
-struct atscppapi::transformations::GzipInflateTransformationState : noncopyable {
+struct atscppapi::transformations::GzipInflateTransformationState {
+  /**
+   *  Not copyable
+   */
+  GzipInflateTransformationState(GzipInflateTransformationState const &)            = delete;
+  GzipInflateTransformationState &operator=(GzipInflateTransformationState const &) = delete;
+
   z_stream z_stream_;
   bool z_stream_initialized_;
   int64_t bytes_produced_;
