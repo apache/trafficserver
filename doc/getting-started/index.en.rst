@@ -167,14 +167,13 @@ To build |TS| from a Git clone (the method we will be using in this guide), you
 will also need the following:
 
 - git
-- autoconf
-- automake
+- cmake
+- ninja
 
 In this guide, |TS| will be built to use the default ``nobody`` user and group
 and will be installed to ``/opt/ts``. It is assumed that all of the dependencies
 are located in standard paths. If this is not the case, you may need to use the
-appropriate ``--with-<package>`` options as detailed in the output of
-``./configure --help``.
+appropriate ``-D<package>_ROOT`` variables.
 
 #. Clone the repository (you may skip this if you have downloaded an archive of
    the source code to build a specific official release of |TS| instead of the
@@ -186,23 +185,18 @@ appropriate ``--with-<package>`` options as detailed in the output of
 
     cd trafficserver/
 
-#. If you have cloned the repository from Git, you will need to generate the
-   ``configure`` script before proceeding::
-
-    autoreconf -if
-
 #. Configure the source tree::
 
-    ./configure --prefix=/opt/ts
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/ts
 
-#. Build |TS| with the generated Makefiles, and test the results::
+#. Build |TS| with the generated build, and test the results::
 
-    make
-    make check
+    cmake --build build
+    cmake --build build -t test
 
 #. Install |TS| to the configured location::
 
-    sudo make install
+    sudo cmake --install build
 
 #. Optionally, you may find it prudent to run the regression tests on your newly
    installed |TS|::

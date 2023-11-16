@@ -15,15 +15,12 @@ online, at
 BUILD AND INSTALLATION
 ----------------------
 
-Configure & Build from Git source tree:
-    $ autoreconf -if  # generate the configure script and Makefile.in files
-
 On Linux, macOS and FreeBSD:
-    $ ./configure [--prefix=PREFIX]
-    $ make
+    $ cmake -B build [-DCMAKE_INSTALL_PREFIX=PREFIX]
+    $ cmake --build build
 
 To install:
-    $ sudo make install
+    $ sudo cmake --install build
 
 * Building on FreeBSD requires GNU make. This is the preferred make
   on all platforms.
@@ -38,18 +35,17 @@ To install:
   the layout name you have created.
 
 * The easiest way to find all of the configuration flags
-  for Traffic Server is to run ./configure --help.
+  for Traffic Server is to run `ccmake build`
 
 
 By default the build will use the highest level of compiler
-optimization. To alter this, specify your own optimizer flags at
-configuration time:
+optimization. To alter this, specify the Release build type:
 
-    $ ./configure CXXFLAGS=-Os CFLAGS=-Os
+    $ cmake -B build -DCMAKE_BUILD_TYPE=Release
 
 To compile with an alternate set of compilers, e.g. LLVM/Clang
 
-    $ ./configure CC=clang CXX=clang++
+    $ cmake -B build CC=clang CXX=clang++
 
 
 To start the Traffic Server process stack (TC, TM, TS):
