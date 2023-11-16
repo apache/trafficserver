@@ -237,9 +237,7 @@ check_include_file(netinet/tcp.h HAVE_NETINET_TCP_H)
 check_include_file(netinet/ip.h HAVE_NETINET_IP_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 check_include_file(netdb.h HAVE_NETDB_H)
-check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
-check_include_file(arpa/nameser.h HAVE_ARPA_NAMESER_H)
-check_include_file(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
+check_include_file(endian.h HAVE_ENDIAN_H)
 
 # Find libraries
 if(ENABLE_CRIPTS)
