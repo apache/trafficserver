@@ -21,44 +21,52 @@
   limitations under the License.
  */
 
-#include "iocore/net/EventIO.h"
-#include "iocore/net/NetHandler.h"
-#include "P_UnixNet.h"
-#include "P_UnixNetProcessor.h"
-#include "P_UnixPollDescriptor.h"
+#include "api/FetchSM.h"
+#include "api/InkAPIInternal.h"
 
-#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Continuation.h"
 
-#include <bitset>
-#include <limits>
+#include "tscore/Allocator.h"
+#include "tscore/ink_platform.h"
 
-std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
+ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 
-int
-EventIO::refresh(int events)
+void
+FetchSM::ext_launch()
+{
+}
+void
+FetchSM::ext_destroy()
+{
+}
+ssize_t
+FetchSM::ext_read_data(char *, unsigned long)
 {
   return 0;
 }
-
-int
-EventIO::start_common(EventLoop l, int fd, int events)
+void
+FetchSM::ext_add_header(char const *, int, char const *, int)
 {
-  return 0;
 }
-
-int
-EventIO::stop()
+void
+FetchSM::ext_write_data(void const *, unsigned long)
 {
-  return 0;
 }
-
-PollDescriptor *
-get_PollDescriptor(EThread *t)
+void *
+FetchSM::ext_get_user_data()
 {
   return nullptr;
 }
+void
+FetchSM::ext_set_user_data(void *)
+{
+}
+void
+FetchSM::ext_init(Continuation *, char const *, char const *, char const *, sockaddr const *, int)
+{
+}
 
 void
-initialize_thread_for_net(EThread *thread)
+api_init()
 {
 }

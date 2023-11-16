@@ -17,15 +17,16 @@
 
 add_executable(test_dns stub.cc test_SplitDNSYAMLLoader.cc unit_test_main.cc)
 
+if(BUILD_REGRESSION_TESTING)
+  target_sources(test_dns PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../../proxy/RegressionSM.cc")
+endif()
+
 target_include_directories(
   test_dns PRIVATE "${PROJECT_SOURCE_DIR}/src/iocore/dns" "${PROJECT_SOURCE_DIR}/src/iocore/net"
                    "${PROJECT_SOURCE_DIR}/src/proxy"
 )
 
-target_link_libraries(
-  test_dns PRIVATE catch2::catch2 libswoc ts::inkdns ts::configmanager # transitive
-                   yaml-cpp::yaml-cpp
-)
+target_link_libraries(test_dns PRIVATE catch2::catch2 libswoc ts::inkdns yaml-cpp::yaml-cpp)
 
 add_test(
   NAME test_dns
