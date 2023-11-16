@@ -122,7 +122,7 @@ struct ifafilt;
 #ifdef HAVE_VALUES_H
 #include <values.h>
 #endif
-#ifdef HAVE_ALLOCA_H
+#if __has_include(<alloca.h>)
 #include <alloca.h>
 #endif
 

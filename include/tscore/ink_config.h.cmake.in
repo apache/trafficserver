@@ -32,7 +32,6 @@
 #cmakedefine BUILD_GROUP "@BUILD_GROUP@"
 #define BUILD_NUMBER "@BUILD_NUMBER@"
 
-#cmakedefine HAVE_ALLOCA_H 1
 #cmakedefine HAVE_BROTLI_ENCODE_H 1
 #cmakedefine HAVE_CLOCK_GETTIME 1
 #cmakedefine HAVE_CURSES_H 1

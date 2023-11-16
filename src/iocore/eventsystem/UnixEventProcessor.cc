@@ -24,7 +24,7 @@
 #include "P_EventSystem.h"
 #include <sched.h>
 #if TS_USE_HWLOC
-#if HAVE_ALLOCA_H
+#if __has_include(<alloca.h>)
 #include <alloca.h>
 #endif
 #include <hwloc.h>
