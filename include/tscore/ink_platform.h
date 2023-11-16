@@ -157,9 +157,7 @@ using in_addr_t = unsigned int;
 #include <sys/systeminfo.h>
 #endif
 
-#if __has_include(<dlfcn.h>)
 #include <dlfcn.h>
-#endif
 
 #ifdef HAVE_FLOAT_H
 #include <float.h> // NOLINT(modernize-deprecated-headers)
