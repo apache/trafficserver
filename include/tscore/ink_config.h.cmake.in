@@ -50,7 +50,6 @@
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
 #cmakedefine HAVE_SYS_TYPES_H 1
-#cmakedefine HAVE_SYS_SYSCTL_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_MOUNT_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1

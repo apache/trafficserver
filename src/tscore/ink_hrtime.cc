@@ -32,13 +32,13 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
 #include <sys/types.h>
 #include <sys/param.h>
-#ifdef HAVE_SYS_SYSCTL_H
+#if __has_include(<sys/sysctl.h>)
 #include <sys/sysctl.h>
 #endif
-#endif
+#endif // __FreeBSD__
 #include <cstring>
 #include <sys/time.h>
 

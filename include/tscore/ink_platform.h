@@ -121,8 +121,8 @@ using in_addr_t = unsigned int;
 #include <sys/sysinfo.h>
 #endif
 
-#if defined(darwin) || defined(freebsd)
-#ifdef HAVE_SYS_SYSCTL_H
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#if __has_include(<sys/sysctl.h>)
 #include <sys/sysctl.h>
 #endif
 #endif
