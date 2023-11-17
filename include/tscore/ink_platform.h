@@ -127,15 +127,11 @@ using in_addr_t = unsigned int;
 #endif
 #endif
 
-#ifdef HAVE_SYS_SYSTEMINFO_H
-#include <sys/systeminfo.h>
-#endif
-
 #include <dlfcn.h>
 
 #include <float.h> // NOLINT(modernize-deprecated-headers)
 
-#ifdef HAVE_SYS_SYSMACROS_H
+#if __has_include(<sys/sysmacros.h>)
 #include <sys/sysmacros.h>
 #endif
 
