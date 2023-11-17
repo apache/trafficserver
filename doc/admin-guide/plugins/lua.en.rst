@@ -182,17 +182,23 @@ enabled. The default value of '0' means disabled.
 
 ::
 
-    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--ljgc=1
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--ljgc=1 @pparam=/script/test.lua
 
 
 Configuration for JIT mode
 ==========================
 
-We can also turn off JIT mode for LuaJIT when it is acting as global plugin for Traffic Server. The default is on (1). We can write this in plugin.config to turn off JIT
+We can also turn off JIT mode for LuaJIT for Traffic Server. The default is on (1). We can write this in plugin.config to turn off JIT
 
 ::
 
     tslua.so --jit=0 /etc/trafficserver/script/test_global_hdr.lua
+
+An example when using the plugin in remap.config
+
+::
+
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--jit=0 @pparam=/script/test.lua
 
 
 Profiling
