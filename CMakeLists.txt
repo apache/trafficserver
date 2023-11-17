@@ -338,10 +338,6 @@ if(EXTERNAL_LIBSWOC)
   find_package(libswoc REQUIRED)
 endif()
 
-# curl is used in traffic_top
-find_package(CURL)
-set(HAVE_CURL ${CURL_FOUND})
-
 include(Check128BitCas)
 include(ConfigureTransparentProxy)
 

@@ -35,7 +35,6 @@
 #cmakedefine HAVE_BROTLI_ENCODE_H 1
 #cmakedefine HAVE_CLOCK_GETTIME 1
 #cmakedefine HAVE_CURSES_H 1
-#cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_NCURSES_H 1
 #cmakedefine HAVE_NCURSES_CURSES_H 1
 #cmakedefine HAVE_NCURSES_NCURSES_H 1
