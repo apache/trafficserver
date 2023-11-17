@@ -61,11 +61,6 @@
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_MOUNT_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
-#cmakedefine HAVE_NETINET_IN_H 1
-#cmakedefine HAVE_NETINET_IN_SYSTM_H 1
-#cmakedefine HAVE_NETINET_TCP_H 1
-#cmakedefine HAVE_NETINET_IP_ICMP_H 1
-#cmakedefine HAVE_NETINET_IP_H 1
 #cmakedefine HAVE_NETDB_H 1
 #cmakedefine HAVE_ARPA_INET_H 1
 #cmakedefine HAVE_ARPA_NAMESER_H 1

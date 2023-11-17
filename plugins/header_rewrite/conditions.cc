@@ -34,17 +34,6 @@
 #include "conditions.h"
 #include "lulu.h"
 
-// This is a bit of a hack, to get the more linux specific tcp_info struct ...
-#if HAVE_STRUCT_LINUX_TCP_INFO
-#ifndef _LINUX_TCP_H
-#define _LINUX_TCP_H
-#endif
-#elif HAVE_NETINET_IN_H
-#ifndef _NETINET_TCP_H
-#define _NETINET_TCP_H
-#endif
-#endif
-
 // ConditionStatus
 void
 ConditionStatus::initialize(Parser &p)

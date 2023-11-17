@@ -68,21 +68,13 @@ struct ifafilt;
 #include <sys/stat.h>
 #endif
 #include <unistd.h>
-#ifdef HAVE_NETINET_IN_H
+
 #include <netinet/in.h>
-#endif
-#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
-#endif
-#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
-#endif
-#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
-#endif
-#ifdef HAVE_NETINET_IP_ICMP_H
 #include <netinet/ip_icmp.h>
-#endif
+
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
