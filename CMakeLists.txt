@@ -217,7 +217,6 @@ include(CheckSourceCompiles)
 include(CheckStructHasMember)
 
 check_include_file(dlfcn.h HAVE_DLFCN_H)
-check_include_file(float.h HAVE_FLOAT_H)
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
 check_include_file(inttypes.h HAVE_INTTYPES_H)
 check_include_file(string.h HAVE_STRING_H)
