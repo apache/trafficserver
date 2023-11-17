@@ -214,8 +214,6 @@ include(CheckStructHasMember)
 
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
 check_include_file(string.h HAVE_STRING_H)
-check_include_file(malloc.h HAVE_MALLOC_H)
-check_include_file(mcheck.h HAVE_MCHECK_H)
 check_include_file(sys/disk.h HAVE_SYS_DISK_H)
 check_include_file(sys/disklabel.h HAVE_SYS_DISKLABEL_H)
 check_include_file(sys/ioctl.h HAVE_SYS_IOCTL_H)

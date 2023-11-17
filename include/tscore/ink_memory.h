@@ -52,7 +52,7 @@
 #endif
 #elif TS_HAS_MIMALLOC
 #include <mimalloc.h>
-#elif HAVE_MALLOC_H
+#else
 #include <malloc.h>
 #endif // ! TS_HAS_JEMALLOC
 
