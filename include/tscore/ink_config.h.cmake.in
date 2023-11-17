@@ -46,7 +46,6 @@
 #cmakedefine HAVE_INTTYPES_H 1
 #cmakedefine HAVE_STRING_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_LINUX_MAJOR_H 1
 #cmakedefine HAVE_MALLOC_H 1
 #cmakedefine HAVE_MCHECK_H 1
 #cmakedefine HAVE_MACHINE_ENDIAN_H 1
