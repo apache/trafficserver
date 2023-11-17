@@ -40,7 +40,7 @@
 #include <sys/uio.h>
 #endif
 
-#if HAVE_SYS_MMAN_H
+#if __has_include(<sys/mman.h>)
 #include <sys/mman.h>
 #endif
 

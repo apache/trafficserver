@@ -32,10 +32,6 @@
 #include <sys/stat.h>
 #endif
 
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
 #if __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
 #endif
