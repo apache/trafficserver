@@ -24,10 +24,36 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 # The source files, globbed so we can drop in local / custom Bundles and extensions.
 file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/*/*.cc)
 
+set(CRIPTS_PUBLIC_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundle.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Connections.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Context.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Crypto.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Epilogue.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Error.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Files.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Headers.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Instance.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Lulu.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Matcher.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Metrics.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Plugins.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Preamble.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Time.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Transaction.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Urls.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/UUID.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
+)
+
 add_library(cripts SHARED ${CPP_FILES})
 add_library(ts::cripts ALIAS cripts)
 
-target_link_libraries(cripts libswoc::libswoc fmt::fmt PkgConfig::PCRE2)
+target_link_libraries(cripts PUBLIC libswoc::libswoc fmt::fmt PkgConfig::PCRE2 OpenSSL::Crypto ts::tsapi)
+set_target_properties(cripts PROPERTIES PUBLIC_HEADER "${CRIPTS_PUBLIC_HEADERS}")
 
 set_target_properties(
   cripts
@@ -36,8 +62,7 @@ set_target_properties(
              MACHO_COMPATIBILITY_VERSION ${PROJECT_VERSION_MAJOR}.0.0
 )
 
-install(TARGETS cripts)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/cripts DESTINATION include)
+install(TARGETS cripts PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cripts)
 
 if(APPLE)
   target_link_options(cripts PRIVATE -undefined dynamic_lookup)
@@ -46,8 +71,9 @@ endif()
 # This generates the src/cripts/Configs.cc file from the ATS source file with
 # overridable confiugrations. This needs to be generated whenever we add new
 # configurations to the ATS source file.
+# This needs to be done manually as the generated file is checked in.
 add_custom_target(
-  Cripts-Configs
+  generate-cripts-config
   COMMAND ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc >
           ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
   DEPENDS ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py
