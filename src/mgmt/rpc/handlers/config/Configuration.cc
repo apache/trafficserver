@@ -115,7 +115,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     try {
       info = kv.as<SetRecordCmdInfo>();
     } catch (YAML::Exception const &ex) {
-      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND});
+      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND}).assign(ERRATA_ERROR);
       continue;
     }
 
@@ -139,7 +139,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // make sure if exist. If not, we stop it and do not keep forward.
     if (ret != REC_ERR_OKAY) {
-      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND});
+      resp.errata().assign({err::RecordError::RECORD_NOT_FOUND}).assign(ERRATA_ERROR);
       continue;
     }
 
@@ -148,7 +148,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // run the check only if we have something to check against it.
     if (pattern != nullptr && utils::recordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
-      resp.errata().assign({err::RecordError::VALIDITY_CHECK_ERROR});
+      resp.errata().assign({err::RecordError::VALIDITY_CHECK_ERROR}).assign(ERRATA_ERROR);
       continue;
     }
 

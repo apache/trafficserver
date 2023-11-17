@@ -106,14 +106,14 @@ JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo c
 
   if (ec) {
     specs::RPCResponseInfo resp{request.id};
-    resp.error.assign(ec);
+    resp.error.assign(ec).assign(ERRATA_ERROR);
     return resp;
   }
 
   // We have got a valid handler, we will now check if the context holds any restriction for this handler to be called.
   if (auto errata = check_for_blockers(ctx, handler.get_options()); !errata.is_ok()) {
     specs::RPCResponseInfo resp{request.id};
-    resp.error.assign(ec);
+    resp.error.assign(ec).assign(ERRATA_ERROR);
     return resp;
   }
 
@@ -164,7 +164,8 @@ JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::In
     }
   } catch (std::exception const &e) {
     Debug(logTag, "Oops, something happened during the callback invocation: %s", e.what());
-    response.error.assign(std::error_code(unsigned(error::RPCErrorCode::ExecutionError), std::generic_category()));
+    response.error.assign(std::error_code(unsigned(error::RPCErrorCode::ExecutionError), std::generic_category()))
+      .assign(ERRATA_ERROR);
   }
 
   return response;
@@ -217,7 +218,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
     // particular request, as they would need to be converted back in a proper error response.
     if (ec) {
       specs::RPCResponseInfo resp;
-      resp.error.assign(ec);
+      resp.error.assign(ec).assign(ERRATA_ERROR);
       return Encoder::encode(resp);
     }
 
@@ -240,7 +241,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
       } else {
         // If the request was marked as an error(decode error), we still need to send the error back, so we save it.
         specs::RPCResponseInfo resp{req.id};
-        resp.error.assign(decode_error);
+        resp.error.assign(decode_error).assign(ERRATA_ERROR);
         response.add_message(std::move(resp));
       }
     }
@@ -257,7 +258,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
     ec = error::RPCErrorCode::INTERNAL_ERROR;
   }
   specs::RPCResponseInfo resp;
-  resp.error.assign(ec);
+  resp.error.assign(ec).assign(ERRATA_ERROR);
   return {Encoder::encode(resp)};
 }
 

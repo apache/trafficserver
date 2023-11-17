@@ -455,9 +455,11 @@ IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions con
     gid_t egid = -1;
     if (get_peereid(peedFd, &euid, &egid) == -1) {
       errata.assign(std::error_code(unsigned(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR), std::generic_category()));
+      errata.assign(ERRATA_ERROR);
       errata.note("Error getting peer credentials: {}", swoc::bwf::Errno{});
     } else if (euid != 0 && euid != geteuid()) {
       errata.assign(std::error_code(unsigned(UnauthorizedErrorCode::PERMISSION_DENIED), std::generic_category()));
+      errata.assign(ERRATA_ERROR);
       errata.note("Denied privileged API access for uid={} gid={}", euid, egid);
     }
   }

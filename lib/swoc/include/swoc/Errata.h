@@ -1068,7 +1068,7 @@ Errata::length() const {
 
 inline bool
 Errata::is_ok() const {
-  return this->empty() || _data->_severity < FAILURE_SEVERITY;
+  return _data == nullptr || _data->_severity < FAILURE_SEVERITY;
 }
 
 inline const Errata::Annotation &
