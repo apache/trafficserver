@@ -4925,6 +4925,7 @@ Sockets
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
    back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
    On FreeBSD, ``accf_data`` module needs to be loaded.
+   Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
    :reloadable:
@@ -4965,7 +4966,8 @@ Sockets
         PACKET_TOS (32)
         TCP_NOTSENT_LOWAT (64)
 
-   Note: TCP_FASTOPEN and TCP_NOTSENT_LOWAT socket options not valid when mptcp is enabled
+   Note: If MPTCP is enabled, TCP_NODELAY is only supported on Linux kernels 5.17+. TCP_FASTOPEN
+   and TCP_NOTSENT_LOWAT socket options are currently not supported.
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
@@ -5020,7 +5022,7 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
-   Note: TCP_MAXSEG socket option not valid when mptcp is enabled
+   Note: If MPTCP is enabled, TCP_MAXSEG socket option is not supported.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_in INT 0x0
 
