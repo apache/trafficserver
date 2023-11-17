@@ -28,7 +28,7 @@
 #include "tscore/ink_string.h"
 #include "tscore/ink_memory.h"
 
-#if HAVE_SYS_STAT_H
+#if __has_include(<sys/stat.h>)
 #include <sys/stat.h>
 #endif
 
@@ -36,15 +36,7 @@
 #include <sys/param.h>
 #endif
 
-#if HAVE_SYS_DISK_H
-#include <sys/disk.h>
-#endif
-
-#if HAVE_SYS_DISKLABEL_H
-#include <sys/disklabel.h>
-#endif
-
-#if HAVE_SYS_IOCTL_H
+#if __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
 #endif
 

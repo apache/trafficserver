@@ -63,10 +63,10 @@ struct ifafilt;
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #include <ctype.h>  // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
+
 #include <sys/types.h>
-#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
+
 #include <unistd.h>
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -111,12 +111,7 @@ struct ifafilt;
 
 #include "tscore/ink_endian.h"
 
-#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
-#endif
-#ifdef HAVE_SYS_SOCKIO_H
-#include <sys/sockio.h>
-#endif
 
 #if defined(__linux__)
 using in_addr_t = unsigned int;
