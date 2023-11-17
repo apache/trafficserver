@@ -236,7 +236,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, time_t expire_ti
 
   // add expiry_entry to expiry queue, if the expire time is positive (otherwise it means don't expire)
   if (expire_time >= 0) {
-    Dbg(dbg_ctl, "partition %d adding entry with expire_time=%" PRId64, this->part_num, expire_time);
+    Dbg(dbg_ctl, "partition %d adding entry with expire_time=%" PRIdMAX, this->part_num, expire_time);
     PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = expiryQueueEntry.alloc();
     new ((void *)expiry_entry) PriorityQueueEntry<RefCountCacheHashEntry *>(val);
     expiry_queue.push(expiry_entry);

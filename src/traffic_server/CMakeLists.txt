@@ -15,7 +15,7 @@
 #
 #######################
 
-add_executable(traffic_server Crash.cc EventName.cc SocksProxy.cc traffic_server.cc RpcAdminPubHandlers.cc)
+add_executable(traffic_server Crash.cc SocksProxy.cc traffic_server.cc RpcAdminPubHandlers.cc)
 target_link_libraries(
   traffic_server
   PRIVATE ts::tscore

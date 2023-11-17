@@ -17,6 +17,7 @@
 
 add_library(
   inkcache STATIC
+  AggregateWriteBuffer.cc
   Cache.cc
   CacheDir.cc
   CacheDisk.cc

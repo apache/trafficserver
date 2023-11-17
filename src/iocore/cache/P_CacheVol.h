@@ -43,8 +43,6 @@
 #define STRIPE_MAGIC                 0xF1D0F00D
 #define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
 #define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define AGG_SIZE                     (4 * 1024 * 1024)   // 4MB
-#define AGG_HIGH_WATER               (AGG_SIZE / 2)      // 2MB
 #define EVACUATION_SIZE              (2 * AGG_SIZE)      // 8MB
 #define STRIPE_BLOCK_SIZE            (1024 * 1024 * 128) // 128MB
 #define MIN_STRIPE_SIZE              STRIPE_BLOCK_SIZE
@@ -281,9 +279,10 @@ public:
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char *get_agg_buffer();
   int get_agg_buf_pos() const;
-  void reset_agg_buf_pos();
   int get_agg_todo_size() const;
   void add_agg_todo(int size);
+
+  bool flush_aggregate_write_buffer();
 
 private:
   void _clear_init();
@@ -577,12 +576,6 @@ inline int
 Stripe::get_agg_buf_pos() const
 {
   return this->_write_buffer.get_buffer_pos();
-}
-
-inline void
-Stripe::reset_agg_buf_pos()
-{
-  this->_write_buffer.reset_buffer_pos();
 }
 
 inline int
