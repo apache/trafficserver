@@ -22,3 +22,8 @@ if(nuraft_FOUND)
 else()
   message(STATUS "skipping stek_share plugin (missing nuraft)")
 endif()
+
+# This was added by add_atsplugin, but one of the modules above must be overriding it.
+if(APPLE)
+  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
+endif()
