@@ -271,7 +271,7 @@ netStatsInfo(TSMutex stat_creation_mutex)
 static void
 getStats(TSMutex stat_creation_mutex)
 {
-#ifdef HAVE_SYSINFO
+#if HAVE_SYSINFO
   struct sysinfo info;
 
   sysinfo(&info);
