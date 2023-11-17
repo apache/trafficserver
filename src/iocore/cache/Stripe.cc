@@ -917,3 +917,21 @@ Stripe::_init_data()
   this->_init_data_internal();
   this->_init_data_internal();
 }
+
+bool
+Stripe::flush_aggregate_write_buffer()
+{
+  // set write limit
+  this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
+
+  if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
+    return false;
+  }
+  this->header->last_write_pos  = this->header->write_pos;
+  this->header->write_pos      += this->_write_buffer.get_buffer_pos();
+  ink_assert(this->header->write_pos == this->header->agg_pos);
+  this->_write_buffer.reset_buffer_pos();
+  this->header->write_serial++;
+
+  return true;
+}

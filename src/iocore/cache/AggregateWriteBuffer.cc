@@ -21,15 +21,20 @@
   limitations under the License.
  */
 
-/****************************************************************************
+#include "iocore/cache/AggregateWriteBuffer.h"
 
-   EventName.h
+#include "iocore/aio/AIO_fault_injection.h"
 
-   Description:  Stringifying Events
- ****************************************************************************/
+#include "tscore/ink_assert.h"
+#include "tscore/ink_platform.h"
 
-#pragma once
-
-#include <unistd.h>
-
-const char *event_int_to_string(int event, int blen = 0, char *buffer = nullptr);
+bool
+AggregateWriteBuffer::flush(int fd, off_t write_pos) const
+{
+  int r = pwrite(fd, this->_buffer, this->_buffer_pos, write_pos);
+  if (r != this->_buffer_pos) {
+    ink_assert(!"flushing agg buffer failed");
+    return false;
+  }
+  return true;
+}

@@ -27,9 +27,7 @@
 
 #include <stddef.h> // NOLINT(modernize-deprecated-headers)
 
-#ifdef HAVE_STDINT_H
 #include <stdint.h> // NOLINT(modernize-deprecated-headers)
-#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h> // NOLINT(modernize-deprecated-headers)

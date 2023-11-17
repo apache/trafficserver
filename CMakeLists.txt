@@ -218,7 +218,6 @@ include(CheckStructHasMember)
 
 check_include_file(dlfcn.h HAVE_DLFCN_H)
 check_include_file(float.h HAVE_FLOAT_H)
-check_include_file(stdint.h HAVE_STDINT_H)
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
 check_include_file(inttypes.h HAVE_INTTYPES_H)
 check_include_file(string.h HAVE_STRING_H)
@@ -371,6 +370,7 @@ include(ConfigureTransparentProxy)
 include(find_ccache)
 
 # Check for IO faculties
+set(CMAKE_REQUIRED_FLAGS -fPIC)
 check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UNSPECIFIED)
 check_symbol_exists(IP_TOS "netinet/ip.h" TS_HAS_IP_TOS)
 check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
@@ -463,6 +463,7 @@ check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
+unset(CMAKE_REQUIRED_FLAGS)
 
 set(HAVE_SSL_READ_EARLY_DATA ${TS_HAS_TLS_EARLY_DATA})
 

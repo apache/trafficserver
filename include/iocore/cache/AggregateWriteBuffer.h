@@ -53,6 +53,22 @@ public:
   AggregateWriteBuffer(AggregateWriteBuffer &&other)            = delete;
   AggregateWriteBuffer &operator=(AggregateWriteBuffer &&other) = delete;
 
+  /**
+   * Flush the internal buffer to disk.
+   *
+   * This method should be called during shutdown. It must not be called
+   * during regular operation.
+   *
+   * Flushing the buffer only writes the buffer to disk; it does not
+   * modify the contents of the buffer. To reset the buffer, call
+   * reset_buffer_pos().
+   *
+   * @param fd File descriptor to write to.
+   * @param write_pos The offset at which to write the buffer data.
+   * @return Returns true if all bytes were flushed, otherwise false.
+   */
+  bool flush(int fd, off_t write_pos) const;
+
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char *get_buffer();
   int get_buffer_pos() const;

@@ -679,13 +679,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     // (2) test a few times per day from 1/1/1970 to past 2010
 
-    for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += static_cast<int>(ts::Random::drandom() * (24 * 60 * 60))) {
+    for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += static_cast<time_t>(ts::Random::drandom() * (24 * 60 * 60))) {
       cftime_replacement(buffer, sizeof(buffer), "%a, %d %b %Y %T %Z", &t);
       t2 = mime_parse_date(buffer, buffer + static_cast<int>(strlen(buffer)));
       if (t2 != t) {
         std::printf("FAILED: parsed time_t doesn't match original time_t\n");
-        std::printf("  input time_t:  %d (%s)\n", static_cast<int>(t), buffer);
-        std::printf("  parsed time_t: %d\n", static_cast<int>(t2));
+        std::printf("  input time_t:  %" PRIdMAX " (%s)\n", t, buffer);
+        std::printf("  parsed time_t: %" PRIdMAX "\n", t2);
         CHECK(false);
       }
       mime_format_date(buffer2, t);
@@ -698,8 +698,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       t3 = mime_parse_date(buffer2, buffer2 + static_cast<int>(strlen(buffer2)));
       if (t != t3) {
         std::printf("FAILED: parsed time_t doesn't match original time_t\n");
-        std::printf("  input time_t:  %d (%s)\n", static_cast<int>(t), buffer2);
-        std::printf("  parsed time_t: %d\n", static_cast<int>(t3));
+        std::printf("  input time_t:  %" PRIdMAX " (%s)\n", t, buffer2);
+        std::printf("  parsed time_t: %" PRIdMAX "\n", t3);
         CHECK(false);
       }
     }
