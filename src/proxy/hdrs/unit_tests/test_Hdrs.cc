@@ -684,8 +684,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       t2 = mime_parse_date(buffer, buffer + static_cast<int>(strlen(buffer)));
       if (t2 != t) {
         std::printf("FAILED: parsed time_t doesn't match original time_t\n");
-        std::printf("  input time_t:  %" PRId64 " (%s)\n", t, buffer);
-        std::printf("  parsed time_t: %" PRId64 "\n", t2);
+        std::printf("  input time_t:  %" PRIdMAX " (%s)\n", t, buffer);
+        std::printf("  parsed time_t: %" PRIdMAX "\n", t2);
         CHECK(false);
       }
       mime_format_date(buffer2, t);
@@ -698,8 +698,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       t3 = mime_parse_date(buffer2, buffer2 + static_cast<int>(strlen(buffer2)));
       if (t != t3) {
         std::printf("FAILED: parsed time_t doesn't match original time_t\n");
-        std::printf("  input time_t:  %" PRId64 " (%s)\n", t, buffer2);
-        std::printf("  parsed time_t: %" PRId64 "\n", t3);
+        std::printf("  input time_t:  %" PRIdMAX " (%s)\n", t, buffer2);
+        std::printf("  parsed time_t: %" PRIdMAX "\n", t3);
         CHECK(false);
       }
     }
