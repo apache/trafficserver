@@ -78,11 +78,16 @@ Acl::init(char const *filename)
     return status;
   }
 
-  // Associate our config file with remap.config to be able to initiate reloads
+  // Associate our config file with remap.config if possible to be able to initiate reloads
   TSMgmtString result;
   const char *var_name = "proxy.config.url_remap.filename";
-  TSMgmtStringGet(var_name, &result);
-  TSMgmtConfigFileAdd(result, configloc.c_str());
+  if (TS_SUCCESS == TSMgmtStringGet(var_name, &result)) {
+    if (TS_SUCCESS != TSMgmtConfigFileAdd(result, configloc.c_str())) {
+      TSWarning("[%s] Error adding mgmt config file", PLUGIN_NAME);
+    }
+  } else {
+    TSWarning("[%s] Could not retrieve remap filename", PLUGIN_NAME);
+  }
 
   // Find our database name and convert to full path as needed
   status = loaddb(maxmind["database"]);
