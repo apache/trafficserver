@@ -161,9 +161,7 @@ using in_addr_t = unsigned int;
 #include <dlfcn.h>
 #endif
 
-#ifdef HAVE_FLOAT_H
 #include <float.h> // NOLINT(modernize-deprecated-headers)
-#endif
 
 #ifdef HAVE_SYS_SYSMACROS_H
 #include <sys/sysmacros.h>
