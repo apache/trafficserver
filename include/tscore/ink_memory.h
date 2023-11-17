@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 
-#if HAVE_SYS_UIO_H
+#if __has_include(<sys/uio.h>)
 #include <sys/uio.h>
 #endif
 

@@ -117,7 +117,7 @@ struct ifafilt;
 using in_addr_t = unsigned int;
 #endif
 
-#ifdef HAVE_SYS_SYSINFO_H
+#if __has_include(<sys/sysinfo.h>)
 #include <sys/sysinfo.h>
 #endif
 

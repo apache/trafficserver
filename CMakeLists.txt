@@ -220,8 +220,6 @@ check_include_file(machine/endian.h HAVE_MACHINE_ENDIAN_H)
 check_include_file(sys/byteorder.h HAVE_SYS_BYTEORDER_H)
 check_include_file(sys/endian.h HAVE_SYS_ENDIAN_H)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
-check_include_file(sys/uio.h HAVE_SYS_UIO_H)
-check_include_file(sys/sysinfo.h HAVE_SYS_SYSINFO_H)
 check_include_file(sys/sysmacros.h HAVE_SYS_SYSMACROS_H)
 check_include_file(sys/systeminfo.h HAVE_SYS_SYSTEMINFO_H)
 check_include_file(sys/sysctl.h HAVE_SYS_SYSCTL_H)
@@ -407,8 +405,7 @@ check_symbol_exists(sendmmsg sys/socket.h HAVE_SENDMMSG)
 check_symbol_exists(strlcat string.h HAVE_STRLCAT)
 check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
 check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
-check_symbol_exists(pthread_mutexattr_settype pthread.h HAVE_PTHREAD_MUTEXATTR_SETTYPE)
-
+check_symbol_exists(sysinfo sys/sysinfo.h HAVE_SYSINFO)
 if(TS_USE_HWLOC)
   check_source_compiles(
     C "#include <hwloc.h>
