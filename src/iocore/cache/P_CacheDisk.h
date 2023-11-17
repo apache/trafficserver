@@ -94,7 +94,8 @@ struct CacheDisk : public Continuation {
   bool online = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
-  int forced_volume_num = -1;      ///< Volume number for this disk.
+  int forced_volume_num = -1; ///< Volume number for this disk.
+  ats_scoped_str id;
   ats_scoped_str hash_base_string; ///< Base string for hash seed.
 
   CacheDisk() : Continuation(new_ProxyMutex()) {}

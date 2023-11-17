@@ -88,12 +88,12 @@ create_config(int num)
         if (vol_num > 255) {
           break;
         }
-        ConfigVol *cp  = new ConfigVol();
-        cp->number     = vol_num++;
-        cp->scheme     = CACHE_HTTP_TYPE;
-        cp->size       = 128;
-        cp->in_percent = false;
-        cp->cachep     = nullptr;
+        ConfigVol *cp           = new ConfigVol();
+        cp->number              = vol_num++;
+        cp->scheme              = CACHE_HTTP_TYPE;
+        cp->size.absolute_value = 128;
+        cp->size.in_percent     = false;
+        cp->cachep              = nullptr;
         config_volumes.cp_queue.enqueue(cp);
         config_volumes.num_volumes++;
         config_volumes.num_http_volumes++;
@@ -127,13 +127,13 @@ create_config(int num)
     vol_num = 1;
     Dbg(dbg_ctl_cache_vol_test, "Cleared  disk");
     for (i = 0; i < 10; i++) {
-      ConfigVol *cp  = new ConfigVol();
-      cp->number     = vol_num++;
-      cp->scheme     = CACHE_HTTP_TYPE;
-      cp->size       = 10;
-      cp->percent    = 10;
-      cp->in_percent = true;
-      cp->cachep     = nullptr;
+      ConfigVol *cp           = new ConfigVol();
+      cp->number              = vol_num++;
+      cp->scheme              = CACHE_HTTP_TYPE;
+      cp->size.absolute_value = 10;
+      cp->size.percent        = 10;
+      cp->size.in_percent     = true;
+      cp->cachep              = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       config_volumes.num_http_volumes++;
@@ -193,17 +193,17 @@ create_config(int num)
 
       ConfigVol *cp = new ConfigVol();
 
-      cp->number     = vol_num++;
-      cp->scheme     = scheme;
-      cp->size       = random_size >> 20;
-      cp->percent    = 0;
-      cp->in_percent = false;
-      cp->cachep     = nullptr;
+      cp->number              = vol_num++;
+      cp->scheme              = scheme;
+      cp->size.absolute_value = random_size >> 20;
+      cp->size.percent        = 0;
+      cp->size.in_percent     = false;
+      cp->cachep              = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       if (cp->scheme == CACHE_HTTP_TYPE) {
         config_volumes.num_http_volumes++;
-        Dbg(dbg_ctl_cache_vol_test, "volume=%d scheme=http size=%zd", cp->number, static_cast<size_t>(cp->size));
+        Dbg(dbg_ctl_cache_vol_test, "volume=%d scheme=http size=%zd", cp->number, static_cast<size_t>(cp->size.absolute_value));
       } else {
         // ToDo: Assert ?
       }
@@ -246,7 +246,7 @@ execute_and_verify()
       if (cachep->vol_number == cp->number) {
         // Configuration and Actual volumes should match
         REQUIRE(cachep->scheme == cp->scheme);
-        REQUIRE(cachep->size == (cp->size << (20 - STORE_BLOCK_SHIFT)));
+        REQUIRE(cachep->size == (cp->size.absolute_value << (20 - STORE_BLOCK_SHIFT)));
         REQUIRE(cachep == cp->cachep);
 
         /* check that the number of volumes match the ones

@@ -1,4 +1,8 @@
 # seems good enough for doing something for playing with.
 # not good for production
 # File must exist and must have this value in it
-storage 256M
+cache:
+  spans:
+    - id: "disk.1"
+      path: "storage"
+      size: 256M

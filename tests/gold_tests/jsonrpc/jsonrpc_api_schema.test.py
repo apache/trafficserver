@@ -99,7 +99,13 @@ ts.Disk.records_config.update(
 
 # One of the API's will be checking the storage. Need this to get a response with content.
 storage_path = os.path.join(Test.RunDirectory, "ts", "storage")
-ts.Disk.storage_config.AddLine(f"{storage_path} 512M")
+ts.Disk.storage_yaml.AddLine(f'''
+cache:
+   spans:
+     - id: span-1
+       path: {storage_path}
+       size: 512M
+''')
 
 # The following tests will only validate the jsonrpc message, it will not run any validation on the content of the 'result' or 'params'
 # of the jsonrpc message. This should be added once the schemas are available.

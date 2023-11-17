@@ -47,7 +47,6 @@ m4/lt~obsolete.m4
 build*
 
 configs/records.yaml.default
-configs/storage.config.default
 
 doc/_build
 doc/docbuild/

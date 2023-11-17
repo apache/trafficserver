@@ -29,7 +29,7 @@
 #       v1.0.3   - Check to force /mnt based cache.db
 
 REMAP_FILE=/usr/local/etc/trafficserver/remap.config
-STORAGE_FILE=/usr/local/etc/trafficserver/storage.config
+STORAGE_FILE=/usr/local/etc/trafficserver/storage.yaml
 EC2_CACHE_LOC=/mnt/trafficserver_cache
 
 # Base settings to use for testing and benchmarking

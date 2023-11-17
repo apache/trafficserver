@@ -167,7 +167,6 @@ produce_layout(bool json)
   print_var(ts::filename::SSL_MULTICERT, RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
   print_var(ts::filename::STORAGE, RecConfigReadConfigPath(nullptr, ts::filename::STORAGE), json);
   print_var(ts::filename::HOSTING, RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
-  print_var(ts::filename::VOLUME, RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
   print_var(ts::filename::IP_ALLOW, RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
   if (json) {
     printf("}\n");

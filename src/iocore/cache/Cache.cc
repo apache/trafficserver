@@ -22,8 +22,8 @@
  */
 
 #include "iocore/cache/Cache.h"
+#include "iocore/cache/YamlStorageConfig.h"
 
-// Cache Inspector and State Pages
 #include "P_CacheTest.h"
 
 #include "tscore/Filenames.h"
@@ -300,6 +300,9 @@ static_assert(static_cast<int>(TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED) == static_
 static_assert(static_cast<int>(TS_EVENT_CACHE_SCAN_OPERATION_FAILED) == static_cast<int>(CACHE_EVENT_SCAN_OPERATION_FAILED));
 static_assert(static_cast<int>(TS_EVENT_CACHE_SCAN_DONE) == static_cast<int>(CACHE_EVENT_SCAN_DONE));
 
+/**
+  CacheDisk and Span
+ */
 int
 CacheProcessor::start_internal(int flags)
 {
@@ -325,8 +328,6 @@ CacheProcessor::start_internal(int flags)
 
   gndisks = 0;
   ink_aio_set_err_callback(new AIO_failure_handler());
-
-  config_volumes.read_config_file();
 
   /*
    create CacheDisk objects for each span in the configuration file and store in gdisks
@@ -406,7 +407,21 @@ CacheProcessor::start_internal(int flags)
         if (check) {
           cache_disk->read_only_p = true;
         }
-        cache_disk->forced_volume_num = span->forced_volume_num;
+        cache_disk->id = ats_strdup(span->id);
+
+        // Find exclusive span
+        for (ConfigVol *vol_config = config_volumes.cp_queue.head; vol_config; vol_config = vol_config->link.next) {
+          for (auto &span_config : vol_config->spans) {
+            if (strncmp(span->id, span_config.use.c_str(), span_config.use.size()) == 0 && span_config.size.in_percent &&
+                span_config.size.percent == 100) {
+              cache_disk->forced_volume_num = vol_config->number;
+              Dbg(dbg_ctl_cache_init, "cache disk id=%s forced volume num=%d", cache_disk->id.get(), vol_config->number);
+
+              break;
+            }
+          }
+        }
+
         if (span->hash_base_string) {
           cache_disk->hash_base_string = ats_strdup(span->hash_base_string);
         }
@@ -544,7 +559,7 @@ CacheProcessor::diskInitialized()
   }
 
   if (res == -1) {
-    /* problems initializing the volume.config. Punt */
+    /* problems initializing the cache.volumes[] Punt */
     gnstripes = 0;
     cacheInitialized();
     return;
@@ -640,7 +655,7 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
+    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnstripes=%d", (unsigned int)caches_ready,
         gnstripes.load());
 
     if (gnstripes) {
@@ -708,8 +723,8 @@ CacheProcessor::cacheInitialized()
           total_ram_cache_bytes += ram_cache_bytes;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, ram_cache_bytes);
 
-          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
-              ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
+          Dbg(dbg_ctl_cache_init, "stripe [%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i, ram_cache_bytes,
+              ram_cache_bytes / (1024 * 1024));
         }
 
         uint64_t vol_total_cache_bytes  = stripe->len - stripe->dirlen();
@@ -1335,7 +1350,7 @@ static int fillExclusiveDisks(CacheVol *cp);
 void
 cplist_update()
 {
-  /* go through cplist and delete volumes that are not in the volume.config */
+  /* go through cplist and delete volumes that are not in the storage.yaml */
   CacheVol *cp = cp_list.head;
   ConfigVol *config_vol;
 
@@ -1394,9 +1409,8 @@ cplist_update()
   // before any other new volumes to assure proper span free space calculation and proper volume block distribution.
   for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
     if (nullptr == config_vol->cachep) {
-      // Find out if this is a forced volume assigned exclusively to a span which was cleared (hence
-      // not referenced in cp_list). Note: non-exclusive cleared spans are not handled here, only
-      // the "exclusive"
+      // Find out if this is a forced volume assigned exclusively to a span which was cleared (hence not referenced in cp_list).
+      // Note: non-exclusive cleared spans are not handled here, only the "exclusive"
       bool forced_volume = false;
       for (int d_no = 0; d_no < gndisks; d_no++) {
         if (gdisks[d_no]->forced_volume_num == config_vol->number) {
@@ -1415,6 +1429,7 @@ cplist_update()
             config_vol->cachep = new_cp;
             fillExclusiveDisks(config_vol->cachep);
             cp_list.enqueue(new_cp);
+            cp_list_len++;
           } else {
             delete new_cp;
           }
@@ -1485,50 +1500,291 @@ fillExclusiveDisks(CacheVol *cp)
   return diskCount;
 }
 
+/**
+  In case of the cache.volumes field is empty. Create the default volume (id: 0).
+ */
+void
+cplist_reconfigure_without_volumes()
+{
+  /* only the http cache */
+  CacheVol *cp     = new CacheVol();
+  cp->vol_number   = 0;
+  cp->scheme       = CACHE_HTTP_TYPE;
+  cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
+  memset(cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
+  cp_list.enqueue(cp);
+  cp_list_len++;
+  for (int i = 0; i < gndisks; i++) {
+    if (gdisks[i]->header->num_volumes != 1 || gdisks[i]->disk_stripes[0]->vol_number != 0) {
+      /* The user had created several volumes before - clear the disk and create one volume for http */
+      Note("Clearing Disk: %s", gdisks[i]->path);
+      gdisks[i]->delete_all_volumes();
+    }
+    if (gdisks[i]->cleared) {
+      uint64_t free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
+      int vols            = (free_space / MAX_STRIPE_SIZE) + 1;
+      for (int p = 0; p < vols; p++) {
+        off_t b = gdisks[i]->free_space / (vols - p);
+        Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
+        DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
+        ink_assert(dpb && dpb->len == (uint64_t)b);
+      }
+      ink_assert(gdisks[i]->free_space == 0);
+    }
+
+    ink_assert(gdisks[i]->header->num_volumes == 1);
+    DiskStripe **dp      = gdisks[i]->disk_stripes;
+    gnstripes           += dp[0]->num_volblocks;
+    cp->size            += dp[0]->size;
+    cp->num_vols        += dp[0]->num_volblocks;
+    cp->disk_stripes[i]  = dp[0];
+  }
+}
+
+/**
+  In case of the cache.volumes field is specified.
+
+  Update config_volumes if needed.
+ */
+int
+complement_config_volumes()
+{
+  /* change percentages in the config partitions to absolute value */
+  off_t tot_space_in_blks = 0;
+  off_t blocks_per_vol    = STORE_BLOCKS_PER_STRIPE;
+  /* sum up the total space available on all the disks.
+     round down the space to 128 megabytes */
+  for (int i = 0; i < gndisks; i++) {
+    // Exclude exclusive disks (with forced volumes) from the following total space calculation,
+    // in such a way forced volumes will not impact volume percentage calculations.
+    if (-1 == gdisks[i]->forced_volume_num) {
+      tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+    } else {
+      for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+        for (auto &span_config : config_vol->spans) {
+          // Convert relative exclusive span size into absolute size
+          if (strncmp(gdisks[i]->id, span_config.use.c_str(), span_config.use.size()) == 0 && span_config.size.in_percent) {
+            int64_t space_in_blks =
+              (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol * span_config.size.percent / 100;
+            // TODO: cleanup
+            space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
+            // round down to 128 megabyte multiple
+            space_in_blks                   = (space_in_blks >> 7) << 7;
+            span_config.size.absolute_value = space_in_blks;
+          }
+
+          if (!config_vol->size.is_empty() && config_vol->size.absolute_value < 128) {
+            Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
+                    (int64_t)config_vol->size.absolute_value, 128);
+            Warning("volume %d is not created", config_vol->number);
+          }
+        }
+      }
+    }
+  }
+
+  // Convert relative volume size into absolute size
+  double percent_remaining = 100.00;
+  for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    if (config_vol->size.in_percent) {
+      if (config_vol->size.percent > percent_remaining) {
+        Warning("total volume sizes added up to more than 100%%!");
+        Warning("no volumes created");
+        return -1;
+      }
+
+      // Find if the volume is forced and if it is then calculate the total forced volume size.
+      // Forced volumes take the whole span (disk) also sum all disk space this volume is forced to.
+      int64_t tot_forced_space_in_blks = 0;
+      for (int i = 0; i < gndisks; i++) {
+        if (config_vol->number == gdisks[i]->forced_volume_num) {
+          tot_forced_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+        }
+      }
+
+      int64_t space_in_blks = 0;
+      if (0 == tot_forced_space_in_blks) {
+        // Calculate the space as percentage of total space in blocks.
+        space_in_blks = static_cast<int64_t>(((config_vol->size.percent / percent_remaining)) * tot_space_in_blks);
+      } else {
+        // Forced volumes take all disk space, so no percentage calculations here.
+        space_in_blks = tot_forced_space_in_blks;
+      }
+
+      space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
+      /* round down to 128 megabyte multiple */
+      space_in_blks                   = (space_in_blks >> 7) << 7;
+      config_vol->size.absolute_value = space_in_blks;
+
+      if (0 == tot_forced_space_in_blks) {
+        tot_space_in_blks -= space_in_blks << (20 - STORE_BLOCK_SHIFT);
+        percent_remaining -= (config_vol->size.absolute_value < 128) ? 0 : config_vol->size.percent;
+      }
+    }
+
+    if (!config_vol->size.is_empty() && config_vol->size.absolute_value < 128) {
+      Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
+              (int64_t)config_vol->size.absolute_value, 128);
+      Warning("volume %d is not created", config_vol->number);
+    }
+
+    if (dbg_ctl_cache_hosting.on()) {
+      Dbg(dbg_ctl_cache_hosting, "volume: %d ramcache: %d", config_vol->number, config_vol->ramcache_enabled);
+
+      if (config_vol->size.absolute_value) {
+        Dbg(dbg_ctl_cache_hosting, "  size: %" PRId64, config_vol->size.absolute_value);
+      } else {
+        for (const auto &config_span : config_vol->spans) {
+          Dbg(dbg_ctl_cache_hosting, "  using span: %s size: %" PRId64, config_span.use.c_str(), config_span.size.absolute_value);
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+int
+cplist_reconfigure_with_volumes()
+{
+  /* go through volume config and grow and create volumes */
+  for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    Dbg(dbg_ctl_cache_init, "volume id=%d", config_vol->number);
+
+    int64_t size = 0;
+
+    if (!config_vol->size.is_empty()) {
+      size = config_vol->size.absolute_value;
+    } else {
+      for (const auto &config_span : config_vol->spans) {
+        size += config_span.size.absolute_value;
+      }
+    }
+
+    if (size < 128) {
+      continue;
+    }
+
+    int volume_number    = config_vol->number;
+    off_t size_in_blocks = (static_cast<off_t>(size) * 1024 * 1024) / STORE_BLOCK_SIZE;
+
+    if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
+      gnstripes += config_vol->cachep->num_vols;
+      continue;
+    }
+
+    if (!config_vol->cachep) {
+      // we did not find a corresponding entry in cache vol...create one
+
+      CacheVol *new_cp     = new CacheVol();
+      new_cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
+      memset(new_cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
+      if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+        ats_free(new_cp->disk_stripes);
+        new_cp->disk_stripes = nullptr;
+        delete new_cp;
+        return -1;
+      }
+      cp_list.enqueue(new_cp);
+      cp_list_len++;
+      config_vol->cachep  = new_cp;
+      gnstripes          += new_cp->num_vols;
+      continue;
+    }
+    //    else
+    CacheVol *cp = config_vol->cachep;
+    ink_assert(cp->size <= size_in_blocks);
+    if (cp->size == size_in_blocks) {
+      gnstripes += cp->num_vols;
+      continue;
+    }
+    // else the size is greater...
+    /* search the cp_list */
+
+    int *sorted_vols = new int[gndisks];
+    for (int i = 0; i < gndisks; i++) {
+      sorted_vols[i] = i;
+    }
+    for (int i = 0; i < gndisks - 1; i++) {
+      int smallest     = sorted_vols[i];
+      int smallest_ndx = i;
+      for (int j = i + 1; j < gndisks; j++) {
+        int curr                = sorted_vols[j];
+        DiskStripe *disk_stripe = cp->disk_stripes[curr];
+        if (gdisks[curr]->cleared) {
+          ink_assert(!disk_stripe);
+          // disks that are cleared should be filled first
+          smallest     = curr;
+          smallest_ndx = j;
+        } else if (!disk_stripe && cp->disk_stripes[smallest]) {
+          smallest     = curr;
+          smallest_ndx = j;
+        } else if (disk_stripe && cp->disk_stripes[smallest] && (disk_stripe->size < cp->disk_stripes[smallest]->size)) {
+          smallest     = curr;
+          smallest_ndx = j;
+        }
+      }
+      sorted_vols[smallest_ndx] = sorted_vols[i];
+      sorted_vols[i]            = smallest;
+    }
+
+    int64_t size_to_alloc = size_in_blocks - cp->size;
+    for (int i = 0; (i < gndisks) && size_to_alloc; i++) {
+      int disk_no = sorted_vols[i];
+      ink_assert(cp->disk_stripes[sorted_vols[gndisks - 1]]);
+      int largest_vol = cp->disk_stripes[sorted_vols[gndisks - 1]]->size;
+
+      /* allocate storage on new disk. Find the difference
+         between the biggest volume on any disk and
+         the volume on this disk and try to make
+         them equal */
+      int64_t size_diff = (cp->disk_stripes[disk_no]) ? largest_vol - cp->disk_stripes[disk_no]->size : largest_vol;
+      size_diff         = (size_diff < size_to_alloc) ? size_diff : size_to_alloc;
+      /* if size_diff == 0, then the disks have volumes of the
+         same sizes, so we don't need to balance the disks */
+      if (size_diff == 0) {
+        break;
+      }
+
+      DiskStripeBlock *dpb;
+      do {
+        dpb = gdisks[disk_no]->create_volume(volume_number, size_diff, cp->scheme);
+        if (dpb) {
+          if (!cp->disk_stripes[disk_no]) {
+            cp->disk_stripes[disk_no] = gdisks[disk_no]->get_diskvol(volume_number);
+          }
+          size_diff -= dpb->len;
+          cp->size  += dpb->len;
+          cp->num_vols++;
+        } else {
+          break;
+        }
+      } while ((size_diff > 0));
+
+      size_to_alloc = size_in_blocks - cp->size;
+    }
+
+    delete[] sorted_vols;
+
+    if (size_to_alloc) {
+      if (create_volume(volume_number, size_to_alloc, cp->scheme, cp)) {
+        return -1;
+      }
+    }
+    gnstripes += cp->num_vols;
+  }
+
+  return 0;
+}
+
 int
 cplist_reconfigure()
 {
-  int64_t size;
-  int volume_number;
-  off_t size_in_blocks;
-  ConfigVol *config_vol;
-
+  // reset global variable...but why?
   gnstripes = 0;
-  if (config_volumes.num_volumes == 0) {
-    /* only the http cache */
-    CacheVol *cp     = new CacheVol();
-    cp->vol_number   = 0;
-    cp->scheme       = CACHE_HTTP_TYPE;
-    cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
-    memset(cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
-    cp_list.enqueue(cp);
-    cp_list_len++;
-    for (int i = 0; i < gndisks; i++) {
-      if (gdisks[i]->header->num_volumes != 1 || gdisks[i]->disk_stripes[0]->vol_number != 0) {
-        /* The user had created several volumes before - clear the disk
-           and create one volume for http */
-        Note("Clearing Disk: %s", gdisks[i]->path);
-        gdisks[i]->delete_all_volumes();
-      }
-      if (gdisks[i]->cleared) {
-        uint64_t free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
-        int vols            = (free_space / MAX_STRIPE_SIZE) + 1;
-        for (int p = 0; p < vols; p++) {
-          off_t b = gdisks[i]->free_space / (vols - p);
-          Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
-          DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
-          ink_assert(dpb && dpb->len == (uint64_t)b);
-        }
-        ink_assert(gdisks[i]->free_space == 0);
-      }
 
-      ink_assert(gdisks[i]->header->num_volumes == 1);
-      DiskStripe **dp      = gdisks[i]->disk_stripes;
-      gnstripes           += dp[0]->num_volblocks;
-      cp->size            += dp[0]->size;
-      cp->num_vols        += dp[0]->num_volblocks;
-      cp->disk_stripes[i]  = dp[0];
-    }
+  if (config_volumes.num_volumes == 0) {
+    cplist_reconfigure_without_volumes();
   } else {
     for (int i = 0; i < gndisks; i++) {
       if (gdisks[i]->header->num_volumes == 1 && gdisks[i]->disk_stripes[0]->vol_number == 0) {
@@ -1539,182 +1795,14 @@ cplist_reconfigure()
       }
     }
 
-    /* change percentages in the config partitions to absolute value */
-    off_t tot_space_in_blks = 0;
-    off_t blocks_per_vol    = STORE_BLOCKS_PER_STRIPE;
-    /* sum up the total space available on all the disks.
-       round down the space to 128 megabytes */
-    for (int i = 0; i < gndisks; i++) {
-      // Exclude exclusive disks (with forced volumes) from the following total space calculation,
-      // in such a way forced volumes will not impact volume percentage calculations.
-      if (-1 == gdisks[i]->forced_volume_num) {
-        tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
-      }
+    if (int err = complement_config_volumes(); err < 0) {
+      return err;
     }
 
-    double percent_remaining = 100.00;
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
-      if (config_vol->in_percent) {
-        if (config_vol->percent > percent_remaining) {
-          Warning("total volume sizes added up to more than 100%%!");
-          Warning("no volumes created");
-          return -1;
-        }
-
-        // Find if the volume is forced and if it is then calculate the total forced volume size.
-        // Forced volumes take the whole span (disk) also sum all disk space this volume is forced
-        // to.
-        int64_t tot_forced_space_in_blks = 0;
-        for (int i = 0; i < gndisks; i++) {
-          if (config_vol->number == gdisks[i]->forced_volume_num) {
-            tot_forced_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
-          }
-        }
-
-        int64_t space_in_blks = 0;
-        if (0 == tot_forced_space_in_blks) {
-          // Calculate the space as percentage of total space in blocks.
-          space_in_blks = static_cast<int64_t>(((config_vol->percent / percent_remaining)) * tot_space_in_blks);
-        } else {
-          // Forced volumes take all disk space, so no percentage calculations here.
-          space_in_blks = tot_forced_space_in_blks;
-        }
-
-        space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
-        /* round down to 128 megabyte multiple */
-        space_in_blks    = (space_in_blks >> 7) << 7;
-        config_vol->size = space_in_blks;
-
-        if (0 == tot_forced_space_in_blks) {
-          tot_space_in_blks -= space_in_blks << (20 - STORE_BLOCK_SHIFT);
-          percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
-        }
-      }
-      if (config_vol->size < 128) {
-        Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
-                (int64_t)config_vol->size, 128);
-        Warning("volume %d is not created", config_vol->number);
-      }
-      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
-          config_vol->ramcache_enabled);
-    }
     cplist_update();
 
-    /* go through volume config and grow and create volumes */
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
-      size = config_vol->size;
-      if (size < 128) {
-        continue;
-      }
-
-      volume_number = config_vol->number;
-
-      size_in_blocks = (static_cast<off_t>(size) * 1024 * 1024) / STORE_BLOCK_SIZE;
-
-      if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
-        gnstripes += config_vol->cachep->num_vols;
-        continue;
-      }
-
-      if (!config_vol->cachep) {
-        // we did not find a corresponding entry in cache vol...create one
-
-        CacheVol *new_cp     = new CacheVol();
-        new_cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
-        memset(new_cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
-        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
-          ats_free(new_cp->disk_stripes);
-          new_cp->disk_stripes = nullptr;
-          delete new_cp;
-          return -1;
-        }
-        cp_list.enqueue(new_cp);
-        cp_list_len++;
-        config_vol->cachep  = new_cp;
-        gnstripes          += new_cp->num_vols;
-        continue;
-      }
-      //    else
-      CacheVol *cp = config_vol->cachep;
-      ink_assert(cp->size <= size_in_blocks);
-      if (cp->size == size_in_blocks) {
-        gnstripes += cp->num_vols;
-        continue;
-      }
-      // else the size is greater...
-      /* search the cp_list */
-
-      int *sorted_vols = new int[gndisks];
-      for (int i = 0; i < gndisks; i++) {
-        sorted_vols[i] = i;
-      }
-      for (int i = 0; i < gndisks - 1; i++) {
-        int smallest     = sorted_vols[i];
-        int smallest_ndx = i;
-        for (int j = i + 1; j < gndisks; j++) {
-          int curr                = sorted_vols[j];
-          DiskStripe *disk_stripe = cp->disk_stripes[curr];
-          if (gdisks[curr]->cleared) {
-            ink_assert(!disk_stripe);
-            // disks that are cleared should be filled first
-            smallest     = curr;
-            smallest_ndx = j;
-          } else if (!disk_stripe && cp->disk_stripes[smallest]) {
-            smallest     = curr;
-            smallest_ndx = j;
-          } else if (disk_stripe && cp->disk_stripes[smallest] && (disk_stripe->size < cp->disk_stripes[smallest]->size)) {
-            smallest     = curr;
-            smallest_ndx = j;
-          }
-        }
-        sorted_vols[smallest_ndx] = sorted_vols[i];
-        sorted_vols[i]            = smallest;
-      }
-
-      int64_t size_to_alloc = size_in_blocks - cp->size;
-      for (int i = 0; (i < gndisks) && size_to_alloc; i++) {
-        int disk_no = sorted_vols[i];
-        ink_assert(cp->disk_stripes[sorted_vols[gndisks - 1]]);
-        int largest_vol = cp->disk_stripes[sorted_vols[gndisks - 1]]->size;
-
-        /* allocate storage on new disk. Find the difference
-           between the biggest volume on any disk and
-           the volume on this disk and try to make
-           them equal */
-        int64_t size_diff = (cp->disk_stripes[disk_no]) ? largest_vol - cp->disk_stripes[disk_no]->size : largest_vol;
-        size_diff         = (size_diff < size_to_alloc) ? size_diff : size_to_alloc;
-        /* if size_diff == 0, then the disks have volumes of the
-           same sizes, so we don't need to balance the disks */
-        if (size_diff == 0) {
-          break;
-        }
-
-        DiskStripeBlock *dpb;
-        do {
-          dpb = gdisks[disk_no]->create_volume(volume_number, size_diff, cp->scheme);
-          if (dpb) {
-            if (!cp->disk_stripes[disk_no]) {
-              cp->disk_stripes[disk_no] = gdisks[disk_no]->get_diskvol(volume_number);
-            }
-            size_diff -= dpb->len;
-            cp->size  += dpb->len;
-            cp->num_vols++;
-          } else {
-            break;
-          }
-        } while ((size_diff > 0));
-
-        size_to_alloc = size_in_blocks - cp->size;
-      }
-
-      delete[] sorted_vols;
-
-      if (size_to_alloc) {
-        if (create_volume(volume_number, size_to_alloc, cp->scheme, cp)) {
-          return -1;
-        }
-      }
-      gnstripes += cp->num_vols;
+    if (int err = cplist_reconfigure_with_volumes(); err < 0) {
+      return err;
     }
   }
 

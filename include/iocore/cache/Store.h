@@ -79,10 +79,10 @@ struct Span {
   unsigned hw_sector_size = DEFAULT_HW_SECTOR_SIZE;
   unsigned alignment      = 0;
   span_diskid_t disk_id;
-  int forced_volume_num = -1;    ///< Force span in to specific volume.
-  bool file_pathname    = false; // the pathname is a file
+  bool file_pathname = false; // the pathname is a file
   // v- used as a magic location for copy constructor.
   // we memcpy everything before this member and do explicit assignment for the rest.
+  ats_scoped_str id;
   ats_scoped_str pathname;
   ats_scoped_str hash_base_string; ///< Used to seed the stripe assignment hash.
 
@@ -100,7 +100,7 @@ struct Span {
     return offset + blocks;
   }
 
-  const char *init(const char *n, int64_t size);
+  const char *init(const char *id, const char *path, int64_t size);
 
   /// Set the hash seed string.
   void hash_base_string_set(const char *s);
@@ -121,6 +121,9 @@ struct Span {
      * explicit assignment for every member, which has its own problems.
      */
     memcpy(static_cast<void *>(this), &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
+    if (that.id) {
+      id = ats_strdup(that.id);
+    }
     if (that.pathname) {
       pathname = ats_strdup(that.pathname);
     }
@@ -155,17 +158,13 @@ struct Store {
   Store(){};
   ~Store();
 
-  unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.config
+  unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.yaml
   unsigned n_spans           = 0; ///< The number of disks/paths we could actually read and parse
   Span **spans               = nullptr;
 
   Result read_config();
 
   int write_config_data(int fd) const;
-
-  /// Additional configuration key values.
-  static const char VOLUME_KEY[];
-  static const char HASH_BASE_STRING_KEY[];
 };
 
 // store either free or in the cache, can be stolen for reconfiguration
