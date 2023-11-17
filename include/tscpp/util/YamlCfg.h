@@ -27,6 +27,7 @@
 #include <string_view>
 
 #include <yaml-cpp/yaml.h>
+#include <swoc/bwf_fwd.h>
 
 namespace ts
 {
@@ -81,3 +82,9 @@ namespace Yaml
 
 } // end namespace Yaml
 } // end namespace ts
+
+namespace swoc
+{
+// This needs to be in namespace "swoc" or "YAML" or ADL doesn't find the overload.
+extern BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, YAML::Mark const &mark);
+} // namespace swoc

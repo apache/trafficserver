@@ -36,7 +36,7 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_ip.h"
 
-#include "yaml-cpp/yaml.h"
+#include "tscpp/util/YamlCfg.h"
 
 using swoc::TextView;
 
@@ -49,13 +49,6 @@ BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IpAllow const *obj)
 {
   return w.print("{}[{}]", obj->MODULE_NAME, obj->get_config_file().c_str());
-}
-
-// This needs to be in namespace "swoc" or "YAML" or ADL doesn't find the overload.
-BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, YAML::Mark const &mark)
-{
-  return w.print("Line {}", mark.line);
 }
 
 } // namespace swoc
