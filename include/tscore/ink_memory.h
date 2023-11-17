@@ -56,6 +56,9 @@
 #include <malloc/malloc.h>
 #elif __has_include(<malloc.h>)
 #include <malloc.h>
+#if __has_include(<malloc_np.h>)
+#include <malloc_np.h>
+#endif
 #endif // ! TS_HAS_JEMALLOC
 
 #ifndef MADV_NORMAL
