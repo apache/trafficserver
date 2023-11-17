@@ -29,9 +29,7 @@
 
 #include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
-#ifdef HAVE_INTTYPES_H
 #include <inttypes.h> // NOLINT(modernize-deprecated-headers)
-#endif
 
 #ifndef INT64_MIN
 #define INT64_MAX (9223372036854775807LL)

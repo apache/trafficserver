@@ -63,22 +63,15 @@ struct ifafilt;
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #endif
-#include <ctype.h> // NOLINT(modernize-deprecated-headers)
-#ifdef HAVE_STRING_H
+#include <ctype.h>  // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
-#endif
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -108,9 +101,6 @@ struct ifafilt;
 #endif
 
 #include <signal.h> // NOLINT(modernize-deprecated-headers)
-#ifdef HAVE_SIGINFO_H
-#include <siginfo.h>
-#endif
 
 #if TS_USE_EPOLL
 #include <sys/epoll.h>
@@ -119,9 +109,6 @@ struct ifafilt;
 #include <sys/event.h>
 #endif
 
-#ifdef HAVE_VALUES_H
-#include <values.h>
-#endif
 #if __has_include(<alloca.h>)
 #include <alloca.h>
 #endif
