@@ -422,7 +422,7 @@ stek_updater(void *arg)
   ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
   ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
 
-  Dbg(dbg_ctl, "Starting STEK updater thread: %lu", ::pthread_self());
+  Dbg(dbg_ctl, "Starting STEK updater thread");
 
   while (!plugin_threads.is_shut_down()) {
     ssl_ticket_key_t curr_stek;
@@ -538,7 +538,7 @@ stek_updater(void *arg)
     stek_share_server.config_reloading = false;
   }
 
-  Dbg(dbg_ctl, "Stopping STEK updater thread: %lu", ::pthread_self());
+  Dbg(dbg_ctl, "Stopping STEK updater thread");
 
   return nullptr;
 }
