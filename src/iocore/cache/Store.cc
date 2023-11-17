@@ -21,14 +21,17 @@
   limitations under the License.
  */
 
+#include "P_CacheHosting.h"
+
 #include "iocore/cache/Store.h"
+#include "iocore/cache/YamlStorageConfig.h"
 #include "records/RecCore.h"
 #include "tscore/Diags.h"
+#include "tscore/ink_memory.h"
 #include "tscore/ink_platform.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
-#include "tscore/SimpleTokenizer.h"
 #include "tsutil/DbgCtl.h"
 
 #if defined(__linux__)
@@ -38,8 +41,6 @@
 //
 // Store
 //
-const char Store::VOLUME_KEY[]           = "volume";
-const char Store::HASH_BASE_STRING_KEY[] = "id";
 
 namespace
 {
@@ -47,6 +48,8 @@ namespace
 DbgCtl dbg_ctl_cache_init{"cache_init"};
 
 } // end anonymous namespace
+
+extern ConfigVolumes config_volumes;
 
 static span_error_t
 make_span_error(int error)
@@ -188,12 +191,6 @@ Span::hash_base_string_set(const char *s)
 }
 
 void
-Span::volume_number_set(int n)
-{
-  forced_volume_num = n;
-}
-
-void
 Store::delete_all()
 {
   for (unsigned i = 0; i < n_spans; i++) {
@@ -221,123 +218,83 @@ Span::~Span()
 Result
 Store::read_config()
 {
-  int            n_dsstore = 0;
-  int            i         = 0;
-  const char    *err       = nullptr;
-  Span          *sd = nullptr, *cur = nullptr;
-  Span          *ns;
-  ats_scoped_fd  fd;
+  SpanConfig     storage_config;
   ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
   Note("%s loading ...", ts::filename::STORAGE);
-  Dbg(dbg_ctl_cache_init, "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
-  fd = ::open(storage_path, O_RDONLY);
-  if (fd < 0) {
-    Error("%s failed to load", ts::filename::STORAGE);
-    return Result::failure("open %s: %s", storage_path.get(), strerror(errno));
+
+  if (!YamlStorageConfig::load(storage_config, config_volumes, storage_path.get())) {
+    return Result::failure("failed to load %s", ts::filename::STORAGE);
   }
 
-  // For each line
+  this->n_spans_in_config = storage_config.size();
 
-  char line[1024];
-  int  len;
-  while ((len = ink_file_fd_readline(fd, sizeof(line), line)) > 0) {
-    const char *path;
-    const char *seed = nullptr;
-    // Because the SimpleTokenizer is a bit too simple, we have to normalize whitespace.
-    for (char *spot = line, *limit = line + len; spot < limit; ++spot) {
-      if (ParseRules::is_space(*spot)) {
-        *spot = ' '; // force whitespace to literal space.
-      }
-    }
-    SimpleTokenizer tokens(line, ' ', SimpleTokenizer::OVERWRITE_INPUT_STRING);
+  int   n_dsstore = 0;
+  Span *prev      = nullptr;
+  Span *head      = nullptr;
 
-    // skip comments and blank lines
-    path = tokens.getNext();
-    if (nullptr == path || '#' == path[0]) {
-      continue;
-    }
+  for (const auto &it : storage_config) {
+    Span *span = new Span();
 
-    // parse
-    Dbg(dbg_ctl_cache_init, "Store::read_config: \"%s\"", path);
-    ++n_spans_in_config;
+    Dbg(dbg_ctl_cache_init, "Span name=\"%s\" path=\"%s\" size=%" PRId64 " hash_seed=%s", it.name.c_str(), it.path.c_str(), it.size,
+        it.hash_seed.c_str());
 
-    int64_t     size       = -1;
-    int         volume_num = -1;
-    const char *e;
-    while (nullptr != (e = tokens.getNext())) {
-      if (ParseRules::is_digit(*e)) {
-        const char *end;
-        if ((size = ink_atoi64(e, &end)) <= 0 || *end != '\0') {
-          delete sd;
-          Error("%s failed to load", ts::filename::STORAGE);
-          return Result::failure("failed to parse size '%s'", e);
-        }
-      } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
-        e += sizeof(HASH_BASE_STRING_KEY) - 1;
-        if ('=' == *e) {
-          ++e;
-        }
-        if (*e && !ParseRules::is_space(*e)) {
-          seed = e;
-        }
-      } else if (0 == strncasecmp(VOLUME_KEY, e, sizeof(VOLUME_KEY) - 1)) {
-        e += sizeof(VOLUME_KEY) - 1;
-        if ('=' == *e) {
-          ++e;
-        }
-        if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
-          delete sd;
-          Error("%s failed to load", ts::filename::STORAGE);
-          return Result::failure("failed to parse volume number '%s'", e);
-        }
-      }
-    }
-
-    std::string pp = Layout::get()->relative(path);
-
-    ns = new Span;
-    Dbg(dbg_ctl_cache_init, "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(),
-        size, volume_num, seed ? " id=" : "", seed ? seed : "");
-    if ((err = ns->init(pp.c_str(), size))) {
+    std::string pp  = Layout::get()->relative(it.path);
+    const char *err = span->init(it.name.c_str(), pp.c_str(), it.size);
+    if (err) {
       Dbg(dbg_ctl_cache_init, "Store::read_config - could not initialize storage \"%s\" [%s]", pp.c_str(), err);
-      delete ns;
+      delete span;
       continue;
     }
 
     n_dsstore++;
 
     // Set side values if present.
-    if (seed) {
-      ns->hash_base_string_set(seed);
-    }
-    if (volume_num > 0) {
-      ns->volume_number_set(volume_num);
+    if (!it.hash_seed.empty()) {
+      span->hash_base_string_set(it.hash_seed.c_str());
     }
 
-    // new Span
-    {
-      Span *prev = cur;
-      cur        = ns;
-      if (!sd) {
-        sd = cur;
-      } else {
-        prev->link.next = cur;
-      }
+    // link prev and current Span
+    if (prev == nullptr) {
+      head = span;
+    } else {
+      prev->link.next = span;
     }
+    prev = span;
   }
 
   // count the number of disks
   extend(n_dsstore);
-  cur = sd;
-  while (cur) {
-    Span *next     = cur->link.next;
-    cur->link.next = nullptr;
-    spans[i++]     = cur;
-    cur            = next;
+  Span *s = head;
+  for (int i = 0; i < n_dsstore; ++i) {
+    Span *next   = s->link.next;
+    s->link.next = nullptr;
+    spans[i]     = s;
+    s            = next;
   }
-  sd = nullptr; // these are all used.
   sort();
+
+  // print read config_volumes
+  if (dbg_ctl_cache_init.on()) {
+    for (ConfigVol *conf = config_volumes.cp_queue.head; conf != nullptr; conf = config_volumes.cp_queue.next(conf)) {
+      if (conf->spans.empty()) {
+        if (conf->size.in_percent) {
+          Dbg(dbg_ctl_cache_init, "Volume number=%d size=%d%%", conf->number, conf->size.percent);
+        } else {
+          Dbg(dbg_ctl_cache_init, "Volume number=%d size=%" PRId64, conf->number, conf->size.absolute_value);
+        }
+      } else {
+        Dbg(dbg_ctl_cache_init, "Volume number=%d", conf->number);
+        for (auto &span_conf : conf->spans) {
+          if (span_conf.size.in_percent) {
+            Dbg(dbg_ctl_cache_init, "  using span id=%s size=%d%%", span_conf.use.c_str(), span_conf.size.percent);
+          } else {
+            Dbg(dbg_ctl_cache_init, "  using span id=%s size=%" PRId64, span_conf.use.c_str(), span_conf.size.absolute_value);
+          }
+        }
+      }
+    }
+  }
 
   Note("%s finished loading", ts::filename::STORAGE);
 
@@ -360,8 +317,10 @@ Store::write_config_data(int fd) const
 }
 
 const char *
-Span::init(const char *path, int64_t size)
+Span::init(const char *name, const char *path, int64_t size)
 {
+  this->name = ats_strdup(name);
+
   struct stat         sbuf;
   struct statvfs      vbuf;
   span_error_t        serr;

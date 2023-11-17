@@ -36,6 +36,7 @@ add_library(
   Store.cc
   Stripe.cc
   StripeSM.cc
+  YamlStorageConfig.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 
@@ -57,6 +58,7 @@ if(HAVE_LZMA_H)
 endif()
 
 if(BUILD_TESTING)
+  # Unit Tests with unit_tests/main.cc
   macro(add_cache_test name)
     add_executable(${name} unit_tests/main.cc unit_tests/stub.cc unit_tests/CacheTestHandler.cc ${ARGN})
     target_link_libraries(${name} PRIVATE ts::inkcache Catch2::Catch2WithMain)
@@ -91,6 +93,11 @@ if(BUILD_TESTING)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
 
+  # Unit Tests without unit_tests/main.cc
+  add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)
+  target_include_directories(test_ConfigVolumes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(test_ConfigVolumes ts::inkcache Catch2::Catch2WithMain)
+  add_test(NAME test_ConfigVolumes COMMAND test_ConfigVolumes)
 endif()
 
 clang_tidy_check(inkcache)

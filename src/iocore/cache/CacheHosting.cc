@@ -24,7 +24,6 @@
 #include "P_CacheHosting.h"
 #include "Stripe.h"
 #include "iocore/cache/CacheDefs.h"
-#include "iocore/eventsystem/Tasks.h"
 #include "swoc/swoc_file.h"
 
 #include "tscore/HostLookup.h"
@@ -38,7 +37,6 @@ namespace
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
 DbgCtl dbg_ctl_matcher{"matcher"};
 
-constexpr static int MAX_VOLUME_IDX = 255;
 } // end anonymous namespace
 
 /*************************************************************
@@ -576,285 +574,6 @@ CacheHostRecord::Print() const
 {
 }
 
-void
-ConfigVolumes::read_config_file()
-{
-  ats_scoped_str config_path;
-
-  config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
-  ink_release_assert(config_path);
-
-  Note("%s loading ...", ts::filename::VOLUME);
-
-  std::error_code ec;
-  std::string     content{swoc::file::load(swoc::file::path{config_path}, ec)};
-
-  if (ec) {
-    switch (ec.value()) {
-    case ENOENT:
-      Warning("Cannot open the config file: %s - %s", config_path.get(), strerror(ec.value()));
-      break;
-    default:
-      Error("%s failed to load: %s", config_path.get(), strerror(ec.value()));
-      return;
-    }
-  }
-
-  BuildListFromString(config_path, content.data());
-  Note("volume.config finished loading");
-
-  return;
-}
-
-void
-ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
-{
-  // Table build locals
-  Tokenizer      bufTok("\n");
-  tok_iter_state i_state;
-  const char    *tmp;
-  int            line_num = 0;
-  int            total    = 0; // added by YTS Team, yamsat for bug id 59632
-
-  char        volume_seen[256];
-  const char *matcher_name = "[CacheVolition]";
-
-  memset(volume_seen, 0, sizeof(volume_seen));
-  num_volumes      = 0;
-  num_http_volumes = 0;
-
-  if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
-    // We have an empty file
-    /* no volumes */
-    return;
-  }
-
-  // First get the number of entries
-  tmp = bufTok.iterFirst(&i_state);
-  while (tmp != nullptr) {
-    line_num++;
-
-    char       *end;
-    char       *line_end         = nullptr;
-    const char *err              = nullptr;
-    int         volume_number    = 0;
-    CacheType   scheme           = CacheType::NONE;
-    int         size             = 0;
-    int         in_percent       = 0;
-    bool        ramcache_enabled = true;
-    int         avg_obj_size     = -1; // Defaults
-    int         fragment_size    = -1;
-    int64_t     ram_cache_size   = -1; // -1 means use shared allocation
-    int64_t     ram_cache_cutoff = -1; // -1 means use global cutoff
-
-    while (true) {
-      // skip all blank spaces at beginning of line
-      while (*tmp && isspace(*tmp)) {
-        tmp++;
-      }
-
-      if (*tmp == '\0' || *tmp == '#') {
-        break;
-      } else if (!(*tmp)) {
-        err = "Unexpected end of line";
-        break;
-      }
-
-      end = const_cast<char *>(tmp);
-      while (*end && !isspace(*end)) {
-        end++;
-      }
-
-      if (!(*end)) {
-        line_end = end;
-      } else {
-        line_end = end + 1;
-        *end     = '\0';
-      }
-      char *eq_sign;
-
-      eq_sign = const_cast<char *>(strchr(tmp, '='));
-      if (!eq_sign) {
-        err = "Unexpected end of line";
-        break;
-      } else {
-        *eq_sign = '\0';
-      }
-
-      if (strcasecmp(tmp, "volume") == 0) { // match volume
-        tmp           += 7;                 // size of string volume including null
-        volume_number  = atoi(tmp);
-
-        if (volume_seen[volume_number]) {
-          err = "Volume Already Specified";
-          break;
-        }
-
-        if (volume_number < 1 || volume_number > MAX_VOLUME_IDX) {
-          err = "Bad Volume Number";
-          break;
-        }
-
-        volume_seen[volume_number] = 1;
-        while (ParseRules::is_digit(*tmp)) {
-          tmp++;
-        }
-      } else if (strcasecmp(tmp, "scheme") == 0) { // match scheme
-        tmp += 7;                                  // size of string scheme including null
-
-        if (!strcasecmp(tmp, "http")) {
-          tmp    += 4;
-          scheme  = CacheType::HTTP;
-        } else if (!strcasecmp(tmp, "mixt")) {
-          tmp    += 4;
-          scheme  = CacheType::RTSP;
-        } else {
-          err = "Unexpected end of line";
-          break;
-        }
-      } else if (strcasecmp(tmp, "size") == 0) { // match size
-        tmp  += 5;
-        size  = atoi(tmp);
-
-        while (ParseRules::is_digit(*tmp)) {
-          tmp++;
-        }
-
-        if (*tmp == '%') {
-          // added by YTS Team, yamsat for bug id 59632
-          total += size;
-          if (size > 100 || total > 100) {
-            err = "Total volume size added up to more than 100 percent, No volumes created";
-            break;
-          }
-          // ends here
-          in_percent = 1;
-          tmp++;
-        } else {
-          in_percent = 0;
-        }
-      } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
-        tmp += 13;
-        if (!ParseRules::is_digit(*tmp)) {
-          err = "Invalid avg_obj_size value (must start with a number, e.g., 64K)";
-          break;
-        }
-        avg_obj_size = static_cast<int>(ink_atoi64(tmp));
-
-        if (avg_obj_size < 0) {
-          err = "Invalid avg_obj_size value (must be >= 0)";
-          break;
-        }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
-          tmp++;
-        }
-      } else if (strcasecmp(tmp, "fragment_size") == 0) { // match fragment_size
-        tmp += 14;
-        if (!ParseRules::is_digit(*tmp)) {
-          err = "Invalid fragment_size value (must start with a number, e.g., 1M)";
-          break;
-        }
-        fragment_size = static_cast<int>(ink_atoi64(tmp));
-
-        if (fragment_size < 0) {
-          err = "Invalid fragment_size value (must be >= 0)";
-          break;
-        }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
-          tmp++;
-        }
-      } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
-        tmp += 9;
-        if (!strcasecmp(tmp, "false")) {
-          tmp              += 5;
-          ramcache_enabled  = false;
-        } else if (!strcasecmp(tmp, "true")) {
-          tmp              += 4;
-          ramcache_enabled  = true;
-        } else {
-          err = "Unexpected end of line";
-          break;
-        }
-      } else if (strcasecmp(tmp, "ram_cache_size") == 0) { // match ram_cache_size
-        tmp += 15;
-        if (!ParseRules::is_digit(*tmp)) {
-          err = "Invalid ram_cache_size value (must start with a number, e.g., 10G)";
-          break;
-        }
-        ram_cache_size = ink_atoi64(tmp);
-
-        if (ram_cache_size < 0) {
-          err = "Invalid ram_cache_size value (must be >= 0)";
-          break;
-        }
-        // Note: ram_cache_size=0 disables RAM cache for this volume, same as ramcache=false
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
-          tmp++;
-        }
-      } else if (strcasecmp(tmp, "ram_cache_cutoff") == 0) { // match ram_cache_cutoff
-        tmp += 17;
-        if (!ParseRules::is_digit(*tmp)) {
-          err = "Invalid ram_cache_cutoff value (must start with a number, e.g., 5M)";
-          break;
-        }
-        ram_cache_cutoff = ink_atoi64(tmp);
-
-        if (ram_cache_cutoff < 0) {
-          err = "Invalid ram_cache_cutoff value (must be >= 0)";
-          break;
-        }
-        while (*tmp && (ParseRules::is_digit(*tmp) || strchr("KMGT", *tmp))) {
-          tmp++;
-        }
-      }
-
-      // ends here
-      if (end < line_end) {
-        tmp = line_end;
-      }
-    }
-
-    if (err) {
-      Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, err);
-    } else if (volume_number && size && scheme != CacheType::NONE) {
-      /* add the config */
-
-      ConfigVol *configp = new ConfigVol();
-
-      configp->number = volume_number;
-      if (in_percent) {
-        configp->percent    = size;
-        configp->in_percent = true;
-      } else {
-        configp->in_percent = false;
-      }
-      configp->scheme           = scheme;
-      configp->size             = size;
-      configp->avg_obj_size     = avg_obj_size;
-      configp->fragment_size    = fragment_size;
-      configp->ram_cache_size   = ram_cache_size;
-      configp->ram_cache_cutoff = ram_cache_cutoff;
-      configp->cachep           = nullptr;
-      configp->ramcache_enabled = ramcache_enabled;
-      cp_queue.enqueue(configp);
-      num_volumes++;
-      if (scheme == CacheType::HTTP) {
-        num_http_volumes++;
-      } else {
-        ink_release_assert(!"Unexpected non-HTTP cache volume");
-      }
-      Dbg(dbg_ctl_cache_hosting,
-          "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d, "
-          "ram_cache_size=%" PRId64 ", ram_cache_cutoff=%" PRId64,
-          volume_number, static_cast<int>(scheme), size, in_percent, ramcache_enabled, ram_cache_size, ram_cache_cutoff);
-    }
-
-    tmp = bufTok.iterNext(&i_state);
-  }
-
-  return;
-}
-
 // Wrapper function for deleting CacheHostRecord from outside the cache module.
 void
 destroyCacheHostRecord(CacheHostRecord *rec)
@@ -899,4 +618,92 @@ createCacheHostRecord(const char *volume_str, char *errbuf, size_t errbufsize)
       host_rec->num_vols);
 
   return host_rec;
+}
+
+bool
+ConfigVol::Size::is_empty() const
+{
+  if (absolute_value == 0 && in_percent == false && percent == 0) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+  Complement missing volumes[].size and volumes[].spans[].size if there
+ */
+void
+ConfigVolumes::complement()
+{
+  struct SizeTracker {
+    int empty_node     = 0;
+    int remaining_size = 100; ///< in percentage
+  };
+
+  SizeTracker                                       volume_tracker;
+  std::unordered_map<std::string_view, SizeTracker> span_size_map;
+
+  // Find missing size and remaining size in percentage
+  for (ConfigVol *conf = cp_queue.head; conf != nullptr; conf = cp_queue.next(conf)) {
+    if (!conf->spans.empty()) {
+      for (const auto &span : conf->spans) {
+        SizeTracker span_size;
+
+        if (auto it = span_size_map.find(span.use); it != span_size_map.end()) {
+          span_size = it->second;
+        }
+
+        if (span.size.is_empty()) {
+          span_size.empty_node++;
+        } else if (span.size.in_percent) {
+          if (span_size.remaining_size < span.size.percent) {
+            Error("Total volume size (in percent) exceeded 100%% - span.use=%s", span.use.c_str());
+            continue;
+          }
+
+          span_size.remaining_size -= span.size.percent;
+        }
+
+        span_size_map.insert_or_assign(span.use, span_size);
+      }
+    } else {
+      if (conf->size.is_empty()) {
+        ++volume_tracker.empty_node;
+      } else if (conf->size.in_percent) {
+        if (volume_tracker.remaining_size < conf->size.percent) {
+          Error("Total volume size (in percent) exceeded 100%%");
+          continue;
+        }
+        volume_tracker.remaining_size -= conf->size.percent;
+      }
+    }
+  }
+
+  // If there're no missing size, do nothing
+  if (volume_tracker.empty_node == 0 &&
+      std::all_of(span_size_map.cbegin(), span_size_map.cend(), [](auto &it) { return it.second.empty_node == 0; })) {
+    return;
+  }
+
+  // Set size
+  for (ConfigVol *conf = cp_queue.head; conf != nullptr; conf = cp_queue.next(conf)) {
+    if (!conf->spans.empty()) {
+      for (auto &span : conf->spans) {
+        if (span.size.is_empty()) {
+          const SizeTracker &tracker = span_size_map[span.use];
+          if (tracker.empty_node == 0) {
+            continue;
+          }
+          span.size.in_percent = true;
+          span.size.percent    = tracker.remaining_size / tracker.empty_node;
+        }
+      }
+    } else {
+      if (conf->size.is_empty() && volume_tracker.empty_node != 0) {
+        conf->size.in_percent = true;
+        conf->size.percent    = volume_tracker.remaining_size / volume_tracker.empty_node;
+      }
+    }
+  }
 }

@@ -27,6 +27,7 @@
 #include "CacheVC.h"
 #include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
+#include "iocore/cache/YamlStorageConfig.h"
 #include "P_CacheTest.h"
 #include "Stripe.h"
 #include "StripeSM.h"
