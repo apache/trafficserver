@@ -341,11 +341,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       break;
     case NH_EXHAUST_RING:
     default:
-      if (!wrapped) {
-        cur_ring = result.last_group;
-      } else if (groups > 1) {
-        cur_ring = (result.last_group + 1) % groups;
-      }
+      cur_ring = result.last_group;
       break;
     }
   }
