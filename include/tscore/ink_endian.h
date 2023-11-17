@@ -25,9 +25,7 @@
 
 #include "tscore/ink_config.h"
 
-#if __has_include(<sys/types.h>)
 #include <sys/types.h>
-#endif
 
 #if __has_include(<sys/byteorder.h>)
 #include <sys/byteorder.h>

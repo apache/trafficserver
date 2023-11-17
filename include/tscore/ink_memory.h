@@ -34,9 +34,7 @@
 
 #include <unistd.h>
 
-#if __has_include(<sys/types.h>)
 #include <sys/types.h>
-#endif
 
 #if HAVE_SYS_UIO_H
 #include <sys/uio.h>
