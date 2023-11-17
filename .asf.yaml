@@ -37,6 +37,7 @@ github:
     - etapia
     - lzx404243
     - JosiahWI
+    - phongn
   protected_branches:
     master:
       required_status_checks:
