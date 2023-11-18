@@ -75,9 +75,8 @@ struct ifafilt;
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#ifdef HAVE_NETDB_H
 #include <netdb.h>
-#endif
+
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
