@@ -5884,9 +5884,6 @@ HttpSM::handle_post_failure()
 void
 HttpSM::handle_http_server_open()
 {
-  // The request is now not queued. This is important because server retries reuse the t_state.
-  t_state.outbound_conn_track_state.dequeue();
-
   // [bwyatt] applying per-transaction OS netVC options here
   //          IFF they differ from the netVC's current options.
   //          This should keep this from being redundant on a
