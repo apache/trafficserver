@@ -60,9 +60,7 @@
 struct ifafilt;
 #include <net/if.h>
 
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
-#endif
 #include <ctype.h>  // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
 #ifdef HAVE_SYS_TYPES_H
