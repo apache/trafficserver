@@ -262,26 +262,9 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
     return handleEvent(AIO_EVENT_DONE, nullptr);
   }
 
+  // Make sure the size is correct for checking error conditions before calling add_writer(this).
   agg_len = stripe->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
-  stripe->add_agg_todo(agg_len);
-  bool agg_error = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
-                    (!f.readers && (stripe->get_agg_todo_size() > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
-#ifdef CACHE_AGG_FAIL_RATE
-  agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
-#endif
-
-  if (!agg_error) {
-    ink_assert(agg_len <= AGG_SIZE);
-    if (f.evac_vector) {
-      stripe->get_pending_writers().push(this);
-    } else {
-      stripe->get_pending_writers().enqueue(this);
-    }
-  } else {
-    stripe->add_agg_todo(-agg_len);
-  }
-
-  if (agg_error) {
+  if (!stripe->add_writer(this)) {
     Metrics::Counter::increment(cache_rsb.write_backlog_failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
     Metrics::Counter::increment(cache_rsb.status[op_type].failure);

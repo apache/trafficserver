@@ -282,6 +282,7 @@ public:
   int get_agg_todo_size() const;
   void add_agg_todo(int size);
 
+  bool add_writer(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
 private:

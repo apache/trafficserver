@@ -919,6 +919,31 @@ Stripe::_init_data()
 }
 
 bool
+Stripe::add_writer(CacheVC *vc)
+{
+  ink_assert(vc);
+  this->add_agg_todo(vc->agg_len);
+  bool agg_error = (vc->agg_len > AGG_SIZE || vc->header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
+                    (!vc->f.readers && (this->get_agg_todo_size() > cache_config_agg_write_backlog + AGG_SIZE) && vc->write_len));
+#ifdef CACHE_AGG_FAIL_RATE
+  agg_error = agg_error || ((uint32_t)vc->mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
+#endif
+
+  if (agg_error) {
+    this->add_agg_todo(-vc->agg_len);
+  } else {
+    ink_assert(vc->agg_len <= AGG_SIZE);
+    if (vc->f.evac_vector) {
+      this->get_pending_writers().push(vc);
+    } else {
+      this->get_pending_writers().enqueue(vc);
+    }
+  }
+
+  return !agg_error;
+}
+
+bool
 Stripe::flush_aggregate_write_buffer()
 {
   // set write limit
