@@ -169,10 +169,6 @@ public:
     int reserve();
     /// Release a connection reservation.
     void release();
-    /// Reserve a queue / retry slot.
-    int enqueue();
-    /// Release a block
-    void dequeue();
     /// Note blocking a transaction.
     void blocked();
     /// Clear all reservations.
@@ -355,27 +351,10 @@ ConnectionTracker::TxnState::drop()
   return std::move(_g);
 }
 
-inline int
-ConnectionTracker::TxnState::enqueue()
-{
-  _queued_p = true;
-  return ++_g->_in_queue;
-}
-
-inline void
-ConnectionTracker::TxnState::dequeue()
-{
-  if (_queued_p) {
-    _queued_p = false;
-    --_g->_in_queue;
-  }
-}
-
 inline void
 ConnectionTracker::TxnState::clear()
 {
   if (_g) {
-    this->dequeue();
     this->release();
     _g = nullptr;
   }
