@@ -247,6 +247,21 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 
   set_agg_write_in_progress();
   POP_HANDLER;
+
+  bool max_doc_error = (cache_config_max_doc_size && (cache_config_max_doc_size < vio.ndone ||
+                                                      (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
+  if (max_doc_error) {
+    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
+    Metrics::Counter::increment(cache_rsb.status[op_type].failure);
+    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
+    io.aio_result = AIO_SOFT_FAILURE;
+    if (event == EVENT_CALL) {
+      return EVENT_RETURN;
+    }
+    return handleEvent(AIO_EVENT_DONE, nullptr);
+  }
+
   agg_len = stripe->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
   stripe->add_agg_todo(agg_len);
   bool agg_error = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
@@ -254,26 +269,28 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 #ifdef CACHE_AGG_FAIL_RATE
   agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
-  bool max_doc_error = (cache_config_max_doc_size && (cache_config_max_doc_size < vio.ndone ||
-                                                      (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
 
-  if (agg_error || max_doc_error) {
+  if (!agg_error) {
+    ink_assert(agg_len <= AGG_SIZE);
+    if (f.evac_vector) {
+      stripe->get_pending_writers().push(this);
+    } else {
+      stripe->get_pending_writers().enqueue(this);
+    }
+  } else {
+    stripe->add_agg_todo(-agg_len);
+  }
+
+  if (agg_error) {
     Metrics::Counter::increment(cache_rsb.write_backlog_failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
     Metrics::Counter::increment(cache_rsb.status[op_type].failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
-    stripe->add_agg_todo(-agg_len);
     io.aio_result = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
       return EVENT_RETURN;
     }
     return handleEvent(AIO_EVENT_DONE, nullptr);
-  }
-  ink_assert(agg_len <= AGG_SIZE);
-  if (f.evac_vector) {
-    stripe->get_pending_writers().push(this);
-  } else {
-    stripe->get_pending_writers().enqueue(this);
   }
   if (!stripe->is_io_in_progress()) {
     return stripe->aggWrite(event, this);
