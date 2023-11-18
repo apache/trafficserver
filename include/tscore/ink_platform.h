@@ -113,10 +113,6 @@ struct ifafilt;
 #include <alloca.h>
 #endif
 
-#ifdef HAVE_STROPTS_H
-#include <stropts.h>
-#endif
-
 #include "tscore/ink_endian.h"
 
 #ifdef HAVE_SYS_IOCTL_H
