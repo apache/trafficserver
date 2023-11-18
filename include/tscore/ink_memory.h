@@ -36,13 +36,9 @@
 
 #include <sys/types.h>
 
-#if __has_include(<sys/uio.h>)
 #include <sys/uio.h>
-#endif
 
-#if __has_include(<sys/mman.h>)
 #include <sys/mman.h>
-#endif
 
 #if TS_HAS_JEMALLOC
 #if __has_include(<jemalloc/jemalloc.h>)

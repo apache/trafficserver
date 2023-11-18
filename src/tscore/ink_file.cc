@@ -28,13 +28,9 @@
 #include "tscore/ink_string.h"
 #include "tscore/ink_memory.h"
 
-#if __has_include(<sys/stat.h>)
 #include <sys/stat.h>
-#endif
 
-#if __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
-#endif
 
 #if __has_include(<sys/mount.h>)
 #include <sys/mount.h> /* for BLKGETSIZE */

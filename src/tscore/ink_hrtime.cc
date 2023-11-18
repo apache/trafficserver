@@ -35,9 +35,7 @@
 #if defined(__FreeBSD__)
 #include <sys/types.h>
 #include <sys/param.h>
-#if __has_include(<sys/sysctl.h>)
 #include <sys/sysctl.h>
-#endif
 #endif // __FreeBSD__
 #include <cstring>
 #include <sys/time.h>
