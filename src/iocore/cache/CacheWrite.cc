@@ -250,21 +250,9 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 
   bool max_doc_error = (cache_config_max_doc_size && (cache_config_max_doc_size < vio.ndone ||
                                                       (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
-  if (max_doc_error) {
-    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
-    Metrics::Counter::increment(cache_rsb.status[op_type].failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
-    io.aio_result = AIO_SOFT_FAILURE;
-    if (event == EVENT_CALL) {
-      return EVENT_RETURN;
-    }
-    return handleEvent(AIO_EVENT_DONE, nullptr);
-  }
-
   // Make sure the size is correct for checking error conditions before calling add_writer(this).
   agg_len = stripe->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
-  if (!stripe->add_writer(this)) {
+  if (max_doc_error || !stripe->add_writer(this)) {
     Metrics::Counter::increment(cache_rsb.write_backlog_failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
     Metrics::Counter::increment(cache_rsb.status[op_type].failure);
