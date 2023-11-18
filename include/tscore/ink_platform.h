@@ -138,9 +138,7 @@ using in_addr_t = unsigned int;
 #include <sys/systeminfo.h>
 #endif
 
-#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
-#endif
 
 #include <float.h> // NOLINT(modernize-deprecated-headers)
 

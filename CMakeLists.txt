@@ -216,7 +216,6 @@ include(CheckTypeSize)
 include(CheckSourceCompiles)
 include(CheckStructHasMember)
 
-check_include_file(dlfcn.h HAVE_DLFCN_H)
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
 check_include_file(string.h HAVE_STRING_H)
 check_include_file(linux/major.h HAVE_LINUX_MAJOR_H)

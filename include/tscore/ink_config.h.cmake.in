@@ -39,7 +39,6 @@
 #cmakedefine HAVE_NCURSES_H 1
 #cmakedefine HAVE_NCURSES_CURSES_H 1
 #cmakedefine HAVE_NCURSES_NCURSES_H 1
-#cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
