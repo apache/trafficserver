@@ -347,8 +347,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   int fn                                      = 0;
   int states                                  = ts_lua_max_state_count;
   int ljgc                                    = 0;
+  int jit                                     = 1;
   static const struct option longopt[]        = {
     {"states", required_argument, 0, 's'},
+    {"jit",    required_argument, 0, 'j'},
     {"inline", required_argument, 0, 'i'},
     {"ljgc",   required_argument, 0, 'g'},
     {0,        0,                 0, 0  },
@@ -366,6 +368,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       states = atoi(optarg);
       Dbg(dbg_ctl, "[%s] setting number of lua VMs [%d]", __FUNCTION__, states);
       // set state
+      break;
+    case 'j':
+      jit = atoi(optarg);
+      if (jit == 0) {
+        Dbg(dbg_ctl, "[%s] disable JIT mode for remap plugin", __FUNCTION__);
+        for (int index = 0; index < ts_lua_max_state_count; ++index) {
+          ts_lua_main_ctx *const main_ctx = (ts_lua_main_ctx_array + index);
+          lua_State *const lstate         = main_ctx->lua;
+          if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF) == 0) {
+            TSError("[ts_lua][%s] Failed to disable JIT mode for remap plugin", __FUNCTION__);
+          }
+        }
+      }
       break;
     case 'i':
       inline_script = optarg;
