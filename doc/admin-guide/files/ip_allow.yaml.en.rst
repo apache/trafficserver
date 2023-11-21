@@ -26,7 +26,7 @@ The :file:`ip_allow.yaml` file controls client access to |TS| and |TS| connectio
 This control is specified via rules. Each rule has:
 
 *  A direction (inbound or out).
-*  A range of IP address to which the rule applies.
+*  A range of IP addresses or an IP category to which the rule applies.
 *  An action, either accept or deny.
 *  A list of HTTP methods.
 
@@ -82,7 +82,21 @@ The keys in a rule are:
 
 ``ip_addrs``
    IP addresses to match for the rule to be applied. This can be either an address range or an
-   array of address ranges. This is a required key.
+   array of address ranges. Either this or ``ip_categories`` are required keys for a rule.
+
+``ip_categories``
+   A user defined string identifying a category of IP addresses relevant to a particular network.
+   For example, ``ACME_INTERNAL`` might represent the set of IP addresses for hosts within a
+   company's network. ``ACME_EXTERNAL`` might represet hosts belonging to the company's network, but
+   which are outside the company's firewall. ``ACME_ALL`` could be used to represent the set of both
+   of these categories. Multiple categories can be specified as an array of strings.
+
+   The set of IP ranges belonging to each category is specified via the separate ``ip_categories``
+   root level node. The :file:`ip_allow.yaml` parser also supports supplying the IP categories via
+   an external file specified with the :ts:cv:`proxy.config.cache.ip_categories.filename`
+   configuration.
+
+   Either this or ``ip_addrs`` are required keys for a rule.
 
 ``action``
    The action, which must be ``allow`` or ``deny``. This is a required key.
@@ -93,8 +107,9 @@ The keys in a rule are:
    keyword "ALL" means all methods, making the specification of any other method redundant. All
    methods comparisons are case insensitive. This is an optional key.
 
-An IP address range can be specified in several ways. A range is always IPv4 or IPv6, it is not
-allowed to have a range that contains addresses from different IP address families.
+An IP address range for ``ip_addrs`` or ``ip_categories`` can be specified in several ways. A range
+is always IPv4 or IPv6, it is not allowed to have a range that contains addresses from different IP
+address families.
 
 *  A single address, which specifies a range of size 1, e.g. "127.0.0.1".
 *  A minimum and maximum address separated by a dash, e.g. "10.1.0.0-10.1.255.255".
@@ -131,7 +146,7 @@ enables all methods for all outbound connections.
 Examples
 ========
 
-The following example enables all clients access.::
+The following example enables all clients access::
 
    apply: in
    ip_addrs: 0.0.0.0-255.255.255.255
@@ -222,7 +237,7 @@ This will match the IP address for the target servers on the outbound connection
 method is ``GET`` or ``HEAD`` the connection will be allowed, otherwise the connection will be
 denied.
 
-As a final example, here is the default configuration in compact form::
+For the purposes of illustration, here is the default configuration in compact form::
 
    ip_allow: [
      { apply: in, ip_addrs: 127.0.0.1, action: allow },
@@ -230,6 +245,47 @@ As a final example, here is the default configuration in compact form::
      { apply: in, ip_addrs: 0/0, action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] },
      { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] }
      ]
+
+The following example demonstrates how to use ``ip_categories``. In this example, the
+``ip_categories`` is ``ACME_INTERNAL`` which is presumably associated with trusted internal IP
+addresses and thus are allowed to ``POST`` and ``DELETE`` resources.
+
+Note this example demonstrates that it is OK to mix ``ip_categories`` and ``ip_addrs`` rules in a
+single :file:`ip_allow.yaml` file. In this case all other IPv4 addresses not matched on
+``ACME_INTERNAL`` match on ``0/0`` and can only perform ``GET`` and ``HEAD`` requests::
+
+     - apply: in
+       ip_categories: ACME_INTERNAL
+       action: allow
+       methods:
+         - GET
+         - HEAD
+         - POST
+         - DELETE
+     - apply: in
+       ip_addrs: 0/0
+       action: allow
+       methods:
+         - GET
+         - HEAD
+
+The set of IP addresses associated with ``ACME_INTERNAL`` can be specified
+using the ``ip_categories`` node like so::
+
+     ip_categories:
+       - name: ACME_INTERNAL
+         ip_addrs:
+           - 10.0.0.0/8
+           - 172.16.0.0/20
+           - 192.168.1.0/24
+
+     ip_allow:
+       - apply: in
+       # ...
+
+The ``ip_categories`` node will generally be at the start of the :file:`ip_allow.yaml` file.
+Alternatively, the same content with the ``ip_categories`` root node can exist in a separate file
+specified with the :ts:cv:`proxy.config.cache.ip_categories.filename` configuration.
 
 .. note::
 

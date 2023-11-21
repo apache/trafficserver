@@ -2188,6 +2188,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       pluginInitCheck.notify_one();
     }
 
+    if (IpAllow::has_no_rules()) {
+      Error("No ip_allow.yaml entries found.  All requests will be denied!");
+    }
+
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);

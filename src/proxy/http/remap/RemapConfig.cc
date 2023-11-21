@@ -423,7 +423,6 @@ const char *
 remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize)
 {
   acl_filter_rule *rule;
-  src_ip_info_t *ipi;
   int i, j;
   bool new_rule_flg = false;
 
@@ -505,7 +504,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         }
         return (const char *)errStrBuf;
       }
-      ipi = &rule->src_ip_array[rule->src_ip_cnt];
+      src_ip_info_t *ipi = &rule->src_ip_array[rule->src_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
@@ -532,6 +531,34 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       }
     }
 
+    if (ul & REMAP_OPTFLG_SRC_IP_CATEGORY) { /* "src_ip_category=" option */
+      if (rule->src_ip_category_cnt >= ACL_FILTER_MAX_SRC_IP) {
+        Debug("url_rewrite", "[validate_filter_args] Too many \"src_ip_category=\" filters");
+        snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"src_ip_category=\" filters!", ACL_FILTER_MAX_SRC_IP);
+        errStrBuf[errStrBufSize - 1] = 0;
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
+        return (const char *)errStrBuf;
+      }
+      src_ip_category_info_t *ipi = &rule->src_ip_category_array[rule->src_ip_category_cnt];
+      if (ul & REMAP_OPTFLG_INVERT) {
+        ipi->invert = true;
+      }
+      for (j = 0; j < rule->src_ip_category_cnt; j++) {
+        if (rule->src_ip_category_array[j].category == ipi->category) {
+          ipi->reset();
+          ipi = nullptr;
+          break; /* we have the same src_ip_category in the list */
+        }
+      }
+      if (ipi) {
+        rule->src_ip_category_cnt++;
+        rule->src_ip_category_valid = 1;
+      }
+    }
+
     if (ul & REMAP_OPTFLG_IN_IP) { /* "dest_ip=" option */
       if (rule->in_ip_cnt >= ACL_FILTER_MAX_IN_IP) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"in_ip=\" filters");
@@ -543,7 +570,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         }
         return (const char *)errStrBuf;
       }
-      ipi = &rule->in_ip_array[rule->in_ip_cnt];
+      src_ip_info_t *ipi = &rule->in_ip_array[rule->in_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
@@ -648,6 +675,14 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           *argptr = &argv[i][8];
         }
         ret_flags |= (REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_INVERT);
+      } else if (!strncasecmp(argv[i], "src_ip_category=~", 8)) {
+        if ((findmode & REMAP_OPTFLG_SRC_IP_CATEGORY) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][17];
+        }
+        ret_flags |= (REMAP_OPTFLG_SRC_IP_CATEGORY | REMAP_OPTFLG_INVERT);
       } else if (!strncasecmp(argv[i], "src_ip=", 7)) {
         if ((findmode & REMAP_OPTFLG_SRC_IP) != 0) {
           idx = i;

@@ -1,0 +1,94 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# The replay file executes various HTTP requests to verify the ip_allow policy
+# applies by default to all methods.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - standard_response: &standard_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 20 ]
+
+sessions:
+- protocol:
+  - name: http
+    version: 1
+  - name: tls
+    sni: test_sni
+  transactions:
+
+  # GET rejected
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test/ip_allow/test_get
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ uuid, get ]
+        - [ X-Request, get ]
+
+    # Shouldn't be used.
+    <<: *standard_response
+
+    proxy-response:
+      status: 403
+
+  # POST rejected
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /test/ip_allow/test_post
+      headers:
+        fields:
+        - [Content-Length, 10]
+        - [ uuid, post ]
+        - [ X-Request, post ]
+
+    # Shouldn't be used.
+    <<: *standard_response
+
+    proxy-response:
+      status: 403
+
+  # PUSH rejected
+  - client-request:
+      method: "PUSH"
+      version: "1.1"
+      url: /test/ip_allow/test_push
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, push ]
+        - [ X-Request, push ]
+        - [ Content-Length, 113 ]
+      content:
+        encoding: plain
+        data: "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public,max-age=2\n\nCACHED"
+
+    <<: *standard_response
+
+    # Verify that ATS confirmed that the PUSH was successful, which it does
+    # with a 201 response.
+    proxy-response:
+      status: 403

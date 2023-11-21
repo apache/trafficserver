@@ -34,6 +34,7 @@ namespace filename
   constexpr const char *LOGGING       = "logging.yaml";
   constexpr const char *CACHE         = "cache.config";
   constexpr const char *IP_ALLOW      = "ip_allow.yaml";
+  constexpr const char *IP_CATEGORIES = "ip_categories.yaml";
   constexpr const char *HOSTING       = "hosting.config";
   constexpr const char *SOCKS         = "socks.config";
   constexpr const char *PARENT        = "parent.config";

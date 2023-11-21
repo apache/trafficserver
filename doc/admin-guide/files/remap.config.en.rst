@@ -428,6 +428,13 @@ This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
 
 .. _remap-config-named-filters:
 
+NextHop Selection Strategies
+============================
+
+You may configure Nexthop or Parent hierarchical caching rules by remap using the
+**@strategy** tag.  See :doc:`../configuration/hierarchical-caching.en` and :doc:`strategies.yaml.en`
+for configuration details and examples.
+
 Acl Filters
 ===========
 
@@ -455,10 +462,13 @@ Examples
 
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head
 
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip_category=ACME_INTERNAL @method=post @method=get @method=head
+
 Note that these Acl filters will return a 403 response if the resource is restricted.
 
 The difference between ``@src_ip`` and ``@in_ip`` is that the ``@src_ip`` is the client
 ip and the ``in_ip`` is the ip address the client is connecting to (the incoming address).
+``@src_ip_category`` functions like ``ip_category`` described in :file:`ip_allow.yaml`.
 
 Named Filters
 =============
@@ -515,13 +525,6 @@ would be ::
    .activateefilter ip_allow
 
 Note this entirely disables IP Allow checks for those remap rules.
-
-NextHop Selection Strategies
-============================
-
-You may configure Nexthop or Parent hierarchical caching rules by remap using the
-**@strategy** tag.  See :doc:`../configuration/hierarchical-caching.en` and :doc:`strategies.yaml.en`
-for configuration details and examples.
 
 Including Additional Remap Files
 ================================
