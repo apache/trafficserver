@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ts/apidefs.h"
 #include <ts/ts.h>
 
 #define PLUGIN_NAME "hook-trace"
@@ -41,6 +42,7 @@ HttpHookTracer(TSCont contp, TSEvent event, void *edata)
     TSHttpTxn txn;
     TSHttpSsn ssn;
     TSHttpAltInfo alt;
+    TSHttpIpAllowInfo allow_info;
     void *ptr;
   } ev;
 
@@ -116,6 +118,11 @@ HttpHookTracer(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
+  case TS_EVENT_HTTP_IP_ALLOW_CATEGORY:
+    Dbg(dbg_ctl, "Received IP_ALLOW_CATEGORY with ip_allow_info %p", ev.allow_info);
+    TSHttpTxnReenable(ev.txn, TS_EVENT_HTTP_CONTINUE);
+    break;
+
   default:
     break;
   }
@@ -178,6 +185,7 @@ TSPluginInit(int argc, const char *argv[])
     TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
     TS_HTTP_PRE_REMAP_HOOK,
     TS_HTTP_POST_REMAP_HOOK,
+    TS_HTTP_IP_ALLOW_CATEGORY_HOOK,
   };
 
   static const TSLifecycleHookID lifecycle[] = {

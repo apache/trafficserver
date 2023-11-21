@@ -38,10 +38,12 @@
 #include "api/FeatureAPIHooks.h"
 
 #include "swoc/swoc_file.h"
+#include "swoc/swoc_ip.h"
 #include "ts/InkAPIPrivateIOCore.h"
 #include "ts/experimental.h"
 
 #include <typeinfo>
+#include <string_view>
 
 /* Some defines that might be candidates for configurable settings later.
  */
@@ -105,6 +107,20 @@ struct HttpAltInfo {
   HTTPHdr m_cached_req;
   HTTPHdr m_cached_resp;
   float m_qvalue;
+};
+
+struct HttpIpAllowInfo {
+  HttpIpAllowInfo(std::string_view category, swoc::IPAddr const &addr) : category(category), addr(addr), contains{false} {}
+
+  /// A user-specified name for IP categories.
+  std::string_view category;
+
+  /// The IP address to query whether it is contained in @a category.
+  swoc::IPAddr const &addr;
+
+  /// The result of the query: the hook sets this to true of @a addr is in @a
+  /// category, false otherwise.
+  bool contains = false;
 };
 
 class ConfigUpdateCallback : public Continuation

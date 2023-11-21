@@ -28,6 +28,7 @@ function do_global_txn_start()
     ts.hook(TS_LUA_HOOK_OS_DNS, os_dns)
     ts.hook(TS_LUA_HOOK_READ_CACHE_HDR, read_cache)
     ts.hook(TS_LUA_HOOK_TXN_CLOSE, txn_close)
+    ts.hook(TS_LUA_HOOK_IP_ALLOW_CATEGORY, ip_allow_category)
 
     return 0
 end
@@ -94,6 +95,12 @@ end
 
 function txn_close()
     ts.debug('txn_close')
+
+    return 0
+end
+
+function ip_allow_category()
+    ts.debug('ip_allow_category')
 
     return 0
 end

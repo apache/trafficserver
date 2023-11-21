@@ -25,8 +25,11 @@
 
 #include "tscore/ink_inet.h"
 
-#include <string>
+#include "swoc/IPAddr.h"
+
 #include <set>
+#include <string>
+#include <string_view>
 #include <vector>
 
 // ===============================================================================
@@ -51,11 +54,33 @@ struct src_ip_info_t {
 
   /// @return @c true if @a ip is inside @a this range.
   bool
-  contains(IpEndpoint const &ip)
+  contains(IpEndpoint const &ip) const
   {
     IpAddr addr{ip};
     return addr.cmp(start) >= 0 && addr.cmp(end) <= 0;
   }
+};
+
+struct src_ip_category_info_t {
+  std::string category; ///< The IP category for this remap rule.
+  bool invert = false;  ///< Should we "invert" the meaning of these IP categories ("not in categories")
+
+  void
+  reset()
+  {
+    category.clear();
+    invert = false;
+  }
+
+  /// @return @c true if @a ip is inside @a this categories.
+  bool
+  contains(IpEndpoint const &ip) const
+  {
+    return ask_hooks_about_category(category, swoc::IPAddr{ip});
+  }
+
+private:
+  bool ask_hooks_about_category(std::string_view category, swoc::IPAddr const &addr) const;
 };
 
 /**
@@ -71,6 +96,7 @@ public:
   char *filter_name     = nullptr; // optional filter name
   unsigned int allow_flag : 1,     // action allow deny
     src_ip_valid          : 1,     // src_ip range valid
+    src_ip_category_valid : 1,     // src_ip range valid
     in_ip_valid           : 1,
     active_queue_flag     : 1, // filter is in active state (used by .useflt directive)
     internal              : 1; // filter internal HTTP requests
@@ -89,6 +115,9 @@ public:
   // src_ip
   int src_ip_cnt; // how many valid src_ip rules we have
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
+
+  int src_ip_category_cnt = 0; // how many valid src_ip rules we have
+  src_ip_category_info_t src_ip_category_array[ACL_FILTER_MAX_SRC_IP];
 
   // in_ip
   int in_ip_cnt; // how many valid dest_ip rules we have

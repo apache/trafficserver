@@ -89,6 +89,7 @@ public:
   using self_type     = IpAllow; ///< Self reference type.
   using scoped_config = ConfigProcessor::scoped_config<self_type, self_type>;
   using IpMap         = swoc::IPSpace<Record const *>;
+  using IpCategories  = std::vector<std::pair<swoc::TextView, Record const *>>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
   enum match_key_t { SRC_ADDR, DST_ADDR };
@@ -104,6 +105,7 @@ public:
 
   static const inline std::string YAML_TAG_ROOT{"ip_allow"};
   static const inline std::string YAML_TAG_IP_ADDRS{"ip_addrs"};
+  static const inline std::string YAML_TAG_IP_CATEGORY{"ip_category"};
   static const inline std::string YAML_TAG_APPLY{"apply"};
   static const inline std::string YAML_VALUE_APPLY_IN{"in"};
   static const inline std::string YAML_VALUE_APPLY_OUT{"out"};
@@ -206,20 +208,34 @@ private:
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
   static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
 
+  /** Dispatch to the TS_HTTP_IP_ALLOW_CATEGORY_HOOK.
+   *
+   * This asks the registered TS_HTTP_IP_ALLOW_CATEGORY_HOOK callbacks whether
+   * @a addr belongs to @a category.
+   *
+   * @param[in] category The category name to check.
+   * @param[in] addr The address to check whether it belongs to @a category.
+   *
+   * @return @c true if @a addr is in @a category, @c false otherwise.
+   */
+  static bool AskHooksAboutCategory(std::string_view category, swoc::IPAddr const &addr);
   void DebugMap(IpMap const &map) const;
 
   swoc::Errata BuildTable();
   swoc::Errata YAMLBuildTable(const std::string &);
   swoc::Errata YAMLLoadEntry(const YAML::Node &);
   swoc::Errata YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, Record const *mark);
+  swoc::Errata YAMLLoadIPCategory(const YAML::Node &, IpCategories *categories, Record const *mark);
   swoc::Errata YAMLLoadMethod(const YAML::Node &node, Record &rec);
 
-  /// Copy @a src to the local arena and review a view of the copy.
+  /// Copy @a src to the local arena and return a view of the copy.
   swoc::TextView localize(swoc::TextView src);
 
   swoc::file::path config_file; ///< Path to configuration file.
   IpMap _src_map;
+  IpCategories _src_categories;
   IpMap _dst_map;
+  IpCategories _dst_categories;
   /// Storage for records.
   swoc::MemArena _arena;
 

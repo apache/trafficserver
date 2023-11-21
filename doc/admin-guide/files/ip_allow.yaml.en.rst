@@ -26,7 +26,7 @@ The :file:`ip_allow.yaml` file controls client access to |TS| and |TS| connectio
 This control is specified via rules. Each rule has:
 
 *  A direction (inbound or out).
-*  A range of IP address to which the rule applies.
+*  A range of IP addresses or an IP category to which the rule applies.
 *  An action, either accept or deny.
 *  A list of HTTP methods.
 
@@ -82,7 +82,21 @@ The keys in a rule are:
 
 ``ip_addrs``
    IP addresses to match for the rule to be applied. This can be either an address range or an
-   array of address ranges. This is a required key.
+   array of address ranges. Either this or ``ip_category`` are required keys for a rule.
+
+``ip_category``
+   An arbitrary string identifying a category of IP addresses. Whether a given
+   IP address applies to this category is implemented in a user plugin via a
+   handler for the TS_HTTP_IP_ALLOW_CATEGORY_HOOK. This can be either a single
+   category or an array of categories. IP categories are helpful in situations
+   where the IP addresses for a rule are not easily specified using IP address
+   ranges. An organization may, for instance, implement categories of IP
+   addresses via an internal library's API that queries a database or parses a
+   separate config file to determine whether any particular IP is identified by
+   a category. ``ACME_INTERNAL``, ``ACME_EXTERNAL``, ``ANY_IP``, etc., are
+   example category names. See the example below for how to use ``ip_category``.
+
+   Either this or ``ip_addrs`` are required keys for a rule.
 
 ``action``
    The action, which must be ``allow`` or ``deny``. This is a required key.
@@ -93,7 +107,7 @@ The keys in a rule are:
    keyword "ALL" means all methods, making the specification of any other method redundant. All
    methods comparisons are case insensitive. This is an optional key.
 
-An IP address range can be specified in several ways. A range is always IPv4 or IPv6, it is not
+An IP address range for ``ip_addrs`` can be specified in several ways. A range is always IPv4 or IPv6, it is not
 allowed to have a range that contains addresses from different IP address families.
 
 *  A single address, which specifies a range of size 1, e.g. "127.0.0.1".
@@ -131,7 +145,7 @@ enables all methods for all outbound connections.
 Examples
 ========
 
-The following example enables all clients access.::
+The following example enables all clients access::
 
    apply: in
    ip_addrs: 0.0.0.0-255.255.255.255
@@ -222,7 +236,7 @@ This will match the IP address for the target servers on the outbound connection
 method is ``GET`` or ``HEAD`` the connection will be allowed, otherwise the connection will be
 denied.
 
-As a final example, here is the default configuration in compact form::
+For the purposes of illustration, here is the default configuration in compact form::
 
    ip_allow: [
      { apply: in, ip_addrs: 127.0.0.1, action: allow },
@@ -230,6 +244,35 @@ As a final example, here is the default configuration in compact form::
      { apply: in, ip_addrs: 0/0, action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] },
      { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] }
      ]
+
+The following example demonstrates how to use ``ip_category``. In this example,
+the ``ip_category`` is ``ACME_INTERNAL`` which is presumably associated with
+trusted internal IP addresses and thus are allowed to ``POST`` and ``DELETE``
+resources.  |TS| core queries which IP addresses are associated with
+``ACME_INTERNAL`` via a plugin which implement the
+``TS_HTTP_IP_ALLOW_CATEGORY_HOOK`` callback. See the example
+`ip_allow <https://github.com/apache/trafficserver/blob/master/example/plugins/c-api/ip_category/ip_category.cc>`_
+plugin for a demonstration of a plugin that implements the required interface.
+
+Note this example demonstrates that it is OK to mix ``ip_category`` and
+``ip_addrs`` rules, in this case all other IPv4 addresses not matched on
+``ACME_INTERNAL`` match on ``0/0`` and can only perform ``GET`` and ``HEAD``
+requests::
+
+     - apply: in
+       ip_category: ACME_INTERNAL
+       action: allow
+       methods:
+         - GET
+         - HEAD
+         - POST
+         - DELETE
+     - apply: in
+       ip_addrs: 0/0
+       action: allow
+       methods:
+         - GET
+         - HEAD
 
 .. note::
 

@@ -22,6 +22,7 @@
  */
 #include <sstream>
 
+#include "ts/apidefs.h"
 #include "ts/ts.h" /* ATS API */
 
 #include "ts/remap.h" /* TSRemapInterface, TSRemapStatus, apiInfo */
@@ -73,6 +74,8 @@ getEventName(TSEvent event)
     return "TS_EVENT_HTTP_PRE_REMAP";
   case TS_EVENT_HTTP_POST_REMAP:
     return "TS_EVENT_HTTP_POST_REMAP";
+  case TS_EVENT_HTTP_IP_ALLOW_CATEGORY:
+    return "TS_EVENT_HTTP_IP_ALLOW_CATEGORY";
   default:
     return "UNHANDLED";
   }

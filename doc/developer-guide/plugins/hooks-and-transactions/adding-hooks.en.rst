@@ -116,8 +116,12 @@ values for ``TSHttpHookID`` are:
     for information about transformation hooks.
 
 ``TS_HTTP_SELECT_ALT_HOOK``
-    See :doc:`"HTTP Alternate Selection" <http-alternate-selection.en>` for
+    See :file:`ip_allow.yaml` for
     information about the alternate selection mechanism.
+
+``TS_HTTP_IP_ALLOW_CATEGORY_HOOK``
+    See :file:`ip_allow.yaml` for information about the ip_allow
+    mechanism.
 
 ``TS_HTTP_SEND_RESPONSE_HDR_HOOK``
     Called immediately before the proxy's response header is written to

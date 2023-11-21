@@ -22,7 +22,31 @@
  */
 
 #include "proxy/http/remap/AclFiltering.h"
+
+#include "api/APIHook.h"
+#include "api/InkAPIInternal.h"
 #include "proxy/hdrs/HTTP.h"
+
+// ===============================================================================
+//                           src_ip_category_info_t
+// ===============================================================================
+
+bool
+src_ip_category_info_t::ask_hooks_about_category(std::string_view category, swoc::IPAddr const &addr) const
+{
+  APIHook *hook = http_global_hooks->get(TS_HTTP_IP_ALLOW_CATEGORY_HOOK);
+  if (hook == nullptr) {
+    return false;
+  }
+  HttpIpAllowInfo info{category, addr};
+  for (; hook != nullptr; hook = hook->next()) {
+    hook->invoke(TS_EVENT_HTTP_IP_ALLOW_CATEGORY, &info);
+    if (info.contains) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // ===============================================================================
 //                              acl_filter_rule
@@ -42,6 +66,9 @@ acl_filter_rule::reset()
   nonstandard_methods.clear();
   for (i = (src_ip_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
     src_ip_array[i].reset();
+  }
+  for (i = (src_ip_category_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
+    src_ip_category_array[i].reset();
   }
   src_ip_valid = 0;
   for (i = (in_ip_cnt = 0); i < ACL_FILTER_MAX_IN_IP; i++) {
@@ -112,6 +139,11 @@ acl_filter_rule::print()
   for (i = 0; i < src_ip_cnt; i++) {
     ip_text_buffer b1, b2;
     printf("%s - %s, ", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
+  }
+  printf("\n");
+  printf("src_ip_category_cnt=%d\n", src_ip_category_cnt);
+  for (i = 0; i < src_ip_category_cnt; i++) {
+    printf("%s, ", src_ip_category_array[i].category.c_str());
   }
   printf("\n");
   printf("in_ip_cnt=%d\n", in_ip_cnt);

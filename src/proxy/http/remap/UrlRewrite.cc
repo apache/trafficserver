@@ -444,8 +444,25 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         }
       }
 
+      if (match && rp->src_ip_category_valid) {
+        Debug("url_rewrite", "match was true and we have specified an src_ip_category field");
+        match = false;
+        for (int j = 0; j < rp->src_ip_category_cnt && !match; j++) {
+          bool in_category = rp->src_ip_category_array[j].contains(s->client_info.src_addr);
+          if (rp->src_ip_category_array[j].invert) {
+            if (!in_category) {
+              match = true;
+            }
+          } else {
+            if (in_category) {
+              match = true;
+            }
+          }
+        }
+      }
+
       if (match && rp->in_ip_valid) {
-        Debug("url_rewrite", "match was true and we have specified a in_ip field");
+        Debug("url_rewrite", "match was true and we have specified an in_ip field");
         match = false;
         for (int j = 0; j < rp->in_ip_cnt && !match; j++) {
           IpEndpoint incoming_addr;

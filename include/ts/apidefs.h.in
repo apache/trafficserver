@@ -356,6 +356,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_EVENT_HTTP_RESPONSE_CLIENT              = 60019,
     TS_EVENT_HTTP_REQUEST_CLIENT               = 60020,
     TS_EVENT_HTTP_TUNNEL_START                 = 60021,
+    TS_EVENT_HTTP_IP_ALLOW_CATEGORY            = 60022,
 
     TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
     TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
@@ -395,6 +396,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
       The following hooks can ONLY be added globally:
        - TS_HTTP_SELECT_ALT_HOOK
        - TS_HTTP_SSN_START_HOOK
+       - TS_HTTP_IP_ALLOW_CATEGORY
 
       TSHttpSsnHookAdd: adds a transaction hook to each transaction
       within a session. You can only use transaction hooks with this call:
@@ -472,6 +474,7 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_CLIENT),              // TS_HTTP_RESPONSE_CLIENT_HOOK
     DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_CLIENT),               // TS_HTTP_REQUEST_CLIENT_HOOK
     DERIVE_HOOK_VALUE_FROM_EVENT(TUNNEL_START),                 // TS_HTTP_TUNNEL_START_HOOK
+    DERIVE_HOOK_VALUE_FROM_EVENT(IP_ALLOW_CATEGORY),            // TS_HTTP_IP_ALLOW_CATEGORY_HOOK
 
 // NOTE:
 // If adding any TS_HTTP hooks, be sure to understand the note above in the
@@ -1027,19 +1030,20 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
 
   using TSFile = struct tsapi_file *;
 
-  using TSMLoc          = struct tsapi_mloc *;
-  using TSMBuffer       = struct tsapi_mbuffer *;
-  using TSHttpSsn       = struct tsapi_httpssn *;
-  using TSHttpTxn       = struct tsapi_httptxn *;
-  using TSSslConnection = struct tsapi_ssl_obj *;
-  using TSSslSession    = struct tsapi_ssl_session *;
-  using TSHttpAltInfo   = struct tsapi_httpaltinfo *;
-  using TSMimeParser    = struct tsapi_mimeparser *;
-  using TSHttpParser    = struct tsapi_httpparser *;
-  using TSCacheKey      = struct tsapi_cachekey *;
-  using TSCacheHttpInfo = struct tsapi_cachehttpinfo *;
-  using TSCacheTxn      = struct tsapi_cachetxn *;
-  using TSSslVerifyCTX  = struct tsapi_x509_store_ctx *;
+  using TSMLoc            = struct tsapi_mloc *;
+  using TSMBuffer         = struct tsapi_mbuffer *;
+  using TSHttpSsn         = struct tsapi_httpssn *;
+  using TSHttpTxn         = struct tsapi_httptxn *;
+  using TSSslConnection   = struct tsapi_ssl_obj *;
+  using TSSslSession      = struct tsapi_ssl_session *;
+  using TSHttpAltInfo     = struct tsapi_httpaltinfo *;
+  using TSHttpIpAllowInfo = struct tsapi_httpipallowinfo *;
+  using TSMimeParser      = struct tsapi_mimeparser *;
+  using TSHttpParser      = struct tsapi_httpparser *;
+  using TSCacheKey        = struct tsapi_cachekey *;
+  using TSCacheHttpInfo   = struct tsapi_cachehttpinfo *;
+  using TSCacheTxn        = struct tsapi_cachetxn *;
+  using TSSslVerifyCTX    = struct tsapi_x509_store_ctx *;
 
   using TSPortDescriptor   = struct tsapi_port *;
   using TSVIO              = struct tsapi_vio *;

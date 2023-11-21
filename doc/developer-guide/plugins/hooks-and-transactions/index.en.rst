@@ -97,7 +97,8 @@ HTTP Transaction State Diagram
    :alt: HTTP Transaction State Diagram
 
    digraph http_txn_state_diagram{
-     accept -> TS_HTTP_TXN_START_HOOK;
+     accept -> "TS_HTTP_IP_ALLOW_CATEGORY_HOOK inbound";
+     "TS_HTTP_IP_ALLOW_CATEGORY_HOOK inbound" -> TS_HTTP_TXN_START_HOOK [label = "allow"];
      TS_HTTP_TXN_START_HOOK -> "read req hdrs";
      "read req hdrs" -> TS_HTTP_READ_REQUEST_HDR_HOOK;
      TS_HTTP_READ_REQUEST_HDR_HOOK -> TS_HTTP_PRE_REMAP_HOOK;
@@ -119,7 +120,8 @@ HTTP Transaction State Diagram
      TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK -> "send cached hdrs" [label = "fresh"];
      "send cached hdrs" -> "set up transform";
      "lock URL in cache" -> "pick address";
-     "pick address" -> "try connect" [label = "       "];
+     "pick address" -> "TS_HTTP_IP_ALLOW_CATEGORY_HOOK outbound";
+     "TS_HTTP_IP_ALLOW_CATEGORY_HOOK outbound" -> "try connect" [label = "       "];
      "try connect" -> "pick address" [label = "fail"];
      "try connect" -> TS_SSL_VERIFY_SERVER_HOOK [label = "HTTPS connection"];
      TS_SSL_VERIFY_SERVER_HOOK -> TS_HTTP_SEND_REQUEST_HDR_HOOK [label = "success"];
@@ -151,6 +153,8 @@ HTTP Transaction State Diagram
      TS_HTTP_OS_DNS_HOOK [shape = box];
      TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK[shape = box];
      TS_HTTP_SELECT_ALT_HOOK [shape = box];
+     "TS_HTTP_IP_ALLOW_CATEGORY_HOOK inbound" [shape = box];
+     "TS_HTTP_IP_ALLOW_CATEGORY_HOOK outbound" [shape = box];
      TS_HTTP_READ_CACHE_HDR_HOOK [shape = box];
      TS_SSL_VERIFY_SERVER_HOOK [shape = box];
      TS_SSL_VERIFY_SERVER_HOOK [tooltip = "verify server certificate"];

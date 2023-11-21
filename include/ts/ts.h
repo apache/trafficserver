@@ -34,6 +34,7 @@
 #endif
 
 #include <type_traits>
+#include <string_view>
 
 #include "tsutil/DbgCtl.h"
 #include "ts/apidefs.h"
@@ -1840,6 +1841,33 @@ namespace c
   TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
   TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
   void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
+
+  /* --------------------------------------------------------------------------
+     ip_allow category specification */
+
+  /** Obtain the category name being inspected.
+   * @param[in] infop The ip_allow info object.
+   * @param[out] category The category name being inspected whether it contains
+   *   the address obtained via @a TSHttpIpAllowInfoAddrGet.
+   * @return TS_SUCCESS if the category name was obtained, TS_ERROR otherwise.
+   */
+  TSReturnCode TSHttpIpAllowInfoCategoryGet(TSHttpIpAllowInfo infop, std::string_view &category);
+
+  /** Obtain the address being queried whether it belongs to a category.
+   * @param[in] infop The ip_allow info object.
+   * @param[out] addr The address being queried against a category obtained via
+   *   @a TSHttpIpAllowInfoCategoryGet.
+   * @return TS_SUCCESS if the address was obtained, TS_ERROR otherwise.
+   */
+  TSReturnCode TSHttpIpAllowInfoAddrGet(TSHttpIpAllowInfo infop, sockaddr &addr);
+
+  /** Set whether an address applies to a category.
+   * @param[in] infop The ip_allow info object.
+   * @param[in] contains Whether the address obtained via
+   *  @a TSHttpIpAllowInfoAddrGet is contained in the category obtained via
+   *  @a TSHttpIpAllowInfoCategoryGet.
+   */
+  void TSHttpIpAllowInfoContainsSet(TSHttpIpAllowInfo infop, bool contains);
 
   /* --------------------------------------------------------------------------
      Actions */

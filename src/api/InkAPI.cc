@@ -27,6 +27,7 @@
 #include <string_view>
 #include <string>
 
+#include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -720,6 +721,15 @@ sdk_sanity_check_http_parser(TSHttpParser parser)
 
 TSReturnCode
 sdk_sanity_check_alt_info(TSHttpAltInfo info)
+{
+  if (info == nullptr) {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+sdk_sanity_check_ip_allow_info(TSHttpIpAllowInfo info)
 {
   if (info == nullptr) {
     return TS_ERROR;
@@ -6170,6 +6180,38 @@ tsapi::c::TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
 
   HttpAltInfo *info = (HttpAltInfo *)infop;
   info->m_qvalue    = quality;
+}
+
+/* ip_allow category specification */
+TSReturnCode
+tsapi::c::TSHttpIpAllowInfoCategoryGet(TSHttpIpAllowInfo infop, std::string_view &category)
+{
+  sdk_assert(sdk_sanity_check_ip_allow_info(infop) == TS_SUCCESS);
+  HttpIpAllowInfo *info = reinterpret_cast<HttpIpAllowInfo *>(infop);
+  category              = info->category;
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+tsapi::c::TSHttpIpAllowInfoAddrGet(TSHttpIpAllowInfo infop, sockaddr &addr)
+{
+  sdk_assert(sdk_sanity_check_ip_allow_info(infop) == TS_SUCCESS);
+  HttpIpAllowInfo *info = reinterpret_cast<HttpIpAllowInfo *>(infop);
+
+  // swoc::IPAddr::copy_to is currently accidentally not marked as a const
+  // method. Its implementation does not in fact modify the IPAddr. Marking the
+  // method as const will be fixed in a future libswoc release. For now work
+  // around the issue via const_cast.
+  const_cast<swoc::IPAddr &>(info->addr).copy_to(&addr);
+  return TS_SUCCESS;
+}
+
+void
+tsapi::c::TSHttpIpAllowInfoContainsSet(TSHttpIpAllowInfo infop, bool contains)
+{
+  sdk_assert(sdk_sanity_check_ip_allow_info(infop) == TS_SUCCESS);
+  HttpIpAllowInfo *info = reinterpret_cast<HttpIpAllowInfo *>(infop);
+  info->contains        = contains;
 }
 
 extern HttpSessionAccept *plugin_http_accept;
