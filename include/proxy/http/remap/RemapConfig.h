@@ -35,13 +35,15 @@ class UrlRewrite;
 #define REMAP_OPTFLG_PPARAM           0x0004u     /* "pparam=" option (per remap plugin option) */
 #define REMAP_OPTFLG_METHOD           0x0008u     /* "method=" option (used for ACL filtering) */
 #define REMAP_OPTFLG_SRC_IP           0x0010u     /* "src_ip=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_ACTION           0x0020u     /* "action=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_INTERNAL         0x0040u     /* only allow internal requests to hit this remap */
-#define REMAP_OPTFLG_IN_IP            0x0080u     /* "in_ip=" option (used for ACL filtering)*/
-#define REMAP_OPTFLG_STRATEGY         0x0100u     /* "strategy=" the name of the nexthop selection strategy */
+#define REMAP_OPTFLG_SRC_IP_CATEGORY  0x0020u     /* "src_ip_category=" option (used for ACL filtering) */
+#define REMAP_OPTFLG_ACTION           0x0040u     /* "action=" option (used for ACL filtering) */
+#define REMAP_OPTFLG_INTERNAL         0x0080u     /* only allow internal requests to hit this remap */
+#define REMAP_OPTFLG_IN_IP            0x0100u     /* "in_ip=" option (used for ACL filtering)*/
+#define REMAP_OPTFLG_STRATEGY         0x0200u     /* "strategy=" the name of the nexthop selection strategy */
 #define REMAP_OPTFLG_MAP_ID           0x0800u     /* associate a map ID with this rule */
-#define REMAP_OPTFLG_INVERT           0x80000000u /* "invert" the rule (for src_ip at least) */
-#define REMAP_OPTFLG_ALL_FILTERS      (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
+#define REMAP_OPTFLG_INVERT           0x80000000u /* "invert" the rule (for src_ip and src_ip_category at least) */
+#define REMAP_OPTFLG_ALL_FILTERS \
+  (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_SRC_IP_CATEGORY | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
 
 struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();

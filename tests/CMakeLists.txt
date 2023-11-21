@@ -23,12 +23,13 @@ function(ADD_AUTEST_PLUGIN _NAME)
                PREFIX ""
                SUFFIX ".so"
   )
-  target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsutil)
+  target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsutil libswoc::libswoc)
 endfunction()
 
 add_subdirectory(tools/plugins)
 add_subdirectory(gold_tests/chunked_encoding)
 add_subdirectory(gold_tests/continuations/plugins)
+add_subdirectory(gold_tests/ip_allow/plugins)
 add_subdirectory(gold_tests/jsonrpc/plugins)
 add_subdirectory(gold_tests/pluginTest/polite_hook_wait)
 add_subdirectory(gold_tests/pluginTest/tsapi)

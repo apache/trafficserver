@@ -89,6 +89,7 @@ public:
   using self_type     = IpAllow; ///< Self reference type.
   using scoped_config = ConfigProcessor::scoped_config<self_type, self_type>;
   using IpMap         = swoc::IPSpace<Record const *>;
+  using IpCategories  = std::unordered_map<std::string, swoc::IPSpace<bool>>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
   enum match_key_t { SRC_ADDR, DST_ADDR };
@@ -104,6 +105,7 @@ public:
 
   static const inline std::string YAML_TAG_ROOT{"ip_allow"};
   static const inline std::string YAML_TAG_IP_ADDRS{"ip_addrs"};
+  static const inline std::string YAML_TAG_IP_CATEGORY{"ip_category"};
   static const inline std::string YAML_TAG_APPLY{"apply"};
   static const inline std::string YAML_VALUE_APPLY_IN{"in"};
   static const inline std::string YAML_VALUE_APPLY_OUT{"out"};
@@ -201,10 +203,43 @@ public:
 
   const swoc::file::path &get_config_file() const;
 
+  /** Set the core's IP category map to the contents of the given map.
+   *
+   * This is eventually called when a plugin uses the TSHttpSetCategoryIPSpaces
+   * API.
+   *
+   * @param[in] map The map with the new category names and values.
+   */
+  static void set_ip_category_map(IpCategories const &map);
+
+  /**
+   * Check if an IP category contains a specific IP address.
+   *
+   * @param category The IP category to check.
+   * @param addr The IP address to check against the category.
+   * @return True if the category contains the address, false otherwise.
+   */
+  static bool ip_category_contains_addr(std::string const &category, swoc::IPAddr const &addr);
+
+  /** Indicate whether ip_allow.yaml has no rules associated with it.
+   *
+   * If there are no rules, then all traffic will be blocked. This is used
+   * during ATS configuration to verify that the user has provided a usable
+   * ip_allow.yaml file.
+   *
+   * @note From the ATS process, this should be called after loading plugins so
+   * that plugins have a chance to specify IP categories and reload
+   * ip_allow.yaml via TSHttpSetCategoryIPSpaces.
+   *
+   * @return True if there are no rules in ip_allow.yaml, false otherwise.
+   */
+  static bool has_no_rules();
+
 private:
   static size_t configid;               ///< Configuration ID for update management.
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
   static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
+  static IpCategories ip_category_map;  ///< Map of IP categories to IP spaces.
 
   void DebugMap(IpMap const &map) const;
 
@@ -212,9 +247,10 @@ private:
   swoc::Errata YAMLBuildTable(const std::string &);
   swoc::Errata YAMLLoadEntry(const YAML::Node &);
   swoc::Errata YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, Record const *mark);
+  swoc::Errata YAMLLoadIPCategory(const YAML::Node &, IpMap *map, Record const *mark);
   swoc::Errata YAMLLoadMethod(const YAML::Node &node, Record &rec);
 
-  /// Copy @a src to the local arena and review a view of the copy.
+  /// Copy @a src to the local arena and return a view of the copy.
   swoc::TextView localize(swoc::TextView src);
 
   swoc::file::path config_file; ///< Path to configuration file.
@@ -222,6 +258,11 @@ private:
   IpMap _dst_map;
   /// Storage for records.
   swoc::MemArena _arena;
+
+  /// Whether ip_allow.yaml has ip_category descriptions that have not been
+  /// converted to IP addresses because TSHttpSetCategoryIPSpaces had not yet
+  /// been called at the time the configuration was parsed.
+  bool _has_unconverted_ip_categories{false};
 
   friend swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, IpAllow::IpMap const &map);
 };
@@ -365,4 +406,11 @@ inline const swoc::file::path &
 IpAllow::get_config_file() const
 {
   return config_file;
+}
+
+inline bool
+IpAllow::has_no_rules()
+{
+  auto const *self = IpAllow::acquire();
+  return self->_src_map.count() == 0 && self->_dst_map.count() == 0;
 }

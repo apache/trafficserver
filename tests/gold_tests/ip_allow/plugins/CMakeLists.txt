@@ -15,14 +15,6 @@
 #
 #######################
 
-add_library(sslhdr STATIC expand.cc util.cc)
-target_link_libraries(sslhdr PRIVATE libswoc::libswoc OpenSSL::SSL ts::tsutil)
-set_target_properties(sslhdr PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+add_autest_plugin(categories_from_file categories_from_file.cc)
 
-if(BUILD_TESTING)
-  add_executable(test_sslhdr unit_tests/unit_test_main.cc unit_tests/test_sslheaders.cc)
-  target_link_libraries(test_sslhdr PRIVATE sslhdr catch2::catch2 OpenSSL::SSL ts::tsutil)
-endif()
-
-add_atsplugin(sslheaders sslheaders.cc)
-target_link_libraries(sslheaders PRIVATE sslhdr OpenSSL::SSL)
+target_link_libraries(categories_from_file PRIVATE libswoc::libswoc)

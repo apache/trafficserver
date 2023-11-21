@@ -33,11 +33,14 @@
 #error "Must compile ATS plugin code with C++ version 17 or later."
 #endif
 
+#include <string>
 #include <type_traits>
+#include <unordered_map>
 
+#include <swoc/swoc_ip.h>
+#include <ts/apidefs.h>
+#include <ts/parentselectdefs.h>
 #include "tsutil/DbgCtl.h"
-#include "ts/apidefs.h"
-#include "ts/parentselectdefs.h"
 
 class DiagsConfigState;
 
@@ -1840,6 +1843,15 @@ namespace c
   TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
   TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
   void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
+
+  /* --------------------------------------------------------------------------
+     ip_allow category specification */
+
+  /** For each IP allow category, define the IP space associated with it.
+   *
+   * @param[in] category_map For each category name, the IP space associated with it.
+   */
+  void TSHttpSetCategoryIPSpaces(std::unordered_map<std::string, swoc::IPSpace<bool>> const &category_spaces);
 
   /* --------------------------------------------------------------------------
      Actions */

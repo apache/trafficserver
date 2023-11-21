@@ -27,6 +27,7 @@
 #include <string_view>
 #include <string>
 
+#include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -37,6 +38,7 @@
 
 #include "tscore/Version.h"
 #include "api/InkAPIInternal.h"
+#include "proxy/IPAllow.h"
 #include "proxy/logging/Log.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
@@ -6161,6 +6163,12 @@ tsapi::c::TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLo
   *obj                                  = reinterpret_cast<TSMLoc>(info->m_cached_resp.m_http);
 
   return sdk_sanity_check_mbuffer(*bufp);
+}
+
+void
+tsapi::c::TSHttpSetCategoryIPSpaces(std::unordered_map<std::string, swoc::IPSpace<bool>> const &category_spaces)
+{
+  IpAllow::set_ip_category_map(category_spaces);
 }
 
 void
