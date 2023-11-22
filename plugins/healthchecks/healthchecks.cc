@@ -139,7 +139,7 @@ setup_watchers(int fd)
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     Dbg(dbg_ctl, "Setting up a watcher for %s", conf->fname);
-    strncpy(fname, conf->fname, MAX_PATH_LEN);
+    strlcpy(fname, conf->fname, MAX_PATH_LEN);
 
     char *dname = dirname(fname);
     /* Make sure to only watch each directory once */
