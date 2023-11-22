@@ -79,9 +79,12 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
 {
   cdata.assign(GZIP_HEADER_SIZE, 0); // reserving space for the header
   z_stream zstrm;
-  zstrm.zalloc = Z_NULL;
-  zstrm.zfree  = Z_NULL;
-  zstrm.opaque = Z_NULL;
+  zstrm.zalloc    = Z_NULL;
+  zstrm.zfree     = Z_NULL;
+  zstrm.opaque    = Z_NULL;
+  zstrm.total_in  = 0;
+  zstrm.total_out = 0;
+
   if (deflateInit2(&zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     TSError("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
@@ -104,10 +107,7 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
       total_data_len += block.data_len;
     }
   }
-  if (!in_data_size) {
-    zstrm.avail_in  = 0; // required for the "finish" loop as no data has been given so far
-    zstrm.total_out = 0; // required for the "finish" loop
-  }
+
   if (deflate_result == Z_OK) {
     deflate_result = runDeflateLoop(zstrm, Z_FINISH, cdata);
   }
