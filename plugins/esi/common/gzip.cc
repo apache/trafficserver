@@ -95,9 +95,9 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
   int deflate_result = Z_OK;
   for (auto block : blocks) {
     if (block.data && (block.data_len > 0)) {
-      zstrm.next_in   = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
-      zstrm.avail_in  = block.data_len;
-      deflate_result  = runDeflateLoop(zstrm, 0, cdata);
+      zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
+      zstrm.avail_in = block.data_len;
+      deflate_result = runDeflateLoop(zstrm, 0, cdata);
       if (deflate_result != Z_OK) {
         break; // break out of the blocks iteration
       }
