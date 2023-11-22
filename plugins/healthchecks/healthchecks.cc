@@ -164,7 +164,7 @@ setup_watchers(int fd)
 }
 
 /* Separate thread to monitor status files for reload */
-#define INOTIFY_BUFLEN (1024 * sizeof(struct inotify_event))
+static constexpr size_t INOTIFY_BUFLEN = (1024 * sizeof(struct inotify_event));
 
 static void *
 hc_thread(void *data ATS_UNUSED)
@@ -184,7 +184,7 @@ hc_thread(void *data ATS_UNUSED)
 
     gettimeofday(&now, nullptr);
     /* Read the inotify events, blocking until we get something */
-    int len = read(fd, buffer, INOTIFY_BUFLEN);
+    ssize_t len = read(fd, buffer, INOTIFY_BUFLEN);
 
     /* The fl_head is a linked list of previously released data entries. They
        are ordered "by time", so once we find one that is scheduled for deletion,
@@ -213,10 +213,10 @@ hc_thread(void *data ATS_UNUSED)
     }
 
     if (len >= 0) {
-      int i = 0;
+      uint32_t i = 0;
 
       /* coverity[ -tainted_data] */
-      while (i < len) {
+      while (i <= (len - sizeof(struct inotify_event))) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         HCFileInfo *finfo           = g_config;
 
