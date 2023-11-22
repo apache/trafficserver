@@ -146,11 +146,7 @@ DiagsConfig::reconfigure_diags()
 ////////////////////////////////////
 // change the diags config values //
 ////////////////////////////////////
-#if !defined(__GNUC__)
     _diags->config = c;
-#else
-    memcpy(((void *)&_diags->config), ((void *)&c), sizeof(DiagsConfigState));
-#endif
     Note("updated diags config");
   }
 

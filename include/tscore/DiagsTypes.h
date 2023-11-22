@@ -87,7 +87,7 @@ public:
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
 
 private:
-  static int _enabled[2] = {}; // one debug, one action
+  static int _enabled[2]; // one debug, one action
 };
 
 //////////////////////////////////////////////////////////////////////////////
