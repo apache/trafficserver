@@ -143,9 +143,9 @@ DiagsConfig::reconfigure_diags()
     _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : dt), DiagsTagType_Debug);
     _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : at), DiagsTagType_Action);
 
-////////////////////////////////////
-// change the diags config values //
-////////////////////////////////////
+    ////////////////////////////////////
+    // change the diags config values //
+    ////////////////////////////////////
     _diags->config = c;
     Note("updated diags config");
   }
