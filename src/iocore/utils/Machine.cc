@@ -51,6 +51,11 @@ Machine::init(char const *name, sockaddr const *ip)
 
 Machine::Machine(char const *the_hostname, sockaddr const *addr)
 {
+  // Initialize the machine IP infomation
+  bzero(&ip, sizeof(ip));
+  bzero(&ip4, sizeof(ip4));
+  bzero(&ip6, sizeof(ip6));
+
   int status; // return for system calls.
   ip_text_buffer ip_strbuf;
   char localhost[1024];
