@@ -26,11 +26,13 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *a
 /// codes are handled so it's ugly to split the code base on family. Instead we depend on
 /// @a sa_family being set correctly.
 
-inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in const *addr) {
-  return bwformat(w,spec,reinterpret_cast<sockaddr const*>(addr));
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in const *addr) {
+  return bwformat(w, spec, reinterpret_cast<sockaddr const *>(addr));
 }
-inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in6 const *addr) {
-  return bwformat(w,spec,reinterpret_cast<sockaddr const*>(addr));
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in6 const *addr) {
+  return bwformat(w, spec, reinterpret_cast<sockaddr const *>(addr));
 }
 
 /// @}

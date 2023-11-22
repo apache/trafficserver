@@ -34,14 +34,14 @@ public:
   static constexpr size_t SIZE  = sizeof(in_addr_t);                                 ///< Size of IPv4 address in bytes.
   static constexpr size_t WIDTH = std::numeric_limits<unsigned char>::digits * SIZE; ///< # of bits in an address.
 
-  static const self_type MIN;                                                        ///< Minimum value.
-  static const self_type MAX;                                                        ///< Maximum value.
-  static constexpr sa_family_t AF_value = AF_INET;                                   ///< Address family type.
+  static const self_type MIN;                      ///< Minimum value.
+  static const self_type MAX;                      ///< Maximum value.
+  static constexpr sa_family_t AF_value = AF_INET; ///< Address family type.
 
   constexpr IP4Addr() = default; ///< Default constructor - ANY address.
 
   /// Copy constructor.
-  IP4Addr(self_type const& that) = default;
+  IP4Addr(self_type const &that) = default;
 
   /// Construct using IPv4 @a addr (in host order).
   /// @note Host order seems odd, but all of the standard network macro values such as @c INADDR_LOOPBACK
@@ -56,7 +56,7 @@ public:
   IP4Addr(string_view const &text);
 
   /// Self assignment.
-  self_type & operator=(self_type const& that) = default;
+  self_type &operator=(self_type const &that) = default;
 
   /// Assign from IPv4 raw address.
   self_type &operator=(in_addr_t ip);
@@ -114,7 +114,7 @@ public:
    * @return @c true if @a text is a valid IPv4 address, @c false otherwise.
    *
    * Whitespace is trimmed from @text before parsing. If the parse fails @a this is set to @c INADDR_ANY.
-  */
+   */
   bool load(string_view const &text);
 
   /// Standard ternary compare.
@@ -224,7 +224,7 @@ public:
   /// Maximum value of an address.
   static const self_type MAX;
 
-  IP6Addr()            = default; ///< Default constructor - ANY address.
+  IP6Addr()                      = default; ///< Default constructor - ANY address.
   IP6Addr(self_type const &that) = default;
 
   /// Construct using IPv6 @a addr.
@@ -245,7 +245,7 @@ public:
   explicit IP6Addr(IP4Addr addr);
 
   /// Self assignment.
-  self_type & operator=(self_type const& that) = default;
+  self_type &operator=(self_type const &that) = default;
 
   /** Left shift.
    *
@@ -296,7 +296,7 @@ public:
    * @param idx Byte index.
    * @return The "text order" byte.
    */
-  constexpr uint8_t operator [] (int idx) const;
+  constexpr uint8_t operator[](int idx) const;
 
   /** Update socket address with this address.
    *
@@ -322,7 +322,7 @@ public:
    * @param dst Destination for host order address.
    * @return @a dst
    */
-  in6_addr& host_order(in6_addr & dst) const;
+  in6_addr &host_order(in6_addr &dst) const;
 
   /// Return the address in network order.
   in6_addr network_order() const;
@@ -371,7 +371,7 @@ public:
    *
    * @return @a this
    */
-  self_type & clear();
+  self_type &clear();
 
   /** Bitwise AND.
    *
@@ -405,11 +405,17 @@ public:
    */
   static void reorder(raw_type &dst, in6_addr const &src);
 
-  template < typename T > auto as_span() -> std::enable_if_t<swoc::meta::is_any_of_v<T, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>, swoc::MemSpan<T>> {
+  template <typename T>
+  auto
+  as_span() -> std::enable_if_t<swoc::meta::is_any_of_v<T, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>, swoc::MemSpan<T>> {
     return swoc::MemSpan(_addr._store).template rebind<T>();
   }
 
-  template < typename T > auto as_span() const -> std::enable_if_t<swoc::meta::is_any_of_v<typename std::remove_const_t<T>, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>, swoc::MemSpan<T const>> {
+  template <typename T>
+  auto
+  as_span() const
+    -> std::enable_if_t<swoc::meta::is_any_of_v<typename std::remove_const_t<T>, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>,
+                        swoc::MemSpan<T const>> {
     return swoc::MemSpan<uint64_t const>(_addr._store).template rebind<T const>();
   }
 
@@ -467,7 +473,7 @@ protected:
 
   /// Index of bytes in @a _addr._raw
   /// This converts MSB (0) to LSB (15) indices to the bytes in the binary format.
-  static constexpr std::array<unsigned, SIZE> RAW_IDX = { 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8 };
+  static constexpr std::array<unsigned, SIZE> RAW_IDX = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
 
   /// Convert between network and host order.
   /// The conversion is symmetric.
@@ -480,7 +486,10 @@ protected:
    * @param msw The most significant 64 bits, host order.
    * @param lsw The least significant 64 bits, host order.
    */
-  IP6Addr(word_store_type::value_type msw, word_store_type::value_type lsw) : _addr{{msw, lsw}} {}
+  IP6Addr(word_store_type::value_type msw, word_store_type::value_type lsw)
+    : _addr{
+        {msw, lsw}
+  } {}
 
   friend IP6Addr operator&(IP6Addr const &addr, IPMask const &mask);
 
@@ -496,9 +505,9 @@ class IPAddr {
 
   using self_type = IPAddr; ///< Self reference type.
 public:
-  IPAddr()                      = default; ///< Default constructor - invalid result.
-  IPAddr(self_type const &that) = default; ///< Copy constructor.
-  self_type & operator = (self_type const& that) = default; ///< Copy assignment.
+  IPAddr()                                    = default; ///< Default constructor - invalid result.
+  IPAddr(self_type const &that)               = default; ///< Copy constructor.
+  self_type &operator=(self_type const &that) = default; ///< Copy assignment.
 
   /// Construct using IPv4 @a addr.
   explicit IPAddr(in_addr_t addr);
@@ -570,7 +579,7 @@ public:
    * @param sa Destination.
    * @return @a sa
    */
-  sockaddr * copy_to(sockaddr * sa);
+  sockaddr *copy_to(sockaddr *sa) const;
 
   /** Parse a string and load the result in @a this.
    *
@@ -635,8 +644,8 @@ protected:
 
   /// Address data.
   union raw_addr_type {
-    IP4Addr _ip4;                                    ///< IPv4 address (host)
-    IP6Addr _ip6;                                    ///< IPv6 address (host)
+    IP4Addr _ip4; ///< IPv4 address (host)
+    IP6Addr _ip6; ///< IPv6 address (host)
 
     constexpr raw_addr_type();
 
@@ -704,7 +713,7 @@ public:
   static self_type mask_for(IP6Addr const &addr);
 
   /// Change to default constructed state (invalid).
-  self_type & clear();
+  self_type &clear();
 
   /// The width of the mask.
   raw_type width() const;
@@ -716,7 +725,7 @@ public:
    *
    * Effectively shifts the mask left, bringing in 0 bits on the right.
    */
-  self_type & operator<<=(raw_type n);
+  self_type &operator<<=(raw_type n);
 
   /** Narrow the mask (cover fewer addresses).
    *
@@ -725,7 +734,7 @@ public:
    *
    * Effectively shift the mask right, bringing in 1 bits on the left.
    */
-  self_type & operator>>=(raw_type n);
+  self_type &operator>>=(raw_type n);
 
   /** The mask as an IPv4 address.
    *
@@ -822,7 +831,7 @@ IP4Addr::operator=(in_addr_t ip) -> self_type & {
 
 inline sockaddr *
 IP4Addr::copy_to(sockaddr *sa) const {
-  this->copy_to(reinterpret_cast<sockaddr_in*>(sa));
+  this->copy_to(reinterpret_cast<sockaddr_in *>(sa));
   return sa;
 }
 
@@ -894,11 +903,12 @@ IP4Addr::is_link_local() const {
   return (_addr & 0xFFFF0000) == 0xA9FE0000; // 169.254.0.0/16
 }
 
-inline bool IP4Addr::is_private() const {
-  return (((_addr & 0xFF000000) == 0x0A000000) ||        // 10.0.0.0/8
-          ((_addr & 0xFFC00000) == 0x64400000) ||        // 100.64.0.0/10
+inline bool
+IP4Addr::is_private() const {
+  return (((_addr & 0xFF000000) == 0x0A000000) || // 10.0.0.0/8
+          ((_addr & 0xFFC00000) == 0x64400000) || // 100.64.0.0/10
           ((_addr & 0xFFF00000) == 0xAC100000) || // 172.16.0.0/12
-          ((_addr & 0xFFFF0000) == 0xC0A80000)           // 192.168.0.0/16
+          ((_addr & 0xFFFF0000) == 0xC0A80000)    // 192.168.0.0/16
   );
 }
 
@@ -935,7 +945,7 @@ inline IP6Addr::IP6Addr(string_view const &text) {
 }
 
 inline IP6Addr::IP6Addr(IP4Addr addr) {
-  _addr._store[MSW] = 0;
+  _addr._store[MSW]        = 0;
   _addr._quad[QUAD_IDX[4]] = 0;
   _addr._quad[QUAD_IDX[5]] = 0xffff;
   _addr._quad[QUAD_IDX[6]] = addr.host_order() >> QUAD_WIDTH;
@@ -967,19 +977,22 @@ IP6Addr::is_link_local() const {
   return _addr._raw[RAW_IDX[0]] == 0xFE && (_addr._raw[RAW_IDX[1]] & 0xC0) == 0x80; // fe80::/10
 }
 
-inline bool IP6Addr::is_private() const {
-  return (_addr._raw[RAW_IDX[0]]& 0xFE) == 0xFC; // fc00::/7
+inline bool
+IP6Addr::is_private() const {
+  return (_addr._raw[RAW_IDX[0]] & 0xFE) == 0xFC; // fc00::/7
 }
 
 inline in6_addr
 IP6Addr::host_order() const {
-  Addr zret { {_addr._store[LSW], _addr._store[MSW] }};
+  Addr zret{
+    {_addr._store[LSW], _addr._store[MSW]}
+  };
   return zret._in6;
 }
 
 inline in6_addr &
-IP6Addr::host_order(in6_addr & dst) const {
-  Addr * addr = reinterpret_cast<Addr*>(&dst);
+IP6Addr::host_order(in6_addr &dst) const {
+  Addr *addr      = reinterpret_cast<Addr *>(&dst);
   addr->_store[0] = _addr._store[LSW];
   addr->_store[1] = _addr._store[MSW];
   return dst;
@@ -992,7 +1005,7 @@ IP6Addr::network_order() const {
 }
 
 inline in6_addr &
-IP6Addr::network_order(in6_addr & dst) const {
+IP6Addr::network_order(in6_addr &dst) const {
   self_type::reorder(dst, _addr._raw);
   return dst;
 }
@@ -1045,20 +1058,23 @@ IP6Addr::reorder(unsigned char dst[WORD_SIZE], unsigned char const src[WORD_SIZE
 /// @return @c true if @a lhs is equal to @a rhs.
 inline bool
 operator==(IP6Addr const &lhs, IP6Addr const &rhs) {
-  return lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] && lhs._addr._store[IP6Addr::LSW] == rhs._addr._store[IP6Addr::LSW];
+  return lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] &&
+         lhs._addr._store[IP6Addr::LSW] == rhs._addr._store[IP6Addr::LSW];
 }
 
 /// @return @c true if @a lhs is not equal to @a rhs.
 inline bool
 operator!=(IP6Addr const &lhs, IP6Addr const &rhs) {
-  return lhs._addr._store[IP6Addr::MSW] != rhs._addr._store[IP6Addr::MSW] || lhs._addr._store[IP6Addr::LSW] != rhs._addr._store[IP6Addr::LSW];
+  return lhs._addr._store[IP6Addr::MSW] != rhs._addr._store[IP6Addr::MSW] ||
+         lhs._addr._store[IP6Addr::LSW] != rhs._addr._store[IP6Addr::LSW];
 }
 
 /// @return @c true if @a lhs is less than @a rhs.
 inline bool
 operator<(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[IP6Addr::MSW] < rhs._addr._store[IP6Addr::MSW] ||
-  (lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] && lhs._addr._store[IP6Addr::LSW] < rhs._addr._store[IP6Addr::LSW]);
+         (lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] &&
+          lhs._addr._store[IP6Addr::LSW] < rhs._addr._store[IP6Addr::LSW]);
 }
 
 /// @return @c true if @a lhs is greater than @a rhs.
@@ -1071,7 +1087,8 @@ operator>(IP6Addr const &lhs, IP6Addr const &rhs) {
 inline bool
 operator<=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[IP6Addr::MSW] < rhs._addr._store[IP6Addr::MSW] ||
-  (lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] && lhs._addr._store[IP6Addr::LSW] <= rhs._addr._store[IP6Addr::LSW]);
+         (lhs._addr._store[IP6Addr::MSW] == rhs._addr._store[IP6Addr::MSW] &&
+          lhs._addr._store[IP6Addr::LSW] <= rhs._addr._store[IP6Addr::LSW]);
 }
 
 /// @return @c true if @a lhs is greater than or equal to @a rhs.
@@ -1082,7 +1099,7 @@ operator>=(IP6Addr const &lhs, IP6Addr const &rhs) {
 
 inline sockaddr *
 IP6Addr::copy_to(sockaddr *sa) const {
-  this->copy_to(reinterpret_cast<sockaddr_in6*>(sa));
+  this->copy_to(reinterpret_cast<sockaddr_in6 *>(sa));
   return sa;
 }
 
@@ -1160,7 +1177,7 @@ IPMask::as_ip4() const {
 }
 
 inline auto
-IPMask::clear() ->  self_type & {
+IPMask::clear() -> self_type & {
   _cidr = INVALID;
   return *this;
 }
@@ -1275,16 +1292,12 @@ IPAddr::is_loopback() const {
 
 inline bool
 IPAddr::is_link_local() const {
-  return this->is_ip4() ? this->ip4().is_link_local()
-         : this->is_ip6() ? this->ip6().is_link_local()
-                          : false;
+  return this->is_ip4() ? this->ip4().is_link_local() : this->is_ip6() ? this->ip6().is_link_local() : false;
 }
 
 inline bool
 IPAddr::is_private() const {
-  return this->is_ip4() ? this->ip4().is_private()
-         : this->is_ip6() ? this->ip6().is_private()
-                          : false;
+  return this->is_ip4() ? this->ip4().is_private() : this->is_ip6() ? this->ip6().is_private() : false;
 }
 
 inline IPAddr &
@@ -1357,21 +1370,31 @@ operator!=(sockaddr const *lhs, IPAddr const &rhs) {
   return !(rhs == lhs);
 }
 
-inline IP4Addr const & IPAddr::ip4() const { return _addr._ip4; }
-inline IPAddr::operator IP4Addr() const { return _addr._ip4; }
+inline IP4Addr const &
+IPAddr::ip4() const {
+  return _addr._ip4;
+}
+inline IPAddr::operator IP4Addr() const {
+  return _addr._ip4;
+}
 
-inline IP6Addr const & IPAddr::ip6() const { return _addr._ip6; }
-inline IPAddr::operator IP6Addr() const { return _addr._ip6; }
+inline IP6Addr const &
+IPAddr::ip6() const {
+  return _addr._ip6;
+}
+inline IPAddr::operator IP6Addr() const {
+  return _addr._ip6;
+}
 
 inline bool
 IPAddr::operator==(self_type const &that) const {
   switch (_family) {
   case AF_INET:
     return that._family == AF_INET && _addr._ip4 == that._addr._ip4;
-    case AF_INET6:
-      return that._family == AF_INET6 && _addr._ip6 == that._addr._ip6;
-      default:
-        return ! that.is_valid();
+  case AF_INET6:
+    return that._family == AF_INET6 && _addr._ip6 == that._addr._ip6;
+  default:
+    return !that.is_valid();
   }
 }
 
@@ -1442,15 +1465,17 @@ namespace std {
 
 /// Standard hash support for @a IP4Addr.
 template <> struct hash<swoc::IP4Addr> {
-  size_t operator()(swoc::IP4Addr const &addr) const {
+  size_t
+  operator()(swoc::IP4Addr const &addr) const {
     return addr.network_order();
   }
 };
 
 /// Standard hash support for @a IP6Addr.
 template <> struct hash<swoc::IP6Addr> {
-  size_t operator()(swoc::IP6Addr const &addr) const {
-    // XOR the 64 chunks then XOR that down to 32 bits.
+  size_t
+  operator()(swoc::IP6Addr const &addr) const {
+    // XOR the 64 chunks
     auto words = addr.as_span<uint64_t>();
     return words[0] ^ words[1];
   }
@@ -1458,7 +1483,8 @@ template <> struct hash<swoc::IP6Addr> {
 
 /// Standard hash support for @a IPAddr.
 template <> struct hash<swoc::IPAddr> {
-  size_t operator()(swoc::IPAddr const &addr) const {
+  size_t
+  operator()(swoc::IPAddr const &addr) const {
     return addr.is_ip4() ? hash<swoc::IP4Addr>()(addr.ip4()) : addr.is_ip6() ? hash<swoc::IP6Addr>()(addr.ip6()) : 0;
   }
 };

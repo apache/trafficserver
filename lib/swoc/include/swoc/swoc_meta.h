@@ -165,7 +165,9 @@ eraser(U &&u) -> U {
  *   }, v);
  * @endcode
  */
-template <typename... Args> struct vary : public Args... { using Args::operator()...; };
+template <typename... Args> struct vary : public Args... {
+  using Args::operator()...;
+};
 /// Template argument deduction guide (C++17 required).
 template <typename... Args> vary(Args...) -> vary<Args...>;
 
@@ -234,5 +236,63 @@ template <typename... Types> struct type_list {
    */
   template <typename T> static constexpr bool contains = is_any_of<T, Types...>::value;
 };
+
+/** Scoped value change.
+ *
+ * The purpose of this class is to change the value of a variable in a scope and then change it
+ * back when the scope is exited. The old value will be moved to a cache variable and then moved
+ * back when the instance is destructed. This is very useful to temporarily tweak global variables
+ * which having to know what the current value is.
+ *
+ * @code
+ * {
+ *   let save(var, value);
+ *   // var now has value.
+ * }
+ * // var now has original value.
+ * @endcode
+ *
+ * @tparam T Type of variable to scope.
+ */
+template <typename T> struct let {
+  using self_type = let;
+
+  let(self_type const& that) = delete;
+  self_type & operator = (self_type const&) = delete;
+
+  T &_var;  ///< Reference to scoped variable.
+  T _value; ///< Original value.
+
+  /** Construct a scope.
+   *
+   * @param var Variable to scope.
+   * @param value temporary value to assign.
+   */
+  let(T &var, T const &value);
+
+  /** Construct a scope.
+   *
+   * @param var Variable to scope.
+   * @param value temporary value to assign.
+   */
+  let(T &var, T &&value);
+
+  ~let();
+};
+
+template <typename T> let<T>::let(T &var, T const &value) : _var(var), _value(std::move(var))
+{
+  _var = value;
+}
+template <typename T> let<T>::let(T &var, T &&value) : _var(var), _value(std::move(var))
+{
+  _var = std::move(value);
+}
+
+template <typename T> let<T>::~let()
+{
+  _var = std::move(_value);
+}
+
 
 }}} // namespace swoc::SWOC_VERSION_NS::meta

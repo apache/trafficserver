@@ -28,13 +28,30 @@
 // assign, the error message is too vague for me to be sure - it doesn't even provide the location of
 // the method invocation. I've been using g++ 12 for development and I don't see that error.
 #if __GNUC__ == 11
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 class TextView;
+
+/** A set of characters.
+ *
+ */
+class CharSet {
+  using self_type = CharSet;
+
+public:
+  constexpr CharSet(TextView const &chars);
+  bool
+  operator()(u_char idx) const {
+    return _chars[idx];
+  }
+
+protected:
+  std::bitset<256> _chars;
+};
 
 /** A read only view of a contiguous piece of memory.
 
@@ -121,7 +138,7 @@ public:
    *
    * Well, estemed reader, because the C++ standard doesn't have a better way to support overloads
    * that handle character pointers and literal strings differently. If the parameters were simply
-   * <tt>(char const *, char const *)</tt> then a cosntruct like <tt>{ "really", "broken" }</tt> can
+   * <tt>(char const *, char const *)</tt> then a construct like <tt>{ "really", "broken" }</tt> can
    * be interpreted as a @c TextView because the elements implicitly convert to <tt>char const
    * *</tt>. This makes no sense and creates some @b very annoying ambiguities for lists of strings
    * if there are exactly two in the list. See @c Lexicon for an example.
@@ -130,7 +147,11 @@ public:
    * are handled by a different constructor so this only disables constructing from two char arrays
    * which IMHO makes no sense and should be forbidden.
    */
-  template < typename T > explicit TextView(T first, std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_convertible_v<T, char const *>, T> last) noexcept : super_type(first, last - first) {}
+  template <typename T>
+  explicit TextView(
+    T first,
+    std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_convertible_v<T, char const *>, T> last) noexcept
+    : super_type(first, last - first) {}
 
   /** Construct from any character container following STL standards.
    *
@@ -140,13 +161,10 @@ public:
    * The container type must have the methods @c data and @c size which must return values convertible
    * to @c char @c const @c * and @c size_t respectively.
    */
-  template < typename C
-    , typename = std::enable_if_t<
-        std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
-        std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
-        , void
-      >
-  > constexpr TextView(C const& c);
+  template <typename C, typename = std::enable_if_t<std::is_convertible_v<decltype(std::declval<C>().data()), char const *> &&
+                                                      std::is_convertible_v<decltype(std::declval<C>().size()), size_t>,
+                                                    void>>
+  constexpr TextView(C const &c);
 
   /** Construct from literal string or array.
 
@@ -168,7 +186,7 @@ public:
    *
    * @internal @a src a reference because it is otherwise ambiguous with the literal constructor.
    */
-  TextView(char * & src) : super_type(src, src ? strlen(src) : 0) {}
+  TextView(char *&src) : super_type(src, src ? strlen(src) : 0) {}
 
   /** Construct from a const C-string.
    *
@@ -178,7 +196,7 @@ public:
    *
    * @internal @a src a reference because it is otherwise ambiguous with the literal constructor.
    */
-  TextView(char const * & src) : super_type(src, src ? strlen(src) : 0) {}
+  TextView(char const *&src) : super_type(src, src ? strlen(src) : 0) {}
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -200,7 +218,7 @@ public:
   /// Assign from C-string @a s.
   self_type &operator=(char *&s);
   /// Assign from C-string @a s.
-  self_type &operator=(char const * & s);
+  self_type &operator=(char const *&s);
 
   /// Assign from a @c std::string.
   self_type &operator=(const std::string &s);
@@ -212,7 +230,7 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type &assign(char * & c_str);
+  self_type &assign(char *&c_str);
 
   /** Assign a view of the @a c_str
    *
@@ -221,7 +239,7 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type &assign(char const * & c_str);
+  self_type &assign(char const *&c_str);
 
   /** Assign from a pointer and size.
    *
@@ -254,7 +272,7 @@ public:
    * @endcode
    * The last character in @a tv will be 'g'.
   */
-  template <size_t N> self_type & assign(const char (&s)[N]) noexcept;
+  template <size_t N> self_type &assign(const char (&s)[N]) noexcept;
 
   /** Assign from any character container following STL standards.
    *
@@ -264,13 +282,11 @@ public:
    * The container type must have the methods @c data and @c size which must return values convertible
    * to @c char @c const @c * and @c size_t respectively.
    */
-  template < typename C
-            , typename = std::enable_if_t<
-                std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
-                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
-                , void
-              >
-            > constexpr self_type & assign(C const& c) {
+  template <typename C, typename = std::enable_if_t<std::is_convertible_v<decltype(std::declval<C>().data()), char const *> &&
+                                                      std::is_convertible_v<decltype(std::declval<C>().size()), size_t>,
+                                                    void>>
+  constexpr self_type &
+  assign(C const &c) {
     return this->assign(c.data(), c.size());
   }
 
@@ -329,6 +345,12 @@ public:
    *
    * @return @a this
    */
+  self_type &ltrim(CharSet const &delimiters);
+
+  /** Remove bytes from the start of the view that are in @a delimiters.
+   *
+   * @return @a this
+   */
   self_type &ltrim(std::string_view const &delimiters);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
@@ -352,6 +374,12 @@ public:
   self_type &rtrim(char c);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
+   *
+   * @return @a this
+   */
+  self_type &rtrim(CharSet const &delimiters);
+
+  /** Remove bytes from the end of the view that are in @a delimiters.
    * @return @a this
    */
   self_type &rtrim(std::string_view const &delimiters);
@@ -369,6 +397,11 @@ public:
    * @return @a this
    */
   self_type &trim(char c);
+
+  /** Remove bytes from the start and end of the view that are in @a delimiters.
+   * @return @a this
+   */
+  self_type &trim(CharSet const &delimiters);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
    * @return @a this
@@ -915,7 +948,7 @@ public:
   struct CaselessEqual {
     /// @return @c true if the view contants are equal when compared without regard to case.
     bool
-    operator()(self_type const& lhs, self_type const& rhs) const noexcept {
+    operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return lhs.size() == rhs.size() && 0 == strcasecmp(lhs, rhs);
     }
   };
@@ -1009,9 +1042,9 @@ template <int RADIX>
 uintmax_t
 svto_radix(TextView &src) {
   static_assert(0 < RADIX && RADIX <= 36, "Radix must be in the range 1..36");
-  static constexpr auto MAX = std::numeric_limits<uintmax_t>::max();
+  static constexpr auto MAX            = std::numeric_limits<uintmax_t>::max();
   static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
-  uintmax_t zret = 0;
+  uintmax_t zret                       = 0;
   int8_t v;
   while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < RADIX) {
     // Tweaked for performance - need to check range after @a RADIX multiply.
@@ -1052,6 +1085,12 @@ double svtod(TextView text, TextView *parsed = nullptr);
 // Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
 // simpler plain @c TextView ? Because otherwise Doxygen can't match up the declaration and
 // definition and the reference documentation is messed up. Sigh.
+
+inline constexpr CharSet::CharSet(TextView const &chars) {
+  for (auto c : chars) {
+    _chars[u_char(c)] = true;
+  }
+}
 
 // === TextView Implementation ===
 /// @cond TextView_INTERNAL
@@ -1112,7 +1151,7 @@ TextView::operator++(int) -> self_type {
 }
 
 inline auto
-TextView::operator+=(size_t n) -> self_type &{
+TextView::operator+=(size_t n) -> self_type & {
   this->remove_prefix(n);
   return *this;
 }
@@ -1148,12 +1187,12 @@ TextView::operator=(const std::string &s) -> self_type & {
 }
 
 inline auto
-TextView::assign(char * & c_str) -> self_type & {
+TextView::assign(char *&c_str) -> self_type & {
   return this->assign(c_str, strlen(c_str));
 }
 
 inline auto
-TextView::assign(char const * & c_str) -> self_type & {
+TextView::assign(char const *&c_str) -> self_type & {
   return this->assign(c_str, strlen(c_str));
 }
 
@@ -1165,7 +1204,7 @@ TextView::assign(const std::string &s) -> self_type & {
 
 inline TextView &
 TextView::assign(char const *ptr, size_t n) {
-  *this = super_type(ptr, n == npos ? ( ptr ? ::strlen(ptr) : 0) : n);
+  *this = super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n);
   return *this;
 }
 
@@ -1434,7 +1473,7 @@ TextView::take_suffix_at(std::string_view const &delimiters) {
 
 template <typename F>
 TextView::self_type
-TextView::take_suffix_if(F const &pred){
+TextView::take_suffix_if(F const &pred) {
   return this->take_suffix_at(this->rfind_if(pred));
 }
 
@@ -1475,62 +1514,71 @@ TextView::trim(char c) {
 }
 
 inline TextView &
-TextView::ltrim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
-  const char *spot;
-  const char *limit;
+TextView::ltrim(CharSet const &delimiters) {
+  const char *spot  = this->data();
+  const char *limit = this->data_end();
 
-  for (spot = this->data(), limit = this->data_end(); spot < limit && valid[static_cast<uint8_t>(*spot)]; ++spot)
-    ;
+  while (spot < limit && delimiters(*spot)) {
+    ++spot;
+  }
   this->remove_prefix(spot - this->data());
 
   return *this;
 }
 
 inline TextView &
-TextView::ltrim(const char *delimiters) {
-  return this->ltrim(std::string_view(delimiters));
+TextView::ltrim(std::string_view const &delimiters) {
+  return this->ltrim(CharSet(delimiters));
 }
 
 inline TextView &
-TextView::rtrim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
+TextView::ltrim(const char *delimiters) {
+  return this->ltrim(CharSet(delimiters));
+}
+
+inline TextView &
+TextView::rtrim(CharSet const &delimiters) {
   const char *spot  = this->data_end();
   const char *limit = this->data();
-
-  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
-    ;
+  while (limit < spot-- && delimiters(*spot)) {
+  }
 
   this->remove_suffix(this->data_end() - (spot + 1));
   return *this;
 }
 
 inline TextView &
-TextView::trim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
+TextView::rtrim(std::string_view const &delimiters) {
+  return this->rtrim(CharSet(delimiters));
+}
+
+inline TextView &
+TextView::trim(CharSet const &delimiters) {
   const char *spot;
   const char *limit;
 
   // Do this explicitly, so we don't have to initialize the character set twice.
-  for (spot = this->data(), limit = this->data_end(); spot < limit && valid[static_cast<uint8_t>(*spot)]; ++spot)
+  for (spot = this->data(), limit = this->data_end(); spot < limit && delimiters(*spot); ++spot)
     ;
   this->remove_prefix(spot - this->data());
 
   spot  = this->data_end();
   limit = this->data();
-  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
-    ;
+  while (limit < spot-- && delimiters(*spot)) {
+  }
   this->remove_suffix(this->data_end() - (spot + 1));
 
   return *this;
 }
 
 inline TextView &
+TextView::trim(std::string_view const &delimiters) {
+  return this->trim(CharSet(delimiters));
+}
+
+inline TextView &
 TextView::trim(const char *delimiters) {
-  return this->trim(std::string_view(delimiters));
+  return this->trim(CharSet(delimiters));
 }
 
 template <typename F>
@@ -1562,12 +1610,12 @@ TextView::trim_if(F const &pred) {
 }
 
 constexpr inline auto
-TextView::data() const noexcept -> value_type const* {
+TextView::data() const noexcept -> value_type const * {
   return super_type::data();
 }
 
 constexpr inline auto
-TextView::data_end() const noexcept -> value_type const* {
+TextView::data_end() const noexcept -> value_type const * {
   return this->data() + this->size();
 }
 
@@ -1723,7 +1771,7 @@ extern template std::ostream &TextView::stream_write(std::ostream &, const TextV
  * an issue.
  */
 template <typename X, typename V> class TransformView {
-  using self_type = TransformView; ///< Self reference type.
+  using self_type       = TransformView; ///< Self reference type.
   using source_iterator = decltype(V{}.begin());
 
 public:
@@ -1777,9 +1825,15 @@ public:
   explicit operator bool() const;
 
   /// Iterator to first transformed character.
-  iterator begin() const { return *this; }
+  iterator
+  begin() const {
+    return *this;
+  }
   /// Iterator past last transformed character.
-  iterator end() const { return self_type{_xf, _limit}; }
+  iterator
+  end() const {
+    return self_type{_xf, _limit};
+  }
 
 protected:
   transform_type _xf;     ///< Per character transform functor.
@@ -1787,7 +1841,7 @@ protected:
   source_iterator _limit; ///< End of source view.
 
   /// Special constructor for making an empty instance to serve as the @c end iterator.
-  TransformView(transform_type && xf, source_iterator && limit) : _xf(xf), _spot(limit), _limit(limit) {}
+  TransformView(transform_type &&xf, source_iterator &&limit) : _xf(xf), _spot(limit), _limit(limit) {}
 };
 
 template <typename X, typename V>
@@ -1899,7 +1953,7 @@ public:
   value_type operator*() const;
 
   /// Move to next element.
-  self_type & operator++();
+  self_type &operator++();
 
   /// Move to next element.
   self_type operator++(int);
@@ -1920,7 +1974,7 @@ protected:
   source_iterator _limit; ///< End marker.
 
   /// Special constructor for making an empty instance to serve as the @c end iterator.
-  explicit TransformView(source_iterator && limit) : _spot(limit), _limit(limit) {}
+  explicit TransformView(source_iterator &&limit) : _spot(limit), _limit(limit) {}
 };
 
 template <typename V>
@@ -1962,16 +2016,21 @@ TransformView<void, V>::empty() const {
   return _spot == _limit;
 }
 
-template <typename V>
-TransformView<void, V>::operator bool() const {
+template <typename V> TransformView<void, V>::operator bool() const {
   return _spot != _limit;
 }
 
 template <typename V>
-auto TransformView<void, V>::begin() const -> self_type { return *this; }
+auto
+TransformView<void, V>::begin() const -> self_type {
+  return *this;
+}
 
 template <typename V>
-auto TransformView<void, V>::end() const -> self_type { return self_type{_limit}; }
+auto
+TransformView<void, V>::end() const -> self_type {
+  return self_type{_limit};
+}
 
 /// @cond INTERNAL_DETAIL
 // Capture @c void transforms and make them identity transforms.
@@ -1999,7 +2058,8 @@ namespace literals {
  * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
  * so hopefully someday this can be removed.
  */
-constexpr std::string_view operator"" _sv(const char *s, size_t n) {
+constexpr std::string_view
+operator"" _sv(const char *s, size_t n) {
   return {s, n};
 }
 
@@ -2013,7 +2073,8 @@ constexpr std::string_view operator"" _sv(const char *s, size_t n) {
  * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
  * so hopefully someday this can be removed.
  */
-constexpr swoc::TextView operator"" _tv(const char *s, size_t n) {
+constexpr swoc::TextView
+operator"" _tv(const char *s, size_t n) {
   return {s, n};
 }
 } // namespace literals
@@ -2048,12 +2109,15 @@ template <typename X, typename V> struct iterator_traits<swoc::TransformView<X, 
 
 template <> struct hash<swoc::TextView> {
   static constexpr hash<string_view> super_hash{};
-  size_t operator()(swoc::TextView const& s) const { return super_hash(s); }
+  size_t
+  operator()(swoc::TextView const &s) const {
+    return super_hash(s);
+  }
 };
 /// @endcond
 
 } // namespace std
 
 #if __GNUC__ == 11
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif

@@ -41,7 +41,7 @@ what(std::string_view const &fmt, Args &&...args) {
 // Exported because inner classes in template classes cannot be used in partial specialization
 // which is required for tuple support. This should be removed next time there is a API changing
 // release because tuple access is being deprecated.
-template < typename E > struct lexicon_pair_type {
+template <typename E> struct lexicon_pair_type {
   E _value;
   TextView _name;
 
@@ -844,7 +844,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, Lexicon<E> const &lex) {
   return w;
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
 namespace std {
 
@@ -873,4 +873,3 @@ get(swoc::detail::lexicon_pair_type<E> const &p) -> typename std::tuple_element<
 }
 
 } // namespace std
-

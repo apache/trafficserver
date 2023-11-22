@@ -141,10 +141,12 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr) {
       w.print("*Invalid IP family [{}]*", addr->sa_family);
       break;
     }
-    if (bracket_p)
+    if (bracket_p) {
       w.write(']');
-    if (port_p)
+    }
+    if (port_p) {
       w.write(':');
+    }
   }
   if (port_p) {
     if (local_numeric_fill_p) {
@@ -158,8 +160,9 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr) {
   }
   if (family_p) {
     local_spec._min = 0;
-    if (addr_p || port_p)
+    if (addr_p || port_p) {
       w.write(' ');
+    }
     if (spec.has_numeric_type()) {
       bwformat(w, local_spec, static_cast<uintmax_t>(addr->sa_family));
     } else {
@@ -208,7 +211,7 @@ bwformat(BufferWriter &w, Spec const &spec, IP6Addr const &addr) {
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, IP4Srv const& srv) {
+bwformat(BufferWriter &w, Spec const &spec, IP4Srv const &srv) {
   bwformat(w, spec, srv.addr());
   if (srv.host_order_port()) {
     w.print(":{}", srv.host_order_port());
@@ -217,7 +220,7 @@ bwformat(BufferWriter &w, Spec const &spec, IP4Srv const& srv) {
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, IP6Srv const& srv) {
+bwformat(BufferWriter &w, Spec const &spec, IP6Srv const &srv) {
   auto port = srv.host_order_port();
   if (port) {
     w.write('[');
@@ -230,9 +233,12 @@ bwformat(BufferWriter &w, Spec const &spec, IP6Srv const& srv) {
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, IPSrv const& srv) {
-  if (srv.is_ip4()) { bwformat(w, spec, IP4Srv(srv)); }
-  else if (srv.is_ip6()) { bwformat(w, spec, IP6Srv(srv)); }
+bwformat(BufferWriter &w, Spec const &spec, IPSrv const &srv) {
+  if (srv.is_ip4()) {
+    bwformat(w, spec, IP4Srv(srv));
+  } else if (srv.is_ip6()) {
+    bwformat(w, spec, IP6Srv(srv));
+  }
   return w;
 }
 
@@ -341,14 +347,14 @@ bwformat(BufferWriter &w, Spec const &spec, IP6Range const &range) {
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IPRange const &range) {
-  return range.is(AF_INET) ? bwformat(w, spec, range.ip4()) :
-                             range.is(AF_INET6) ? bwformat(w, spec, range.ip6()) : w.write("*-*"_tv);
+  return range.is(AF_INET)  ? bwformat(w, spec, range.ip4()) :
+         range.is(AF_INET6) ? bwformat(w, spec, range.ip6()) :
+                              w.write("*-*"_tv);
 }
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IPRangeView const &rv) {
-  return rv.is(AF_INET) ? bwformat(w, spec, rv.ip4()) :
-         rv.is(AF_INET6) ? bwformat(w, spec, rv.ip6()) : w.write("*-*"_tv);
+  return rv.is(AF_INET) ? bwformat(w, spec, rv.ip4()) : rv.is(AF_INET6) ? bwformat(w, spec, rv.ip6()) : w.write("*-*"_tv);
 }
 
 BufferWriter &

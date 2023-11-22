@@ -346,7 +346,7 @@ public:
    *
    * The elements are removed from @a src, which becomes empty.
    */
-  self_type & append(self_type & src);
+  self_type &append(self_type &src);
 
   /** Prepend a list.
    *
@@ -355,7 +355,7 @@ public:
    *
    * The elements are removed from @a src, which becomes empty.
    */
-  self_type & prepend(self_type & src);
+  self_type &prepend(self_type &src);
 
   /** Splice in a list after an existing element.
    *
@@ -363,7 +363,7 @@ public:
    * @param src List to splice.
    * @return @a this
    */
-  self_type &insert_after(value_type *target, self_type & src);
+  self_type &insert_after(value_type *target, self_type &src);
 
   /** Splice in a list before an existing element.
    *
@@ -371,7 +371,7 @@ public:
    * @param src List to splice.
    * @return @a this
    */
-  self_type &insert_before(value_type *target, self_type & src);
+  self_type &insert_before(value_type *target, self_type &src);
 
   /** Splice in a list after an existing element.
    *
@@ -379,7 +379,7 @@ public:
    * @param src List to splice.
    * @return @a this
    */
-  self_type &insert_after(iterator const &target, self_type & src);
+  self_type &insert_after(iterator const &target, self_type &src);
 
   /** Splice in a list before an existing element.
    *
@@ -387,7 +387,7 @@ public:
    * @param src List to splice.
    * @return @a this
    */
-  self_type &insert_before(iterator const &target, self_type & src);
+  self_type &insert_before(iterator const &target, self_type &src);
 
   /// Remove all elements.
   /// @note @b No memory management is done!
@@ -552,12 +552,12 @@ IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing) {
   return ptr_ref_cast<T>(L::prev_ptr(thing));
 }
 
-template < typename T > struct IntrusiveLinks {
-  T * _next = nullptr;
-  T * _prev = nullptr;
+template <typename T> struct IntrusiveLinks {
+  T *_next = nullptr;
+  T *_prev = nullptr;
 };
 
-template < typename T, IntrusiveLinks<T> (T::* links) > struct IntrusiveLinkDescriptor {
+template <typename T, IntrusiveLinks<T>(T::*links)> struct IntrusiveLinkDescriptor {
   static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
   static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
 };
@@ -841,16 +841,16 @@ IntrusiveDList<L>::insert_before(iterator const &target, value_type *v) -> self_
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_after(value_type *target, self_type & src) -> self_type & {
+IntrusiveDList<L>::insert_after(value_type *target, self_type &src) -> self_type & {
   if (target && src._count > 0) {
     if (_tail == target) {
       this->append(src);
-    } else { // invariant - @a target is not tail therefore has a successor.
-      L::next_ptr(src._tail) = L::next_ptr(target); // link @a src tail to @a target successor
+    } else {                                                     // invariant - @a target is not tail therefore has a successor.
+      L::next_ptr(src._tail)              = L::next_ptr(target); // link @a src tail to @a target successor
       L::prev_ptr(L::next_ptr(src._tail)) = src._tail;
 
       L::prev_ptr(src._head) = target; // link @a src head to @target
-      L::next_ptr(target) = src._head;
+      L::next_ptr(target)    = src._head;
 
       _count += src._count;
       src.clear();
@@ -861,22 +861,22 @@ IntrusiveDList<L>::insert_after(value_type *target, self_type & src) -> self_typ
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_after(iterator const &target, self_type & src) -> self_type & {
+IntrusiveDList<L>::insert_after(iterator const &target, self_type &src) -> self_type & {
   return this->insert_after(target._v, src);
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_before(value_type *target, self_type & src) -> self_type & {
+IntrusiveDList<L>::insert_before(value_type *target, self_type &src) -> self_type & {
   if (target && src._count > 0) {
     if (_head == target) {
       this->prepend(src);
-    } else { // invariant - @a target is not head and therefore has a predecessor.
-      L::prev_ptr(src._head) = L::prev_ptr(target); // link @a src head to @a target predecessor
+    } else {                                                  // invariant - @a target is not head and therefore has a predecessor.
+      L::prev_ptr(src._head)           = L::prev_ptr(target); // link @a src head to @a target predecessor
       L::next_ptr(L::prev_ptr(target)) = src._head;
 
       L::next_ptr(src._tail) = target; // link @a src tail to @a target
-      L::prev_ptr(target) = src._tail;
+      L::prev_ptr(target)    = src._tail;
 
       _count += src._count;
       src.clear();
@@ -887,7 +887,7 @@ IntrusiveDList<L>::insert_before(value_type *target, self_type & src) -> self_ty
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_before(iterator const &target, self_type & src) -> self_type & {
+IntrusiveDList<L>::insert_before(iterator const &target, self_type &src) -> self_type & {
   return this->insert_before(target._v, src);
 }
 
@@ -1041,14 +1041,18 @@ IntrusiveDList<L>::nth(unsigned int n) -> iterator {
     return {};
   }
 
-  value_type * spot;
-  if (n < _count/2) { // closer to head, count from there..
+  value_type *spot;
+  if (n < _count / 2) { // closer to head, count from there..
     spot = _head;
-    while (n-- > 0) { spot = L::next_ptr(spot); }
+    while (n-- > 0) {
+      spot = L::next_ptr(spot);
+    }
   } else { // count from tail
-    spot = _tail;
+    spot         = _tail;
     unsigned idx = _count - 1;
-    while (idx-- > n) { spot = L::prev_ptr(spot); }
+    while (idx-- > n) {
+      spot = L::prev_ptr(spot);
+    }
   }
   return iterator_for(spot);
 }
@@ -1056,7 +1060,6 @@ IntrusiveDList<L>::nth(unsigned int n) -> iterator {
 template <typename L>
 auto
 IntrusiveDList<L>::take_prefix(unsigned int n) -> self_type {
-
   if (n == 0) {
     return {};
   }
@@ -1068,16 +1071,16 @@ IntrusiveDList<L>::take_prefix(unsigned int n) -> self_type {
   // Invariant - there is at least one element that will not be taken.
 
   self_type zret;
-  value_type * spot = this->nth(n); // new @a head for @a this
+  value_type *spot = this->nth(n); // new @a head for @a this
 
-  zret._count = n;
-  zret._head = _head;
-  zret._tail = L::prev_ptr(spot);
+  zret._count             = n;
+  zret._head              = _head;
+  zret._tail              = L::prev_ptr(spot);
   L::next_ptr(zret._tail) = nullptr;
 
-  _count -= n;
-  _head = spot;
-  L::prev_ptr(_head) = nullptr;
+  _count             -= n;
+  _head               = spot;
+  L::prev_ptr(_head)  = nullptr;
 
   return zret;
 }
@@ -1094,7 +1097,6 @@ IntrusiveDList<L>::split_prefix(unsigned int n) -> self_type {
 template <typename L>
 auto
 IntrusiveDList<L>::take_suffix(unsigned int n) -> self_type {
-
   if (n == 0) {
     return {};
   }
@@ -1106,16 +1108,16 @@ IntrusiveDList<L>::take_suffix(unsigned int n) -> self_type {
   // Invariant - there is at least one element that will not be taken.
 
   self_type zret;
-  value_type * spot = this->nth(_count - n - 1); // new @a tail for @a this
+  value_type *spot = this->nth(_count - n - 1); // new @a tail for @a this
 
-  zret._count = n;
-  zret._head = L::next_ptr(spot);
+  zret._count             = n;
+  zret._head              = L::next_ptr(spot);
   L::prev_ptr(zret._head) = nullptr;
-  zret._tail = _tail;
+  zret._tail              = _tail;
 
-  _count -= n;
-  _tail = spot;
-  L::next_ptr(_tail) = nullptr;
+  _count             -= n;
+  _tail               = spot;
+  L::next_ptr(_tail)  = nullptr;
 
   return zret;
 }
@@ -1136,10 +1138,10 @@ IntrusiveDList<L>::prepend(IntrusiveDList::self_type &src) -> self_type & {
     if (_count == 0) {
       *this = std::move(src);
     } else {
-      L::prev_ptr(_head)     = src._tail;
-      L::next_ptr(src._tail) = _head;
-      _count += src._count;
-      _head = src._head;
+      L::prev_ptr(_head)      = src._tail;
+      L::next_ptr(src._tail)  = _head;
+      _count                 += src._count;
+      _head                   = src._head;
       src.clear();
     }
   }
@@ -1153,10 +1155,10 @@ IntrusiveDList<L>::append(IntrusiveDList::self_type &src) -> self_type & {
     if (_count == 0) {
       *this = std::move(src);
     } else {
-      L::next_ptr(_tail)     = src._head;
-      L::prev_ptr(src._head) = _tail;
-      _count += src._count;
-      _tail = src._tail;
+      L::next_ptr(_tail)      = src._head;
+      L::prev_ptr(src._head)  = _tail;
+      _count                 += src._count;
+      _tail                   = src._tail;
       src.clear();
     }
   }

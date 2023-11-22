@@ -45,7 +45,7 @@ struct Errno {
 struct Date {
   /// Default format
   static constexpr std::string_view DEFAULT_FORMAT{"%Y %b %d %H:%M:%S"_sv};
-  time_t _epoch; ///< The time.
+  time_t _epoch;         ///< The time.
   std::string_view _fmt; ///< Data format.
 
   /** Constructor.
@@ -83,7 +83,7 @@ FirstOfConverter(T &&t) {
 /// All arguments must be convertible to @c std::string_view.
 template <typename... Args>
 std::string_view
-FirstOf(Args &&... args) {
+FirstOf(Args &&...args) {
   std::array<std::string_view, sizeof...(args)> strings{{detail::FirstOfConverter(args)...}};
   for (auto &s : strings) {
     if (!s.empty())
@@ -143,7 +143,7 @@ SubText<Args...>::operator!() const {
  */
 template <typename... Args>
 SubText<Args...>
-If(bool flag, TextView const &fmt, Args &&... args) {
+If(bool flag, TextView const &fmt, Args &&...args) {
   return SubText<Args...>(flag ? fmt : TextView{}, std::forward_as_tuple(args...));
 }
 
@@ -220,7 +220,7 @@ Optional(TextView fmt, ARG &&arg) {
  * @endcode
  */
 struct UnHex {
-  UnHex(MemSpan<void const> const& span) : _span(span) {}
+  UnHex(MemSpan<void const> const &span) : _span(span) {}
   MemSpan<void const> _span; ///< Source span.
 };
 } // namespace bwf
@@ -254,7 +254,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const 
  */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
 
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::UnHex const &obj);
 
 /** Output a nested formatted string.
  *
