@@ -140,11 +140,14 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   data_len -= (GZIP_HEADER_SIZE + GZIP_TRAILER_SIZE);
   buf_list.clear();
   z_stream zstrm;
-  zstrm.zalloc   = Z_NULL;
-  zstrm.zfree    = Z_NULL;
-  zstrm.opaque   = Z_NULL;
-  zstrm.next_in  = nullptr;
-  zstrm.avail_in = 0;
+  zstrm.zalloc    = Z_NULL;
+  zstrm.zfree     = Z_NULL;
+  zstrm.opaque    = Z_NULL;
+  zstrm.next_in   = nullptr;
+  zstrm.avail_in  = 0;
+  zstrm.total_in  = 0;
+  zstrm.total_out = 0;
+
   if (inflateInit2(&zstrm, -MAX_WBITS) != Z_OK) {
     TSError("[%s] inflateInit2 failed!", __FUNCTION__);
     return false;
