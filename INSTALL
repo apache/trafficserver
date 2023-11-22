@@ -37,6 +37,14 @@ To install:
 * The easiest way to find all of the configuration flags
   for Traffic Server is to run `ccmake build`
 
+* For convience, if there a file named "CMakeLists.nice" in the source
+  directory, it will be loaded early in the loading of "CMakeList.txt".
+  This enables local modifications that don't have to be passed on the
+  command line or IDE. For instance if this is put in that file then
+  the install directory will be set to "/opt/ts".
+
+    set(CMAKE_INSTALL_PREFIX "/opt/ts")
+
 
 By default the build will use the highest level of compiler
 optimization. To alter this, specify the Release build type:

@@ -43,6 +43,10 @@ list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 
 include(layout)
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.nice")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.nice")
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(DEBUG _DEBUG)
 endif()
