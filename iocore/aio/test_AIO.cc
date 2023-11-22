@@ -288,6 +288,9 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_offset     = seq_read_point;
     io->aiocb.aio_nbytes     = seq_read_size;
     io->aiocb.aio_lio_opcode = LIO_READ;
+#if TS_USE_MMAP
+    io->mutex = mutex;
+#endif
     ink_assert(ink_aio_read(io) >= 0);
     seq_read_point += seq_read_size;
     if (seq_read_point > max_offset) {

@@ -53,7 +53,11 @@ struct AIOCallbackInternal : public AIOCallback {
   AIOCallbackInternal()
   {
     memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
+#if TS_USE_MMAP
+    this->aiocb.aio_fildes = MAP_FAILED;
+#else
     this->aiocb.aio_fildes = -1;
+#endif
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };
@@ -96,10 +100,14 @@ struct AIO_Reqs {
   ASLL(AIOCallbackInternal, alink) aio_temp_list;
   ink_mutex aio_mutex;
   ink_cond aio_cond;
-  int index           = 0;  /* position of this struct in the aio_reqs array */
-  int pending         = 0;  /* number of outstanding requests on the disk */
-  int queued          = 0;  /* total number of aio_todo requests */
-  int filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
+  int index           = 0;          /* position of this struct in the aio_reqs array */
+  int pending         = 0;          /* number of outstanding requests on the disk */
+  int queued          = 0;          /* total number of aio_todo requests */
+#if TS_USE_MMAP
+  void *filedes       = MAP_FAILED; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
+#else
+  int filedes = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
+#endif
   int requests_queued = 0;
 };
 

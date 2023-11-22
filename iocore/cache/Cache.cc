@@ -577,7 +577,7 @@ CacheProcessor::start_internal(int flags)
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-#if AIO_MODE == AIO_MODE_NATIVE
+#if (AIO_MODE == AIO_MODE_NATIVE) && (!TS_USE_MMAP)
   for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
     et->diskHandler = new DiskHandler();
     et->schedule_imm(et->diskHandler);
@@ -1218,11 +1218,14 @@ vol_dir_clear(Vol *d)
 {
   size_t dir_len = d->dirlen();
   vol_clear_init(d);
-
+#if TS_USE_MMAP
+  memcpy(static_cast<char *>(d->fd) + d->skip, d->raw_dir, dir_len);
+#else
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
     Warning("unable to clear cache directory '%s'", d->hash_text.get());
     return -1;
   }
+#endif
   return 0;
 }
 
@@ -1241,6 +1244,9 @@ Vol::clear_dir()
   io.action           = this;
   io.thread           = AIO_CALLBACK_THREAD_ANY;
   io.then             = nullptr;
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_write(&io));
   return 0;
 }
@@ -1320,6 +1326,9 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     aio->then             = (i < 3) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
 #if AIO_MODE == AIO_MODE_NATIVE
+#if TS_USE_MMAP
+  init_info->vol_aio->mutex = mutex;
+#endif
   ink_assert(ink_aio_readv(init_info->vol_aio));
 #else
   ink_assert(ink_aio_read(init_info->vol_aio));
@@ -1338,7 +1347,11 @@ Vol::handle_dir_clear(int event, void *data)
     if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
+    #if TS_USE_MMAP
+      fd = MAP_FAILED;
+    #else
       fd = -1;
+    #endif
     }
 
     if (op->aiocb.aio_nbytes == dir_len) {
@@ -1347,6 +1360,7 @@ Vol::handle_dir_clear(int event, void *data)
          skip + len */
       op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
       op->aiocb.aio_offset = skip + dir_len;
+      ink_assert(op->mutex);
       ink_assert(ink_aio_write(op));
       return EVENT_DONE;
     }
@@ -1613,6 +1627,9 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   }
   prev_recover_pos    = recover_pos;
   io.aiocb.aio_offset = recover_pos;
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_read(&io));
   return EVENT_CONT;
 
@@ -1744,6 +1761,9 @@ Vol::handle_header_read(int event, void *data)
         Note("using directory A for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip;
+#if TS_USE_MMAP
+      io.mutex = mutex;
+#endif
       ink_assert(ink_aio_read(&io));
     }
     // try B
@@ -1753,6 +1773,9 @@ Vol::handle_header_read(int event, void *data)
         Note("using directory B for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip + this->dirlen();
+#if TS_USE_MMAP
+      io.mutex = mutex;
+#endif
       ink_assert(ink_aio_read(&io));
     } else {
       Note("no good directory, clearing '%s' since sync_serials on both A and B copies are invalid", hash_text.get());
@@ -1780,7 +1803,11 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     ink_assert(!gvol[vol_no]);
     gvol[vol_no] = this;
     SET_HANDLER(&Vol::aggWrite);
+#if TS_USE_MMAP
+    cache->vol_initialized(fd != MAP_FAILED);
+#else
     cache->vol_initialized(fd != -1);
+#endif
     return EVENT_DONE;
   }
 }
@@ -2348,6 +2375,9 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io.action        = this;
   io.thread        = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
   SET_HANDLER(&CacheVC::handleReadDone);
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_read(&io) >= 0);
   CACHE_DEBUG_INCREMENT_DYN_STAT(cache_pread_count_stat);
   return EVENT_CONT;

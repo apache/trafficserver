@@ -8562,7 +8562,11 @@ TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
 }
 
 TSReturnCode
+#if TS_USE_MMAP
+TSAIORead(ink_aiocb::aio_mmap &fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
+#else
 TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
+#endif
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -8580,7 +8584,9 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
   pAIO->aiocb.aio_buf = buf;
   pAIO->action        = pCont;
   pAIO->thread        = pCont->mutex->thread_holding;
-
+#if TS_USE_MMAP
+  pAIO->mutex = pCont->mutex;
+#endif
   if (ink_aio_read(pAIO, 1) == 1) {
     return TS_SUCCESS;
   }
@@ -8603,7 +8609,11 @@ TSAIONBytesGet(TSAIOCallback data)
 }
 
 TSReturnCode
+#if TS_USE_MMAP
+TSAIOWrite(ink_aiocb::aio_mmap &fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
+#else
 TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
+#endif
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
