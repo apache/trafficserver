@@ -411,7 +411,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   CHECK_FALSE(stringToSign.compare(bench[3]));
 
   /* Test the signature calculation */
-  char signature[EVP_MAX_MD_SIZE];
+  char signature[EVP_MAX_MD_SIZE] = {};
   size_t signatureLen =
     getSignature(awsSecretAccessKey, strlen(awsSecretAccessKey), awsRegion.c_str(), awsRegion.length(), awsService,
                  strlen(awsService), dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);
