@@ -32,10 +32,7 @@ CMakeUserPresets.json
 
 .diags.log.meta
 
-/aclocal.m4
-/autom4te.cache
 /build-aux
-/configure
 /tags
 /_build
 
@@ -48,12 +45,6 @@ m4/lt~obsolete.m4
 
 # common directory name for out-of-tree CMake builds
 build*
-
-Makefile
-Makefile-pl
-config.cache
-config.status
-config.nice
 
 configs/records.yaml.default
 configs/storage.config.default
@@ -81,11 +72,7 @@ src/traffic_top/traffic_top
 src/traffic_via/traffic_via
 
 include/stamp-h1
-include/ink_autoconf.h
-include/ink_autoconf.h.in
 src/tscore/stamp-h1
-src/tscore/ink_autoconf.h
-src/tscore/ink_autoconf.h.in
 include/tscore/ink_config.h
 include/ts/apidefs.h
 src/tscore/CompileParseRules
