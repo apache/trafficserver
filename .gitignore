@@ -24,6 +24,7 @@ Makefile.in
 .idea
 
 CMakeUserPresets.json
+CMakeLists.nice
 
 # clangd language server files.
 /compile_commands.json
