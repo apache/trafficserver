@@ -22,9 +22,9 @@
  */
 
 #include "SSLProxySession.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/NetVConnection.h"
-#include "iocore/net/TLSSNISupport.h"
+
+class TLSSNISupport;
 
 void
 SSLProxySession::init(NetVConnection const &new_vc)

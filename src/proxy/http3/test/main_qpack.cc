@@ -35,7 +35,6 @@
 
 #include "iocore/net/quic/QUICConfig.h"
 #include "proxy/hdrs/HuffmanCodec.h"
-#include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
 
 #define TEST_THREADS 1

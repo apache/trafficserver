@@ -23,12 +23,10 @@
 
 #include "swoc/swoc_file.h"
 #include "swoc/BufferWriter.h"
-#include "swoc/bwf_std.h"
-#include "swoc/bwf_ip.h"
+#include "tscore/Layout.h"
 
 #include "SNIActionPerformer.h"
 
-#include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
 
 #if TS_USE_QUIC == 1

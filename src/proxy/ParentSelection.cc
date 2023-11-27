@@ -20,7 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "../iocore/eventsystem/P_EventSystem.h"
 #include "proxy/ParentSelection.h"
 #include "proxy/ParentConsistentHash.h"
 #include "proxy/ParentRoundRobin.h"
@@ -30,7 +29,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpTransact.h"
 #include "iocore/utils/Machine.h"
-#include "tscore/Filenames.h"
+#include "tscore/Tokenizer.h"
 
 #define MAX_SIMPLE_RETRIES             5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5

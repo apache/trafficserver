@@ -24,8 +24,7 @@
 #include <cstdio>
 
 #include "catch.hpp"
-
-#include "iocore/eventsystem/EventSystem.h"
+#include "tscore/ink_platform.h"
 #include "proxy/hdrs/MIME.h"
 
 TEST_CASE("Mime", "[proxy][mime]")

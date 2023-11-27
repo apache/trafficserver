@@ -24,6 +24,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
+#include "tscore/Tokenizer.h"
 #include <cctype>
 #include <cstring>
 #include "proxy/http/HttpConfig.h"

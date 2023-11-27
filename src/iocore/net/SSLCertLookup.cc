@@ -23,11 +23,7 @@
 
 #include "P_SSLCertLookup.h"
 
-#include "tscore/ink_config.h"
-#include "tscore/Layout.h"
 #include "tscore/MatcherUtils.h"
-#include "tscpp/util/Regex.h"
-#include "tscore/Trie.h"
 #include "tscore/ink_config.h"
 
 #include "swoc/BufferWriter.h"
@@ -37,16 +33,12 @@
 
 #include "tscpp/util/Convert.h"
 
-#include "iocore/eventsystem/EventSystem.h"
-
 #include "P_SSLUtils.h"
-#include "P_SSLConfig.h"
-#include "SSLSessionTicket.h"
 
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <algorithm>
+#include <openssl/rand.h>
 
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip)

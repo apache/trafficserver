@@ -30,14 +30,14 @@
 
 ****************************************************************************/
 
-#include "tscore/ink_config.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
 
 // inkcache
-#include "../../iocore/cache/P_Cache.h"
+#include "../../iocore/cache/P_CacheInternal.h"
+#include "iocore/cache/CacheVC.h"
 
 #include "tscore/ParseRules.h"
 #include "tscore/ink_memory.h"

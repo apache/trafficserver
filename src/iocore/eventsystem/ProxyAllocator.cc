@@ -20,7 +20,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/ProxyAllocator.h"
+#include "tscore/ink_assert.h"
 
 int thread_freelist_high_watermark = 512;
 int thread_freelist_low_watermark  = 32;

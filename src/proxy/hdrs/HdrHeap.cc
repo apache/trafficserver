@@ -35,7 +35,8 @@
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HTTP.h"
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Thread.h"
 
 static constexpr size_t MAX_LOST_STR_SPACE        = 1024;
 static constexpr uint32_t MAX_HDR_HEAP_OBJ_LENGTH = (1 << 20) - 1; ///< m_length is 20 bit
