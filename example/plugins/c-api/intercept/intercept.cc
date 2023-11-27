@@ -116,7 +116,7 @@ struct InterceptIOChannel {
 // A simple encapsulation of the IO state of a TSVConn. We need the TSVConn itself, and the
 // IO metadata for the read side and the write side.
 struct InterceptIO {
-  TSVConn vc;
+  TSVConn vc = nullptr;
   InterceptIOChannel readio;
   InterceptIOChannel writeio;
 
