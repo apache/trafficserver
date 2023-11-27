@@ -690,9 +690,13 @@ add_custom_target(
   COMMENT "formatting all files"
 )
 
-if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git AND NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
-  message(STATUS "Installing github hook")
+if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git)
+  file(TIMESTAMP ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit PRE_COMMIT_BEFORE)
   configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
+  file(TIMESTAMP ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit PRE_COMMIT_AFTER)
+  if(NOT PRE_COMMIT_BEFORE STREQUAL PRE_COMMIT_AFTER)
+    message(STATUS "Installing github hook")
+  endif()
 endif()
 
 # Add a target to run the rat tool.  If java isn't installed this will fail, but its not normally run
