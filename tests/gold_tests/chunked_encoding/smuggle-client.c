@@ -59,11 +59,7 @@ main(int argc, char *argv[])
   const char *target_port = argv[2];
   printf("using address: %s and port: %s\n", target, target_port);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  SSL_library_init();
-#else
   OPENSSL_init_ssl(0, NULL);
-#endif
 
   /* Obtain address(es) matching host/port */
   memset(&hints, 0, sizeof(struct addrinfo));

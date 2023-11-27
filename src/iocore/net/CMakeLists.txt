@@ -42,7 +42,6 @@ add_library(
   SSLConfig.cc
   SSLSecret.cc
   SSLDiags.cc
-  SSLInternal.cc
   SSLNetAccept.cc
   SSLNetProcessor.cc
   SSLNetVConnection.cc

@@ -113,7 +113,6 @@ produce_features(bool json)
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
-  print_feature("TS_USE_SET_RBIO", TS_USE_SET_RBIO, json);
   print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
   print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
   print_feature("TS_HAS_QUICHE", TS_HAS_QUICHE, json);

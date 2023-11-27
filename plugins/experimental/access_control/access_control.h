@@ -260,7 +260,6 @@ public:
   AccessTokenFactory(const KvpAccessTokenConfig &tokenConfig, const StringMap &secretsMap, bool enableDebug)
     : _kvpAccessTokenConfig(tokenConfig), _secretMap(secretsMap), _enableDebug(enableDebug)
   {
-    cryptoMagicInit();
     _desiredType = KeyValuePair;
   }
 

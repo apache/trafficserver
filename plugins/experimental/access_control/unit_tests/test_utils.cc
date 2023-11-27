@@ -231,8 +231,6 @@ TEST_CASE("Base64: modified encode / decode with '+', '/' and various paddings",
 
 TEST_CASE("HMAC Digest: test various supported/unsupported types", "[MAC][access_control][utility]")
 {
-  cryptoMagicInit();
-
   const String key  = "1234567890";
   const String data = "calculate a message digest on this";
 
@@ -274,6 +272,4 @@ TEST_CASE("HMAC Digest: test various supported/unsupported types", "[MAC][access
 
     digestIter++;
   }
-
-  cryptoMagicCleanup();
 }
