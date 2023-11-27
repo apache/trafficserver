@@ -300,13 +300,13 @@ struct AIO_failure_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number         = -1;
-  int scheme             = 0;
-  off_t size             = 0;
-  int num_vols           = 0;
-  bool ramcache_enabled  = true;
-  Stripe **vols          = nullptr;
-  DiskStripe **disk_vols = nullptr;
+  int vol_number            = -1;
+  int scheme                = 0;
+  off_t size                = 0;
+  int num_vols              = 0;
+  bool ramcache_enabled     = true;
+  Stripe **stripes          = nullptr;
+  DiskStripe **disk_stripes = nullptr;
   LINK(CacheVol, link);
   // per volume stats
   CacheStatsBlock vol_rsb;
@@ -473,14 +473,16 @@ Doc::data()
 // inline Functions
 
 inline EvacuationBlock *
-evacuation_block_exists(Dir *dir, Stripe *p)
+evacuation_block_exists(Dir *dir, Stripe *stripe)
 {
   auto bucket = dir_evac_bucket(dir);
-  if (p->evac_bucket_valid(bucket)) {
-    EvacuationBlock *b = p->evacuate[bucket].head;
-    for (; b; b = b->link.next)
-      if (dir_offset(&b->dir) == dir_offset(dir))
+  if (stripe->evac_bucket_valid(bucket)) {
+    EvacuationBlock *b = stripe->evacuate[bucket].head;
+    for (; b; b = b->link.next) {
+      if (dir_offset(&b->dir) == dir_offset(dir)) {
         return b;
+      }
+    }
   }
   return nullptr;
 }

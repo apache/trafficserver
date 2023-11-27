@@ -97,11 +97,11 @@ extern int64_t cache_config_ram_cache_cutoff;
  * vol_map - precalculated map
  * offset - offset to start looking at (and data at this location has not been read yet). */
 static off_t
-next_in_map(Stripe *vol, char *vol_map, off_t offset)
+next_in_map(Stripe *stripe, char *vol_map, off_t offset)
 {
-  off_t start_offset = vol->vol_offset_to_offset(0);
+  off_t start_offset = stripe->vol_offset_to_offset(0);
   off_t new_off      = (offset - start_offset);
-  off_t vol_len      = vol->vol_relative_length(start_offset);
+  off_t vol_len      = stripe->vol_relative_length(start_offset);
 
   while (new_off < vol_len && !vol_map[new_off / SCAN_BUF_SIZE]) {
     new_off += SCAN_BUF_SIZE;
@@ -113,7 +113,7 @@ next_in_map(Stripe *vol, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *vol);
+int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
@@ -122,11 +122,11 @@ int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *vol);
  *
  * d - Stripe to make a map of. */
 static char *
-make_vol_map(Stripe *vol)
+make_vol_map(Stripe *stripe)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
-  off_t start_offset = vol->vol_offset_to_offset(0);
-  off_t vol_len      = vol->vol_relative_length(start_offset);
+  off_t start_offset = stripe->vol_offset_to_offset(0);
+  off_t vol_len      = stripe->vol_relative_length(start_offset);
   size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
   char *vol_map      = static_cast<char *>(ats_malloc(map_len));
 
@@ -134,16 +134,16 @@ make_vol_map(Stripe *vol)
 
   // Scan directories.
   // Copied from dir_entries_used() and modified to fill in the map instead.
-  for (int s = 0; s < vol->segments; s++) {
-    Dir *seg = vol->dir_segment(s);
-    for (int b = 0; b < vol->buckets; b++) {
+  for (int s = 0; s < stripe->segments; s++) {
+    Dir *seg = stripe->dir_segment(s);
+    for (int b = 0; b < stripe->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, vol)) {
+      if (dir_bucket_loop_fix(e, s, stripe)) {
         break;
       }
       while (e) {
-        if (dir_offset(e) && dir_valid(vol, e) && dir_agg_valid(vol, e) && dir_head(e)) {
-          off_t offset = vol->vol_offset(e) - start_offset;
+        if (dir_offset(e) && dir_valid(stripe, e) && dir_agg_valid(stripe, e) && dir_head(e)) {
+          off_t offset = stripe->vol_offset(e) - start_offset;
           if (offset <= vol_len) {
             vol_map[offset / SCAN_BUF_SIZE] = 1;
           }
@@ -641,11 +641,11 @@ CacheVC::scanVol(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (!rec->num_vols) {
       goto Ldone;
     }
-    vol = rec->vols[0];
+    vol = rec->stripes[0];
   } else {
     for (int i = 0; i < rec->num_vols - 1; i++) {
-      if (vol == rec->vols[i]) {
-        vol = rec->vols[i + 1];
+      if (vol == rec->stripes[i]) {
+        vol = rec->stripes[i + 1];
         goto Lcont;
       }
     }

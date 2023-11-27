@@ -254,8 +254,8 @@ execute_and_verify()
         int d_no;
         int m_vols = 0;
         for (d_no = 0; d_no < gndisks; d_no++) {
-          if (cachep->disk_vols[d_no]) {
-            DiskStripe *dp = cachep->disk_vols[d_no];
+          if (cachep->disk_stripes[d_no]) {
+            DiskStripe *dp = cachep->disk_stripes[d_no];
             // DiskStripes and CacheVols should match
             REQUIRE(dp->vol_number == cachep->vol_number);
 
@@ -289,7 +289,7 @@ execute_and_verify()
       Dbg(dbg_ctl_cache_hosting, "Disk: %d: Stripe Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks,
           d->free_space);
       for (int j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        Dbg(dbg_ctl_cache_hosting, "\tStripe: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        Dbg(dbg_ctl_cache_hosting, "\tStripe: %d Size: %" PRIu64, d->disk_stripes[j]->vol_number, d->disk_stripes[j]->size);
       }
       for (int j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
         Dbg(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
@@ -323,8 +323,8 @@ ClearCacheVolList(Queue<CacheVol> *cpl, int len)
   int i        = 0;
   CacheVol *cp = nullptr;
   while ((cp = cpl->dequeue())) {
-    ats_free(cp->disk_vols);
-    ats_free(cp->vols);
+    ats_free(cp->disk_stripes);
+    ats_free(cp->stripes);
     delete (cp);
     i++;
   }

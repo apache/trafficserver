@@ -265,28 +265,28 @@ struct CacheSync : public Continuation {
 // Global Functions
 
 int dir_probe(const CacheKey *, Stripe *, Dir *, Dir **);
-int dir_insert(const CacheKey *key, Stripe *vol, Dir *to_part);
-int dir_overwrite(const CacheKey *key, Stripe *vol, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int dir_delete(const CacheKey *key, Stripe *vol, Dir *del);
-int dir_lookaside_probe(const CacheKey *key, Stripe *vol, Dir *result, EvacuationBlock **eblock);
-int dir_lookaside_insert(EvacuationBlock *b, Stripe *vol, Dir *to);
-int dir_lookaside_fixup(const CacheKey *key, Stripe *vol);
-void dir_lookaside_cleanup(Stripe *vol);
-void dir_lookaside_remove(const CacheKey *key, Stripe *vol);
-void dir_free_entry(Dir *e, int s, Stripe *vol);
+int dir_insert(const CacheKey *key, Stripe *stripe, Dir *to_part);
+int dir_overwrite(const CacheKey *key, Stripe *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int dir_delete(const CacheKey *key, Stripe *stripe, Dir *del);
+int dir_lookaside_probe(const CacheKey *key, Stripe *stripe, Dir *result, EvacuationBlock **eblock);
+int dir_lookaside_insert(EvacuationBlock *b, Stripe *stripe, Dir *to);
+int dir_lookaside_fixup(const CacheKey *key, Stripe *stripe);
+void dir_lookaside_cleanup(Stripe *stripe);
+void dir_lookaside_remove(const CacheKey *key, Stripe *stripe);
+void dir_free_entry(Dir *e, int s, Stripe *stripe);
 void dir_sync_init();
-int check_dir(Stripe *vol);
-void dir_clean_vol(Stripe *vol);
-void dir_clear_range(off_t start, off_t end, Stripe *vol);
-int dir_segment_accounted(int s, Stripe *vol, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+int check_dir(Stripe *stripe);
+void dir_clean_vol(Stripe *stripe);
+void dir_clear_range(off_t start, off_t end, Stripe *stripe);
+int dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
                           int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
-uint64_t dir_entries_used(Stripe *vol);
+uint64_t dir_entries_used(Stripe *stripe);
 void sync_cache_dir_on_shutdown();
-int dir_freelist_length(Stripe *vol, int s);
+int dir_freelist_length(Stripe *stripe, int s);
 
-int dir_bucket_length(Dir *b, int s, Stripe *vol);
-int dir_freelist_length(Stripe *vol, int s);
-void dir_clean_segment(int s, Stripe *vol);
+int dir_bucket_length(Dir *b, int s, Stripe *stripe);
+int dir_freelist_length(Stripe *stripe, int s);
+void dir_clean_segment(int s, Stripe *stripe);
 
 // Inline Functions
 

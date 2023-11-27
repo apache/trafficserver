@@ -45,13 +45,13 @@ struct CacheHostRecord {
 
   ~CacheHostRecord()
   {
-    ats_free(vols);
+    ats_free(stripes);
     ats_free(vol_hash_table);
     ats_free(cp);
   }
 
   CacheType type                 = CACHE_NONE_TYPE;
-  Stripe **vols                  = nullptr;
+  Stripe **stripes               = nullptr;
   int num_vols                   = 0;
   unsigned short *vol_hash_table = nullptr;
   CacheVol **cp                  = nullptr;

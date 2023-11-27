@@ -90,12 +90,12 @@ public:
   int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
-  void init(int64_t max_bytes, Stripe *vol) override;
+  void init(int64_t max_bytes, Stripe *stripe) override;
 
   void compress_entries(EThread *thread, int do_at_most = INT_MAX);
 
   // TODO move it to private.
-  Stripe *vol = nullptr; // for stats
+  Stripe *stripe = nullptr; // for stats
 private:
   int64_t _max_bytes = 0;
   int64_t _bytes     = 0;
@@ -203,10 +203,10 @@ RamCacheCLFUS::_resize_hashtable()
 }
 
 void
-RamCacheCLFUS::init(int64_t abytes, Stripe *avol)
+RamCacheCLFUS::init(int64_t abytes, Stripe *astripe)
 {
-  ink_assert(avol != nullptr);
-  vol              = avol;
+  ink_assert(astripe != nullptr);
+  stripe           = astripe;
   this->_max_bytes = abytes;
   DDbg(dbg_ctl_ram_cache, "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!this->_max_bytes) {
@@ -302,7 +302,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             int64_t delta  = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
             this->_bytes  += delta;
             Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
-            Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
+            Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
             e->size = e->compressed_len;
             check_accounting(this);
             e->flag_bits.compressed = 0;
@@ -318,12 +318,12 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           (*ret_data) = data;
         }
         Metrics::Counter::increment(cache_rsb.ram_cache_hits);
-        Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_hits);
+        Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
         return ram_hit_state;
       } else {
         Metrics::Counter::increment(cache_rsb.ram_cache_misses);
-        Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_misses);
+        Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
         return 0;
       }
@@ -334,7 +334,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " MISS", key->slice32(3), auxkey);
 Lerror:
   Metrics::Counter::increment(cache_rsb.ram_cache_misses);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.ram_cache_misses);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
 
   return 0;
 Lfailed:
@@ -408,7 +408,7 @@ RamCacheCLFUS::_destroy(RamCacheCLFUSEntry *e)
     this->_objects--;
     this->_bytes -= e->size + ENTRY_OVERHEAD;
     Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, e->size);
-    Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, e->size);
+    Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.ram_cache_bytes, e->size);
     e->data = nullptr;
   } else {
     this->_history--;
@@ -426,8 +426,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
   if (!cache_config_ram_cache_compress) {
     return;
   }
-  ink_assert(vol != nullptr);
-  MUTEX_TAKE_LOCK(vol->mutex, thread);
+  ink_assert(stripe != nullptr);
+  MUTEX_TAKE_LOCK(stripe->mutex, thread);
   if (!this->_compressed) {
     this->_compressed  = this->_lru[0].head;
     this->_ncompressed = 0;
@@ -467,7 +467,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       Ptr<IOBufferData> edata = e->data;
       uint32_t elen           = e->len;
       CryptoHash key          = e->key;
-      MUTEX_UNTAKE_LOCK(vol->mutex, thread);
+      MUTEX_UNTAKE_LOCK(stripe->mutex, thread);
       b           = static_cast<char *>(ats_malloc(l));
       bool failed = false;
       switch (ctype) {
@@ -502,7 +502,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       }
 #endif
       }
-      MUTEX_TAKE_LOCK(vol->mutex, thread);
+      MUTEX_TAKE_LOCK(stripe->mutex, thread);
       // see if the entry is till around
       {
         if (failed) {
@@ -537,7 +537,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         int64_t delta      = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
         this->_bytes      += delta;
         Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
-        Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
         e->size = l;
       } else {
         ats_free(b);
@@ -547,7 +547,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         int64_t delta  = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
         this->_bytes  += delta;
         Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
-        Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
         e->size = e->len;
         l       = e->len;
       }
@@ -568,7 +568,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     this->_compressed = e->lru_link.next;
     this->_ncompressed++;
   }
-  MUTEX_UNTAKE_LOCK(vol->mutex, thread);
+  MUTEX_UNTAKE_LOCK(stripe->mutex, thread);
   return;
 }
 
@@ -579,7 +579,7 @@ RamCacheCLFUS::_requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
   while ((victim = victims.dequeue())) {
     this->_bytes += victim->size + ENTRY_OVERHEAD;
     Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, victim->size);
-    Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
+    Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
     victim->hits = REQUEUE_HITS(victim->hits);
     this->_lru[0].enqueue(victim);
   }
@@ -615,7 +615,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       int64_t delta  = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       this->_bytes  += delta;
       Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
-      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, delta);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
       if (!copy) {
         e->size = size;
         e->data = data;
@@ -677,7 +677,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     }
     this->_bytes -= victim->size + ENTRY_OVERHEAD;
     Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, victim->size);
-    Metrics::Gauge::decrement(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
+    Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
     victims.enqueue(victim);
     if (victim == this->_compressed) {
       this->_compressed = nullptr;
@@ -706,7 +706,7 @@ Linsert:
     if (this->_bytes + size + victim->size <= this->_max_bytes) {
       this->_bytes += victim->size + ENTRY_OVERHEAD;
       Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, victim->size);
-      Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, victim->size);
       victim->hits = REQUEUE_HITS(victim->hits);
       this->_lru[0].enqueue(victim);
     } else {
@@ -739,7 +739,7 @@ Linsert:
   e->flag_bits.copy  = copy;
   this->_bytes      += size + ENTRY_OVERHEAD;
   Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, size);
-  Metrics::Gauge::increment(vol->cache_vol->vol_rsb.ram_cache_bytes, size);
+  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, size);
   e->size = size;
   this->_objects++;
   this->_lru[0].enqueue(e);
