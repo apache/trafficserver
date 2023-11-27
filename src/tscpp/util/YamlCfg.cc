@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <string>
 
+#include <tscpp/util/ts_bw_format.h>
+
 #include <tscore/ink_assert.h>
 
 namespace ts
@@ -81,3 +83,13 @@ namespace Yaml
 
 } // end namespace Yaml
 } // end namespace ts
+
+// This needs to be in namespace "swoc" or "YAML" or ADL doesn't find the overload.
+namespace swoc
+{
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, YAML::Mark const &mark)
+{
+  return w.print("Line {}", mark.line);
+}
+} // namespace swoc
