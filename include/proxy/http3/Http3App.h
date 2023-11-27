@@ -37,6 +37,7 @@
 #include "proxy/http3/Http3FrameCollector.h"
 #include "proxy/http3/Http3FrameGenerator.h"
 #include "proxy/http3/Http3FrameHandler.h"
+#include "proxy/http3/QPACK.h"
 
 class Http3Session;
 
@@ -77,6 +78,9 @@ private:
   void _handle_bidi_stream_on_eos(int event, VIO *vio);
 
   void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
+
+  QUICStreamVCAdapter::IOInfo &_get_stream_info(QUICStreamId stream_id);
+  void _update_vio_cont_to_QPACK(QPACK *qpack, QUICStreamVCAdapter *adapter);
 
   Http3FrameHandler *_protocol_enforcer = nullptr;
   Http3FrameHandler *_settings_handler  = nullptr;
