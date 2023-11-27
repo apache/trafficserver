@@ -143,14 +143,10 @@ DiagsConfig::reconfigure_diags()
     _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : dt), DiagsTagType_Debug);
     _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : at), DiagsTagType_Action);
 
-////////////////////////////////////
-// change the diags config values //
-////////////////////////////////////
-#if !defined(__GNUC__)
+    ////////////////////////////////////
+    // change the diags config values //
+    ////////////////////////////////////
     _diags->config = c;
-#else
-    memcpy(((void *)&_diags->config), ((void *)&c), sizeof(DiagsConfigState));
-#endif
     Note("updated diags config");
   }
 
