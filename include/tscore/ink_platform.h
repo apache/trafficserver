@@ -181,15 +181,6 @@ using in_addr_t = unsigned int;
        //                 windows-260,etc)
 #endif
 
-// This is a little bit of a hack for now, until MPTCP has landed upstream in Linux land.
-#ifndef MPTCP_ENABLED
-#if defined(__linux__)
-#define MPTCP_ENABLED 42
-#else
-#define MPTCP_ENABLED 0
-#endif
-#endif
-
 // If kernel headers do not support IPPROTO_MPTCP definition
 #ifndef IPPROTO_MPTCP
 #define IPPROTO_MPTCP 262

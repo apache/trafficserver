@@ -229,7 +229,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && !opt.f_mptcp && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;
   }
 
@@ -239,9 +239,12 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !opt.f_mptcp &&
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
-    goto Lerror;
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) {
+    if (opt.f_mptcp) {
+      Warning("[Server::listen] TCP_FASTOPEN socket option not valid on MPTCP socket level");
+    } else if (safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
+      goto Lerror;
+    }
   }
 #endif
 
@@ -261,8 +264,10 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0 && !opt.f_mptcp) {
-    if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
+  if (NetProcessor::accept_mss > 0) {
+    if (opt.f_mptcp) {
+      Warning("[Server::listen] TCP_MAXSEG socket option not valid on MPTCP socket level");
+    } else if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
       goto Lerror;
     }
   }
@@ -271,7 +276,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && !opt.f_mptcp && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+  if (opt.defer_accept > 0 && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
     // FIXME: should we go to the error
     // goto error;
     Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
