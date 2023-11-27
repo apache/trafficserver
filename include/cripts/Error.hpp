@@ -39,7 +39,7 @@ public:
     Message(const Message &)        = delete;
     void operator=(const Message &) = delete;
 
-    static void _set(Cript::Context *context, Cript::string msg);
+    static void _set(Cript::Context *context, const Cript::string_view msg);
 
     [[nodiscard]] Cript::StringViewWrapper
     message() const
@@ -49,7 +49,7 @@ public:
 
   private:
     void
-    setter(Cript::string const &msg)
+    setter(const Cript::string_view msg)
     {
       _message = msg;
     }

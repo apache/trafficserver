@@ -22,24 +22,21 @@
 // Constants
 const Header::Iterator Header::Iterator::_end = Header::Iterator("__END__", Header::Iterator::END_TAG);
 
-namespace Cript
-{
-namespace Method
+namespace Cript::Method
 {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
-  const Header::Method GET({TS_HTTP_METHOD_GET, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_GET)});
-  const Header::Method HEAD({TS_HTTP_METHOD_HEAD, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_HEAD)});
-  const Header::Method POST({TS_HTTP_METHOD_POST, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_POST)});
-  const Header::Method PUT({TS_HTTP_METHOD_PUT, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_PUT)});
-  const Header::Method PUSH({TS_HTTP_METHOD_PUSH, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_PUSH)});
-  const Header::Method DELETE({TS_HTTP_METHOD_DELETE, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_DELETE)});
-  const Header::Method OPTIONS({TS_HTTP_METHOD_OPTIONS, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_OPTIONS)});
-  const Header::Method CONNECT({TS_HTTP_METHOD_CONNECT, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_CONNECT)});
-  const Header::Method TRACE({TS_HTTP_METHOD_TRACE, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_TRACE)});
-  // This is a special feature of ATS
-  const Header::Method PURGE({TS_HTTP_METHOD_PURGE, static_cast<Cript::string_view::size_type>(TS_HTTP_LEN_PURGE)});
-} // namespace Method
-} // namespace Cript
+const Header::Method GET(TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET);
+const Header::Method HEAD(TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD);
+const Header::Method POST(TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST);
+const Header::Method PUT(TS_HTTP_METHOD_PUT, TS_HTTP_LEN_PUT);
+const Header::Method PUSH(TS_HTTP_METHOD_PUSH, TS_HTTP_LEN_PUSH);
+const Header::Method DELETE(TS_HTTP_METHOD_DELETE, TS_HTTP_LEN_DELETE);
+const Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
+const Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
+const Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
+// This is a special feature of ATS
+const Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
+} // namespace Cript::Method
 
 Header::Status &
 Header::Status::operator=(int status)
@@ -293,7 +290,7 @@ Header::begin()
     const char *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
     Cript::string_view name_view(name, name_len);
 
-    return Iterator(name_view, _iterator_tag, this);
+    return {name_view, _iterator_tag, this};
 
   } else {
     return Iterator::end(); // Seems unlikely that we'd not have any headers...
