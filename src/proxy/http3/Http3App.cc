@@ -346,17 +346,51 @@ Http3App::_set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter)
   if (type == Http3StreamType::QPACK_ENCODER) {
     if (this->_qc->direction() == NET_VCONNECTION_IN) {
       this->_ssn->remote_qpack()->set_encoder_stream(adapter->stream().id());
+      this->_update_vio_cont_to_QPACK(this->_ssn->remote_qpack(), adapter);
     } else {
       this->_ssn->local_qpack()->set_encoder_stream(adapter->stream().id());
+      this->_update_vio_cont_to_QPACK(this->_ssn->local_qpack(), adapter);
     }
   } else if (type == Http3StreamType::QPACK_DECODER) {
     if (this->_qc->direction() == NET_VCONNECTION_IN) {
       this->_ssn->local_qpack()->set_decoder_stream(adapter->stream().id());
+      this->_update_vio_cont_to_QPACK(this->_ssn->local_qpack(), adapter);
     } else {
       this->_ssn->remote_qpack()->set_decoder_stream(adapter->stream().id());
+      this->_update_vio_cont_to_QPACK(this->_ssn->remote_qpack(), adapter);
     }
   } else {
     ink_abort("unknown stream type");
+  }
+}
+
+QUICStreamVCAdapter::IOInfo &
+Http3App::_get_stream_info(QUICStreamId stream_id)
+{
+  auto it = this->_streams.find(stream_id);
+  if (it == this->_streams.end()) {
+    ink_abort("stream not found");
+  }
+  return it->second;
+}
+
+void
+Http3App::_update_vio_cont_to_QPACK(QPACK *qpack, QUICStreamVCAdapter *adapter)
+{
+  switch (adapter->stream().direction()) {
+  case QUICStreamDirection::BIDIRECTIONAL:
+    this->_get_stream_info(adapter->stream().id()).update_read_vio(qpack);
+    this->_get_stream_info(adapter->stream().id()).update_write_vio(qpack);
+    break;
+  case QUICStreamDirection::SEND:
+    this->_get_stream_info(adapter->stream().id()).update_write_vio(qpack);
+    break;
+  case QUICStreamDirection::RECEIVE:
+    this->_get_stream_info(adapter->stream().id()).update_read_vio(qpack);
+    break;
+  default:
+    ink_assert(false);
+    break;
   }
 }
 

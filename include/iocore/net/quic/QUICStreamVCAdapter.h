@@ -98,6 +98,18 @@ public:
     adapter.encourge_write();
   }
 
+  void
+  update_read_vio(Continuation *c)
+  {
+    read_vio->set_continuation(c);
+  }
+
+  void
+  update_write_vio(Continuation *c)
+  {
+    write_vio->set_continuation(c);
+  }
+
   QUICStreamVCAdapter adapter;
   MIOBuffer *read_buffer;
   MIOBuffer *write_buffer;
