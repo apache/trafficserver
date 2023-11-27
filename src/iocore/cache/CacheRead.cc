@@ -23,8 +23,6 @@
 
 #include "P_Cache.h"
 
-#include "proxy/http/HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
-
 namespace
 {
 
@@ -168,8 +166,7 @@ Lmiss:
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
-  // this is a horrible violation of the interface and should be fixed (FIXME)
-  ((HttpCacheSM *)cont)->set_readwhilewrite_inprogress(true);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_RWW, nullptr);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
   if (c->handleEvent(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
     return ACTION_RESULT_DONE;

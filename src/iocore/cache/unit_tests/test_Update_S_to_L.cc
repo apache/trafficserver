@@ -56,6 +56,8 @@ public:
       base->do_io_read();
       REQUIRE(base->vc->alternate.get_frag_offset_count() > 8);
       break;
+    case CACHE_EVENT_OPEN_READ_RWW:
+      break;
     case VC_EVENT_READ_READY:
       base->reenable();
       break;

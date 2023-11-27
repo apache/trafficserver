@@ -312,6 +312,9 @@ CacheReadTest::read_event(int event, void *e)
   case CACHE_EVENT_OPEN_READ_FAILED:
     this->process_event(event);
     break;
+  case CACHE_EVENT_OPEN_READ_RWW:
+    this->process_event(event);
+    break;
   case VC_EVENT_READ_READY: {
     while (this->_reader->block_read_avail()) {
       auto str = this->_reader->block_read_view();

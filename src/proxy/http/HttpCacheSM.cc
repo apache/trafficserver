@@ -118,6 +118,10 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     master_sm->handleEvent(event, &captive_action);
     break;
 
+  case CACHE_EVENT_OPEN_READ_RWW:
+    set_readwhilewrite_inprogress(true);
+    break;
+
   case CACHE_EVENT_OPEN_READ_FAILED:
     err_code = reinterpret_cast<intptr_t>(data);
     if ((intptr_t)data == -ECACHE_DOC_BUSY) {

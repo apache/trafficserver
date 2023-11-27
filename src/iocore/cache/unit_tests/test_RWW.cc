@@ -153,6 +153,8 @@ CacheRWWTest::process_read_event(int event, CacheTestBase *base)
   case CACHE_EVENT_OPEN_READ:
     base->do_io_read();
     break;
+  case CACHE_EVENT_OPEN_READ_RWW:
+    break;
   case VC_EVENT_READ_READY:
     Dbg(dbg_ctl_cache_rww_test, "cache read reenable");
     this->_read_event    = nullptr;
@@ -188,6 +190,7 @@ CacheRWWTest::handle_cache_event(int event, CacheTestBase *base)
     break;
   case CACHE_EVENT_OPEN_READ:
   case CACHE_EVENT_OPEN_READ_FAILED:
+  case CACHE_EVENT_OPEN_READ_RWW:
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
   case VC_EVENT_READ_READY:
@@ -270,6 +273,8 @@ public:
     case CACHE_EVENT_OPEN_READ_FAILED:
       REQUIRE(this->_size == SMALL_FILE);
       this->close_read();
+      return;
+    case CACHE_EVENT_OPEN_READ_RWW:
       return;
     case VC_EVENT_READ_READY:
       if (this->_wt) {
@@ -357,6 +362,8 @@ public:
       this->_read_event    = nullptr;
       this->_is_read_start = true;
       base->do_io_read(UINT32_MAX);
+      break;
+    case CACHE_EVENT_OPEN_READ_RWW:
       break;
     case VC_EVENT_READ_READY:
       if (this->_wt) {
