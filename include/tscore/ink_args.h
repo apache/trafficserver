@@ -30,9 +30,7 @@ Process arguments
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
 
-#if HAVE_SYSEXITS_H
 #include <sysexits.h>
-#endif
 
 #ifndef EX_USAGE
 #define EX_USAGE 64
