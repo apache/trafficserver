@@ -68,19 +68,12 @@ FetchSM::httpConnect()
   int64_t id         = pi ? pi->getPluginId() : 0;
 
   Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
-
-  // TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
   TSHttpConnectOptions options{.connect_type      = TS_CONNECT_PLUGIN,
-                               .addr              = nullptr,
-                               .tag               = nullptr,
-                               .id                = 0,
+                               .addr              = &_addr.sa,
+                               .tag               = tag,
+                               .id                = id,
                                .buffer_index      = TS_IOBUFFER_SIZE_INDEX_32K,
                                .buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT};
-  options.addr = &_addr.sa;
-  options.tag  = tag;
-  options.id   = id;
-
-  // http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
   http_vc = PluginHttpConnectInternal(&options);
   if (http_vc == nullptr) {
     Debug(DEBUG_TAG, "Not ready to use");
@@ -722,30 +715,23 @@ FetchSM::ext_read_data(char *buf, size_t len)
   }
 
   already = 0;
-  // blk     = TSIOBufferReaderStart(reader);
   if (reader->block) {
     reader->skip_empty_blocks();
   }
-
   blk = reader->get_current_block();
-
   while (blk) {
-    wavail = len - already;
-
-    // next_blk = TSIOBufferBlockNext(blk);
+    wavail   = len - already;
     next_blk = blk->next.get();
-    // start    = TSIOBufferBlockReadStart(blk, reader, &blk_len);
-    char *p = blk->start();
-    blk_len = blk->read_avail();
+    start    = blk->start();
+    blk_len  = blk->read_avail();
     if (reader->block.get() == blk) {
-      p       += reader->start_offset;
+      start   += reader->start_offset;
       blk_len -= reader->start_offset;
       if (blk_len < 0) {
         blk_len = 0;
       }
     }
-    start = p;
-    need  = blk_len > wavail ? wavail : blk_len;
+    need = blk_len > wavail ? wavail : blk_len;
 
     memcpy(&buf[already], start, need);
     already += need;
@@ -758,7 +744,6 @@ FetchSM::ext_read_data(char *buf, size_t len)
   }
 
   resp_received_body_len += already;
-  // TSIOBufferReaderConsume(reader, already);
   reader->consume(already);
 
   read_vio->reenable();
