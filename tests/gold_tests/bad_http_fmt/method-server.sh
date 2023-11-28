@@ -31,8 +31,7 @@ response ()
     sleep 1
   done
 
-
-  # Send back 200 KBytes of data
+  # respond even if the method is funky
 
   printf "HTTP/1.1 200 OK\r\n"
   printf "Content-Length: 0\r\n"
