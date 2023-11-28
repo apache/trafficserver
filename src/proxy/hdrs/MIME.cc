@@ -2971,8 +2971,11 @@ mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_retur
     mday  = d - days[month] - 1;
     year += 1900;
 
+    // coverity[Y2K38_SAFETY:FALSE]
     *m_return = month;
+    // coverity[Y2K38_SAFETY:FALSE]
     *d_return = mday;
+    // coverity[Y2K38_SAFETY:FALSE]
     *y_return = year;
   }
 }
