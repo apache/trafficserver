@@ -14,7 +14,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-printf "HTTP/1.1 200\r\nTransfer-encoding: chunked\r\n\r\n"
-printf "F\r\n123456789012345\r\n"
-sleep 1
-printf "0\r\n\r\n"
+# A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
+# Sends a fixed response message
+
+response ()
+{
+  # Wait for end of Request message.
+  #
+  while (( 1 == 1 ))
+  do
+    if [[ -f $outfile ]] ; then
+      if tr '\r\n' '=!' < $outfile | grep '=!=!' > /dev/null
+      then
+        break;
+      fi
+    fi
+    sleep 1
+  done
+
+  # delay before finishing the chunk
+  printf "HTTP/1.1 200\r\nTransfer-encoding: chunked\r\n\r\n"
+  printf "F\r\n123456789012345\r\n"
+  sleep 1
+  printf "0\r\n\r\n"
+
+}
+outfile=$2
+response | nc -l $1 > "$outfile"

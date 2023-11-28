@@ -27,6 +27,8 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")
+Test.GetTcpPort("upstream_port2")
+Test.GetTcpPort("upstream_port3")
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -34,8 +36,15 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
+delay_server = Test.Processes.Process("delay-server", "bash -c '" + Test.TestDirectory +
+                                      "/delay-server.sh {} outserver1'".format(Test.Variables.upstream_port))
+server2 = Test.Processes.Process("server2", "bash -c '" + Test.TestDirectory +
+                                 "/server2.sh {} outserver2'".format(Test.Variables.upstream_port2))
+server3 = Test.Processes.Process("server3", "bash -c '" + Test.TestDirectory +
+                                 "/server3.sh {} outserver3'".format(Test.Variables.upstream_port3))
+
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
+    'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -46,7 +55,10 @@ ts.Disk.remap_config.AddLine(
     'map /delay-chunked-response http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
+    'map /post-full http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2)
+)
+ts.Disk.remap_config.AddLine(
+    'map /post-chunked http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3)
 )
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -62,11 +74,10 @@ ts.Disk.ssl_multicert_config.AddLine(
 # delay before final chunk size
 server1_out = Test.Disk.File("outserver1")
 tr = Test.AddTestRun()
-tr.Setup.Copy('delay-server.sh')
-tr.Setup.Copy('case1.sh')
-tr.Processes.Default.Command = 'sh ./case1.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
+tr.Processes.Default.Command = 'nghttp -vv https://127.0.0.1:{}/delay-chunked-response'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(delay_server)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("RST_STREAM", "Delayed chunk close should not cause reset")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length", "Should return chunked")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(":status: 200", "Should get successful response")
@@ -77,9 +88,9 @@ tr.StillRunningAfter = ts
 # HTTP2 POST: www.example.com Host, chunked body
 server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
-tr.Setup.Copy('server2.sh')
-tr.Setup.Copy('case2.sh')
-tr.Processes.Default.Command = 'sh ./case2.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
+tr.Processes.Default.StartBefore(server2)
+tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("content-length:", "Response should include content length")
@@ -91,9 +102,9 @@ server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request 
 # HTTP2 POST: chunked post body and chunked response
 server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
-tr.Setup.Copy('server3.sh')
-tr.Setup.Copy('case3.sh')
-tr.Processes.Default.Command = 'sh ./case3.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
+tr.Processes.Default.StartBefore(server3)
+tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length:", "Response should not include content length")
