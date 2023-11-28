@@ -42,10 +42,10 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
-source "$GIT_TOP/tools/autopep8.sh"
-if [ ! -d ${AUTOPEP8_VENV} ]
+source "$GIT_TOP/tools/yapf.sh"
+if [ ! -d ${YAPF_VENV} ]
 then
-    echo "Run \"make autopep8\""
+    echo "Run \"make yaf\""
     exit 1
 fi
 source ${AUTOPEP8_VENV}/bin/activate
@@ -53,26 +53,27 @@ source ${AUTOPEP8_VENV}/bin/activate
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
-autopep8_patch_file=$(mktemp -t autopep8.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $autopep8_patch_file" 0 1 2 3 5 15
+yapf_patch_file=$(mktemp -t yapf.XXXXXXXXXX)
+trap "rm -f $clang_patch_file $yapf_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
+source ${YAPF_VENV}/bin/activate
+REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
+YAPF_CONFIG=${REPO_ROOT}/.style.yapf
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/yamlcpp" | while read file; do
     case "$file" in
 	*.cc | *.c | *.h | *.h.in)
 	    ${FORMAT} "$file" | diff -u "$file" - >> "$clang_patch_file"
 	    ;;
         # Keep this list of Python extensions the same with the list of
-        # extensions searched for in the toosl/autopep8.sh script.
+        # extensions searched for in the toosl/yapf.sh script.
         *.py | *.cli.ext | *.test.ext)
-            autopep8 \
-                --ignore-local-config \
-                --exclude ${GIT_TOP}/lib/yamlcpp \
-                --max-line-length 132 \
-                --aggressive \
-                --aggressive \
+            yapf \
+                --style ${YAPF_CONFIG} \
+                --parallel \
                 --diff \
-                "$file" >> "$autopep8_patch_file"
+                "$file" >>"$yapf_patch_file"
+            ;;
     esac
 done
 
@@ -87,19 +88,18 @@ else
     echo
 fi
 
-
-if [ -s "$autopep8_patch_file" ] ; then
-    echo "The commit is not accepted because autopep8 reports issues with it."
+if [ -s "$yapf_patch_file" ]; then
+    echo "The commit is not accepted because yapf reports issues with it."
     echo "The easiest way to fix this is to run:"
     echo
-    echo "    $ make autopep8"
+    echo "    $ make yapf"
     exit 1
 else
-    echo "This commit complies with the current autopep8 formatting rules."
+    echo "This commit complies with the current yapf formatting rules."
     echo
 fi
 
 # Cleanup before exit
 deactivate
-rm -f "$clang_patch_file" "$autopep8_patch_file"
+rm -f "$clang_patch_file" "$yapf_patch_file"
 exit 0
