@@ -658,9 +658,20 @@ add_custom_target(
   VERBATIM
 )
 
+# Leave autopep8 for historical reasons, but have it call yapf. It will not do
+# to have conflicting Python formatting targets. This can be removed when at
+# least CI is updated to use yapf instead of autopep8.
 add_custom_target(
   autopep8
-  ${CMAKE_SOURCE_DIR}/tools/autopep8.sh ${CMAKE_SOURCE_DIR}
+  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "formatting python files"
+  VERBATIM
+)
+
+add_custom_target(
+  yapf
+  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "formatting python files"
   VERBATIM
