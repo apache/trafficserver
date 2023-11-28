@@ -123,7 +123,9 @@ template <typename C> struct scalar_unit_round_down_t {
 template <intmax_t N, typename C, typename T> struct scalar_round_up_t {
   C _n;
 
-  template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
+  template <intmax_t S, typename I>
+  constexpr
+  operator Scalar<S, I, T>() const {
     return Scalar<S, I, T>(scale_conversion_round_up<S, N>(_n));
   }
 };
@@ -132,7 +134,9 @@ template <intmax_t N, typename C, typename T> struct scalar_round_up_t {
 template <intmax_t N, typename C, typename T> struct scalar_round_down_t {
   C _n;
 
-  template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
+  template <intmax_t S, typename I>
+  constexpr
+  operator Scalar<S, I, T>() const {
     return Scalar<S, I, T>(scale_conversion_round_down<S, N>(_n));
   }
 };
@@ -456,7 +460,7 @@ Scalar<N, C, T>::operator=(self_type const &that) -> self_type & {
 
 template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_round_up_t<N, C, T> v) -> self_type &{
+Scalar<N, C, T>::operator=(detail::scalar_round_up_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }

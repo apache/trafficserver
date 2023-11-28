@@ -201,16 +201,16 @@ public:
   MemArena(self_type const &that) = delete;
 
   /// Allow moving the arena.
-  MemArena(self_type &&that);
+  MemArena(self_type &&that) noexcept;
 
   /// Destructor.
   ~MemArena();
 
   /// No copy assignment.
-  self_type & operator=(self_type const & that) = delete;
+  self_type &operator=(self_type const &that) = delete;
 
   /// Move assignment.
-  self_type & operator=(self_type &&that);
+  self_type &operator=(self_type &&that) noexcept;
 
   /** Make a self-contained instance.
    *
@@ -279,7 +279,7 @@ public:
       general it is a bad idea to make objects in the Arena that own memory that is not also in the
       Arena.
   */
-  template <typename T, typename... Args> T *make(Args &&... args);
+  template <typename T, typename... Args> T *make(Args &&...args);
 
   /** Freeze reserved memory.
 
@@ -384,7 +384,7 @@ public:
   size_t reserved_size() const;
 
   using const_iterator = BlockList::const_iterator; ///< Constant element iteration.
-  using iterator       = const_iterator; ///< Element iteration.
+  using iterator       = const_iterator;            ///< Element iteration.
 
   /// First active block.
   const_iterator begin() const;
@@ -397,6 +397,7 @@ public:
 
   /// After last frozen block.
   const_iterator frozen_end() const;
+
 protected:
   /** Internally allocates a new block of memory of size @a n bytes.
    *
@@ -502,7 +503,7 @@ public:
   void clear();
 
   /// Access the wrapped arena directly.
-  MemArena & arena();
+  MemArena &arena();
 };
 
 // --- Implementation ---
@@ -581,7 +582,7 @@ MemArena::Block::operator delete([[maybe_unused]] void *ptr, void *place) noexce
 
 inline size_t
 MemArena::Block::align_padding(void const *ptr, size_t align) {
-  if (auto delta = uintptr_t(ptr) & (align - 1) ; delta > 0) {
+  if (auto delta = uintptr_t(ptr) & (align - 1); delta > 0) {
     return align - delta;
   }
   return 0;
@@ -597,7 +598,7 @@ MemArena::alloc_span(size_t n) {
 
 template <typename T, typename... Args>
 T *
-MemArena::make(Args &&... args) {
+MemArena::make(Args &&...args) {
   return new (this->alloc(sizeof(T), alignof(T)).data()) T(std::forward<Args>(args)...);
 }
 
@@ -610,10 +611,14 @@ MemArena::remnant_span(size_t n) {
 
 template <>
 inline MemSpan<void>
-MemArena::remnant_span<void>(size_t n) { return this->require(n).remnant().prefix(n); }
+MemArena::remnant_span<void>(size_t n) {
+  return this->require(n).remnant().prefix(n);
+}
 
 inline MemSpan<void>
-MemArena::remnant(size_t n, size_t align) { return this->require(n, align).remnant().prefix(n); }
+MemArena::remnant(size_t n, size_t align) {
+  return this->require(n, align).remnant().prefix(n);
+}
 
 inline size_t
 MemArena::size() const {
@@ -693,7 +698,11 @@ FixedArena<T>::clear() {
   _list._next = nullptr;
 }
 
-template < typename T > MemArena & FixedArena<T>::arena() { return _arena; }
+template <typename T>
+MemArena &
+FixedArena<T>::arena() {
+  return _arena;
+}
 
 /// @endcond INTERNAL_DETAIL
 

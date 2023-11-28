@@ -29,7 +29,7 @@ string_view
 Errata::Data::localize(string_view src) {
   auto span = _arena.alloc(src.size()).rebind<char>();
   memcpy(span.data(), src.data(), src.size());
-  return { span.data(), span.size() };
+  return {span.data(), span.size()};
 }
 
 /* ----------------------------------------------------------------------- */
@@ -40,7 +40,9 @@ Errata::Severity Errata::FAILURE_SEVERITY(2);
 Errata::Severity Errata::FILTER_SEVERITY(0);
 
 /// Default set of severity names.
-std::array<swoc::TextView, 3> Severity_Names{{"Info", "Warning", "Error"}};
+std::array<swoc::TextView, 3> Severity_Names{
+  {"Info", "Warning", "Error"}
+};
 
 swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES{Severity_Names.data(), Severity_Names.size()};
 
@@ -48,7 +50,7 @@ Errata::~Errata() {
   this->sink();
 }
 
-Errata&
+Errata &
 Errata::sink() {
   if (_data) {
     for (auto &f : Sink_List) {
@@ -93,8 +95,8 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
 
 Errata &
 Errata::note_localized(std::string_view const &text, std::optional<Severity> severity) {
-  auto d        = this->data();
-  Annotation *n = d->_arena.make<Annotation>(text, severity);
+  auto d  = this->data();
+  auto *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
 }
@@ -107,7 +109,7 @@ Errata::alloc(size_t n) {
 Errata &
 Errata::note(const self_type &that) {
   if (that._data) {
-    auto d       = this->data();
+    auto d = this->data();
     if (that.has_severity()) {
       this->update(that.severity());
     }
@@ -118,8 +120,9 @@ Errata::note(const self_type &that) {
   return *this;
 }
 
-auto Errata::update(Severity severity) -> self_type & {
-  if (! _data || ! _data->_severity.has_value() || _data->_severity.value() < severity) {
+auto
+Errata::update(Severity severity) -> self_type & {
+  if (!_data || !_data->_severity.has_value() || _data->_severity.value() < severity) {
     this->assign(severity);
   }
   return *this;
@@ -153,16 +156,13 @@ bwformat(BufferWriter &bw, bwf::Spec const &, Errata const &errata) {
   }
 
   bool trailing_p = false;
-  auto glue = errata.annotation_glue_text();
-  auto a_s_glue = errata.annotation_severity_glue_text();
-  auto id_txt = errata.indent_text();
+  auto glue       = errata.annotation_glue_text();
+  auto a_s_glue   = errata.annotation_severity_glue_text();
+  auto id_txt     = errata.indent_text();
   for (auto &note : errata) {
     if (note.text()) {
-      bw.print("{}{}{}{}"
-               , swoc::bwf::If(trailing_p, "{}", glue)
-               , swoc::bwf::Pattern{int(note.level()), id_txt}
-               , swoc::bwf::If(note.has_severity(), "{}{}", note.severity(), a_s_glue)
-               , note.text());
+      bw.print("{}{}{}{}", swoc::bwf::If(trailing_p, "{}", glue), swoc::bwf::Pattern{int(note.level()), id_txt},
+               swoc::bwf::If(note.has_severity(), "{}{}", note.severity(), a_s_glue), note.text());
       trailing_p = true;
     }
   }

@@ -80,7 +80,7 @@ svtou(TextView src, TextView *out, int base) {
   }
   if (src.ltrim_if(&isspace).size()) {
     auto origin = src.data();
-    int8_t v;
+    int8_t v    = 0;
     // If base is 0, it wasn't specified - check for standard base prefixes
     if (0 == base) {
       base = 10;
@@ -154,8 +154,8 @@ svtod(swoc::TextView text, swoc::TextView *parsed) {
       if (e & 1) {
         zret *= scale;
       }
-      scale *= scale;
-      e >>= 1;
+      scale  *= scale;
+      e     >>= 1;
     }
     return zret;
   };
@@ -192,7 +192,7 @@ svtod(swoc::TextView text, swoc::TextView *parsed) {
     ++text;
     double scale = 0.1;
     while (text && isdigit(*text)) {
-      frac += scale * (*text++ - '0');
+      frac  += scale * (*text++ - '0');
       scale /= 10.0;
     }
   }

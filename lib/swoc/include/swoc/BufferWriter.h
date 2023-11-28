@@ -63,7 +63,7 @@ public:
    * @internal The char poointer overloads protect this method in order to protect against including
    * the terminal nul in the destination buffer.
    */
-  BufferWriter & write(MemSpan<void const> span);
+  BufferWriter &write(MemSpan<void const> span);
 
   /// @return Pointer to first byte in buffer.
   virtual const char *data() const = 0;
@@ -177,7 +177,7 @@ public:
    * @note This must be declared here, but the implementation is in @c bwf_base.h. That file does
    * not need to be included if formatted output is not used.
    */
-  template <typename... Args> BufferWriter &print(const TextView &fmt, Args &&... args);
+  template <typename... Args> BufferWriter &print(const TextView &fmt, Args &&...args);
 
   /** Formatted output to the buffer.
    *
@@ -199,7 +199,7 @@ public:
    * @param args Arguments for the format string.
    * @return @a this.
    */
-  template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&... args);
+  template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&...args);
 
   /** Formatted output to the buffer.
    *
@@ -273,7 +273,7 @@ public:
    *
    * Essentially this forwards @a t to @c bwformat.
    */
-  template <typename T> BufferWriter & format(bwf::Spec const& spec, T && t);
+  template <typename T> BufferWriter &format(bwf::Spec const &spec, T &&t);
 
   /** Write formattted data.
    *
@@ -284,7 +284,7 @@ public:
    *
    * Essentially this forwards @a t to @c bwformat.
    */
-  template <typename T> BufferWriter & format(bwf::Spec const& spec, T const& t);
+  template <typename T> BufferWriter &format(bwf::Spec const &spec, T const &t);
 
   /** IO stream operator.
    *
@@ -396,11 +396,11 @@ public:
   std::ostream &operator>>(std::ostream &stream) const override;
 
   /// @cond COVARY
-  template <typename... Rest> self_type &print(TextView fmt, Rest &&... rest);
+  template <typename... Rest> self_type &print(TextView fmt, Rest &&...rest);
 
   template <typename... Args> self_type &print_v(TextView fmt, std::tuple<Args...> const &args);
 
-  template <typename... Args> self_type &print(bwf::Format const &fmt, Args &&... args);
+  template <typename... Args> self_type &print(bwf::Format const &fmt, Args &&...args);
 
   template <typename... Args> self_type &print_v(bwf::Format const &fmt, std::tuple<Args...> const &args);
   /// @endcond
@@ -464,15 +464,17 @@ BufferWriter::write(const void *data, size_t length) {
   return *this;
 }
 
-# if 0
+#if 0
 inline BufferWriter &
 BufferWriter::write(const std::string_view &sv) {
   return this->write(sv.data(), sv.size());
 }
-# endif
+#endif
 
 inline BufferWriter &
-BufferWriter::write(MemSpan<void const> span) { return this->write(span.data(), span.size()); }
+BufferWriter::write(MemSpan<void const> span) {
+  return this->write(span.data(), span.size());
+}
 
 inline char *
 BufferWriter::aux_data() {
@@ -592,8 +594,7 @@ FixedBufferWriter::extent() const {
   return _attempted;
 }
 
-inline auto
-FixedBufferWriter::restrict(size_t n) -> self_type & {
+inline auto FixedBufferWriter::restrict(size_t n) -> self_type & {
   if (n > _capacity) {
     throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
   }

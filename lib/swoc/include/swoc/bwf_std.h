@@ -37,22 +37,20 @@ bwformat(BufferWriter &w, bwf::Spec const & /* spec */, std::bitset<N> const &bi
 
 template <typename Rep, typename Period>
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::duration<Rep, Period> const &d)
-{
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::duration<Rep, Period> const &d) {
   return bwformat(w, spec, d.count());
 }
 
 template <typename Clock, typename Duration>
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::time_point<Clock, Duration> const &t)
-{
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::time_point<Clock, Duration> const &t) {
   return bwformat(w, spec, t.time_since_epoch());
 }
 
 inline BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const& spec, std::exception const& e) {
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::exception const &e) {
   w.write("Exception - "_tv);
   return bwformat(w, spec, e.what());
 }
 
-}} // end namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
