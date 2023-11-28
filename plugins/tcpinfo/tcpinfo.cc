@@ -29,12 +29,6 @@
 #include <ts/ts.h>
 #include <unistd.h>
 #include <netinet/in.h>
-// This is a bit of a hack, to get the more linux specific tcp_info struct ...
-#if __has_include(<linux/tcp.h>)
-#include <linux/tcp.h>
-#else
-#include <netinet/tcp.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <getopt.h>

@@ -71,7 +71,12 @@ struct ifafilt;
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
+// This is a bit of a hack, to get the more linux specific tcp_info struct ...
+#if __has_include(<linux/tcp.h>)
+#include <linux/tcp.h>
+#else
 #include <netinet/tcp.h>
+#endif
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
