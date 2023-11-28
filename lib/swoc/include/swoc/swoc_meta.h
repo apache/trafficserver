@@ -257,8 +257,8 @@ template <typename... Types> struct type_list {
 template <typename T> struct let {
   using self_type = let;
 
-  let(self_type const& that) = delete;
-  self_type & operator = (self_type const&) = delete;
+  let(self_type const &that)              = delete;
+  self_type &operator=(self_type const &) = delete;
 
   T &_var;  ///< Reference to scoped variable.
   T _value; ///< Original value.
@@ -280,19 +280,15 @@ template <typename T> struct let {
   ~let();
 };
 
-template <typename T> let<T>::let(T &var, T const &value) : _var(var), _value(std::move(var))
-{
+template <typename T> let<T>::let(T &var, T const &value) : _var(var), _value(std::move(var)) {
   _var = value;
 }
-template <typename T> let<T>::let(T &var, T &&value) : _var(var), _value(std::move(var))
-{
+template <typename T> let<T>::let(T &var, T &&value) : _var(var), _value(std::move(var)) {
   _var = std::move(value);
 }
 
-template <typename T> let<T>::~let()
-{
+template <typename T> let<T>::~let() {
   _var = std::move(_value);
 }
-
 
 }}} // namespace swoc::SWOC_VERSION_NS::meta

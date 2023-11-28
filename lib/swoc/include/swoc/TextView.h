@@ -43,14 +43,30 @@ class CharSet {
   using self_type = CharSet;
 
 public:
+  /** Construct from character sequence.
+   *
+   * @param chars Character sequence.
+   *
+   * The charset becomes @c true for every character in the sequence.
+   */
   constexpr CharSet(TextView const &chars);
-  bool
-  operator()(u_char idx) const {
-    return _chars[idx];
-  }
+
+  /** Check if character is in the charset.
+   *
+   * @param c Character to check.
+   * @return @c true if @a c is in the charset, @c false if not.
+   */
+  bool operator()(unsigned char c) const;
+
+  /** Check if character is in the charset.
+   *
+   * @param c Character to check.
+   * @return @c true if @a c is in the charset, @c false if not.
+   */
+  bool operator()(char c) const;
 
 protected:
-  std::bitset<256> _chars;
+  std::bitset<std::numeric_limits<unsigned char>::max() + 1> _chars;
 };
 
 /** A read only view of a contiguous piece of memory.
@@ -1088,8 +1104,18 @@ double svtod(TextView text, TextView *parsed = nullptr);
 
 inline constexpr CharSet::CharSet(TextView const &chars) {
   for (auto c : chars) {
-    _chars[u_char(c)] = true;
+    _chars[uint8_t(c)] = true;
   }
+}
+
+inline bool
+CharSet::operator()(unsigned char c) const {
+  return _chars[c];
+}
+
+inline bool
+CharSet::operator()(char c) const {
+  return _chars[uint8_t(c)];
 }
 
 // === TextView Implementation ===

@@ -1121,7 +1121,8 @@ Errata::assign(code_type code) -> self_type & {
   return *this;
 }
 
-inline bool Errata::has_severity() const {
+inline bool
+Errata::has_severity() const {
   return _data && _data->_severity.has_value();
 }
 inline auto
