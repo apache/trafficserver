@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 // This is a bit of a hack, to get the more linux specific tcp_info struct ...
-#if HAVE_STRUCT_LINUX_TCP_INFO
+#if __has_include(<linux/tcp.h>)
 #include <linux/tcp.h>
 #else
 #include <netinet/tcp.h>
@@ -148,19 +148,21 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
   if (config->log_level == 2) {
 #if !defined(freebsd) || defined(__GLIBC__)
 #if HAVE_STRUCT_LINUX_TCP_INFO
+    // Linux 4.6+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str,
                                server_str, info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans,
                                info.tcpi_data_segs_in, info.tcpi_data_segs_out);
 #else
+    // Linux 2.6.12+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans);
 #endif
 #else
-    // E.g. FreeBSD and macOS
+    // FreeBSD 6.0+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.__tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.__tcpi_rcv_ssthresh, info.__tcpi_unacked,

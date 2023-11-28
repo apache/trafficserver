@@ -480,7 +480,9 @@ set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
 unset(CMAKE_REQUIRED_INCLUDES)
 
+# technically looking for kernel 4.6+ tcp_info
 check_struct_has_member("struct tcp_info" tcpi_data_segs_out "linux/tcp.h" HAVE_STRUCT_LINUX_TCP_INFO)
+# technically looking for release 6.0+ tcp_info
 check_struct_has_member("struct tcp_info" __tcpi_retrans "netinet/tcp.h" HAVE_STRUCT_FREEBSD_TCP_INFO)
 check_struct_has_member("struct sockaddr" sa_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
 check_struct_has_member("struct sockaddr_in" sin_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_IN_SIN_LEN)
