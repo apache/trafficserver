@@ -16,5 +16,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-(printf "GET / HTTP/1.1" |  nc -w 11 127.0.0.1 $1) 
+(printf "GET / HTTP/1.1" |  nc -w 11 127.0.0.1 $1)
 
