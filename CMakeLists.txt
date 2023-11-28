@@ -214,7 +214,6 @@ include(CheckStructHasMember)
 
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
 check_include_file(string.h HAVE_STRING_H)
-check_include_file(linux/major.h HAVE_LINUX_MAJOR_H)
 check_include_file(malloc.h HAVE_MALLOC_H)
 check_include_file(mcheck.h HAVE_MCHECK_H)
 check_include_file(machine/endian.h HAVE_MACHINE_ENDIAN_H)

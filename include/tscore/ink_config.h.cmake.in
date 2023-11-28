@@ -42,7 +42,6 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_LINUX_MAJOR_H 1
 #cmakedefine HAVE_MALLOC_H 1
 #cmakedefine HAVE_MCHECK_H 1
 #cmakedefine HAVE_MACHINE_ENDIAN_H 1

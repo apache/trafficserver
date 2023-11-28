@@ -30,7 +30,7 @@
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/runroot.h"
 
-#if HAVE_LINUX_MAJOR_H
+#if __has_include(<linux/major.h>)
 #include <linux/major.h>
 #endif
 
