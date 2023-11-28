@@ -35,6 +35,9 @@ server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")
 
+server4 = Test.Processes.Process("server4", "bash -c '" + Test.TestDirectory +
+                                 "/server4.sh {} outserver4'".format(Test.Variables.upstream_port))
+
 testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
                   "timestamp": "1469733493.993",
@@ -141,10 +144,9 @@ server4_out.Content = Testers.ExcludesExpression("sneaky", "Extra body bytes sho
 
 # HTTP/1.1 Try to smuggle another request to the origin
 tr = Test.AddTestRun()
+tr.Processes.Default.StartBefore(server4)
 tr.TimeOut = 5
-tr.Setup.Copy('server4.sh')
-tr.Setup.Copy('case4.sh')
-tr.Processes.Default.Command = 'sh ./case4.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
+tr.Processes.Default.Command = "./smuggle-client 127.0.0.1 {0}".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("content-length:", "Response should not include content length")
 # Transfer encoding to origin, but no content-length
