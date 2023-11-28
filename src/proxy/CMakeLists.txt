@@ -35,6 +35,8 @@ add_library(
   ProxyTransaction.cc
   ReverseProxy.cc
   Transform.cc
+  FetchSM.cc
+  PluginHttpConnect.cc
 )
 add_library(ts::proxy ALIAS proxy)
 

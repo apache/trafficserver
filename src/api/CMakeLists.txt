@@ -16,8 +16,7 @@
 #######################
 
 # plugin api *only*
-add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc FetchSM.cc # OSCP stapling
-)
+add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
 add_library(ts::tsapi ALIAS tsapi)
 
 set(TSAPI_PUBLIC_HEADERS

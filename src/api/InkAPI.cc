@@ -47,6 +47,7 @@
 #include "proxy/HttpAPIHooks.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpConfig.h"
+#include "proxy/PluginHttpConnect.h"
 #include "../iocore/net/P_Net.h"
 #include "../iocore/net/P_SSLNextProtocolAccept.h"
 #include "../iocore/net/P_SSLNetVConnection.h"
@@ -67,7 +68,7 @@
 #include "proxy/PluginVC.h"
 #include "proxy/http/HttpSessionAccept.h"
 #include "proxy/PluginVC.h"
-#include "api/FetchSM.h"
+#include "proxy/FetchSM.h"
 #include "api/LifecycleAPIHooks.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "iocore/aio/AIO.h"
@@ -6293,36 +6294,7 @@ tsapi::c::TSHttpConnectPlugin(TSHttpConnectOptions *options)
 
   sdk_assert(ats_is_ip(options->addr));
   sdk_assert(ats_ip_port_cast(options->addr));
-
-  if (options->buffer_index < TS_IOBUFFER_SIZE_INDEX_128 || options->buffer_index > MAX_BUFFER_SIZE_INDEX) {
-    options->buffer_index = TS_IOBUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
-  }
-
-  if (options->buffer_water_mark < TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT) {
-    options->buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT;
-  }
-
-  if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, options->buffer_index, options->buffer_water_mark);
-
-    new_pvc->set_active_addr(options->addr);
-    new_pvc->set_plugin_id(options->id);
-    new_pvc->set_plugin_tag(options->tag);
-
-    PluginVC *return_vc = new_pvc->connect();
-
-    if (return_vc != nullptr) {
-      PluginVC *other_side = return_vc->get_other_side();
-
-      if (other_side != nullptr) {
-        other_side->set_is_internal_request(true);
-      }
-    }
-
-    return reinterpret_cast<TSVConn>(return_vc);
-  }
-
-  return nullptr;
+  return reinterpret_cast<TSVConn>(PluginHttpConnectInternal(options));
 }
 
 tsapi::c::TSVConn
