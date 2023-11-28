@@ -147,7 +147,7 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans,
                                info.tcpi_data_segs_in, info.tcpi_data_segs_out);
-#elif defined(__linux__)
+#elif HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
     // Linux 2.6.12+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,

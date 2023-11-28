@@ -1313,10 +1313,12 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   if (tsSsn == TS_SUCCESS) {
     if (tcp_info_len > 0) {
       char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
-#if defined(HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT)
+#if defined(HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS)
+      // Linux 2.6.12+
       snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
                info.tcpi_snd_cwnd, info.tcpi_retrans);
 #elif defined(HAVE_STRUCT_TCP_INFO___TCPI_RETRANS)
+      // FreeBSD 6.0+
       snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
                info.tcpi_snd_cwnd, info.__tcpi_retrans);
 #endif

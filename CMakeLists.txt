@@ -480,6 +480,8 @@ set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
 unset(CMAKE_REQUIRED_INCLUDES)
 
+# Since Linux 2.6.12
+check_struct_has_member("struct tcp_info" tcpi_total_retrans "linux/tcp.h" HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS)
 # Since Linux 4.6
 check_struct_has_member("struct tcp_info" tcpi_data_segs_out "linux/tcp.h" HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT)
 # Since FreeBSD 6
