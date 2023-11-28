@@ -22,53 +22,16 @@
  */
 
 #include "tscore/ink_config.h"
-#include "api/FetchSM.h"
+#include "proxy/FetchSM.h"
 #include <cstdio>
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/PluginVC.h"
+#include "proxy/PluginHttpConnect.h"
 
 #define DEBUG_TAG             "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 
 ClassAllocator<FetchSM> FetchSMAllocator("FetchSMAllocator");
-
-extern HttpSessionAccept *plugin_http_accept;
-namespace
-{
-PluginVC *
-HttpConnectPlugin(TSHttpConnectOptions *options)
-{
-  if (options->buffer_index < TS_IOBUFFER_SIZE_INDEX_128 || options->buffer_index > MAX_BUFFER_SIZE_INDEX) {
-    options->buffer_index = TS_IOBUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
-  }
-
-  if (options->buffer_water_mark < TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT) {
-    options->buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT;
-  }
-
-  if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, options->buffer_index, options->buffer_water_mark);
-
-    new_pvc->set_active_addr(options->addr);
-    new_pvc->set_plugin_id(options->id);
-    new_pvc->set_plugin_tag(options->tag);
-
-    PluginVC *return_vc = new_pvc->connect();
-
-    if (return_vc != nullptr) {
-      PluginVC *other_side = return_vc->get_other_side();
-
-      if (other_side != nullptr) {
-        other_side->set_is_internal_request(true);
-      }
-    }
-
-    return return_vc;
-  }
-
-  return nullptr;
-}
-} // namespace
 
 void
 FetchSM::cleanUp()
@@ -118,7 +81,7 @@ FetchSM::httpConnect()
   options.id   = id;
 
   // http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
-  http_vc = HttpConnectPlugin(&options);
+  http_vc = PluginHttpConnectInternal(&options);
   if (http_vc == nullptr) {
     Debug(DEBUG_TAG, "Not ready to use");
     if (contp) {

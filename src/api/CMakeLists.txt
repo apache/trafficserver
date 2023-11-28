@@ -43,7 +43,6 @@ add_library(
   APIHooks.cc # proxy
   LifecycleAPIHooks.cc # proxy, http
   HttpHookState.cc # proxy, http
-  FetchSM.cc # OSCP stapling
 )
 add_library(ts::tsapibackend ALIAS tsapibackend)
 target_link_libraries(
