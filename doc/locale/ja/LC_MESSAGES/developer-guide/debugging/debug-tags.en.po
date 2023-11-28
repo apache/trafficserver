@@ -34,7 +34,7 @@ msgstr ""
 
 #: ../../../developer-guide/debugging/debug-tags.en.rst:25
 msgid ""
-"Use the API ``void TSDebug (const char *tag, const char *format_str, ...)`` "
+"Use the API ``void Dbg (DbgCtl dbg_ctl, const char *format_str, ...)`` "
 "to add traces in your plugin. In this API:"
 msgstr ""
 

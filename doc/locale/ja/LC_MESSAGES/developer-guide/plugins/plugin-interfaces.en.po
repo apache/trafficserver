@@ -35,7 +35,7 @@ msgstr ""
 
 #: ../../developer-guide/plugins/plugin-interfaces.en.rst:125
 msgid ""
-":c:func:`TSDebug` prints out a formatted statement if you are running "
+":c:func:`Dbg` prints out a formatted statement if you are running "
 "Traffic Server in debug mode."
 msgstr ""
 

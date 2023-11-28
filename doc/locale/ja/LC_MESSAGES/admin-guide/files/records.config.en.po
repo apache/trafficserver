@@ -4262,8 +4262,8 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2800
 msgid ""
-"|TS| plugins will typically log debug messages using the :c:func:`TSDebug` "
-"API, passing the plugin name as the debug tag."
+"|TS| plugins will typically log debug messages using the :c:func:`Dbg` "
+"API, passing the debug control associated with the plugin name."
 msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2806
