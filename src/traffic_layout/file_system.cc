@@ -41,17 +41,9 @@ static std::string remove_path;
 CopyStyle copy_style;
 
 // list of all executables of traffic server
-std::set<std::string> const executables = {"traffic_crashlog",
-                                           "traffic_ctl",
-                                           "traffic_layout",
-                                           "traffic_logcat",
-                                           "traffic_logstats",
-                                           "traffic_server",
-                                           "traffic_top",
-                                           "traffic_via",
-                                           "trafficserver",
-                                           "tspush",
-                                           "tsxs"};
+std::set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",    "traffic_layout", "traffic_logcat",
+                                           "traffic_logstats", "traffic_server", "traffic_top",    "traffic_via",
+                                           "trafficserver",    "tspush"};
 
 void
 append_slash(std::string &path)

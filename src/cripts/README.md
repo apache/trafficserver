@@ -41,15 +41,8 @@ build cripts when explicitly enabled, and only using `cmake``.
 
 ## 2.1. Building a Cript
 
-At the moment, building Cripts is the same as building any other ATS plugin, using
-either existing build system or tooling such as `tsxs`.
-
-```
-tsxs -lcript -o cript_test.so cript_test.cc
-```
-
-This will read the Cript file cript_test.cc and produce a cript_test.so plugin, that can be
-loaded in ATS via remap.config:
+At the moment, building Cripts needs to be done manually, using cmake and package
+config tools. Once built, it can be loaded as any regular remap plugin:
 
 ```
 map https://example.com https://origin.example.com @plugin=cript_test.so

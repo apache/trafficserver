@@ -144,22 +144,3 @@ to ensure that the block is written to cache.
 The only 416 case this plugin handles itself is if the requested range
 is inside the end slice block but past the content length.  Otherwise
 parents seem to properly issue 416 responses themselves.
-
----
-
-To manually build the plugin use the "tsxs" executable that installs with
-traffic_server.
-
-Running the following command will build the plugin
-
-```
-tsxs -v -o slice.so *.cc
-```
-
-Running the following command will build and install the plugin.
-Beware this may crash a running system if the plugin is loaded
-and the OS uses memory paging with plugins.
-
-```
-tsxs -v -i -o slice.so *.cc
-```

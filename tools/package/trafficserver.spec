@@ -180,7 +180,6 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 
 %files devel
 %defattr(-,root,root,-)
-%{_bindir}/tsxs
 %{_includedir}/ts
 %{_includedir}/tscpp
 %{_datadir}/pkgconfig/trafficserver.pc
