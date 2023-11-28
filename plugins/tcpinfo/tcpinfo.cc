@@ -57,7 +57,7 @@ static const char *tcpi_headers[] = {"timestamp event client server rtt",
                                      "timestamp event client server rtt rttvar last_sent last_recv snd_cwnd "
                                      "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans"
 // Additional information from linux's linux/tcp.h appended here
-#if HAVE_STRUCT_LINUX_TCP_INFO
+#if HAVE_STRUCT_LINUX_4_6_TCP_INFO
                                      " data_segs_in data_segs_out"
 #endif
 };
@@ -141,7 +141,7 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 
   if (config->log_level == 2) {
 #if !defined(freebsd) || defined(__GLIBC__)
-#if HAVE_STRUCT_LINUX_TCP_INFO
+#if HAVE_STRUCT_LINUX_4_6_TCP_INFO
     // Linux 4.6+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str,
                                server_str, info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
