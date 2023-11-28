@@ -237,14 +237,14 @@ TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
   const char *date1 = "Sun, 05 Dec 1999 08:49:37 GMT";
   const char *date2 = "Sunday, 05-Dec-1999 08:49:37 GMT";
 
-  int d1 = mime_parse_date(date1, date1 + strlen(date1));
-  int d2 = mime_parse_date(date2, date2 + strlen(date2));
+  time_t d1 = mime_parse_date(date1, date1 + strlen(date1));
+  time_t d2 = mime_parse_date(date2, date2 + strlen(date2));
 
   if (d1 != d2) {
     std::printf("Failed mime_parse_date\n");
     CHECK(false);
   }
 
-  std::printf("Date1: %d\n", d1);
-  std::printf("Date2: %d\n", d2);
+  std::printf("Date1: %" PRIdMAX "\n", d1);
+  std::printf("Date2: %" PRIdMAX "\n", d2);
 }
