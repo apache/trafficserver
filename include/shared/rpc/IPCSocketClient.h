@@ -55,8 +55,8 @@ struct IPCSocketClient {
   /// Send all the passed string to the socket.
   self_reference send(std::string_view data);
 
-  /// Read all the content from the socket till the passed buffer is full.
-  ReadStatus read_all(swoc::FixedBufferWriter &bw);
+  /// Read all the content from the socket till the message is complete.
+  ReadStatus read_all(std::string &content);
 
   /// Closes the socket.
   void

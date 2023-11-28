@@ -19,11 +19,82 @@
 */
 #include <stdexcept>
 #include <chrono>
+#include <sstream>
+#include <utility>
 
 #include "tscpp/util/ts_bw_format.h"
 
 #include "shared/rpc/IPCSocketClient.h"
 #include <tscore/ink_assert.h>
+
+namespace
+{
+/// @brief Simple buffer to store the jsonrpc server's response.
+///
+///        With small content it will just use the LocalBufferWritter, if the
+///        content gets bigger, then it will just save the buffer into a stream
+///        and reuse the already created BufferWritter.
+template <size_t N> class BufferStream
+{
+  std::ostringstream _os;
+  swoc::LocalBufferWriter<N> _bw;
+  size_t _written{0};
+
+public:
+  char *
+  writable_data()
+  {
+    return _bw.aux_data();
+  }
+
+  void
+  save(size_t n)
+  {
+    _bw.commit(n);
+
+    if (_bw.remaining() == 0) { // no more space available, flush what's on the bw
+                                // and reset it.
+      flush();
+    }
+  }
+
+  size_t
+  available() const
+  {
+    return _bw.remaining();
+  }
+
+  void
+  flush()
+  {
+    if (_bw.size() == 0) {
+      return;
+    }
+    _os.write(_bw.view().data(), _bw.size());
+    _written += _bw.size();
+
+    _bw.clear();
+  }
+
+  std::string
+  str()
+  {
+    if (stored() <= _bw.size()) {
+      return {_bw.data(), _bw.size()};
+    }
+
+    flush();
+    return _os.str();
+  }
+
+  size_t
+  stored() const
+  {
+    return _written ? _written : _bw.size();
+  }
+};
+
+} // namespace
 
 namespace shared::rpc
 {
@@ -62,28 +133,26 @@ IPCSocketClient ::send(std::string_view data)
 }
 
 IPCSocketClient::ReadStatus
-IPCSocketClient::read_all(swoc::FixedBufferWriter &bw)
+IPCSocketClient::read_all(std::string &content)
 {
   if (this->is_closed()) {
     // we had a failure.
     return {};
   }
+
+  BufferStream<356000> bs;
+
   ReadStatus readStatus{ReadStatus::UNKNOWN};
-  while (bw.remaining()) {
-    swoc::MemSpan<char> span{bw.aux_data(), bw.remaining()};
-    const ssize_t ret = ::read(_sock, span.data(), span.size());
+  while (true) {
+    auto buf           = bs.writable_data();
+    const auto to_read = bs.available();
+    const ssize_t ret  = ::read(_sock, buf, to_read);
+
     if (ret > 0) {
-      bw.commit(ret);
-      if (bw.remaining() > 0) { // some space available.
-        continue;
-      } else {
-        // buffer full.
-        readStatus = ReadStatus::BUFFER_FULL;
-        break;
-      }
+      bs.save(ret);
+      continue;
     } else {
-      if (bw.size()) {
-        // data was read.
+      if (bs.stored() > 0) {
         readStatus = ReadStatus::NO_ERROR;
         break;
       }
@@ -91,6 +160,7 @@ IPCSocketClient::read_all(swoc::FixedBufferWriter &bw)
       break;
     }
   }
+  content = bs.str();
   return readStatus;
 }
 } // namespace shared::rpc

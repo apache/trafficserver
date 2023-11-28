@@ -190,21 +190,21 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   std::string
   read()
   {
-    swoc::LocalBufferWriter<32000> bw;
-    auto ret = super::read_all(bw);
+    std::string buf;
+    auto ret = super::read_all(buf);
     if (ret == ReadStatus::NO_ERROR) {
-      return {bw.data(), bw.size()};
+      return buf;
     }
     return {};
   }
-  // small wrapper function to deal with the bw.
+  // small wrapper function to deal with the flow.
   std::string
   query(std::string_view msg)
   {
-    swoc::LocalBufferWriter<32000> bw;
-    auto ret = connect().send(msg).read_all(bw);
+    std::string buf;
+    auto ret = connect().send(msg).read_all(buf);
     if (ret == ReadStatus::NO_ERROR) {
-      return {bw.data(), bw.size()};
+      return buf;
     }
 
     return {};
