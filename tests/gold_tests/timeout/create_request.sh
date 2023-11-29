@@ -21,6 +21,7 @@
 printf "GET / HTTP/1.1" | nc 127.0.0.1 $1 &
 targetPID=$!
 count=11
+echo PID is *${targetPID}
 while [ $count -gt 0 ]
 do
 	sleep 1
