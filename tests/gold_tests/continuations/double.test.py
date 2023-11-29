@@ -81,26 +81,30 @@ tr.StillRunningAfter = ts
 
 # Signal that all the curl processes have completed and poll for done metric
 tr = Test.AddTestRun("Curl Done")
-tr.Processes.Default.Command = (
-    "traffic_ctl plugin msg done done ; "
-    "N=60 ; "
-    "while (( N > 0 )) ; "
-    "do "
-    "sleep 1 ; "
-    'if [[ "$$( traffic_ctl metric get continuations_verify.test.done )" = '
-    '"continuations_verify.test.done 1" ]] ; then exit 0 ; '
-    "fi ; "
-    "let N=N-1 ; "
-    "done ; "
-    "echo TIMEOUT ; "
-    "exit 1"
-)
+tr.Processes.Default.Command = "traffic_ctl plugin msg done done"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
 
+
+def make_done_stat_ready(tsenv):
+    def done_stat_ready(process, hasRunFor, **kw):
+        retval = subprocess.run(
+            "traffic_ctl metric get continuations_verify.test.done",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=tsenv)
+        return retval.returncode == 0 and b'1' in retval.stdout
+
+    return done_stat_ready
+
+
+watcher = Test.Processes.Process("watcher", "sleep 20")
+
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn")
+tr.Processes.Default.StartBefore(watcher, ready=make_done_stat_ready(ts.Env))
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
