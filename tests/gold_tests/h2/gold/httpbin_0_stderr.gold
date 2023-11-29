@@ -1,12 +1,12 @@
 ``
 > GET /get HTTP/2
 > Host: ``
-> User-Agent: curl/``
-> Accept: */*
+> ``ser-Agent: curl/``
+> ``ccept: */*
 ``
 < HTTP/2 200 ``
 ``
-< content-type: application/json; encoding=utf-8
+< content-type: application/json; ``=utf-8
 < date: ``
 < content-length: ``
 < age: ``
