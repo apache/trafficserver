@@ -53,11 +53,6 @@ ts.Disk.remap_config.AddLine(
     f'map https://localhost:{ts.Variables.ssl_portv6} http://localhost:{ts.Variables.port}'
 )
 
-# Set up to check the output after the tests have run.
-#
-#log_id = Test.Disk.File("log2.txt")
-#log_id.Content = "log2.gold"
-
 # Size of object to get.  (NOTE:  If you increase this significantly you may also have to increase cache
 # capacity in tests/gold_tests/autest-size/min_cfg/storage.config.  Also, for very large objects, if
 # proxy.config.diags.debug.enabled is 1, the PUSH request will timeout and fail.)
