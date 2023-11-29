@@ -27,8 +27,10 @@
 #include <atomic>
 #include <cstdarg>
 
+#include <api/SourceLocation.h>
+
 #include <tscore/ink_assert.h>
-#include <tscore/Diags.h>
+#include <api/DbgCtl.h>
 
 DbgCtl::DbgCtl(DbgCtl &&src)
 {

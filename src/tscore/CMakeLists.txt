@@ -55,7 +55,6 @@ add_library(
   ParseRules.cc
   Random.cc
   Regression.cc
-  SourceLocation.cc
   TextBuffer.cc
   Throttler.cc
   Tokenizer.cc

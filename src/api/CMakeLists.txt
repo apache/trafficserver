@@ -22,7 +22,6 @@ add_library(ts::tsapi ALIAS tsapi)
 set(TSAPI_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/ts/ts.h
     ${PROJECT_SOURCE_DIR}/include/ts/remap.h
-    ${PROJECT_SOURCE_DIR}/include/ts/DbgCtl.h
     ${PROJECT_SOURCE_DIR}/include/ts/TsException.h
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
@@ -52,10 +51,10 @@ target_link_libraries(
 )
 
 # Items that even tscore can depend on
-add_library(tsapicore Metrics.cc DbgCtl.cc)
+add_library(tsapicore Metrics.cc DbgCtl.cc SourceLocation.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
-target_link_libraries(tsapicore PRIVATE ts::tscore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+target_link_libraries(tsapicore PUBLIC libswoc)
 
 install(TARGETS tsapi tsapicore tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
 

@@ -38,7 +38,7 @@
 #include "tscore/ink_assert.h"
 
 // ts
-#include "ts/DbgCtl.h"
+#include "api/DbgCtl.h"
 
 namespace
 {

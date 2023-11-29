@@ -61,7 +61,7 @@
 #include "tscore/Ptr.h"
 
 // ts
-#include "ts/DbgCtl.h"
+#include "api/DbgCtl.h"
 
 #include <cstddef>
 #include <cstdint>

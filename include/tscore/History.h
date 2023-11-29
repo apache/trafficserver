@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "tscore/SourceLocation.h"
+#include "api/SourceLocation.h"
 #include "tscore/ink_memory.h"
 
 #define NO_REENTRANT         99999
