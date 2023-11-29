@@ -24,6 +24,12 @@ set -e
 WORKDIR="$(mktemp -d)"
 readonly WORKDIR
 
+CRYPTO_LIB_VENDOR="boringssl"
+
+if [ "$1" == "quictls" ]; then
+    CRYPTO_LIB_VENDOR="quictls"
+fi
+
 cd "${WORKDIR}"
 echo "Building H3 dependencies in ${WORKDIR} ..."
 
@@ -93,12 +99,6 @@ else
   num_threads=$(sysctl -n hw.logicalcpu)
 fi
 
-# boringssl
-echo "Building boringssl..."
-
-# We need this go version.
-sudo mkdir -p ${BASE}/go
-
 if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then
     ARCH="arm64"
 else
@@ -113,56 +113,46 @@ else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.21.6.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.6.${OS}-${ARCH}.tar.gz
-rm go1.21.6.${OS}-${ARCH}.tar.gz
-sudo chmod -R a+rX ${BASE}
+if [ "$CRYPTO_LIB_VENDOR" == "boringssl" ]; then
+    # We need this go version.
+    sudo mkdir -p ${BASE}/go
 
-GO_BINARY_PATH=${BASE}/go/bin/go
-if [ ! -d boringssl ]; then
-  git clone https://boringssl.googlesource.com/boringssl
-  cd boringssl
-  git checkout a1843d660b47116207877614af53defa767be46a
-  cd ..
+    # boringssl
+    echo "Building boringssl..."
+    wget https://go.dev/dl/go1.21.6.${OS}-${ARCH}.tar.gz
+    sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.6.${OS}-${ARCH}.tar.gz
+    rm go1.21.6.${OS}-${ARCH}.tar.gz
+    sudo chmod -R a+rX ${BASE}
+
+    GO_BINARY_PATH=${BASE}/go/bin/go
+    if [ ! -d boringssl ]; then
+        git clone https://boringssl.googlesource.com/boringssl
+        cd boringssl
+        git checkout a1843d660b47116207877614af53defa767be46a
+        cd ..
+    fi
+    cd boringssl
+	cmake \
+	  -B build-shared \
+	  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+	  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+	  -DCMAKE_BUILD_TYPE=Release \
+	  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
+	  -DBUILD_SHARED_LIBS=1
+	cmake \
+	  -B build-static \
+	  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+	  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+	  -DCMAKE_BUILD_TYPE=Release \
+	  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
+	  -DBUILD_SHARED_LIBS=0
+	cmake --build build-shared -j ${num_threads}
+	cmake --build build-static -j ${num_threads}
+	sudo cmake --install build-shared
+	sudo cmake --install build-static
+	sudo chmod -R a+rX ${BASE}
+	cd ..
 fi
-cd boringssl
-cmake \
-  -B build-shared \
-  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
-  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
-  -DBUILD_SHARED_LIBS=1
-cmake \
-  -B build-static \
-  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
-  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
-  -DBUILD_SHARED_LIBS=0
-cmake --build build-shared -j ${num_threads}
-cmake --build build-static -j ${num_threads}
-sudo cmake --install build-shared
-sudo cmake --install build-static
-sudo chmod -R a+rX ${BASE}
-cd ..
-
-# Build quiche
-# Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
-echo "Building quiche"
-QUICHE_BASE="${BASE:-/opt}/quiche"
-[ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
-cd quiche
-git checkout 0.20.1
-QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
-sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
-sudo mkdir -p ${QUICHE_BASE}/include
-sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
-[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
-sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
-sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
-sudo chmod -R a+rX ${BASE}
-cd ..
 
 echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
@@ -171,12 +161,6 @@ cd openssl-quic
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install_sw
 sudo chmod -R a+rX ${BASE}
-
-# The symlink target provides a more convenient path for the user while also
-# providing, in the symlink source, the precise branch of the OpenSSL build.
-sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
-sudo chmod -R a+rX ${BASE}
-cd ..
 
 # OpenSSL will install in /lib or lib64 depending upon the architecture.
 if [ -d "${OPENSSL_PREFIX}/lib" ]; then
@@ -188,6 +172,46 @@ else
   exit 1
 fi
 LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
+# The symlink target provides a more convenient path for the user while also
+# providing, in the symlink source, the precise branch of the OpenSSL build.
+sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
+sudo chmod -R a+rX ${BASE}
+cd ..
+
+# Build quiche
+# Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
+QUICHE_BASE="${BASE:-/opt}/quiche"
+QUICHE_FEATURE_LIST="ffi,pkg-config-meta,qlog"
+QUICHE_REPO_URL="https://github.com/cloudflare/quiche.git"
+QUICHE_GIT_CO="0.20.1" # no branch by default.
+
+if [ "$CRYPTO_LIB_VENDOR" == "quictls" ]; then
+    echo "*** WARNING *** - Building quiche  - with experimental openssl/quictls support!!!!"
+    QUICHE_FEATURE_LIST="$QUICHE_FEATURE_LIST",openssl
+    QUICHE_GIT_CO="master"
+    export PKG_CONFIG_PATH="$OPENSSL_LIB"/pkgconfig
+    export LD_LIBRARY_PATH="$OPENSSL_LIB"
+
+else
+    echo "Building quiche with boringssl"
+    export QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH}
+    export QUICHE_BSSL_LINK_KIND=dylib
+fi
+
+[ ! -d quiche ] && git clone ${QUICHE_REPO_URL}
+cd quiche
+
+# either a release or master which includes quitls support.
+git checkout ${QUICHE_GIT_CO}
+cargo build -j4 --package quiche --release --features ${QUICHE_FEATURE_LIST}
+sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
+sudo mkdir -p ${QUICHE_BASE}/include
+sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
+[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
+sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
+sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
+sudo chmod -R a+rX ${BASE}
+cd ..
 
 # Then nghttp3
 echo "Building nghttp3..."
