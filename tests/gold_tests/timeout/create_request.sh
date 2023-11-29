@@ -16,5 +16,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-(printf "GET / HTTP/1.1" |  nc -w 11 127.0.0.1 $1)
+# Different vresions of nc have different wait options,
+# so falling back to shell
+printf "GET / HTTP/1.1" | nc 127.0.0.1 $1 &
+targetPID=$!
+count=11
+while [ $count -gt 0 ]
+do
+	sleep 1
+	output=`ps uax | grep $targetPID | grep "nc "`
+	if [ -z "$output" ] # process is gone
+	then
+		exit 0
+	fi
+	count=`expr $count - 1`
+done
+kill $targetPID
 
