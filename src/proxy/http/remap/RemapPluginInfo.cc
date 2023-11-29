@@ -175,7 +175,7 @@ RemapPluginInfo::initInstance(int argc, char **argv, void **ih, std::string &err
   ink_zero(tmpbuf);
 
   if (new_instance_cb) {
-#if defined(freebsd) || defined(darwin)
+#if defined(freebsd) || (defined(__APPLE__) && defined(__MACH__))
     optreset = 1;
 #endif
 #if defined(__GLIBC__)

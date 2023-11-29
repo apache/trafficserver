@@ -104,7 +104,7 @@ PluginDso::load(std::string &error)
       PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
 
       /* Now attempt to load the plugin DSO */
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
       if (!dlopen_preflight(_runtimePath.c_str()) || (_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
 #else
       if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {

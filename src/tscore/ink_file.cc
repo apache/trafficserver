@@ -434,7 +434,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
 {
   ink_zero(geometry);
 
-#if defined(freebsd) || defined(darwin) || defined(openbsd)
+#if defined(freebsd) || (defined(__APPLE__) && defined(__MACH__)) || defined(openbsd)
   ioctl_arg_t arg ATS_UNUSED;
 
 // These IOCTLs are standard across the BSD family; Darwin has a different set though.

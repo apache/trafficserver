@@ -547,7 +547,7 @@ check_directory_permission(const char *path)
   return true;
 }
 
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
 // on Darwin, getgrouplist() takes int.
 using gid_type = int;
 #else

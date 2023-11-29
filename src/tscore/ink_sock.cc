@@ -325,7 +325,7 @@ bind_unix_domain_socket(const char *path, mode_t mode)
   sockaddr.sun_family = AF_UNIX;
   ink_strlcpy(sockaddr.sun_path, path, sizeof(sockaddr.sun_path));
 
-#if defined(darwin) || defined(freebsd)
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(freebsd)
   socklen = sizeof(struct sockaddr_un);
 #else
   socklen = strlen(sockaddr.sun_path) + sizeof(sockaddr.sun_family);

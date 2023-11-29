@@ -60,7 +60,7 @@ using ink_thread_key = pthread_key_t;
 
 // Darwin has a sem_init stub that returns ENOSYS. Rather than bodge around doing runtime
 // detection, just emulate on Darwin.
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
 #define TS_EMULATE_ANON_SEMAPHORES 1
 #endif
 

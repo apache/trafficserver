@@ -234,7 +234,7 @@ main(int argc, const char **argv)
   ink_freelists_dump(stdout);
 
 // On Darwin, fail the tests if we have any memory leaks.
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
   if (system("xcrun leaks test_certlookup") != 0) {
     RegressionTest::final_status = REGRESSION_TEST_FAILED;
   }

@@ -58,7 +58,7 @@ ink_max_out_rlimit(int which)
 
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
   if (rl.rlim_cur != rl.rlim_max) {
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
     if (which == RLIMIT_NOFILE) {
       rl.rlim_cur = (OPEN_MAX < rl.rlim_max) ? OPEN_MAX : rl.rlim_max;
     } else {

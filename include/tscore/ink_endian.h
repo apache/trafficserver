@@ -38,7 +38,7 @@
 #include <sys/byteorder.h>
 #endif
 
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
 #include <libkern/OSByteOrder.h>
 inline uint64_t
 be64toh(uint64_t x)

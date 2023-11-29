@@ -170,7 +170,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->plugin_path = ats_strdup(path);
     plugin_reg_current->dlh         = handle;
 
-#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
+#if (!defined(kfreebsd) && defined(freebsd)) || (defined(__APPLE__) && defined(__MACH__))
     optreset = 1;
 #endif
 #if defined(__GLIBC__)

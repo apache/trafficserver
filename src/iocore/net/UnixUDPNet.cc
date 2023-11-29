@@ -29,7 +29,7 @@
 
  ****************************************************************************/
 
-#if defined(darwin)
+#if (defined(__APPLE__) && defined(__MACH__))
 /* This is for IPV6_PKTINFO and IPV6_RECVPKTINFO */
 #define __APPLE_USE_RFC_3542
 #endif
