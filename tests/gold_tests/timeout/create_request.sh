@@ -25,6 +25,8 @@ while [ $count -gt 0 ]
 do
 	sleep 1
 	output=`ps uax | grep $targetPID | grep "nc "`
+	output0=`ps uax | grep $targetPID`
+	echo "Out for $stargetPID is $output or $output0"
 	if [ -z "$output" ] # process is gone
 	then
 		exit 0
