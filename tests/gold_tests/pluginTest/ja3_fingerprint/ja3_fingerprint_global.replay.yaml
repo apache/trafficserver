@@ -1,0 +1,105 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+- protocol:
+  - name: tls
+    sni: https.server.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /some/path/https
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, https.server.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, https-request ]
+        - [ uuid, https-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, { value: 'https-request', as: equal } ]
+        - [ X-JA3-Sig, { as: present } ]
+        - [ X-JA3-Raw, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 36 ]
+        - [ X-Response, https-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'https-response', as: equal } ]
+
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: http2.server.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, http2.server.com ]
+        - [ :path, /some/path/http2 ]
+        - [ content-type, image/jpeg ]
+        - [ uuid, http2-request ]
+        - [ x-request, http2-request ]
+      content:
+        size: 399
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-request, { value: 'http2-request', as: equal } ]
+        - [ X-JA3-Sig, { as: present } ]
+        - [ X-JA3-Raw, { as: present } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, 36 ]
+        - [ x-response, http2-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]
+        - [ x-response, { value: 'http2-response', as: equal } ]

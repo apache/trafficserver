@@ -12,15 +12,25 @@ The log file format is as follows:
 
 [time] [client IP] [JA3 string] [MD5 Hash]
 
-2. plugin.config
-In plugin.config, supply name of the plugin and options
-Example: ja3_fingerprint.so --ja3raw --ja3log
-Add flag --ja3raw if `X-JA3-Raw` is desired other than only `X-JA3-Sig`.
+2. Plugin Configuration Options
+The following optional arguments can be used to configure the plugin's behavior:
+
+Add flag --ja3raw if `X-JA3-Raw` is desired in addition to `X-JA3-Sig`.
 Add flag --ja3log if local logging in standard logging directory is desired.
 
-3. remap.config
-This plugin can also be used as a remap plugin. For each remap rule, add plugin and parameter field. For example:
-map http://from.com http://to.com @plugin=ja3_fingerprint.so [@pparam=--ja3raw] [@pparam=--ja3log]
+3. plugin.config
+In plugin.config, supply name of the plugin and any desired options. For example:
 
-4. Requirement
+ja3_fingerprint.so --ja3raw --ja3log
+
+4. remap.config
+This plugin can alternatively be used as a remap plugin. For each remap rule,
+add plugin and parameter field. For example:
+
+map http://from.com http://to.com @plugin=ja3_fingerprint.so @pparam=--ja3raw @pparam=--ja3log
+
+The plugin is not designed to function as both a global and remap plugin, so
+choose one configuration or the other.
+
+5. Requirement
 Won't compile against OpenSSL 1.1.0 due to APIs and opaque structures.
