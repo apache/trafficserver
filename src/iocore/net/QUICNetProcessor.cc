@@ -34,8 +34,6 @@
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 
-#include <quiche.h>
-
 //
 // Global Data
 //
@@ -99,7 +97,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   quiche_config_set_initial_max_streams_uni(this->_quiche_config, params->initial_max_streams_uni_in());
   quiche_config_set_disable_active_migration(this->_quiche_config, params->disable_active_migration());
   quiche_config_set_active_connection_id_limit(this->_quiche_config, params->active_cid_limit_in());
-  quiche_config_set_cc_algorithm(this->_quiche_config, QUICHE_CC_RENO);
+  quiche_config_set_cc_algorithm(this->_quiche_config, params->get_cc_algorithm());
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
   // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed

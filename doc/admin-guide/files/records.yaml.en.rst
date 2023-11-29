@@ -4785,6 +4785,17 @@ removed in the future without prior notice.
 
    Disables HTTP/0.9 over QUIC by default.
 
+.. ts:cv:: CONFIG proxy.config.quic.cc_algorithm INT 0
+
+   Specified the congestion control algorithm.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` RENO (default).
+   ``1`` CUBIC.
+   ===== ======================================================================
+
 
 UDP Configuration
 =====================

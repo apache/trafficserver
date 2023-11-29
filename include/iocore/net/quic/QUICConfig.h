@@ -24,6 +24,7 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include <quiche.h>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "../../../../src/iocore/net/P_SSLCertLookup.h"
@@ -87,6 +88,8 @@ public:
 
   bool disable_http_0_9() const;
 
+  quiche_cc_algorithm get_cc_algorithm() const;
+
 private:
   static int _connection_table_size;
   // TODO: make configurable
@@ -140,6 +143,8 @@ private:
   uint32_t _max_send_udp_payload_size_out = 0;
 
   uint32_t _disable_http_0_9 = 1;
+
+  uint32_t _cc_algorithm = 0;
 };
 
 class QUICConfig
