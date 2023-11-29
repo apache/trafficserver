@@ -94,7 +94,7 @@ s.AddLines([
     "    ignore_self_detect: true",
     "    groups:",
     "      - *g1",
-    "    scheme: http"])
+    "    scheme: http",])
 
 # Fallover not currently tested.
 #
@@ -105,7 +105,7 @@ s.AddLines([
 # "      response_codes:",
 # "        - 404",
 # "      health_check:",
-# "        - passive"])
+# "        - passive",])
 
 ts.Disk.remap_config.AddLine(
     "map http://dummy.com http://not_used @strategy=the-strategy"

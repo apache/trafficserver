@@ -73,7 +73,7 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: ccc.com',
     '  verify_client: STRICT',
     '  verify_client_ca_certs:',
-    f'    file: {ts.Variables.SSLDir}/ccc-ca.pem'
+    f'    file: {ts.Variables.SSLDir}/ccc-ca.pem',
 ])
 
 # Success test runs.

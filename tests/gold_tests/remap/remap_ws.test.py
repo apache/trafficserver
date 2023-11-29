@@ -42,7 +42,7 @@ ts.Disk.records_config.update({
 
 ts.Disk.remap_config.AddLines([
     'map ws://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.port),
-    'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+    'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port),
 ])
 
 ts.Disk.ssl_multicert_config.AddLine(

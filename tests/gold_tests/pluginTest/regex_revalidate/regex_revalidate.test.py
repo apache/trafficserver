@@ -137,7 +137,7 @@ path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
 # Define first revision for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    "# Empty\n"
+    "# Empty\n",
 ])
 
 ts.Disk.remap_config.AddLine(
@@ -190,7 +190,7 @@ tr = Test.AddTestRun("Reload config add path1")
 # happens after the delay.)
 tr.DelayStart = 1
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule
+    path1_rule,
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -224,7 +224,7 @@ tr = Test.AddTestRun("Reload config add path2")
 tr.DelayStart = 1
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
     path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 700)
+    'path2 {}\n'.format(int(time.time()) + 700),
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

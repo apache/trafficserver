@@ -41,7 +41,7 @@ ts.Disk.remap_config.AddLines([
     # line 3
     'map /generation2/ http://127.0.0.1/' +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=2' +
-    ' @plugin=generator.so'
+    ' @plugin=generator.so',
 ])
 
 objectid = uuid.uuid4()

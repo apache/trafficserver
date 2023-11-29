@@ -80,7 +80,7 @@ ts1.Disk.stek_share_conf_1.AddLines([
     'root_cert_file: {0}'.format(cert_path),
     'server_cert_file: {0}'.format(cert_path),
     'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
+    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
 ])
 
 ts2.Disk.stek_share_conf_2.AddLines([
@@ -99,7 +99,7 @@ ts2.Disk.stek_share_conf_2.AddLines([
     'root_cert_file: {0}'.format(cert_path),
     'server_cert_file: {0}'.format(cert_path),
     'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
+    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
 ])
 
 ts3.Disk.stek_share_conf_3.AddLines([
@@ -118,7 +118,7 @@ ts3.Disk.stek_share_conf_3.AddLines([
     'root_cert_file: {0}'.format(cert_path),
     'server_cert_file: {0}'.format(cert_path),
     'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
+    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
 ])
 
 ts4.Disk.stek_share_conf_4.AddLines([
@@ -137,7 +137,7 @@ ts4.Disk.stek_share_conf_4.AddLines([
     'root_cert_file: {0}'.format(cert_path),
     'server_cert_file: {0}'.format(cert_path),
     'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
+    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
 ])
 
 ts5.Disk.stek_share_conf_5.AddLines([
@@ -156,7 +156,7 @@ ts5.Disk.stek_share_conf_5.AddLines([
     'root_cert_file: {0}'.format(cert_path),
     'server_cert_file: {0}'.format(cert_path),
     'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
+    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
 ])
 
 ts1.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':

@@ -88,7 +88,7 @@ ts.Disk.MakeConfigFile('load_engine.cnf').AddLines([
     '',
     'default_algorithms = RSA',
     '',
-    'init = 1'])
+    'init = 1',])
 
 # Make a basic request.  Hopefully it goes through
 tr = Test.AddTestRun("Run-Test")

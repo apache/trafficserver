@@ -49,7 +49,7 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: "*one.com"',
     '  client_cert: "one.com.pem"',
     '- fqdn: "*two.com"',
-    '  client_cert: "two.com.pem"'
+    '  client_cert: "two.com.pem"',
 ])
 
 # Set up plugin

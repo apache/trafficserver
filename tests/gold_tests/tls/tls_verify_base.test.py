@@ -86,7 +86,7 @@ ts.Disk.sni_yaml.AddLines([
     '  verify_server_properties: ALL',
     '- fqdn: bad_bar.com',
     '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: ALL'
+    '  verify_server_properties: ALL',
 ])
 
 tr = Test.AddTestRun("Permissive-Test")
