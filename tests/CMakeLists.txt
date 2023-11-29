@@ -27,6 +27,7 @@ function(ADD_AUTEST_PLUGIN _NAME)
 endfunction()
 
 add_subdirectory(tools/plugins)
+add_subdirectory(gold_tests/bigojb)
 add_subdirectory(gold_tests/chunked_encoding)
 add_subdirectory(gold_tests/continuations/plugins)
 add_subdirectory(gold_tests/jsonrpc/plugins)
