@@ -31,17 +31,24 @@ class JA3FingerprintTest:
     _ts_counter: int = 0
     _client_counter: int = 0
 
-    def __init__(self, test_remap: bool) -> None:
+    def __init__(self, test_remap: bool, modify_incoming: bool) -> None:
         """Configure the test processes in preparation for the TestRun.
 
         :param test_remap: Whether to configure the plugin as a remap plugin
         instead of as a global plugin.
+        :param modify_incoming: Whether ja3_fingerprint should be configured to
+        modify the client request rather than the proxy request.
         """
+        if test_remap and modify_incoming:
+            raise ValueError('modify-incoming is only allowed as a global plugin.')
+
         self._test_remap = test_remap
         if test_remap:
             self._replay_file = 'ja3_fingerprint_remap.replay.yaml'
         else:
             self._replay_file = 'ja3_fingerprint_global.replay.yaml'
+
+        self._modify_incoming = modify_incoming
 
         tr = Test.AddTestRun('Testing ja3_fingerprint plugin.')
         self._configure_dns(tr)
@@ -49,6 +56,7 @@ class JA3FingerprintTest:
         self._configure_trafficserver()
         self._configure_client(tr)
         self._await_ja3log()
+        self._verify_internal_headers()
 
     def _configure_dns(self, tr: 'TestRun') -> None:
         """Configure a nameserver for the test.
@@ -86,7 +94,10 @@ class JA3FingerprintTest:
                 f'map https://http2.server.com https://http2.backend.com:{server_port} '
                 '@plugin=ja3_fingerprint.so @pparam=--ja3log')
         else:
-            self._ts.Disk.plugin_config.AddLine('ja3_fingerprint.so --ja3log --ja3raw')
+            arguments = '--ja3log --ja3raw'
+            if self._modify_incoming:
+                arguments += ' --modify-incoming'
+            self._ts.Disk.plugin_config.AddLine(f'ja3_fingerprint.so {arguments}')
             self._ts.Disk.remap_config.AddLine(f'map https://http2.server.com https://http2.backend.com:{server_port}')
 
         self._ts.Disk.records_config.update(
@@ -143,6 +154,33 @@ class JA3FingerprintTest:
         p.Command = f'echo await {ja3_path} creation'
         p.StartBefore(waiter)
 
+    def _verify_internal_headers(self) -> None:
+        """Verify that the correct headers were modified."""
 
-JA3FingerprintTest(test_remap=False)
-JA3FingerprintTest(test_remap=True)
+        # We use the grep command to get the small snippet of output we want
+        # from the traffic.out file. Gold file matching against long files, like
+        # traffic.out, is exceedingly slow.
+
+        tr = Test.AddTestRun('Verify the internal client request headers.')
+        traffic_out = self._ts.Disk.traffic_out.AbsPath
+        p = tr.Processes.Default
+        p.Command = f'grep --after-context=20 "Incoming Request" {traffic_out}'
+
+        if self._modify_incoming:
+            p.Streams.All += "modify-incoming-client.gold"
+        else:
+            p.Streams.All += "modify-sent-client.gold"
+
+        tr = Test.AddTestRun('Verify the internal proxy request headers.')
+        p = tr.Processes.Default
+        p.Command = f'grep --after-context=20 "Proxy\'s Request after hooks" {traffic_out}'
+
+        if self._modify_incoming:
+            p.Streams.All += "modify-incoming-proxy.gold"
+        else:
+            p.Streams.All += "modify-sent-proxy.gold"
+
+
+JA3FingerprintTest(test_remap=False, modify_incoming=False)
+JA3FingerprintTest(test_remap=True, modify_incoming=False)
+JA3FingerprintTest(test_remap=False, modify_incoming=True)
