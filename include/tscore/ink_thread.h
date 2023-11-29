@@ -136,13 +136,8 @@ ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, si
 static inline void
 ink_thread_cancel(ink_thread who)
 {
-#if defined(freebsd)
-  (void)who;
-  ink_assert(!"not supported");
-#else
   int ret = pthread_cancel(who);
   ink_assert(ret == 0);
-#endif
 }
 
 static inline void *
@@ -171,18 +166,11 @@ ink_thread_null()
 static inline int
 ink_thread_get_priority(ink_thread t, int *priority)
 {
-#if defined(freebsd)
-  (void)t;
-  (void)priority;
-  ink_assert(!"not supported");
-  return -1;
-#else
   int policy;
   struct sched_param param;
   int res   = pthread_getschedparam(t, &policy, &param);
   *priority = param.sched_priority;
   return res;
-#endif
 }
 
 static inline int
@@ -236,7 +224,9 @@ ink_cond_timedwait(ink_cond *cp, ink_mutex *mp, ink_timestruc *t)
   while (EINTR == (err = pthread_cond_timedwait(cp, mp, t))) {
     ;
   }
-#if defined(freebsd) || defined(openbsd)
+#ifndef ETIME
+// ink_defs.h aliases ETIME to ETIMEDOUT and this path should never happen
+#warning Unknown ETIME return condition for pthread_cond_timedwait
   ink_assert((err == 0) || (err == ETIMEDOUT));
 #else
   ink_assert((err == 0) || (err == ETIME) || (err == ETIMEDOUT));
