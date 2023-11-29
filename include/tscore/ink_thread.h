@@ -270,7 +270,7 @@ ink_set_thread_name(const char *name ATS_UNUSED)
   pthread_setname_np(pthread_self(), name);
 #elif defined(HAVE_PTHREAD_SET_NAME_NP_2)
   pthread_set_name_np(pthread_self(), name);
-#elif defined(HAVE_SYS_PRCTL_H) && defined(PR_SET_NAME)
+#elif HAVE_PRCTL
   prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
 }
@@ -282,7 +282,7 @@ ink_get_thread_name(char *name, size_t len)
   pthread_getname_np(pthread_self(), name, len);
 #elif defined(HAVE_PTHREAD_GET_NAME_NP)
   pthread_get_name_np(pthread_self(), name, len);
-#elif defined(HAVE_SYS_PRCTL_H) && defined(PR_GET_NAME)
+#elif HAVE_PRCTL
   prctl(PR_GET_NAME, name, 0, 0, 0);
 #else
   snprintf(name, len, "0x%" PRIx64, (uint64_t)ink_thread_self());

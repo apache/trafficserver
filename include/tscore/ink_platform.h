@@ -125,7 +125,7 @@ using in_addr_t = unsigned int;
 #include <sys/sysmacros.h>
 #endif
 
-#ifdef HAVE_SYS_PRCTL_H
+#if __has_include(<sys/prctl.h>)
 #include <sys/prctl.h>
 #endif
 
