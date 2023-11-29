@@ -54,7 +54,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.ssl_multicert_config.AddLines([
     'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem ssl_key_name=signed-foo-ec.key,signed-foo.key',
     'ssl_cert_name=signed-san-ec.pem,signed-san.pem ssl_key_name=signed-san-ec.key,signed-san.key',
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
 ])
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secret_load_test.so'), ts)
@@ -70,7 +70,7 @@ ts.Disk.records_config.update({
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.dns.resolv_conf': 'NULL',
     'proxy.config.diags.debug.tags': 'ssl_secret_load_test',
-    'proxy.config.diags.debug.enabled': 1
+    'proxy.config.diags.debug.enabled': 1,
 })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})

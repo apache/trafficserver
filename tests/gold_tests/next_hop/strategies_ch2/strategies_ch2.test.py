@@ -102,7 +102,7 @@ s.AddLines([
     "    ignore_self_detect: true",
     "    groups:",
     "      - *g1",
-    "    scheme: http"
+    "    scheme: http",
 ])
 
 # Use default fallover config.
@@ -114,7 +114,7 @@ s.AddLines([
 #     "      response_codes:",
 #     "        - 404",
 #     "      health_check:",
-#     "        - passive"
+#     "        - passive",
 # ])
 
 ts.Disk.remap_config.AddLine(

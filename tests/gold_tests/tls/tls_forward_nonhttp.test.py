@@ -59,7 +59,7 @@ ts.Disk.records_config.update({
 ts.Disk.sni_yaml.AddLines([
     "sni:",
     "- fqdn: bar.com",
-    "  forward_route: localhost:{0}".format(ts.Variables.s_client_port)
+    "  forward_route: localhost:{0}".format(ts.Variables.s_client_port),
 ])
 
 tr = Test.AddTestRun("forward-non-http")

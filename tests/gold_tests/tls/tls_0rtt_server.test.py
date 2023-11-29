@@ -138,7 +138,7 @@ ts1.Disk.remap_config.AddLine(
 ts1.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: example-no.com',
-    '  server_max_early_data: 0'
+    '  server_max_early_data: 0',
 ])
 
 ts2.Disk.records_config.update({
@@ -169,7 +169,7 @@ ts2.Disk.remap_config.AddLine(
 ts2.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: example-yes.com',
-    '  server_max_early_data: 16384'
+    '  server_max_early_data: 16384',
 ])
 
 tr = Test.AddTestRun('Basic Curl Test')

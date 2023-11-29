@@ -56,7 +56,7 @@ ts1.Disk.remap_config.AddLine(
 )
 ts2.Disk.remap_config.AddLines([
     'map /reuse_session https://127.0.0.1:{0}'.format(ts1.Variables.ssl_port),
-    'map /remove_oldest https://127.0.1.1:{0}'.format(ts1.Variables.ssl_port)
+    'map /remove_oldest https://127.0.1.1:{0}'.format(ts1.Variables.ssl_port),
 ])
 ts3.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)

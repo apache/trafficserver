@@ -105,7 +105,7 @@ class TestSniIpAllow:
             ])
         ts.Disk.sni_yaml.AddLines([
             '- fqdn: allow.me.com',
-            '  ip_allow: 127.0.0.1'
+            '  ip_allow: 127.0.0.1',
         ])
         if connect_type == ConnectionType.TUNNEL:
             ts.Disk.sni_yaml.AddLines([

@@ -329,7 +329,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
                                       f'bindir: {bin_dir}',
                                       f'prefix: {ts_dir}',
                                       f'logdir: {log_dir}',
-                                      f'sysconfdir: {config_dir}'])
+                                      f'sysconfdir: {config_dir}',])
         # Add more if needed
         p.Env['TS_RUNROOT'] = os.path.join(config_dir, "runroot.yaml")
 

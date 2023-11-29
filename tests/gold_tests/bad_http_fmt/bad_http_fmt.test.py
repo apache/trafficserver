@@ -98,7 +98,7 @@ ts.Disk.ip_allow_yaml.AddLines([
     '    ip_addrs: ::1',
     '    action: allow',
     '    methods:',
-    '      - GET'
+    '      - GET',
 ])
 
 ts.Disk.remap_config.AddLine(

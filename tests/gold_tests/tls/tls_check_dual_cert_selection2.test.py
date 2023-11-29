@@ -53,7 +53,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.ssl_multicert_config.AddLines([
     'ssl_cert_name=combined-ec.pem,combined.pem',
     'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem',
-    'dest_ip=* ssl_cert_name=signed-san-ec.pem,signed-san.pem'
+    'dest_ip=* ssl_cert_name=signed-san-ec.pem,signed-san.pem',
 ])
 
 # Case 1, global config policy=permissive properties=signature

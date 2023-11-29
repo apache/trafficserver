@@ -34,7 +34,7 @@ pv_port = pv.Variables.http_port
 tm.Disk.remap_config.AddLines([f"map http://alpha.ex http://alpha.ex:{pv_port}",
                                f"map http://bravo.ex http://bravo.ex:{pv_port}",
                                f"map http://charlie.ex http://charlie.ex:{pv_port}",
-                               f"map http://delta.ex http://delta.ex:{pv_port}"])
+                               f"map http://delta.ex http://delta.ex:{pv_port}",])
 tm.Disk.records_config.update({'proxy.config.url_remap.min_rules_required': 3})
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
@@ -53,7 +53,7 @@ tr.Processes.Default.Env = tm.Env
 tr.Processes.Default.Command = 'echo "Change remap.config, two lines"'
 tr.Disk.File(remap_cfg_path).WriteOn("")
 tr.Disk.File(remap_cfg_path, typename="ats:config").AddLines([
-    f"map http://alpha.ex http://alpha.ex:{pv_port}", f"map http://bravo.ex http://bravo.ex:{pv_port}"
+    f"map http://alpha.ex http://alpha.ex:{pv_port}", f"map http://bravo.ex http://bravo.ex:{pv_port}",
 ])
 
 tr = Test.AddTestRun("remap_config reload, fails")
@@ -75,7 +75,7 @@ tr.Disk.File(remap_cfg_path,
                                               f"map http://foxtrot.ex http://foxtrot.ex:{pv_port}",
                                               f"map http://golf.ex http://golf.ex:{pv_port}",
                                               f"map http://hotel.ex http://hotel.ex:{pv_port}",
-                                              f"map http://india.ex http://india.ex:{pv_port}"])
+                                              f"map http://india.ex http://india.ex:{pv_port}",])
 
 tr = Test.AddTestRun("remap_config reload, succeeds")
 tr.Processes.Default.Env = tm.Env

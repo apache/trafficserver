@@ -48,7 +48,7 @@ ts.Disk.records_config.update({
 
 ts.Disk.remap_config.AddLines([
     'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
-    'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port)
+    'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port),
 ])
 
 ts.Disk.ssl_multicert_config.AddLine(

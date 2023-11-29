@@ -63,7 +63,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 ts.Disk.remap_config.AddLines([
     'map https://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port),
-    'map https://foo.com https://127.0.0.1:{0}'.format(ts.Variables.s_server_port)
+    'map https://foo.com https://127.0.0.1:{0}'.format(ts.Variables.s_server_port),
 ])
 
 ts.Disk.sni_yaml.AddLines([

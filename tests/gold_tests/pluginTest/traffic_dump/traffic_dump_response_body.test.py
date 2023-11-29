@@ -59,7 +59,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLines([
-    f'map / http://127.0.0.1:{server.Variables.http_port}'
+    f'map / http://127.0.0.1:{server.Variables.http_port}',
 ])
 
 # Configure traffic_dump to dump body bytes (-b).

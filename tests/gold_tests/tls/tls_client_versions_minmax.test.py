@@ -73,7 +73,7 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: foo.com',
     '  valid_tls_versions_in: [ TLSv1_2 ]',  # This setting should be ignored in favor of a version range setting
     '  valid_tls_version_min_in: TLSv1',
-    '  valid_tls_version_max_in: TLSv1_1'
+    '  valid_tls_version_max_in: TLSv1_1',
 ])
 
 # Target foo.com for TLSv1_2.  Should fail

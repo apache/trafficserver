@@ -68,7 +68,7 @@ ts.Disk.records_config.update({
 ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: foo.com',
-    '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]'
+    '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]',
 ])
 
 # Target foo.com for TLSv1_2.  Should fail

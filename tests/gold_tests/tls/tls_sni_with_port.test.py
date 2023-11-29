@@ -131,7 +131,7 @@ class TestSNIWithPort:
             "  inbound_port_ranges:",
             f"  - {self._port_two}",
             f"  - {self._port_three}",
-            f"  tunnel_route: localhost:{server_two.Variables.https_port}"
+            f"  tunnel_route: localhost:{server_two.Variables.https_port}",
         ])
 
         ts.Disk.ssl_multicert_config.AddLine(
