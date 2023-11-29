@@ -49,13 +49,6 @@
   the pointer was required by the standard.
 */
 
-/*
-#if defined(POSIX_THREAD)
-#include <pthread.h>
-#include <stdlib.h>
-#endif
-*/
-
 void ink_queue_load_64(void *dst, void *src);
 
 #ifdef __x86_64__
