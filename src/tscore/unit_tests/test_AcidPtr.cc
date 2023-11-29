@@ -28,6 +28,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <chrono>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -47,7 +48,7 @@ TEST_CASE("AcidPtr Atomicity")
       unique_lock<mutex> gate_lock(gate_mutex);
       gate.wait(gate_lock);
     }
-    int r = rand();
+    int r = random();
     AcidCommitPtr<vector<int>> cptr(ptr);
     int old = (*cptr)[0];
     for (int &i : *cptr) {
