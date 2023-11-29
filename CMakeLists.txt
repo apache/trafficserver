@@ -392,6 +392,9 @@ check_symbol_exists(sendmmsg sys/socket.h HAVE_SENDMMSG)
 check_symbol_exists(strlcat string.h HAVE_STRLCAT)
 check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
 check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
+check_symbol_exists(pthread_mutexattr_setpshared pthread.h HAVE_PTHREAD_MUTEXATTR_SETPSHARED)
+check_symbol_exists(pthread_mutexattr_settype pthread.h HAVE_PTHREAD_MUTEXATTR_SETTYPE)
+
 if(TS_USE_HWLOC)
   check_source_compiles(
     C "#include <hwloc.h>

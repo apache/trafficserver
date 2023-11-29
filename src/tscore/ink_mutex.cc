@@ -35,6 +35,9 @@ public:
   x_pthread_mutexattr_t()
   {
     pthread_mutexattr_init(&attr);
+#if HAVE_PTHREAD_MUTEXATTR_SETPSHARED
+    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+#endif
 
 #if DEBUG && HAVE_PTHREAD_MUTEXATTR_SETTYPE
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
