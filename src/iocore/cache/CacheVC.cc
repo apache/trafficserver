@@ -347,35 +347,35 @@ CacheVC::handleReadDone(int event, Event *e)
   } else if (is_io_in_progress()) {
     return EVENT_CONT;
   }
-  if (DISK_BAD(vol->disk)) {
+  if (DISK_BAD(stripe->disk)) {
     io.aio_result = -1;
-    Error("Canceling cache read: disk %s is bad.", vol->hash_text.get());
+    Error("Canceling cache read: disk %s is bad.", stripe->hash_text.get());
     goto Ldone;
   }
   {
-    MUTEX_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+    MUTEX_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       VC_SCHED_LOCK_RETRY();
     }
-    if ((!dir_valid(vol, &dir)) || (!io.ok())) {
+    if ((!dir_valid(stripe, &dir)) || (!io.ok())) {
       if (!io.ok()) {
         Dbg(dbg_ctl_cache_disk_error, "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-            vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+            stripe->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
             (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
 
     doc = reinterpret_cast<Doc *>(buf->data());
-    ink_assert(vol->mutex->nthread_holding < 1000);
+    ink_assert(stripe->mutex->nthread_holding < 1000);
     ink_assert(doc->magic == DOC_MAGIC);
 
     if (ts::VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
       // future version, count as corrupted
       doc->magic = DOC_CORRUPT;
       Dbg(dbg_ctl_cache_bc, "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major,
-          doc->v_minor, vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+          doc->v_minor, stripe->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
       goto Ldone;
     }
 
@@ -413,7 +413,7 @@ CacheVC::handleReadDone(int event, Event *e)
         ink_assert(checksum == doc->checksum);
         if (checksum != doc->checksum) {
           Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
-               doc->first_key.b[0], doc->first_key.b[1], doc->len, doc->hlen, vol->path, (uint64_t)io.aiocb.aio_offset,
+               doc->first_key.b[0], doc->first_key.b[1], doc->len, doc->hlen, stripe->path, (uint64_t)io.aiocb.aio_offset,
                (size_t)io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
           okay       = 0;
@@ -442,15 +442,15 @@ CacheVC::handleReadDone(int event, Event *e)
            (doc_len && static_cast<int64_t>(doc_len) < cache_config_ram_cache_cutoff) || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
-          vol->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
+          stripe->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
           // update this document, we don't have to read it back in memory
           // again
-          vol->first_fragment_key    = *read_key;
-          vol->first_fragment_offset = dir_offset(&dir);
-          vol->first_fragment_data   = buf;
+          stripe->first_fragment_key    = *read_key;
+          stripe->first_fragment_offset = dir_offset(&dir);
+          stripe->first_fragment_data   = buf;
         }
       } // end VIO::READ check
       // If it could be compressed, unmarshal after
@@ -473,36 +473,36 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   f.doc_from_ram_cache = false;
 
   // check ram cache
-  ink_assert(vol->mutex->thread_holding == this_ethread());
+  ink_assert(stripe->mutex->thread_holding == this_ethread());
   int64_t o           = dir_offset(&dir);
-  int ram_hit_state   = vol->ram_cache->get(read_key, &buf, static_cast<uint64_t>(o));
+  int ram_hit_state   = stripe->ram_cache->get(read_key, &buf, static_cast<uint64_t>(o));
   f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
   if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
     goto LramHit;
   }
 
   // check if it was read in the last open_read call
-  if (*read_key == vol->first_fragment_key && dir_offset(&dir) == vol->first_fragment_offset) {
-    buf = vol->first_fragment_data;
+  if (*read_key == stripe->first_fragment_key && dir_offset(&dir) == stripe->first_fragment_offset) {
+    buf = stripe->first_fragment_data;
     goto LmemHit;
   }
   // see if its in the aggregation buffer
-  if (dir_agg_buf_valid(vol, &dir)) {
-    int agg_offset = vol->vol_offset(&dir) - vol->header->write_pos;
+  if (dir_agg_buf_valid(stripe, &dir)) {
+    int agg_offset = stripe->vol_offset(&dir) - stripe->header->write_pos;
     buf            = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)vol->get_agg_buf_pos());
+    ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)stripe->get_agg_buf_pos());
     char *doc = buf->data();
-    char *agg = vol->get_agg_buffer() + agg_offset;
+    char *agg = stripe->get_agg_buffer() + agg_offset;
     memcpy(doc, agg, io.aiocb.aio_nbytes);
     io.aio_result = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
   }
 
-  io.aiocb.aio_fildes = vol->fd;
-  io.aiocb.aio_offset = vol->vol_offset(&dir);
-  if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(vol->skip + vol->len)) {
-    io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
+  io.aiocb.aio_fildes = stripe->fd;
+  io.aiocb.aio_offset = stripe->vol_offset(&dir);
+  if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(stripe->skip + stripe->len)) {
+    io.aiocb.aio_nbytes = stripe->skip + stripe->len - io.aiocb.aio_offset;
   }
   buf              = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   io.aiocb.aio_buf = buf->data();
@@ -514,7 +514,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 // ToDo: Why are these for debug only ??
 #if DEBUG
   Metrics::Counter::increment(cache_rsb.pread_count);
-  Metrics::Counter::increment(vol->cache_vol->vol_rsb.pread_count);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.pread_count);
 #endif
 
   return EVENT_CONT;
@@ -541,21 +541,21 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   cancel_trigger();
   set_io_not_in_progress();
   {
-    MUTEX_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+    MUTEX_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       VC_SCHED_LOCK_RETRY();
     }
     if (_action.cancelled) {
       if (od) {
-        vol->close_write(this);
+        stripe->close_write(this);
         od = nullptr;
       }
       goto Lfree;
     }
     if (!f.remove_aborted_writers) {
-      if (vol->open_write(this, true, 1)) {
+      if (stripe->open_write(this, true, 1)) {
         // writer  exists
-        od = vol->open_read(&key);
+        od = stripe->open_read(&key);
         ink_release_assert(od);
         od->dont_update_directory = true;
         od                        = nullptr;
@@ -569,7 +569,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (!buf) {
       goto Lcollision;
     }
-    if (!dir_valid(vol, &dir)) {
+    if (!dir_valid(stripe, &dir)) {
       last_collision = nullptr;
       goto Lcollision;
     }
@@ -583,9 +583,9 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       /* should be first_key not key..right?? */
       if (doc->first_key == key) {
         ink_assert(doc->magic == DOC_MAGIC);
-        if (dir_delete(&key, vol, &dir) > 0) {
+        if (dir_delete(&key, stripe, &dir) > 0) {
           if (od) {
-            vol->close_write(this);
+            stripe->close_write(this);
           }
           od = nullptr;
           goto Lremoved;
@@ -595,7 +595,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   Lcollision:
     // check for collision
-    if (dir_probe(&key, vol, &dir, &last_collision) > 0) {
+    if (dir_probe(&key, stripe, &dir, &last_collision) > 0) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lread;
@@ -604,12 +604,12 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   Ldone:
     Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
-    Metrics::Counter::increment(vol->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
     if (od) {
-      vol->close_write(this);
+      stripe->close_write(this);
     }
   }
-  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *)-ECACHE_NO_DOC);
   goto Lfree;
 Lremoved:
@@ -619,9 +619,9 @@ Lfree:
 }
 
 int
-CacheVC::scanVol(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+CacheVC::scanStripe(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanVol", this);
+  Dbg(dbg_ctl_cache_scan_truss, "%p", this);
   if (_action.cancelled) {
     return free_CacheVC(this);
   }
@@ -637,15 +637,15 @@ CacheVC::scanVol(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   }
 
-  if (!vol) {
+  if (!stripe) {
     if (!rec->num_vols) {
       goto Ldone;
     }
-    vol = rec->stripes[0];
+    stripe = rec->stripes[0];
   } else {
     for (int i = 0; i < rec->num_vols - 1; i++) {
-      if (vol == rec->stripes[i]) {
-        vol = rec->stripes[i + 1];
+      if (stripe == rec->stripes[i]) {
+        stripe = rec->stripes[i + 1];
         goto Lcont;
       }
     }
@@ -680,7 +680,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return free_CacheVC(this);
   }
 
-  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     Dbg(dbg_ctl_cache_scan_truss, "delay %p:scanObject", this);
     mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
@@ -689,9 +689,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   if (!fragment) { // initialize for first read
     fragment            = 1;
-    scan_vol_map        = make_vol_map(vol);
-    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol->vol_offset_to_offset(0));
-    if (io.aiocb.aio_offset >= static_cast<off_t>(vol->skip + vol->len)) {
+    scan_stripe_map     = make_vol_map(stripe);
+    io.aiocb.aio_offset = next_in_map(stripe, scan_stripe_map, stripe->vol_offset_to_offset(0));
+    if (io.aiocb.aio_offset >= static_cast<off_t>(stripe->skip + stripe->len)) {
       goto Lnext_vol;
     }
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
@@ -721,7 +721,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          static_cast<off_t>(io.aiocb.aio_nbytes)) {
     might_need_overlap_read = false;
     doc                     = reinterpret_cast<Doc *>(reinterpret_cast<char *>(doc) + next_object_len);
-    next_object_len         = vol->round_to_approx_size(doc->len);
+    next_object_len         = stripe->round_to_approx_size(doc->len);
     int i;
     bool changed;
 
@@ -737,11 +737,11 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     last_collision = nullptr;
     while (true) {
-      if (!dir_probe(&doc->first_key, vol, &dir, &last_collision)) {
+      if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
-      if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
-          (vol->vol_offset(&dir) != io.aiocb.aio_offset + (reinterpret_cast<char *>(doc) - buf->data()))) {
+      if (!dir_agg_valid(stripe, &dir) || !dir_head(&dir) ||
+          (stripe->vol_offset(&dir) != io.aiocb.aio_offset + (reinterpret_cast<char *>(doc) - buf->data()))) {
         continue;
       }
       break;
@@ -783,7 +783,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // verify that the earliest block exists, reducing 'false hit' callbacks
       if (!(key == doc->key)) {
         last_collision = nullptr;
-        if (!dir_probe(&key, vol, &earliest_dir, &last_collision)) {
+        if (!dir_probe(&key, stripe, &earliest_dir, &last_collision)) {
           continue;
         }
       }
@@ -860,24 +860,24 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   } else { // Normal case, where we ended on a object boundary.
     io.aiocb.aio_offset += (reinterpret_cast<char *>(doc) - buf->data()) + next_object_len;
     Dbg(dbg_ctl_cache_scan_truss, "next %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
-    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, io.aiocb.aio_offset);
+    io.aiocb.aio_offset = next_in_map(stripe, scan_stripe_map, io.aiocb.aio_offset);
     Dbg(dbg_ctl_cache_scan_truss, "next_in_map %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
     io.aiocb.aio_nbytes    = SCAN_BUF_SIZE;
     io.aiocb.aio_buf       = buf->data();
     scan_fix_buffer_offset = 0;
   }
 
-  if (io.aiocb.aio_offset >= vol->skip + vol->len) {
+  if (io.aiocb.aio_offset >= stripe->skip + stripe->len) {
   Lnext_vol:
-    SET_HANDLER(&CacheVC::scanVol);
+    SET_HANDLER(&CacheVC::scanStripe);
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(scan_msec_delay));
     return EVENT_CONT;
   }
 
 Lread:
-  io.aiocb.aio_fildes = vol->fd;
-  if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(vol->skip + vol->len)) {
-    io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
+  io.aiocb.aio_fildes = stripe->fd;
+  if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(stripe->skip + stripe->len)) {
+    io.aiocb.aio_nbytes = stripe->skip + stripe->len - io.aiocb.aio_offset;
   }
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
@@ -922,14 +922,14 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
   int ret = 0;
   {
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
-      Dbg(dbg_ctl_cache_scan, "vol->mutex %p:scanOpenWrite", this);
+      Dbg(dbg_ctl_cache_scan, "stripe->mutex %p:scanOpenWrite", this);
       VC_SCHED_LOCK_RETRY();
     }
 
     Dbg(dbg_ctl_cache_scan, "trying for writer lock");
-    if (vol->open_write(this, false, 1)) {
+    if (stripe->open_write(this, false, 1)) {
       writer_lock_retry++;
       SET_HANDLER(&CacheVC::scanOpenWrite);
       mutex->thread_holding->schedule_in_local(this, scan_msec_delay);
@@ -950,7 +950,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Dir *l = nullptr;
     Dir d;
     Doc *doc = reinterpret_cast<Doc *>(buf->data() + offset);
-    offset   = reinterpret_cast<char *>(doc) - buf->data() + vol->round_to_approx_size(doc->len);
+    offset   = reinterpret_cast<char *>(doc) - buf->data() + stripe->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create
     // a new directory entry for this fragment. Remember the
     // offset and the key in earliest_key
@@ -963,8 +963,8 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
 
     while (true) {
-      if (!dir_probe(&first_key, vol, &d, &l)) {
-        vol->close_write(this);
+      if (!dir_probe(&first_key, stripe, &d, &l)) {
+        stripe->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);
         SET_HANDLER(&CacheVC::scanObject);
         return handleEvent(EVENT_IMMEDIATE, nullptr);
@@ -997,16 +997,16 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanUpdateDone", this);
   cancel_trigger();
   // get volume lock
-  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (lock.is_locked()) {
     // insert a directory entry for the previous fragment
-    dir_overwrite(&first_key, vol, &dir, &od->first_dir, false);
+    dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
-      dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
+      dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
     }
-    ink_assert(vol->open_read(&first_key));
+    ink_assert(stripe->open_read(&first_key));
     ink_assert(this->od);
-    vol->close_write(this);
+    stripe->close_write(this);
     SET_HANDLER(&CacheVC::scanObject);
     return handleEvent(EVENT_IMMEDIATE, nullptr);
   } else {

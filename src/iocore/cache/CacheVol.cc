@@ -41,7 +41,7 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
   }
 
   CacheVC *c = new_CacheVC(cont);
-  c->vol     = nullptr;
+  c->stripe  = nullptr;
   /* do we need to make a copy */
   c->hostname        = const_cast<char *>(hostname);
   c->host_len        = host_len;
@@ -49,7 +49,7 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
   c->buf             = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
   c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);
   c->offset          = 0;
-  SET_CONTINUATION_HANDLER(c, &CacheVC::scanVol);
+  SET_CONTINUATION_HANDLER(c, &CacheVC::scanStripe);
   eventProcessor.schedule_in(c, HRTIME_MSECONDS(c->scan_msec_delay));
   cont->handleEvent(CACHE_EVENT_SCAN, c);
   return &c->_action;

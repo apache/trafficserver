@@ -224,10 +224,10 @@ public:
   {
     CacheKey key        = {};
     Dir *last_collision = nullptr;
-    SCOPED_MUTEX_LOCK(lock, vc->vol->mutex, this->mutex->thread_holding);
+    SCOPED_MUTEX_LOCK(lock, vc->stripe->mutex, this->mutex->thread_holding);
     vc->vector.data[1].alternate.object_key_get(&key);
-    REQUIRE(dir_probe(&key, vc->vol, &dir, &last_collision) != 0);
-    REQUIRE(dir_delete(&key, vc->vol, &dir));
+    REQUIRE(dir_probe(&key, vc->stripe, &dir, &last_collision) != 0);
+    REQUIRE(dir_delete(&key, vc->stripe, &dir));
   }
 };
 

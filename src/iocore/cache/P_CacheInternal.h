@@ -174,7 +174,7 @@ free_CacheVC(CacheVC *cont)
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex = cont->mutex.get();
-  Stripe *stripe    = cont->vol;
+  Stripe *stripe    = cont->stripe;
 
   if (stripe) {
     Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
@@ -212,7 +212,7 @@ free_CacheVC(CacheVC *cont)
   cont->writer_buf.clear();
   cont->alternate_index = CACHE_ALT_INDEX_DEFAULT;
 
-  ats_free(cont->scan_vol_map);
+  ats_free(cont->scan_stripe_map);
 
   memset((char *)&cont->vio, 0, cont->size_to_init);
 #ifdef DEBUG
@@ -226,7 +226,7 @@ inline int
 CacheVC::calluser(int event)
 {
   recursive++;
-  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   vio.cont->handleEvent(event, (void *)&vio);
   recursive--;
   if (closed) {
@@ -240,7 +240,7 @@ inline int
 CacheVC::callcont(int event)
 {
   recursive++;
-  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);
   recursive--;
   if (closed) {
@@ -310,7 +310,7 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
   cancel_trigger();
   int ret = 0;
   {
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       set_agg_write_in_progress();
       trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
@@ -343,7 +343,7 @@ CacheVC::writer_done()
 {
   OpenDirEntry *cod = od;
   if (!cod) {
-    cod = vol->open_read(&first_key);
+    cod = stripe->open_read(&first_key);
   }
   CacheVC *w = (cod) ? cod->writers.head : nullptr;
   // If the write vc started after the reader, then its not the

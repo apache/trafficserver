@@ -73,7 +73,7 @@ OpenDir::OpenDir()
 int
 OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   unsigned int h = cont->first_key.slice32(0);
   int b          = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
@@ -135,7 +135,7 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 int
 OpenDir::close_write(CacheVC *cont)
 {
-  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
@@ -167,10 +167,10 @@ OpenDir::open_read(const CryptoHash *key) const
 int
 OpenDirEntry::wait(CacheVC *cont, int msec)
 {
-  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   cont->f.open_read_timeout = 1;
   ink_assert(!cont->trigger);
-  cont->trigger = cont->vol->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
+  cont->trigger = cont->stripe->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
   readers.push(cont);
   return EVENT_CONT;
 }
