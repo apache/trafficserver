@@ -20,7 +20,7 @@ end=`date +%s`
 
 runtime=$((end-start))
 echo $runtime
-if [ $runtime -lt 6 ]
+if [ $runtime -lt 5 ]
 then
   echo "Accept timeout $runtime"
   exit 0
