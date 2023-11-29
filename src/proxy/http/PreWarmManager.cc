@@ -312,15 +312,14 @@ PreWarmSM::state_dns_lookup(int event, void *data)
     break;
   }
   case EVENT_SRV_LOOKUP: {
-    _pending_action = nullptr;
+    _pending_action             = nullptr;
+    char srv_hostname[MAXDNAME] = {}; // Needs to have the same scope as hostname
     std::string_view hostname;
 
     if (record == nullptr || !record->is_srv()) {
       // no SRV record, fallback to default lookup
       hostname = _dst->host;
     } else {
-      char srv_hostname[MAXDNAME] = {0};
-
       hostname = std::string_view(srv_hostname);
 
       HostDBInfo *info =
