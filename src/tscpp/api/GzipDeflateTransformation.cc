@@ -104,12 +104,14 @@ GzipDeflateTransformation::consume(std::string_view data)
   do {
     LOG_DEBUG("Iteration %d: Deflate will compress %ld bytes", ++iteration, data.size());
     state_->z_stream_.avail_out = buffer_size;
-    state_->z_stream_.next_out  = &buffer[0];
+    // next_out needs to be set to nullptr before we return since it points to a local buffer
+    // coverity[WRAPPER_ESCAPE: FALSE]
+    state_->z_stream_.next_out = &buffer[0];
 
     int err = deflate(&state_->z_stream_, Z_SYNC_FLUSH);
     if (Z_OK != err) {
-      state_->z_stream_.next_out = nullptr;
       LOG_ERROR("Iteration %d: Deflate failed to compress %ld bytes with error code '%d'", iteration, data.size(), err);
+      state_->z_stream_.next_out = nullptr;
       return;
     }
 
