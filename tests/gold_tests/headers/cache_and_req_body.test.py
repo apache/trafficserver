@@ -99,8 +99,8 @@ tr.StillRunningAfter = ts
 
 # Test 2 - 200 cached response and using netcat
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n''x-debug: x-cache,x-cache-key,via\r\n''Host: www.example.com\r\n''\r\n'|nc 127.0.0.1 -w 1 {port}".format(
-    port=ts.Variables.port)
+tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{}'.format(
+    ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_hit)
 tr.StillRunningAfter = ts
