@@ -104,7 +104,7 @@ watcher = Test.Processes.Process("watcher", "sleep 20")
 
 tr = Test.AddTestRun("Wait for stats")
 tr.Processes.Default.StartBefore(watcher, ready=make_done_stat_ready(ts.Env))
-tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.test.done",
+tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.test.done"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 
