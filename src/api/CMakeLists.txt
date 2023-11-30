@@ -51,12 +51,28 @@ target_link_libraries(
 )
 
 # Items that even tscore can depend on
+set(TSAPICORE_PUBLIC_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/api/Metrics.h
+    ${PROJECT_SOURCE_DIR}/include/api/SourceLocation.h
+    ${PROJECT_SOURCE_DIR}/include/api/DbgCtl.h
+    ${PROJECT_SOURCE_DIR}/include/api/APIHook.h
+    ${PROJECT_SOURCE_DIR}/include/api/APIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/FeatureAPIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/InkAPIInternal.h
+    ${PROJECT_SOURCE_DIR}/include/api/LifecycleAPIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/Metrics.h
+    ${PROJECT_SOURCE_DIR}/include/api/SourceLocation.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_bw_format.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_diag_levels.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_errata.h
+)
 add_library(tsapicore Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
-set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSAPICORE_PUBLIC_HEADERS}")
 target_link_libraries(tsapicore PUBLIC libswoc)
 
-install(TARGETS tsapi tsapicore tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapi tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapicore PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/api)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)

@@ -22,7 +22,7 @@
 #include <sstream>
 #include <utility>
 
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 
 #include "shared/rpc/IPCSocketClient.h"
 #include <tscore/ink_assert.h>

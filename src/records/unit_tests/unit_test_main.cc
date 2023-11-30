@@ -20,7 +20,6 @@
 
 #include <vector>
 #include <string>
-#include "tscpp/util/ts_bw.h"
 #include "tscore/ink_resolver.h"
 #include "test_Diags.h"
 

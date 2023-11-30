@@ -29,8 +29,6 @@ set(TSCPPUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Regex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/TsSharedMutex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/YamlCfg.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_bw.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_bw_format.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_ip.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_meta.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_time_parser.h

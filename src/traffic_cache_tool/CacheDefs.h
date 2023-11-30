@@ -30,7 +30,7 @@
 #include "swoc/swoc_file.h"
 #include "swoc/Scalar.h"
 #include "swoc/TextView.h"
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_errata.h"
 
 #include "tscore/Version.h"
 #include "tscore/ink_memory.h"
