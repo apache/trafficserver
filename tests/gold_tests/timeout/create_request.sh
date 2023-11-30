@@ -18,8 +18,22 @@
 
 # Different vresions of nc have different wait options,
 # so falling back to shell
-printf "GET / HTTP/1.1" | nc 127.0.0.1 $1 &
-targetPID=$!
+
+# Send part of the request and then stop
+request() {
+	printf "GET / HTTP/1.1"
+}
+
+ncat 
+if [ $? -le 1 ]
+then
+	request | ncat -i 11 127.0.0.1 $1 &
+	targetPID=$!
+else
+	request | nc -w 11 127.0.0.1 $1 &
+	targetPID=$!
+fi
+
 count=11
 echo PID is *${targetPID}
 while [ $count -gt 0 ]
@@ -27,7 +41,7 @@ do
 	sleep 1
 	output=`ps uax | grep $targetPID | grep "nc "`
 	output0=`ps uax | grep $targetPID`
-	echo "Out for $stargetPID is $output or $output0"
+	echo "Out for $targetPID is $output or $output0"
 	if [ -z "$output" ] # process is gone
 	then
 		exit 0
