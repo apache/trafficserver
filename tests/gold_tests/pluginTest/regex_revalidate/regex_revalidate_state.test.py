@@ -61,7 +61,7 @@ response_header_0 = {"headers":
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 
 reval_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'reval.conf')
-reval_state_path = os.path.join(Test.Variables.RUNTIMEDIR, 'reval.state')
+reval_state_path = os.path.join(ts.Variables.RUNTIMEDIR, 'reval.state')
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine(
