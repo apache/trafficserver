@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <string>
 
-#include <tscpp/util/ts_bw_format.h>
+#include "api/ts_bw_format.h"
 
 #include <tscore/ink_assert.h>
 

@@ -34,7 +34,9 @@
 
  ****************************************************************************/
 
-#include "tscpp/util/ts_bw_format.h"
+#include "api/DbgCtl.h"
+#include "tscore/DiagsTypes.h"
+#include "api/ts_bw_format.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_defs.h"
@@ -73,7 +75,7 @@ DiagsPtr::set(Diags *new_ptr)
 {
   _diags_ptr = new_ptr;
 
-  DbgCtl::update();
+  DebugInterface::set_instance(new_ptr);
 }
 
 static bool regression_testing_on = false;
@@ -441,7 +443,7 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
     unlock();
   }
   if ((DiagsTagType_Debug == mode) && (this == diags())) {
-    DbgCtl::update();
+    DbgCtl::update([&](const char *tag) -> bool { return tag_activated(tag, DiagsTagType_Debug); });
   }
 }
 
@@ -465,7 +467,7 @@ Diags::deactivate_all(DiagsTagType mode)
   }
   unlock();
   if ((DiagsTagType_Debug == mode) && (this == diags())) {
-    DbgCtl::update();
+    DbgCtl::update([&](const char *tag) -> bool { return tag_activated(tag, DiagsTagType_Debug); });
   }
 }
 

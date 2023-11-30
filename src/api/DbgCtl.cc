@@ -143,6 +143,7 @@ private:
 DbgCtl::_TagData const *
 DbgCtl::_new_reference(char const *tag)
 {
+  DebugInterface *p = DebugInterface::get_instance();
   ink_assert(tag != nullptr);
 
   // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
@@ -167,7 +168,7 @@ DbgCtl::_new_reference(char const *tag)
 
   char *t = new char[sz + 1]; // Deleted by ~Registry().
   std::memcpy(t, tag, sz + 1);
-  _TagData new_elem{t, diags() && diags()->tag_activated(tag, DiagsTagType_Debug)};
+  _TagData new_elem{t, p && p->debug_tag_activated(tag)};
 
   auto res = d.map.insert(new_elem);
 
@@ -191,10 +192,8 @@ DbgCtl::_rm_reference()
 }
 
 void
-DbgCtl::update()
+DbgCtl::update(const std::function<bool(const char *)> &f)
 {
-  ink_release_assert(diags() != nullptr);
-
   _RegistryAccessor ra;
 
   if (!ra.registry_reference_count) {
@@ -204,17 +203,19 @@ DbgCtl::update()
   auto &d{ra.data()};
 
   for (auto &i : d.map) {
-    i.second = diags()->tag_activated(i.first, DiagsTagType_Debug);
+    i.second = f(i.first);
   }
 }
 
 void
 DbgCtl::print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
 {
+  DebugInterface *p = DebugInterface::get_instance();
+  ink_release_assert(p);
   SourceLocation src_loc{file, function, line};
   va_list args;
   va_start(args, fmt_str);
-  diags()->print_va(tag, DL_Diag, &src_loc, fmt_str, args);
+  p->print_va(tag, DL_Diag, &src_loc, fmt_str, args);
   va_end(args);
 }
 
@@ -223,5 +224,25 @@ std::atomic<int> DbgCtl::_config_mode{0};
 bool
 DbgCtl::_override_global_on()
 {
-  return diags()->get_override();
+  DebugInterface *p = DebugInterface::get_instance();
+  ink_release_assert(p);
+  return p->get_override();
+}
+
+namespace
+{
+static DebugInterface *di_inst;
+}
+
+DebugInterface *
+DebugInterface::get_instance()
+{
+  return di_inst;
+}
+
+void
+DebugInterface::set_instance(DebugInterface *i)
+{
+  di_inst = i;
+  DbgCtl::update([&](const char *t) { return i->debug_tag_activated(t); });
 }

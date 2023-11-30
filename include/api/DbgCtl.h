@@ -23,12 +23,28 @@
 
 #pragma once
 
+#include "api/SourceLocation.h"
+#include "api/ts_diag_levels.h"
 #include <atomic>
 #include <utility>
+#include <functional>
 
 #include <ts/apidefs.h> // For TS_PRINTFLIKE
 
 class DiagsConfigState;
+
+class DebugInterface
+{
+public:
+  virtual ~DebugInterface()                            = default;
+  virtual bool debug_tag_activated(const char *) const = 0;
+  virtual bool get_override() const                    = 0;
+  virtual void print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
+                        va_list ap) const              = 0;
+
+  static DebugInterface *get_instance();
+  static void set_instance(DebugInterface *);
+};
 
 class DbgCtl
 {
@@ -107,7 +123,7 @@ public:
 
   // Call this when the compiled regex to enable tags may have changed.
   //
-  static void update();
+  static void update(const std::function<bool(const char *)> &f);
 
   // For use in DbgPrint() only.
   //

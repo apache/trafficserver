@@ -28,7 +28,7 @@
 
 #include "../eventsystem/P_EventSystem.h"
 #include "iocore/net/Socks.h"
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_errata.h"
 
 #include "proxy/ParentSelection.h"
 

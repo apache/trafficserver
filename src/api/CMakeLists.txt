@@ -51,7 +51,7 @@ target_link_libraries(
 )
 
 # Items that even tscore can depend on
-add_library(tsapicore Metrics.cc DbgCtl.cc SourceLocation.cc)
+add_library(tsapicore Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 target_link_libraries(tsapicore PUBLIC libswoc)

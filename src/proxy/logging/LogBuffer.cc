@@ -26,7 +26,7 @@
   information on the structure of a LogBuffer.
  */
 #include "tscore/ink_platform.h"
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 
 #include <cstdio>
 #include <cstdlib>

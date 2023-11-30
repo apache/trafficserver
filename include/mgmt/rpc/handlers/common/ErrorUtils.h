@@ -21,11 +21,12 @@
 #pragma once
 // TODO: we have to rename and split this file.(Errors and Errata)
 
+#include "swoc/BufferWriter.h"
+
 #include <system_error>
 #include <string_view>
 
 #include "tscore/Errata.h"
-#include "tscpp/util/ts_bw.h"
 
 namespace rpc::handlers::errors
 {

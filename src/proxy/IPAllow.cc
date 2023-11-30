@@ -28,7 +28,7 @@
 
 #include "proxy/IPAllow.h"
 #include "tscore/Filenames.h"
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_errata.h"
 
 #include "swoc/Vectray.h"
 #include "swoc/BufferWriter.h"

@@ -22,8 +22,8 @@
   limitations under the License.
 */
 
-#include "tscpp/util/ts_diag_levels.h"
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_diag_levels.h"
+#include "api/ts_errata.h"
 
 static const bool INITIALIZED = []() -> bool {
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
