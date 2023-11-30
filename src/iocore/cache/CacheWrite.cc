@@ -1591,8 +1591,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->f.overwrite      = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
   c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
   c->f.sync           = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
-  // coverity[Y2K38_SAFETY:FALSE]
-  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+  c->pin_in_cache     = apin_in_cache;
 
   if ((res = c->stripe->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
@@ -1693,8 +1692,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
 
   Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
-  // coverity[Y2K38_SAFETY:FALSE]
-  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+  c->pin_in_cache = apin_in_cache;
 
   {
     CACHE_TRY_LOCK(lock, c->stripe->mutex, cont->mutex->thread_holding);
