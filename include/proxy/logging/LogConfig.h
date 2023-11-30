@@ -170,31 +170,31 @@ public:
   LogFilterList filter_list;
   LogFormatList format_list;
 
-  int log_buffer_size;
-  bool log_fast_buffer;
-  int max_secs_per_buffer;
-  int max_space_mb_for_logs;
-  int max_space_mb_headroom;
-  int logfile_perm;
+  uint32_t log_buffer_size  = 10 * LOG_KILOBYTE;
+  bool log_fast_buffer      = false;
+  int max_secs_per_buffer   = 5;
+  int max_space_mb_for_logs = 100;
+  int max_space_mb_headroom = 10;
+  int logfile_perm          = 0644;
 
-  int preproc_threads;
+  int preproc_threads = 1;
 
-  Log::RollingEnabledValues rolling_enabled;
-  int rolling_interval_sec;
-  int rolling_offset_hr;
-  int rolling_size_mb;
-  int rolling_min_count;
-  int rolling_max_count;
-  bool rolling_allow_empty;
-  bool auto_delete_rolled_files;
+  Log::RollingEnabledValues rolling_enabled = Log::NO_ROLLING;
+  int rolling_interval_sec                  = 86400;
+  int rolling_offset_hr                     = 0;
+  int rolling_size_mb                       = 10;
+  int rolling_min_count                     = 0;
+  int rolling_max_count                     = 0;
+  bool rolling_allow_empty                  = false;
+  bool auto_delete_rolled_files             = false;
 
-  int sampling_frequency;
-  int file_stat_frequency;
-  int space_used_frequency;
+  int sampling_frequency   = 1;
+  int file_stat_frequency  = 16;
+  int space_used_frequency = 900;
 
-  int ascii_buffer_size;
-  int max_line_size;
-  int logbuffer_max_iobuf_index;
+  int ascii_buffer_size         = 4 * 9216;
+  int max_line_size             = 9216;
+  int logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 
   char *hostname           = nullptr;
   char *logfile_dir        = nullptr;
