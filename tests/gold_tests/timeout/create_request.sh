@@ -41,7 +41,7 @@ echo PID is *${targetPID}
 while [ $count -gt 0 ]
 do
 	sleep 1
-	output=`ps uax | grep $targetPID | grep "$nc_name "
+	output=`ps uax | grep $targetPID | grep "$nc_name "`
 	output0=`ps uax | grep $targetPID`
 	echo "Out for $targetPID is $output or $output0"
 	if [ -z "$output" ] # process is gone
