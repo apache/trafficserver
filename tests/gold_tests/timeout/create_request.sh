@@ -24,11 +24,13 @@ request() {
 	printf "GET / HTTP/1.1"
 }
 
+nc_name="nc"
 ncat
 if [ $? -le 1 ]
 then
 	request | ncat -i 11 127.0.0.1 $1 &
 	targetPID=$!
+	nc_name="ncat"
 else
 	request | nc -w 11 127.0.0.1 $1 &
 	targetPID=$!
@@ -39,7 +41,7 @@ echo PID is *${targetPID}
 while [ $count -gt 0 ]
 do
 	sleep 1
-	output=`ps uax | grep $targetPID | grep "nc "`
+	output=`ps uax | grep $targetPID | grep "$nc_name "
 	output0=`ps uax | grep $targetPID`
 	echo "Out for $targetPID is $output or $output0"
 	if [ -z "$output" ] # process is gone
