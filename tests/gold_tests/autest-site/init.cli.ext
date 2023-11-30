@@ -20,8 +20,7 @@ import sys
 import microserver
 
 if sys.version_info < (3, 6, 0):
-    host.WriteError(
-        "You need python 3.6 or later to run these tests\n", show_stack=False)
+    host.WriteError("You need python 3.6 or later to run these tests\n", show_stack=False)
 
 needed_autest_version = "1.10.4"
 found_autest_version = AuTestVersion()
@@ -31,7 +30,6 @@ if AuTestVersion() < needed_autest_version:
         "Please update AuTest:\n  pipenv --rm && pipenv install\n",
         show_stack=False)
 
-
 needed_microserver_version = "1.0.6"
 found_microserver_version = microserver.__version__
 if found_microserver_version < needed_microserver_version:
@@ -40,14 +38,8 @@ if found_microserver_version < needed_microserver_version:
         "Please update MicroServer:\n  pipenv --rm && pipenv install\n",
         show_stack=False)
 
-Settings.path_argument(["--ats-bin"],
-                       required=True,
-                       help="A user provided directory to ATS bin")
+Settings.path_argument(["--ats-bin"], required=True, help="A user provided directory to ATS bin")
 
-Settings.path_argument(["--build-root"],
-                       required=False,
-                       help="The location of the build root for out of source builds")
+Settings.path_argument(["--build-root"], required=False, help="The location of the build root for out of source builds")
 
-Settings.path_argument(["--proxy-verifier-bin"],
-                       required=False,
-                       help="A location for system proxy-verifier binaries to test with.")
+Settings.path_argument(["--proxy-verifier-bin"], required=False, help="A location for system proxy-verifier binaries to test with.")

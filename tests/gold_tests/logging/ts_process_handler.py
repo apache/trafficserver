@@ -73,15 +73,11 @@ def convert_signal_name_to_signal(signal_name):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Interact with a Traffic Server process')
+    parser = argparse.ArgumentParser(description='Interact with a Traffic Server process')
     parser.add_argument(
-        'ts_identifier',
-        help='An identifier in the command line for the desired '
+        'ts_identifier', help='An identifier in the command line for the desired '
         'Traffic Server process.')
-    parser.add_argument(
-        '--signal',
-        help='Send the given signal to the process.')
+    parser.add_argument('--signal', help='Send the given signal to the process.')
 
     return parser.parse_args()
 
@@ -91,8 +87,7 @@ def main():
     try:
         process = get_ts_process_pid(args.ts_identifier)
     except GetPidError as e:
-        print(traceback.format_exception(None, e, e.__traceback__),
-              file=sys.stderr, flush=True)
+        print(traceback.format_exception(None, e, e.__traceback__), file=sys.stderr, flush=True)
         return 1
 
     if args.signal:

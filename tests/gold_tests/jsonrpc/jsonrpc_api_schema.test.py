@@ -17,14 +17,12 @@ JSONRPC Schema test. This test will run a basic request/response schema validati
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import os
 import sys
 import tempfile
 from string import Template
 
 Test.Summary = 'Test jsonrpc admin API'
-
 
 # set the schema folder.
 schema_folder = os.path.join(Test.TestDirectory, '..', '..', '..', "src", "mgmt", "rpc", "schema")
@@ -49,11 +47,7 @@ def substitute_context_in_file(process, file, context):
 
 
 def add_testrun_for_jsonrpc_request(
-        test_description,
-        request_file_name,
-        params_schema_file_name=None,
-        result_schema_file_name=None,
-        context=None):
+        test_description, request_file_name, params_schema_file_name=None, result_schema_file_name=None, context=None):
     '''
     Simple wrapper around the AddJsonRPCClientRequest method.
 
@@ -78,9 +72,7 @@ def add_testrun_for_jsonrpc_request(
     request_schema_file_name = os.path.join(schema_folder, "jsonrpc_request_schema.json")
     tr.AddJsonRPCClientRequest(
         ts,
-        file=os.path.join(
-            ts.RunDirectory,
-            os.path.basename(request_file_name)),
+        file=os.path.join(ts.RunDirectory, os.path.basename(request_file_name)),
         schema_file_name=request_schema_file_name,
         params_field_schema_file_name=params_schema_file_name)
 
@@ -98,16 +90,16 @@ ts = Test.MakeATSProcess('ts')
 
 Test.testName = 'Basic JSONRPC API test'
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rpc|filemanager|http|cache',
-    'proxy.config.jsonrpc.filename': "jsonrpc.yaml",  # We will be using this record to tests some RPC API.
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rpc|filemanager|http|cache',
+        'proxy.config.jsonrpc.filename': "jsonrpc.yaml",  # We will be using this record to tests some RPC API.
+    })
 
 # One of the API's will be checking the storage. Need this to get a response with content.
 storage_path = os.path.join(Test.RunDirectory, "ts", "storage")
 ts.Disk.storage_config.AddLine(f"{storage_path} 512M")
-
 
 # The following tests will only validate the jsonrpc message, it will not run any validation on the content of the 'result' or 'params'
 # of the jsonrpc message. This should be added once the schemas are available.
@@ -117,65 +109,90 @@ ts.Disk.storage_config.AddLine(f"{storage_path} 512M")
 success_schema_file_name_name = os.path.join(schema_folder, "success_response_schema.json")
 # admin_lookup_records
 
-
 params_schema_file_name = os.path.join(schema_folder, "admin_lookup_records_params_schema.json")
-first = add_testrun_for_jsonrpc_request("Test admin_lookup_records",
-                                        request_file_name='json/admin_lookup_records_req_1.json',
-                                        params_schema_file_name=params_schema_file_name,
-                                        context={'record_name': 'proxy.config.jsonrpc.filename'})
+first = add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records",
+    request_file_name='json/admin_lookup_records_req_1.json',
+    params_schema_file_name=params_schema_file_name,
+    context={'record_name': 'proxy.config.jsonrpc.filename'})
 first.Processes.Default.StartBefore(ts)
 
-add_testrun_for_jsonrpc_request("Test admin_lookup_records w/error",
-                                request_file_name='json/admin_lookup_records_req_invalid_rec.json')
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records w/error", request_file_name='json/admin_lookup_records_req_invalid_rec.json')
 
-add_testrun_for_jsonrpc_request("Test admin_lookup_records",
-                                request_file_name='json/admin_lookup_records_req_1.json',
-                                context={'record_name': 'proxy.config.jsonrpc.filename'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records",
+    request_file_name='json/admin_lookup_records_req_1.json',
+    context={'record_name': 'proxy.config.jsonrpc.filename'})
 
-add_testrun_for_jsonrpc_request("Test admin_lookup_records w/error",
-                                request_file_name='json/admin_lookup_records_req_invalid_rec.json')
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records w/error", request_file_name='json/admin_lookup_records_req_invalid_rec.json')
 
-add_testrun_for_jsonrpc_request("Test admin_lookup_records w/error",
-                                request_file_name='json/admin_lookup_records_req_multiple.json',
-                                context={'record_name': 'proxy.config.jsonrpc.filename'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records w/error",
+    request_file_name='json/admin_lookup_records_req_multiple.json',
+    context={'record_name': 'proxy.config.jsonrpc.filename'})
 
-add_testrun_for_jsonrpc_request("Test admin_lookup_records w/error",
-                                request_file_name='json/admin_lookup_records_req_metric.json',
-                                context={'record_name_regex': 'proxy.process.http.total_client_connections_ipv4*'})
-
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records w/error",
+    request_file_name='json/admin_lookup_records_req_metric.json',
+    context={'record_name_regex': 'proxy.process.http.total_client_connections_ipv4*'})
 
 # admin_config_set_records
-add_testrun_for_jsonrpc_request("Test admin_lookup_records w/error", request_file_name='json/admin_config_set_records_req.json',
-                                context={'record_name': 'proxy.config.jsonrpc.filename', 'record_value': 'test_jsonrpc.yaml'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_lookup_records w/error",
+    request_file_name='json/admin_config_set_records_req.json',
+    context={
+        'record_name': 'proxy.config.jsonrpc.filename',
+        'record_value': 'test_jsonrpc.yaml'
+    })
 
 # admin_config_reload
-add_testrun_for_jsonrpc_request("Test admin_config_reload", request_file_name='json/admin_config_reload_req.json',
-                                result_schema_file_name=success_schema_file_name_name)
+add_testrun_for_jsonrpc_request(
+    "Test admin_config_reload",
+    request_file_name='json/admin_config_reload_req.json',
+    result_schema_file_name=success_schema_file_name_name)
 
 # admin_clear_metrics_records
-add_testrun_for_jsonrpc_request("Clear admin_clear_metrics_records", request_file_name='json/admin_clear_metrics_records_req.json',
-                                context={'record_name': 'proxy.process.http.404_responses'})
+add_testrun_for_jsonrpc_request(
+    "Clear admin_clear_metrics_records",
+    request_file_name='json/admin_clear_metrics_records_req.json',
+    context={'record_name': 'proxy.process.http.404_responses'})
 
 # admin_host_set_status
-add_testrun_for_jsonrpc_request("Test admin_host_set_status", request_file_name='json/admin_host_set_status_req.json',
-                                context={'operation': 'up', 'host': 'my.test.host.trafficserver.com'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_host_set_status",
+    request_file_name='json/admin_host_set_status_req.json',
+    context={
+        'operation': 'up',
+        'host': 'my.test.host.trafficserver.com'
+    })
 
 # admin_host_set_status
-add_testrun_for_jsonrpc_request("Test admin_host_set_status", request_file_name='json/admin_host_set_status_req.json',
-                                context={'operation': 'down', 'host': 'my.test.host.trafficserver.com'})
-
+add_testrun_for_jsonrpc_request(
+    "Test admin_host_set_status",
+    request_file_name='json/admin_host_set_status_req.json',
+    context={
+        'operation': 'down',
+        'host': 'my.test.host.trafficserver.com'
+    })
 
 # admin_server_start_drain
-add_testrun_for_jsonrpc_request("Test admin_server_start_drain", request_file_name='json/method_call_no_params.json',
-                                context={'method': 'admin_server_start_drain'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_server_start_drain",
+    request_file_name='json/method_call_no_params.json',
+    context={'method': 'admin_server_start_drain'})
 
-add_testrun_for_jsonrpc_request("Test admin_server_start_drain",
-                                request_file_name='json/method_call_no_params.json',
-                                context={'method': 'admin_server_start_drain'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_server_start_drain",
+    request_file_name='json/method_call_no_params.json',
+    context={'method': 'admin_server_start_drain'})
 
 # admin_server_stop_drain
-add_testrun_for_jsonrpc_request("Test admin_server_stop_drain", request_file_name='json/method_call_no_params.json',
-                                context={'method': 'admin_server_stop_drain'})
+add_testrun_for_jsonrpc_request(
+    "Test admin_server_stop_drain",
+    request_file_name='json/method_call_no_params.json',
+    context={'method': 'admin_server_stop_drain'})
 
 # admin_storage_get_device_status
 add_testrun_for_jsonrpc_request(
@@ -183,7 +200,8 @@ add_testrun_for_jsonrpc_request(
     request_file_name='json/admin_storage_x_device_status_req.json',
     context={
         'method': 'admin_storage_get_device_status',
-        'device': f'{storage_path}/cache.db'})
+        'device': f'{storage_path}/cache.db'
+    })
 
 # admin_storage_set_device_offline
 add_testrun_for_jsonrpc_request(
@@ -191,8 +209,11 @@ add_testrun_for_jsonrpc_request(
     request_file_name='json/admin_storage_x_device_status_req.json',
     context={
         'method': 'admin_storage_set_device_offline',
-        'device': f'{storage_path}/cache.db'})
+        'device': f'{storage_path}/cache.db'
+    })
 
 # admin_plugin_send_basic_msg
-add_testrun_for_jsonrpc_request("Test admin_plugin_send_basic_msg", request_file_name='json/admin_plugin_send_basic_msg_req.json',
-                                result_schema_file_name=success_schema_file_name_name)
+add_testrun_for_jsonrpc_request(
+    "Test admin_plugin_send_basic_msg",
+    request_file_name='json/admin_plugin_send_basic_msg_req.json',
+    result_schema_file_name=success_schema_file_name_name)

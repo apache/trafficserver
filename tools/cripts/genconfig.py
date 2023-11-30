@@ -29,7 +29,8 @@ def indentp(str, indent):
 
 
 def print_header():
-    print("""
+    print(
+        """
 /*
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -139,7 +140,6 @@ while i < len(lines):
         # parts = conf.split(".")
         elements.append((conf, enum, type))
     i += 1
-
 
 tree = {}
 elements.sort()

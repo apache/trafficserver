@@ -34,24 +34,19 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.show_location': 0,
-    'proxy.config.diags.debug.tags': 'header.*',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.show_location': 0,
+        'proxy.config.diags.debug.tags': 'header.*',
+    })
 
 # The following rule adds X-First and X-Last headers
 ts.Setup.CopyAs('rules/rule_l_value.conf', Test.RunDirectory)
 
-ts.Disk.plugin_config.AddLine(
-    'header_rewrite.so {0}/rule_l_value.conf'.format(Test.RunDirectory)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_l_value.conf'.format(Test.RunDirectory))
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # [L] test
 tr = Test.AddTestRun("Header Rewrite End [L]")

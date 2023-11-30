@@ -30,6 +30,7 @@ def AddRecord(hostname, list_ip_addr):
     record[hostname] = list_ip_addr
     return record
 
+
 # dict in format {'domain': [IPs]}
 # json file in the same mappings/otherwise format that uDNS takes
 

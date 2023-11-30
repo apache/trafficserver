@@ -38,22 +38,22 @@ server = Test.MakeVerifierServerProcess("server", replay_file)
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': '{0}:ssl:allow-plain'.format(ts.Variables.ssl_port),
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'ssl|http',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.server_ports': '{0}:ssl:allow-plain'.format(ts.Variables.ssl_port),
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'ssl|http',
+    })
 
-ts.Disk.remap_config.AddLines([
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
-    'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port),
-])
+ts.Disk.remap_config.AddLines(
+    [
+        'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
+        'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port),
+    ])
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 big_post_body = "0123456789" * 50000
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")

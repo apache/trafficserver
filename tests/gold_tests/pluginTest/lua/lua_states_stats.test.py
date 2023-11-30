@@ -20,9 +20,7 @@ Test.Summary = '''
 Test lua states and stats functionality
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('tslua.so'),
-)
+Test.SkipUnless(Condition.PluginExists('tslua.so'),)
 
 Test.ContinueOnFail = True
 # Define default ATS
@@ -38,27 +36,27 @@ Test.Setup.Copy("metrics.sh")
 Test.Setup.Copy("lifecycle_stats.sh")
 
 # test to ensure origin server works
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 
-ts.Disk.remap_config.AddLines({
-    'map / http://127.0.0.1:{}/'.format(server.Variables.Port),
-    'map http://hello http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.RunDirectory)
-})
+ts.Disk.remap_config.AddLines(
+    {
+        'map / http://127.0.0.1:{}/'.format(server.Variables.Port),
+        'map http://hello http://127.0.0.1:{}/'.format(server.Variables.Port) +
+        ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.RunDirectory)
+    })
 
 ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.RunDirectory))
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ts_lua',
-    'proxy.config.plugin.lua.max_states': 4,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ts_lua',
+        'proxy.config.plugin.lua.max_states': 4,
+    })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(ts.Variables.port)
 

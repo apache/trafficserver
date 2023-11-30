@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -111,14 +110,13 @@ def count_threads(ts_path, etnet_threads, accept_threads, task_threads, aio_thre
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--ts-path', type=str, dest='ts_path', help='path to traffic_server binary', required=True)
-    parser.add_argument('-e', '--etnet-threads', type=int, dest='etnet_threads',
-                        help='expected number of ET_NET threads', required=True)
-    parser.add_argument('-a', '--accept-threads', type=int, dest='accept_threads',
-                        help='expected number of ACCEPT threads', required=True)
-    parser.add_argument('-t', '--task-threads', type=int, dest='task_threads',
-                        help='expected number of TASK threads', required=True)
-    parser.add_argument('-c', '--aio-threads', type=int, dest='aio_threads',
-                        help='expected number of AIO threads', required=True)
+    parser.add_argument(
+        '-e', '--etnet-threads', type=int, dest='etnet_threads', help='expected number of ET_NET threads', required=True)
+    parser.add_argument(
+        '-a', '--accept-threads', type=int, dest='accept_threads', help='expected number of ACCEPT threads', required=True)
+    parser.add_argument(
+        '-t', '--task-threads', type=int, dest='task_threads', help='expected number of TASK threads', required=True)
+    parser.add_argument('-c', '--aio-threads', type=int, dest='aio_threads', help='expected number of AIO threads', required=True)
     args = parser.parse_args()
     exit(count_threads(args.ts_path, args.etnet_threads, args.accept_threads, args.task_threads, args.aio_threads))
 

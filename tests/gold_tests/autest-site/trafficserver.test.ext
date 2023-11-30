@@ -41,18 +41,22 @@ def get_typename(s):
 # A mapping from log type to the log name. 'stdout' and 'stderr' are handled
 # specially and are used to indicate the stdout and stderr streams,
 # respectively.
-default_log_data = {
-    'diags': 'diags.log',
-    'error': 'error.log',
-    'manager': 'manager.log'
-}
+default_log_data = {'diags': 'diags.log', 'error': 'error.log', 'manager': 'manager.log'}
 
 
-def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
-                   enable_tls=False, enable_cache=True, enable_quic=False,
-                   block_for_debug=False, log_data=default_log_data,
-                   use_traffic_out=True, dump_runroot=True,
-                   enable_proxy_protocol=False):
+def MakeATSProcess(
+        obj,
+        name,
+        command='traffic_server',
+        select_ports=True,
+        enable_tls=False,
+        enable_cache=True,
+        enable_quic=False,
+        block_for_debug=False,
+        log_data=default_log_data,
+        use_traffic_out=True,
+        dump_runroot=True,
+        enable_proxy_protocol=False):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -152,8 +156,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
 
     p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR'] = template_dir
     p.Variables.BODY_FACTORY_TEMPLATE_DIR = template_dir
-    p.Setup.Copy(
-        os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
+    p.Setup.Copy(os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
 
     #########################################################
     # setup cache directory
@@ -235,10 +238,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         tmpname = os.path.join(log_dir, fname)
         p.Disk.File(tmpname, id='diags_log')
     # add this test back once we have network namespaces working again
-    p.Disk.diags_log.Content = Testers.ExcludesExpression(
-        "ERROR:", f"Diags log file {fname} should not contain errors")
-    p.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "FATAL:", f"Diags log file {fname} should not contain errors")
+    p.Disk.diags_log.Content = Testers.ExcludesExpression("ERROR:", f"Diags log file {fname} should not contain errors")
+    p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", f"Diags log file {fname} should not contain errors")
     p.Disk.diags_log.Content += Testers.ExcludesExpression(
         "Unrecognized configuration value",
         f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
@@ -323,13 +324,16 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     # Fill in the runroot file and set the config var, this will be used traffic_server
     # and traffic_ctl
     if dump_runroot:
-        p.Disk.runroot_yaml.AddLines([f'runtimedir: {runtime_dir}',
-                                      f'cachedir: {cache_dir}',
-                                      f'localstatedir: {runtime_dir}',
-                                      f'bindir: {bin_dir}',
-                                      f'prefix: {ts_dir}',
-                                      f'logdir: {log_dir}',
-                                      f'sysconfdir: {config_dir}',])
+        p.Disk.runroot_yaml.AddLines(
+            [
+                f'runtimedir: {runtime_dir}',
+                f'cachedir: {cache_dir}',
+                f'localstatedir: {runtime_dir}',
+                f'bindir: {bin_dir}',
+                f'prefix: {ts_dir}',
+                f'logdir: {log_dir}',
+                f'sysconfdir: {config_dir}',
+            ])
         # Add more if needed
         p.Env['TS_RUNROOT'] = os.path.join(config_dir, "runroot.yaml")
 
@@ -379,16 +383,15 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         # rely upon the cache will not function correctly if ATS starts
         # processing traffic before the cache is ready. Thus we set the
         # wait_for_cache configuration.
-        p.Disk.records_config.update({
-            # Do not accept connections from clients until cache subsystem is
-            # operational.
-            'proxy.config.http.wait_for_cache': 1,
-        })
+        p.Disk.records_config.update(
+            {
+                # Do not accept connections from clients until cache subsystem is
+                # operational.
+                'proxy.config.http.wait_for_cache': 1,
+            })
     else:
         # The user wants the cache to be disabled.
-        p.Disk.records_config.update({
-            'proxy.config.http.cache.http': 0
-        })
+        p.Disk.records_config.update({'proxy.config.http.cache.http': 0})
 
     if enable_quic:
         p.Disk.records_config.update({
@@ -417,11 +420,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
             'proxy.config.http.server_ports': port_str,
         })
 
-    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
-        p.Variables.manager_port)
+    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(p.Variables.manager_port)
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
-    p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
-        p.Variables.admin_port)  # support pre ATS 6.x
+    p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(p.Variables.admin_port)  # support pre ATS 6.x
 
     p.ReturnCode = 0
 
@@ -446,23 +447,8 @@ class Config(File):
     Class to represent a config file
     '''
 
-    def __init__(self,
-                 runable,
-                 name,
-                 exists=None,
-                 size=None,
-                 content_tester=None,
-                 execute=False,
-                 runtime=True,
-                 content=None):
-        super(Config, self).__init__(
-            runable,
-            name,
-            exists=None,
-            size=None,
-            content_tester=None,
-            execute=False,
-            runtime=True)
+    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True, content=None):
+        super(Config, self).__init__(runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True)
 
         self.content = content
         self._added = False
@@ -475,8 +461,7 @@ class Config(File):
         '''
         Write contents to disk
         '''
-        host.WriteVerbosef('ats-config-file', "Writing out file {0}",
-                           self.Name)
+        host.WriteVerbosef('ats-config-file', "Writing out file {0}", self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
@@ -498,25 +483,19 @@ class YAMLFile(File):
     Class representing a YAML config file.
     '''
 
-    def __init__(self,
-                 runable,
-                 name,
-                 exists=None,
-                 size=None,
-                 content_tester=None,
-                 execute=False,
-                 runtime=True,
-                 content=None,
-                 root_tag=None):
-
-        super(YAMLFile, self).__init__(
+    def __init__(
+            self,
             runable,
             name,
             exists=None,
             size=None,
             content_tester=None,
             execute=False,
-            runtime=True)
+            runtime=True,
+            content=None,
+            root_tag=None):
+
+        super(YAMLFile, self).__init__(runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True)
         self.__root_tag = root_tag
         # We support multiple docs in the same file, every time append_to_document
         # is called, a new item will be created in the following list. At the end
@@ -551,9 +530,7 @@ class YAMLFile(File):
 
                 yaml.dump_all(docs, f)
 
-        return (True,
-                "Writing config file {0}".format(os.path.split(self.Name)[-1]),
-                "Success")
+        return (True, "Writing config file {0}".format(os.path.split(self.Name)[-1]), "Success")
 
     def __transform_content(self, content):
         if isinstance(content, str):  # from new style
@@ -584,23 +561,9 @@ class YAMLFile(File):
 
 
 class RecordsYAML(YAMLFile):
-    def __init__(self,
-                 runable,
-                 name,
-                 exists=None,
-                 size=None,
-                 content_tester=None,
-                 execute=False,
-                 runtime=True):
-        super(RecordsYAML, self).__init__(
-            runable,
-            name,
-            exists,
-            size,
-            content_tester,
-            execute,
-            runtime,
-            root_tag="ts")
+
+    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True):
+        super(RecordsYAML, self).__init__(runable, name, exists, size, content_tester, execute, runtime, root_tag="ts")
 
     def _make_obj_from_legacy_record(self, config, var, value):
         '''
@@ -660,6 +623,8 @@ class RecordsYAML(YAMLFile):
             We also support plain YAML(str) to be passed on. Base class will load from the yaml parser.
             '''
             super(RecordsYAML, self).append_to_document(data)
+
+
 ##########################################################################
 
 

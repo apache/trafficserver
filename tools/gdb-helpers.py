@@ -64,6 +64,7 @@ def wks_or_str(idx, addr, addr_len):
 
 
 class URL:
+
     def __init__(self, val):
         self.impl = val['m_url_impl'].dereference()
 
@@ -81,6 +82,7 @@ class URL:
 
 
 class HTTPHdr:
+
     def __init__(self, val):
         self.impl = val['m_http']
         self.val = val
@@ -142,6 +144,7 @@ class HTTPHdr:
 
 
 class ConnectionAttributes:
+
     def __init__(self, val):
         self.val = val
 
@@ -161,6 +164,7 @@ class ConnectionAttributes:
 
 
 class HttpSM:
+
     def __init__(self, val):
         ptr_type = gdb.lookup_type('struct HttpSM').pointer()
         self.val = None
@@ -254,6 +258,7 @@ def usage():
 
 
 class ATSPrintCommand(gdb.Command):
+
     def __init__(self):
         super(ATSPrintCommand, self).__init__('atspr', gdb.COMMAND_DATA)
 

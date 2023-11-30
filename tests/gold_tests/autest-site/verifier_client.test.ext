@@ -17,15 +17,24 @@ Implement the Proxy Verifier client extensions.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import os
 from verifier_common import create_address_argument, substitute_context_in_replay_file
 
 
-def _configure_client(obj, process, name, replay_path, http_ports=None,
-                      https_ports=None, http3_ports=None, keys=None,
-                      ssl_cert='', ca_cert='', verbose=True, other_args='',
-                      context=None):
+def _configure_client(
+        obj,
+        process,
+        name,
+        replay_path,
+        http_ports=None,
+        https_ports=None,
+        http3_ports=None,
+        keys=None,
+        ssl_cert='',
+        ca_cert='',
+        verbose=True,
+        other_args='',
+        context=None):
     """
     Configure the process for running the verifier-client.
 
@@ -91,8 +100,7 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
 
     if https_ports or http3_ports:
         if ssl_cert == '':
-            ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
-                                    "proxy-verifier", "ssl", "client.pem")
+            ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "client.pem")
 
             if not os.path.isfile(ssl_cert):
                 raise ValueError("Tried to use '{}' for --client-cert, but it is not "
@@ -108,8 +116,7 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
             obj.Variables['tls_secrets_log_path'] = tls_secrets_log_path
 
         if ca_cert == '':
-            ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
-                                   "proxy-verifier", "ssl", "ca.pem")
+            ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "ca.pem")
 
             if not os.path.isfile(ca_cert):
                 raise ValueError("Tried to use '{}' for --ca-certs, but it is not "
@@ -132,14 +139,22 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
     process.ReturnCode = 0
 
     process.Streams.stdout = Testers.ExcludesExpression(
-        "Violation|Invalid status",
-        "There should be no Proxy Verifier violation errors.")
+        "Violation|Invalid status", "There should be no Proxy Verifier violation errors.")
 
 
-def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
-                             https_ports=None, http3_ports=None, keys=None,
-                             ssl_cert='', ca_cert='', verbose=True, other_args='',
-                             context=None):
+def AddVerifierClientProcess(
+        run,
+        name,
+        replay_path,
+        http_ports=None,
+        https_ports=None,
+        http3_ports=None,
+        keys=None,
+        ssl_cert='',
+        ca_cert='',
+        verbose=True,
+        other_args='',
+        context=None):
     """
     Set the Default process of the test run to a verifier-client Process.
 
@@ -187,9 +202,8 @@ def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
     """
 
     p = run.Processes.Default
-    _configure_client(run, p, name, replay_path, http_ports, https_ports,
-                      http3_ports, keys, ssl_cert, ca_cert, verbose,
-                      other_args, context)
+    _configure_client(
+        run, p, name, replay_path, http_ports, https_ports, http3_ports, keys, ssl_cert, ca_cert, verbose, other_args, context)
     return p
 
 

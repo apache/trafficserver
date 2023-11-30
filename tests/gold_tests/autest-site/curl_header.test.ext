@@ -24,20 +24,13 @@ import re
 
 
 class CurlHeader(Tester):
-    def __init__(self,
-                 value,
-                 test_value=None,
-                 kill_on_failure=False,
-                 description_group=None,
-                 description=None):
+
+    def __init__(self, value, test_value=None, kill_on_failure=False, description_group=None, description=None):
 
         self._stack = host.getCurrentStack(1)
 
         if not is_a.Dictionary(value):
-            host.WriteError(
-                "CurlHeader Input: Need to provide a dictionary.",
-                stack=host.getCurrentStack(1)
-            )
+            host.WriteError("CurlHeader Input: Need to provide a dictionary.", stack=host.getCurrentStack(1))
 
         ops = ("equal", "equal_re")
         gold_dict = value
@@ -52,8 +45,7 @@ class CurlHeader(Tester):
             if not isinstance(header, str):
                 host.WriteError(
                     'CurlHeader Input: Unsupported type for header {}. Header needs to be a string.'.format(header),
-                    stack=self._stack
-                )
+                    stack=self._stack)
 
             if target is None or isinstance(target, str):
                 continue
@@ -61,24 +53,28 @@ class CurlHeader(Tester):
                 for op, pos_val in target.items():
                     if op not in ops:
                         host.WriteError(
-                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'.format(
-                                op, header, ', '.join(ops)), stack=self._stack)
+                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'
+                            .format(op, header, ', '.join(ops)),
+                            stack=self._stack)
                     elif pos_val is None or isinstance(pos_val, str):
                         continue
                     elif isinstance(pos_val, list):
                         for str_ in pos_val:
                             if not isinstance(str_, str) and str_ is not None:
                                 host.WriteError(
-                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'.format(
-                                        str_, str_.__class__.__name__, header), stack=self._stack)
+                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'
+                                    .format(str_, str_.__class__.__name__, header),
+                                    stack=self._stack)
                     else:
                         host.WriteError(
-                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'.format(
-                                pos_val, pos_val.__class__.__name__, header), stack=self._stack)
+                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'
+                            .format(pos_val, pos_val.__class__.__name__, header),
+                            stack=self._stack)
             else:
                 host.WriteError(
-                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'.format(
-                        target, target.__class__.__name__, header), stack=self._stack)
+                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'
+                    .format(target, target.__class__.__name__, header),
+                    stack=self._stack)
 
         super(CurlHeader, self).__init__(
             value=value,
@@ -146,9 +142,7 @@ class CurlHeader(Tester):
             if self.KillOnFailure:
                 raise KillOnFailureError
         host.WriteVerbose(
-            ["testers.CurlHeader", "testers"],
-            "{0} - ".format(tester.ResultType.to_color_string(self.Result)),
-            self.Reason)
+            ["testers.CurlHeader", "testers"], "{0} - ".format(tester.ResultType.to_color_string(self.Result)), self.Reason)
 
     # Optional operations to do:
     #       equal: complete string match
@@ -200,8 +194,7 @@ class CurlHeader(Tester):
                             return None
 
             ret = ''
-            ops = {'equal': 'Any of the following strings: ',
-                   'equal_re': 'Any of the following regular expression: '}
+            ops = {'equal': 'Any of the following strings: ', 'equal_re': 'Any of the following regular expression: '}
 
             for op, pos_val in target.items():
                 ret += '    {}: \'{}\'\n'.format(ops[op], '\', \''.join(pos_val)) if isinstance(pos_val, list) \

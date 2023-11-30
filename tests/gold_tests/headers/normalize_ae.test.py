@@ -23,9 +23,7 @@ Test.Summary = '''
 Test normalizations of the Accept-Encoding header field.
 '''
 
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_BROTLI')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_BROTLI'))
 
 Test.ContinueOnFail = True
 
@@ -54,25 +52,19 @@ def baselineTsSetup(ts):
         # 'proxy.config.diags.debug.enabled': 1,
     })
 
-    ts.Disk.remap_config.AddLine(
-        'map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-    )
+    ts.Disk.remap_config.AddLine('map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))
     ts.Disk.remap_config.AddLine(
         'map http://www.ae-0.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=0'
-    )
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=0')
     ts.Disk.remap_config.AddLine(
         'map http://www.ae-1.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1'
-    )
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1')
     ts.Disk.remap_config.AddLine(
         'map http://www.ae-2.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2'
-    )
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2')
     ts.Disk.remap_config.AddLine(
         'map http://www.ae-3.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3'
-    )
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3')
 
 
 baselineTsSetup(ts)

@@ -15,7 +15,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 '''
 A simple tool to decode http2 frames for 0-rtt testing.
 '''
@@ -102,6 +101,7 @@ class Http2FrameDefs:
 
 
 class Http2Frame:
+
     def __init__(self, length, frame_type, flags, stream_id):
         self.length = length
         self.frame_type = frame_type
@@ -162,8 +162,7 @@ class Http2Frame:
             error_code = int(self.payload[4:8].hex(), 16)
             debug_data = self.payload[8:].hex()
             return '\nLast Stream ID = 0x{0:08x}\nError Code = 0x{1:08x}\nDebug Data = {2}'.format(
-                last_stream_id, error_code, debug_data
-            )
+                last_stream_id, error_code, debug_data)
         else:
             return '\nError: Frame type mismatch: {0}'.format(Http2FrameDefs.FRAME_TYPES[self.frame_type])
 
@@ -192,8 +191,7 @@ class Http2Frame:
 
     def print(self):
         output = 'Length: {0}\nType: {1}\nFlags: {2}\nStream ID: {3}\nPayload: {4}\n'.format(
-            self.length, Http2FrameDefs.FRAME_TYPES[self.frame_type], self.flags, self.stream_id, self.print_payload()
-        )
+            self.length, Http2FrameDefs.FRAME_TYPES[self.frame_type], self.flags, self.stream_id, self.print_payload())
         if self.decode_error is not None:
             output += self.decode_error + '\n'
         return output
@@ -203,13 +201,13 @@ class Http2Frame:
 
 
 class Decoder:
+
     def read_frame_header(self, data):
         frame = Http2Frame(
             length=int(data[0:3].hex(), 16),
             frame_type=int(data[3:4].hex(), 16),
             flags=int(data[4:5].hex(), 16),
-            stream_id=int(data[5:9].hex(), 16) & Http2FrameDefs.RESERVE_BIT_MASK
-        )
+            stream_id=int(data[5:9].hex(), 16) & Http2FrameDefs.RESERVE_BIT_MASK)
         return frame
 
     def decode(self, data):

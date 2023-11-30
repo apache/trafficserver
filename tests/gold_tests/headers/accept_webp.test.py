@@ -29,28 +29,30 @@ server = Test.MakeOriginServer("server")
 
 testName = "accept_webp"
 request_header = {
-    "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\nAccept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5\r\n\r\n",
+    "headers":
+        "GET / HTTP/1.1\r\nHost: www.example.com\r\nAccept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""}
+    "body": ""
+}
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: image/webp\r\nCache-Control: max-age=300\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # ATS Configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http_match',
-    'proxy.config.http.cache.ignore_accept_mismatch': 0,
-    'proxy.config.http.insert_response_via_str': 3,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http_match',
+        'proxy.config.http.cache.ignore_accept_mismatch': 0,
+        'proxy.config.http.insert_response_via_str': 3,
+        'proxy.config.http.cache.http': 1,
+        'proxy.config.http.wait_for_cache': 1,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test 1 - Request with image/webp support from the origin
 tr = Test.AddTestRun()

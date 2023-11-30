@@ -33,15 +33,9 @@ def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument(
-        '--listening_port',
-        type=int,
-        help='Port where the proxy listens.')
+    parser.add_argument('--listening_port', type=int, help='Port where the proxy listens.')
 
-    parser.add_argument(
-        '--forwarding_port',
-        type=int,
-        help='Server port to forward to.')
+    parser.add_argument('--forwarding_port', type=int, help='Server port to forward to.')
 
     return parser.parse_args()
 

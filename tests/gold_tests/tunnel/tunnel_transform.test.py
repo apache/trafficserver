@@ -35,30 +35,29 @@ server = Test.MakeOriginServer("server", ssl=True)
 server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
-request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n",
-                         "timestamp": "1469733493.993", "body": ""}
+request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_tunnel_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                          "timestamp": "1469733493.993", "body": ""}
+response_tunnel_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'tunnel_transform.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'tunnel_transform.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_tunnel_header, response_tunnel_header)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|test',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|test',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
@@ -70,8 +69,7 @@ ts.Disk.sni_yaml.AddLines([
 # directions
 tr = Test.AddTestRun("Run dumb proxy and send tunnel request.")
 tr.Setup.CopyAs('dumb_proxy.py', tr.RunDirectory)
-dumb_proxy = tr.Processes.Process(
-    f'dumb-proxy')
+dumb_proxy = tr.Processes.Process(f'dumb-proxy')
 proxy_port = get_port(dumb_proxy, "listening_port")
 dumb_proxy.Command = f'{sys.executable} dumb_proxy.py --listening_port {proxy_port} --forwarding_port {ts.Variables.ssl_port}'
 dumb_proxy.StartBefore(Test.Processes.ts)
@@ -110,6 +108,7 @@ tr.StillRunningAfter = server
 
 
 def make_done_stat_ready(tsenv):
+
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
             "traffic_ctl metric get tunnel_transform.test.done",
@@ -177,8 +176,7 @@ tr2.Processes.Default.Env = ts.Env
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Streams.stdout = Testers.Lambda(
-    lambda info, tester: check_byte_count(
-        path1, proxy_output, 'client-to-server'))
+    lambda info, tester: check_byte_count(path1, proxy_output, 'client-to-server'))
 
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath
 

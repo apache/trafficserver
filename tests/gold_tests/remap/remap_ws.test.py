@@ -26,28 +26,32 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 testName = "Test WebSocket Remaps"
-request_header = {"headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
-                  "body": None}
+request_header = {
+    "headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+    "body": None
+}
 response_header = {
-    "headers": "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
-    "body": None}
+    "headers":
+        "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
+    "body": None
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
-ts.Disk.remap_config.AddLines([
-    'map ws://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.port),
-    'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port),
-])
+ts.Disk.remap_config.AddLines(
+    [
+        'map ws://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.port),
+        'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port),
+    ])
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # wss mapping
 tr = Test.AddTestRun()
@@ -81,31 +85,20 @@ tr.StillRunningAfter = ts
 # Test metrics
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
-    " 'traffic_ctl metric get" +
-    " proxy.process.http.total_incoming_connections" +
-    " proxy.process.http.total_client_connections" +
-    " proxy.process.http.total_client_connections_ipv4" +
-    " proxy.process.http.total_client_connections_ipv6" +
-    " proxy.process.http.total_server_connections" +
-    " proxy.process.http2.total_client_connections" +
-    " proxy.process.http.connect_requests" +
-    " proxy.process.tunnel.total_client_connections_blind_tcp" +
-    " proxy.process.tunnel.current_client_connections_blind_tcp" +
-    " proxy.process.tunnel.total_server_connections_blind_tcp" +
-    " proxy.process.tunnel.current_server_connections_blind_tcp" +
-    " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-    " proxy.process.tunnel.current_client_connections_tls_tunnel" +
-    " proxy.process.tunnel.total_client_connections_tls_forward" +
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
+    " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
+    " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
+    " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
+    " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
+    " proxy.process.tunnel.current_client_connections_blind_tcp" + " proxy.process.tunnel.total_server_connections_blind_tcp" +
+    " proxy.process.tunnel.current_server_connections_blind_tcp" + " proxy.process.tunnel.total_client_connections_tls_tunnel" +
+    " proxy.process.tunnel.current_client_connections_tls_tunnel" + " proxy.process.tunnel.total_client_connections_tls_forward" +
     " proxy.process.tunnel.current_client_connections_tls_forward" +
     " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
     " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-    " proxy.process.tunnel.total_client_connections_tls_http" +
-    " proxy.process.tunnel.current_client_connections_tls_http" +
-    " proxy.process.tunnel.total_server_connections_tls" +
-    " proxy.process.tunnel.current_server_connections_tls'" +
-    f" {Test.TestDirectory}/gold/remap-ws-metrics.gold"
-)
+    " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
+    " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
+    f" {Test.TestDirectory}/gold/remap-ws-metrics.gold")
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

@@ -20,7 +20,6 @@ import yaml
 
 Test.Summary = 'Testing ATS records to yaml script.'
 
-
 file_suffix = 1
 
 # case 1 TLS with no data
@@ -41,7 +40,6 @@ tr.Processes.Default.Command = f'python3 convert2yaml.py -f old_records.config -
 tr.Processes.Default.Stream = 'gold/renamed_records.gold'
 f = tr.Disk.File(f"generated{file_suffix}.yaml")
 f.Content = "gold/renamed_records.yaml"
-
 
 tr = Test.AddTestRun("Test errors when trying to override values ")
 tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))

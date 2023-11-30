@@ -27,12 +27,8 @@ from jose import jwt
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config',
-                        help="Configuration File",
-                        required=True)
-    parser.add_argument('-u', '--uri',
-                        help="URI to sign",
-                        required=True)
+    parser.add_argument('-c', '--config', help="Configuration File", required=True)
+    parser.add_argument('-u', '--uri', help="URI to sign", required=True)
 
     # helpers
     parser.add_argument('--key_index', type=int, nargs=1)

@@ -30,32 +30,46 @@ server = Test.MakeOriginServer("server")
 # **testname is required**
 testName = ""
 request_header1 = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header1 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "xxx"}
-request_header2 = {"headers": "GET /no_cache_control HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "the flinstones"}
-request_header3 = {"headers": "GET /max_age_10sec HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-response_header3 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "yabadabadoo"}
+response_header1 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx"
+}
+request_header2 = {
+    "headers": "GET /no_cache_control HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header2 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "the flinstones"
+}
+request_header3 = {
+    "headers": "GET /max_age_10sec HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header3 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "yabadabadoo"
+}
 server.addResponse("sessionlog.json", request_header1, response_header1)
 server.addResponse("sessionlog.json", request_header2, response_header2)
 server.addResponse("sessionlog.json", request_header3, response_header3)
 
 # ATS Configuration
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.insert_age_in_response': 0,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.response_via_str': 3,
+        'proxy.config.http.insert_age_in_response': 0,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test 1 - 200 response and cache fill
 tr = Test.AddTestRun()
@@ -107,23 +121,21 @@ tr.StillRunningAfter = ts
 ts = Test.MakeATSProcess("ts-for-proxy-verifier")
 replay_file = "replay/cache-control-max-age.replay.yaml"
 server = Test.MakeVerifierServerProcess("proxy-verifier-server", replay_file)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.insert_age_in_response': 0,
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
 
-    # Disable ignoring max-age in the client request so we can test that
-    # behavior too.
-    'proxy.config.http.cache.ignore_client_cc_max_age': 0,
-})
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
-)
+        # Disable ignoring max-age in the client request so we can test that
+        # behavior too.
+        'proxy.config.http.cache.ignore_client_cc_max_age': 0,
+    })
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
 tr = Test.AddTestRun("Verify correct max-age cache-control behavior.")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("proxy-verifier-client", replay_file, http_ports=[ts.Variables.port])
-
 
 #
 # Verify correct interaction between cache-control no-cache and pragma header
@@ -132,15 +144,12 @@ ts = Test.MakeATSProcess("ts-cache-control-pragma")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|cache',
-
 })
 tr = Test.AddTestRun("Verify Pragma: no-cache does not conflict with Cache-Control headers")
 replay_file = "replay/cache-control-pragma.replay.yaml"
 server = tr.AddVerifierServerProcess("pragma-server", replay_file)
 tr.AddVerifierClientProcess("pragma-client", replay_file, http_ports=[ts.Variables.port])
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
@@ -157,8 +166,7 @@ class RequestCacheControlDefaultTest:
 
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
-            "request-cache-control-default-verifier-server",
-            self.requestCacheControlReplayFile)
+            "request-cache-control-default-verifier-server", self.requestCacheControlReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-request-cache-control-default")
@@ -166,9 +174,7 @@ class RequestCacheControlDefaultTest:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
         })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the proper handling of cache-control directives in requests in default configuration")
@@ -200,25 +206,22 @@ class RequestCacheControlHonorClientTest:
 
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
-            "request-cache-control-honor-client-verifier-server",
-            self.requestCacheControlReplayFile)
+            "request-cache-control-honor-client-verifier-server", self.requestCacheControlReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-request-cache-control-honor-client")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            # Configured to honor client requests to bypass the cache
-            "proxy.config.http.cache.ignore_client_no_cache": 0
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                # Configured to honor client requests to bypass the cache
+                "proxy.config.http.cache.ignore_client_no_cache": 0
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
         # Verify logs for the request containing no-cache
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "Revalidate document with server",
-            "Verify that ATS honors the no-cache and performs a revalidation.")
+            "Revalidate document with server", "Verify that ATS honors the no-cache and performs a revalidation.")
         # Verify logs for the request containing no-store
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "client does not permit storing, and cache control does not say to ignore client no-cache",
@@ -226,7 +229,8 @@ class RequestCacheControlHonorClientTest:
 
     def runTraffic(self):
         tr = Test.AddTestRun(
-            "Verify the proper handling of cache-control directives in requests when ATS is configured to honor client's request to bypass the cache")
+            "Verify the proper handling of cache-control directives in requests when ATS is configured to honor client's request to bypass the cache"
+        )
         tr.AddVerifierClientProcess(
             "request-cache-control-honor-client-client",
             self.requestCacheControlReplayFile,
@@ -255,8 +259,7 @@ class ResponseCacheControlDefaultTest:
 
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
-            "response-cache-control-default-verifier-server",
-            self.responseCacheControlReplayFile)
+            "response-cache-control-default-verifier-server", self.responseCacheControlReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-response-cache-control-default")
@@ -264,14 +267,11 @@ class ResponseCacheControlDefaultTest:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
         })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
         # Verify logs for the response containing no-cache
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "Revalidate document with server",
-            "Verify that ATS honors the no-cache in response and performs a revalidation.")
+            "Revalidate document with server", "Verify that ATS honors the no-cache in response and performs a revalidation.")
         # Verify logs for the response containing no-store
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "server does not permit storing and config file does not indicate that server directive should be ignored",
@@ -307,19 +307,17 @@ class ResponseCacheControlIgnoredTest:
 
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
-            "response-cache-control-ignored-verifier-server",
-            self.responseCacheControlReplayFile)
+            "response-cache-control-ignored-verifier-server", self.responseCacheControlReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-response-cache-control-ignored")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            "proxy.config.http.cache.ignore_server_no_cache": 1
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http.cache.ignore_server_no_cache": 1
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
         # Verify logs for the response containing no-cache or no-store
         self.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
@@ -331,7 +329,8 @@ class ResponseCacheControlIgnoredTest:
 
     def runTraffic(self):
         tr = Test.AddTestRun(
-            "Verify the proper handling of cache-control directives in responses when ATS is configured to ignore server's request to bypass the cache")
+            "Verify the proper handling of cache-control directives in responses when ATS is configured to ignore server's request to bypass the cache"
+        )
         tr.AddVerifierClientProcess(
             "response-cache-control-client-ignored",
             self.responseCacheControlReplayFile,

@@ -67,12 +67,8 @@ class JA3FingerprintTest:
         name = f'server{self._server_counter}'
         self._server = tr.AddVerifierServerProcess(name, self._replay_file)
         JA3FingerprintTest._server_counter += 1
-        self._server.Streams.All += Testers.ContainsExpression(
-            "https-request",
-            "Verify the HTTPS request was received.")
-        self._server.Streams.All += Testers.ContainsExpression(
-            "http2-request",
-            "Verify the HTTP/2 request was received.")
+        self._server.Streams.All += Testers.ContainsExpression("https-request", "Verify the HTTPS request was received.")
+        self._server.Streams.All += Testers.ContainsExpression("http2-request", "Verify the HTTP/2 request was received.")
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -81,36 +77,28 @@ class JA3FingerprintTest:
         self._ts = Test.MakeATSProcess(name, enable_cache=False, enable_tls=True)
         JA3FingerprintTest._ts_counter += 1
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
+        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         server_port = self._server.Variables.https_port
-        self._ts.Disk.remap_config.AddLine(
-            f'map https://https.server.com https://https.backend.com:{server_port}'
-        )
+        self._ts.Disk.remap_config.AddLine(f'map https://https.server.com https://https.backend.com:{server_port}')
 
         if self._test_remap:
             self._ts.Disk.remap_config.AddLine(
                 f'map https://http2.server.com https://http2.backend.com:{server_port} '
-                '@plugin=ja3_fingerprint.so @pparam=--ja3log'
-            )
+                '@plugin=ja3_fingerprint.so @pparam=--ja3log')
         else:
             self._ts.Disk.plugin_config.AddLine('ja3_fingerprint.so --ja3log --ja3raw')
-            self._ts.Disk.remap_config.AddLine(
-                f'map https://http2.server.com https://http2.backend.com:{server_port}'
-            )
+            self._ts.Disk.remap_config.AddLine(f'map https://http2.server.com https://http2.backend.com:{server_port}')
 
-        self._ts.Disk.records_config.update({
-            'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-
-            'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL',
-
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ja3_fingerprint',
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|ja3_fingerprint',
+            })
 
         ja3log_path = os.path.join(self._ts.Variables.LOGDIR, "ja3_fingerprint.log")
         self._ts.Disk.File(ja3log_path, id='ja3_log')
@@ -123,9 +111,7 @@ class JA3FingerprintTest:
             regex = r'(.*JA3.*MD5){2}'
 
         self._ts.Disk.ja3_log.Content += Testers.ContainsExpression(
-            regex,
-            "Verify the JA3 log contains a JA3 line.",
-            reflags=re.MULTILINE | re.DOTALL)
+            regex, "Verify the JA3 log contains a JA3 line.", reflags=re.MULTILINE | re.DOTALL)
 
     def _configure_client(self, tr: 'TestRun') -> None:
         """Configure the TestRun.
@@ -134,10 +120,7 @@ class JA3FingerprintTest:
         """
         name = f'client{self._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name,
-            self._replay_file,
-            http_ports=[self._ts.Variables.port],
-            https_ports=[self._ts.Variables.ssl_port])
+            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
         JA3FingerprintTest._client_counter += 1
 
         p.StartBefore(self._dns)
@@ -145,12 +128,8 @@ class JA3FingerprintTest:
         p.StartBefore(self._ts)
         tr.StillRunningAfter = self._ts
 
-        p.Streams.All += Testers.ContainsExpression(
-            "https-response",
-            "Verify the HTTPS response was received.")
-        p.Streams.All += Testers.ContainsExpression(
-            "http2-response",
-            "Verify the HTTP/2 response was received.")
+        p.Streams.All += Testers.ContainsExpression("https-response", "Verify the HTTPS response was received.")
+        p.Streams.All += Testers.ContainsExpression("http2-response", "Verify the HTTP/2 response was received.")
 
     def _await_ja3log(self) -> None:
         """Await the creation of the JA3 log."""

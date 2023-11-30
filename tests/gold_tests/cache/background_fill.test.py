@@ -20,10 +20,7 @@ from enum import Enum
 import os
 
 Test.Summary = 'Exercise Background Fill'
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-    Condition.HasProxyVerifierVersion('2.8.0')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasProxyVerifierVersion('2.8.0'))
 Test.ContinueOnFail = True
 
 
@@ -54,26 +51,26 @@ class BackgroundFillTest:
             self.ts[name] = Test.MakeATSProcess(name, select_ports=True, enable_tls=True, enable_cache=True)
 
             self.ts[name].addDefaultSSLFiles()
-            self.ts[name].Disk.ssl_multicert_config.AddLine(
-                "dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+            self.ts[name].Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
-            self.ts[name].Disk.records_config.update({
-                "proxy.config.http.server_ports": f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl",
-                "proxy.config.http.background_fill_active_timeout": "0",
-                "proxy.config.http.background_fill_completed_threshold": "0.0",
-                "proxy.config.http.cache.required_headers": 0,  # Force cache
-                "proxy.config.http.insert_response_via_str": 2,
-                'proxy.config.http.server_session_sharing.pool': 'thread',
-                'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-                'proxy.config.exec_thread.autoconfig.enabled': 0,
-                'proxy.config.exec_thread.limit': 1,
-                'proxy.config.ssl.server.cert.path': f"{self.ts[name].Variables.SSLDir}",
-                'proxy.config.ssl.server.private_key.path': f"{self.ts[name].Variables.SSLDir}",
-                'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                "proxy.config.diags.debug.enabled": 3,
-                "proxy.config.diags.debug.tags": "http",
-            })
+            self.ts[name].Disk.records_config.update(
+                {
+                    "proxy.config.http.server_ports": f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl",
+                    "proxy.config.http.background_fill_active_timeout": "0",
+                    "proxy.config.http.background_fill_completed_threshold": "0.0",
+                    "proxy.config.http.cache.required_headers": 0,  # Force cache
+                    "proxy.config.http.insert_response_via_str": 2,
+                    'proxy.config.http.server_session_sharing.pool': 'thread',
+                    'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
+                    'proxy.config.exec_thread.autoconfig.enabled': 0,
+                    'proxy.config.exec_thread.limit': 1,
+                    'proxy.config.ssl.server.cert.path': f"{self.ts[name].Variables.SSLDir}",
+                    'proxy.config.ssl.server.private_key.path': f"{self.ts[name].Variables.SSLDir}",
+                    'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
+                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                    "proxy.config.diags.debug.enabled": 3,
+                    "proxy.config.diags.debug.tags": "http",
+                })
 
             if name == 'for_httpbin' or name == 'default':
                 self.ts[name].Disk.remap_config.AddLines([

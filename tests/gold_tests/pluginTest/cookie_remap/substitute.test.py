@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 
 '''
@@ -29,20 +30,29 @@ ts = Test.MakeATSProcess("ts")
 
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
-request_header = {"headers": "GET /photos/search?query=magic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {
+    "headers": "GET /photos/search?query=magic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionfile.log", request_header, response_header)
 
-request_header_2 = {"headers": "GET /photos/search?query=/theunmatchedpath HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": ""}
+request_header_2 = {
+    "headers": "GET /photos/search?query=/theunmatchedpath HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 response_header_2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionfile.log", request_header_2, response_header_2)
 
-request_header_3 = {"headers": "GET /photos/search/magic/foobar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": ""}
+request_header_3 = {
+    "headers": "GET /photos/search/magic/foobar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 response_header_3 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionfile.log", request_header_3, response_header_3)
@@ -52,10 +62,11 @@ config_path = os.path.join(Test.TestDirectory, "configs/substituteconfig.txt")
 with open(config_path, 'r') as config_file:
     config1 = config_file.read()
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
+    })
 
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 
@@ -63,8 +74,7 @@ ts.Disk.File(ts.Variables.CONFIGDIR + "/substituteconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/substituteconfig.txt'
-)
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/substituteconfig.txt')
 
 tr = Test.AddTestRun("Substitute $path in the dest query")
 tr.Processes.Default.Command = '''

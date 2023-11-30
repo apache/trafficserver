@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Verify that a given JSON replay file fulfills basic expectations.
 """
@@ -128,8 +127,7 @@ def verify_client_request_size(replay_json, client_request_size):
         return False
 
     if size != client_request_size:
-        print("Mismatched client-request request size. Expected: {}, received: {}".format(
-            client_request_size, size))
+        print("Mismatched client-request request size. Expected: {}, received: {}".format(client_request_size, size))
         return False
     return True
 
@@ -180,8 +178,9 @@ def verify_protocols_helper(replay_json, expected_protocols, is_client):
             return True
         else:
             host_name = "client" if is_client else "server"
-            print('Unexpected protocol {} stack. Expected: "{}", found: "{}".'.format(
-                host_name, expected_protocols, dumped_protocols))
+            print(
+                'Unexpected protocol {} stack. Expected: "{}", found: "{}".'.format(
+                    host_name, expected_protocols, dumped_protocols))
             return False
     except KeyError:
         print("Could not find {} protocol stack node in the replay file.".format(host_name))
@@ -225,8 +224,7 @@ def verify_tls_features(expected_tls_features, found_tls_features):
             elif expected_value.lower() == "true":
                 expected_value = True
             else:
-                raise ValueError("Cannot convert expected value to a boolean: {}, found: {}".format(
-                    expected_value, found_value))
+                raise ValueError("Cannot convert expected value to a boolean: {}, found: {}".format(expected_value, found_value))
             if found_value == 'true':
                 found_value = True
             elif found_value == 'false':
@@ -238,12 +236,10 @@ def verify_tls_features(expected_tls_features, found_tls_features):
         elif isinstance(found_value, int):
             value_matches = found_value == int(expected_value)
         else:
-            raise ValueError("Cannot determine type of found value: {}".format(
-                found_value))
+            raise ValueError("Cannot determine type of found value: {}".format(found_value))
 
         if not value_matches:
-            print('Mismatched value for "{}", expected "{}", received "{}"'.format(
-                expected_key, expected_value, found_value))
+            print('Mismatched value for "{}", expected "{}", received "{}"'.format(expected_key, expected_value, found_value))
             return False
     return True
 
@@ -256,8 +252,7 @@ def verify_client_tls_features(replay_json, expected_tls_features):
         return False
 
     if not verify_tls_features(expected_tls_features, tls_features):
-        print('Failed to verify client tls features in "{}"'.format(
-            expected_tls_features))
+        print('Failed to verify client tls features in "{}"'.format(expected_tls_features))
         return False
     return True
 
@@ -270,8 +265,7 @@ def verify_server_tls_features(replay_json, expected_tls_features):
         return False
 
     if not verify_tls_features(expected_tls_features, tls_features):
-        print('Failed to verify server tls features in "{}"'.format(
-            expected_tls_features))
+        print('Failed to verify server tls features in "{}"'.format(expected_tls_features))
         return False
     return True
 
@@ -284,8 +278,7 @@ def verify_client_http_version(replay_json, expected_client_http_version):
         return False
 
     if expected_client_http_version != found_version:
-        print('Expected client version of "{}", but found "{}"'.format(
-            expected_client_http_version, found_version))
+        print('Expected client version of "{}", but found "{}"'.format(expected_client_http_version, found_version))
         return False
     return True
 
@@ -314,8 +307,9 @@ def verify_client_request_body_bytes(replay_json, expected_body_bytes):
         return False
 
     if int(proxy_request_body_size) != len(expected_body_bytes):
-        print("Expected the proxy-request content size to be '{0}' but got '{1}'".format(
-            len(expected_body_bytes), proxy_request_body_size))
+        print(
+            "Expected the proxy-request content size to be '{0}' but got '{1}'".format(
+                len(expected_body_bytes), proxy_request_body_size))
         return False
 
     return True
@@ -345,8 +339,9 @@ def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
         return False
 
     if int(server_response_body_size) != len(expected_body_bytes):
-        print("Expected the server-response content size to be '{0}' but got '{1}'".format(
-            len(expected_body_bytes), server_response_body_size))
+        print(
+            "Expected the server-response content size to be '{0}' but got '{1}'".format(
+                len(expected_body_bytes), server_response_body_size))
         return False
 
     return True
@@ -354,36 +349,21 @@ def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("schema_file",
-                        type=argparse.FileType('r'),
-                        help="The schema in which to validate the replay file.")
-    parser.add_argument("replay_file",
-                        type=argparse.FileType('r'),
-                        help="The replay file to validate.")
-    parser.add_argument("--request-target",
-                        help="The request target ('url' element) to expect in the replay file.")
-    parser.add_argument("--client-request-size",
-                        type=int,
-                        help="The expected size value in the client-request node.")
-    parser.add_argument("--sensitive-fields",
-                        action="append",
-                        help="The fields that are considered sensitive and replaced with insensitive values.")
-    parser.add_argument("--client-protocols",
-                        help="The comma-separated sequence of protocols to expect for the client connection.")
-    parser.add_argument("--server-protocols",
-                        help="The comma-separated sequence of protocols to expect for the server connection.")
-    parser.add_argument("--client-tls-features",
-                        help="The TLS values to expect for the client connection.")
-    parser.add_argument("--server-tls-features",
-                        help="The TLS values to expect for the server connection.")
-    parser.add_argument("--client-http-version",
-                        help="The client HTTP version to expect")
-    parser.add_argument("--request_body",
-                        type=str,
-                        help="Verify that the client request has the specified body bytes.")
-    parser.add_argument("--response_body",
-                        type=str,
-                        help="Verify that the proxy response has the specified body bytes.")
+    parser.add_argument("schema_file", type=argparse.FileType('r'), help="The schema in which to validate the replay file.")
+    parser.add_argument("replay_file", type=argparse.FileType('r'), help="The replay file to validate.")
+    parser.add_argument("--request-target", help="The request target ('url' element) to expect in the replay file.")
+    parser.add_argument("--client-request-size", type=int, help="The expected size value in the client-request node.")
+    parser.add_argument(
+        "--sensitive-fields",
+        action="append",
+        help="The fields that are considered sensitive and replaced with insensitive values.")
+    parser.add_argument("--client-protocols", help="The comma-separated sequence of protocols to expect for the client connection.")
+    parser.add_argument("--server-protocols", help="The comma-separated sequence of protocols to expect for the server connection.")
+    parser.add_argument("--client-tls-features", help="The TLS values to expect for the client connection.")
+    parser.add_argument("--server-tls-features", help="The TLS values to expect for the server connection.")
+    parser.add_argument("--client-http-version", help="The client HTTP version to expect")
+    parser.add_argument("--request_body", type=str, help="Verify that the client request has the specified body bytes.")
+    parser.add_argument("--response_body", type=str, help="Verify that the proxy response has the specified body bytes.")
     return parser.parse_args()
 
 

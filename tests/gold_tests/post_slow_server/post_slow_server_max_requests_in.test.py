@@ -34,19 +34,19 @@ class PostAndMaxRequestsInTest:
     def __setupOriginServer(self):
         Test.GetTcpPort("server_port")
         self.origin_server = Test.Processes.Process(
-            "server", "bash -c '" + Test.TestDirectory + "/server.sh {}'".format(Test.Variables.server_port)
-        )
+            "server", "bash -c '" + Test.TestDirectory + "/server.sh {}'".format(Test.Variables.server_port))
 
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
-        self.ts.Disk.records_config.update({
-            "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
-            "proxy.config.net.max_requests_in": 1000,
-            'proxy.config.http.connect_attempts_timeout': 1,
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.net.max_requests_in": 1000,
+                'proxy.config.http.connect_attempts_timeout': 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
+            })
 
         self.ts.Disk.remap_config.AddLines([
             f"map / https://127.0.0.1:{Test.Variables.server_port}/",

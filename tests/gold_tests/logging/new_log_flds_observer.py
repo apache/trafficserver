@@ -47,14 +47,8 @@ for ln in csv.reader(sys.stdin, delimiter=' '):
 
 # Validate contents of report.
 #
-if (ccid[0] != ccid[1] and
-    ccid[1] != ccid[2] and
-    ccid[2] == ccid[3] and
-    ctid[2] != ctid[3] and
-    ccid[3] != ccid[4] and
-    ccid[4] == ccid[5] and
-    ctid[4] != ctid[5] and
-        ccid[5] != ccid[6]):
+if (ccid[0] != ccid[1] and ccid[1] != ccid[2] and ccid[2] == ccid[3] and ctid[2] != ctid[3] and ccid[3] != ccid[4] and
+        ccid[4] == ccid[5] and ctid[4] != ctid[5] and ccid[5] != ccid[6]):
     exit(code=0)
 
 # Failure exit if report was not valid.

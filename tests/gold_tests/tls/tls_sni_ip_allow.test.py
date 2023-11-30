@@ -19,7 +19,6 @@ Test exercising ip_allow configuration of sni.yaml
 
 import os
 
-
 Test.Summary = '''Test sni.yaml ip_allow.'''
 
 
@@ -71,15 +70,10 @@ class TestSniIpAllow:
         name = f'server{TestSniIpAllow._server_counter}'
         server = tr.AddVerifierServerProcess(name, self._replay_file)
         TestSniIpAllow._server_counter += 1
-        server.Streams.All += Testers.ContainsExpression(
-            'allowed-request',
-            'The allowed request should be recieved.')
+        server.Streams.All += Testers.ContainsExpression('allowed-request', 'The allowed request should be recieved.')
+        server.Streams.All += Testers.ExcludesExpression('blocked-request', 'The blocked request should not have been recieved.')
         server.Streams.All += Testers.ExcludesExpression(
-            'blocked-request',
-            'The blocked request should not have been recieved.')
-        server.Streams.All += Testers.ExcludesExpression(
-            'block.me.com',
-            'Nothing about the block.me.com sni should have been recieved.')
+            'block.me.com', 'Nothing about the block.me.com sni should have been recieved.')
 
         return server
 
@@ -94,11 +88,12 @@ class TestSniIpAllow:
         name = f'ts{TestSniIpAllow._ts_counter}'
         ts = tr.MakeATSProcess(name, enable_tls=True, enable_cache=False)
         TestSniIpAllow._ts_counter += 1
-        ts.Disk.sni_yaml.AddLines([
-            'sni:',
-            '- fqdn: block.me.com',
-            '  ip_allow: 192.168.10.1',  # Therefore 127.0.0.1 should be blocked.
-        ])
+        ts.Disk.sni_yaml.AddLines(
+            [
+                'sni:',
+                '- fqdn: block.me.com',
+                '  ip_allow: 192.168.10.1',  # Therefore 127.0.0.1 should be blocked.
+            ])
         if connect_type == ConnectionType.TUNNEL:
             ts.Disk.sni_yaml.AddLines([
                 f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
@@ -112,23 +107,18 @@ class TestSniIpAllow:
                 f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
             ])
         ts.addDefaultSSLFiles()
-        ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        ts.Disk.remap_config.AddLine(
-            f'map / http://remapped.backend.server.com:{server.Variables.http_port}/'
-        )
-        ts.Disk.records_config.update({
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-
-            'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL',
-
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl',
-        })
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.remap_config.AddLine(f'map / http://remapped.backend.server.com:{server.Variables.http_port}/')
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+                'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|ssl',
+            })
         if connect_type == ConnectionType.TUNNEL:
             ts.Disk.records_config.update({
                 'proxy.config.http.connect_ports': f"{server.Variables.https_port}",
@@ -144,10 +134,7 @@ class TestSniIpAllow:
         """
         name = f'client{TestSniIpAllow._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name,
-            self._replay_file,
-            http_ports=[ts.Variables.port],
-            https_ports=[ts.Variables.ssl_port])
+            name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
         TestSniIpAllow._client_counter += 1
         ts.StartBefore(server)
         ts.StartBefore(dns)
@@ -157,12 +144,9 @@ class TestSniIpAllow:
         # non-zero return code.
         p.ReturnCode = 1
 
-        p.Streams.All += Testers.ContainsExpression(
-            'allowed-response',
-            'The response to teh allowed request should be recieved.')
+        p.Streams.All += Testers.ContainsExpression('allowed-response', 'The response to teh allowed request should be recieved.')
         p.Streams.All += Testers.ExcludesExpression(
-            'blocked-response',
-            'The response to the blocked request should not have been recieved.')
+            'blocked-response', 'The response to the blocked request should not have been recieved.')
 
 
 TestSniIpAllow(ConnectionType.GET)

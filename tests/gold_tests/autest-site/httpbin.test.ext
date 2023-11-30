@@ -19,8 +19,7 @@
 from ports import get_port
 
 
-def MakeHttpBinServer(self, name, ip='127.0.0.1', port=None,
-                      options={}) -> 'Process':
+def MakeHttpBinServer(self, name, ip='127.0.0.1', port=None, options={}) -> 'Process':
     data_dir = os.path.join(self.RunDirectory, name)
     # create Process
     p = self.Processes.Process(name)
@@ -28,10 +27,7 @@ def MakeHttpBinServer(self, name, ip='127.0.0.1', port=None,
         port = get_port(p, "Port")
 
     self._RootRunable.SkipUnless(
-        Condition.HasProgram(
-            "go-httpbin",
-            "go-httpbin needs be installed and in PATH for this extension to run")
-    )
+        Condition.HasProgram("go-httpbin", "go-httpbin needs be installed and in PATH for this extension to run"))
 
     command = f"go-httpbin -host {ip} -port {port} "
     for flag, value in options.items():

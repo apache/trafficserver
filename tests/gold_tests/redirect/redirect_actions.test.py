@@ -38,19 +38,18 @@ dnsRecords = {'iwillredirect.test': ['127.0.0.1']}
 host = socket.gethostname()
 ipv4addrs = set()
 try:
-    ipv4addrs = set([ip for
-                     (family, _, _, _, (ip, *_)) in
-                     socket.getaddrinfo(host, port=None) if
-                     socket.AF_INET == family])
+    ipv4addrs = set([ip for (family, _, _, _, (ip, *_)) in socket.getaddrinfo(host, port=None) if socket.AF_INET == family])
 except socket.gaierror:
     pass
 
 ipv6addrs = set()
 try:
-    ipv6addrs = set(["[{0}]".format(ip.split('%')[0]) for
-                     (family, _, _, _, (ip, *_)) in
-                     socket.getaddrinfo(host, port=None) if
-                     socket.AF_INET6 == family and 'fe80' != ip[0:4]])  # Skip link-local addresses.
+    ipv6addrs = set(
+        [
+            "[{0}]".format(ip.split('%')[0])
+            for (family, _, _, _, (ip, *_)) in socket.getaddrinfo(host, port=None)
+            if socket.AF_INET6 == family and 'fe80' != ip[0:4]
+        ])  # Skip link-local addresses.
 except socket.gaierror:
     pass
 
@@ -62,12 +61,14 @@ request_header = {
     'headers': ('GET / HTTP/1.1\r\n'
                 'Host: *\r\n\r\n'),
     'timestamp': ArbitraryTimestamp,
-    'body': ''}
+    'body': ''
+}
 response_header = {
     'headers': ('HTTP/1.1 204 No Content\r\n'
                 'Connection: close\r\n\r\n'),
     'timestamp': ArbitraryTimestamp,
-    'body': ''}
+    'body': ''
+}
 origin.addResponse('sessionfile.log', request_header, response_header)
 
 # Map scenarios to trafficserver processes.
@@ -112,17 +113,18 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
 
     if config not in trafficservers:
         trafficservers[config] = Test.MakeATSProcess('ts_{0}'.format(normConfig), enable_cache=False)
-        trafficservers[config].Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|redirect',
-            'proxy.config.http.number_of_redirections': 1,
-            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.url_remap.remap_required': 0,
-            'proxy.config.http.redirect.actions': config,
-            'proxy.config.http.connect_attempts_timeout': 5,
-            'proxy.config.http.connect_attempts_max_retries': 0,
-        })
+        trafficservers[config].Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|dns|redirect',
+                'proxy.config.http.number_of_redirections': 1,
+                'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.url_remap.remap_required': 0,
+                'proxy.config.http.redirect.actions': config,
+                'proxy.config.http.connect_attempts_timeout': 5,
+                'proxy.config.http.connect_attempts_max_retries': 0,
+            })
         tr.Processes.Default.StartBefore(trafficservers[config])
     else:
         tr.StillRunningAfter = trafficservers[config]
@@ -136,26 +138,27 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
     # A GET request parameterized on the config and on the target.
     request_header = {
         'headers': ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-                    'Host: *\r\n\r\n').
-        format(normConfig, normRedirectTarget),
+                    'Host: *\r\n\r\n').format(normConfig, normRedirectTarget),
         'timestamp': ArbitraryTimestamp,
-        'body': ''}
+        'body': ''
+    }
     # Returns a redirect to the test domain for the given target & the port number for the TS of the given config.
     response_header = {
-        'headers': ('HTTP/1.1 307 Temporary Redirect\r\n'
-                    'Location: http://{0}:{1}/\r\n'
-                    'Connection: close\r\n\r\n').
-        format(testDomain, origin.Variables.Port),
+        'headers':
+            ('HTTP/1.1 307 Temporary Redirect\r\n'
+             'Location: http://{0}:{1}/\r\n'
+             'Connection: close\r\n\r\n').format(testDomain, origin.Variables.Port),
         'timestamp': ArbitraryTimestamp,
-        'body': ''}
+        'body': ''
+    }
     origin.addResponse('sessionfile.log', request_header, response_header)
 
     # Generate the request data file.
     command_path = os.path.join(data_path, tr.Name)
     with open(command_path, 'w') as f:
-        f.write(('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-                 'Host: iwillredirect.test:{2}\r\n\r\n').
-                format(normConfig, normRedirectTarget, origin.Variables.Port))
+        f.write(
+            ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
+             'Host: iwillredirect.test:{2}\r\n\r\n').format(normConfig, normRedirectTarget, origin.Variables.Port))
     # Set the command with the appropriate URL.
     port = trafficservers[config].Variables.port
     dir_path = os.path.join(data_dirname, tr.Name)
@@ -204,7 +207,6 @@ scenarios = [
         AddressE.Self: ActionE.Return,
         AddressE.Default: ActionE.Reject,
     },
-
     {
         # Follow to loopback, but alternately reject/return others, flipped from the previous scenario.
         AddressE.Private: ActionE.Return,
@@ -215,19 +217,16 @@ scenarios = [
         AddressE.Self: ActionE.Reject,
         AddressE.Default: ActionE.Return,
     },
-
     {
         # Return loopback, but reject everything else.
         AddressE.Loopback: ActionE.Return,
         AddressE.Default: ActionE.Reject,
     },
-
     {
         # Reject loopback, but return everything else.
         AddressE.Loopback: ActionE.Reject,
         AddressE.Default: ActionE.Return,
     },
-
     {
         # Return everything.
         AddressE.Default: ActionE.Return,

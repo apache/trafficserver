@@ -32,8 +32,11 @@ ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: does.not.matter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": "xxx"}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.records_config.update({
@@ -41,9 +44,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http|dns',
 })
 
-ts.Disk.remap_config.AddLine(
-    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
 # Mix in a numeric log field.  Hopefull this will detect any binary alignment problems.
 #
@@ -56,8 +57,7 @@ logging:
   logs:
     - filename: test_all_headers
       format: custom
-'''.split("\n")
-)
+'''.split("\n"))
 
 # Configure comparison of "sanitized" log file with gold file at end of test.
 #
@@ -80,16 +80,14 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
-    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
-)
+    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
 tr.Processes.Default.ReturnCode = 0
 
 # Repeat same curl, will be answered from the ATS cache.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
-)
+    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.

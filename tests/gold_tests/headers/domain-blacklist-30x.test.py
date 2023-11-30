@@ -34,20 +34,21 @@ REDIRECT_308_HOST = 'www.redirect308.test'
 REDIRECT_0_HOST = 'www.redirect0.test'
 PASSTHRU_HOST = 'www.passthrough.test'
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'header_rewrite|dbg_header_rewrite',
-    'proxy.config.body_factory.enable_logging': 1,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'header_rewrite|dbg_header_rewrite',
+        'proxy.config.body_factory.enable_logging': 1,
+    })
 
-ts.Disk.remap_config.AddLine("""\
+ts.Disk.remap_config.AddLine(
+    """\
 regex_map http://{0}/ http://{0}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_301.conf
 regex_map http://{1}/ http://{1}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_302.conf
 regex_map http://{2}/ http://{2}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_307.conf
 regex_map http://{3}/ http://{3}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_308.conf
 regex_map http://{4}/ http://{4}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_0.conf
-""".format(REDIRECT_301_HOST, REDIRECT_302_HOST, REDIRECT_307_HOST, REDIRECT_308_HOST, REDIRECT_0_HOST)
-)
+""".format(REDIRECT_301_HOST, REDIRECT_302_HOST, REDIRECT_307_HOST, REDIRECT_308_HOST, REDIRECT_0_HOST))
 
 for x in (0, 301, 302, 307, 308):
     ts.Disk.MakeConfigFile("header_rewrite_rules_{0}.conf".format(x)).AddLine("""\
@@ -72,7 +73,6 @@ redirect302tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0
 redirect302tr.Processes.Default.TimeOut = 5  # seconds
 redirect302tr.Processes.Default.ReturnCode = 0
 redirect302tr.Processes.Default.Streams.stdout = "redirect302_get.gold"
-
 
 redirect307tr = Test.AddTestRun(f"Test domain {REDIRECT_307_HOST}")
 redirect302tr.StillRunningBefore = ts

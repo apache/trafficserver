@@ -58,17 +58,12 @@ Description: According to rfc7231 I should not have been sent to you!
 regex_remap_conf_file = "maps.reg"
 
 ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'
-                    .format(DEFAULT_204_HOST, server.Variables.Port, regex_remap_conf_file)
-)
+    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'.format(
+        DEFAULT_204_HOST, server.Variables.Port, regex_remap_conf_file))
 ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host @plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={0}'
-                    .format(CUSTOM_TEMPLATE_204_HOST, server.Variables.Port, regex_remap_conf_file)
-)
-ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
-    '//.*/ http://127.0.0.1:{0} @status=204'
-    .format(server.Variables.Port)
-)
+    .format(CUSTOM_TEMPLATE_204_HOST, server.Variables.Port, regex_remap_conf_file))
+ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://127.0.0.1:{0} @status=204'.format(server.Variables.Port))
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
@@ -81,7 +76,6 @@ defaultTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1
 defaultTr.Processes.Default.TimeOut = 5  # seconds
 defaultTr.Processes.Default.ReturnCode = 0
 defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
-
 
 customTemplateTr = Test.AddTestRun(f"Test domain {CUSTOM_TEMPLATE_204_HOST}")
 customTemplateTr.StillRunningBefore = ts

@@ -33,39 +33,32 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl_verify_test',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
-    'proxy.config.ssl.client.verify.server.properties': 'NONE',
-    'proxy.config.url_remap.pristine_host_hdr': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl_verify_test',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
+        'proxy.config.ssl.client.verify.server.properties': 'NONE',
+        'proxy.config.url_remap.pristine_host_hdr': 1
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
-    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 
-ts.Disk.sni_yaml.AddLine(
-    'sni:')
-ts.Disk.sni_yaml.AddLine(
-    '- fqdn: bar.com')
-ts.Disk.sni_yaml.AddLine(
-    '  verify_server_policy: PERMISSIVE')
+ts.Disk.sni_yaml.AddLine('sni:')
+ts.Disk.sni_yaml.AddLine('- fqdn: bar.com')
+ts.Disk.sni_yaml.AddLine('  verify_server_policy: PERMISSIVE')
 
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'),
-                       ts, '-count=2 -bad=random.com -bad=bar.com')
+Test.PrepareTestPlugin(
+    os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
 
 tr = Test.AddTestRun("request good name")
 tr.Processes.Default.StartBefore(server)
@@ -75,7 +68,6 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
-
 
 tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts

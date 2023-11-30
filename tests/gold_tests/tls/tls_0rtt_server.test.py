@@ -23,29 +23,15 @@ Test ATS TLSv1.3 0-RTT support
 '''
 
 # Checking only OpenSSL version allows you to run this test with BoringSSL (and it should pass).
-Test.SkipUnless(
-    Condition.HasOpenSSLVersion('1.1.1'),
-)
+Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'),)
 
 ts1 = Test.MakeATSProcess('ts1', enable_tls=True)
 ts2 = Test.MakeATSProcess('ts2', enable_tls=True)
 server = Test.MakeOriginServer('server')
 
-request_header1 = {
-    'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': ''
-}
-response_header1 = {
-    'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': 'curl test'
-}
-request_header2 = {
-    'headers': 'GET /early_get HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': ''
-}
+request_header1 = {'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
+response_header1 = {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n', 'timestamp': '1469733493.993', 'body': 'curl test'}
+request_header2 = {'headers': 'GET /early_get HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
 response_header2 = {
     'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
     'timestamp': '1469733493.993',
@@ -110,30 +96,28 @@ ts1.Setup.Copy('early_h2_post.txt')
 ts1.Setup.Copy('early_h2_multi1.txt')
 ts1.Setup.Copy('early_h2_multi2.txt')
 
-ts1.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
-    'proxy.config.exec_thread.autoconfig.enabled': 0,
-    'proxy.config.exec_thread.limit': 8,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.session_cache.value': 2,
-    'proxy.config.ssl.session_cache.size': 512000,
-    'proxy.config.ssl.session_cache.timeout': 7200,
-    'proxy.config.ssl.session_cache.num_buckets': 32768,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.server.max_early_data': 16384,
-    'proxy.config.ssl.server.allow_early_data_params': 0,
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-})
+ts1.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
+        'proxy.config.exec_thread.autoconfig.enabled': 0,
+        'proxy.config.exec_thread.limit': 8,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.size': 512000,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 32768,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.max_early_data': 16384,
+        'proxy.config.ssl.server.allow_early_data_params': 0,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 
-ts1.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts1.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts1.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts1.Disk.sni_yaml.AddLines([
     'sni:',
@@ -141,30 +125,28 @@ ts1.Disk.sni_yaml.AddLines([
     '  server_max_early_data: 0',
 ])
 
-ts2.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
-    'proxy.config.exec_thread.autoconfig.enabled': 0,
-    'proxy.config.exec_thread.limit': 8,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.session_cache.value': 2,
-    'proxy.config.ssl.session_cache.size': 512000,
-    'proxy.config.ssl.session_cache.timeout': 7200,
-    'proxy.config.ssl.session_cache.num_buckets': 32768,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.server.max_early_data': 0,
-    'proxy.config.ssl.server.allow_early_data_params': 0,
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-})
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
+        'proxy.config.exec_thread.autoconfig.enabled': 0,
+        'proxy.config.exec_thread.limit': 8,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.session_cache.value': 2,
+        'proxy.config.ssl.session_cache.size': 512000,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 32768,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.max_early_data': 0,
+        'proxy.config.ssl.server.allow_early_data_params': 0,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 
-ts2.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts2.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts2.Disk.sni_yaml.AddLines([
     'sni:',

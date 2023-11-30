@@ -18,9 +18,7 @@ from typing import Optional
 
 Test.Summary = 'Checks ts.proxy.config.udp.poll_timeout'
 
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_QUICHE')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'))
 
 
 class TestPollTimeout:
@@ -49,15 +47,14 @@ class TestPollTimeout:
 
         TestPollTimeout.ts_counter += 1
         self._ts = ts
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll',
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll',
+            })
 
         if self.udp_poll_timeout_in is not None:
-            self._ts.Disk.records_config.update({
-                'proxy.config.udp.poll_timeout': self.udp_poll_timeout_in
-            })
+            self._ts.Disk.records_config.update({'proxy.config.udp.poll_timeout': self.udp_poll_timeout_in})
 
     def run(self):
         """Run the test."""
@@ -70,14 +67,11 @@ class TestPollTimeout:
         self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
             f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout.")
 
+
 # Tests start.
 
-
-test0 = TestPollTimeout(
-    "Test ts.proxy.config.udp.poll_timeout with default value.")
+test0 = TestPollTimeout("Test ts.proxy.config.udp.poll_timeout with default value.")
 test0.run()
 
-test1 = TestPollTimeout(
-    "Test ts.proxy.config.udp.poll_timeout with value of 10.",
-    udp_poll_timeout_in=10)
+test1 = TestPollTimeout("Test ts.proxy.config.udp.poll_timeout with value of 10.", udp_poll_timeout_in=10)
 test1.run()

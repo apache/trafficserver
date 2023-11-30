@@ -41,37 +41,37 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLines([
-    'map /one http://127.0.0.1:{0}'.format(Test.Variables.upstream_port1),
-    'map /two http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2),
-    'map /three http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3),
-    'map /four http://127.0.0.1:{0}'.format(Test.Variables.upstream_port4),
-    'map /five http://127.0.0.1:{0}'.format(Test.Variables.upstream_port5),
-    'map /six http://127.0.0.1:{0}'.format(Test.Variables.upstream_port6),
-])
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 0,
-    # 'proxy.config.http2.initial_window_size_in': 2*16384, # Make a ludacrisly small window
-    'proxy.config.diags.debug.tags': 'http',
-})
+ts.Disk.remap_config.AddLines(
+    [
+        'map /one http://127.0.0.1:{0}'.format(Test.Variables.upstream_port1),
+        'map /two http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2),
+        'map /three http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3),
+        'map /four http://127.0.0.1:{0}'.format(Test.Variables.upstream_port4),
+        'map /five http://127.0.0.1:{0}'.format(Test.Variables.upstream_port5),
+        'map /six http://127.0.0.1:{0}'.format(Test.Variables.upstream_port6),
+    ])
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 0,
+        # 'proxy.config.http2.initial_window_size_in': 2*16384, # Make a ludacrisly small window
+        'proxy.config.diags.debug.tags': 'http',
+    })
 
-server1 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port1))
-server2 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port2))
-server3 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port3))
-server4 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port4))
-server5 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port5))
-server6 = Test.Processes.Process("server1", "bash -c '" + Test.TestDirectory +
-                                 "/server1.sh {} outserver1'".format(Test.Variables.upstream_port6))
+server1 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port1))
+server2 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port2))
+server3 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port3))
+server4 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port4))
+server5 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port5))
+server6 = Test.Processes.Process(
+    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port6))
 
 big_post_body = "0123456789" * 231070
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
