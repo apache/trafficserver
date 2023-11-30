@@ -31,7 +31,7 @@ ts = Test.MakeATSProcess("ts")
 Test.GetTcpPort("upstream_port")
 
 method_server = Test.Processes.Process("method-server", "bash -c '" + Test.TestDirectory +
-                                       "/method-server.sh {} outserver'".format(Test.Variables.upstream_port))
+                                       f"/method-server.sh {Test.Variables.upstream_port} outserver'")
 
 server = Test.MakeOriginServer("server", ssl=False)
 request_header = {
@@ -114,7 +114,7 @@ tr = Test.AddTestRun("success-1.0")
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.Command = (
-    f"printf 'GET {random_path}/0 HTTP/1.0\r\n" +
+    f"printf 'GET {random_path}/0HTTP/1.0\r\n" +
     "Host: example.com\r\n" +
     "Connection: close\r\n" +
     "X-Req-Id: 1\r\n\r\n'" +
@@ -125,7 +125,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("success-1.1")
 tr.Processes.Default.Command = (
-    f"printf 'GET {random_path}/1 HTTP/1.1\r\n" +
+    f"printf 'GET {random_path}/1HTTP/1.1\r\n" +
     "Host: example.com\r\n" +
     "Connection: close\r\n" +
     "X-Req-Id: 2\r\n\r\n'" +
@@ -215,3 +215,10 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = "grep -e '^===' -e '^HTTP/' -e 'X-Resp-Id:' -e '<HTML>' client.log"
 tr.Processes.Default.Streams.stdout = 'client.gold'
 tr.Processes.Default.ReturnCode = 0
+
+server.Streams.All += Testers.ContainsExpression("Serving GET /sdfsdf/0... Finished", "Served 1")
+server.Streams.All += Testers.ContainsExpression("Serving GET /sdfsdf/1... Finished", "Served 2")
+server.Streams.All += Testers.ContainsExpression("Serving GET /example/2... Finished", "Served 3")
+
+outserver = Test.Disk.File("outserver")
+outserver.Content = "server.gold"

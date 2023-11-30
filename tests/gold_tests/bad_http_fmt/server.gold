@@ -1,16 +1,4 @@
-GET /sdfsdf HTTP/1.1
-X-Req-Id: 0
-HTTP/1.1 200 OK
-Content-Length: 0
-GET /sdfsdf HTTP/1.1
-X-Req-Id: 1
-HTTP/1.1 200 OK
-Content-Length: 0
-xyzxyz /example HTTP/1.1
+xyzxyz / HTTP/1.1
+Host: 127.0.0.1:``
 X-Req-Id: 6
-HTTP/1.1 200 OK
-Content-Length: 0
-GET /example HTTP/1.1
-X-Req-Id: 7
-HTTP/1.1 200 OK
-Content-Length: 0
+``
