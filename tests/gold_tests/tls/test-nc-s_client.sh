@@ -23,5 +23,5 @@ if openssl s_client --help 2>&1 | grep -q ignore_unexpected_eof
 then
   ignore_unexpected_eof='-ignore_unexpected_eof'
 fi
-nc -l -p "$1" -c 'echo -e "This is a reply"' -o test.out &
-echo "This is a test" | openssl s_client -servername bar.com -connect "localhost:$2" -ign_eof ${ignore_unexpected_eof} "${@:3}"
+echo -e "This is a reply" | nc -l "$1"  > test.out &
+echo "This is a test" | openssl s_client -servername bar.com -connect "localhost:$2" -ign_eof ${ignore_unexpected_eof}
