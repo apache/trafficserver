@@ -70,3 +70,4 @@ tr4.Setup.Copy("create_request.sh")
 tr4.Processes.Default.Command = 'sh  ./time_client.sh "sh ./create_request.sh {0}"'.format(ts.Variables.port)
 tr4.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "Transaction inactivity timeout", "Request should fail with transaction inactivity timeout")
+tr4.Processes.Default.ReturnCode = 0

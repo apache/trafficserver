@@ -25,19 +25,22 @@ request() {
 }
 
 nc_name="nc"
-ncat
+ncat --help
 if [ $? -le 1 ]
 then
-	request | ncat -i 11 127.0.0.1 $1 &
-	targetPID=$!
 	nc_name="ncat"
+	request | ncat -i 11 127.0.0.1 $1 &
 else
 	request | nc -w 11 127.0.0.1 $1 &
-	targetPID=$!
 fi
+targetPID=$!
 
 count=11
 echo PID is *${targetPID}
+output=`ps uax | grep $targetPID | grep "$nc_name "`
+output0=`ps uax | grep $targetPID`
+echo "Out for $targetPID is $output or $output0"
+
 while [ $count -gt 0 ]
 do
 	sleep 1
