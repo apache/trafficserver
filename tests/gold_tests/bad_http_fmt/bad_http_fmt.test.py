@@ -28,6 +28,52 @@ random_method = "xyzxyz"
 
 ts = Test.MakeATSProcess("ts")
 
+Test.GetTcpPort("upstream_port")
+
+method_server = Test.Processes.Process("method-server", "bash -c '" + Test.TestDirectory +
+                                       f"/method-server.sh {Test.Variables.upstream_port} outserver'")
+
+server = Test.MakeOriginServer("server", ssl=False)
+request_header = {
+    "headers": "GET {}/0 HTTP/1.1\r\nX-Req-Id: 0\r\nHost: example.com\r\n\r\n".format(random_path),
+    "timestamp": "1469733493.993",
+    "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nX-Resp-Id: 1\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+
+request_header = {
+    "headers": "GET {}/1 HTTP/1.1\r\nX-Req-Id: 1\r\nHost: example.com\r\n\r\n".format(random_path),
+    "timestamp": "1469733493.993",
+    "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nX-Resp-Id: 2\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+
+request_header = {
+    "headers": "GET /example/1 HTTP/1.1\r\nX-Req-Id: 6\r\nHost: example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nX-Resp-Id: 3\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+
+request_header = {
+    "headers": "GET /example/2 HTTP/1.1\r\nX-Req-Id: 7\r\nHost: example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nX-Resp-Id: 4\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
+server.addResponse("sessionlog.json", request_header, response_header)
+
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns',
@@ -55,108 +101,111 @@ ts.Disk.ip_allow_yaml.AddLines([
     '      - GET'
 ])
 
-Test.GetTcpPort("server_port")
-
-
-def server_cmd(resp_id):
-    dq = '"'
-    return (fr"(nc -o server{resp_id}.log " +
-            fr"--sh-exec 'sleep 1 ; printf {dq}HTTP/1.1 200 OK\r\n" +
-            fr"X-Resp-Id: {resp_id}\r\n" +
-            fr"Content-Length: 0\r\n\r\n{dq}' " +
-            fr"-l 127.0.0.1 {Test.Variables.server_port} & )")
-
+ts.Disk.remap_config.AddLine(
+    'map /add-method http://127.0.0.1:{0}/'.format(Test.Variables.upstream_port)
+)
+ts.Disk.remap_config.AddLine(
+    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port)
+)
 
 # Even if the request from the client is HTTP version 1.0, ATS's request to server will be HTTP version 1.1.
 #
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("success-1.0")
 tr.Processes.Default.StartBefore(ts)
+tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.Command = (
-    server_cmd(1) +
-    fr" ; printf 'GET {random_path}HTTP/1.0\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 0\r\n\r\n'" +
+    f"printf 'GET {random_path}/0HTTP/1.0\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 1\r\n\r\n'" +
     f" | nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("success-1.1")
 tr.Processes.Default.Command = (
-    server_cmd(2) +
-    fr" ; printf 'GET {random_path}HTTP/1.1\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 1\r\n\r\n'" +
+    f"printf 'GET {random_path}/1HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 2\r\n\r\n'" +
     f" | nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("invalid-url-line")
 tr.Processes.Default.Command = (
-    fr"printf 'GET {random_path}<HTTP/1.1\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 2\r\n\r\n'" +
+    f"printf 'GET {random_path}<HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 2\r\n\r\n'" +
     f" | nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("bad-http-version")
 tr.Processes.Default.Command = (
-    fr"printf 'GET {random_path} HTTP/1.2\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 3\r\n\r\n'" +
+    f"printf 'GET {random_path} HTTP/1.2\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 3\r\n\r\n'" +
     f" | nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("bad-request-maybe-http-version")
+tr.Processes.Default.Command = (
+    f"printf 'GET {random_path} HTTP/0.9\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 4\r\n\r\n'" +
+    f" | nc localhost {ts.Variables.port} >> client.log" +
+    " ; echo '======' >> client.log"
+)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun("same-as-last-case?")
 tr.Processes.Default.Command = (
     fr"printf 'GET {random_path} HTTP/0.9\r\n" +
-    r"X-Req-Id: 4\r\n\r\n'" +
-    fr" | nc localhost {ts.Variables.port} >> client.log" +
-    " ; echo '======' >> client.log"
-)
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    fr"printf 'GET {random_path} HTTP/0.9\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 5\r\n\r\n'" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 5\r\n\r\n'" +
     fr"| nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("allowed-random-method")
+tr.Processes.Default.StartBefore(method_server)
 tr.Processes.Default.Command = (
-    server_cmd(3) +
-    fr" ; printf '{random_method} /example HTTP/1.1\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 6\r\n\r\n'" +
+    fr"printf '{random_method} /add-method HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 6\r\n\r\n'" +
     f" | nc localhost {ts.Variables.port} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("valid-ipv6")
 tr.Processes.Default.Command = (
-    server_cmd(4) +
-    r" ; printf 'GET /example HTTP/1.1\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n" +
-    r"X-Req-Id: 7\r\n\r\n'" +
+    f"printf 'GET /example/2 HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n" +
+    "X-Req-Id: 7\r\n\r\n'" +
     f" | nc ::1 {ts.Variables.portv6} >> client.log" +
     " ; echo '======' >> client.log"
 )
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("unallowed-method-v6")
 tr.Processes.Default.Command = (
-    fr"printf '{random_method} /example HTTP/1.1\r\n" +
-    fr"Host: localhost:{Test.Variables.server_port}\r\n\r\n'" +
+    f"printf '{random_method} /example/1 HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Connection: close\r\n\r\n'" +
     f" | nc ::1 {ts.Variables.portv6} >> client.log" +
     " ; echo '======' >> client.log"
 )
@@ -167,9 +216,9 @@ tr.Processes.Default.Command = "grep -e '^===' -e '^HTTP/' -e 'X-Resp-Id:' -e '<
 tr.Processes.Default.Streams.stdout = 'client.gold'
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = "grep -e 'X-Req-Id:' -e 'HTTP/' -e 'Content-' server1.log"
-for n in range(2, 5):
-    tr.Processes.Default.Command += f" ; grep -e 'X-Req-Id:' -e 'HTTP/' -e '[Cc]ontent-' server{n}.log"
-tr.Processes.Default.Streams.stdout = 'server.gold'
-tr.Processes.Default.ReturnCode = 0
+server.Streams.All += Testers.ContainsExpression("Serving GET /sdfsdf/0... Finished", "Served 1")
+server.Streams.All += Testers.ContainsExpression("Serving GET /sdfsdf/1... Finished", "Served 2")
+server.Streams.All += Testers.ContainsExpression("Serving GET /example/2... Finished", "Served 3")
+
+outserver = Test.Disk.File("outserver")
+outserver.Content = "server.gold"
