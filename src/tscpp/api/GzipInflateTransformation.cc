@@ -107,11 +107,13 @@ GzipInflateTransformation::consume(std::string_view data)
   while (state_->z_stream_.avail_in > 0 && err != Z_STREAM_END) {
     LOG_DEBUG("Iteration %d: Gzip has %d bytes to inflate", ++iteration, state_->z_stream_.avail_in);
 
-    // Setup where the decompressed output will go.
+    // Setup where the decompressed output will go
+    // next_out needs to be set to nullptr before we return since it points to a local buffer
+    // coverity[WRAPPER_ESCAPE: FALSE]
     state_->z_stream_.next_out  = reinterpret_cast<unsigned char *>(&buffer[0]);
     state_->z_stream_.avail_out = inflate_block_size;
 
-    /* Uncompress */
+    // Uncompress the data
     err = inflate(&state_->z_stream_, Z_SYNC_FLUSH);
 
     if (err != Z_OK && err != Z_STREAM_END) {
