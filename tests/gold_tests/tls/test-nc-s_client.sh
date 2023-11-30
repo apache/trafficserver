@@ -24,4 +24,4 @@ then
   ignore_unexpected_eof='-ignore_unexpected_eof'
 fi
 echo -e "This is a reply" | nc -l "$1"  > test.out &
-echo "This is a test" | openssl s_client -servername bar.com -connect "localhost:$2" -ign_eof ${ignore_unexpected_eof} 
+echo "This is a test" | openssl s_client -servername bar.com -connect "localhost:$2" -ign_eof ${ignore_unexpected_eof}
