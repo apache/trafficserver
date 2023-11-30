@@ -102,9 +102,14 @@ def make_done_stat_ready(tsenv):
 
 watcher = Test.Processes.Process("watcher", "sleep 20")
 
+tr = Test.AddTestRun("Wait for stats")
+tr.Processes.Default.StartBefore(watcher, ready=make_done_stat_ready(ts.Env))
+tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.test.done",
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn")
-tr.Processes.Default.StartBefore(watcher, ready=make_done_stat_ready(ts.Env))
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
