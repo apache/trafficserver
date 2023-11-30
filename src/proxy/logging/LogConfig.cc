@@ -67,40 +67,6 @@
 #define MANAGER_LOG_FILENAME  "manager.log"
 
 void
-LogConfig::setup_default_values()
-{
-  hostname              = ats_strdup(Machine::instance()->host_name.c_str());
-  log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
-  log_fast_buffer       = false;
-  max_secs_per_buffer   = 5;
-  max_space_mb_for_logs = 100;
-  max_space_mb_headroom = 10;
-  error_log_filename    = ats_strdup("error.log");
-  logfile_perm          = 0644;
-  logfile_dir           = ats_strdup(".");
-
-  preproc_threads = 1;
-
-  rolling_enabled          = Log::NO_ROLLING;
-  rolling_interval_sec     = 86400; // 24 hours
-  rolling_offset_hr        = 0;
-  rolling_size_mb          = 10;
-  rolling_min_count        = 0;
-  rolling_max_count        = 0;
-  rolling_allow_empty      = false;
-  auto_delete_rolled_files = true;
-  roll_log_files_now       = false;
-
-  sampling_frequency   = 1;
-  file_stat_frequency  = 16;
-  space_used_frequency = 900;
-
-  ascii_buffer_size         = 4 * 9216;
-  max_line_size             = 9216; // size of pipe buffer for SunOS 5.6
-  logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
-}
-
-void
 LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
@@ -294,8 +260,35 @@ LogConfig::LogConfig() : m_partition_space_left(static_cast<int64_t>(UINT_MAX))
   // Setup the default values for all LogConfig public variables so that
   // a LogConfig object is valid upon return from the constructor even
   // if no configuration file is read
-  //
-  setup_default_values();
+  hostname              = ats_strdup(Machine::instance()->host_name.c_str());
+  log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
+  log_fast_buffer       = false;
+  max_secs_per_buffer   = 5;
+  max_space_mb_for_logs = 100;
+  max_space_mb_headroom = 10;
+  error_log_filename    = ats_strdup("error.log");
+  logfile_perm          = 0644;
+  logfile_dir           = ats_strdup(".");
+
+  preproc_threads = 1;
+
+  rolling_enabled          = Log::NO_ROLLING;
+  rolling_interval_sec     = 86400; // 24 hours
+  rolling_offset_hr        = 0;
+  rolling_size_mb          = 10;
+  rolling_min_count        = 0;
+  rolling_max_count        = 0;
+  rolling_allow_empty      = false;
+  auto_delete_rolled_files = true;
+  roll_log_files_now       = false;
+
+  sampling_frequency   = 1;
+  file_stat_frequency  = 16;
+  space_used_frequency = 900;
+
+  ascii_buffer_size         = 4 * 9216;
+  max_line_size             = 9216; // size of pipe buffer for SunOS 5.6
+  logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 }
 
 /*-------------------------------------------------------------------------
@@ -306,6 +299,7 @@ LogConfig::LogConfig() : m_partition_space_left(static_cast<int64_t>(UINT_MAX))
 
 LogConfig::~LogConfig()
 {
+  ats_free(hostname);
   ats_free(error_log_filename);
   ats_free(logfile_dir);
 }

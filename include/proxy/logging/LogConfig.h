@@ -158,7 +158,6 @@ public:
    */
   void register_rolled_log_auto_delete(std::string_view logname, int rolling_min_count);
 
-public:
   bool initialized             = false;
   bool reconfiguration_needed  = false;
   bool logging_space_exhausted = false;
@@ -204,9 +203,6 @@ public:
 private:
   bool evaluate_config();
 
-  void setup_default_values();
-
-private:
   bool m_disk_full                  = false;
   bool m_disk_low                   = false;
   bool m_partition_full             = false;
