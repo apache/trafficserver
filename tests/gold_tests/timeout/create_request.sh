@@ -24,7 +24,7 @@ request() {
 	printf "GET / HTTP/1.1"
 }
 
-ncat 
+ncat
 if [ $? -le 1 ]
 then
 	request | ncat -i 11 127.0.0.1 $1 &
