@@ -161,6 +161,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
   REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
   REC_EstablishStaticConfigInt32U(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
+  REC_EstablishStaticConfigInt32U(this->_cc_algorithm, "proxy.config.quic.cc_algorithm");
 
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
@@ -417,6 +418,19 @@ bool
 QUICConfigParams::disable_http_0_9() const
 {
   return this->_disable_http_0_9;
+}
+
+quiche_cc_algorithm
+QUICConfigParams::get_cc_algorithm() const
+{
+  switch (this->_cc_algorithm) {
+  case 0:
+    return QUICHE_CC_RENO;
+  case 1:
+    return QUICHE_CC_CUBIC;
+  default:
+    return QUICHE_CC_RENO;
+  }
 }
 
 //
