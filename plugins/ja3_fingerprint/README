@@ -17,6 +17,16 @@ The following optional arguments can be used to configure the plugin's behavior:
 
 Add flag --ja3raw if `X-JA3-Raw` is desired in addition to `X-JA3-Sig`.
 Add flag --ja3log if local logging in standard logging directory is desired.
+Add flag --modify-incoming if it is desired that the plugin modify the incoming
+    client request headers rather than the sent (proxy) request headers.
+    Regardless, the origin will receive the configured `X-JA3-*` headers. Using
+    this option allows other plugins that are configured later than
+    `ja3_fingerprint.so` in the `plugin.config` file to see the `X-JA3-*`
+    headers as if they were sent by the client.  This option is only applicable
+    for ja3_fingerprint configured as a global plugin (i.e., a `plugin.config`
+    plugin) not as a remap plugin.  This is because remap plugins by definition
+    are enaged upon remap completion and by that point it is too late to
+    meaningfully modify the client request headers.
 
 3. plugin.config
 In plugin.config, supply name of the plugin and any desired options. For example:
