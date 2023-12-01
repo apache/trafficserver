@@ -152,4 +152,6 @@ TEST_CASE("MMH", "[libts][MMH]")
   ats_free(free_s1);
   ats_free(free_s2);
   ats_free(free_s3);
+
+  fclose(fp);
 }
