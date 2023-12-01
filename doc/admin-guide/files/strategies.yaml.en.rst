@@ -23,7 +23,7 @@ strategies.yaml
 
 .. include:: ../../common.defs
 
-The :file:`strategies.yaml` file identifies the next hop proxies used in an
+The :file:`strategies.yaml` file identifies the next hop proxies used in a
 cache hierarchy and the algorithms used to select the next hop proxy. Use
 this file to perform the following configuration:
 
