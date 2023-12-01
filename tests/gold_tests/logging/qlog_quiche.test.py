@@ -22,9 +22,7 @@ Test.Summary = '''
 Basic test for qlog using quiche library.
 '''
 
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_QUICHE')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'))
 
 Generate_Qlog = True
 No_Qlog = False
@@ -84,11 +82,9 @@ class quiche_qlog_Test:
                   quic:
                     qlog:
                       file_base: log/test_qlog # we expect to have log/test_qlog-<TRACE ID>.sqlog
-                  '''
-            )
+                  ''')
         self._ts.Disk.ssl_multicert_config.AddLine(
-            f'dest_ip=* ssl_cert_name={ts.Variables.SSLDir}/server.pem ssl_key_name={ts.Variables.SSLDir}/server.key'
-        )
+            f'dest_ip=* ssl_cert_name={ts.Variables.SSLDir}/server.pem ssl_key_name={ts.Variables.SSLDir}/server.key')
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -101,10 +97,7 @@ class quiche_qlog_Test:
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.AddVerifierClientProcess(
-            f"client-{quiche_qlog_Test.client_counter}",
-            self.replay_file,
-            http3_ports=[
-                self._ts.Variables.ssl_port])
+            f"client-{quiche_qlog_Test.client_counter}", self.replay_file, http3_ports=[self._ts.Variables.ssl_port])
         quiche_qlog_Test.client_counter += 1
         tr.Processes.Default.ReturnCode = 0
 

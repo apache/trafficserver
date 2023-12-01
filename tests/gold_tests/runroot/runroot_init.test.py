@@ -22,8 +22,8 @@ Test.Summary = '''
 Test for init of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
-Test.SkipUnless(Test.Variables.BINDIR.startswith(Test.Variables.PREFIX),
-                "need to guarantee bin path starts with prefix for runroot")
+Test.SkipUnless(
+    Test.Variables.BINDIR.startswith(Test.Variables.PREFIX), "need to guarantee bin path starts with prefix for runroot")
 
 # init from pass in path
 path1 = os.path.join(Test.RunDirectory, "runroot1")

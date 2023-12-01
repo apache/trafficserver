@@ -19,7 +19,6 @@ Test TLS secrets logging.
 
 import os
 
-
 Test.Summary = '''
 Test TLS secrets logging.
 '''
@@ -40,8 +39,7 @@ class TlsKeyloggingTest:
     def setupOriginServer(self):
         server_name = f"server_{TlsKeyloggingTest.server_counter}"
         TlsKeyloggingTest.server_counter += 1
-        self.server = Test.MakeVerifierServerProcess(
-            server_name, TlsKeyloggingTest.replay_file)
+        self.server = Test.MakeVerifierServerProcess(server_name, TlsKeyloggingTest.replay_file)
 
     def setupTS(self, enable_secrets_logging):
         ts_name = f"ts_{TlsKeyloggingTest.ts_counter}"
@@ -49,27 +47,22 @@ class TlsKeyloggingTest:
         self.ts = Test.MakeATSProcess(ts_name, enable_tls=True, enable_cache=False)
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.records_config.update({
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl_keylog'
-        })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self.ts.Disk.remap_config.AddLine(
-            f'map / https://127.0.0.1:{self.server.Variables.https_port}'
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'ssl_keylog'
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self.server.Variables.https_port}')
 
         keylog_file = os.path.join(self.ts.Variables.LOGDIR, "tls_secrets.txt")
 
         # Remove the keylog_file configuration automatically configured via the
         # trafficserver AuTest extension.
-        self.ts.Disk.records_config.update(
-            '''
+        self.ts.Disk.records_config.update('''
         ssl:
             keylog_file: null
         ''')
@@ -80,8 +73,7 @@ class TlsKeyloggingTest:
             })
 
             self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                f"Opened {keylog_file} for TLS key logging",
-                "Verify the user was notified of TLS secrets logging.")
+                f"Opened {keylog_file} for TLS key logging", "Verify the user was notified of TLS secrets logging.")
             self.ts.Disk.File(keylog_file, id="keylog", exists=True)
             # It would be nice to verify the content of certain lines in the
             # keylog file, but the content is dependent upon the particular TLS
@@ -97,10 +89,7 @@ class TlsKeyloggingTest:
 
         client_name = f"client_{TlsKeyloggingTest.client_counter}"
         TlsKeyloggingTest.client_counter += 1
-        tr.AddVerifierClientProcess(
-            client_name,
-            TlsKeyloggingTest.replay_file,
-            https_ports=[self.ts.Variables.ssl_port])
+        tr.AddVerifierClientProcess(client_name, TlsKeyloggingTest.replay_file, https_ports=[self.ts.Variables.ssl_port])
 
 
 TlsKeyloggingTest(enable_secrets_logging=False).run()

@@ -34,6 +34,7 @@ from pydoc import locate
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from colorama import init, Fore, Back, Style
+
 init(autoreset=True)
 
 Remapped_Vars = {}
@@ -96,8 +97,8 @@ def progressbar(it, size=60, out=sys.stdout, mute=False):
     def show(j):
         x = int(size * j / count)
         if not mute:
-            print("[{}{}] {}/{}".format("█" * x, "░" * (size - x), j, count),
-                  end='\r', file=out, flush=True)
+            print("[{}{}] {}/{}".format("█" * x, "░" * (size - x), j, count), end='\r', file=out, flush=True)
+
     show(0)
     for i, item in enumerate(it):
         yield item
@@ -168,6 +169,7 @@ def print_summary():
 
 
 def get_value(type, value):
+
     def have_multipliers(value, mps):
         for m in mps:
             if value.endswith(m):
@@ -206,7 +208,8 @@ def add_object(config, var, value, type, track_info):
         elif var in config and isinstance(config[var], dict):
             line, rec = track_info
             raise Exception(
-                f"We cannot continue with '{rec}' at line '{line}' as an existing YAML map will be overridden.\nPlease check your config.")
+                f"We cannot continue with '{rec}' at line '{line}' as an existing YAML map will be overridden.\nPlease check your config."
+            )
         config[var] = get_value(type, value)
     else:
         key = var[:index]
@@ -292,14 +295,16 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--schema', help="Validate the output using a json schema file.")
     parser.add_argument('-o', '--output', help="Save to output file.", required=False, default="records.yaml")
     parser.add_argument(
-        '-m',
-        '--mute',
-        help="Be quiet, do not output anything, except for errors",
-        required=False,
-        action='store_true')
+        '-m', '--mute', help="Be quiet, do not output anything, except for errors", required=False, action='store_true')
     parser.add_argument('-e', '--error', help="Show traceback", required=False, action='store_true', default=False)
-    parser.add_argument('-x', '--no-backup', help="If it exists, do not backup the output file.",
-                        required=False, action='store_true', default=False, dest='no_backup')
+    parser.add_argument(
+        '-x',
+        '--no-backup',
+        help="If it exists, do not backup the output file.",
+        required=False,
+        action='store_true',
+        default=False,
+        dest='no_backup')
     kk = parser.add_mutually_exclusive_group(required=False)
     kk.add_argument('-j', '--json', help="Output as json", action='store_true', default=False)
     kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true', default=True)

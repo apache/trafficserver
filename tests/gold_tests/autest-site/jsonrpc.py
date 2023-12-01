@@ -27,9 +27,12 @@ class BaseRequestType(type):
     '''
     Base class for both, request and notifications
     '''
+
     def __getattr__(cls: typing.Callable, name: str) -> typing.Callable:
+
         def attr_handler(*args: typing.Any, **kwargs: typing.Any) -> "Request":
             return cls(name, *args, **kwargs)
+
         return attr_handler
 
 
@@ -156,6 +159,7 @@ class Request(Notification):
 
 
 class BatchRequest(list):
+
     def __init__(self, *args: typing.Union[Request, Notification]):
         for r in args:
             self.append(r)

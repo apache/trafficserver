@@ -36,9 +36,7 @@ class CookieDefaultTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "cookie-default-verifier-server",
-            self.cookieDefaultReplayFile)
+        self.server = Test.MakeVerifierServerProcess("cookie-default-verifier-server", self.cookieDefaultReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-default")
@@ -46,9 +44,7 @@ class CookieDefaultTest:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
         })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the correct caching behavior when ATS is in default configuration")
@@ -79,30 +75,24 @@ class CookieBypassTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "cookie-bypass-verifier-server",
-            self.cookieBypassReplayFile)
+        self.server = Test.MakeVerifierServerProcess("cookie-bypass-verifier-server", self.cookieBypassReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-bypass")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            # Bypass cache for any responses to cookies
-            "proxy.config.http.cache.cache_responses_to_cookies": 0
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                # Bypass cache for any responses to cookies
+                "proxy.config.http.cache.cache_responses_to_cookies": 0
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun(
             "Verify the correct caching behavior when ATS is configured to not cache response to cookie for any content type")
         tr.AddVerifierClientProcess(
-            "cookie-bypass-client",
-            self.cookieBypassReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "cookie-bypass-client", self.cookieBypassReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -125,21 +115,18 @@ class CookieImgOnlyTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "cookie-img-only-verifier-server",
-            self.cookieImgOnlyReplayFile)
+        self.server = Test.MakeVerifierServerProcess("cookie-img-only-verifier-server", self.cookieImgOnlyReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-img-only")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            # Cache only for image types
-            "proxy.config.http.cache.cache_responses_to_cookies": 2
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                # Cache only for image types
+                "proxy.config.http.cache.cache_responses_to_cookies": 2
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun(
@@ -171,21 +158,18 @@ class CookieAllButTextTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "cookie-all-but-text-verifier-server",
-            self.cookieAllButTextReplayFile)
+        self.server = Test.MakeVerifierServerProcess("cookie-all-but-text-verifier-server", self.cookieAllButTextReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-all-but-text")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            # Cache all content type except text
-            "proxy.config.http.cache.cache_responses_to_cookies": 3
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                # Cache all content type except text
+                "proxy.config.http.cache.cache_responses_to_cookies": 3
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun(
@@ -219,25 +203,24 @@ class CookieAllButTextWithExcpTest:
 
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
-            "cookie-all-but-text-with-excp-verifier-server",
-            self.cookieAllButTextReplayFile)
+            "cookie-all-but-text-with-excp-verifier-server", self.cookieAllButTextReplayFile)
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts-cookie-all-but-text-with-excp")
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            # Cache all content type but text. Text type also gets cached for
-            # server responses without Set-Cookie or with Cache-Control: public
-            "proxy.config.http.cache.cache_responses_to_cookies": 4
-        })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                # Cache all content type but text. Text type also gets cached for
+                # server responses without Set-Cookie or with Cache-Control: public
+                "proxy.config.http.cache.cache_responses_to_cookies": 4
+            })
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runTraffic(self):
         tr = Test.AddTestRun(
-            "Verify the correct caching behavior when ATS is configured to cache all content types but text, but with a few exceptions for text types which would also be cached")
+            "Verify the correct caching behavior when ATS is configured to cache all content types but text, but with a few exceptions for text types which would also be cached"
+        )
         tr.AddVerifierClientProcess(
             "cookie-all-but-text-with-excp-client",
             self.cookieAllButTextReplayFile,

@@ -19,7 +19,6 @@
 from ports import get_port
 import sys
 
-
 Test.Summary = __doc__
 
 
@@ -51,9 +50,7 @@ class QuickServerTest:
 
         :param tr: The test run to associate with the DNS process with.
         """
-        self._dns = tr.MakeDNServer(
-            f'dns-{QuickServerTest._dns_counter}',
-            default='127.0.0.1')
+        self._dns = tr.MakeDNServer(f'dns-{QuickServerTest._dns_counter}', default='127.0.0.1')
         QuickServerTest._dns_counter += 1
 
     def _configure_server(self, tr: 'TestRun'):
@@ -83,15 +80,14 @@ class QuickServerTest:
         """
         self._ts = tr.MakeATSProcess(f'ts-{QuickServerTest._ts_counter}')
         QuickServerTest._ts_counter += 1
-        self._ts.Disk.remap_config.AddLine(
-            f'map / http://quick.server.com:{self._server.Variables.http_port}'
-        )
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|hostdb',
-            'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
-            'proxy.config.dns.resolv_conf': 'NULL',
-        })
+        self._ts.Disk.remap_config.AddLine(f'map / http://quick.server.com:{self._server.Variables.http_port}')
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|dns|hostdb',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+            })
 
     def run(self):
         """Run the test."""
@@ -106,11 +102,9 @@ class QuickServerTest:
         tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
         tr.Setup.CopyAs(self._quick_server, Test.RunDirectory)
 
-        client_command = (
-            f'{sys.executable} {self._slow_post_client} '
-            '127.0.0.1 '
-            f'{self._ts.Variables.port} '
-        )
+        client_command = (f'{sys.executable} {self._slow_post_client} '
+                          '127.0.0.1 '
+                          f'{self._ts.Variables.port} ')
         if not self._should_abort_request:
             client_command += '--finish-request '
         tr.Processes.Default.Command = client_command
@@ -125,8 +119,5 @@ class QuickServerTest:
 for abort_request in [True, False]:
     for drain_request in [True, False]:
         for abort_response_headers in [True, False]:
-            test = QuickServerTest(
-                abort_request,
-                drain_request,
-                abort_response_headers)
+            test = QuickServerTest(abort_request, drain_request, abort_response_headers)
             test.run()

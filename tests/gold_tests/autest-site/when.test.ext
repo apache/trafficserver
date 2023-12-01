@@ -47,9 +47,7 @@ def FileContains(haystack, needle, desired_count=1):
 
     if not os.path.exists(haystack):
         host.WriteDebug(
-            ['FileContains', 'when'],
-            "Testing for file content '{0}' in file '{1}': file does not exist".format(
-                needle, haystack))
+            ['FileContains', 'when'], "Testing for file content '{0}' in file '{1}': file does not exist".format(needle, haystack))
         return False
 
     needle_regex = re.compile(needle)
@@ -60,24 +58,19 @@ def FileContains(haystack, needle, desired_count=1):
             line_count += 1
             if needle_regex.search(line):
                 host.WriteDebug(
-                    ['FileContains', 'when'],
-                    "Found '{0}' in file '{1}' in line: '{2}', line number: {3}".format(
+                    ['FileContains', 'when'], "Found '{0}' in file '{1}' in line: '{2}', line number: {3}".format(
                         needle, haystack, line.rstrip(), line_count))
                 needle_seen_count += 1
 
                 if needle_seen_count >= desired_count:
                     host.WriteDebug(
-                        ['FileContains', 'when'],
-                        "Testing for file content '{0}' in file '{1}', "
-                        "successfully found it the desired {2} times".format(
-                            needle, haystack, needle_seen_count))
+                        ['FileContains', 'when'], "Testing for file content '{0}' in file '{1}', "
+                        "successfully found it the desired {2} times".format(needle, haystack, needle_seen_count))
                     return True
 
         host.WriteDebug(
-            ['FileContains', 'when'],
-            "Testing for file content '{0}' in file '{1}', only seen {2} "
-            "out of the desired {3} times".format(
-                needle, haystack, needle_seen_count, desired_count))
+            ['FileContains', 'when'], "Testing for file content '{0}' in file '{1}', only seen {2} "
+            "out of the desired {3} times".format(needle, haystack, needle_seen_count, desired_count))
 
         return False
 

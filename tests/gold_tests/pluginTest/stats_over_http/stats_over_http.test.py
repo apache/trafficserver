@@ -44,11 +44,12 @@ class StatsOverHttpPluginTest:
 
         self.ts.Disk.plugin_config.AddLine('stats_over_http.so _stats')
 
-        self.ts.Disk.records_config.update({
-            "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "stats_over_http"
-        })
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "stats_over_http"
+            })
 
     def __checkProcessBefore(self, tr):
         if self.state == self.State.RUNNING:

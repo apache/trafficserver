@@ -18,6 +18,7 @@ Specific test for number_of_redirections config.
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Test redirection/location & number of redirects(number_of_redirections config)
 '''
@@ -46,13 +47,11 @@ class NumberOfRedirectionsTest:
         self._srv2 = Test.MakeVerifierServerProcess(
             f"srv2_{self._numberOfRedirections}",
             "replay/redirect_srv2_replay.yaml",
-            context={
-                "vs_http_port": self._srv3.Variables.http_port})
+            context={"vs_http_port": self._srv3.Variables.http_port})
         self._srv1 = Test.MakeVerifierServerProcess(
             f"srv1_{self._numberOfRedirections}",
             "replay/redirect_srv1_replay.yaml",
-            context={
-                "vs_http_port": self._srv2.Variables.http_port})
+            context={"vs_http_port": self._srv2.Variables.http_port})
 
     def setup_dns(self):
         self._dns = Test.MakeDNServer(f"dns_{self._numberOfRedirections}")
@@ -61,20 +60,22 @@ class NumberOfRedirectionsTest:
         self._dns.addRecords(records={"c.test": ["127.0.0.1"]})
 
     def add_config(self):
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|redirect|http_redirect',
-            'proxy.config.http.number_of_redirections': self._numberOfRedirections,
-            'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.url_remap.remap_required': 0,  # need this so the domain gets a chance to be evaluated through DNS
-            'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
-        })
-        self._ts.Disk.remap_config.AddLines([
-            'map a.test/ping http://a.test:{0}/'.format(self._srv1.Variables.http_port),
-            'map b.test/pong http://b.test:{0}/'.format(self._srv2.Variables.http_port),
-            'map c.test/pang http://c.test:{0}/'.format(self._srv3.Variables.http_port),
-        ])
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|dns|redirect|http_redirect',
+                'proxy.config.http.number_of_redirections': self._numberOfRedirections,
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.url_remap.remap_required': 0,  # need this so the domain gets a chance to be evaluated through DNS
+                'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
+            })
+        self._ts.Disk.remap_config.AddLines(
+            [
+                'map a.test/ping http://a.test:{0}/'.format(self._srv1.Variables.http_port),
+                'map b.test/pong http://b.test:{0}/'.format(self._srv2.Variables.http_port),
+                'map c.test/pang http://c.test:{0}/'.format(self._srv3.Variables.http_port),
+            ])
 
     def run(self):
         self._tr.Processes.Default.StartBefore(self._srv1)

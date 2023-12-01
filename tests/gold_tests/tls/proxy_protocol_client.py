@@ -23,46 +23,21 @@ import sys
 import struct
 import ssl
 
-
 VERSION_2_SIGNATURE = b'\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A'
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "server_address",
-        help="The server IP address to connect to.")
-    parser.add_argument(
-        "server_port",
-        type=int,
-        help="The server port to connect to.")
-    parser.add_argument(
-        "sni",
-        help="The SNI to include in the CLIENT_HELLO.")
-    parser.add_argument(
-        "proxy_src_ip",
-        help="The source IP address in the PROXY message.")
-    parser.add_argument(
-        "proxy_dest_ip",
-        help="The destination IP address in the PROXY message.")
-    parser.add_argument(
-        "proxy_src_port",
-        type=int,
-        help="The source port in the PROXY message.")
-    parser.add_argument(
-        "proxy_dest_port",
-        type=int,
-        help="The destination port in the PROXY message.")
-    parser.add_argument(
-        "protocol_version",
-        type=int,
-        choices=[1, 2],
-        help="the proxy protocol version(either 1 or 2).")
-    parser.add_argument(
-        "--https",
-        action="store_true",
-        help="Send https data after the PROXY message.")
+    parser.add_argument("server_address", help="The server IP address to connect to.")
+    parser.add_argument("server_port", type=int, help="The server port to connect to.")
+    parser.add_argument("sni", help="The SNI to include in the CLIENT_HELLO.")
+    parser.add_argument("proxy_src_ip", help="The source IP address in the PROXY message.")
+    parser.add_argument("proxy_dest_ip", help="The destination IP address in the PROXY message.")
+    parser.add_argument("proxy_src_port", type=int, help="The source port in the PROXY message.")
+    parser.add_argument("proxy_dest_port", type=int, help="The destination port in the PROXY message.")
+    parser.add_argument("protocol_version", type=int, choices=[1, 2], help="the proxy protocol version(either 1 or 2).")
+    parser.add_argument("--https", action="store_true", help="Send https data after the PROXY message.")
     return parser.parse_args()
 
 
@@ -100,12 +75,7 @@ def construct_proxy_header_v2(src_addr: tuple, dst_addr: tuple) -> bytes:
 
 
 def send_proxy_header(
-        socket: socket.socket,
-        src_ip: str,
-        src_port: str,
-        dest_ip: int,
-        dest_port: int,
-        proxy_protocol_version: int) -> None:
+        socket: socket.socket, src_ip: str, src_port: str, dest_ip: int, dest_port: int, proxy_protocol_version: int) -> None:
     """Send the specified PROXY protocol header.
 
     :param socket: The socket to send the header on.
@@ -117,14 +87,11 @@ def send_proxy_header(
     """
     logging.info(f'Sending PROXY protocol version {proxy_protocol_version}')
     if proxy_protocol_version == 1:
-        header = construct_proxy_header_v1((src_ip, src_port),
-                                           (dest_ip, dest_port))
+        header = construct_proxy_header_v1((src_ip, src_port), (dest_ip, dest_port))
     elif proxy_protocol_version == 2:
-        header = construct_proxy_header_v2((src_ip, src_port),
-                                           (dest_ip, dest_port))
+        header = construct_proxy_header_v2((src_ip, src_port), (dest_ip, dest_port))
     else:
-        raise ValueError(
-            f'Invalid proxy protocol version: {proxy_protocol_version}')
+        raise ValueError(f'Invalid proxy protocol version: {proxy_protocol_version}')
 
     socket.sendall(header)
 
@@ -155,8 +122,8 @@ def main() -> None:
     args = parse_args()
     with socket.create_connection((args.server_address, args.server_port)) as sock:
         # send the PROXY header
-        send_proxy_header(sock, args.proxy_src_ip, args.proxy_src_port,
-                          args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version)
+        send_proxy_header(
+            sock, args.proxy_src_ip, args.proxy_src_port, args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version)
         if args.https:
             # https
             context = ssl.create_default_context()
@@ -170,7 +137,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     sys.exit(main())

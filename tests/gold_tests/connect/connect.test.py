@@ -44,12 +44,13 @@ class ConnectTest:
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
-            'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
+                'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
+            })
 
         self.ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
@@ -64,8 +65,7 @@ logging:
   logs:
     - filename: access
       format: common
-'''.split("\n")
-        )
+'''.split("\n"))
 
     def __checkProcessBefore(self, tr):
         if self.state == self.State.RUNNING:
@@ -97,8 +97,7 @@ logging:
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
             os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log')
-        )
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
         tr.Processes.Default.ReturnCode = 0
 
     def run(self):
@@ -119,42 +118,36 @@ class ConnectViaPVTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "connect-verifier-server",
-            self.connectReplayFile)
+        self.server = Test.MakeVerifierServerProcess("connect-verifier-server", self.connectReplayFile)
         # Verify server output
-        self.server.Streams.stdout += Testers.ExcludesExpression(
-            "uuid: 1",
-            "Verify the CONNECT request doesn't reach the server.")
+        self.server.Streams.stdout += Testers.ExcludesExpression("uuid: 1", "Verify the CONNECT request doesn't reach the server.")
         self.server.Streams.stdout += Testers.ContainsExpression(
-            "GET /get HTTP/1.1\nuuid: 2", reflags=re.MULTILINE,
-            description="Verify the server gets the second request.")
+            "GET /get HTTP/1.1\nuuid: 2", reflags=re.MULTILINE, description="Verify the server gets the second request.")
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("connect-ts")
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|iocore_net|rec',
-            'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
-            'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|iocore_net|rec',
+                'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
+                'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
+            })
 
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1", reflags=re.MULTILINE,
+            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
+            reflags=re.MULTILINE,
             description="Verify that ATS recognizes the CONNECT request.")
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify correct handling of CONNECT request")
         tr.AddVerifierClientProcess(
-            "connect-client",
-            self.connectReplayFile,
-            http_ports=[self.ts.Variables.port],
-            other_args='--thread-limit 1')
+            "connect-client", self.connectReplayFile, http_ports=[self.ts.Variables.port], other_args='--thread-limit 1')
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -163,16 +156,11 @@ class ConnectViaPVTest:
     def __testMetrics(self):
         tr = Test.AddTestRun("Test metrics")
         tr.Processes.Default.Command = (
-            f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
-            " 'traffic_ctl metric get" +
-            " proxy.process.http.total_incoming_connections" +
-            " proxy.process.http.total_client_connections" +
-            " proxy.process.http.total_client_connections_ipv4" +
-            " proxy.process.http.total_client_connections_ipv6" +
-            " proxy.process.http.total_server_connections" +
-            " proxy.process.http2.total_client_connections" +
-            " proxy.process.http.connect_requests" +
-            " proxy.process.tunnel.total_client_connections_blind_tcp" +
+            f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
+            " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
+            " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
+            " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
+            " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
             " proxy.process.tunnel.current_client_connections_blind_tcp" +
             " proxy.process.tunnel.total_server_connections_blind_tcp" +
             " proxy.process.tunnel.current_server_connections_blind_tcp" +
@@ -183,11 +171,8 @@ class ConnectViaPVTest:
             " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
             " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
             " proxy.process.tunnel.total_client_connections_tls_http" +
-            " proxy.process.tunnel.current_client_connections_tls_http" +
-            " proxy.process.tunnel.total_server_connections_tls" +
-            " proxy.process.tunnel.current_server_connections_tls'" +
-            f" {Test.TestDirectory}/gold/metrics.gold"
-        )
+            " proxy.process.tunnel.current_client_connections_tls_http" + " proxy.process.tunnel.total_server_connections_tls" +
+            " proxy.process.tunnel.current_server_connections_tls'" + f" {Test.TestDirectory}/gold/metrics.gold")
         # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
         tr.Processes.Default.Env = self.ts.Env
         tr.Processes.Default.ReturnCode = 0
@@ -211,49 +196,44 @@ class ConnectViaPVTest2:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            "connect-verifier-server2",
-            self.connectReplayFile)
+        self.server = Test.MakeVerifierServerProcess("connect-verifier-server2", self.connectReplayFile)
         # Verify server output
         self.server.Streams.stdout += Testers.ExcludesExpression(
-            "test: connect-request",
-            "Verify the CONNECT request doesn't reach the server.")
+            "test: connect-request", "Verify the CONNECT request doesn't reach the server.")
         self.server.Streams.stdout += Testers.ContainsExpression(
-            "GET /get HTTP/1.1\nuuid: 1\ntest: real-request", reflags=re.MULTILINE,
+            "GET /get HTTP/1.1\nuuid: 1\ntest: real-request",
+            reflags=re.MULTILINE,
             description="Verify the server gets the second(tunneled) request.")
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("connect-ts2", enable_tls=True)
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|hpack',
-            'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
-            'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
-            'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl",
-            'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|hpack',
+                'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
+                'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl",
+                'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
+            })
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1", reflags=re.MULTILINE,
+            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
+            reflags=re.MULTILINE,
             description="Verify that ATS recognizes the CONNECT request.")
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify correct handling of CONNECT request on HTTP/2")
         tr.AddVerifierClientProcess(
-            "connect-client2",
-            self.connectReplayFile,
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
+            "connect-client2", self.connectReplayFile, https_ports=[self.ts.Variables.ssl_port], other_args='--thread-limit 1')
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

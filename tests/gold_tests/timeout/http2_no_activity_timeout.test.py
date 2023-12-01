@@ -17,7 +17,6 @@
 from typing import Optional
 import re
 
-
 Test.Summary = 'Verify http2.no_activity_timeout_(in|out)'
 
 
@@ -29,13 +28,14 @@ class Test_http2_no_activity_timeout:
     ts_counter: int = 0
     server_counter: int = 0
 
-    def __init__(self,
-                 name: str,
-                 replay_keys: Optional[str] = None,
-                 no_activity_timeout_in: Optional[int] = None,
-                 expect_in_timeout=False,
-                 no_activity_timeout_out: Optional[int] = None,
-                 expect_out_timeout=False):
+    def __init__(
+            self,
+            name: str,
+            replay_keys: Optional[str] = None,
+            no_activity_timeout_in: Optional[int] = None,
+            expect_in_timeout=False,
+            no_activity_timeout_out: Optional[int] = None,
+            expect_out_timeout=False):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -62,9 +62,7 @@ class Test_http2_no_activity_timeout:
 
         :param tr: The TestRun object to associate the server process with.
         """
-        self._server = tr.AddVerifierServerProcess(
-            f"server_{Test_http2_no_activity_timeout.server_counter}",
-            self.replay_file)
+        self._server = tr.AddVerifierServerProcess(f"server_{Test_http2_no_activity_timeout.server_counter}", self.replay_file)
         Test_http2_no_activity_timeout.server_counter += 1
 
     def _configure_traffic_server(self, tr: 'TestRun'):
@@ -72,27 +70,24 @@ class Test_http2_no_activity_timeout:
 
         :param tr: The TestRun object to associate the ts process with.
         """
-        self._ts = tr.MakeATSProcess(
-            f"ts-{Test_http2_no_activity_timeout.ts_counter}",
-            enable_tls=True,
-            enable_cache=False)
+        self._ts = tr.MakeATSProcess(f"ts-{Test_http2_no_activity_timeout.ts_counter}", enable_tls=True, enable_cache=False)
         Test_http2_no_activity_timeout.ts_counter += 1
 
         self._ts.addSSLfile("ssl/cert.crt")
         self._ts.addSSLfile("ssl/private-key.key")
         self._ts.Disk.ssl_multicert_config.AddLine(
             f'dest_ip=* ssl_cert_name={self._ts.Variables.SSLDir}/cert.crt '
-            f'ssl_key_name={self._ts.Variables.SSLDir}/private-key.key'
-        )
+            f'ssl_key_name={self._ts.Variables.SSLDir}/private-key.key')
 
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|socket|inactivity_cop',
-            'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
-            "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-            'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|socket|inactivity_cop',
+                'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+                'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
+            })
 
         if self._no_activity_timeout_in is not None:
             self._ts.Disk.records_config.update({
@@ -123,11 +118,9 @@ class Test_http2_no_activity_timeout:
 
         if self._expect_in_timeout:
             tr.Processes.Default.Streams.All += Testers.IncludesExpression(
-                "SSL_read error",
-                "The client should have a read error due to an ATS timeout.")
+                "SSL_read error", "The client should have a read error due to an ATS timeout.")
             self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                "http2_cs.*Closing event:.*TIMEOUT",
-                "We should detect a client side timeout.")
+                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a client side timeout.")
         elif self._expect_out_timeout:
             # There should be two origin connections:
             # 1. For the first no delay transaction.
@@ -137,14 +130,10 @@ class Test_http2_no_activity_timeout:
                 "A second server side connection should be needed after the first times out.",
                 reflags=re.MULTILINE | re.DOTALL)
             self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                "http2_cs.*Closing event:.*TIMEOUT",
-                "We should detect a server side timeout.")
+                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a server side timeout.")
 
 
-test0 = Test_http2_no_activity_timeout(
-    "Default no activity timeout",
-    expect_in_timeout=False,
-    expect_out_timeout=False)
+test0 = Test_http2_no_activity_timeout("Default no activity timeout", expect_in_timeout=False, expect_out_timeout=False)
 test0.run()
 
 test1 = Test_http2_no_activity_timeout(

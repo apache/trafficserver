@@ -33,6 +33,7 @@ DEFAULT_LOOKUP_KEY = '{PATH}'
 def addMethod(self, testName, request_header, functionName):
     return
 
+
 # creates the full request or response block using headers and message data
 
 
@@ -60,13 +61,11 @@ def getHeaderFieldVal(request_header, field):
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
 def addResponse(self, filename, request_header, response_header):
     client_request = Request.fromRequestLine(
-        request_header["headers"],
-        "" if "body" not in request_header else request_header["body"],
+        request_header["headers"], "" if "body" not in request_header else request_header["body"],
         None if "options" not in request_header else request_header["options"])
 
     server_response = Response.fromRequestLine(
-        response_header["headers"],
-        "" if "body" not in response_header else response_header["body"],
+        response_header["headers"], "" if "body" not in response_header else response_header["body"],
         None if "options" not in response_header else response_header["options"])
 
     # timestamp field is left None because that needs to be revised for better implementation
@@ -135,16 +134,10 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
     try:
         sock.connect((serverHost, port))
     except ConnectionRefusedError:
-        host.WriteDebug(
-            ['uServerUpAndRunning', 'when'],
-            "Connection refused: {0}:{1}".format(
-                serverHost, port))
+        host.WriteDebug(['uServerUpAndRunning', 'when'], "Connection refused: {0}:{1}".format(serverHost, port))
         return False
     except ssl.SSLError as e:
-        host.WriteDebug(
-            ['uServerUpAndRunning', 'when'],
-            "SSL connection error: {0}:{1}:{2}".format(
-                serverHost, port, e))
+        host.WriteDebug(['uServerUpAndRunning', 'when'], "SSL connection error: {0}:{1}:{2}".format(serverHost, port, e))
         return False
 
     sock.sendall(request.encode())
@@ -164,11 +157,7 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
     if decoded_output == expected_response:
         return True
 
-    host.WriteError('\n'.join([
-        'Got invalid response from microserver:',
-        '----',
-        decoded_output,
-        '----']))
+    host.WriteError('\n'.join(['Got invalid response from microserver:', '----', decoded_output, '----']))
 
 
 AddWhenFunction(uServerUpAndRunning)
@@ -243,12 +232,15 @@ def MakeOriginServer(
     }
 
     # Set up health check.
-    addResponse(p, "healthcheck.json", healthcheck_request, {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "imok",
-        "options": {"skipHooks": None}
-    })
+    addResponse(
+        p, "healthcheck.json", healthcheck_request, {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "imok",
+            "options": {
+                "skipHooks": None
+            }
+        })
 
     p.Ready = When.uServerUpAndRunning(
         ipaddr,

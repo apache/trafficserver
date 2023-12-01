@@ -46,28 +46,29 @@ ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Disk.remap_config.AddLine(
-    'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem ssl_key_name=signed-foo-ec.key,signed-foo.key',
-    'ssl_cert_name=signed-san-ec.pem,signed-san.pem ssl_key_name=signed-san-ec.key,signed-san.key',
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-])
+ts.Disk.ssl_multicert_config.AddLines(
+    [
+        'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem ssl_key_name=signed-foo-ec.key,signed-foo.key',
+        'ssl_cert_name=signed-san-ec.pem,signed-san.pem ssl_key_name=signed-san-ec.key,signed-san.key',
+        'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
+    ])
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.dns.resolv_conf': 'NULL',
-    'proxy.config.diags.debug.tags': 'ssl',
-    'proxy.config.diags.debug.enabled': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.tags': 'ssl',
+        'proxy.config.diags.debug.enabled': 1
+    })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})

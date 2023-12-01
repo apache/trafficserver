@@ -38,28 +38,27 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.connect_ports': '{0} {1}'.format(ts.Variables.ssl_port, ts.Variables.s_client_port),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.http.connect_ports': '{0} {1}'.format(ts.Variables.ssl_port, ts.Variables.s_client_port),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
 ts.Disk.sni_yaml.AddLines([
     "sni:",
     "- fqdn: bar.com",
-    "  forward_route: localhost:{0}".format(ts.Variables.s_client_port)
+    "  forward_route: localhost:{0}".format(ts.Variables.s_client_port),
 ])
 
 tr = Test.AddTestRun("forward-non-http")

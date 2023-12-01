@@ -39,16 +39,17 @@ class Sigusr2Test:
         self._ts_name = "sigusr2_ts{}".format(Sigusr2Test.__ts_counter)
         Sigusr2Test.__ts_counter += 1
         self.ts = Test.MakeATSProcess(self._ts_name)
-        self.ts.Disk.records_config.update({
-            'proxy.config.http.wait_for_cache': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'log',
-            'proxy.config.log.periodic_tasks_interval': 1,
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.http.wait_for_cache': 1,
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'log',
+                'proxy.config.log.periodic_tasks_interval': 1,
 
-            # All log rotation should be handled externally.
-            'proxy.config.log.rolling_enabled': 0,
-            'proxy.config.log.auto_delete_rolled_files': 0,
-        })
+                # All log rotation should be handled externally.
+                'proxy.config.log.rolling_enabled': 0,
+                'proxy.config.log.auto_delete_rolled_files': 0,
+            })
 
         self.diags_log = self.ts.Disk.diags_log.AbsPath
 
@@ -59,10 +60,9 @@ class Sigusr2Test:
         self.log_dir = os.path.dirname(self.diags_log)
 
         self.ts.Disk.remap_config.AddLine(
-            'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(
-                self.ts.Variables.port, self.server.Variables.Port)
-        )
-        self.ts.Disk.logging_yaml.AddLine('''
+            'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(self.ts.Variables.port, self.server.Variables.Port))
+        self.ts.Disk.logging_yaml.AddLine(
+            '''
             logging:
               formats:
                 - name: has_path
@@ -85,13 +85,19 @@ class Sigusr2Test:
         server = Test.MakeOriginServer("server")
         Sigusr2Test.__server = server
         for path in ['/first', '/second', '/third']:
-            request_header = {"headers": "GET {} HTTP/1.1\r\n"
-                              "Host: does.not.matter\r\n\r\n".format(path),
-                              "timestamp": "1469733493.993", "body": ""}
-            response_header = {"headers": "HTTP/1.1 200 OK\r\n"
-                               "Connection: close\r\n"
-                               "Cache-control: max-age=85000\r\n\r\n",
-                               "timestamp": "1469733493.993", "body": "xxx"}
+            request_header = {
+                "headers": "GET {} HTTP/1.1\r\n"
+                           "Host: does.not.matter\r\n\r\n".format(path),
+                "timestamp": "1469733493.993",
+                "body": ""
+            }
+            response_header = {
+                "headers": "HTTP/1.1 200 OK\r\n"
+                           "Connection: close\r\n"
+                           "Cache-control: max-age=85000\r\n\r\n",
+                "timestamp": "1469733493.993",
+                "body": "xxx"
+            }
             server.addResponse("sessionlog.json", request_header, response_header)
         return server
 
@@ -119,8 +125,7 @@ tr1 = Test.AddTestRun("Verify system logs can be rotated")
 diags_test = Sigusr2Test()
 
 # Configure our rotation processes.
-rotate_diags_log = tr1.Processes.Process("rotate_diags_log", "mv {} {}".format(
-    diags_test.diags_log, diags_test.rotated_diags_log))
+rotate_diags_log = tr1.Processes.Process("rotate_diags_log", "mv {} {}".format(diags_test.diags_log, diags_test.rotated_diags_log))
 
 # Configure the signaling of SIGUSR2 to traffic_server.
 tr1.Processes.Default.Command = diags_test.get_sigusr2_signal_command()
@@ -137,12 +142,10 @@ tr1.StillRunningAfter = diags_test.server
 # server running, this new one shouldn't. But it should indicate that the new
 # diags.log was opened.
 diags_test.ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "traffic server running",
-    "The new diags.log should not reference the running traffic server")
+    "traffic server running", "The new diags.log should not reference the running traffic server")
 
 diags_test.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Reseated diags.log",
-    "The new diags.log should indicate the newly opened diags.log")
+    "Reseated diags.log", "The new diags.log should indicate the newly opened diags.log")
 
 #
 # Test 2: Verify SIGUSR2 isn't needed for rotated configured logs.
@@ -151,8 +154,7 @@ tr2 = Test.AddTestRun("Verify yaml.log logs can be rotated")
 configured_test = Sigusr2Test()
 
 first_curl = tr2.Processes.Process(
-    "first_curl",
-    'curl "http://127.0.0.1:{0}/first" --verbose'.format(configured_test.ts.Variables.port))
+    "first_curl", 'curl "http://127.0.0.1:{0}/first" --verbose'.format(configured_test.ts.Variables.port))
 # Note that for each of these processes, aside from the final Default one, they
 # are all treated like long-running servers to AuTest. Thus the long sleeps
 # only allow us to wait until the logs get populated with the desired content,
@@ -162,12 +164,11 @@ first_curl_ready = tr2.Processes.Process("first_curl_ready", 'sleep 30')
 first_curl_ready.StartupTimeout = 30
 first_curl_ready.Ready = When.FileContains(configured_test.configured_log, "/first")
 
-rotate_log = tr2.Processes.Process("rotate_log_file", "mv {} {}".format(
-    configured_test.configured_log, configured_test.rotated_configured_log))
+rotate_log = tr2.Processes.Process(
+    "rotate_log_file", "mv {} {}".format(configured_test.configured_log, configured_test.rotated_configured_log))
 
 second_curl = tr2.Processes.Process(
-    "second_curl",
-    'curl "http://127.0.0.1:{0}/second" --verbose'.format(configured_test.ts.Variables.port))
+    "second_curl", 'curl "http://127.0.0.1:{0}/second" --verbose'.format(configured_test.ts.Variables.port))
 
 second_curl_ready = tr2.Processes.Process("second_curl_ready", 'sleep 30')
 # In the autest environment, it can take more than 10 seconds for the log file to be created.
@@ -180,8 +181,7 @@ send_pkill_ready.StartupTimeout = 30
 send_pkill_ready.Ready = When.FileExists(configured_test.configured_log)
 
 third_curl = tr2.Processes.Process(
-    "third_curl",
-    'curl "http://127.0.0.1:{0}/third" --verbose'.format(configured_test.ts.Variables.port))
+    "third_curl", 'curl "http://127.0.0.1:{0}/third" --verbose'.format(configured_test.ts.Variables.port))
 third_curl_ready = tr2.Processes.Process("third_curl_ready", 'sleep 30')
 # In the autest environment, it can take more than 10 seconds for the log file to be created.
 third_curl_ready.StartupTimeout = 30
@@ -211,21 +211,15 @@ tr2.StillRunningAfter = configured_test.ts
 
 # Verify that the logs are in the correct files.
 configured_test.ts.Disk.configured_log.Content += Testers.ExcludesExpression(
-    "/first",
-    "The new test_rotation.log should not have the first GET retrieval in it.")
+    "/first", "The new test_rotation.log should not have the first GET retrieval in it.")
 configured_test.ts.Disk.configured_log.Content += Testers.ExcludesExpression(
-    "/second",
-    "The new test_rotation.log should not have the second GET retrieval in it.")
+    "/second", "The new test_rotation.log should not have the second GET retrieval in it.")
 configured_test.ts.Disk.configured_log.Content += Testers.ContainsExpression(
-    "/third",
-    "The new test_rotation.log should have the third GET retrieval in it.")
+    "/third", "The new test_rotation.log should have the third GET retrieval in it.")
 
 configured_test.ts.Disk.configured_log_old.Content += Testers.ContainsExpression(
-    "/first",
-    "test_rotation.log_old should have the first GET retrieval in it.")
+    "/first", "test_rotation.log_old should have the first GET retrieval in it.")
 configured_test.ts.Disk.configured_log_old.Content += Testers.ContainsExpression(
-    "/second",
-    "test_rotation.log_old should have the second GET retrieval in it.")
+    "/second", "test_rotation.log_old should have the second GET retrieval in it.")
 configured_test.ts.Disk.configured_log_old.Content += Testers.ExcludesExpression(
-    "/third",
-    "test_rotation.log_old should not have the third GET retrieval in it.")
+    "/third", "test_rotation.log_old should not have the third GET retrieval in it.")

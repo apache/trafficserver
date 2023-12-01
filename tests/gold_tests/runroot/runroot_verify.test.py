@@ -40,7 +40,6 @@ else:
     # given a custom setup this might work.. or it might not
     logsuffix = logdir
 
-
 # create runroot
 path = os.path.join(Test.RunDirectory, "runroot")
 tr = Test.AddTestRun("Create runroot")

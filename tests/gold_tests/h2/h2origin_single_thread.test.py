@@ -32,27 +32,24 @@ ts = Test.MakeATSProcess("ts", enable_tls="true")
 ts.addDefaultSSLFiles()
 replay_file = "replay_h2origin"
 server = Test.MakeVerifierServerProcess("h2-origin", replay_file)
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.exec_thread.autoconfig.enabled': 0,
-    # Limiting ourselves to 1 thread to exercise origin reuse
-    'proxy.config.exec_thread.limit': 1,
-    'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-    # Sticking with hybrid pool because global pool does not work with h2
-    'proxy.config.http.server_session_sharing.pool': 'hybrid',
-    'proxy.config.http.server_session_sharing.match': 'hostonly',
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.exec_thread.autoconfig.enabled': 0,
+        # Limiting ourselves to 1 thread to exercise origin reuse
+        'proxy.config.exec_thread.limit': 1,
+        'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
+        # Sticking with hybrid pool because global pool does not work with h2
+        'proxy.config.http.server_session_sharing.pool': 'hybrid',
+        'proxy.config.http.server_session_sharing.match': 'hostonly',
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / https://127.0.0.1:{0}'.format(server.Variables.https_port)
-)
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.https_port))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -64,8 +61,7 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n")
-)
+'''.split("\n"))
 
 tr = Test.AddTestRun("Test traffic to origin using HTTP/2")
 tr.Processes.Default.StartBefore(server)

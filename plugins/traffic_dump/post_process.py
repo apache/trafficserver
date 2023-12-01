@@ -35,7 +35,6 @@ Server was interrupted mid-connection. This also merges sessions to the same
 client and, by default, formats the output files with human readable spacing.
 '''
 
-
 # Base replay file template with basic elements
 TEMPLATE = json.loads('{"meta": {"version":"1.0"},"sessions":[]}')
 
@@ -264,11 +263,9 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
                 if not connection_time:
                     connection_time = session['start-time']
                 if connection_time:
-                    logging.debug("Omitting session in %s with connection-time: %d: %s",
-                                  replay_file, session['connection-time'], e)
+                    logging.debug("Omitting session in %s with connection-time: %d: %s", replay_file, session['connection-time'], e)
                 else:
-                    logging.debug("Omitting a session in %s, could not find a connection time: %s",
-                                  replay_file, e)
+                    logging.debug("Omitting a session in %s, could not find a connection time: %s", replay_file, e)
                 continue
             sessions.append(session)
             session_count += 1
@@ -335,24 +332,33 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("in_dir", type=str,
-                        help='''The input directory of traffic_dump replay
+    parser.add_argument(
+        "in_dir",
+        type=str,
+        help='''The input directory of traffic_dump replay
                         files.  The expectation is that this will contain
                         sub-directories that themselves contain replay files.
                         This is written to accommodate the directory populated
                         by traffic_dump via the --logdir option.''')
-    parser.add_argument("out_dir", type=str,
-                        help="The output directory of post processed replay files.")
-    parser.add_argument("-n", "--num_sessions", type=int, default=10,
-                        help='''The maximum number of sessions merged into
+    parser.add_argument("out_dir", type=str, help="The output directory of post processed replay files.")
+    parser.add_argument(
+        "-n",
+        "--num_sessions",
+        type=int,
+        default=10,
+        help='''The maximum number of sessions merged into
                         single replay output files. The default is 10.''')
-    parser.add_argument("--no-human-readable", action="store_true",
-                        help='''By default, post processor will generate replay
+    parser.add_argument(
+        "--no-human-readable",
+        action="store_true",
+        help='''By default, post processor will generate replay
                         files that are spaced out in a human readable format.
                         This turns off that behavior and leaves the files as
                         single-line entries.''')
-    parser.add_argument("--no-fabricate-proxy-requests", action="store_true",
-                        help='''By default, post processor will fabricate proxy
+    parser.add_argument(
+        "--no-fabricate-proxy-requests",
+        action="store_true",
+        help='''By default, post processor will fabricate proxy
                         requests and server responses for transactions served
                         out of the proxy. Presumably in replay conditions,
                         these fabricated requests and responses will not hurt
@@ -362,10 +368,8 @@ def parse_args():
                         the server will not know how to reply to these
                         requests. Using this option turns off this fabrication
                         behavior.''')
-    parser.add_argument("-j", "--num_threads", type=int, default=32,
-                        help='''The maximum number of threads to use.''')
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Enable debug level logging.")
+    parser.add_argument("-j", "--num_threads", type=int, default=32, help='''The maximum number of threads to use.''')
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug level logging.")
     return parser.parse_args()
 
 
@@ -389,10 +393,11 @@ def main():
 
     # Start up the threads.
     for _ in range(nthreads):
-        t = Thread(target=post_process,
-                   args=(args.in_dir, subdir_q, args.out_dir,
-                         args.num_sessions, args.no_human_readable,
-                         not args.no_fabricate_proxy_requests, cnt_q))
+        t = Thread(
+            target=post_process,
+            args=(
+                args.in_dir, subdir_q, args.out_dir, args.num_sessions, args.no_human_readable,
+                not args.no_fabricate_proxy_requests, cnt_q))
         t.start()
         threads.append(t)
 

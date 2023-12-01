@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 
 '''
@@ -32,17 +33,17 @@ config_path = os.path.join(Test.TestDirectory, "configs/statusconfig.txt")
 with open(config_path, 'r') as config_file:
     config1 = config_file.read()
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
+    })
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/statusconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/statusconfig.txt'
-)
+    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/statusconfig.txt')
 
 # Plugin sets the HTTP status because first rule matches
 tr = Test.AddTestRun("Sets the status to 205")

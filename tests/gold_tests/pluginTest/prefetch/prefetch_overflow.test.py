@@ -27,15 +27,14 @@ for i in list(range(3594967639391, 3594967639391 + 3)):
             f"GET /texts/demo-{i}.txt HTTP/1.1\r\n"
             "Host: does.not.matter\r\n"  # But cannot be omitted.
             "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
+        "timestamp": "1469733493.993",
+        "body": ""
     }
     response_header = {
-        "headers":
-            "HTTP/1.1 200 OK\r\n"
-            "Connection: close\r\n"
-            "Cache-control: max-age=85000\r\n"
-            "\r\n",
+        "headers": "HTTP/1.1 200 OK\r\n"
+                   "Connection: close\r\n"
+                   "Cache-control: max-age=85000\r\n"
+                   "\r\n",
         "timestamp": "1469733493.993",
         "body": f"This is the body for demo-{i}.txt.\n"
     }
@@ -44,22 +43,17 @@ for i in list(range(3594967639391, 3594967639391 + 3)):
 dns = Test.MakeDNServer("dns")
 
 ts = Test.MakeATSProcess("ts", use_traffic_out=False, command="traffic_server 2> trace.log")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|dns|prefetch',
-    'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
-    'proxy.config.dns.resolv_conf': "NULL",
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|dns|prefetch',
+        'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+        'proxy.config.dns.resolv_conf': "NULL",
+    })
 ts.Disk.remap_config.AddLine(
-    f"map http://domain.in http://127.0.0.1:{server.Variables.Port}" +
-    " @plugin=cachekey.so @pparam=--remove-all-params=true"
-    " @plugin=prefetch.so" +
-    " @pparam=--front=true" +
-    " @pparam=--fetch-policy=simple" +
-    r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/" +
-    " @pparam=--fetch-count=3" +
-    " @pparam=--fetch-overflow=64"
-)
+    f"map http://domain.in http://127.0.0.1:{server.Variables.Port}" + " @plugin=cachekey.so @pparam=--remove-all-params=true"
+    " @plugin=prefetch.so" + " @pparam=--front=true" + " @pparam=--fetch-policy=simple" +
+    r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/" + " @pparam=--fetch-count=3" + " @pparam=--fetch-overflow=64")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -70,13 +64,10 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3594967639391.txt'
-)
+    f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3594967639391.txt')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    "grep 'GET http://domain.in' trace.log"
-)
+tr.Processes.Default.Command = ("grep 'GET http://domain.in' trace.log")
 tr.Streams.stdout = "prefetch_overflow.gold"
 tr.Processes.Default.ReturnCode = 0

@@ -22,9 +22,7 @@ Test.Summary = '''
 Test lua functionality
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('tslua.so'),
-)
+Test.SkipUnless(Condition.PluginExists('tslua.so'),)
 
 Test.ContinueOnFail = True
 # Define default ATS
@@ -32,27 +30,20 @@ ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": "AAAA"}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "AAAA"}
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam=client_hook.lua'
-)
+    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=client_hook.lua')
 
 # Configure the tslua's configuration file.
 ts.Setup.Copy("client_hook.lua", ts.Variables.CONFIGDIR)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ts_lua'
-})
+ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'ts_lua'})
 
 # Test for watermark debug output
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(r"AAAA", "Response is properly captured")

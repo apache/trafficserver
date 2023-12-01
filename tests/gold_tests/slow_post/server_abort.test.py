@@ -29,15 +29,14 @@ ts.Disk.remap_config.AddLine(
     # on the origin server so that it aborts the connection upon receiving a
     # request
     'map / https://127.0.0.1:{0}'.format(server.Variables.Port))
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=aaa-signed.pem ssl_key_name=aaa-signed.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.tags': 'http|dns',
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.ssl.server.cert.path': f'{Test.TestDirectory}/test_secrets',
-    'proxy.config.ssl.server.private_key.path': f'{Test.TestDirectory}/test_secrets',
-})
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=aaa-signed.pem ssl_key_name=aaa-signed.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.tags': 'http|dns',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.ssl.server.cert.path': f'{Test.TestDirectory}/test_secrets',
+        'proxy.config.ssl.server.private_key.path': f'{Test.TestDirectory}/test_secrets',
+    })
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -47,5 +46,4 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 server.Streams.stderr += Testers.ContainsExpression(
-    "UnicodeDecodeError",
-    "Verify that the server raises an exception when processing the request.")
+    "UnicodeDecodeError", "Verify that the server raises an exception when processing the request.")

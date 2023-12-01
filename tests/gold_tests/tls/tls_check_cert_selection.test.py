@@ -39,26 +39,27 @@ ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/combo.pem")
 
-ts.Disk.remap_config.AddLine(
-    'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=127.0.0.1 ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
-    'ssl_cert_name=signed2-bar.pem ssl_key_name=signed-bar.key',
-    'dest_ip=* ssl_cert_name=combo.pem'
-])
+ts.Disk.ssl_multicert_config.AddLines(
+    [
+        'dest_ip=127.0.0.1 ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
+        'ssl_cert_name=signed2-bar.pem ssl_key_name=signed-bar.key',
+        'dest_ip=* ssl_cert_name=combo.pem',
+    ])
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.dns.resolv_conf': 'NULL',
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})

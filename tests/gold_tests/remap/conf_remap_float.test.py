@@ -14,7 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 Test.Summary = '''
 Test command: traffic_ctl config describe proxy.config.http.background_fill_completed_threshold (YTSATS-3309)
 '''
@@ -22,13 +21,11 @@ Test.testName = 'Float in conf_remap Config Test'
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.MakeConfigFile('conf_remap.yaml').update(
-    '''
+ts.Disk.MakeConfigFile('conf_remap.yaml').update('''
 ts:
   http:
     background_fill_completed_threshold: !!float '0.5'
-'''
-)
+''')
 
 ts.Disk.remap_config.AddLine(
     f"map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={Test.RunDirectory}/ts/config/conf_remap.yaml"

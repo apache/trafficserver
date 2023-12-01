@@ -22,8 +22,7 @@ Test interaction of H2 and chunked encoding
 
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-    Condition.HasCurlFeature('http2')
-)
+    Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")
@@ -36,34 +35,27 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-delay_server = Test.Processes.Process("delay-server", "bash -c '" + Test.TestDirectory +
-                                      "/delay-server.sh {} outserver1'".format(Test.Variables.upstream_port))
-server2 = Test.Processes.Process("server2", "bash -c '" + Test.TestDirectory +
-                                 "/server2.sh {} outserver2'".format(Test.Variables.upstream_port2))
-server3 = Test.Processes.Process("server3", "bash -c '" + Test.TestDirectory +
-                                 "/server3.sh {} outserver3'".format(Test.Variables.upstream_port3))
+delay_server = Test.Processes.Process(
+    "delay-server", "bash -c '" + Test.TestDirectory + "/delay-server.sh {} outserver1'".format(Test.Variables.upstream_port))
+server2 = Test.Processes.Process(
+    "server2", "bash -c '" + Test.TestDirectory + "/server2.sh {} outserver2'".format(Test.Variables.upstream_port2))
+server3 = Test.Processes.Process(
+    "server3", "bash -c '" + Test.TestDirectory + "/server3.sh {} outserver3'".format(Test.Variables.upstream_port3))
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map /delay-chunked-response http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
-)
-ts.Disk.remap_config.AddLine(
-    'map /post-full http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2)
-)
-ts.Disk.remap_config.AddLine(
-    'map /post-chunked http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3)
-)
+ts.Disk.remap_config.AddLine('map /delay-chunked-response http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
+ts.Disk.remap_config.AddLine('map /post-full http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2))
+ts.Disk.remap_config.AddLine('map /post-chunked http://127.0.0.1:{0}'.format(Test.Variables.upstream_port3))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Using netcat as a cheap origin server in case 1 so we can insert a delay in sending back the response.
 # Replaced microserver for cases 2 and 3 as well because I was getting python exceptions when running

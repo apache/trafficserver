@@ -28,21 +28,18 @@ request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "t
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-    'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-    'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
+        'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
+        'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
+    })
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLine(
-    f'map / http://127.0.0.1:{server.Variables.Port}'
-)
+ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 tr = Test.AddTestRun("ensure we can connect for SNI $sni_domain")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -54,16 +51,16 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 
-
 tr2 = Test.AddTestRun("Update config files")
 # Update the configs
 sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
 
 tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config")
-tr2.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=server_does_not_exist.pem ssl_key_name=server_does_not_exist.key',
-    'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
-])
+tr2.Disk.ssl_multicert_config.AddLines(
+    [
+        'ssl_cert_name=server_does_not_exist.pem ssl_key_name=server_does_not_exist.key',
+        'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
+    ])
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
@@ -90,7 +87,6 @@ tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 
-
 ##########################################################################
 # Ensure ATS fails/exits when non-existent cert is specified
 # Also, not explicitly setting proxy.config.ssl.server.multicert.exit_on_load_fail
@@ -109,6 +105,5 @@ tr4.Processes.Default.StartBefore(ts2)
 ts2.ReturnCode = 70  # ink_fatal will exit with EX_SOFTWARE.
 ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
-    'Traffic Server is fully initialized',
-    'process should fail when invalid certificate specified')
+    'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('FATAL: failed to load SSL certificate file', 'check diags.log"')

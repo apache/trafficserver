@@ -16,11 +16,7 @@
 
 Test.Summary = 'Basic checks on QUIC max_idle_timeout set by ts.quic.no_activity_timeout_in'
 
-
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_QUICHE'),
-    Condition.HasCurlFeature('http3')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'), Condition.HasCurlFeature('http3'))
 
 
 class Test_quic_no_activity_timeout:
@@ -51,9 +47,7 @@ class Test_quic_no_activity_timeout:
 
         :param tr: The TestRun object to associate the server process with.
         """
-        server = tr.AddVerifierServerProcess(
-            f"server_{Test_quic_no_activity_timeout.server_counter}",
-            self.replay_file)
+        server = tr.AddVerifierServerProcess(f"server_{Test_quic_no_activity_timeout.server_counter}", self.replay_file)
         Test_quic_no_activity_timeout.server_counter += 1
         self._server = server
 
@@ -68,12 +62,13 @@ class Test_quic_no_activity_timeout:
         self._ts = ts
         self._ts.addSSLfile("ssl/cert.crt")
         self._ts.addSSLfile("ssl/private-key.key")
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop',
-            'proxy.config.quic.no_activity_timeout_in': self.no_activity_timeout_in,
-            'proxy.config.quic.qlog.file_base': f'log/qlog_{Test_quic_no_activity_timeout.server_counter}',
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop',
+                'proxy.config.quic.no_activity_timeout_in': self.no_activity_timeout_in,
+                'proxy.config.quic.qlog.file_base': f'log/qlog_{Test_quic_no_activity_timeout.server_counter}',
+            })
 
         if self.extra_recs:
             self._ts.Disk.records_config.update(self.extra_recs)
@@ -109,8 +104,8 @@ class Test_quic_no_activity_timeout:
         if self.gold_file:
             tr.Processes.Default.Streams.all = self.gold_file
 
-# Tests start.
 
+# Tests start.
 
 test0 = Test_quic_no_activity_timeout(
     "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout), no delays",

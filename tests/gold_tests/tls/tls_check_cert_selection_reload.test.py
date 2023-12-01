@@ -37,25 +37,26 @@ ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/combo.pem")
 
-ts.Disk.remap_config.AddLine(
-    'map /stuff https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map /stuff https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=signed-bar.pem ssl_key_name=signed-bar.key',
-    'dest_ip=* ssl_cert_name=combo.pem'
-])
+ts.Disk.ssl_multicert_config.AddLines(
+    [
+        'ssl_cert_name=signed-bar.pem ssl_key_name=signed-bar.key',
+        'dest_ip=* ssl_cert_name=combo.pem',
+    ])
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.diags.debug.tags': 'ssl|http|lm',
-    'proxy.config.diags.debug.enabled': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.diags.debug.tags': 'ssl|http|lm',
+        'proxy.config.diags.debug.enabled': 1
+    })
 
 # Should receive a bar.com cert issued by first signer
 tr = Test.AddTestRun("bar.com cert signer1")
@@ -80,8 +81,7 @@ tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "unable to get local issuer certificate",
-    "Server certificate not issued by expected signer")
+    "unable to get local issuer certificate", "Server certificate not issued by expected signer")
 
 # Pause a little to ensure mtime will be updated
 tr = Test.AddTestRun("Pause a little to ensure mtime will be different")
@@ -106,17 +106,15 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Try with signer 1 again")
 # Wait for the reload to complete
-tr.Processes.Default.StartBefore(server3, ready=When.FileContains(
-    ts.Disk.diags_log.Name, 'ssl_multicert.config finished loading', 2))
+tr.Processes.Default.StartBefore(
+    server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'ssl_multicert.config finished loading', 2))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl -v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 60
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "unable to get local issuer certificate",
-    "Server certificate not issued by expected signer")
-
+    "unable to get local issuer certificate", "Server certificate not issued by expected signer")
 
 tr = Test.AddTestRun("Try with signer 2 again")
 tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(

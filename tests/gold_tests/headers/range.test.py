@@ -27,16 +27,12 @@ CACHE_SHORT_MAXAGE = 1
 
 def register(microserver, request_hdr, request_body, response_hdr, response_body):
     request = {
-        "headers": "{}\r\n\r\n".format(
-            "\r\n".join(line for line in request_hdr.split("\n") if line)
-        ),
+        "headers": "{}\r\n\r\n".format("\r\n".join(line for line in request_hdr.split("\n") if line)),
         "timestamp": "1469733493.993",
         "body": request_body,
     }
     response = {
-        "headers": "{}\r\n\r\n".format(
-            "\r\n".join(line for line in response_hdr.split("\n") if line)
-        ),
+        "headers": "{}\r\n\r\n".format("\r\n".join(line for line in response_hdr.split("\n") if line)),
         "timestamp": "1469733493.993",
         "body": response_body,
     }
@@ -88,9 +84,7 @@ ETag: range
 response_body = f"{''.join(str(i) for i in range(10))}\n"
 
 register(microserver, request_hdr, "", response_hdr, response_body)
-register(
-    microserver, short_cache_request_hdr, "", short_cache_response_hdr, response_body
-)
+register(microserver, short_cache_request_hdr, "", short_cache_response_hdr, response_body)
 
 # The purpose here is to have a somewhat smarter origin that can respond to If-Modified-Since queries.
 # We then can test how the cache server using this origin deals with stale caches.
@@ -107,8 +101,7 @@ origin.Disk.records_config.update(
         "proxy.config.http.response_via_str": 0,
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "http",
-    }
-)
+    })
 
 # Make the origin return 304 Not Modified for stale caches
 origin.Disk.cache_config.AddLine("dest_ip=127.0.0.1 pin-in-cache=1d")
@@ -132,8 +125,7 @@ ts.Disk.records_config.update(
         "proxy.config.http.wait_for_cache": 1,
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "http",
-    }
-)
+    })
 # ----
 # Test Cases
 # ----
@@ -145,13 +137,9 @@ ts.Disk.records_config.update(
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = curl_range(ts, ifrange='"should-not-match"')
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(
-    microserver, ready=When.PortOpen(microserver.Variables.Port)
-)
+tr.Processes.Default.StartBefore(microserver, ready=When.PortOpen(microserver.Variables.Port))
 tr.Processes.Default.StartBefore(origin, ready=When.PortOpen(origin.Variables.port))
-tr.Processes.Default.StartBefore(
-    Test.Processes.ts, ready=When.PortOpen(ts.Variables.port)
-)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # On cache hit
@@ -218,9 +206,7 @@ tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 # ATS should respond to range requests with partial content for stale caches in response to
 # valid If-Range requests if the origin responds with 304 Not Modified.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f"sleep {2 * CACHE_SHORT_MAXAGE}; " + curl_range(
-    ts, path="short", ifrange='"range"'
-)
+tr.Processes.Default.Command = f"sleep {2 * CACHE_SHORT_MAXAGE}; " + curl_range(ts, path="short", ifrange='"range"')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-206-revalidated.gold"
 

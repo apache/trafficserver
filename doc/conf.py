@@ -54,8 +54,8 @@ sys.path.insert(0, os.path.abspath('.'))
 def setup(app):
     app.add_css_file('override.css')
 
-# -- General configuration -----------------------------------------------------
 
+# -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -109,7 +109,6 @@ copyright = f'{date.today().year}, dev@trafficserver.apache.org'
 # Extract the version from the configure.ac file with regex so as to
 # work identically when building with Autotools (e.g. $ make html)
 # and without (e.g. on Read the Docs)
-
 
 contents = open('../configure.ac').read()
 match = re.compile(r'm4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
@@ -182,23 +181,23 @@ pygments_style = 'default'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [('c:identifier', 'int64_t'),
-                  ('c:identifier', 'uint64_t'),
-                  ('c:identifier', 'uint8_t'),
-                  ('c:identifier', 'int32_t'),
-                  ('c:identifier', 'size_t'),
-                  ('c:identifier', 'ssize_t'),
-                  ('c:identifier', 'sockaddr'),
-                  ('c:identifier', 'time_t'),
-                  ('cpp:identifier', 'T'),  # template arg
-                  ('cpp:identifier', 'F'),  # template arg
-                  ('cpp:identifier', 'Args'),  # variadic template arg
-                  ('cpp:identifier', 'Rest'),  # variadic template arg
-                  ]
+nitpick_ignore = [
+    ('c:identifier', 'int64_t'),
+    ('c:identifier', 'uint64_t'),
+    ('c:identifier', 'uint8_t'),
+    ('c:identifier', 'int32_t'),
+    ('c:identifier', 'size_t'),
+    ('c:identifier', 'ssize_t'),
+    ('c:identifier', 'sockaddr'),
+    ('c:identifier', 'time_t'),
+    ('cpp:identifier', 'T'),  # template arg
+    ('cpp:identifier', 'F'),  # template arg
+    ('cpp:identifier', 'Args'),  # variadic template arg
+    ('cpp:identifier', 'Rest'),  # variadic template arg
+]
 
 # Autolink issue references.
 # See Customizing the Parser in the docutils.parsers.rst module.
-
 
 # Customize parser.inliner in the only way that Sphinx supports.
 # docutils.parsers.rst.Parser takes an instance of states.Inliner or a
@@ -211,6 +210,7 @@ BaseInliner = states.Inliner
 
 
 class Inliner(states.Inliner):
+
     def init_customizations(self, settings):
         self.__class__ = BaseInliner
         BaseInliner.init_customizations(self, settings)
@@ -219,22 +219,17 @@ class Inliner(states.Inliner):
         # Copied from states.Inliner.init_customizations().
         # In Docutils 0.13 these are locals.
         if not hasattr(self, 'start_string_prefix'):
-            self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
-                                        (punctuation_chars.openers,
-                                         punctuation_chars.delimiters))
+            self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' % (punctuation_chars.openers, punctuation_chars.delimiters))
         if not hasattr(self, 'end_string_suffix'):
-            self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
-                                      (punctuation_chars.closing_delimiters,
-                                       punctuation_chars.delimiters,
-                                       punctuation_chars.closers))
+            self.end_string_suffix = (
+                u'($|(?=\\s|[\x00%s%s%s]))' %
+                (punctuation_chars.closing_delimiters, punctuation_chars.delimiters, punctuation_chars.closers))
 
         issue = re.compile(
             r'''
       {start_string_prefix}
       TS-\d+
-      {end_string_suffix}'''.format(
-                start_string_prefix=self.start_string_prefix,
-                end_string_suffix=self.end_string_suffix),
+      {end_string_suffix}'''.format(start_string_prefix=self.start_string_prefix, end_string_suffix=self.end_string_suffix),
             re.VERBOSE | re.UNICODE)
 
         self.implicit_dispatch.append((issue, self.issue_reference))
@@ -352,8 +347,7 @@ elif 'latex_paper' in tags:
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'ApacheTrafficServer.tex', u'Apache Traffic Server Documentation',
-     u'dev@trafficserver.apache.org', 'manual'),
+    ('index', 'ApacheTrafficServer.tex', u'Apache Traffic Server Documentation', u'dev@trafficserver.apache.org', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -388,7 +382,6 @@ latex_documents = [
 # documents and includes the same brief description in both the HTML
 # and manual page outputs.
 
-
 # Override ManualPageWriter and ManualPageTranslator in the only way
 # that Sphinx supports
 
@@ -396,6 +389,7 @@ BaseWriter = manpage.ManualPageWriter
 
 
 class ManualPageWriter(BaseWriter):
+
     def translate(self):
         transform = frontmatter.DocTitle(self.document)
 
@@ -427,6 +421,7 @@ BaseTranslator = manpage.ManualPageTranslator
 
 
 class ManualPageTranslator(BaseTranslator):
+
     def __init__(self, builder, *args, **kwds):
         BaseTranslator.__init__(self, builder, *args, **kwds)
 
@@ -443,9 +438,9 @@ manpage.ManualPageTranslator = ManualPageTranslator
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'ApacheTrafficServer', u'Apache Traffic Server Documentation',
-     u'dev@trafficserver.apache.org', 'ApacheTrafficServer', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        'index', 'ApacheTrafficServer', u'Apache Traffic Server Documentation', u'dev@trafficserver.apache.org',
+        'ApacheTrafficServer', 'One line description of project.', 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

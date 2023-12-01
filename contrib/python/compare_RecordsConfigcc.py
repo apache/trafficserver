@@ -102,7 +102,6 @@ if len(defaults) > 0:
     for d in sorted(defaults):
         print("\t%s %s -> %s" % (d, "%s %s" % rc_cc[d], "%s %s" % rc_doc[d]))
 
-
 # Search for stale documentation ...
 stale = [k for k in rc_doc if k not in rc_cc]
 if (len(stale) > 0):

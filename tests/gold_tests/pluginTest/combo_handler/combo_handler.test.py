@@ -25,9 +25,7 @@ Test combo_handler plugin
 
 # Skip if plugin not present.
 #
-Test.SkipUnless(
-    Condition.PluginExists('combo_handler.so'),
-)
+Test.SkipUnless(Condition.PluginExists('combo_handler.so'),)
 
 # Function to generate a unique data file path (in the top level of the test's run directory),  put data (in string 'data') into
 # the file, and return the file name.
@@ -43,12 +41,14 @@ def data_file(data):
         f.write(data)
     return file_path
 
+
 # Function to return command (string) to run tcp_client.py tool.  'host' 'port', and 'file_path' are the parameters to tcp_client.
 #
 
 
 def tcp_client_cmd(host, port, file_path):
     return f"{sys.executable} {Test.Variables.AtsTestToolsDir}/tcp_client.py {host} {port} {file_path}"
+
 
 # Function to return command (string) to run tcp_client.py tool.  'host' and 'port' are the first two parameters to tcp_client.
 # 'data' is the data to put in the data file input to tcp_client.
@@ -64,19 +64,15 @@ server = Test.MakeOriginServer("server")
 
 def add_server_obj(content_type, path):
     request_header = {
-        "headers": "GET " + path + " HTTP/1.1\r\n" +
-        "Host: just.any.thing\r\n\r\n",
+        "headers": "GET " + path + " HTTP/1.1\r\n" + "Host: just.any.thing\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""
     }
     response_header = {
-        "headers": "HTTP/1.1 200 OK\r\n" +
-        "Connection: close\r\n" +
-        'Etag: "359670651"\r\n' +
-        "Cache-Control: public, max-age=31536000\r\n" +
-        "Accept-Ranges: bytes\r\n" +
-        "Content-Type: " + content_type + "\r\n" +
-        "\r\n",
+        "headers":
+            "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "359670651"\r\n' +
+            "Cache-Control: public, max-age=31536000\r\n" + "Accept-Ranges: bytes\r\n" + "Content-Type: " + content_type + "\r\n" +
+            "\r\n",
         "timestamp": "1469733493.993",
         "body": "Content for " + path + "\n"
     }
@@ -97,15 +93,9 @@ ts.Disk.records_config.update({
 
 ts.Disk.plugin_config.AddLine("combo_handler.so - - - ctwl.txt")
 
-ts.Disk.remap_config.AddLine(
-    'map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so'
-)
-ts.Disk.remap_config.AddLine(
-    f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/'
-)
-ts.Disk.remap_config.AddLine(
-    f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/'
-)
+ts.Disk.remap_config.AddLine('map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so')
+ts.Disk.remap_config.AddLine(f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/')
+ts.Disk.remap_config.AddLine(f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/')
 
 # Configure the combo_handler's configuration file.
 ts.Setup.Copy("ctwl.txt", ts.Variables.CONFIGDIR)
@@ -117,23 +107,17 @@ tr.Processes.Default.Command = "echo start stuff"
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-                                          "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" +
-                                          "Host: xyz\n" +
-                                          "Connection: close\n" +
-                                          "\n"
-                                          )
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/1-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr1.gold"
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-                                          "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" +
-                                          "Host: xyz\n" +
-                                          "Connection: close\n" +
-                                          "\n"
-                                          )
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"

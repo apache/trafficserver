@@ -46,22 +46,15 @@ def prepare_plugin_helper(so_name, tsproc, plugin_args="", copy_plugin=True):
 
     plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
     if copy_plugin:
-        host.WriteVerbose(
-            "prepare_plugin",
-            "Copying down {} into {}.".format(so_name, plugin_dir))
+        host.WriteVerbose("prepare_plugin", "Copying down {} into {}.".format(so_name, plugin_dir))
         tsproc.Setup.Copy(so_name, plugin_dir)
     else:
-        host.WriteVerbose(
-            "prepare_plugin",
-            "Skipping copying {} into {} due to configuration.".format(
-                so_name, plugin_dir))
+        host.WriteVerbose("prepare_plugin", "Skipping copying {} into {} due to configuration.".format(so_name, plugin_dir))
 
     # Add an entry to plugin.config.
     basename = os.path.basename(so_name)
     config_line = "{0} {1}".format(basename, plugin_args)
-    host.WriteVerbose(
-        "prepare_plugin",
-        'Adding line to plugin.config: "{}"'.format(config_line))
+    host.WriteVerbose("prepare_plugin", 'Adding line to plugin.config: "{}"'.format(config_line))
     tsproc.Disk.plugin_config.AddLine(config_line)
 
 
@@ -79,8 +72,7 @@ def prepare_test_plugin(self, so_path, tsproc, plugin_args=""):
         plugin.config.
     """
     if not os.path.exists(so_path):
-        raise ValueError(
-            'PrepareTestPlugin: file does not exist: "{}"'.format(so_path))
+        raise ValueError('PrepareTestPlugin: file does not exist: "{}"'.format(so_path))
 
     prepare_plugin_helper(so_path, tsproc, plugin_args, copy_plugin=True)
 
@@ -99,9 +91,8 @@ def prepare_installed_plugin(self, so_name, tsproc, plugin_args=""):
         plugin.config.
     """
     if os.path.dirname(so_name):
-        raise ValueError(
-            'PrepareInstalledPlugin expects a filename not a path: '
-            '"{}"'.format(so_name))
+        raise ValueError('PrepareInstalledPlugin expects a filename not a path: '
+                         '"{}"'.format(so_name))
     prepare_plugin_helper(so_name, tsproc, plugin_args, copy_plugin=False)
 
 
@@ -110,7 +101,6 @@ PrepareTestPlugin should be used for the test-specific plugins that need to
 be copied down into the sandbox directory.
 """
 ExtendTest(prepare_test_plugin, name="PrepareTestPlugin")
-
 """
 PrepareInstalledPlugin should be used for the plugins installed via Automake
 make install. They are already sym linked into the test directory via the

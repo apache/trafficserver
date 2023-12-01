@@ -48,10 +48,12 @@ class conf_remap_yaml_load_test:
         :param tr: The TestRun object to associate the server process with.
         """
         server = Test.MakeOriginServer(f"server-{conf_remap_yaml_load_test.ts_counter}", lookup_key="{%Host}{PATH}")
-        request_header2 = {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n",
-                           "timestamp": "1469733493.993", "body": ""}
-        response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                            "timestamp": "1469733493.993", "body": ""}
+        request_header2 = {
+            "headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }
+        response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
         server.addResponse("sessionfile.log", request_header2, response_header2)
         conf_remap_yaml_load_test.server_counter += 1
@@ -78,8 +80,7 @@ class conf_remap_yaml_load_test:
             url_remap:
                 pristine_host_hdr: 0 # make sure is 0
 
-        '''
-        )
+        ''')
         self._ts = ts
 
     def run(self, diags_fail_exp="", ts_retcode=0):
@@ -101,8 +102,7 @@ class conf_remap_yaml_load_test:
 
         if diags_fail_exp != "":
             # some error logs will be written to the diags.
-            self._ts.Disk.diags_log.Content = Testers.IncludesExpression(
-                diags_fail_exp, "Have a look.")
+            self._ts.Disk.diags_log.Content = Testers.IncludesExpression(diags_fail_exp, "Have a look.")
         else:
             tr.Processes.Default.ReturnCode = 0
 
@@ -128,8 +128,7 @@ test0 = conf_remap_yaml_load_test(
     ts:
       url_remap:
         pristine_host_hdr: 1
-    '''
-)
+    ''')
 test0.run()
 
 test1 = conf_remap_yaml_load_test(
@@ -139,8 +138,7 @@ test1 = conf_remap_yaml_load_test(
     ts:
       url_remap:
         pristine_host_hdr: !!float '1'
-    '''
-)
+    ''')
 test1.run(diags_fail_exp="'proxy.config.url_remap.pristine_host_hdr' variable type mismatch", ts_retcode=33)
 
 test2 = conf_remap_yaml_load_test(
@@ -150,11 +148,11 @@ test2 = conf_remap_yaml_load_test(
     ts:
       plugin:
         dynamic_reload_mode: 1
-    '''
-)
+    ''')
 
-test2.run(diags_fail_exp="'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden", ts_retcode=33)
-
+test2.run(
+    diags_fail_exp="'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden",
+    ts_retcode=33)
 
 # We let the conf_remap parse two fields, only one is valid, we expect ATS to start and the invalid fields ignored.
 test3 = conf_remap_yaml_load_test(
@@ -168,10 +166,8 @@ test3 = conf_remap_yaml_load_test(
 
       url_remap:
         pristine_host_hdr: 1
-    '''
-)
+    ''')
 test3.run(diags_fail_exp="'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden")
-
 
 # Check null values
 test4 = conf_remap_yaml_load_test(
@@ -184,6 +180,5 @@ test4 = conf_remap_yaml_load_test(
         pristine_host_hdr: 1
       hostdb:
         ip_resolve: "NULL" # We want to make sure this gets read as it should. "NULL" could be the value of this field.
-    '''
-)
+    ''')
 test4.run()

@@ -141,11 +141,7 @@ def AddJsonRPCClientRequest(obj, ts, request='', file=None, schema_file_name=Non
         process.SetupEvent.Connect(
             Testers.Lambda(
                 lambda ev: SchemaValidator().validate_request_schema(
-                    ev,
-                    fileName,
-                    True,
-                    schema_file_name,
-                    params_field_schema_file_name)))
+                    ev, fileName, True, schema_file_name, params_field_schema_file_name)))
     return process
 
 
@@ -166,7 +162,6 @@ def AddJsonRPCShowRegisterHandlerRequest(obj, ts):
 
 # Testers
 class CustomJSONRPCResponse(Tester):
-
     '''
     Custom tester that provides the user the ability to be called with the response from the RPC. The registered function will be
     called with the jsonrpc.Response(jsonrpc.py).
@@ -196,12 +191,13 @@ class CustomJSONRPCResponse(Tester):
 
     '''
 
-    def __init__(self,
-                 func: typing.Any,
-                 test_value=None,
-                 kill_on_failure: bool = False,
-                 description_group: typing.Optional[str] = None,
-                 description: typing.Optional[str] = None):
+    def __init__(
+            self,
+            func: typing.Any,
+            test_value=None,
+            kill_on_failure: bool = False,
+            description_group: typing.Optional[str] = None,
+            description: typing.Optional[str] = None):
         if description is None:
             description = "Validating JSONRPC 2.0 response"
 
@@ -231,11 +227,11 @@ class CustomJSONRPCResponse(Tester):
             if self.KillOnFailure:
                 raise KillOnFailureError
 
+
 # Testers
 
 
 class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
-
     '''
     Tester for response schema validation.
     This class can perform a JSONRPC 2.0 schema validation and also the 'result' field validation if provided.
@@ -248,14 +244,15 @@ class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
         the JSONRPC 2.0 specs.
     '''
 
-    def __init__(self,
-                 schema_file_name,
-                 result_field_schema_file_name=None,
-                 value=None,
-                 test_value=None,
-                 kill_on_failure: bool = False,
-                 description_group: typing.Optional[str] = None,
-                 description: typing.Optional[str] = None):
+    def __init__(
+            self,
+            schema_file_name,
+            result_field_schema_file_name=None,
+            value=None,
+            test_value=None,
+            kill_on_failure: bool = False,
+            description_group: typing.Optional[str] = None,
+            description: typing.Optional[str] = None):
         if description is None:
             description = "Validating JSONRPC 2.0 response schema"
         self._schema_file_name = schema_file_name
@@ -273,14 +270,15 @@ class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
         with open(self._GetContent(eventinfo), "r") as resp:
             response_text = resp.read()
 
-        (testPassed, reason, cmm) = self.validate_request_schema(eventinfo, self._GetContent(
-            eventinfo), False, self._schema_file_name, self._result_field_schema_file_name)
+        (testPassed, reason, cmm) = self.validate_request_schema(
+            eventinfo, self._GetContent(eventinfo), False, self._schema_file_name, self._result_field_schema_file_name)
 
         if testPassed:
             self.Result = tester.ResultType.Passed
             self.Reason = f"Returned value: {reason}"
-            host.WriteVerbose(["testers.JSONRPCResponseSchemaValidator", "testers"],
-                              f"tester.ResultType.to_color_string(self.Result) - ", self.Reason)
+            host.WriteVerbose(
+                ["testers.JSONRPCResponseSchemaValidator", "testers"], f"tester.ResultType.to_color_string(self.Result) - ",
+                self.Reason)
         else:
             self.Result = tester.ResultType.Failed
             self.Reason = f"Returned value: {reason}"

@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Test a basic remap of a http connection
 '''
@@ -40,12 +41,8 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': f'{pluginName}',
 })
 
-ts.Disk.plugin_config.AddLine(
-    f'# {path}/{pluginName}.so {configFile}'
-)
-ts.Disk.remap_config.AddLine(
-    f'map http://www.example.com http://127.0.0.1:{server.Variables.Port}'
-)
+ts.Disk.plugin_config.AddLine(f'# {path}/{pluginName}.so {configFile}')
+ts.Disk.remap_config.AddLine(f'map http://www.example.com http://127.0.0.1:{server.Variables.Port}')
 
 goldFile = os.path.join(Test.RunDirectory, f"{pluginName}.gold")
 with open(goldFile, 'w+') as jf:

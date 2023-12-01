@@ -23,9 +23,7 @@ Test minimum rules on load - succeed on missing file.
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.records_config.update({
-    f'proxy.config.url_remap.min_rules_required': 0
-})
+ts.Disk.records_config.update({f'proxy.config.url_remap.min_rules_required': 0})
 
 tr = Test.AddTestRun("startup")
 p = tr.Processes.Default

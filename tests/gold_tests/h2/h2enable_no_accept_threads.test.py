@@ -20,9 +20,7 @@ Test.Summary = '''
 Test enabling H2 on a per domain basis
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -35,23 +33,21 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Set up port 4444 with HTTP1 only, no HTTP/2
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.http.server_ports': '{0}:ssl:proto=http {1}'.format(ts.Variables.ssl_port, ts.Variables.port),
-    'proxy.config.accept_threads': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|ssl',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.http.server_ports': '{0}:ssl:proto=http {1}'.format(ts.Variables.ssl_port, ts.Variables.port),
+        'proxy.config.accept_threads': 0
+    })
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',

@@ -34,10 +34,7 @@ Test a basic regex_revalidate
 # If the rule disappears from regex_revalidate.conf its still loaded!!
 # A rule's expiry can't be changed after the fact!
 
-Test.SkipUnless(
-    Condition.PluginExists('regex_revalidate.so'),
-    Condition.PluginExists('xdebug.so')
-)
+Test.SkipUnless(Condition.PluginExists('regex_revalidate.so'), Condition.PluginExists('xdebug.so'))
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -50,76 +47,56 @@ Test.testName = "regex_revalidate"
 Test.Setup.Copy("metrics.sh")
 
 # default root
-request_header_0 = {"headers":
-                    "GET / HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": "",
-                    }
+request_header_0 = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_0 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     "Cache-Control: max-age=300\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "xxx",
-                     }
+response_header_0 = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=300\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx",
+}
 
 # cache item path1
-request_header_1 = {"headers":
-                    "GET /path1 HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_1 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path1"\r\n' +
-                     "Cache-Control: max-age=600,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "abc"
-                     }
+request_header_1 = {
+    "headers": "GET /path1 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header_1 = {
+    "headers":
+        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1"\r\n' + "Cache-Control: max-age=600,public\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "abc"
+}
 
 # cache item path1a
-request_header_2 = {"headers":
-                    "GET /path1a HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_2 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path1a"\r\n' +
-                     "Cache-Control: max-age=600,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "cde"
-                     }
+request_header_2 = {
+    "headers": "GET /path1a HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header_2 = {
+    "headers":
+        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1a"\r\n' + "Cache-Control: max-age=600,public\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "cde"
+}
 
 # cache item path2a
-request_header_3 = {"headers":
-                    "GET /path2a HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_3 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path2a"\r\n' +
-                     "Cache-Control: max-age=900,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "efg"
-                     }
+request_header_3 = {
+    "headers": "GET /path2a HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header_3 = {
+    "headers":
+        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path2a"\r\n' + "Cache-Control: max-age=900,public\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "efg"
+}
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
@@ -128,9 +105,7 @@ server.addResponse("sessionlog.json", request_header_3, response_header_3)
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-ts.Disk.plugin_config.AddLine(
-    'regex_revalidate.so -d -c regex_revalidate.conf'
-)
+ts.Disk.plugin_config.AddLine('regex_revalidate.so -d -c regex_revalidate.conf')
 
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
 curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
@@ -138,22 +113,22 @@ curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com
 path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
 # Define first revision for when trafficserver starts
-ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    "# Empty\n"
-])
+ts.Disk.File(
+    regex_revalidate_conf_path, typename="ats:config").AddLines([
+        "# Empty\n",
+    ])
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{}'.format(server.Variables.Port))
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'regex_revalidate',
-    #    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.http.insert_age_in_response': 0,
-    'proxy.config.http.response_via_str': 3,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'regex_revalidate',
+        #    'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.response_via_str': 3,
+    })
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("Cache miss path1")
@@ -196,9 +171,10 @@ tr = Test.AddTestRun("Reload config add path1")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule
-])
+tr.Disk.File(
+    regex_revalidate_conf_path, typename="ats:config").AddLines([
+        path1_rule,
+    ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
@@ -229,10 +205,11 @@ tr = Test.AddTestRun("Reload config add path2")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 700)
-])
+tr.Disk.File(
+    regex_revalidate_conf_path, typename="ats:config").AddLines([
+        path1_rule,
+        'path2 {}\n'.format(int(time.time()) + 700),
+    ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
@@ -266,10 +243,11 @@ tr = Test.AddTestRun("Reload config change path2")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) - 100),
-])
+tr.Disk.File(
+    regex_revalidate_conf_path, typename="ats:config").AddLines([
+        path1_rule,
+        'path2 {}\n'.format(int(time.time()) - 100),
+    ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())

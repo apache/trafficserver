@@ -18,6 +18,7 @@
 
 import os
 import subprocess
+
 Test.Summary = '''
 Test the reported type of HTTP transactions and tunnels
 '''
@@ -31,41 +32,40 @@ server = Test.MakeOriginServer("server", ssl=True)
 server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: http-test\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: http-test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n",
-                         "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_tunnel_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                          "timestamp": "1469733493.993", "body": ""}
+response_tunnel_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'hook_tunnel_plugin.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_tunnel_plugin.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 server.addResponse("sessionfile.log", request_tunnel_header, response_tunnel_header)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|test',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|test',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.remap_config.AddLine(
-    'map https://http-test:{0}/ https://127.0.0.1:{1}/'.format(
-        ts.Variables.ssl_port, server.Variables.SSL_Port)
-)
+    'map https://http-test:{0}/ https://127.0.0.1:{1}/'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
@@ -125,6 +125,7 @@ tr.StillRunningAfter = server
 
 
 def make_done_stat_ready(tsenv):
+
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
             "traffic_ctl metric get txn_type_verify.test.done",
@@ -154,8 +155,7 @@ tr = Test.AddTestRun("Check for tunnel start")
 tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.tunnel.start'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "txn_type_verify.tunnel.start 1", 'Should have a tunnel start.')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("txn_type_verify.tunnel.start 1", 'Should have a tunnel start.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -163,7 +163,6 @@ tr = Test.AddTestRun("Check for http request")
 tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.http.req'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "txn_type_verify.http.req 2", 'Should have two http requests.')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("txn_type_verify.http.req 2", 'Should have two http requests.')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

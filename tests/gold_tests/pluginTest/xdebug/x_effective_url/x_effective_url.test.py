@@ -22,20 +22,20 @@ Test xdebug plugin X-Effective header
 
 server = Test.MakeOriginServer("server")
 
-request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-request_header_two = {
-    "headers": "GET /two/argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header_two = {"headers": "GET /two/argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header_two, response_header)
 
 # request_header_three would be identical to request_header.
 
 request_header_four = {
-    "headers": "GET /four/argh,urgh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    "headers": "GET /four/argh,urgh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server.addResponse("sessionlog.json", request_header_four, response_header)
 
 ts = Test.MakeATSProcess("ts")
@@ -47,24 +47,16 @@ ts.Disk.records_config.update({
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-effective-url')
 
-ts.Disk.remap_config.AddLine(
-    "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "map http://two http://127.0.0.1:{0}".format(server.Variables.Port) + "/two"
-)
-ts.Disk.remap_config.AddLine(
-    "regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port)  # Host: three123
-)
-ts.Disk.remap_config.AddLine(
-    "regex_map http://four http://127.0.0.1:{0}".format(server.Variables.Port) + "/four"
-)
+ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
+ts.Disk.remap_config.AddLine("map http://two http://127.0.0.1:{0}".format(server.Variables.Port) + "/two")
+ts.Disk.remap_config.AddLine("regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port)  # Host: three123
+                            )
+ts.Disk.remap_config.AddLine("regex_map http://four http://127.0.0.1:{0}".format(server.Variables.Port) + "/four")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(Test.Processes.server)
-tr.Processes.Default.Command = "cp {}/tcp_client.py {}/tcp_client.py".format(
-    Test.Variables.AtsTestToolsDir, Test.RunDirectory)
+tr.Processes.Default.Command = "cp {}/tcp_client.py {}/tcp_client.py".format(Test.Variables.AtsTestToolsDir, Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 
 
@@ -73,8 +65,7 @@ def sendMsg(msgFile):
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
         f"( {sys.executable} {Test.RunDirectory}/tcp_client.py 127.0.0.1 {ts.Variables.port} {Test.TestDirectory}/{msgFile}.in"
-        f" ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  {Test.RunDirectory}/out.log 2>&1 "
-    )
+        f" ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  {Test.RunDirectory}/out.log 2>&1 ")
     tr.Processes.Default.ReturnCode = 0
 
 

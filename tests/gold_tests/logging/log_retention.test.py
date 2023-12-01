@@ -90,13 +90,19 @@ class TestLogRetention:
             return cls.__server
 
         server = Test.MakeOriginServer("server")
-        request_header = {"headers": "GET / HTTP/1.1\r\n"
-                          "Host: does.not.matter\r\n\r\n",
-                          "timestamp": "1469733493.993", "body": ""}
-        response_header = {"headers": "HTTP/1.1 200 OK\r\n"
-                           "Connection: close\r\n"
-                           "Cache-control: max-age=85000\r\n\r\n",
-                           "timestamp": "1469733493.993", "body": "xxx"}
+        request_header = {
+            "headers": "GET / HTTP/1.1\r\n"
+                       "Host: does.not.matter\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }
+        response_header = {
+            "headers": "HTTP/1.1 200 OK\r\n"
+                       "Connection: close\r\n"
+                       "Cache-control: max-age=85000\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "xxx"
+        }
         server.addResponse("sessionlog.json", request_header, response_header)
         cls.__server = server
         return cls.__server
@@ -117,31 +123,26 @@ class TestLogRetention:
         self.ts.Disk.records_config.update(combined_records_config)
 
         self.ts.Disk.remap_config.AddLine(
-            'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(
-                self.ts.Variables.port, self.server.Variables.Port)
-        )
+            'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(self.ts.Variables.port, self.server.Variables.Port))
         return self.ts
 
     def get_curl_command(self):
         """
         Generate the appropriate single curl command.
         """
-        return 'curl "http://127.0.0.1:{0}" --verbose'.format(
-            self.ts.Variables.port)
+        return 'curl "http://127.0.0.1:{0}" --verbose'.format(self.ts.Variables.port)
 
     def get_command_to_rotate_once(self):
         """
         Generate the set of curl commands to trigger a log rotate.
         """
-        return 'for i in {{1..2500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(
-            self.ts.Variables.port)
+        return 'for i in {{1..2500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
 
     def get_command_to_rotate_thrice(self):
         """
         Generate the set of curl commands to trigger a log rotate.
         """
-        return 'for i in {{1..7500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(
-            self.ts.Variables.port)
+        return 'for i in {{1..7500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
 
 
 #
@@ -157,8 +158,7 @@ twelve_meg_log_space = {
     # Verify that setting a hostname changes the hostname used in rolled logs.
     'proxy.config.log.hostname': specified_hostname,
 }
-test = TestLogRetention(twelve_meg_log_space,
-                        "Verify log rotation and deletion of the configured log file with no min_count.")
+test = TestLogRetention(twelve_meg_log_space, "Verify log rotation and deletion of the configured log file with no min_count.")
 
 # Configure approximately 5 KB entries for a log with no specified min_count.
 test.ts.Disk.logging_yaml.AddLines(
@@ -170,25 +170,20 @@ logging:
   logs:
     - filename: test_deletion
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that each log type was registered for auto-deletion.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "Registering rotated log deletion for test_deletion.log with min roll count 0",
     "Verify test_deletion.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was rotated and deleted.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
@@ -200,12 +195,10 @@ test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
 
-
 #
 # Test 1: Verify log deletion happens with a min_count of 1.
 #
-test = TestLogRetention(twelve_meg_log_space,
-                        "Verify log rotation and deletion of the configured log file with a min_count of 1.")
+test = TestLogRetention(twelve_meg_log_space, "Verify log rotation and deletion of the configured log file with a min_count of 1.")
 
 # Configure approximately 5 KB entries for a log with no specified min_count.
 test.ts.Disk.logging_yaml.AddLines(
@@ -218,8 +211,7 @@ logging:
     - filename: test_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that each log type was registered for auto-deletion.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
@@ -227,17 +219,13 @@ test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "Verify test_deletion.log auto-delete configuration")
 # Only the test_deletion should have its min_count overridden.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was rotated and deleted.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
@@ -248,12 +236,10 @@ test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
 
-
 #
 # Test 2: Verify log deletion happens for a plugin's logs.
 #
-test = TestLogRetention(twelve_meg_log_space,
-                        "Verify log rotation and deletion of plugin logs.")
+test = TestLogRetention(twelve_meg_log_space, "Verify log rotation and deletion of plugin logs.")
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_log_interface.so'), test.ts)
 
 # Verify that the plugin's logs and other core logs were registered for deletion.
@@ -261,21 +247,16 @@ test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "Registering rotated log deletion for test_log_interface.log with min roll count 0",
     "Verify test_log_interface.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was rotated and deleted.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "The rolled logfile.*test_log_interface.log_.*was auto-deleted.*bytes were reclaimed",
-    "Verify that space was reclaimed")
+    "The rolled logfile.*test_log_interface.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
 test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
 test.tr.Processes.Default.ReturnCode = 0
@@ -291,8 +272,7 @@ twenty_two_meg_log_space = {
     'proxy.config.log.max_space_mb_headroom': 2,
     'proxy.config.log.max_space_mb_for_logs': 22,
 }
-test = TestLogRetention(twenty_two_meg_log_space,
-                        "Verify log deletion priority behavior.")
+test = TestLogRetention(twenty_two_meg_log_space, "Verify log deletion priority behavior.")
 
 # Configure approximately 5 KB entries for a log with no specified min_count.
 test.ts.Disk.logging_yaml.AddLines(
@@ -309,8 +289,7 @@ logging:
     - filename: test_high_priority_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that each log type was registered for auto-deletion.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
@@ -321,17 +300,13 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Verify test_high_priority_deletion.log auto-delete configuration")
 # Only the test_deletion should have its min_count overridden.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was rotated and deleted.
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
     "The rolled logfile.*test_low_priority_deletion.log_.*was auto-deleted.*bytes were reclaimed",
@@ -358,27 +333,21 @@ various_min_count_overrides = {
     'proxy.config.output.logfile.rolling_min_count': 4,
     'proxy.config.diags.logfile.rolling_min_count': 5,
 }
-test = TestLogRetention(various_min_count_overrides,
-                        "Verify that the various min_count configurations behave as expected")
+test = TestLogRetention(various_min_count_overrides, "Verify that the various min_count configurations behave as expected")
 
 # Only the test_deletion should have its min_count overridden.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 3",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 3", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 4",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 4", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 5",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 5", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 5",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 5", "Verify manager.log auto-delete configuration")
 # In case a future log is added, make sure the developer doesn't forget to
 # set the min count per configuration.
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "Registering .* with min roll count 0",
-    "Verify nothing has a default min roll count of 0 per configuration")
+    "Registering .* with min roll count 0", "Verify nothing has a default min roll count of 0 per configuration")
 
 # This test doesn't require a log rotation. We just verify that the logs communicate
 # the appropriate min_count values above.
@@ -387,18 +356,17 @@ test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
 
-
 #
 # Test 5: Verify log deletion does not happen when it is disabled.
 #
 auto_delete_disabled = twelve_meg_log_space.copy()
-auto_delete_disabled.update({
-    'proxy.config.log.auto_delete_rolled_files': 0,
-    # Verify that setting a hostname changes the hostname used in rolled logs.
-    'proxy.config.log.hostname': 'my_hostname',
-})
-test = TestLogRetention(auto_delete_disabled,
-                        "Verify log deletion does not happen when auto-delet is disabled.")
+auto_delete_disabled.update(
+    {
+        'proxy.config.log.auto_delete_rolled_files': 0,
+        # Verify that setting a hostname changes the hostname used in rolled logs.
+        'proxy.config.log.hostname': 'my_hostname',
+    })
+test = TestLogRetention(auto_delete_disabled, "Verify log deletion does not happen when auto-delet is disabled.")
 
 # Configure approximately 5 KB entries for a log with no specified min_count.
 test.ts.Disk.logging_yaml.AddLines(
@@ -411,8 +379,7 @@ logging:
     - filename: test_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that each log type was registered for auto-deletion.
 test.ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
@@ -420,21 +387,16 @@ test.ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
     "Verify test_deletion.log auto-delete configuration")
 # Only the test_deletion should have its min_count overridden.
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was not deleted.
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed",
-    "Verify that space was reclaimed")
+    "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
 test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
 test.tr.Processes.Default.ReturnCode = 0
@@ -455,8 +417,7 @@ max_roll_count_of_2 = {
     # This is the configuration under test.
     'proxy.config.log.rolling_max_count': 2,
 }
-test = TestLogRetention(max_roll_count_of_2,
-                        "Verify max_roll_count is respected.")
+test = TestLogRetention(max_roll_count_of_2, "Verify max_roll_count is respected.")
 
 # Configure approximately 5 KB entries for a log with no specified min_count.
 test.ts.Disk.logging_yaml.AddLines(
@@ -468,13 +429,11 @@ logging:
   logs:
     - filename: test_deletion
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that trim happened for the rolled file.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "rolled logfile.*test_deletion.log.*old.* was auto-deleted",
-    "Verify test_deletion.log was trimmed")
+    "rolled logfile.*test_deletion.log.*old.* was auto-deleted", "Verify test_deletion.log was trimmed")
 
 test.tr.Processes.Default.Command = test.get_command_to_rotate_thrice()
 test.tr.Processes.Default.ReturnCode = 0
@@ -484,8 +443,7 @@ test.tr.StillRunningAfter = test.server
 #
 # Test 7: Verify log deletion happens after a config reload.
 #
-test = TestLogRetention(twelve_meg_log_space,
-                        "Verify log rotation and deletion after a config reload.")
+test = TestLogRetention(twelve_meg_log_space, "Verify log rotation and deletion after a config reload.")
 
 test.ts.Disk.logging_yaml.AddLines(
     '''
@@ -496,29 +454,23 @@ logging:
   logs:
     - filename: test_deletion
       format: long
-'''.format(prefix="0123456789" * 500).split("\n")
-)
+'''.format(prefix="0123456789" * 500).split("\n"))
 
 # Verify that the plugin's logs and other core logs were registered for deletion.
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "Registering rotated log deletion for test_deletion.log with min roll count 0",
     "Verify test_deletion.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for error.log with min roll count 0",
-    "Verify error.log auto-delete configuration")
+    "Registering rotated log deletion for error.log with min roll count 0", "Verify error.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for traffic.out with min roll count 0",
-    "Verify traffic.out auto-delete configuration")
+    "Registering rotated log deletion for traffic.out with min roll count 0", "Verify traffic.out auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for diags.log with min roll count 0",
-    "Verify diags.log auto-delete configuration")
+    "Registering rotated log deletion for diags.log with min roll count 0", "Verify diags.log auto-delete configuration")
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Registering rotated log deletion for manager.log with min roll count 0",
-    "Verify manager.log auto-delete configuration")
+    "Registering rotated log deletion for manager.log with min roll count 0", "Verify manager.log auto-delete configuration")
 # Verify test_deletion was rotated and deleted.
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed",
-    "Verify that space was reclaimed")
+    "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
 # Touch logging.yaml so the config reload applies to logging objects.
 test.tr.Processes.Default.Command = "touch " + test.ts.Disk.logging_yaml.AbsRunTimePath

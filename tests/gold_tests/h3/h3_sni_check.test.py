@@ -21,10 +21,7 @@ Test.Summary = '''
 Verify h3 SNI checking behavior.
 '''
 
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_QUICHE'),
-    Condition.HasCurlFeature('http3')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'), Condition.HasCurlFeature('http3'))
 
 Test.ContinueOnFail = True
 
@@ -55,9 +52,7 @@ class Test_sni_check:
 
         :param tr: The TestRun object to associate the server process with.
         """
-        server = tr.AddVerifierServerProcess(
-            f"server_{Test_sni_check.server_counter}",
-            self.replay_file)
+        server = tr.AddVerifierServerProcess(f"server_{Test_sni_check.server_counter}", self.replay_file)
         Test_sni_check.server_counter += 1
         self._server = server
 
@@ -72,17 +67,16 @@ class Test_sni_check:
         self._ts = ts
         # Configure TLS for Traffic Server.
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.quic.no_activity_timeout_in': 0,
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        })
+        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+                'proxy.config.quic.no_activity_timeout_in': 0,
+                'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+            })
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -106,8 +100,7 @@ class Test_sni_check:
             # The client request should time out because ATS rejects it and does
             # not send a response.
             tr.Processes.Default.ReturnCode = 1
-            self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                "SNI not found", "ATS should detect the missing SNI.")
+            self._ts.Disk.traffic_out.Content += Testers.ContainsExpression("SNI not found", "ATS should detect the missing SNI.")
         else:
             # Verify the client request is successful.
             tr.Processes.Default.ReturnCode = 0
@@ -119,11 +112,9 @@ class Test_sni_check:
 
 
 # TEST 1: Client request with SNI.
-test0 = Test_sni_check(
-    "", replay_keys="has_sni", expect_request_rejected=False)
+test0 = Test_sni_check("", replay_keys="has_sni", expect_request_rejected=False)
 test0.run()
 
 # TEST 2: Client request without SNI.
-test1 = Test_sni_check(
-    "", replay_keys="no_sni", expect_request_rejected=True)
+test1 = Test_sni_check("", replay_keys="no_sni", expect_request_rejected=True)
 test1.run()

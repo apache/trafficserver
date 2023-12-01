@@ -23,9 +23,7 @@ Test.Summary = '''
 Test certifier plugin behaviors
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('certifier.so')
-)
+Test.SkipUnless(Condition.PluginExists('certifier.so'))
 
 
 class DynamicCertTest:
@@ -48,24 +46,21 @@ class DynamicCertTest:
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
         Setup.Copy(self.certPathSrc, self.certPathDest)
         Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|certifier|ssl",
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-        })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|certifier|ssl",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.plugin_config.AddLine(
-            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
+        )
         # Verify logs for dynamic generation of certs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "creating shadow certs",
-            "Verify the certifier plugin generates the certificate dynamically.")
+            "creating shadow certs", "Verify the certifier plugin generates the certificate dynamically.")
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
@@ -100,10 +95,8 @@ class DynamicCertTest:
     def run(self):
         # the certifier plugin generates the cert and store it in a directory
         # named with the first three character of the md5 hash of the hostname
-        genCertPath = os.path.join(self.certPathDest,
-                                   'store',
-                                   str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]),
-                                   self.host + ".crt")
+        genCertPath = os.path.join(
+            self.certPathDest, 'store', str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]), self.host + ".crt")
         self.verifyCertNotExist(genCertPath)
         self.runHTTPSTraffic()
         self.verifyCert(genCertPath)
@@ -132,24 +125,21 @@ class ReuseExistingCertTest:
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
         Setup.Copy(self.certPathSrc, self.certPathDest)
         Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|certifier|ssl",
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-        })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|certifier|ssl",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.plugin_config.AddLine(
-            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
+        )
         # Verify logs for reusing existing cert
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "reusing existing cert and context for www.tls.com",
-            "Should reuse the existing certificate")
+            "reusing existing cert and context for www.tls.com", "Should reuse the existing certificate")
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")

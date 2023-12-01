@@ -17,7 +17,6 @@ Verify the behavior of proxy.config.http.per_server.connection.max.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 Test.Summary = __doc__
 
 
@@ -44,32 +43,27 @@ class PerServerConnectionMaxTest:
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
         self._ts = Test.MakeATSProcess("ts1")
-        self._ts.Disk.remap_config.AddLine(
-            f'map / http://127.0.0.1:{self._server.Variables.http_port}'
-        )
-        self._ts.Disk.records_config.update({
-            'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.http.per_server.connection.max': self._origin_max_connections,
-        })
+        self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.http.per_server.connection.max': self._origin_max_connections,
+            })
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
             f'WARNING:.*too many connections:.*limit={self._origin_max_connections}',
             'Verify the user is warned about the connection limit being hit.')
 
     def run(self) -> None:
         """Configure the TestRun."""
-        tr = Test.AddTestRun(
-            'Verify we enforce proxy.config.http.per_server.connection.max')
+        tr = Test.AddTestRun('Verify we enforce proxy.config.http.per_server.connection.max')
         tr.Processes.Default.StartBefore(self._dns)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
-        tr.AddVerifierClientProcess(
-            'client',
-            self._replay_file,
-            http_ports=[self._ts.Variables.port])
+        tr.AddVerifierClientProcess('client', self._replay_file, http_ports=[self._ts.Variables.port])
 
 
 class ConnectMethodTest:
@@ -95,16 +89,16 @@ class ConnectMethodTest:
     def _configure_trafficserver(self) -> None:
         self._ts = Test.MakeATSProcess("ts2")
 
-        self._ts.Disk.records_config.update({
-            'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|hostdb',
-            'proxy.config.http.server_ports': f"{self._ts.Variables.port}",
-            'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
-
-            'proxy.config.http.per_server.connection.max': self._origin_max_connections,
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|dns|hostdb',
+                'proxy.config.http.server_ports': f"{self._ts.Variables.port}",
+                'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
+                'proxy.config.http.per_server.connection.max': self._origin_max_connections,
+            })
 
         self._ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://www.this.origin.com:{self._server.Variables.Port}/",
@@ -137,8 +131,7 @@ class ConnectMethodTest:
         # response.
         tr.Processes.Default.Command = (
             f"sleep 1; curl -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
-            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
-        )
+            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'")
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).
         tr.Processes.Default.ReturnCode = 22
