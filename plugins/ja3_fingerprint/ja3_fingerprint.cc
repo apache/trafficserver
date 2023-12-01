@@ -443,8 +443,6 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   auto remap_info = static_cast<ja3_remap_info *>(ih);
-  if (remap_info) {
-    delete remap_info;
-  }
+  delete remap_info;
   ih = nullptr;
 }
