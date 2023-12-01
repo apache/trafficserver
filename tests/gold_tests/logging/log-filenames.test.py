@@ -33,11 +33,7 @@ class LogFilenamesTest:
     __ts_counter = 1
 
     # The default log names for the various system logs.
-    default_log_data = {
-        'diags': 'diags.log',
-        'error': 'error.log',
-        'manager': 'manager.log'
-    }
+    default_log_data = {'diags': 'diags.log', 'error': 'error.log', 'manager': 'manager.log'}
 
     def __init__(self, description, log_data=default_log_data):
         ''' Handle initialization tasks common across the tests.
@@ -66,27 +62,29 @@ class LogFilenamesTest:
         '''
         self._ts_name = f"ts{LogFilenamesTest.__ts_counter}"
         LogFilenamesTest.__ts_counter += 1
-        self.ts = Test.MakeATSProcess(self._ts_name, command="traffic_manager",
-                                      use_traffic_out=False, log_data=log_data)
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'log',
-            'proxy.config.log.periodic_tasks_interval': 1,
-        })
+        self.ts = Test.MakeATSProcess(self._ts_name, command="traffic_manager", use_traffic_out=False, log_data=log_data)
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 0,
+                'proxy.config.diags.debug.tags': 'log',
+                'proxy.config.log.periodic_tasks_interval': 1,
+            })
 
         # Intentionally retrieve a port that is closed, that is no server is
         # listening on it. We will use this to attempt talking with a
         # non-existent server, which will result in an error log entry.
         ports.get_port(self.ts, 'closed_port')
-        self.ts.Disk.remap_config.AddLines([
-            f'map /server/down http://127.0.0.1:{self.ts.Variables.closed_port}',
-            'map / https://trafficserver.apache.org @action=deny',
-        ])
+        self.ts.Disk.remap_config.AddLines(
+            [
+                f'map /server/down http://127.0.0.1:{self.ts.Variables.closed_port}',
+                'map / https://trafficserver.apache.org @action=deny',
+            ])
 
         # The following log is configured so that we can wait upon it being
         # written so we know that ATS is done writing logs.
         self.sentinel_log_filename = "sentinel"
-        self.ts.Disk.logging_yaml.AddLine(f'''
+        self.ts.Disk.logging_yaml.AddLine(
+            f'''
             logging:
               formats:
                 - name: url_and_return_code
@@ -96,9 +94,7 @@ class LogFilenamesTest:
                   format: url_and_return_code
             ''')
 
-        self.sentinel_log_path = os.path.join(
-            self.ts.Variables.LOGDIR,
-            f"{self.sentinel_log_filename}.log")
+        self.sentinel_log_path = os.path.join(self.ts.Variables.LOGDIR, f"{self.sentinel_log_filename}.log")
 
         return self.ts
 
@@ -124,8 +120,7 @@ class LogFilenamesTest:
         tr = Test.AddTestRun(f'Run traffic for: {description}')
         tr.Processes.Default.Command = (
             f'curl http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
-            f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose'
-        )
+            f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.ts)
 
@@ -140,7 +135,8 @@ class LogFilenamesTest:
             The path to the configured custom log file.
         """
         self.custom_log_filename = custom_log_filename
-        self.ts.Disk.logging_yaml.AddLine(f'''
+        self.ts.Disk.logging_yaml.AddLine(
+            f'''
                 - filename: {custom_log_filename}
                   format: url_and_return_code
             ''')
@@ -152,9 +148,7 @@ class LogFilenamesTest:
             else:
                 self.ts.Disk.custom_log = self.ts.Streams.stderr
         else:
-            self.custom_log_path = os.path.join(
-                self.ts.Variables.LOGDIR,
-                f"{custom_log_filename}.log")
+            self.custom_log_path = os.path.join(self.ts.Variables.LOGDIR, f"{custom_log_filename}.log")
             self.ts.Disk.File(self.custom_log_path, id="custom_log")
         return self.custom_log_path
 
@@ -164,23 +158,19 @@ class LogFilenamesTest:
         '''
         manager_path = self.ts.Disk.manager_log.AbsPath
         self.ts.Disk.manager_log.Content += Testers.ContainsExpression(
-            "Launching ts process",
-            f"{manager_path} should contain traffic_manager log messages")
+            "Launching ts process", f"{manager_path} should contain traffic_manager log messages")
 
         diags_path = self.ts.Disk.diags_log.AbsPath
         self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            "Traffic Server is fully initialized",
-            f"{diags_path} should contain traffic_server diag messages")
+            "Traffic Server is fully initialized", f"{diags_path} should contain traffic_server diag messages")
 
         error_log_path = self.ts.Disk.error_log.AbsPath
         self.ts.Disk.error_log.Content += Testers.ContainsExpression(
-            "CONNECT: attempt fail",
-            f"{error_log_path} should contain connection error messages")
+            "CONNECT: attempt fail", f"{error_log_path} should contain connection error messages")
 
         custom_log_path = self.ts.Disk.custom_log.AbsPath
         self.ts.Disk.custom_log.Content += Testers.ContainsExpression(
-            "https://trafficserver.apache.org/some/path: 403",
-            f"{custom_log_path} should contain the custom transaction logs")
+            "https://trafficserver.apache.org/some/path: 403", f"{custom_log_path} should contain the custom transaction logs")
 
 
 class DefaultNamedTest(LogFilenamesTest):
@@ -206,19 +196,16 @@ class CustomNamedTest(LogFilenamesTest):
     '''
 
     def __init__(self):
-        log_data = {
-            'diags': 'my_diags.log',
-            'error': 'my_error.log',
-            'manager': 'my_manager.log'
-        }
+        log_data = {'diags': 'my_diags.log', 'error': 'my_error.log', 'manager': 'my_manager.log'}
         super().__init__('specify log filename configuration', log_data)
 
         # Configure custom names for manager.log, etc.
-        self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'my_manager.log',
-            'proxy.config.diags.logfile.filename': 'my_diags.log',
-            'proxy.config.error.logfile.filename': 'my_error.log',
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.node.config.manager_log_filename': 'my_manager.log',
+                'proxy.config.diags.logfile.filename': 'my_diags.log',
+                'proxy.config.error.logfile.filename': 'my_error.log',
+            })
 
         # For these tests, more important than the listening port is the
         # existence of the log files. In particular, it can take a few seconds
@@ -236,19 +223,16 @@ class stdoutTest(LogFilenamesTest):
 
     def __init__(self):
 
-        log_data = {
-            'diags': 'stdout',
-            'error': 'stdout',
-            'manager': 'stdout'
-        }
+        log_data = {'diags': 'stdout', 'error': 'stdout', 'manager': 'stdout'}
         super().__init__('specify logs to go to stdout', log_data)
 
         # Configure custom names for manager.log, etc.
-        self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'stdout',
-            'proxy.config.diags.logfile.filename': 'stdout',
-            'proxy.config.error.logfile.filename': 'stdout',
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.node.config.manager_log_filename': 'stdout',
+                'proxy.config.diags.logfile.filename': 'stdout',
+                'proxy.config.error.logfile.filename': 'stdout',
+            })
 
         self.configure_named_custom_log('stdout')
 
@@ -265,19 +249,16 @@ class stderrTest(LogFilenamesTest):
 
     def __init__(self):
 
-        log_data = {
-            'diags': 'stderr',
-            'error': 'stderr',
-            'manager': 'stderr'
-        }
+        log_data = {'diags': 'stderr', 'error': 'stderr', 'manager': 'stderr'}
         super().__init__('specify logs to go to stderr', log_data)
 
         # Configure custom names for manager.log, etc.
-        self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'stderr',
-            'proxy.config.diags.logfile.filename': 'stderr',
-            'proxy.config.error.logfile.filename': 'stderr',
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.node.config.manager_log_filename': 'stderr',
+                'proxy.config.diags.logfile.filename': 'stderr',
+                'proxy.config.error.logfile.filename': 'stderr',
+            })
 
         self.configure_named_custom_log('stderr')
 

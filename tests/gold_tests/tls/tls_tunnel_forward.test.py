@@ -32,8 +32,11 @@ request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "tim
 request_random_header = {"headers": "GET / HTTP/1.1\r\nHost: random.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok foo"}
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok bar"}
-response_random_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                          "timestamp": "1469733493.993", "body": "ok random"}
+response_random_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "ok random"
+}
 server_foo.addResponse("sessionlog_foo.json", request_foo_header, response_foo_header)
 server_bar.addResponse("sessionlog_bar.json", request_bar_header, response_bar_header)
 server_random.addResponse("sessionlog_random.json", request_random_header, response_random_header)
@@ -51,36 +54,37 @@ ts.addSSLfile("ssl/signer.key")
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.http.connect_ports': '{0} {1} {2} {3}'.format(ts.Variables.ssl_port,
-                                                                                           server_foo.Variables.SSL_Port,
-                                                                                           server_bar.Variables.Port,
-                                                                                           server_random.Variables.Port),
-                               'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-                               'proxy.config.exec_thread.autoconfig.scale': 1.0,
-                               'proxy.config.url_remap.pristine_host_hdr': 1,
-                               'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-                               'proxy.config.dns.resolv_conf': 'NULL'})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.http.connect_ports':
+            '{0} {1} {2} {3}'.format(
+                ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.Port, server_random.Variables.Port),
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
-ts.Disk.sni_yaml.AddLines([
-    "sni:",
-    "- fqdn: 'foo.com'",
-    "  tunnel_route: 'localhost:{0}'".format(server_foo.Variables.SSL_Port),
-    "- fqdn: 'bar.com'",
-    "  forward_route: 'localhost:{0}'".format(server_bar.Variables.Port),
-    "- fqdn: ''",  # default case
-    "  forward_route: 'localhost:{0}'".format(server_random.Variables.Port),
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        "sni:",
+        "- fqdn: 'foo.com'",
+        "  tunnel_route: 'localhost:{0}'".format(server_foo.Variables.SSL_Port),
+        "- fqdn: 'bar.com'",
+        "  forward_route: 'localhost:{0}'".format(server_bar.Variables.Port),
+        "- fqdn: ''",  # default case
+        "  forward_route: 'localhost:{0}'".format(server_random.Variables.Port),
+    ])
 
 tr = Test.AddTestRun("Tunnel-test")
 tr.Processes.Default.Command = "curl -v  --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)

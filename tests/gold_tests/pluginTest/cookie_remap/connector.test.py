@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 
 '''
@@ -31,8 +32,11 @@ ts = Test.MakeATSProcess("ts")
 # second server is run during second test
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
-request_header = {"headers": "GET /cookiematches HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {
+    "headers": "GET /cookiematches HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -40,8 +44,11 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 
 server2 = Test.MakeOriginServer("server2", ip='127.0.0.11')
-request_header2 = {"headers": "GET /cookiedoesntmatch HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header2 = {
+    "headers": "GET /cookiedoesntmatch HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 # expected response from the origin server
 response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -53,10 +60,11 @@ config_path = os.path.join(Test.TestDirectory, "configs/connectorconfig.txt")
 with open(config_path, 'r') as config_file:
     config1 = config_file.read()
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
+    })
 
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 config1 = config1.replace("$ALTPORT", str(server2.Variables.Port))
@@ -65,8 +73,7 @@ ts.Disk.File(ts.Variables.CONFIGDIR + "/connectorconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/connectorconfig.txt'
-)
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/connectorconfig.txt')
 
 # Positive test case that remaps because all connected operations pass
 tr = Test.AddTestRun("cookie value matches")

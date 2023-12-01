@@ -22,14 +22,20 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer(
+    "server_foo",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
+    })
+server_bar = Test.MakeOriginServer(
+    "server_bar",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
+    })
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -60,38 +66,37 @@ ts.Disk.remap_config.AddLine(
     'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
     'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
-ts.Disk.remap_config.AddLine(
-    'map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # set global policy
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.ssl.client.verify.server.properties': 'ALL',
-    'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        # set global policy
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.ssl.client.verify.server.properties': 'ALL',
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1
+    })
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bob.bar.com',
-    '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: ALL',
-    '- fqdn: bob.*.com',
-    '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: SIGNATURE',
-    "- fqdn: '*bar.com'",
-    '  verify_server_policy: DISABLED',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bob.bar.com',
+        '  verify_server_policy: ENFORCED',
+        '  verify_server_properties: ALL',
+        '- fqdn: bob.*.com',
+        '  verify_server_policy: ENFORCED',
+        '  verify_server_properties: SIGNATURE',
+        "- fqdn: '*bar.com'",
+        '  verify_server_policy: DISABLED',
+    ])
 
 tr = Test.AddTestRun("foo.com Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -116,7 +121,6 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
-
 tr2 = Test.AddTestRun("bob.bar.com Override-enforcing-Test")
 tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/".format(
     ts.Variables.ssl_port)
@@ -140,7 +144,6 @@ tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(

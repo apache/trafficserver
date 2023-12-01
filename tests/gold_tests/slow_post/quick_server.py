@@ -17,9 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from http_utils import (wait_for_headers_complete,
-                        determine_outstanding_bytes_to_read,
-                        drain_socket)
+from http_utils import (wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket)
 
 import argparse
 import socket
@@ -29,22 +27,11 @@ import sys
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("address", help="Address to listen on")
+    parser.add_argument("port", type=int, default=8080, help="The port to listen on")
+    parser.add_argument('--drain-request', action='store_true', help="Drain the entire request before closing the connection")
     parser.add_argument(
-        "address",
-        help="Address to listen on")
-    parser.add_argument(
-        "port",
-        type=int,
-        default=8080,
-        help="The port to listen on")
-    parser.add_argument(
-        '--drain-request',
-        action='store_true',
-        help="Drain the entire request before closing the connection")
-    parser.add_argument(
-        '--abort-response-headers',
-        action='store_true',
-        help="Abort the response in the midst of sending the response headers")
+        '--abort-response-headers', action='store_true', help="Abort the response in the midst of sending the response headers")
     return parser.parse_args()
 
 
@@ -80,11 +67,9 @@ def send_response(sock: socket.socket, abort_early: bool) -> None:
     if abort_early:
         response = "HTTP/1."
     else:
-        response = (
-            r"HTTP/1.1 200 OK\r\n"
-            r"Content-Length: 0\r\n"
-            r"\r\n"
-        )
+        response = (r"HTTP/1.1 200 OK\r\n"
+                    r"Content-Length: 0\r\n"
+                    r"\r\n")
     print(f'Sending:\n{response}')
     sock.sendall(response.encode("utf-8"))
 
@@ -116,8 +101,7 @@ def main() -> int:
                     break
 
                 if args.drain_request:
-                    num_bytes_to_drain = determine_outstanding_bytes_to_read(
-                        read_bytes)
+                    num_bytes_to_drain = determine_outstanding_bytes_to_read(read_bytes)
                     print(f'Read {len(read_bytes)} bytes. '
                           f'Draining {num_bytes_to_drain} bytes.')
                     drain_socket(sock, read_bytes, num_bytes_to_drain)

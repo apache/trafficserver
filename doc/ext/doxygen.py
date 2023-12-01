@@ -100,7 +100,9 @@ class doctree_resolved:
                         # Lookup the object in the Doxygen index
                         try:
                             compound, = index.xpath(
-                                'descendant::compound[(not($owner) or name[text() = $owner]) and descendant::name[text() = $name]][1]', owner=signature_owner or owner, name=name)
+                                'descendant::compound[(not($owner) or name[text() = $owner]) and descendant::name[text() = $name]][1]',
+                                owner=signature_owner or owner,
+                                name=name)
 
                         except ValueError:
                             continue
@@ -112,7 +114,7 @@ class doctree_resolved:
                         # An enumvalue has no location
                         memberdef, = cache[filename].xpath(
                             'descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath(
-                            'descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
+                                'descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
 
                         # Append the link after the object's signature.
                         # Get the source file and line number from Doxygen and use
@@ -137,8 +139,8 @@ class doctree_resolved:
                         else:
                             refuri = 'http://docs.trafficserver.apache.org/en/latest/' + refuri
 
-                        reference = nodes.reference('', '', emphasis, classes=[
-                                                    'viewcode-link'], reftitle='Source code', refuri=refuri)
+                        reference = nodes.reference(
+                            '', '', emphasis, classes=['viewcode-link'], reftitle='Source code', refuri=refuri)
                         desc_child += reference
 
                         # Style the links
@@ -159,13 +161,15 @@ def setup(app):
 
     else:
         if not etree:
-            app.warn('''Python lxml library not found
+            app.warn(
+                '''Python lxml library not found
   The library is used to add links from an API description to the source
   code for that object.
   Depending on your system, try installing the python-lxml package.''')
 
         if not path.isfile('xml/index.xml'):
-            app.warn('''Doxygen files not found: xml/index.xml
+            app.warn(
+                '''Doxygen files not found: xml/index.xml
   The files are used to add links from an API description to the source
   code for that object.
   Run "$ make doxygen" to generate these XML files.''')

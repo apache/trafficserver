@@ -26,18 +26,16 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers":
-        "GET /test HTTP/1.1\r\n"
-        "Host: whatever\r\n"
-        "\r\n",
+    "headers": "GET /test HTTP/1.1\r\n"
+               "Host: whatever\r\n"
+               "\r\n",
     "body": "",
     'timestamp': "1469733493.993",
 }
 response_header = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n"
-        "Connection: close\r\n"
-        "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+               "Connection: close\r\n"
+               "\r\n",
     "body": "body\n",
     'timestamp': "1469733493.993",
 }
@@ -45,15 +43,14 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
-ts.Disk.records_config.update({
-    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-    'proxy.config.dns.resolv_conf': 'NULL',
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.cache.required_headers': 0,
-})
-ts.Disk.remap_config.AddLine(
-    'map / http://localhost:{}/'.format(server.Variables.Port)
-)
+ts.Disk.records_config.update(
+    {
+        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.http.cache.http': 1,
+        'proxy.config.http.cache.required_headers': 0,
+    })
+ts.Disk.remap_config.AddLine('map / http://localhost:{}/'.format(server.Variables.Port))
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -64,8 +61,7 @@ logging:
   logs:
     - filename: field-test
       format: custom
-'''.split("\n")
-)
+'''.split("\n"))
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -84,9 +80,7 @@ log_filespec = os.path.join(ts.Variables.LOGDIR, 'field-test.log')
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + log_filespec
-)
+tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + log_filespec)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

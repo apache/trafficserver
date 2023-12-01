@@ -16,7 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import os
 
 Test.Summary = 'Test TSFatal API'
@@ -27,15 +26,16 @@ ts = Test.MakeATSProcess('ts')
 
 Test.testName = 'Fatal Shutdown Test'
 
-ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
-    'proxy.config.exec_thread.autoconfig.scale': 1.5,
-    'proxy.config.exec_thread.limit': 16,
-    'proxy.config.accept_threads': 1,
-    'proxy.config.task_threads': 2,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'TSFatal_test'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.autoconfig.scale': 1.5,
+        'proxy.config.exec_thread.limit': 16,
+        'proxy.config.accept_threads': 1,
+        'proxy.config.task_threads': 2,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'TSFatal_test'
+    })
 
 # Load plugin
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'fatal_shutdown.so'), ts)

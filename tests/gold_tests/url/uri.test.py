@@ -28,14 +28,8 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|cache|url',
 })
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
 tr = Test.AddTestRun("Verify correct URI parsing behavior.")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.AddVerifierClientProcess(
-    "client",
-    replay_file,
-    http_ports=[ts.Variables.port],
-    other_args='--thread-limit 1')
+tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port], other_args='--thread-limit 1')

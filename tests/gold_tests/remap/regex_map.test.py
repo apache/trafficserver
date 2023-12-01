@@ -27,30 +27,27 @@ server = Test.MakeOriginServer("server")
 dns = Test.MakeDNServer("dns", default='127.0.0.1')
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: zero.one.two.three.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: zero.one.two.three.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
-    'proxy.config.http.referer_filter': 1,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
+        'proxy.config.http.referer_filter': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 ts.Disk.remap_config.AddLine(
     r'regex_map '
     r'http://(.*)?one\.two\.three\.com/ '
-    r'http://$1reactivate.four.five.six.com:{}/'.format(server.Variables.Port)
-)
+    r'http://$1reactivate.four.five.six.com:{}/'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     r'regex_map '
     r'https://\b(?!(.*one|two|three|four|five|six)).+\b\.seven\.eight\.nine\.com/blah12345.html '
-    r'https://www.example.com:{}/one/two/three/blah12345.html'.format(server.Variables.Port)
-)
+    r'https://www.example.com:{}/one/two/three/blah12345.html'.format(server.Variables.Port))
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -H"Host: zero.one.two.three.com" http://127.0.0.1:{0}/ --verbose'.format(ts.Variables.port)

@@ -29,7 +29,6 @@ ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True)
 ts3 = Test.MakeATSProcess("ts3", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-
 # Add info the origin server responses
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -43,65 +42,59 @@ ts2.addSSLfile("ssl/server.key")
 ts3.addSSLfile("ssl/server.pem")
 ts3.addSSLfile("ssl/server.key")
 
-ts1.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts2.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts3.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts1.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts2.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts3.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts1.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts3.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts1.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 0,
-})
-ts2.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-})
-ts3.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 0,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-})
+ts1.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 0,
+    })
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+    })
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 0,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+    })
 
 
 def check_session(ev, test):

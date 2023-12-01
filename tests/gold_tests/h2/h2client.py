@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 A basic, ad-hoc HTTP/2 client.
 '''
@@ -140,21 +139,11 @@ def makerequest(port: int, path: str, verify_default_body: bool, print_body: boo
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("port",
-                        type=int,
-                        help="Port to use")
-    parser.add_argument("path",
-                        help="The path to request")
-    parser.add_argument("--repeat",
-                        type=int,
-                        default=1,
-                        help="Number of times to repeat the request")
-    parser.add_argument("--verify_default_body",
-                        action="store_true",
-                        help="Verify the default body content: abbb...")
-    parser.add_argument("--print_body",
-                        action="store_true",
-                        help="Print the response body")
+    parser.add_argument("port", type=int, help="Port to use")
+    parser.add_argument("path", help="The path to request")
+    parser.add_argument("--repeat", type=int, default=1, help="Number of times to repeat the request")
+    parser.add_argument("--verify_default_body", action="store_true", help="Verify the default body content: abbb...")
+    parser.add_argument("--print_body", action="store_true", help="Print the response body")
     args = parser.parse_args()
 
     for i in range(args.repeat):

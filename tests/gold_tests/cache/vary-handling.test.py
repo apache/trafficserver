@@ -24,17 +24,16 @@ Test correct handling of alternates via the Vary header.
 ts = Test.MakeATSProcess("ts")
 replay_file = "replay/varied_transactions.replay.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.insert_age_in_response': 0,
-    'proxy.config.cache.limits.http.max_alts': 4,
-    'proxy.config.cache.log.alternate.eviction': 1,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.cache.limits.http.max_alts': 4,
+        'proxy.config.cache.log.alternate.eviction': 1,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
 
 tr = Test.AddTestRun("Run traffic with max_alts behavior when set to 4")
 tr.Processes.Default.StartBefore(server)

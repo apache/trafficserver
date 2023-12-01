@@ -19,7 +19,6 @@ Verify ATS handles down name servers correctly.
 
 from ports import get_port
 
-
 # This value tracks DNS_PRIMARY_RETRY_PERIOD in P_DNSProcessor.h.
 DNS_PRIMARY_RETRY_PERIOD = 5
 
@@ -67,19 +66,21 @@ class DownDNSNameserverTest:
         # the responses come out of the cache without going to the origin.
         self._ts = Test.MakeATSProcess("ts", enable_cache=False)
 
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'hostdb|dns',
-            'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns_port}',
-            'proxy.config.dns.resolv_conf': 'NULL'
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'hostdb|dns',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns_port}',
+                'proxy.config.dns.resolv_conf': 'NULL'
+            })
 
         # Cause a name resolution for each, unique path.
-        self._ts.Disk.remap_config.AddLines([
-            f'map /first/host http://first.host.com:{self._server.Variables.http_port}/',
-            f'map /second/host http://second.host.com:{self._server.Variables.http_port}/',
-            f'map /third/host http://third.host.com:{self._server.Variables.http_port}/',
-        ])
+        self._ts.Disk.remap_config.AddLines(
+            [
+                f'map /first/host http://first.host.com:{self._server.Variables.http_port}/',
+                f'map /second/host http://second.host.com:{self._server.Variables.http_port}/',
+                f'map /third/host http://third.host.com:{self._server.Variables.http_port}/',
+            ])
 
     def _run_transaction(self, start_dns: bool, keyname: str):
         """Run a transaction with the name server reachable.
@@ -99,10 +100,7 @@ class DownDNSNameserverTest:
         self._client_counter += 1
 
         if start_dns:
-            dns = tr.MakeDNServer(
-                f'dns{self._dns_counter}',
-                default='127.0.0.1',
-                port=self._dns_port)
+            dns = tr.MakeDNServer(f'dns{self._dns_counter}', default='127.0.0.1', port=self._dns_port)
             self._dns_counter += 1
             tr.Processes.Default.StartBefore(dns)
 
@@ -113,8 +111,7 @@ class DownDNSNameserverTest:
 
         # Verify that the client tried to send the transaction.
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f'uuid: {keyname}',
-            f'The client should have sent a transaction with uuid {keyname}')
+            f'uuid: {keyname}', f'The client should have sent a transaction with uuid {keyname}')
 
         # The client will report an error if ATS could not complete the
         # transaction due to DNS resolution issues.
@@ -126,10 +123,7 @@ class DownDNSNameserverTest:
         tr = Test.AddTestRun()
 
         if start_dns:
-            dns = tr.MakeDNServer(
-                f'dns{self._dns_counter}',
-                default='127.0.0.1',
-                port=self._dns_port)
+            dns = tr.MakeDNServer(f'dns{self._dns_counter}', default='127.0.0.1', port=self._dns_port)
             self._dns_counter += 1
             tr.Processes.Default.StartBefore(dns)
 

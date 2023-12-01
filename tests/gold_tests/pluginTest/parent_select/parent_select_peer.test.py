@@ -27,11 +27,10 @@ Test next hop selection using strategies.yaml with consistent hashing, with peer
 #
 server = Test.MakeOriginServer("server")
 response_header = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n"
-        "Connection: close\r\n"
-        "Cache-control: max-age=85000\r\n"
-        "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+               "Connection: close\r\n"
+               "Cache-control: max-age=85000\r\n"
+               "\r\n",
     "timestamp": "1469733493.993",
     "body": "This is the body.\n"
 }
@@ -56,15 +55,14 @@ ts_upstream = []
 for i in range(num_upstream):
     ts = Test.MakeATSProcess(f"ts_upstream{i}")
     dns.addRecords(records={f"ts_upstream{i}": ["127.0.0.1"]})
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http|dns',
-        'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
-        'proxy.config.dns.resolv_conf': "NULL",
-    })
-    ts.Disk.remap_config.AddLine(
-        f"map / http://127.0.0.1:{server.Variables.Port}"
-    )
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http|dns',
+            'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
+            'proxy.config.dns.resolv_conf': "NULL",
+        })
+    ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
     ts_upstream.append(ts)
 
 # Define peer trafficserver instances.
@@ -78,18 +76,19 @@ for i in range(num_peer):
     ts = ts_peer[i]
     dns.addRecords(records={f"ts_peer{i}": ["127.0.0.1"]})
 
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb|cachekey|pparent_select',
-        'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",  # Only nameservers if resolv_conf NULL.
-        'proxy.config.dns.resolv_conf': "NULL",  # This defaults to /etc/resvolv.conf (OS namesevers) if not NULL.
-        'proxy.config.http.cache.http': 1,
-        'proxy.config.http.cache.required_headers': 0,
-        'proxy.config.http.uncacheable_requests_bypass_parent': 0,
-        'proxy.config.http.no_dns_just_forward_to_parent': 1,
-        'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
-        'proxy.config.http.parent_proxy.self_detect': 1,
-    })
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb|cachekey|pparent_select',
+            'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",  # Only nameservers if resolv_conf NULL.
+            'proxy.config.dns.resolv_conf': "NULL",  # This defaults to /etc/resvolv.conf (OS namesevers) if not NULL.
+            'proxy.config.http.cache.http': 1,
+            'proxy.config.http.cache.required_headers': 0,
+            'proxy.config.http.uncacheable_requests_bypass_parent': 0,
+            'proxy.config.http.no_dns_just_forward_to_parent': 1,
+            'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
+            'proxy.config.http.parent_proxy.self_detect': 1,
+        })
 
     ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
     s = ts.Disk.strategies
@@ -112,34 +111,36 @@ for i in range(num_peer):
         # The health check URL does not seem to be used currently.
         # s.AddLine(f"          health_check_url: http://ts_upstream{j}:{ts_upstream[j].Variables.port}")
         s.AddLine(f"      weight: 1.0")
-    s.AddLines([
-        "strategies:",
-        "  - strategy: the-strategy",
-        "    policy: consistent_hash",
-        "    hash_key: cache_key",
-        "    go_direct: false",
-        "    parent_is_proxy: true",
-        "    cache_peer_result: false",
-        "    ignore_self_detect: false",
-        "    groups:",
-        "      - *peer_group",
-        "      - *peer_upstream",
-        "    scheme: http",
-        "    failover:",
-        "      ring_mode: peering_ring",
-        f"      self: ts_peer{i}",
-        #"      max_simple_retries: 2",
-        #"      response_codes:",
-        #"        - 404",
-        #"      health_check:",
-        #"        - passive",
-    ])
+    s.AddLines(
+        [
+            "strategies:",
+            "  - strategy: the-strategy",
+            "    policy: consistent_hash",
+            "    hash_key: cache_key",
+            "    go_direct: false",
+            "    parent_is_proxy: true",
+            "    cache_peer_result: false",
+            "    ignore_self_detect: false",
+            "    groups:",
+            "      - *peer_group",
+            "      - *peer_upstream",
+            "    scheme: http",
+            "    failover:",
+            "      ring_mode: peering_ring",
+            f"      self: ts_peer{i}",
+            #"      max_simple_retries: 2",
+            #"      response_codes:",
+            #"        - 404",
+            #"      health_check:",
+            #"        - passive",
+        ])
 
     suffix = f" @plugin=parent_select.so @pparam={ts.Variables.CONFIGDIR}/strategies.yaml @pparam=the-strategy @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
-    ts.Disk.remap_config.AddLines([
-        "map http://dummy.com http://not_used" + suffix,
-        "map http://not_used http://also_not_used" + suffix,
-    ])
+    ts.Disk.remap_config.AddLines(
+        [
+            "map http://dummy.com http://not_used" + suffix,
+            "map http://not_used http://also_not_used" + suffix,
+        ])
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -154,8 +155,7 @@ tr.Processes.Default.ReturnCode = 0
 for i in range(num_object):
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
-        f'curl --verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://dummy.com/obj{i}'
-    )
+        f'curl --verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://dummy.com/obj{i}')
     tr.Processes.Default.Streams.stdout = "peer.body.gold"
     tr.Processes.Default.ReturnCode = 0
 
@@ -163,15 +163,13 @@ for i in range(num_object):
     tr = Test.AddTestRun()
     # num_peer must not be a multiple of 3
     tr.Processes.Default.Command = (
-        f'curl --verbose --proxy 127.0.0.1:{ts_peer[(i * 3) % num_peer].Variables.port} http://dummy.com/obj{i}'
-    )
+        f'curl --verbose --proxy 127.0.0.1:{ts_peer[(i * 3) % num_peer].Variables.port} http://dummy.com/obj{i}')
     tr.Processes.Default.Streams.stdout = "peer.body.gold"
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     "grep -e '^+++' -e '^[A-Z].*TTP/' -e '^.alts. --' -e 'PARENT_SPECIFIED' trace_peer*.log"
-    " | sed 's/^.*(pparent_select) [^ ]* //' | sed 's/[.][0-9]*$$//'"
-)
+    " | sed 's/^.*(pparent_select) [^ ]* //' | sed 's/[.][0-9]*$$//'")
 tr.Processes.Default.Streams.stdout = "peer.trace.gold"
 tr.Processes.Default.ReturnCode = 0

@@ -63,40 +63,35 @@ class TtlDnsTest:
         return dns
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess(
-            f"server-{self.server_process_counter}", TtlDnsTest.single_transaction_replay)
+        self.server = Test.MakeVerifierServerProcess(f"server-{self.server_process_counter}", TtlDnsTest.single_transaction_replay)
 
     def setupTS(self):
-        self.ts = Test.MakeATSProcess(
-            f"ts-{self.server_process_counter}", select_ports=True, enable_cache=False)
+        self.ts = Test.MakeATSProcess(f"ts-{self.server_process_counter}", select_ports=True, enable_cache=False)
         self.dns_port = ports.get_port(self.ts, 'dns_port')
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "dns",
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "dns",
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns_port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
 
-            'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns_port}',
-            'proxy.config.dns.resolv_conf': 'NULL',
+                # Configure ATS to treat each resolved name to have a 1 second
+                # time to live.
+                "proxy.config.hostdb.ttl_mode": 1,
+                "proxy.config.hostdb.timeout": self.dnsTTL,
 
-            # Configure ATS to treat each resolved name to have a 1 second
-            # time to live.
-            "proxy.config.hostdb.ttl_mode": 1,
-            "proxy.config.hostdb.timeout": self.dnsTTL,
-
-            # MicroDNS will be down for the second transaction. Have ATS give
-            # up trying to talk to it after one second.
-            "proxy.config.hostdb.lookup_timeout": self.queryTimeout,
-        })
+                # MicroDNS will be down for the second transaction. Have ATS give
+                # up trying to talk to it after one second.
+                "proxy.config.hostdb.lookup_timeout": self.queryTimeout,
+            })
         if self.configure_serve_stale:
             if self.exceed_serve_stale:
                 stale_timeout = 1
             else:
                 stale_timeout = 300
 
-            self.ts.Disk.records_config.update({
-                "proxy.config.hostdb.serve_stale_for": stale_timeout
-            })
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://resolve.this.com:{self.server.Variables.http_port}/")
+            self.ts.Disk.records_config.update({"proxy.config.hostdb.serve_stale_for": stale_timeout})
+        self.ts.Disk.remap_config.AddLine(f"map / http://resolve.this.com:{self.server.Variables.http_port}/")
 
     def testRunWithDNS(self):
         tr = Test.AddTestRun()
@@ -106,9 +101,7 @@ class TtlDnsTest:
         dns = self.addDNSServerToTestRun(tr)
         process_number = TtlDnsTest.get_unique_process_counter()
         tr.AddVerifierClientProcess(
-            f"client-{process_number}",
-            TtlDnsTest.single_transaction_replay,
-            http_ports=[self.ts.Variables.port])
+            f"client-{process_number}", TtlDnsTest.single_transaction_replay, http_ports=[self.ts.Variables.port])
 
         tr.Processes.Default.StartBefore(dns)
         tr.Processes.Default.StartBefore(self.server)
@@ -135,9 +128,7 @@ class TtlDnsTest:
             # resolved.
             replay_file = TtlDnsTest.server_error_replay
         process_number = TtlDnsTest.get_unique_process_counter()
-        tr.AddVerifierClientProcess(
-            f"client-{process_number}",
-            replay_file, http_ports=[self.ts.Variables.port])
+        tr.AddVerifierClientProcess(f"client-{process_number}", replay_file, http_ports=[self.ts.Variables.port])
 
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts

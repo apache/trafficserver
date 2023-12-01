@@ -24,28 +24,23 @@ server = Test.MakeOriginServer("server")
 
 Test.Setup.Copy("metrics.sh")
 
-request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 ts.Disk.plugin_config.AddLine('remap_stats.so')
 
-ts.Disk.remap_config.AddLine(
-    "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "map http://two http://127.0.0.1:{0}".format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
+ts.Disk.remap_config.AddLine("map http://two http://127.0.0.1:{0}".format(server.Variables.Port))
 
-ts.Disk.records_config.update({
-    'proxy.config.http.transaction_active_timeout_out': 2,
-    'proxy.config.http.transaction_no_activity_timeout_out': 2,
-    'proxy.config.http.connect_attempts_timeout': 2,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.transaction_active_timeout_out': 2,
+        'proxy.config.http.transaction_no_activity_timeout_out': 2,
+        'proxy.config.http.connect_attempts_timeout': 2,
+    })
 
 # 0 Test - Curl host One
 tr = Test.AddTestRun("curl host one")

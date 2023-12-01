@@ -19,28 +19,25 @@
 Test.Summary = 'Testing ATS inactivity timeout'
 
 Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-    Condition.HasProgram("telnet", "Need telnet to shutdown when server shuts down tcp"),
-    Condition.HasProgram("nc", "Need nc to send data to server")
-)
+    Condition.HasCurlFeature('http2'), Condition.HasProgram("telnet", "Need telnet to shutdown when server shuts down tcp"),
+    Condition.HasProgram("nc", "Need nc to send data to server"))
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("../tls/ssl/server.pem")
 ts.addSSLfile("../tls/ssl/server.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.transaction_no_activity_timeout_in': 6,
-    'proxy.config.http.accept_no_activity_timeout': 2,
-    'proxy.config.net.default_inactivity_timeout': 10,
-    'proxy.config.net.defer_accept': 0  # Must turn off defer accept to test the raw TCP case
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.http.transaction_no_activity_timeout_in': 6,
+        'proxy.config.http.accept_no_activity_timeout': 2,
+        'proxy.config.net.default_inactivity_timeout': 10,
+        'proxy.config.net.defer_accept': 0  # Must turn off defer accept to test the raw TCP case
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # case 1 TLS with no data
 tr = Test.AddTestRun("tr")

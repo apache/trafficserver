@@ -23,30 +23,24 @@ Test xdebug plugin X-Cache-Info header
 server = Test.MakeOriginServer("server")
 started = False
 
-request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.records_config.update({
-    'proxy.config.url_remap.remap_required': 0,
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.url_remap.remap_required': 0,
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http'
+    })
 
 ts.Disk.plugin_config.AddLine('xdebug.so')
 
-ts.Disk.remap_config.AddLine(
-    "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "map http://two http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
+ts.Disk.remap_config.AddLine("map http://two http://127.0.0.1:{0}".format(server.Variables.Port))
+ts.Disk.remap_config.AddLine("regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port))
 
 Test.Setup.Copy(f'{Test.Variables.AtsTestToolsDir}')
 

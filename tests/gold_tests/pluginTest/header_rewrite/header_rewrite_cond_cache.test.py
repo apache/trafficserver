@@ -23,16 +23,13 @@ server = Test.MakeOriginServer("server")
 Test.testName = "CACHE"
 
 # Request from client
-request_header = {"headers":
-                  "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993",
-                  "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # Expected response from the origin server
-response_header = {"headers":
-                   "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
-                   "timestamp": "1469733493.993",
-                   "body": "CACHED"}
-
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "CACHED"
+}
 
 # add request/response
 server.addResponse("sessionlog.log", request_header, response_header)
@@ -45,15 +42,9 @@ ts.Disk.records_config.update({
 # (ie. "hit-fresh", "hit-stale", "miss", "none")
 ts.Setup.CopyAs('rules/rule_add_cache_result_header.conf', Test.RunDirectory)
 
-ts.Disk.plugin_config.AddLine(
-    'header_rewrite.so {0}/rule_add_cache_result_header.conf'.format(Test.RunDirectory)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_add_cache_result_header.conf'.format(Test.RunDirectory))
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Commands to get the following response headers
 # 1. miss (empty cache)
@@ -64,8 +55,7 @@ curlRequest = (
     'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
     'curl -v -H "Host: www.example.com" http://127.0.0.1:{0};'
     'sleep 15; curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
-    'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0}'
-)
+    'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0}')
 
 # Test Case
 tr = Test.AddTestRun()

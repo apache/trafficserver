@@ -29,7 +29,6 @@ server = Test.MakeOriginServer("server")
 
 HOST = 'www.example.test'
 
-
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
 

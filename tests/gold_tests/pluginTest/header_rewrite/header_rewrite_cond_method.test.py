@@ -35,20 +35,17 @@ response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestam
 session_file = "sessionfile.log"
 server.addResponse(session_file, request_get, response)
 server.addResponse(session_file, request_delete, response)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'header.*',
-    'proxy.config.http.insert_response_via_str': 0,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'header.*',
+        'proxy.config.http.insert_response_via_str': 0,
+    })
 # The following rule inserts a via header if the request method is a GET or DELETE
 conf_name = "rule_cond_method.conf"
 ts.Setup.CopyAs('rules/{0}'.format(conf_name), Test.RunDirectory)
-ts.Disk.plugin_config.AddLine(
-    'header_rewrite.so {0}/{1}'.format(Test.RunDirectory, conf_name)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/{1}'.format(Test.RunDirectory, conf_name))
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test method in READ_REQUEST_HDR_HOOK.
 expected_output = "gold/header_rewrite_cond_method.gold"

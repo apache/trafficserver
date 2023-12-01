@@ -45,29 +45,20 @@ proxy_verifer_version = open(proxy_verifer_version_file, "rt").read().strip()
 
 if Arguments.proxy_verifier_bin is not None:
     ENV['VERIFIER_BIN'] = Arguments.proxy_verifier_bin
-    host.WriteVerbose(
-        ['ats'],
-        "Expecting Proxy Verifier to be in user-supplied bin path: ",
-        ENV['VERIFIER_BIN'])
+    host.WriteVerbose(['ats'], "Expecting Proxy Verifier to be in user-supplied bin path: ", ENV['VERIFIER_BIN'])
 else:
     # No Verifier bin path was specified. First see if a Proxy Verifier was
     # unpacked as a part of preparing for this test.
     unpack_bin = os.path.join(test_root, 'proxy-verifier', 'unpack', proxy_verifer_version, 'bin')
     if os.path.exists(os.path.join(unpack_bin, 'verifier-client')):
         ENV['VERIFIER_BIN'] = unpack_bin
-        host.WriteVerbose(
-            ['ats'],
-            "Using locally unpacked Proxy Verifier: ",
-            ENV['VERIFIER_BIN'])
+        host.WriteVerbose(['ats'], "Using locally unpacked Proxy Verifier: ", ENV['VERIFIER_BIN'])
     else:
         # Finally check the PATH.
         path_search = shutil.which('verifier-client')
         if path_search is not None:
             ENV['VERIFIER_BIN'] = dirname(path_search)
-            host.WriteVerbose(
-                ['ats'],
-                "Using Proxy Verifier found in PATH: ",
-                ENV['VERIFIER_BIN'])
+            host.WriteVerbose(['ats'], "Using Proxy Verifier found in PATH: ", ENV['VERIFIER_BIN'])
         else:
             prepare_proxy_verifier_path = os.path.join(test_root, "prepare_proxy_verifier.sh")
             host.WriteError("Could not find Proxy Verifier binaries. "
@@ -82,10 +73,7 @@ if pv_version < required_pv_version:
         f"Proxy Verifier at {verifier_client} is too old. "
         f"Version required: {required_pv_version}, version found: {pv_version}")
 else:
-    host.WriteVerbose(
-        ['ats'],
-        f"Proxy Verifier at {verifier_client} has version: {pv_version}")
-
+    host.WriteVerbose(['ats'], f"Proxy Verifier at {verifier_client} has version: {pv_version}")
 
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
@@ -125,12 +113,7 @@ if ENV['ATS_BIN'] is not None:
 
     # this queries tsxs for build flags so we can build code for the tests and get certain
     # useful flags as which openssl to use when we don't use the system version
-    out = {
-        'CPPFLAGS': '',
-        'LIBS': '',
-        'LDFLAGS': '',
-        'CXX': ''
-    }
+    out = {'CPPFLAGS': '', 'LIBS': '', 'LDFLAGS': '', 'CXX': ''}
     if os.path.isfile(tsxs):
         for flag in out.keys():
             try:

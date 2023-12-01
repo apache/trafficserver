@@ -17,13 +17,12 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Test with nghttp
 '''
 
-Test.SkipUnless(
-    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-)
+Test.SkipUnless(Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),)
 Test.ContinueOnFail = True
 
 # ----
@@ -40,29 +39,28 @@ post_body_file.close()
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True,
-                         enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
 ts.Setup.CopyAs('rules/graceful_shutdown.conf', Test.RunDirectory)
 
-ts.Disk.remap_config.AddLines([
-    'map /httpbin/ http://127.0.0.1:{0}/ @plugin=header_rewrite.so @pparam={1}/graceful_shutdown.conf'.format(
-        httpbin.Variables.Port, Test.RunDirectory)
-])
+ts.Disk.remap_config.AddLines(
+    [
+        'map /httpbin/ http://127.0.0.1:{0}/ @plugin=header_rewrite.so @pparam={1}/graceful_shutdown.conf'.format(
+            httpbin.Variables.Port, Test.RunDirectory)
+    ])
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2_cs',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http2_cs',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
+    })
 
 # ----
 # Test Cases

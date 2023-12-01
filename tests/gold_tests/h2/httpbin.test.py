@@ -45,21 +45,17 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)
-)
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.http.insert_request_via_str': 1,
-    'proxy.config.http.insert_response_via_str': 1,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2',
-
-})
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.insert_request_via_str': 1,
+        'proxy.config.http.insert_response_via_str': 1,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http2',
+    })
 ts.Disk.logging_yaml.AddLines(
     '''
 logging:
@@ -70,8 +66,7 @@ logging:
   logs:
     - filename: access
       format: access
-'''.split("\n")
-)
+'''.split("\n"))
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/httpbin_access.gold')
 
@@ -129,7 +124,5 @@ test_run.StillRunningAfter = httpbin
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'access.log')
-)
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'access.log'))
 test_run.Processes.Default.ReturnCode = 0

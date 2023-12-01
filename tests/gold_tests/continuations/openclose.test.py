@@ -18,6 +18,7 @@
 
 import os
 import subprocess
+
 Test.Summary = '''
 Test transactions and sessions, making sure they open and close in the proper order.
 '''
@@ -29,27 +30,26 @@ server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'ssntxnorder_verify.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
-    'proxy.config.cache.enable_read_while_writer': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
+        'proxy.config.cache.enable_read_while_writer': 0
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map http://oc.test:{0} http://127.0.0.1:{1}'.format(
-        ts.Variables.port, server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
 cmd = 'curl -H "Connection: close" -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
@@ -64,8 +64,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
-tr.Processes.Default.StartBefore(
-    server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
@@ -85,6 +84,7 @@ tr.StillRunningAfter = ts
 
 
 def make_done_stat_ready(tsenv):
+
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
             "traffic_ctl metric get ssntxnorder_verify.test.done",
@@ -124,10 +124,8 @@ tr = Test.AddTestRun("Check for ssn open/close")
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "yes", 'should verify contents')
-tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "ssntxnorder_verify.ssn.start 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("ssntxnorder_verify.ssn.start 0", 'should be nonzero')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -135,10 +133,8 @@ tr = Test.AddTestRun("Check for txn/open/close")
 tr.Processes.Default.Command = comparator_command.format('txn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "yes", 'should verify contents')
-tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "ssntxnorder_verify.txn.start 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("ssntxnorder_verify.txn.start 0", 'should be nonzero')
 # and we receive the same number of transactions as we asked it to make
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "ssntxnorder_verify.txn.start {}".format(numberOfRequests), 'should be the number of transactions we made')

@@ -40,22 +40,13 @@ ts = Test.MakeATSProcess("ts", command="traffic_server")
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
 
 # default root
-req_chk = {"headers":
-           "GET / HTTP/1.1\r\n" +
-           "Host: www.example.com\r\n" +
-           "uuid: none\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_chk = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_chk = {"headers":
-           "HTTP/1.1 200 OK\r\n" +
-           "Connection: close\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
@@ -63,103 +54,82 @@ body = "lets go surfin now"
 bodylen = len(body)
 
 # this request should work
-req_full = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "uuid: full\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_full = {
+    "headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "uuid: full\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_full = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            'Etag: "foo"\r\n' +
-            "Cache-Control: public, max-age=500\r\n" +
-            "Connection: close\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body
-            }
+res_full = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + 'Etag: "foo"\r\n' +
+        "Cache-Control: public, max-age=500\r\n" + "Connection: close\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
 # this request should work
-req_good = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "Range: bytes=0-\r\n" +
-            "uuid: range_full\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_good = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" +
+        "uuid: range_full\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_good = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            'Etag: "foo"\r\n' +
-            "Cache-Control: public, max-age=500\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
-            "Connection: close\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body
-            }
+res_good = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + 'Etag: "foo"\r\n' +
+        "Cache-Control: public, max-age=500\r\n" + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" +
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_good, res_good)
 
 # this request should fail with a cache_range_requests asset
-req_fail = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.fail.com\r\n" +
-            "Accept: */*\r\n" +
-            "Range: bytes=0-\r\n" +
-            "uuid: range_fail\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_fail = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: www.fail.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "uuid: range_fail\r\n" +
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_fail = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            'Etag: "foo"\r\n' +
-            "Cache-Control: public, max-age=500\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
-            "Connection: close\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body
-            }
+res_fail = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + 'Etag: "foo"\r\n' +
+        "Cache-Control: public, max-age=500\r\n" + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" +
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_fail, res_fail)
 
 # cache range requests plugin remap, working config
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port))
 
 # improperly configured cache_range_requests with cachekey
-ts.Disk.remap_config.AddLine(
-    'map http://www.fail.com http://127.0.0.1:{}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://www.fail.com http://127.0.0.1:{}'.format(server.Variables.Port))
 
 # cache debug
-ts.Disk.plugin_config.AddLines([
-    'cachekey.so --include-headers=Range --static-prefix=foo',
-    'cache_range_requests.so --no-modify-cachekey',
-    'xdebug.so',
-])
+ts.Disk.plugin_config.AddLines(
+    [
+        'cachekey.so --include-headers=Range --static-prefix=foo',
+        'cache_range_requests.so --no-modify-cachekey',
+        'xdebug.so',
+    ])
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cachekey|cache_range_requests',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cachekey|cache_range_requests',
+    })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache-key"'.format(ts.Variables.port)
 
@@ -171,6 +141,5 @@ ps.StartBefore(Test.Processes.ts)
 ps.Command = curl_and_args + ' http://www.example.com/path -r0- -H "uuid: full"'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /foo/Range:bytes=0-/path",
-    "expected cachekey style range request in cachekey")
+    "X-Cache-Key: /foo/Range:bytes=0-/path", "expected cachekey style range request in cachekey")
 tr.StillRunningAfter = ts

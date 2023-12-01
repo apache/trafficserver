@@ -19,13 +19,12 @@
 import sys
 
 Test.Summary = 'Test PROXY Protocol'
-Test.SkipUnless(
-    Condition.HasCurlOption("--haproxy-protocol")
-)
+Test.SkipUnless(Condition.HasCurlOption("--haproxy-protocol"))
 Test.ContinueOnFail = True
 
 
 class ProxyProtocolTest:
+
     def __init__(self):
         self.setupOriginServer()
         self.setupTS()
@@ -43,18 +42,18 @@ class ProxyProtocolTest:
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.httpbin.Variables.Port}/")
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.httpbin.Variables.Port}/")
 
-        self.ts.Disk.records_config.update({
-            "proxy.config.http.server_ports": f"{self.ts.Variables.port}:pp {self.ts.Variables.ssl_port}:ssl:pp",
-            "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
-            "proxy.config.http.insert_forwarded": "for|proto",
-            "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
-            "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "proxyprotocol",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port}:pp {self.ts.Variables.ssl_port}:ssl:pp",
+                "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
+                "proxy.config.http.insert_forwarded": "for|proto",
+                "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
+                "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "proxyprotocol",
+            })
 
     def addTestCase0(self):
         """

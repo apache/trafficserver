@@ -28,43 +28,45 @@ Test.SkipUnless(Condition.PluginExists('uri_signing.so'))
 server = Test.MakeOriginServer("server")
 
 # Default origin test
-req_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "",
-              }
-res_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "",
-              }
+req_header = {
+    "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
+res_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 server.addResponse("sessionfile.log", req_header, res_header)
 
 # Test case for normal
-req_header = {"headers":
-              "GET /someasset.ts HTTP/1.1\r\nHost: somehost\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "",
-              }
+req_header = {
+    "headers": "GET /someasset.ts HTTP/1.1\r\nHost: somehost\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-res_header = {"headers":
-              "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "somebody",
-              }
+res_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "somebody",
+}
 
 server.addResponse("sessionfile.log", req_header, res_header)
 
 # Test case for crossdomain
-req_header = {"headers":
-              "GET /crossdomain.xml HTTP/1.1\r\nHost: somehost\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "",
-              }
+req_header = {
+    "headers": "GET /crossdomain.xml HTTP/1.1\r\nHost: somehost\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-res_header = {"headers":
-              "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-              "timestamp": "1469733493.993",
-              "body": "<crossdomain></crossdomain>",
-              }
+res_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "<crossdomain></crossdomain>",
+}
 
 server.addResponse("sessionfile.log", req_header, res_header)
 
@@ -74,17 +76,17 @@ server.addResponse("sessionfile.log", req_header, res_header)
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 #ts = Test.MakeATSProcess("ts", "traffic_server_valgrind.sh")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'uri_signing|http',
-    #  'proxy.config.diags.debug.tags': 'uri_signing',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'uri_signing|http',
+        #  'proxy.config.diags.debug.tags': 'uri_signing',
+    })
 
 # Use unchanged incoming URL.
 ts.Disk.remap_config.AddLine(
     'map http://somehost/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=uri_signing.so @pparam={}/config.json'.format(Test.RunDirectory)
-)
+    ' @plugin=uri_signing.so @pparam={}/config.json'.format(Test.RunDirectory))
 
 # Install configuration
 ts.Setup.CopyAs('config.json', Test.RunDirectory)
@@ -204,7 +206,6 @@ ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-
 # 12 - Check missing iss from the payload
 tr = Test.AddTestRun("Missing iss field in the payload")
 ps = tr.Processes.Default
@@ -212,7 +213,6 @@ ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=ew
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "Initial JWT Failure: iss is missing, must be present",
-    "should fail the validation")
+    "Initial JWT Failure: iss is missing, must be present", "should fail the validation")
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

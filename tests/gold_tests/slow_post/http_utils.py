@@ -66,10 +66,7 @@ def determine_outstanding_bytes_to_read(read_bytes: bytes) -> int:
     return content_length_value - (len(read_bytes) - end_of_headers)
 
 
-def drain_socket(
-        sock: socket.socket,
-        previously_read_data: bytes,
-        num_bytes_to_drain: int) -> None:
+def drain_socket(sock: socket.socket, previously_read_data: bytes, num_bytes_to_drain: int) -> None:
     """Read the rest of the request.
 
     :param sock: The socket to drain.

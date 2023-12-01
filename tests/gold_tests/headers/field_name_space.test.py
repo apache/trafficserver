@@ -28,19 +28,15 @@ ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 
 testName = "field_name_space"
-request_header = {
-    "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nFoo : 123\r\nFoo: 456\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test spaces at the end of the field name and before the :
 tr = Test.AddTestRun()

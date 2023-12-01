@@ -30,40 +30,40 @@ HOST = 'www.example.test'
 
 server = Test.MakeOriginServer("server")
 
-ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1}'.format(HOST, server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://{0} http://127.0.0.1:{1}'.format(HOST, server.Variables.Port))
 
-server.addResponse("sessionfile.log", {
-    "headers": "HEAD /head200 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
-    "timestamp": "1469733493.993",
-    "body": ""
-}, {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": "This body should not be returned for a HEAD request."
-})
+server.addResponse(
+    "sessionfile.log", {
+        "headers": "HEAD /head200 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "This body should not be returned for a HEAD request."
+    })
 
-server.addResponse("sessionfile.log", {
-    "headers": "GET /get200 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
-    "timestamp": "1469733493.993",
-    "body": ""
-}, {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": "This body should be returned for a GET request."
-})
+server.addResponse(
+    "sessionfile.log", {
+        "headers": "GET /get200 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "This body should be returned for a GET request."
+    })
 
-server.addResponse("sessionfile.log", {
-    "headers": "GET /get304 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
-    "timestamp": "1469733493.993",
-    "body": ""
-}, {
-    "headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-})
-
+server.addResponse(
+    "sessionfile.log", {
+        "headers": "GET /get304 HTTP/1.1\r\nHost: {0}\r\n\r\n".format(HOST),
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    })
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
@@ -79,7 +79,6 @@ trhead200.Processes.Default.TimeOut = 5  # seconds
 trhead200.Processes.Default.ReturnCode = 0
 trhead200.Processes.Default.Streams.stdout = "gold/http-head-200.gold"
 
-
 trget200 = Test.AddTestRun("Test domain {0}".format(HOST))
 trget200.StillRunningBefore = ts
 trget200.StillRunningBefore = server
@@ -90,7 +89,6 @@ trget200.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 
 trget200.Processes.Default.TimeOut = 5  # seconds
 trget200.Processes.Default.ReturnCode = 0
 trget200.Processes.Default.Streams.stdout = "gold/http-get-200.gold"
-
 
 trget304 = Test.AddTestRun("Test domain {0}".format(HOST))
 trget304.StillRunningBefore = ts

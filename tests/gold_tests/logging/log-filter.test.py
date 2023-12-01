@@ -27,18 +27,16 @@ replay_file = "log-filter.replays.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'log',
-
-    'proxy.config.net.connections_throttle': 100,
-    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'log',
+        'proxy.config.net.connections_throttle': 100,
+        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 # setup some config file for this server
-ts.Disk.remap_config.AddLine(
-    'map / http://localhost:{}/'.format(server.Variables.http_port)
-)
+ts.Disk.remap_config.AddLine('map / http://localhost:{}/'.format(server.Variables.http_port))
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -72,15 +70,13 @@ logging:
       filters:
       - queryparamescaper_cquuc
       - not_localhost
-'''.split("\n")
-)
+'''.split("\n"))
 
 # #########################################################################
 # at the end of the different test run a custom log file should exist
 # Because of this we expect the testruns to pass the real test is if the
 # customlog file exists and passes the format check
-Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'filter-test.log'),
-               exists=True, content='gold/filter-test.gold')
+Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'filter-test.log'), exists=True, content='gold/filter-test.gold')
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -91,15 +87,12 @@ tr.AddVerifierClientProcess("client-1", replay_file, http_ports=[ts.Variables.po
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'filter-test.log')
-)
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'filter-test.log'))
 test_run.Processes.Default.ReturnCode = 0
 
 # We already waited for the above, so we don't have to wait for this one.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
     os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 1 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'should-not-be-written.log')
-)
+    os.path.join(ts.Variables.LOGDIR, 'should-not-be-written.log'))
 test_run.Processes.Default.ReturnCode = 1

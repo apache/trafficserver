@@ -36,19 +36,16 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
-)
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 0,
-    # 'proxy.config.http2.initial_window_size_in': 2*16384, # Make a ludacrisly small window
-    'proxy.config.diags.debug.tags': 'http',
-})
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 0,
+        # 'proxy.config.http2.initial_window_size_in': 2*16384, # Make a ludacrisly small window
+        'proxy.config.diags.debug.tags': 'http',
+    })
 
 big_post_body = "0123456789" * 231070
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
@@ -66,8 +63,8 @@ test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with large body early return")
-test_run.Processes.Default.Command = '(nc -o output2 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; curl -H "Expect:" -v -o /dev/null --http1.1 -d @big_post_body -k https://127.0.0.1:{}/post'.format(Test.Variables.upstream_port,
-                                                                                                                                                                                                                                                                            ts.Variables.ssl_port)
+test_run.Processes.Default.Command = '(nc -o output2 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; curl -H "Expect:" -v -o /dev/null --http1.1 -d @big_post_body -k https://127.0.0.1:{}/post'.format(
+    Test.Variables.upstream_port, ts.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Receive the early response")
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
@@ -95,19 +92,19 @@ client_out3.Content += Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Recei
 client_out3.Content += Testers.ContainsExpression("Connection: close", "ATS marks the client connection to close")
 
 test_run = Test.AddTestRun("http1.1 Post with paused body")
-test_run.Processes.Default.Command = '(nc -o output3 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(Test.Variables.upstream_port,
-                                                                                                                                                                                                                                                                                                                                                 ts.Variables.port)
+test_run.Processes.Default.Command = '(nc -o output3 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(
+    Test.Variables.upstream_port, ts.Variables.port)
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with delayed and paused body")
-test_run.Processes.Default.Command = '(nc -o output3 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout3 --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n\"; sleep 1; printf \"1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(Test.Variables.upstream_port,
-                                                                                                                                                                                                                                                                                                                                                                        ts.Variables.port)
+test_run.Processes.Default.Command = '(nc -o output3 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"; sleep 1\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout3 --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n\"; sleep 1; printf \"1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(
+    Test.Variables.upstream_port, ts.Variables.port)
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
 test_run = Test.AddTestRun("http1.1 Post with paused body and no delay on server")
-test_run.Processes.Default.Command = '(nc -o output4 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout2 --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(Test.Variables.upstream_port,
-                                                                                                                                                                                                                                                                                                                                         ts.Variables.port)
+test_run.Processes.Default.Command = '(nc -o output4 --sh-exec \'printf \"HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\n\r\n\"\' -l 127.0.0.1 {} & ) ; sleep 1 ; nc -o clientout2 --sh-exec \' printf \"POST /post HTTP/1.1\r\nHost: bob\r\nContent-Length: 20\r\n\r\n1234567890\"; sleep 4; printf \"0123456789\"\' 127.0.0.1 {}'.format(
+    Test.Variables.upstream_port, ts.Variables.port)
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0

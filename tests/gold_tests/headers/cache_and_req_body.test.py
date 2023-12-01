@@ -31,58 +31,91 @@ server = Test.MakeOriginServer("server")
 testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1\r\n\r\n",
+    "headers":
+        "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # ATS Configuration
 ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.response_via_str': 3,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.response_via_str': 3,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 cache_and_req_body_miss = {
     'Connection': 'keep-alive',
-    'Via': {'equal_re': None},
-    'Server': {'equal_re': '.*'},
-    'X-Cache-Key': {'equal_re': 'http://127.0.0.1.*'},
+    'Via': {
+        'equal_re': None
+    },
+    'Server': {
+        'equal_re': '.*'
+    },
+    'X-Cache-Key': {
+        'equal_re': 'http://127.0.0.1.*'
+    },
     'X-Cache': 'miss',
-    'Last-Modified': {'equal_re': '.*'},
+    'Last-Modified': {
+        'equal_re': '.*'
+    },
     'cache-control': 'max-age=1',
     'Content-Length': '3',
-    'Date': {'equal_re': '.*'},
-    'Age': {'equal_re': '.*'}
+    'Date': {
+        'equal_re': '.*'
+    },
+    'Age': {
+        'equal_re': '.*'
+    }
 }
 
 cache_and_req_body_hit = {
-    'Last-Modified': {'equal_re': '.*'},
+    'Last-Modified': {
+        'equal_re': '.*'
+    },
     'cache-control': 'max-age=1',
     'Content-Length': '3',
-    'Date': {'equal_re': '.*'},
-    'Age': {'equal_re': '.*'},
+    'Date': {
+        'equal_re': '.*'
+    },
+    'Age': {
+        'equal_re': '.*'
+    },
     'Connection': 'keep-alive',
-    'Via': {'equal_re': '.*'},
-    'Server': {'equal_re': '.*'},
+    'Via': {
+        'equal_re': '.*'
+    },
+    'Server': {
+        'equal_re': '.*'
+    },
     'X-Cache': 'hit-fresh',
     'HTTP/1.1 200 OK': ''
 }
 
 cache_and_req_body_hit_close = {
-    'Last-Modified': {'equal_re': '.*'},
+    'Last-Modified': {
+        'equal_re': '.*'
+    },
     'cache-control': 'max-age=1',
     'Content-Length': '3',
-    'Date': {'equal_re': '.*'},
-    'Age': {'equal_re': '.*'},
+    'Date': {
+        'equal_re': '.*'
+    },
+    'Age': {
+        'equal_re': '.*'
+    },
     'Connection': 'close',
-    'Via': {'equal_re': '.*'},
-    'Server': {'equal_re': '.*'},
+    'Via': {
+        'equal_re': '.*'
+    },
+    'Server': {
+        'equal_re': '.*'
+    },
     'X-Cache': 'hit-fresh',
     'HTTP/1.1 200 OK': ''
 }

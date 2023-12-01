@@ -25,9 +25,7 @@ Basic slice plugin test
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
 
-Test.SkipUnless(
-    Condition.PluginExists('slice.so'),
-)
+Test.SkipUnless(Condition.PluginExists('slice.so'),)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -37,59 +35,49 @@ server = Test.MakeOriginServer("server")
 ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 # default root
-request_header_chk = {"headers":
-                      "GET / HTTP/1.1\r\n" +
-                      "Host: ats\r\n" +
-                      "\r\n",
-                      "timestamp": "1469733493.993",
-                      "body": "",
-                      }
+request_header_chk = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: ats\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_chk = {"headers":
-                       "HTTP/1.1 200 OK\r\n" +
-                       "Connection: close\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": "",
-                       }
+response_header_chk = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
 server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
 block_bytes = 7
 body = "lets go surfin now"
 
-request_header = {"headers":
-                  "GET /path HTTP/1.1\r\n" +
-                  "Host: origin\r\n" +
-                  "\r\n",
-                  "timestamp": "1469733493.993",
-                  "body": "",
-                  }
+request_header = {
+    "headers": "GET /path HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header = {"headers":
-                   "HTTP/1.1 200 OK\r\n" +
-                   "Connection: close\r\n" +
-                   'Etag: "path"\r\n' +
-                   "Cache-Control: max-age=500\r\n" +
-                   "\r\n",
-                   "timestamp": "1469733493.993",
-                   "body": body,
-                   }
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body,
+}
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
 
 # set up whole asset fetch into cache
-ts.Disk.remap_config.AddLines([
-    f'map http://preload/ http://127.0.0.1:{server.Variables.Port}',
-    f'map http://slice_only/ http://127.0.0.1:{server.Variables.Port}',
-    f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
-    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
-    f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}' +
-    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' +
-    ' @pparam=--skip-header=SkipSlice',
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f'map http://preload/ http://127.0.0.1:{server.Variables.Port}',
+        f'map http://slice_only/ http://127.0.0.1:{server.Variables.Port}',
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
+        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
+        f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}' +
+        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' + ' @pparam=--skip-header=SkipSlice',
+    ])
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 0,

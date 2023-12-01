@@ -22,10 +22,13 @@ Test tls server certificate verification without a pristine host header
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer(
+    "server_foo",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
+    })
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 
@@ -50,25 +53,24 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # set global policy
-    'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
-    'proxy.config.ssl.client.verify.server.properties': 'ALL',
-    'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-    'proxy.config.url_remap.pristine_host_hdr': 0,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        # set global policy
+        'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
+        'proxy.config.ssl.client.verify.server.properties': 'ALL',
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.url_remap.pristine_host_hdr': 0,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -98,5 +100,5 @@ tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Con
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
-ts.Disk.diags_log.Content += Testers.ContainsExpression(r"WARNING: SNI \(bar.com\) not in certificate",
-                                                        "Make sure bad_bar name checked failed.")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    r"WARNING: SNI \(bar.com\) not in certificate", "Make sure bad_bar name checked failed.")

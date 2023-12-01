@@ -43,12 +43,13 @@ class ConnectTest:
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts", select_ports=True)
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
-            'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
+                'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
+            })
 
         self.ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
@@ -63,8 +64,7 @@ logging:
   logs:
     - filename: access
       format: common
-'''.split("\n")
-        )
+'''.split("\n"))
 
     def __checkProcessBefore(self, tr):
         if self.state == self.State.RUNNING:
@@ -96,8 +96,7 @@ logging:
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
             os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log')
-        )
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
         tr.Processes.Default.ReturnCode = 0
 
     def run(self):

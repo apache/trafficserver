@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import re
+
 Test.Summary = '''
 Test tls tickets
 '''
@@ -25,7 +26,6 @@ Test tls tickets
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
-
 
 # Add info the origin server responses
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -38,35 +38,28 @@ ts.addSSLfile("ssl/server.key")
 ts2.addSSLfile("ssl/server.pem")
 ts2.addSSLfile("ssl/server.key")
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts2.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts2.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.server.session_ticket.enable': '1',
-    'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-})
-ts2.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.session_ticket.enable': '1',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-})
-
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.server.session_ticket.enable': '1',
+        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
+    })
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.ssl.server.session_ticket.enable': '1',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
+    })
 
 tr = Test.AddTestRun("Create ticket")
 tr.Setup.Copy('file.ticket')

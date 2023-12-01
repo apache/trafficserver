@@ -22,17 +22,13 @@ Test.Summary = '''
 Test lua is_debug_tag_set functionality
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('tslua.so'),
-)
+Test.SkipUnless(Condition.PluginExists('tslua.so'),)
 
 Test.ContinueOnFail = False
 # Define default ATS
 ts = Test.MakeATSProcess("ts", command="traffic_manager")
 
-ts.Disk.remap_config.AddLine(
-    'map http://test http://127.0.0.1/ @plugin=tslua.so @pparam=tags.lua'
-)
+ts.Disk.remap_config.AddLine('map http://test http://127.0.0.1/ @plugin=tslua.so @pparam=tags.lua')
 
 # Configure the tslua's configuration file.
 ts.Setup.Copy("tags.lua", ts.Variables.CONFIGDIR)

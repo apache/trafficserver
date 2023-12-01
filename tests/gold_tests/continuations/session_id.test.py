@@ -17,20 +17,21 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Verify session ID properties.
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 # Configure the server.
 server = Test.MakeOriginServer("server")
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # Configure ATS. Disable the cache to simplify the test.
@@ -38,24 +39,21 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True, enabl
 
 ts.addDefaultSSLFiles()
 
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsBuildGoldTestsDir,
-                                    'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts)
+Test.PrepareTestPlugin(
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'session_id_verify',
-    'proxy.config.cache.enable_read_while_writer': 0,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'session_id_verify',
+        'proxy.config.cache.enable_read_while_writer': 0,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 #
 # Run some HTTP/1 traffic.
@@ -70,8 +68,7 @@ numberOfRequests = 100
 ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
-tr.Processes.Default.StartBefore(
-    server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)

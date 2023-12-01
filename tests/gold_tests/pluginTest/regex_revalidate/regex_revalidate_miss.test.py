@@ -18,6 +18,7 @@
 
 import os
 import time
+
 Test.Summary = '''
 regex_revalidate plugin test, MISS (refetch) functionality
 '''
@@ -26,10 +27,7 @@ regex_revalidate plugin test, MISS (refetch) functionality
 # If MISS tag encountered, should load rule as refetch instead of IMS.
 # If rule switched from MISS to IMS or vice versa, rule should reset.
 
-Test.SkipUnless(
-    Condition.PluginExists('regex_revalidate.so'),
-    Condition.PluginExists('xdebug.so')
-)
+Test.SkipUnless(Condition.PluginExists('regex_revalidate.so'), Condition.PluginExists('xdebug.so'))
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -42,50 +40,37 @@ Test.testName = "regex_revalidate_miss"
 Test.Setup.Copy("metrics_miss.sh")
 
 # default root
-request_header_0 = {"headers":
-                    "GET / HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": "",
-                    }
+request_header_0 = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_0 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     "Cache-Control: max-age=300\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "xxx",
-                     }
+response_header_0 = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=300\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx",
+}
 
 # cache item path1
-request_header_1 = {"headers":
-                    "GET /path1 HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_1 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path1"\r\n' +
-                     "Cache-Control: max-age=600,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "abc"
-                     }
-
+request_header_1 = {
+    "headers": "GET /path1 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header_1 = {
+    "headers":
+        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1"\r\n' + "Cache-Control: max-age=600,public\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "abc"
+}
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.plugin_config.AddLine(
-    'regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log'
-)
+ts.Disk.plugin_config.AddLine('regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log')
 
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
 #curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
@@ -93,23 +78,20 @@ regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalid
 path1_rule = 'path1 {}'.format(int(time.time()) + 600)
 
 # Define first revision for when trafficserver starts
-ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(
-    "# Empty"
-)
+ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine("# Empty")
 
-ts.Disk.remap_config.AddLine(
-    'map http://ats/ http://127.0.0.1:{}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://ats/ http://127.0.0.1:{}'.format(server.Variables.Port))
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'regex_revalidate',
-    'proxy.config.http.insert_age_in_response': 0,
-    'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'regex_revalidate',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.response_via_str': 3,
+        'proxy.config.http.cache.http': 1,
+        'proxy.config.http.wait_for_cache': 1,
+    })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 

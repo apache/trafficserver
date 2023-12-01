@@ -36,9 +36,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: {}\r\n\r\n".format(HTTP_40
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1}'.format(HTTP_408_HOST, server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://{0} http://127.0.0.1:{1}'.format(HTTP_408_HOST, server.Variables.Port))
 
 TIMEOUT = 2
 ts.Disk.records_config.update({

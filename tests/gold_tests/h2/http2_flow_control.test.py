@@ -20,7 +20,6 @@ import os
 import re
 from typing import List, Optional
 
-
 Test.Summary = __doc__
 
 
@@ -65,13 +64,11 @@ class Http2FlowControlTest:
 
         self._initial_window_size = initial_window_size
         self._expected_initial_window_size = (
-            initial_window_size if initial_window_size is not None
-            else self._default_initial_window_size)
+            initial_window_size if initial_window_size is not None else self._default_initial_window_size)
 
         self._max_concurrent_streams_in = max_concurrent_streams_in
         self._expected_max_concurrent_streams_in = (
-            max_concurrent_streams_in if max_concurrent_streams_in is not None
-            else self._default_max_concurrent_streams_in)
+            max_concurrent_streams_in if max_concurrent_streams_in is not None else self._default_max_concurrent_streams_in)
 
         self._verify_window_update_frames = verify_window_update_frames
 
@@ -87,30 +84,25 @@ class Http2FlowControlTest:
 
     def _configure_server(self):
         """Configure the test server."""
-        server = Test.MakeVerifierServerProcess(
-            f'server-{Http2FlowControlTest._server_counter}',
-            self._replay_file)
+        server = Test.MakeVerifierServerProcess(f'server-{Http2FlowControlTest._server_counter}', self._replay_file)
         Http2FlowControlTest._server_counter += 1
         return server
 
     def _configure_trafficserver(self):
         """Configure a Traffic Server process."""
-        ts = Test.MakeATSProcess(
-            f'ts-{Http2FlowControlTest._ts_counter}',
-            enable_tls=True,
-            enable_cache=False)
+        ts = Test.MakeATSProcess(f'ts-{Http2FlowControlTest._ts_counter}', enable_tls=True, enable_cache=False)
         Http2FlowControlTest._ts_counter += 1
 
         ts.addDefaultSSLFiles()
-        ts.Disk.records_config.update({
-            'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-            'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self._dns.Variables.Port),
-
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self._dns.Variables.Port),
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+            })
 
         if self._initial_window_size is not None:
             ts.Disk.records_config.update({
@@ -122,13 +114,9 @@ class Http2FlowControlTest:
                 'proxy.config.http2.max_concurrent_streams_in': self._max_concurrent_streams_in,
             })
 
-        ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-        ts.Disk.remap_config.AddLine(
-            f'map / http://127.0.0.1:{self._server.Variables.http_port}'
-        )
+        ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
         return ts
 
@@ -138,9 +126,7 @@ class Http2FlowControlTest:
         :param tr: The TestRun to associate the client with.
         """
         tr.AddVerifierClientProcess(
-            f'client-{Http2FlowControlTest._client_counter}',
-            self._replay_file,
-            https_ports=[self._ts.Variables.ssl_port])
+            f'client-{Http2FlowControlTest._client_counter}', self._replay_file, https_ports=[self._ts.Variables.ssl_port])
         Http2FlowControlTest._client_counter += 1
 
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
@@ -154,20 +140,16 @@ class Http2FlowControlTest:
 
         if self._verify_window_update_frames:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id 0: {self._expected_initial_window_size}',
-                "Client should receive a session WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id 0: {self._expected_initial_window_size}', "Client should receive a session WINDOW_UPDATE.")
 
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id 3: {self._expected_initial_window_size}',
-                "Client should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id 3: {self._expected_initial_window_size}', "Client should receive a stream WINDOW_UPDATE.")
 
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id 5: {self._expected_initial_window_size}',
-                "Client should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id 5: {self._expected_initial_window_size}', "Client should receive a stream WINDOW_UPDATE.")
 
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id 7: {self._expected_initial_window_size}',
-                "Client should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id 7: {self._expected_initial_window_size}', "Client should receive a stream WINDOW_UPDATE.")
 
     def run(self):
         """Configure the TestRun."""
@@ -188,19 +170,14 @@ test.run()
 #
 # Configuring max_concurrent_streams_in.
 #
-test = Http2FlowControlTest(
-    description="Configure max_concurrent_streams_in",
-    max_concurrent_streams_in=53)
+test = Http2FlowControlTest(description="Configure max_concurrent_streams_in", max_concurrent_streams_in=53)
 test.run()
 
 #
 # Configuring initial_window_size.
 #
-test = Http2FlowControlTest(
-    description="Configure a large initial_window_size_in",
-    initial_window_size=100123)
+test = Http2FlowControlTest(description="Configure a large initial_window_size_in", initial_window_size=100123)
 test.run()
-
 
 test = Http2FlowControlTest(
     description="Configure a small initial_window_size_in",

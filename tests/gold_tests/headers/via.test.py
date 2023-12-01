@@ -24,10 +24,7 @@ Test.Summary = '''
 Check VIA header for protocol stack data.
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-    Condition.HasCurlFeature('IPv6')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasCurlFeature('IPv6'))
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -44,23 +41,19 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # These should be promoted rather than other tests like this reaching around.
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.http.insert_request_via_str': 4,
-    'proxy.config.http.insert_response_via_str': 4,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.insert_request_via_str': 4,
+        'proxy.config.http.insert_response_via_str': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
-)
+    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Set up to check the output after the tests have run.
 via_log_id = Test.Disk.File("via.log")
