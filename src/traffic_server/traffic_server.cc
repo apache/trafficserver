@@ -2172,7 +2172,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
 
     // initialize logging (after event and net processor)
-    Log::init(Log::NO_REMOTE_MANAGEMENT);
+    Log::init();
 
     (void)parsePluginConfig();
 
