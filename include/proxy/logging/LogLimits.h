@@ -34,5 +34,5 @@ enum {
   LOG_MAX_FORMATTED_LINE   = 10240
 };
 
-#define LOG_KILOBYTE ((int64_t)1024)
-#define LOG_MEGABYTE ((int64_t)1048576)
+constexpr int64_t LOG_KILOBYTE = 1024;
+constexpr int64_t LOG_MEGABYTE = 1048576;
