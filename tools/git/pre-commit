@@ -63,7 +63,7 @@ trap "rm -f $clang_patch_file $yapf_patch_file $cmake_format_patch_file" 0 1 2 3
 
 # Loop over all files that are changed, and produce a diff file
 source ${YAPF_VENV}/bin/activate
-REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
+REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
 YAPF_CONFIG=${REPO_ROOT}/.style.yapf
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(catch2|fastlz|swoc|yamlcpp)" | while read file; do
     case "$file" in
