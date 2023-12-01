@@ -26,6 +26,8 @@
 
 #include <yaml-cpp/yaml.h>
 #include <tscore/Layout.h>
+#include <tscore/ink_assert.h>
+
 #include <swoc/BufferWriter.h>
 
 #include "shared/rpc/IPCSocketClient.h"
@@ -38,10 +40,6 @@ namespace shared::rpc
 ///
 class RPCClient
 {
-  // Large buffer, as we may query a full list of records(metrics can be a lot bigger).
-  // TODO: should we add a parameter to increase the buffer? or maybe a record limit on the server's side?
-  static constexpr size_t BUFFER_SIZE{35600000};
-
 public:
   RPCClient() : _client(Layout::get()->runtimedir + "/jsonrpc20.sock") {}
 
@@ -53,22 +51,27 @@ public:
   invoke(std::string_view req)
   {
     std::string err_text; // for error messages.
-    std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
-    swoc::FixedBufferWriter bw{buf.get(), BUFFER_SIZE};
     try {
       _client.connect();
       if (!_client.is_closed()) {
+        std::string resp;
         _client.send(req);
-        switch (_client.read_all(bw)) {
+        switch (_client.read_all(resp)) {
         case IPCSocketClient::ReadStatus::NO_ERROR: {
           _client.disconnect();
-          return {bw.data(), bw.size()};
+          return resp;
         }
         case IPCSocketClient::ReadStatus::BUFFER_FULL:
-          swoc::bwprint(err_text, "Buffer full, not enough space to read the response. Buffer size: {}", BUFFER_SIZE);
+          // we don't expect this to happen as client will not let us know about
+          // this for now. Keep this in case we decide to put a limit on
+          // responses.
+          ink_assert(!"Buffer full, not enough space to read the response.");
+          break;
+        case IPCSocketClient::ReadStatus::STREAM_ERROR:
+          err_text = "STREAM_ERROR: Error while reading response.";
           break;
         default:
-          err_text = "Something happened, we can't read the response";
+          err_text = "Something happened, we can't read the response. Unknown error.";
           break;
         }
       } else {
