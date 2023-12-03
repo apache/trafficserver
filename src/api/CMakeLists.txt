@@ -66,7 +66,7 @@ set(TSAPICORE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/api/ts_diag_levels.h
     ${PROJECT_SOURCE_DIR}/include/api/ts_errata.h
 )
-add_library(tsapicore Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc)
+add_library(tsapicore SHARED Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc ts_bwf.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSAPICORE_PUBLIC_HEADERS}")
 target_link_libraries(tsapicore PUBLIC libswoc)
@@ -81,7 +81,7 @@ endif()
 if(BUILD_TESTING)
   add_executable(test_ApiCore unit_tests/test_Metrics.cc)
 
-  target_link_libraries(test_ApiCore PRIVATE tsapicore tscore catch2::catch2)
+  target_link_libraries(test_ApiCore PRIVATE tscore tsapicore catch2::catch2)
 
   add_test(NAME test_ApiCore COMMAND $<TARGET_FILE:test_ApiCore>)
 endif()
