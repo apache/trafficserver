@@ -35,7 +35,7 @@
 
 #include "swoc/MemSpan.h"
 
-#include "tscore/ink_assert.h"
+#include "api/Assert.h"
 
 namespace ts
 {
@@ -101,8 +101,8 @@ public:
   Metrics()
   {
     _blobs[0] = new NamesAndAtomics();
-    ink_release_assert(_blobs[0]);
-    ink_release_assert(0 == _create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+    release_assert(_blobs[0]);
+    release_assert(0 == _create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
   }
 
   // The singleton instance, owned by the Metrics class
@@ -335,28 +335,28 @@ public:
     static void
     increment(AtomicType *metric, uint64_t val = 1)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       metric->_value.fetch_add(val, MEMORY_ORDER);
     }
 
     static void
     decrement(AtomicType *metric, uint64_t val = 1)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       metric->_value.fetch_sub(val, MEMORY_ORDER);
     }
 
     static int64_t
     load(const AtomicType *metric)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       return metric->_value.load();
     }
 
     static void
     store(AtomicType *metric, int64_t val)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       return metric->_value.store(val);
     }
 
@@ -423,14 +423,14 @@ public:
     static void
     increment(AtomicType *metric, uint64_t val = 1)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       metric->_value.fetch_add(val, MEMORY_ORDER);
     }
 
     static int64_t
     load(const AtomicType *metric)
     {
-      ink_assert(metric);
+      debug_assert(metric);
       return metric->_value.load();
     }
 

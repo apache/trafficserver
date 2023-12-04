@@ -33,8 +33,8 @@
 
 #include "api/ts_diag_levels.h"
 #include "api/ts_bw_format.h"
-#include "tscore/ink_assert.h"
 #include "api/DbgCtl.h"
+#include "api/Assert.h"
 
 #include "tscore/ink_config.h"
 
@@ -128,7 +128,7 @@ public:
   delete_registry()
   {
     auto r = _registry_instance.load();
-    ink_assert(r != nullptr);
+    debug_assert(r != nullptr);
     _registry_instance = nullptr;
     delete r;
     _mtx_is_locked = false;
@@ -148,7 +148,7 @@ DbgCtl::_TagData const *
 DbgCtl::_new_reference(char const *tag)
 {
   DebugInterface *p = DebugInterface::get_instance();
-  ink_assert(tag != nullptr);
+  debug_assert(tag != nullptr);
 
   // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
@@ -168,7 +168,7 @@ DbgCtl::_new_reference(char const *tag)
 
   auto sz = std::strlen(tag);
 
-  ink_assert(sz > 0);
+  debug_assert(sz > 0);
 
   char *t = new char[sz + 1]; // Deleted by ~Registry().
   std::memcpy(t, tag, sz + 1);
@@ -176,7 +176,7 @@ DbgCtl::_new_reference(char const *tag)
 
   auto res = d.map.insert(new_elem);
 
-  ink_assert(res.second);
+  debug_assert(res.second);
 
   return &*res.first;
 }
@@ -186,7 +186,7 @@ DbgCtl::_rm_reference()
 {
   _RegistryAccessor ra;
 
-  ink_assert(ra.registry_reference_count != 0);
+  debug_assert(ra.registry_reference_count != 0);
 
   --ra.registry_reference_count;
 
