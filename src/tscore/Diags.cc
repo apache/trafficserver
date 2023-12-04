@@ -86,23 +86,6 @@ tell_diags_regression_testing_is_on()
   regression_testing_on = true;
 }
 
-static bool
-location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
-{
-  if (loc && loc->valid()) {
-    switch (show) {
-    case SHOW_LOCATION_ALL:
-      return true;
-    case SHOW_LOCATION_DEBUG:
-      return level <= DL_Debug;
-    default:
-      return false;
-    }
-  }
-
-  return false;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      Diags::Diags(char *bdt, char *bat)
@@ -216,42 +199,6 @@ Diags::~Diags()
   deactivate_all(DiagsTagType_Action);
 }
 
-namespace
-{
-
-struct DiagTimestamp {
-  std::chrono::time_point<std::chrono::system_clock> ts = std::chrono::system_clock::now();
-};
-
-swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
-{
-  auto epoch = std::chrono::system_clock::to_time_t(ts.ts);
-  swoc::LocalBufferWriter<48> lw;
-
-  ctime_r(&epoch, lw.aux_data());
-  lw.commit(19); // keep only leading text.
-  lw.print(".{:03}", std::chrono::time_point_cast<std::chrono::milliseconds>(ts.ts).time_since_epoch().count() % 1000);
-  w.write(lw.view().substr(4));
-
-  return w;
-}
-
-struct DiagThreadname {
-  char name[32];
-
-  DiagThreadname() { ink_get_thread_name(name, sizeof(name)); }
-};
-
-swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname const &n)
-{
-  bwformat(w, spec, std::string_view{n.name});
-  return w;
-}
-
-} // namespace
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::print_va(...)
@@ -285,30 +232,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 {
   ink_release_assert(diags_level < DiagsLevel_Count);
   swoc::LocalBufferWriter<1024> format_writer;
-
-  // Save room for optional newline and terminating NUL bytes.
-  format_writer.restrict(2);
-
-  format_writer.print("[{}] ", DiagTimestamp{});
-  auto timestamp_offset = format_writer.size();
-
-  format_writer.print("{} {}: ", DiagThreadname{}, level_name(diags_level));
-
-  if (location(loc, show_location, diags_level)) {
-    format_writer.print("<{}> ", *loc);
-  }
-
-  if (debug_tag) {
-    format_writer.print("({}) ", debug_tag);
-  }
-
-  format_writer.print("{}", format_string);
-
-  format_writer.restore(2);                  // restore the space for required termination.
-  if (format_writer.view().back() != '\n') { // safe because always some chars in the buffer.
-    format_writer.write('\n');
-  }
-  format_writer.write('\0');
+  auto timestamp_offset = generate_format_string(format_writer, debug_tag, diags_level, loc, SHOW_LOCATION_DEBUG, format_string);
 
   //////////////////////////////////////
   // now, finally, output the message //
@@ -468,42 +392,6 @@ Diags::deactivate_all(DiagsTagType mode)
   unlock();
   if ((DiagsTagType_Debug == mode) && (this == diags())) {
     DbgCtl::update([&](const char *tag) -> bool { return tag_activated(tag, DiagsTagType_Debug); });
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      const char *Diags::level_name(DiagsLevel dl)
-//
-//      This routine returns a string name corresponding to the error
-//      level <dl>, suitable for us as an output log entry prefix.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-const char *
-Diags::level_name(DiagsLevel dl) const
-{
-  switch (dl) {
-  case DL_Diag:
-    return ("DIAG");
-  case DL_Debug:
-    return ("DEBUG");
-  case DL_Status:
-    return ("STATUS");
-  case DL_Note:
-    return ("NOTE");
-  case DL_Warning:
-    return ("WARNING");
-  case DL_Error:
-    return ("ERROR");
-  case DL_Fatal:
-    return ("FATAL");
-  case DL_Alert:
-    return ("ALERT");
-  case DL_Emergency:
-    return ("EMERGENCY");
-  default:
-    return ("DIAG");
   }
 }
 

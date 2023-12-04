@@ -44,6 +44,7 @@
 #include "api/SourceLocation.h"
 
 #include "api/ts_diag_levels.h"
+#include "api/DbgCtl.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
@@ -63,8 +64,6 @@ struct DiagsModeOutput {
 enum StdStream { STDOUT = 0, STDERR };
 
 enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
-
-enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
 
 #define DiagsLevel_Count DL_Undefined
 
@@ -176,8 +175,6 @@ public:
   /////////////////////////////
   // raw printing interfaces //
   /////////////////////////////
-
-  const char *level_name(DiagsLevel level) const;
 
   ///////////////////////////////////////////////////////////////////////
   // user diagnostic output interfaces --- enabled on or off based     //
