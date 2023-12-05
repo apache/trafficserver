@@ -283,6 +283,10 @@ include(CheckOpenSSLIsBoringSSL)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
 
+if(NOT OPENSSL_IS_BORINGSSL AND OPENSSL_VERSION VERSION_LESS "1.1.1")
+  message(FATAL_ERROR "OpenSSL version greater than 1.0.1 or BoringSSL required")
+endif()
+
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
   set(OPENSSL_IS_OPENSSL3 TRUE)
   add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
