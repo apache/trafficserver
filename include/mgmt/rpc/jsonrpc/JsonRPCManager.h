@@ -272,8 +272,9 @@ private:
       // We support these three for now. This can easily be extended to support other signatures.
       // that's one of the main points of the InternalHandler
       std::variant<std::monostate, Notification, Method, PluginMethod> _func;
-      const RPCRegistryInfo *_regInfo; ///< Can hold internal information about the handler, this could be null as it is optional.
-                                       ///< This pointer can eventually holds important information about the call.
+      const RPCRegistryInfo *_regInfo =
+        nullptr; ///< Can hold internal information about the handler, this could be null as it is optional.
+                 ///< This pointer can eventually holds important information about the call.
       TSRPCHandlerOptions _options;
     };
     // We will keep all the handlers wrapped inside the InternalHandler class, this will help us
