@@ -88,46 +88,27 @@ crashlog_open(const char *path)
   return (fd == -1) ? nullptr : fdopen(fd, "w");
 }
 
-static unsigned
-max_passwd_size()
+extern int ServerBacktrace(unsigned /* options */, int pid, char **trace);
+
+bool
+crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
 {
-#if defined(_SC_GETPW_R_SIZE_MAX)
-  long val = sysconf(_SC_GETPW_R_SIZE_MAX);
-  if (val > 0) {
-    return static_cast<unsigned>(val);
-  }
-#endif
+  char *trace = nullptr;
+  int mgmterr;
 
-  return 4096;
-}
+  // NOTE: sometimes we can't get a backtrace because the ptrace attach will fail with
+  // EPERM. I've seen this happen when a debugger is attached, which makes sense, but it
+  // can also happen without a debugger. Possibly in that case, there is a race with the
+  // kernel locking the process information?
 
-static void
-change_privileges()
-{
-  struct passwd *pwd;
-  struct passwd pbuf;
-  char buf[max_passwd_size()];
-
-  if (getpwnam_r(user, &pbuf, buf, sizeof(buf), &pwd) != 0) {
-    Error("missing password database entry for username '%s': %s", user, strerror(errno));
-    return;
+  if ((mgmterr = ServerBacktrace(0, static_cast<int>(pid), &trace)) != 0) {
+    fprintf(fp, "Unable to retrieve backtrace: %d\n", mgmterr);
+    return false;
   }
 
-  if (pwd == nullptr) {
-    // Password entry not found ...
-    Error("missing password database entry for '%s'", user);
-    return;
-  }
-
-  if (setegid(pwd->pw_gid) != 0) {
-    Error("setegid(%d) failed: %s", pwd->pw_gid, strerror(errno));
-    return;
-  }
-
-  if (setreuid(pwd->pw_uid, 0) != 0) {
-    Error("setreuid(%d, %d) failed: %s", pwd->pw_uid, 0, strerror(errno));
-    return;
-  }
+  fprintf(fp, "%s", trace);
+  free(trace);
+  return true;
 }
 
 int
@@ -144,13 +125,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Process command line arguments and dump into variables
   process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
-
-  // XXX This is a hack. traffic_manager starts traffic_server with the euid of the admin user. We are still
-  // privileged, but won't be able to open files in /proc or ptrace the target. This really should be fixed
-  // in traffic_manager.
-  if (getuid() == 0) {
-    change_privileges();
-  }
 
   if (wait_mode) {
     EnableDeathSignal(SIGKILL);
@@ -240,8 +214,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_write_registers(fp, target);
 
   fprintf(fp, "\n");
-  crashlog_write_procstatus(fp, target);
+  crashlog_write_backtrace(fp, parent, target);
 
+  fprintf(fp, "\n");
+  crashlog_write_procstatus(fp, target);
   fprintf(fp, "\n");
   crashlog_write_proclimits(fp, target);
 
