@@ -417,16 +417,17 @@ HSMresult_t
 HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
                                      TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
-  PoolableSession *to_return = nullptr;
-  HSMresult_t retval         = HSM_NOT_FOUND;
-  bool acquired              = false;
+  PoolableSession *to_return    = nullptr;
+  HSMresult_t retval            = HSM_NOT_FOUND;
+  UnixNetVConnection *server_vc = nullptr;
+  EThread *const ethread        = this_ethread();
+  bool acquired                 = false;
 
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
   // due to a potential parallel network read on the VC with no mutex guarding
   {
     // Now check to see if we have a connection in our shared connection pool
-    EThread *ethread = this_ethread();
     Ptr<ProxyMutex> pool_mutex =
       (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
 
@@ -443,60 +444,68 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
         retval   = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         acquired = (HSM_DONE == retval);
         Debug("http_ss", "[acquire session] global pool search %s", to_return ? "successful" : "failed");
-        // At this point to_return has been removed from the pool. Do we need to move it
-        // to the same thread?
-        if (to_return) {
-          UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
-          if (server_vc) {
-            // Disable i/o on this vc now, but, hold onto the g_pool cont
-            // and the mutex to stop any stray events from getting in
+      }
+
+      // At this point to_return has been removed from the pool.
+      if (nullptr != to_return) {
+        server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
+        if (nullptr != server_vc) {
+          // Keep things from timing out on us
+          server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
+
+          // If thread must be migrated, clear out the VC's
+          // data and event handling on the original thread.
+          if (ethread != server_vc->get_thread()) {
+            SCOPED_MUTEX_LOCK(vclock, server_vc->mutex, ethread);
             server_vc->do_io_read(m_g_pool, 0, nullptr);
             server_vc->do_io_write(m_g_pool, 0, nullptr);
-            UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
-            // The VC moved, free up the original one
-            if (new_vc != server_vc) {
-              ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
-              if (!new_vc) {
-                // Close out to_return, we were't able to get a connection
-                Metrics::Counter::increment(http_rsb.origin_shutdown_migration_failure);
-                to_return->do_io_close();
-                to_return = nullptr;
-                retval    = HSM_NOT_FOUND;
-              } else {
-                // Keep things from timing out on us
-                new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
-                to_return->set_netvc(new_vc);
-              }
-            } else {
-              // Keep things from timing out on us
-              server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
-            }
+            server_vc->ep.stop();
           }
         }
       }
     } else { // Didn't get the lock.  to_return is still NULL
       retval = HSM_RETRY;
     }
+  }
 
-    if (to_return) {
-      if (sm->create_server_txn(to_return)) {
-        Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
-        to_return->state = PoolableSession::SSN_IN_USE;
-        retval           = HSM_DONE;
+  // now the vc is out of the pool
+  if (nullptr != to_return && nullptr != server_vc) {
+    UnixNetVConnection *const new_vc = server_vc->migrateToCurrentThread(sm, ethread);
+    // The VC moved, free up the original one
+    if (new_vc != server_vc) {
+      ink_assert(nullptr == new_vc || nullptr != new_vc->nh);
+      if (nullptr == new_vc) {
+        // Close out to_return, we were't able to get a connection
+        Metrics::Counter::increment(http_rsb.origin_shutdown_migration_failure);
+        to_return->do_io_close(); // already done ??
+        to_return = nullptr;
+        retval    = HSM_NOT_FOUND;
       } else {
-        Debug("http_ss", "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
-              to_return->connection_id());
-        // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
-        if (!to_return->is_multiplexing()) {
-          to_return->do_io_close();
-        }
-        retval = HSM_RETRY;
+        // Keep things from timing out on us
+        new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
+        to_return->set_netvc(new_vc);
       }
     }
   }
 
   if (acquired) {
     Metrics::Gauge::decrement(http_rsb.pooled_server_connections);
+  }
+
+  if (nullptr != to_return) {
+    if (sm->create_server_txn(to_return)) {
+      Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+      to_return->state = PoolableSession::SSN_IN_USE;
+      retval           = HSM_DONE;
+    } else {
+      Debug("http_ss", "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
+            to_return->connection_id());
+      // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
+      if (!to_return->is_multiplexing()) {
+        to_return->do_io_close();
+      }
+      retval = HSM_RETRY;
+    }
   }
 
   return retval;
