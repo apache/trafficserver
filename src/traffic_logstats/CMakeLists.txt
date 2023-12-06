@@ -16,7 +16,9 @@
 #######################
 
 add_executable(traffic_logstats logstats.cc)
-target_link_libraries(traffic_logstats PRIVATE ts::logging ts::tscore ts::diagsconfig ts::tsapi)
+target_link_libraries(
+  traffic_logstats PRIVATE ts::logging ts::tscore ts::diagsconfig ts::tsapi ts::configmanager ts::overridable_txn_vars
+)
 
 install(TARGETS traffic_logstats)
 
