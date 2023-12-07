@@ -123,7 +123,7 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
   // Preserve the first n bits
   uint8_t prefix = *buf_start & (0xFF << n);
 
-  if (value < (static_cast<uint64_t>(1 << n) - 1)) {
+  if (value < (static_cast<uint64_t>(UINT64_C(1) << n) - 1)) {
     *(p++) = value;
   } else {
     *(p++)  = (1 << n) - 1;
