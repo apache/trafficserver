@@ -888,16 +888,19 @@ TSPluginInit(int argc, const char *argv[])
 
   // Make xDebugHeader available to other plugins, as a C-style string.
   //
-  int idx = -1;
-  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_GLB, "XDebugHeader", "XDebug header name", &idx) == TS_SUCCESS);
+  int idx  = -1;
+  auto ret = TSUserArgIndexReserve(TS_USER_ARGS_GLB, "XDebugHeader", "XDebug header name", &idx);
+  TSReleaseAssert(ret == TS_SUCCESS);
   TSReleaseAssert(idx >= 0);
   TSUserArgSet(nullptr, idx, const_cast<char *>(xDebugHeader.str));
 
   AuxDataMgr::init("xdebug");
 
   // Setup the global hook
-  TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
-  TSReleaseAssert(XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr));
+  XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr);
+  TSReleaseAssert(XInjectHeadersCont);
+  XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr);
+  TSReleaseAssert(XDeleteDebugHdrCont);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
 
   gethostname(Hostname, 1024);
