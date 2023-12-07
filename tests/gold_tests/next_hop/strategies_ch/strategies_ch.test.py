@@ -59,6 +59,7 @@ for i in range(num_nh):
             'proxy.config.dns.resolv_conf': "NULL",
         })
     ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
+    ts.ReturnCode = Any(0, -2)
     ts_nh.append(ts)
 
 ts = Test.MakeATSProcess("ts")
