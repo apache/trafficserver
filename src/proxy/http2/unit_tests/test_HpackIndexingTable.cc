@@ -72,7 +72,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       for (const auto &i : indexed_test_case) {
         memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-        int len = encode_indexed_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.index);
+        int64_t len = encode_indexed_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.index);
 
         REQUIRE(len > 0);
         REQUIRE(len == i.encoded_field_len);
@@ -190,7 +190,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
     {
       {
         uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-        int len;
+        int64_t len;
         HpackIndexingTable indexing_table(4096);
 
         for (unsigned int i = 9; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
