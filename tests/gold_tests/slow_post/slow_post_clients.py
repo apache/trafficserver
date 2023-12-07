@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -31,7 +30,7 @@ def gen(slow_time):
 
 
 def slow_post(port, slow_time):
-    requests.post('http://127.0.0.1:{0}/'.format(port, ), data=gen(slow_time))
+    requests.post('http://127.0.0.1:{0}/'.format(port,), data=gen(slow_time))
 
 
 def makerequest(port, connection_limit):
@@ -47,12 +46,8 @@ def makerequest(port, connection_limit):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", "-p",
-                        type=int,
-                        help="Port to use")
-    parser.add_argument("--connectionlimit", "-c",
-                        type=int,
-                        help="connection limit")
+    parser.add_argument("--port", "-p", type=int, help="Port to use")
+    parser.add_argument("--connectionlimit", "-c", type=int, help="connection limit")
     args = parser.parse_args()
     makerequest(args.port, args.connectionlimit)
 

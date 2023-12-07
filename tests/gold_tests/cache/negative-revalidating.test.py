@@ -25,22 +25,20 @@ Test the negative revalidating feature.
 # Verify disabled negative_revalidating behavior.
 #
 ts = Test.MakeATSProcess("ts-negative-revalidating-disabled")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|cache',
-    'proxy.config.http.insert_age_in_response': 0,
-
-    'proxy.config.http.negative_revalidating_enabled': 0,
-    'proxy.config.http.cache.max_stale_age': 6
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|cache',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.http.negative_revalidating_enabled': 0,
+        'proxy.config.http.cache.max_stale_age': 6
+    })
 tr = Test.AddTestRun("Verify disabled negative revalidating behavior.")
 replay_file = "replay/negative-revalidating-disabled.replay.yaml"
 server = tr.AddVerifierServerProcess("server1", replay_file)
 server_port = server.Variables.http_port
 tr.AddVerifierClientProcess("client1", replay_file, http_ports=[ts.Variables.port])
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server_port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server_port))
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
 
@@ -48,23 +46,22 @@ tr.StillRunningAfter = ts
 # Verify enabled negative_revalidating behavior.
 #
 ts = Test.MakeATSProcess("ts-negative-revalidating-enabled")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|cache',
-    'proxy.config.http.insert_age_in_response': 0,
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|cache',
+        'proxy.config.http.insert_age_in_response': 0,
 
-    # Negative revalidating is on by default. Verify this by leaving out the
-    # following line and expect negative_revalidating to be enabled.
-    # 'proxy.config.http.negative_revalidating_enabled': 1,
-    'proxy.config.http.cache.max_stale_age': 6
-})
+        # Negative revalidating is on by default. Verify this by leaving out the
+        # following line and expect negative_revalidating to be enabled.
+        # 'proxy.config.http.negative_revalidating_enabled': 1,
+        'proxy.config.http.cache.max_stale_age': 6
+    })
 tr = Test.AddTestRun("Verify negative revalidating behavior.")
 replay_file = "replay/negative-revalidating-enabled.replay.yaml"
 server = tr.AddVerifierServerProcess("server2", replay_file)
 server_port = server.Variables.http_port
 tr.AddVerifierClientProcess("client2", replay_file, http_ports=[ts.Variables.port])
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server_port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server_port))
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts

@@ -58,10 +58,7 @@ tr.Processes.Default.Command = "traffic_server -C 'verify_global_plugin'"
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR: verifying a plugin requires a plugin SO file path argument",
-    "Should warn about the need for an SO file argument")
-
-
+    "ERROR: verifying a plugin requires a plugin SO file path argument", "Should warn about the need for an SO file argument")
 """
 TEST: verify_global_plugin should complain if the argument doesn't reference a shared
 object file.
@@ -75,20 +72,14 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR: .*No such file or directory",
-    "Should warn about the non-existent SO file argument")
-
-
+    "ERROR: .*No such file or directory", "Should warn about the non-existent SO file argument")
 """
 TEST: verify_global_plugin should complain if the shared object file doesn't
 have the expected Plugin symbols.
 """
 tr = Test.AddTestRun("Verify the requirement of our Plugin API.")
 ts = create_ts_process()
-Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsTestPluginsDir,
-                 'missing_ts_plugin_init.so'),
-    ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'missing_ts_plugin_init.so'), ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
     "traffic_server -C 'verify_global_plugin {filename}'".format(
@@ -96,23 +87,15 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR: .*unable to find TSPluginInit function in",
-    "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ERROR",
-    "ERROR: .*unable to find TSPluginInit function in")
-
-
+    "ERROR: .*unable to find TSPluginInit function in", "Should warn about the need for the TSPluginInit symbol")
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*unable to find TSPluginInit function in")
 """
 TEST: Verify that passing a remap plugin produces a warning because
 it doesn't have the global plugin symbols.
 """
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
-Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsTestPluginsDir,
-                 'conf_remap_stripped.so'),
-    ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'conf_remap_stripped.so'), ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
     "traffic_server -C 'verify_global_plugin {filename}'".format(
@@ -120,23 +103,15 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR: .*unable to find TSPluginInit function in",
-    "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ERROR",
-    "ERROR: .*unable to find TSPluginInit function in")
-
-
+    "ERROR: .*unable to find TSPluginInit function in", "Should warn about the need for the TSPluginInit symbol")
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*unable to find TSPluginInit function in")
 """
 TEST: The happy case: a global plugin shared object file is passed as an
 argument that has the definition for the expected Plugin symbols.
 """
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
-Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsTestPluginsDir,
-                 'ssl_hook_test.so'),
-    ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
     "traffic_server -C 'verify_global_plugin {filename}'".format(
@@ -144,10 +119,7 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "NOTE: verifying plugin '.*' Success",
-    "Verification should succeed")
-
-
+    "NOTE: verifying plugin '.*' Success", "Verification should succeed")
 """
 TEST: This is a regression test for a shared object file that doesn't have all
 of the required symbols defined because of a malformed interaction between C
@@ -166,8 +138,5 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR:.*unable to load",
-    "Should log failure to load shared object")
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ERROR",
-    "Should log failure to load shared object")
+    "ERROR:.*unable to load", "Should log failure to load shared object")
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Should log failure to load shared object")

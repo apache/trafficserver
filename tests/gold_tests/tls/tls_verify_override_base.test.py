@@ -22,14 +22,20 @@ Test tls server certificate verification options. Exercise conf_remap
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer(
+    "server_foo",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
+    })
+server_bar = Test.MakeOriginServer(
+    "server_bar",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
+    })
 server = Test.MakeOriginServer("server", ssl=True)
 
 dns = Test.MakeDNServer("dns")
@@ -54,67 +60,63 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
+ts.Disk.remap_config.AddLine('map http://foo.com/basic https://foo.com:{0}'.format(server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/basic https://foo.com:{0}'.format(server_foo.Variables.SSL_Port))
+    'map http://foo.com/override https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
+    .format(server_foo.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map http://bar.com/basic https://bar.com:{0}'.format(server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/override https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
-        server_foo.Variables.SSL_Port))
+    'map http://bar.com/overridedisabled https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=DISABLED'
+    .format(server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/basic https://bar.com:{0}'.format(server_foo.Variables.SSL_Port))
+    'map http://bar.com/overridesignature https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
+    .format(server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overridedisabled https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=DISABLED'.format(
-        server_foo.Variables.SSL_Port))
+    'map http://bar.com/overrideenforced https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
+    .format(server_foo.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map /basic https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overridesignature https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
-        server_foo.Variables.SSL_Port))
+    'map /overrideenforce https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
+    .format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overrideenforced https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
-        server_foo.Variables.SSL_Port))
+    'map /overridename  https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME'
+    .format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /basic https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
+    'map /snipolicyfooremap  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'
+    .format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /overrideenforce https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
-        server.Variables.SSL_Port))
+    'map /snipolicyfoohost  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'
+    .format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /overridename  https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME'.format(
-        server.Variables.SSL_Port))
+    'map /snipolicyfooservername  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'
+    .format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /snipolicyfooremap  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'.format(
-        server_bar.Variables.SSL_Port))
+    'map /snipolicybarremap  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'
+    .format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /snipolicyfoohost  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(
-        server_bar.Variables.SSL_Port))
+    'map /snipolicybarhost  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'
+    .format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map /snipolicyfooservername  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'.format(
-        server_bar.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map /snipolicybarremap  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'.format(
-        server_bar.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map /snipolicybarhost  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(
-        server_bar.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map /snipolicybarservername  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'.format(
-        server_bar.Variables.SSL_Port))
+    'map /snipolicybarservername  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'
+    .format(server_bar.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -233,7 +235,6 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not connect", "Curl attempt should succeed")
-
 
 # Over riding the built in ERROR check since we expect some cases to fail
 

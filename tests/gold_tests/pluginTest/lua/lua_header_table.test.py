@@ -20,17 +20,13 @@ Test.Summary = '''
 Test lua header table functionality
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('tslua.so'),
-)
+Test.SkipUnless(Condition.PluginExists('tslua.so'),)
 
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.remap_config.AddLine(
-    f"map / http://127.0.0.1 @plugin=tslua.so @pparam=header_table.lua"
-)
+ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1 @plugin=tslua.so @pparam=header_table.lua")
 # Configure the tslua's configuration file.
 ts.Setup.Copy("header_table.lua", ts.Variables.CONFIGDIR)
 

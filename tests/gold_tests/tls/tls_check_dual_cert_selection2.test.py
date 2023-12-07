@@ -47,28 +47,29 @@ ts.addSSLfile("ssl/combined.pem")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
-ts.Disk.remap_config.AddLine(
-    'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=combined-ec.pem,combined.pem',
-    'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem',
-    'dest_ip=* ssl_cert_name=signed-san-ec.pem,signed-san.pem'
-])
+ts.Disk.ssl_multicert_config.AddLines(
+    [
+        'ssl_cert_name=combined-ec.pem,combined.pem',
+        'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem',
+        'dest_ip=* ssl_cert_name=signed-san-ec.pem,signed-san.pem',
+    ])
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '/tmp',  # Faulty key path should not matter, since there are no key files
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.dns.resolv_conf': 'NULL',
-    'proxy.config.diags.debug.tags': 'ssl',
-    'proxy.config.diags.debug.enabled': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '/tmp',  # Faulty key path should not matter, since there are no key files
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.tags': 'ssl',
+        'proxy.config.diags.debug.enabled': 0
+    })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -98,11 +99,11 @@ with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-san.pem'), 'r') as myf
 with open(os.path.join(Test.TestDirectory, 'ssl', 'combined-ec.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
-    combo_ec_string = re.escape(file_string[0: cert_end])
+    combo_ec_string = re.escape(file_string[0:cert_end])
 with open(os.path.join(Test.TestDirectory, 'ssl', 'combined.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
-    combo_rsa_string = re.escape(file_string[0: cert_end])
+    combo_rsa_string = re.escape(file_string[0:cert_end])
 
 # Should receive a EC cert since ATS cipher list prefers EC
 tr = Test.AddTestRun("Default for foo should return EC cert")

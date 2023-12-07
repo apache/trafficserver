@@ -40,46 +40,29 @@ ts = Test.MakeATSProcess("ts", command="traffic_server")
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
 
 # default root
-req_chk = {"headers":
-           "GET / HTTP/1.1\r\n" +
-           "Host: www.example.com\r\n" +
-           "uuid: none\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_chk = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_chk = {"headers":
-           "HTTP/1.1 200 OK\r\n" +
-           "Connection: close\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
 body = "lets go surfin now"
 
-req_full = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "uuid: full\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_full = {
+    "headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "uuid: full\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_full = {"headers":
-            "HTTP/1.1 200 OK\r\n" +
-            "Cache-Control: max-age=500\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "path"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body
-            }
+res_full = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=500\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
@@ -88,148 +71,119 @@ bodylen = len(body)
 
 inner_str = "7-15"
 
-req_inner = {"headers":
-             "GET /path HTTP/1.1\r\n" +
-             "Host: www.example.com\r\n" +
-             "Accept: */*\r\n" +
-             "Range: bytes={}\r\n".format(inner_str) +
-             "uuid: inner\r\n" +
-             "\r\n",
-             "timestamp": "1469733493.993",
-             "body": ""
-             }
+req_inner = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(inner_str) +
+        "uuid: inner\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_inner = {"headers":
-             "HTTP/1.1 206 Partial Content\r\n" +
-             "Accept-Ranges: bytes\r\n" +
-             "Cache-Control: max-age=500\r\n" +
-             "Content-Range: bytes {0}/{1}\r\n".format(inner_str, bodylen) +
-             "Connection: close\r\n" +
-             'Etag: "path"\r\n' +
-             "\r\n",
-             "timestamp": "1469733493.993",
-             "body": body[7:15]
-             }
+res_inner = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
+        "Content-Range: bytes {0}/{1}\r\n".format(inner_str, bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body[7:15]
+}
 
 server.addResponse("sessionlog.json", req_inner, res_inner)
 
 frange_str = "0-"
 
-req_frange = {"headers":
-              "GET /path HTTP/1.1\r\n" +
-              "Host: www.example.com\r\n" +
-              "Accept: */*\r\n" +
-              "Range: bytes={}\r\n".format(frange_str) +
-              "uuid: frange\r\n" +
-              "\r\n",
-              "timestamp": "1469733493.993",
-              "body": ""
-              }
+req_frange = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(frange_str) +
+        "uuid: frange\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_frange = {"headers":
-              "HTTP/1.1 206 Partial Content\r\n" +
-              "Accept-Ranges: bytes\r\n" +
-              "Cache-Control: max-age=500\r\n" +
-              "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
-              "Connection: close\r\n" +
-              'Etag: "path"\r\n' +
-              "\r\n",
-              "timestamp": "1469733493.993",
-              "body": body
-              }
+res_frange = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
+        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_frange, res_frange)
 
 last_str = "-5"
 
-req_last = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "Range: bytes={}\r\n".format(last_str) +
-            "uuid: last\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_last = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(last_str) +
+        "uuid: last\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_last = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            "Cache-Control: max-age=200\r\n" +
-            "Content-Range: bytes {0}-{1}/{1}\r\n".format(bodylen - 5, bodylen) +
-            "Connection: close\r\n" +
-            'Etag: "path"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body[-5:]
-            }
+res_last = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=200\r\n" +
+        "Content-Range: bytes {0}-{1}/{1}\r\n".format(bodylen - 5, bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body[-5:]
+}
 
 server.addResponse("sessionlog.json", req_last, res_last)
 
 pselect_str = "1-10"
 
-req_pselect = {"headers":
-               "GET /path HTTP/1.1\r\n" +
-               "Host: parentselect\r\n" +
-               "Accept: */*\r\n" +
-               "Range: bytes={}\r\n".format(pselect_str) +
-               "uuid: pselect\r\n" +
-               "\r\n",
-               "timestamp": "1469733493.993",
-               "body": ""
-               }
+req_pselect = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: parentselect\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(pselect_str) +
+        "uuid: pselect\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_pselect = {"headers":
-               "HTTP/1.1 206 Partial Content\r\n" +
-               "Accept-Ranges: bytes\r\n" +
-               "Cache-Control: max-age=200\r\n" +
-               "Content-Range: bytes {}/19\r\n".format(pselect_str) +
-               "Connection: close\r\n" +
-               'Etag: "path"\r\n' +
-               "\r\n",
-               "timestamp": "1469733493.993",
-               "body": body[1:10]
-               }
+res_pselect = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=200\r\n" +
+        "Content-Range: bytes {}/19\r\n".format(pselect_str) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body[1:10]
+}
 
 server.addResponse("sessionlog.json", req_pselect, res_pselect)
 
-req_psd = {"headers":
-           "GET /path HTTP/1.1\r\n" +
-           "Host: psd\r\n" +
-           "Accept: */*\r\n" +
-           "Range: bytes={}\r\n".format(pselect_str) +
-           "uuid: pselect\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_psd = {
+    "headers":
+        "GET /path HTTP/1.1\r\n" + "Host: psd\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(pselect_str) +
+        "uuid: pselect\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
 server.addResponse("sessionlog.json", req_psd, res_pselect)
 
 # cache range requests plugin remap
 ts.Setup.CopyAs('reason.conf', Test.RunDirectory)
-ts.Disk.remap_config.AddLines([
-    'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=header_rewrite.so @pparam={}/reason.conf @plugin=cache_range_requests.so'.format(Test.RunDirectory),
+ts.Disk.remap_config.AddLines(
+    [
+        'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
+        ' @plugin=header_rewrite.so @pparam={}/reason.conf @plugin=cache_range_requests.so'.format(Test.RunDirectory),
 
-    # parent select cache key option
-    'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=cache_range_requests.so @pparam=--ps-cachekey',
+        # parent select cache key option
+        'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
+        ' @plugin=cache_range_requests.so @pparam=--ps-cachekey',
 
-    # deprecated
-    'map http://psd http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url',
-])
+        # deprecated
+        'map http://psd http://127.0.0.1:{}'.format(server.Variables.Port) +
+        ' @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url',
+    ])
 
 # cache debug
 ts.Disk.plugin_config.AddLine('xdebug.so')
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cache_range_requests|http',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cache_range_requests|http',
+    })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 

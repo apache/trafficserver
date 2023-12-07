@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import re
+
 Test.Summary = '''
 Test tls origin session reuse
 '''
@@ -29,16 +30,8 @@ ts4 = Test.MakeATSProcess("ts4", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 # Add info the origin server responses
-request_header = {
-    'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': ''
-}
-response_header = {
-    'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': 'curl test'
-}
+request_header = {'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
+response_header = {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n', 'timestamp': '1469733493.993', 'body': 'curl test'}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # add ssl materials like key, certificates for the server
@@ -51,101 +44,92 @@ ts3.addSSLfile("ssl/server.key")
 ts4.addSSLfile("ssl/server.pem")
 ts4.addSSLfile("ssl/server.key")
 
-ts1.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts2.Disk.remap_config.AddLines([
-    'map /reuse_session https://127.0.0.1:{0}'.format(ts1.Variables.ssl_port),
-    'map /remove_oldest https://127.0.1.1:{0}'.format(ts1.Variables.ssl_port)
-])
-ts3.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts4.Disk.remap_config.AddLine(
-    'map / https://127.0.0.1:{0}'.format(ts3.Variables.ssl_port)
-)
+ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts2.Disk.remap_config.AddLines(
+    [
+        'map /reuse_session https://127.0.0.1:{0}'.format(ts1.Variables.ssl_port),
+        'map /remove_oldest https://127.0.1.1:{0}'.format(ts1.Variables.ssl_port),
+    ])
+ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts4.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(ts3.Variables.ssl_port))
 
-ts1.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts2.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts3.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts4.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts1.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts3.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts4.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts1.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
-ts2.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
-ts3.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
-ts4.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts4.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts4.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.session_cache': 2,
-    'proxy.config.ssl.session_cache.size': 4096,
-    'proxy.config.ssl.session_cache.num_buckets': 256,
-    'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
-    'proxy.config.ssl.session_cache.timeout': 0,
-    'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 1,
-    'proxy.config.ssl.origin_session_cache': 0,
-    'proxy.config.ssl.origin_session_cache.size': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts1.Disk.records_config.update(
+    {
+        'proxy.config.http.cache.http': 0,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.origin_session_cache': 1,
+        'proxy.config.ssl.origin_session_cache.size': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.http.cache.http': 0,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.origin_session_cache': 1,
+        'proxy.config.ssl.origin_session_cache.size': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.http.cache.http': 0,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.origin_session_cache': 1,
+        'proxy.config.ssl.origin_session_cache.size': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
+ts4.Disk.records_config.update(
+    {
+        'proxy.config.http.cache.http': 0,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts4.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts4.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 4096,
+        'proxy.config.ssl.session_cache.num_buckets': 256,
+        'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
+        'proxy.config.ssl.session_cache.timeout': 0,
+        'proxy.config.ssl.session_cache.auto_clear': 1,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.origin_session_cache': 0,
+        'proxy.config.ssl.origin_session_cache.size': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
 tr = Test.AddTestRun('new session then reuse')
 tr.Processes.Default.Command = 'curl https://127.0.0.1:{0}/reuse_session -k && curl https://127.0.0.1:{0}/reuse_session -k'.format(

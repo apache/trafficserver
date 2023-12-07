@@ -24,9 +24,7 @@ Test PUSHing an object into the cache and the GETting it with a few variations o
 # by increasing the value of the obj_kilobytes variable below.  (But do not increase it on any shared branch
 # that we do CI runs on.)
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 # push_request and check_ramp are built via `make`. Here we copy the built binary down to the test
 # directory so that the test runs in this file can use it.
@@ -36,24 +34,21 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'bigobj', 'che
 ts = Test.MakeATSProcess("ts1", enable_tls=True)
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|dns|cache',
-    'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
-    'proxy.config.http.push_method_enabled': 1,
-    'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
-    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    'proxy.config.url_remap.remap_required': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|dns|cache',
+        'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
+        'proxy.config.http.push_method_enabled': 1,
+        'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
+        'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+        'proxy.config.url_remap.remap_required': 0
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.remap_config.AddLine(
-    'map https://localhost http://localhost'
-)
+ts.Disk.remap_config.AddLine('map https://localhost http://localhost')
 
 # Set up to check the output after the tests have run.
 #
@@ -71,41 +66,35 @@ tr = Test.AddTestRun("PUSH an object to the cache")
 tr.Processes.Default.StartBefore(ts)
 #
 # Put object with URL http://localhost/bigobj in cache using PUSH request.
-tr.Processes.Default.Command = (
-    f'./push_request {obj_kilobytes} | nc localhost {ts.Variables.port}'
-)
+tr.Processes.Default.Command = (f'./push_request {obj_kilobytes} | nc localhost {ts.Variables.port}')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("GET bigobj: cleartext, HTTP/1.1, IPv4")
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --header "Host: localhost"'
     f' http://localhost:{ts.Variables.port}/bigobj 2>> log.txt |'
-    f' ./check_ramp {obj_kilobytes}'
-)
+    f' ./check_ramp {obj_kilobytes}')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/1.1, IPv4")
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --insecure --header "Host: localhost"'
     f' https://localhost:{ts.Variables.ssl_port}/bigobj 2>> log.txt |'
-    f' ./check_ramp {obj_kilobytes}'
-)
+    f' ./check_ramp {obj_kilobytes}')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv4")
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http2 --insecure --header "Host: localhost"'
     f' https://localhost:{ts.Variables.ssl_port}/bigobj 2>> log.txt |'
-    f' ./check_ramp {obj_kilobytes}'
-)
+    f' ./check_ramp {obj_kilobytes}')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv6")
 tr.Processes.Default.Command = (
     'curl --verbose --ipv6 --http2 --insecure --header "Host: localhost"'
     f' https://localhost:{ts.Variables.ssl_portv6}/bigobj 2>> log.txt |'
-    f' ./check_ramp {obj_kilobytes}'
-)
+    f' ./check_ramp {obj_kilobytes}')
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
@@ -117,31 +106,24 @@ tr.Processes.Default.ReturnCode = 0
 ts = Test.MakeATSProcess("ts2", enable_tls=True)
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|dns|cache',
-    'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
-    'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
-    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    'proxy.config.url_remap.remap_required': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|dns|cache',
+        'proxy.config.http.cache.required_headers': 0,  # No required headers for caching
+        'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
+        'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+        'proxy.config.url_remap.remap_required': 0
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.remap_config.AddLine(
-    'map https://localhost http://localhost'
-)
+ts.Disk.remap_config.AddLine('map https://localhost http://localhost')
 
 tr = Test.AddTestRun("PUSH request is rejected when push_method_enabled is 0")
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = (
-    f'./push_request {obj_kilobytes} | nc localhost {ts.Variables.port}'
-)
+tr.Processes.Default.Command = (f'./push_request {obj_kilobytes} | nc localhost {ts.Variables.port}')
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "403 Access Denied",
-    "The PUSH request should have received a 403 response."
-)
+    "403 Access Denied", "The PUSH request should have received a 403 response.")

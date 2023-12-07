@@ -41,25 +41,24 @@ class DownCachedOriginServerTest:
         """Configure Traffic Server."""
         self._ts = Test.MakeATSProcess("ts", enable_cache=False)
 
-        self._ts.Disk.remap_config.AddLine(
-            f"map / http://resolve.this.com:{self._server.Variables.http_port}/"
-        )
+        self._ts.Disk.remap_config.AddLine(f"map / http://resolve.this.com:{self._server.Variables.http_port}/")
 
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'hostdb|dns|http|socket',
-            'proxy.config.http.connect_attempts_max_retries': 0,
-            'proxy.config.http.connect_attempts_rr_retries': 0,
-            'proxy.config.hostdb.fail.timeout': 10,
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.hostdb.ttl_mode': 1,
-            'proxy.config.hostdb.timeout': 2,
-            'proxy.config.hostdb.lookup_timeout': 2,
-            'proxy.config.http.transaction_no_activity_timeout_in': 2,
-            'proxy.config.http.connect_attempts_timeout': 2,
-            'proxy.config.hostdb.host_file.interval': 1,
-            'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'hostdb|dns|http|socket',
+                'proxy.config.http.connect_attempts_max_retries': 0,
+                'proxy.config.http.connect_attempts_rr_retries': 0,
+                'proxy.config.hostdb.fail.timeout': 10,
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.hostdb.ttl_mode': 1,
+                'proxy.config.hostdb.timeout': 2,
+                'proxy.config.hostdb.lookup_timeout': 2,
+                'proxy.config.http.transaction_no_activity_timeout_in': 2,
+                'proxy.config.http.connect_attempts_timeout': 2,
+                'proxy.config.hostdb.host_file.interval': 1,
+                'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
+            })
 
     # Even when the origin server is down, SM will return a hit-fresh domain from HostDB.
     # After request has failed, SM should mark the IP as down
@@ -70,10 +69,7 @@ class DownCachedOriginServerTest:
         tr.Processes.Default.StartBefore(self._ts)
 
         tr.AddVerifierClientProcess(
-            "client-1",
-            DownCachedOriginServerTest.replay_file,
-            http_ports=[self._ts.Variables.port],
-            other_args='--keys 1')
+            "client-1", DownCachedOriginServerTest.replay_file, http_ports=[self._ts.Variables.port], other_args='--keys 1')
 
     # After host has been marked down from previous test, HostDB should not return
     # the host as available and DNS lookup should fail.
@@ -81,18 +77,14 @@ class DownCachedOriginServerTest:
         tr = Test.AddTestRun()
 
         tr.AddVerifierClientProcess(
-            "client-2",
-            DownCachedOriginServerTest.replay_file,
-            http_ports=[self._ts.Variables.port],
-            other_args='--keys 2')
+            "client-2", DownCachedOriginServerTest.replay_file, http_ports=[self._ts.Variables.port], other_args='--keys 2')
 
     # Verify error log marking host down exists
     def _test_error_log(self):
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
             os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self._ts.Variables.LOGDIR, 'error.log')
-        )
+            os.path.join(self._ts.Variables.LOGDIR, 'error.log'))
 
         self._ts.Disk.error_log.Content = Testers.ContainsExpression("/dns/mark/down' marking down", "host should be marked down")
         self._ts.Disk.error_log.Content = Testers.ContainsExpression(

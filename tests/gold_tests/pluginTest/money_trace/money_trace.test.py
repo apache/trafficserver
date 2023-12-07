@@ -14,15 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
+
 Test.Summary = '''
 Test money_trace remap
 '''
 
 # Test description:
 
-Test.SkipUnless(
-    Condition.PluginExists('money_trace.so'),
-)
+Test.SkipUnless(Condition.PluginExists('money_trace.so'),)
 Test.ContinueOnFail = False
 Test.testName = "money_trace remap"
 
@@ -32,41 +31,26 @@ ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 # configure origin server
 server = Test.MakeOriginServer("server")
 
-req_chk = {"headers":
-           "GET / HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
-res_chk = {"headers":
-           "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_chk = {"headers": "GET / HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
-req_hdr = {"headers":
-           "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
-res_hdr = {"headers":
-           "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_hdr = {"headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+res_hdr = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", req_hdr, res_hdr)
 
-ts.Disk.remap_config.AddLines([
-    f"map http://none/ http://127.0.0.1:{server.Variables.Port}",
-    f"map http://basic/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so",
-    f"map http://header/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--header=mt",
-    f"map http://pregen/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--pregen-header=@pregen",
-    f"map http://pgh/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--header=mt @pparam=--pregen-header=@pregen",
-    f"map http://create/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true",
-    f"map http://cheader/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--header=mt",
-    f"map http://cpregen/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--pregen-header=@pregen",
-    f"map http://passthru/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--passthru=true",
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f"map http://none/ http://127.0.0.1:{server.Variables.Port}",
+        f"map http://basic/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so",
+        f"map http://header/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--header=mt",
+        f"map http://pregen/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--pregen-header=@pregen",
+        f"map http://pgh/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--header=mt @pparam=--pregen-header=@pregen",
+        f"map http://create/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true",
+        f"map http://cheader/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--header=mt",
+        f"map http://cpregen/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--pregen-header=@pregen",
+        f"map http://passthru/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--passthru=true",
+    ])
 
 # minimal configuration
 ts.Disk.records_config.update({
@@ -83,11 +67,9 @@ logging:
   logs:
     - filename: remap
       format: custom
-'''.split("\n")
-)
+'''.split("\n"))
 
-Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'remap.log'),
-               exists=True, content='gold/remap-log.gold')
+Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'remap.log'), exists=True, content='gold/remap-log.gold')
 
 curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"
 
@@ -220,6 +202,4 @@ for trace in trace_strings:
 tr = Test.AddTestRun()
 ps = tr.Processes.Default
 ps.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'remap.log')
-)
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'remap.log'))

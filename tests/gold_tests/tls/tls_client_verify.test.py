@@ -17,7 +17,6 @@ Test requiring certificate from user agent
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 Test.Summary = '''
 Test various options for requiring certificate from client for mutual authentication TLS
 '''
@@ -39,37 +38,35 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.client.certification_level': 2,
-    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.TLSv1_3': 0
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.client.certification_level': 2,
+        'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.TLSv1_3': 0
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # Scenario 1:  Default no client cert required.  cert required for bar.com
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bob.bar.com',
-    '  verify_client: NONE',
-    '- fqdn: "bob.com"',
-    '  verify_client: STRICT',
-    '- fqdn: bob.*.com',
-    '  verify_client: NONE',
-    '- fqdn: "*bar.com"',
-    '  verify_client: STRICT',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bob.bar.com',
+        '  verify_client: NONE',
+        '- fqdn: "bob.com"',
+        '  verify_client: STRICT',
+        '- fqdn: bob.*.com',
+        '  verify_client: NONE',
+        '- fqdn: "*bar.com"',
+        '  verify_client: STRICT',
+    ])
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -81,8 +78,7 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n")
-)
+'''.split("\n"))
 
 # to foo.com w/o client cert.  Should fail
 tr = Test.AddTestRun("Connect to foo.com without cert")
@@ -195,7 +191,6 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case12".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
-
 
 # Test that the fqdn's match completely.  bob.com should require client certificate. bob.com.com should not
 tr = Test.AddTestRun("Connect to bob.com without cert, should fail")

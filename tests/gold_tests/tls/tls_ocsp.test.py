@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Test tls server prefetched OCSP responses
 '''
@@ -40,25 +41,23 @@ ts.addSSLfile("ssl/server.ocsp.key")
 ts.addSSLfile("ssl/ocsp_response.der")
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
-)
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.ocsp.pem ssl_key_name=server.ocsp.key ssl_ocsp_name=ocsp_response.der'
-)
+    'dest_ip=* ssl_cert_name=server.ocsp.pem ssl_key_name=server.ocsp.key ssl_ocsp_name=ocsp_response.der')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.cert_chain.filename': 'ca.ocsp.pem',
-    # enable prefetched OCSP responses
-    'proxy.config.ssl.ocsp.response.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.ocsp.enabled': 1,
-    'proxy.config.exec_thread.autoconfig.scale': 1.0
-})
-
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.cert_chain.filename': 'ca.ocsp.pem',
+        # enable prefetched OCSP responses
+        'proxy.config.ssl.ocsp.response.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.ocsp.enabled': 1,
+        'proxy.config.exec_thread.autoconfig.scale': 1.0
+    })
 
 tr = Test.AddTestRun("Check OCSP response using curl")
 tr.Processes.Default.StartBefore(server)

@@ -43,22 +43,17 @@ block_bytes_2 = 5
 body = "lets go surfin now"
 bodylen = len(body)
 
-request_header = {"headers":
-                  "GET /path HTTP/1.1\r\n" +
-                  "Host: origin\r\n" +
-                  "\r\n",
-                  "timestamp": "1469733493.993",
-                  "body": "",
-                  }
+request_header = {
+    "headers": "GET /path HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header = {"headers":
-                   "HTTP/1.1 200 OK\r\n" +
-                   "Connection: close\r\n" +
-                   "Cache-Control: public, max-age=5\r\n" +
-                   "\r\n",
-                   "timestamp": "1469733493.993",
-                   "body": body,
-                   }
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: public, max-age=5\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body,
+}
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -67,56 +62,52 @@ for block_bytes in [block_bytes_1, block_bytes_2]:
     for i in range(bodylen // block_bytes + 1):
         b0 = i * block_bytes
         b1 = b0 + block_bytes - 1
-        req_header = {"headers":
-                      "GET /path HTTP/1.1\r\n" +
-                      "Host: *\r\n" +
-                      "Accept: */*\r\n" +
-                      f"Range: bytes={b0}-{b1}\r\n" +
-                      "\r\n",
-                      "timestamp": "1469733493.993",
-                      "body": ""
-                      }
+        req_header = {
+            "headers": "GET /path HTTP/1.1\r\n" + "Host: *\r\n" + "Accept: */*\r\n" + f"Range: bytes={b0}-{b1}\r\n" + "\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+        }
         if (b1 > bodylen - 1):
             b1 = bodylen - 1
-        resp_header = {"headers":
-                       "HTTP/1.1 206 Partial Content\r\n" +
-                       "Accept-Ranges: bytes\r\n" +
-                       "Cache-Control: public, max-age=5\r\n" +
-                       f"Content-Range: bytes {b0}-{b1}/{bodylen}\r\n" +
-                       "Connection: close\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": body[b0:b1 + 1]
-                       }
+        resp_header = {
+            "headers":
+                "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: public, max-age=5\r\n" +
+                f"Content-Range: bytes {b0}-{b1}/{bodylen}\r\n" + "Connection: close\r\n" + "\r\n",
+            "timestamp": "1469733493.993",
+            "body": body[b0:b1 + 1]
+        }
         server.addResponse("sessionlog.json", req_header, resp_header)
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 
-ts.Disk.remap_config.AddLines([
-    f'map http://sliceprefetchbytes1/ http://127.0.0.1:{server.Variables.Port}' +
-    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_1} @pparam=--prefetch-count=1 \\' +
-    ' @plugin=cache_range_requests.so',
-    f'map http://sliceprefetchbytes2/ http://127.0.0.1:{server.Variables.Port}' +
-    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_2} @pparam=--prefetch-count=3 \\' +
-    ' @plugin=cache_range_requests.so',
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f'map http://sliceprefetchbytes1/ http://127.0.0.1:{server.Variables.Port}' +
+        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_1} @pparam=--prefetch-count=1 \\' +
+        ' @plugin=cache_range_requests.so',
+        f'map http://sliceprefetchbytes2/ http://127.0.0.1:{server.Variables.Port}' +
+        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_2} @pparam=--prefetch-count=3 \\' +
+        ' @plugin=cache_range_requests.so',
+    ])
 
 ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.logging_yaml.AddLines([
-    'logging:',
-    '  formats:',
-    '  - name: cache',
-    '    format: "%<{Content-Range}psh> %<{X-Cache}psh>"',
-    '  logs:',
-    '    - filename: cache',
-    '      format: cache',
-    '      mode: ascii',
-])
+ts.Disk.logging_yaml.AddLines(
+    [
+        'logging:',
+        '  formats:',
+        '  - name: cache',
+        '    format: "%<{Content-Range}psh> %<{X-Cache}psh>"',
+        '  logs:',
+        '    - filename: cache',
+        '      format: cache',
+        '      mode: ascii',
+    ])
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug',
+    })
 
 # 0 Test - Full object slice (miss) with only block 14-20 prefetched in background, block bytes= 7
 tr = Test.AddTestRun("Full object slice: first block is miss, only block 14-20 prefetched")
@@ -185,9 +176,6 @@ tr.StillRunningAfter = ts
 cache_file = os.path.join(ts.Variables.LOGDIR, 'cache.log')
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun("Checking debug logs for background fetches")
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    cache_file
-)
+test_run.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + cache_file)
 ts.Disk.File(cache_file).Content = "gold/slice_prefetch.gold"
 test_run.Processes.Default.ReturnCode = 0

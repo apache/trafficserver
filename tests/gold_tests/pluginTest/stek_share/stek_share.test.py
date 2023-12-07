@@ -40,16 +40,8 @@ cert_path = os.path.join(Test.RunDirectory, 'self_signed.crt')
 key_path = os.path.join(Test.RunDirectory, 'self_signed.key')
 server_list_path = os.path.join(Test.RunDirectory, 'server_list.yaml')
 
-request_header1 = {
-    'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': ''
-}
-response_header1 = {
-    'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-    'timestamp': '1469733493.993',
-    'body': 'curl test'
-}
+request_header1 = {'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
+response_header1 = {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n', 'timestamp': '1469733493.993', 'body': 'curl test'}
 server.addResponse('sessionlog.json', request_header1, response_header1)
 
 stek_share_conf_path_1 = os.path.join(ts1.Variables.CONFIGDIR, 'stek_share_conf.yaml')
@@ -64,127 +56,202 @@ ts3.Disk.File(stek_share_conf_path_3, id="stek_share_conf_3", typename="ats:conf
 ts4.Disk.File(stek_share_conf_path_4, id="stek_share_conf_4", typename="ats:config")
 ts5.Disk.File(stek_share_conf_path_5, id="stek_share_conf_5", typename="ats:config")
 
-ts1.Disk.stek_share_conf_1.AddLines([
-    'server_id: 1',
-    'address: 127.0.0.1',
-    'port: 10001',
-    'asio_thread_pool_size: 4',
-    'heart_beat_interval: 100',
-    'election_timeout_lower_bound: 200',
-    'election_timeout_upper_bound: 400',
-    'reserved_log_items: 5',
-    'snapshot_distance: 5',
-    'client_req_timeout: 3000',  # this is in milliseconds
-    'key_update_interval: 3600',  # this is in seconds
-    'server_list_file: {0}'.format(server_list_path),
-    'root_cert_file: {0}'.format(cert_path),
-    'server_cert_file: {0}'.format(cert_path),
-    'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
-])
+ts1.Disk.stek_share_conf_1.AddLines(
+    [
+        'server_id: 1',
+        'address: 127.0.0.1',
+        'port: 10001',
+        'asio_thread_pool_size: 4',
+        'heart_beat_interval: 100',
+        'election_timeout_lower_bound: 200',
+        'election_timeout_upper_bound: 400',
+        'reserved_log_items: 5',
+        'snapshot_distance: 5',
+        'client_req_timeout: 3000',  # this is in milliseconds
+        'key_update_interval: 3600',  # this is in seconds
+        'server_list_file: {0}'.format(server_list_path),
+        'root_cert_file: {0}'.format(cert_path),
+        'server_cert_file: {0}'.format(cert_path),
+        'server_key_file: {0}'.format(key_path),
+        'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
+    ])
 
-ts2.Disk.stek_share_conf_2.AddLines([
-    'server_id: 2',
-    'address: 127.0.0.1',
-    'port: 10002',
-    'asio_thread_pool_size: 4',
-    'heart_beat_interval: 100',
-    'election_timeout_lower_bound: 200',
-    'election_timeout_upper_bound: 400',
-    'reserved_log_items: 5',
-    'snapshot_distance: 5',
-    'client_req_timeout: 3000',  # this is in milliseconds
-    'key_update_interval: 3600',  # this is in seconds
-    'server_list_file: {0}'.format(server_list_path),
-    'root_cert_file: {0}'.format(cert_path),
-    'server_cert_file: {0}'.format(cert_path),
-    'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
-])
+ts2.Disk.stek_share_conf_2.AddLines(
+    [
+        'server_id: 2',
+        'address: 127.0.0.1',
+        'port: 10002',
+        'asio_thread_pool_size: 4',
+        'heart_beat_interval: 100',
+        'election_timeout_lower_bound: 200',
+        'election_timeout_upper_bound: 400',
+        'reserved_log_items: 5',
+        'snapshot_distance: 5',
+        'client_req_timeout: 3000',  # this is in milliseconds
+        'key_update_interval: 3600',  # this is in seconds
+        'server_list_file: {0}'.format(server_list_path),
+        'root_cert_file: {0}'.format(cert_path),
+        'server_cert_file: {0}'.format(cert_path),
+        'server_key_file: {0}'.format(key_path),
+        'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
+    ])
 
-ts3.Disk.stek_share_conf_3.AddLines([
-    'server_id: 3',
-    'address: 127.0.0.1',
-    'port: 10003',
-    'asio_thread_pool_size: 4',
-    'heart_beat_interval: 100',
-    'election_timeout_lower_bound: 200',
-    'election_timeout_upper_bound: 400',
-    'reserved_log_items: 5',
-    'snapshot_distance: 5',
-    'client_req_timeout: 3000',  # this is in milliseconds
-    'key_update_interval: 3600',  # this is in seconds
-    'server_list_file: {0}'.format(server_list_path),
-    'root_cert_file: {0}'.format(cert_path),
-    'server_cert_file: {0}'.format(cert_path),
-    'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
-])
+ts3.Disk.stek_share_conf_3.AddLines(
+    [
+        'server_id: 3',
+        'address: 127.0.0.1',
+        'port: 10003',
+        'asio_thread_pool_size: 4',
+        'heart_beat_interval: 100',
+        'election_timeout_lower_bound: 200',
+        'election_timeout_upper_bound: 400',
+        'reserved_log_items: 5',
+        'snapshot_distance: 5',
+        'client_req_timeout: 3000',  # this is in milliseconds
+        'key_update_interval: 3600',  # this is in seconds
+        'server_list_file: {0}'.format(server_list_path),
+        'root_cert_file: {0}'.format(cert_path),
+        'server_cert_file: {0}'.format(cert_path),
+        'server_key_file: {0}'.format(key_path),
+        'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
+    ])
 
-ts4.Disk.stek_share_conf_4.AddLines([
-    'server_id: 4',
-    'address: 127.0.0.1',
-    'port: 10004',
-    'asio_thread_pool_size: 4',
-    'heart_beat_interval: 100',
-    'election_timeout_lower_bound: 200',
-    'election_timeout_upper_bound: 400',
-    'reserved_log_items: 5',
-    'snapshot_distance: 5',
-    'client_req_timeout: 3000',  # this is in milliseconds
-    'key_update_interval: 3600',  # this is in seconds
-    'server_list_file: {0}'.format(server_list_path),
-    'root_cert_file: {0}'.format(cert_path),
-    'server_cert_file: {0}'.format(cert_path),
-    'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
-])
+ts4.Disk.stek_share_conf_4.AddLines(
+    [
+        'server_id: 4',
+        'address: 127.0.0.1',
+        'port: 10004',
+        'asio_thread_pool_size: 4',
+        'heart_beat_interval: 100',
+        'election_timeout_lower_bound: 200',
+        'election_timeout_upper_bound: 400',
+        'reserved_log_items: 5',
+        'snapshot_distance: 5',
+        'client_req_timeout: 3000',  # this is in milliseconds
+        'key_update_interval: 3600',  # this is in seconds
+        'server_list_file: {0}'.format(server_list_path),
+        'root_cert_file: {0}'.format(cert_path),
+        'server_cert_file: {0}'.format(cert_path),
+        'server_key_file: {0}'.format(key_path),
+        'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
+    ])
 
-ts5.Disk.stek_share_conf_5.AddLines([
-    'server_id: 5',
-    'address: 127.0.0.1',
-    'port: 10005',
-    'asio_thread_pool_size: 4',
-    'heart_beat_interval: 100',
-    'election_timeout_lower_bound: 200',
-    'election_timeout_upper_bound: 400',
-    'reserved_log_items: 5',
-    'snapshot_distance: 5',
-    'client_req_timeout: 3000',  # this is in milliseconds
-    'key_update_interval: 3600',  # this is in seconds
-    'server_list_file: {0}'.format(server_list_path),
-    'root_cert_file: {0}'.format(cert_path),
-    'server_cert_file: {0}'.format(cert_path),
-    'server_key_file: {0}'.format(key_path),
-    'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share'
-])
+ts5.Disk.stek_share_conf_5.AddLines(
+    [
+        'server_id: 5',
+        'address: 127.0.0.1',
+        'port: 10005',
+        'asio_thread_pool_size: 4',
+        'heart_beat_interval: 100',
+        'election_timeout_lower_bound: 200',
+        'election_timeout_upper_bound: 400',
+        'reserved_log_items: 5',
+        'snapshot_distance: 5',
+        'client_req_timeout: 3000',  # this is in milliseconds
+        'key_update_interval: 3600',  # this is in seconds
+        'server_list_file: {0}'.format(server_list_path),
+        'root_cert_file: {0}'.format(cert_path),
+        'server_cert_file: {0}'.format(cert_path),
+        'server_key_file: {0}'.format(key_path),
+        'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
+    ])
 
-ts1.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':
-                                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'})
+ts1.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'stek_share',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 1024,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 16,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 ts1.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_1))
 ts1.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=self_signed.crt ssl_key_name=self_signed.key')
 ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts2.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':
-                                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'})
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'stek_share',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 1024,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 16,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 ts2.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_2))
 ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=self_signed.crt ssl_key_name=self_signed.key')
 ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts3.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':
-                                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'})
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'stek_share',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 1024,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 16,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 ts3.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_3))
 ts3.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=self_signed.crt ssl_key_name=self_signed.key')
 ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts4.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':
-                                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'})
+ts4.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'stek_share',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 1024,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 16,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 ts4.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_4))
 ts4.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=self_signed.crt ssl_key_name=self_signed.key')
 ts4.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts5.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'stek_share', 'proxy.config.exec_thread.autoconfig': 0, 'proxy.config.exec_thread.limit': 4, 'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory), 'proxy.config.ssl.session_cache': 2, 'proxy.config.ssl.session_cache.size': 1024, 'proxy.config.ssl.session_cache.timeout': 7200, 'proxy.config.ssl.session_cache.num_buckets': 16, 'proxy.config.ssl.server.session_ticket.enable': 1, 'proxy.config.ssl.server.cipher_suite':
-                                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'})
+ts5.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'stek_share',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 1024,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 16,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
 ts5.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_5))
 ts5.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=self_signed.crt ssl_key_name=self_signed.key')
 ts5.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))

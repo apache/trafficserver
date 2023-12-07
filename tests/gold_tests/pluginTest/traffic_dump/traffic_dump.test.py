@@ -24,18 +24,13 @@ Test.Summary = '''
 Verify traffic_dump functionality.
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('traffic_dump.so'),
-)
+Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
 
 schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 
 # Configure the origin server.
 replay_file = "replay/traffic_dump.yaml"
-server = Test.MakeVerifierServerProcess(
-    "server", replay_file,
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
-
+server = Test.MakeVerifierServerProcess("server", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts", command='traffic_manager', enable_tls=True)
@@ -48,39 +43,36 @@ ts.addSSLfile("ssl/signer.pem")
 ts.Setup.Copy("ssl/signed-foo.pem")
 ts.Setup.Copy("ssl/signed-foo.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'traffic_dump|http',
-    'proxy.config.http.insert_age_in_response': 0,
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'traffic_dump|http',
+        'proxy.config.http.insert_age_in_response': 0,
+        'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.http.host_sni_policy': 2,
+        'proxy.config.ssl.TLSv1_3': 0,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.http.connect_ports': f"{server.Variables.http_port}",
+    })
 
-    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.http.host_sni_policy': 2,
-    'proxy.config.ssl.TLSv1_3': 0,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-    'proxy.config.http.connect_ports': f"{server.Variables.http_port}",
-})
-
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-
-ts.Disk.remap_config.AddLines([
-    f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}',
-    f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}',
-    f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
-    f'map / http://127.0.0.1:{server.Variables.http_port}',
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}',
+        f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}',
+        f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
+        f'map / http://127.0.0.1:{server.Variables.http_port}',
+    ])
 
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
     f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 1000000000 '
-    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'
-)
+    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"')
 # Configure logging of transactions. This is helpful for the cache test below.
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -95,20 +87,15 @@ logging:
 
 # Set up trafficserver expectations.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "loading plugin.*traffic_dump.so",
-    "Verify the traffic_dump plugin got loaded.")
+    "loading plugin.*traffic_dump.so", "Verify the traffic_dump plugin got loaded.")
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    f"Initialized with log directory: {replay_dir}",
-    "Verify traffic_dump initialized with the configured directory.")
+    f"Initialized with log directory: {replay_dir}", "Verify traffic_dump initialized with the configured directory.")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size of 1 bytes and disk limit of 1000000000 bytes",
     "Verify traffic_dump initialized with the configured disk limit.")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Finish a session with log file of.*bytes",
-    "Verify traffic_dump sees the end of sessions and accounts for it.")
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Dumping body bytes: false",
-    "Verify that dumping body bytes is enabled.")
+    "Finish a session with log file of.*bytes", "Verify traffic_dump sees the end of sessions and accounts for it.")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("Dumping body bytes: false", "Verify that dumping body bytes is enabled.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -151,9 +138,12 @@ ts.Disk.File(replay_file_session_14, exists=False)
 # Run our test traffic.
 tr = Test.AddTestRun("Run the test traffic.")
 tr.AddVerifierClientProcess(
-    "client", replay_file, http_ports=[ts.Variables.port],
+    "client",
+    replay_file,
+    http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    ssl_cert="ssl/server_combined.pem",
+    ca_cert="ssl/signer.pem",
     other_args='--thread-limit 1')
 
 tr.Processes.Default.StartBefore(server)
@@ -348,9 +338,12 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Run some more test traffic with the restricted disk limit.")
 tr.AddVerifierClientProcess(
-    "client-2", replay_file, http_ports=[ts.Variables.port],
+    "client-2",
+    replay_file,
+    http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    ssl_cert="ssl/server_combined.pem",
+    ca_cert="ssl/signer.pem",
     other_args='--keys 1')
 
 # Since the limit is zero, we should not see any new replay file created.
@@ -377,9 +370,12 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Run some more test traffic with no disk limit.")
 tr.AddVerifierClientProcess(
-    "client-3", replay_file, http_ports=[ts.Variables.port],
+    "client-3",
+    replay_file,
+    http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    ssl_cert="ssl/server_combined.pem",
+    ca_cert="ssl/signer.pem",
     other_args='--keys 1')
 
 # Since the limit is zero, we should not see any new replay file created.
@@ -409,9 +405,12 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Run test traffic with newly restricted disk limit.")
 tr.AddVerifierClientProcess(
-    "client-4", replay_file, http_ports=[ts.Variables.port],
+    "client-4",
+    replay_file,
+    http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    ssl_cert="ssl/server_combined.pem",
+    ca_cert="ssl/signer.pem",
     other_args='--keys 1')
 
 # Since the limit is zero, we should not see any new replay file created.

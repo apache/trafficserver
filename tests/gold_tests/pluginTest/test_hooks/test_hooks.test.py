@@ -16,20 +16,16 @@
 
 import os
 
-
 Test.Summary = '''
 Test TS API Hooks.
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'),)
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")
 
-request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -43,48 +39,39 @@ Test.Env["OUTPUT_FILE"] = log_path
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.remap_required': 0,
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|test_hooks',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.remap_required': 0,
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|test_hooks',
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
 
-ts.Disk.remap_config.AddLine(
-    "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "map https://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine("map http://one http://127.0.0.1:{0}".format(server.Variables.Port))
+ts.Disk.remap_config.AddLine("map https://one http://127.0.0.1:{0}".format(server.Variables.Port))
 
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port)
-)
+tr.Processes.Default.Command = ('curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port)
-)
+    'curl --verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port)
-)
+    'curl --verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 # The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these

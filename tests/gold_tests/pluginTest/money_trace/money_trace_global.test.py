@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Test money_trace global
 '''
@@ -23,8 +24,7 @@ Test money_trace global
 
 Test.SkipUnless(
     #    Condition.PluginExists('xdebug.so'),
-    Condition.PluginExists('money_trace.so'),
-)
+    Condition.PluginExists('money_trace.so'),)
 Test.ContinueOnFail = False
 Test.testName = "money_trace global"
 
@@ -34,28 +34,12 @@ ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 # configure origin server
 server = Test.MakeOriginServer("server")
 
-req_chk = {"headers":
-           "GET / HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
-res_chk = {"headers":
-           "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_chk = {"headers": "GET / HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
-req_hdr = {"headers":
-           "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
-res_hdr = {"headers":
-           "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_hdr = {"headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+res_hdr = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", req_hdr, res_hdr)
 
 ts.Disk.remap_config.AddLines([
@@ -80,11 +64,9 @@ logging:
   logs:
     - filename: global
       format: custom
-'''.split("\n")
-)
+'''.split("\n"))
 
-Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'global.log'),
-               exists=True, content='gold/global-log.gold')
+Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'global.log'), exists=True, content='gold/global-log.gold')
 
 curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"  # -H 'X-Debug: Probe' "
 
@@ -120,7 +102,5 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun()
 ps = tr.Processes.Default
 ps.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'global.log')
-)
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'global.log'))
 #ps.ReturnCode = 0

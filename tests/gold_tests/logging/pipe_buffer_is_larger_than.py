@@ -26,16 +26,11 @@ F_GETPIPE_SZ = 1032  # Linux 2.6.35+
 
 
 def parse_args():
-    parser = parser = argparse.ArgumentParser(
-        description='Verify that a FIFO has a buffer of at least a certain size')
+    parser = parser = argparse.ArgumentParser(description='Verify that a FIFO has a buffer of at least a certain size')
 
-    parser.add_argument(
-        'pipe_name',
-        help='The pipe name upon which to verify the size is large enough.')
+    parser.add_argument('pipe_name', help='The pipe name upon which to verify the size is large enough.')
 
-    parser.add_argument(
-        'minimum_buffer_size',
-        help='The minimu buffer size for the pipe to expect.')
+    parser.add_argument('minimum_buffer_size', help='The minimu buffer size for the pipe to expect.')
 
     return parser.parse_args()
 
@@ -46,14 +41,10 @@ def test_fifo(fifo, minimum_buffer_size):
         buffer_size = fcntl.fcntl(fifo_fd, F_GETPIPE_SZ)
 
         if buffer_size >= int(minimum_buffer_size):
-            print("Success. Size is: {} which is larger than: {}".format(
-                buffer_size,
-                minimum_buffer_size))
+            print("Success. Size is: {} which is larger than: {}".format(buffer_size, minimum_buffer_size))
             return 0
         else:
-            print("Fail. Size is: {} which is smaller than: {}".format(
-                buffer_size,
-                minimum_buffer_size))
+            print("Fail. Size is: {} which is smaller than: {}".format(buffer_size, minimum_buffer_size))
             return 1
     except Exception as e:
         print("Unable to open fifo, error: {}".format(str(e)))

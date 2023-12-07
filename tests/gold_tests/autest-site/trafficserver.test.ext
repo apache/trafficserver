@@ -28,20 +28,23 @@ def make_id(s):
 # A mapping from log type to the log name. 'stdout' and 'stderr' are handled
 # specially and are used to indicate the stdout and stderr streams,
 # respectively.
-default_log_data = {
-    'diags': 'diags.log',
-    'error': 'error.log',
-    'manager': 'manager.log'
-}
+default_log_data = {'diags': 'diags.log', 'error': 'error.log', 'manager': 'manager.log'}
 
 # 'block_for_debug', if True, causes traffic_server to run with the --block option enabled, and effectively
 # disables timeouts that could be triggered by running traffic_server under a debugger.
 
 
-def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
-                   enable_tls=False, enable_cache=True, enable_quic=False,
-                   block_for_debug=False, log_data=default_log_data,
-                   use_traffic_out=True):
+def MakeATSProcess(
+        obj,
+        name,
+        command='traffic_server',
+        select_ports=True,
+        enable_tls=False,
+        enable_cache=True,
+        enable_quic=False,
+        block_for_debug=False,
+        log_data=default_log_data,
+        use_traffic_out=True):
     #####################################
     # common locations
 
@@ -141,8 +144,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
 
     p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR'] = template_dir
     p.Variables.BODY_FACTORY_TEMPLATE_DIR = template_dir
-    p.Setup.Copy(
-        os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
+    p.Setup.Copy(os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
 
     #########################################################
     # setup cache directory
@@ -228,10 +230,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         tmpname = os.path.join(log_dir, fname)
         p.Disk.File(tmpname, id='diags_log')
     # add this test back once we have network namespaces working again
-    p.Disk.diags_log.Content = Testers.ExcludesExpression(
-        "ERROR:", f"Diags log file {fname} should not contain errors")
-    p.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "FATAL:", f"Diags log file {fname} should not contain errors")
+    p.Disk.diags_log.Content = Testers.ExcludesExpression("ERROR:", f"Diags log file {fname} should not contain errors")
+    p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", f"Diags log file {fname} should not contain errors")
     p.Disk.diags_log.Content += Testers.ExcludesExpression(
         "Unrecognized configuration value",
         f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
@@ -353,16 +353,15 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         # rely upon the cache will not function correctly if ATS starts
         # processing traffic before the cache is ready. Thus we set the
         # wait_for_cache configuration.
-        p.Disk.records_config.update({
-            # Do not accept connections from clients until cache subsystem is
-            # operational.
-            'proxy.config.http.wait_for_cache': 1,
-        })
+        p.Disk.records_config.update(
+            {
+                # Do not accept connections from clients until cache subsystem is
+                # operational.
+                'proxy.config.http.wait_for_cache': 1,
+            })
     else:
         # The user wants the cache to be disabled.
-        p.Disk.records_config.update({
-            'proxy.config.http.cache.http': 0
-        })
+        p.Disk.records_config.update({'proxy.config.http.cache.http': 0})
 
     if enable_quic:
         p.Disk.records_config.update({
@@ -387,11 +386,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
             'proxy.config.http.server_ports': port_str,
         })
 
-    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
-        p.Variables.manager_port)
+    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(p.Variables.manager_port)
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
-    p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
-        p.Variables.admin_port)  # support pre ATS 6.x
+    p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(p.Variables.admin_port)  # support pre ATS 6.x
 
     if 'traffic_manager' in command:
         p.ReturnCode = 2
@@ -419,23 +416,8 @@ class Config(File):
     Class to represent a config file
     '''
 
-    def __init__(self,
-                 runable,
-                 name,
-                 exists=None,
-                 size=None,
-                 content_tester=None,
-                 execute=False,
-                 runtime=True,
-                 content=None):
-        super(Config, self).__init__(
-            runable,
-            name,
-            exists=None,
-            size=None,
-            content_tester=None,
-            execute=False,
-            runtime=True)
+    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True, content=None):
+        super(Config, self).__init__(runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True)
 
         self.content = content
         self._added = False
@@ -448,8 +430,7 @@ class Config(File):
         '''
         Write contents to disk
         '''
-        host.WriteVerbosef('ats-config-file', "Writing out file {0}",
-                           self.Name)
+        host.WriteVerbosef('ats-config-file', "Writing out file {0}", self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
@@ -484,22 +465,8 @@ class RecordsConfig(Config, dict):
 
     line_template = 'CONFIG {name} {kind} {val}\n'
 
-    def __init__(self,
-                 runable,
-                 name,
-                 exists=None,
-                 size=None,
-                 content_tester=None,
-                 execute=False,
-                 runtime=True):
-        super(RecordsConfig, self).__init__(
-            runable,
-            name,
-            exists=None,
-            size=None,
-            content_tester=None,
-            execute=False,
-            runtime=True)
+    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True):
+        super(RecordsConfig, self).__init__(runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True)
         self.WriteCustomOn(self._do_write)
 
     def _do_write(self, name):
@@ -507,15 +474,8 @@ class RecordsConfig(Config, dict):
         if len(self) > 0:
             with open(name, 'w') as f:
                 for name, val in self.items():
-                    f.write(
-                        self.line_template.format(
-                            name=name,
-                            kind=self.reverse_kind_map[type(val)],
-                            val=val)
-                    )
-        return (True,
-                "Writing config file {0}".format(os.path.split(self.Name)[-1]),
-                "Success")
+                    f.write(self.line_template.format(name=name, kind=self.reverse_kind_map[type(val)], val=val))
+        return (True, "Writing config file {0}".format(os.path.split(self.Name)[-1]), "Success")
 
 
 ##########################################################################

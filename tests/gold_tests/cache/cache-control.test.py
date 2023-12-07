@@ -30,32 +30,46 @@ server = Test.MakeOriginServer("server")
 # **testname is required**
 testName = ""
 request_header1 = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header1 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "xxx"}
-request_header2 = {"headers": "GET /no_cache_control HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "the flinstones"}
-request_header3 = {"headers": "GET /max_age_10sec HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-response_header3 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": "yabadabadoo"}
+response_header1 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx"
+}
+request_header2 = {
+    "headers": "GET /no_cache_control HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header2 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "the flinstones"
+}
+request_header3 = {
+    "headers": "GET /max_age_10sec HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header3 = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "yabadabadoo"
+}
 server.addResponse("sessionlog.json", request_header1, response_header1)
 server.addResponse("sessionlog.json", request_header2, response_header2)
 server.addResponse("sessionlog.json", request_header3, response_header3)
 
 # ATS Configuration
 ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.insert_age_in_response': 0,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.response_via_str': 3,
+        'proxy.config.http.insert_age_in_response': 0,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test 1 - 200 response and cache fill
 tr = Test.AddTestRun()
@@ -114,18 +128,17 @@ tr.StillRunningAfter = ts
 ts = Test.MakeATSProcess("ts-for-proxy-verifier")
 replay_file = "replay/cache-control-max-age.replay.yaml"
 server = Test.MakeVerifierServerProcess("proxy-verifier-server", replay_file)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.insert_age_in_response': 0,
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
 
-    # Disable ignoring max-age in the client request so we can test that
-    # behavior too.
-    'proxy.config.http.cache.ignore_client_cc_max_age': 0,
-})
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
-)
+        # Disable ignoring max-age in the client request so we can test that
+        # behavior too.
+        'proxy.config.http.cache.ignore_client_cc_max_age': 0,
+    })
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
 tr = Test.AddTestRun("Verify correct max-age cache-control behavior.")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

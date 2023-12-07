@@ -20,6 +20,7 @@ Test.Summary = 'Test Split DNS'
 
 
 class SplitDNSTest:
+
     def __init__(self):
         self.setupDNSServer()
         self.setupOriginServer()
@@ -31,24 +32,21 @@ class SplitDNSTest:
 
     def setupOriginServer(self):
         self.origin_server = Test.MakeOriginServer("origin_server")
-        self.origin_server.addResponse("sessionlog.json",
-                                       {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
-                                       {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"})
+        self.origin_server.addResponse(
+            "sessionlog.json", {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"})
 
     def setupTS(self):
-        self.ts = Test.MakeATSProcess(
-            "ts", select_ports=True, enable_cache=False)
-        self.ts.Disk.records_config.update({
-            "proxy.config.dns.splitDNS.enabled": 1,
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "dns|splitdns",
-        })
-        self.ts.Disk.splitdns_config.AddLine(
-            f"dest_domain=foo.ts.a.o named=127.0.0.1:{self.dns.Variables.Port}")
-        self.ts.Disk.remap_config.AddLine(
-            f"map /foo/ http://foo.ts.a.o:{self.origin_server.Variables.Port}/")
-        self.ts.Disk.remap_config.AddLine(
-            f"map /bar/ http://127.0.0.1:{self.origin_server.Variables.Port}/")
+        self.ts = Test.MakeATSProcess("ts", select_ports=True, enable_cache=False)
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.dns.splitDNS.enabled": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "dns|splitdns",
+            })
+        self.ts.Disk.splitdns_config.AddLine(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self.dns.Variables.Port}")
+        self.ts.Disk.remap_config.AddLine(f"map /foo/ http://foo.ts.a.o:{self.origin_server.Variables.Port}/")
+        self.ts.Disk.remap_config.AddLine(f"map /bar/ http://127.0.0.1:{self.origin_server.Variables.Port}/")
 
     def addTestCase0(self):
         tr = Test.AddTestRun()

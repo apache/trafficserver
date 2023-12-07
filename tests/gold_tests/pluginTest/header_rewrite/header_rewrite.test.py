@@ -38,15 +38,9 @@ ts.Disk.records_config.update({
 })
 # The following rule changes the status code returned from origin server to 303
 ts.Setup.CopyAs('rules/rule.conf', Test.RunDirectory)
-ts.Disk.plugin_config.AddLine(
-    'header_rewrite.so {0}/rule.conf'.format(Test.RunDirectory)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule.conf'.format(Test.RunDirectory))
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # call localhost straight
 tr = Test.AddTestRun()

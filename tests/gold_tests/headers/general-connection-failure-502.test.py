@@ -28,9 +28,7 @@ ts = Test.MakeATSProcess("ts")
 HOST = 'www.connectfail502.test'
 server = Test.MakeOriginServer("server", ssl=False)  # Reserves a port across autest.
 
-ts.Disk.remap_config.AddLine(
-    'map http://{host} http://{ip}:{uport}'.format(host=HOST, ip='127.0.0.1', uport=server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://{host} http://{ip}:{uport}'.format(host=HOST, ip='127.0.0.1', uport=server.Variables.Port))
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
 

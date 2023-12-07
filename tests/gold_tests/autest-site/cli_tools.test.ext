@@ -17,7 +17,6 @@ Tools to help with TestRun commands
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 # allows the same command to be repeatedly run in parallel.
 #
 # example usage:
@@ -31,25 +30,18 @@ Tools to help with TestRun commands
 #
 # Note that by default, the Default Process is created in this function.
 
+
 def spawn_commands(self, cmdstr, count, retcode=0, use_default=True):
     ret = []
 
     if use_default:
         count = int(count) - 1
     for cnt in range(0, count):
-        ret.append(
-            self.Processes.Process(
-                name="cmdline-{num}".format(num=cnt),
-                cmdstr=cmdstr,
-                returncode=retcode
-            )
-        )
+        ret.append(self.Processes.Process(name="cmdline-{num}".format(num=cnt), cmdstr=cmdstr, returncode=retcode))
     if use_default:
         self.Processes.Default.Command = cmdstr
         self.Processes.Default.ReturnCode = retcode
-        self.Processes.Default.StartBefore(
-            *ret
-        )
+        self.Processes.Default.StartBefore(*ret)
     return ret
 
 

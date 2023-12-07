@@ -25,39 +25,36 @@ Verify that request following a ill-formed request is not processed
 Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts", enable_cache=True)
 Test.ContinueOnFail = True
-ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
-                               'proxy.config.diags.debug.enabled': 0,
-                               'proxy.config.http.strict_uri_parsing': 1
-                               })
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.http.strict_uri_parsing': 1
+    })
 
 ts2 = Test.MakeATSProcess("ts2", enable_cache=True)
 
-ts2.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
-                                'proxy.config.diags.debug.enabled': 0,
-                                'proxy.config.http.strict_uri_parsing': 2
-                                })
-
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.http.strict_uri_parsing': 2
+    })
 
 server = Test.MakeOriginServer("server")
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1000\r\n\r\n",
+    "headers":
+        "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1000\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts2.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts2.Disk.remap_config.AddLine(
-    'map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts2.Disk.remap_config.AddLine('map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 trace_out = Test.Disk.File("trace_curl.txt")
 
@@ -110,7 +107,6 @@ tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ncontent-l
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_header.gold'
 
-
 # TRACE request with a body
 tr = Test.AddTestRun("Trace request with a body")
 tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost: bob\r\nContent-length:2\r\n\r\nokGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
@@ -136,8 +132,7 @@ tr = Test.AddTestRun("Trace request via curl")
 tr.Processes.Default.Command = 'curl -v --http1.1 -X TRACE -k http://127.0.0.1:{}/bar'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    r"HTTP/1.1 501 Unsupported method \('TRACE'\)",
-    "microserver does not support TRACE")
+    r"HTTP/1.1 501 Unsupported method \('TRACE'\)", "microserver does not support TRACE")
 
 # Methods are case sensitive. Verify that "gET" is not confused with "GET".
 tr = Test.AddTestRun("mixed case method")

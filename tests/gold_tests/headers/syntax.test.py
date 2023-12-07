@@ -33,9 +33,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Test 0 - 200 Response
 tr = Test.AddTestRun()

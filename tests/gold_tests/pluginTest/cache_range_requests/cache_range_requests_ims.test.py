@@ -41,60 +41,43 @@ ts = Test.MakeATSProcess("ts", command="traffic_server")
 server = Test.MakeOriginServer("server")
 
 # default root
-req_chk = {"headers":
-           "GET / HTTP/1.1\r\n" +
-           "Host: www.example.com\r\n" +
-           "uuid: none\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+req_chk = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_chk = {"headers":
-           "HTTP/1.1 200 OK\r\n" +
-           "Connection: close\r\n" +
-           "\r\n",
-           "timestamp": "1469733493.993",
-           "body": ""
-           }
+res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
 body = "lets go surfin now"
 bodylen = len(body)
 
-req_full = {"headers":
-            "GET /path HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "Range: bytes=0-\r\n" +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+req_full = {
+    "headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
-res_full = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            "Cache-Control: max-age=500\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
-            "Connection: close\r\n" +
-            'Etag: "772102f4-56f4bc1e6d417"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": body
-            }
+res_full = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
+        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body
+}
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
 # cache range requests plugin remap
-ts.Disk.remap_config.AddLines([
-    f'map http://ims http://127.0.0.1:{server.Variables.Port}' +
-    ' @plugin=cache_range_requests.so @pparam=--consider-ims',
-    f'map http://imsheader http://127.0.0.1:{server.Variables.Port}' +
-    ' @plugin=cache_range_requests.so @pparam=--consider-ims' +
-    ' @pparam=--ims-header=CrrIms',
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f'map http://ims http://127.0.0.1:{server.Variables.Port}' + ' @plugin=cache_range_requests.so @pparam=--consider-ims',
+        f'map http://imsheader http://127.0.0.1:{server.Variables.Port}' +
+        ' @plugin=cache_range_requests.so @pparam=--consider-ims' + ' @pparam=--ims-header=CrrIms',
+    ])
 
 # cache debug
 ts.Disk.plugin_config.AddLine('xdebug.so')
@@ -116,7 +99,6 @@ ps.Command = curl_and_args + ' http://ims/path -r 0-'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
-
 
 # test inner range
 # 1 Test - Fetch range into cache

@@ -29,24 +29,24 @@ ts = Test.MakeATSProcess("ts")
 
 # Setup some config file for this server. Note that setting wait_for_cache to 3
 # will intentionally override the value set in MakeATSProcess.
-ts.Disk.records_config.update({
-    'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
-    'proxy.config.http.cache.generation': -1,  # Start with cache turned off
-    'proxy.config.config_update_interval_ms': 1,
-    'proxy.config.http.wait_for_cache': 3,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
+        'proxy.config.http.cache.generation': -1,  # Start with cache turned off
+        'proxy.config.config_update_interval_ms': 1,
+        'proxy.config.http.wait_for_cache': 3,
+    })
 ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.remap_config.AddLines([
-    'map /default/ http://127.0.0.1/ @plugin=generator.so',
-    # line 2
-    'map /generation1/ http://127.0.0.1/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=1' +
-    ' @plugin=generator.so',
-    # line 3
-    'map /generation2/ http://127.0.0.1/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=2' +
-    ' @plugin=generator.so'
-])
+ts.Disk.remap_config.AddLines(
+    [
+        'map /default/ http://127.0.0.1/ @plugin=generator.so',
+        # line 2
+        'map /generation1/ http://127.0.0.1/' + ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=1' +
+        ' @plugin=generator.so',
+        # line 3
+        'map /generation2/ http://127.0.0.1/' + ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=2' +
+        ' @plugin=generator.so',
+    ])
 
 objectid = uuid.uuid4()
 # first test is a miss for default

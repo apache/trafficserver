@@ -22,44 +22,33 @@ import re
 
 
 def HasOpenSSLVersion(self, version):
-    output = subprocess.check_output(
-        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
-    )
+    output = subprocess.check_output(os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True)
     json_data = output.decode('utf-8')
     openssl_str = json.loads(json_data)['openssl_str']
     exe_ver = re.search(r'\d\.\d\.\d', openssl_str).group(0)
     if exe_ver == '':
         raise ValueError("Error determining version of OpenSSL library needed by traffic_server executable")
-    return self.Condition(
-        lambda: exe_ver >= version,
-        "OpenSSL library version is " + exe_ver + ", must be at least " + version
-    )
+    return self.Condition(lambda: exe_ver >= version, "OpenSSL library version is " + exe_ver + ", must be at least " + version)
 
 
 def IsBoringSSL(self):
-    output = subprocess.check_output(
-        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
-    )
+    output = subprocess.check_output(os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True)
     json_data = output.decode('utf-8')
     openssl_str = json.loads(json_data)['openssl_str']
     return self.Condition(
         # OpenSSL 1.1.1 (compatible; BoringSSL)
         lambda: "compatible; BoringSSL" in openssl_str,
-        "SSL library is not BoringSSL"
-    )
+        "SSL library is not BoringSSL")
 
 
 def IsOpenSSL(self):
-    output = subprocess.check_output(
-        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
-    )
+    output = subprocess.check_output(os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True)
     json_data = output.decode('utf-8')
     openssl_str = json.loads(json_data)['openssl_str']
     return self.Condition(
         # OpenSSL 1.1.1k  25 Mar 2021
         lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
-        "SSL library is not OpenSSL"
-    )
+        "SSL library is not OpenSSL")
 
 
 def HasCurlVersion(self, version):
@@ -87,14 +76,11 @@ def HasCurlFeature(self, feature):
                         return True
         return False
 
-    return self.CheckOutput(
-        ['curl', '--version'],
-        default,
-        "Curl needs to support feature: {feature}".format(feature=feature)
-    )
+    return self.CheckOutput(['curl', '--version'], default, "Curl needs to support feature: {feature}".format(feature=feature))
 
 
 def HasCurlOption(self, option):
+
     def default(output):
         tag = option.lower()
         for line in output.splitlines():
@@ -105,21 +91,15 @@ def HasCurlOption(self, option):
                     return True
         return False
 
-    return self.CheckOutput(
-        ['curl', '--help', 'all'],
-        default,
-        "Curl needs to support option: {option}".format(option=option)
-    )
+    return self.CheckOutput(['curl', '--help', 'all'], default, "Curl needs to support option: {option}".format(option=option))
 
 
 def HasATSFeature(self, feature):
 
     val = self.Variables.get(feature, None)
 
-    return self.Condition(
-        lambda: val,
-        "ATS feature not enabled: {feature}".format(feature=feature)
-    )
+    return self.Condition(lambda: val, "ATS feature not enabled: {feature}".format(feature=feature))
+
 
 # test if a plugin exists in the libexec folder
 

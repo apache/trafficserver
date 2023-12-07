@@ -29,87 +29,108 @@ Test.ContinueOnFail = True
 # lookup_key is to make unique response in origin for header "UID" that will pass in ATS request
 server = Test.MakeOriginServer("server", lookup_key="{%UID}")
 # Initial request
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\nUID: Fill\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1\r\n\r\n",
+request_header = {
+    "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\nUID: Fill\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": ""
+}
+response_header = {
+    "headers":
+        "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 # IMS revalidation request
 request_IMS_header = {
     "headers": "GET / HTTP/1.1\r\nUID: IMS\r\nIf-Modified-Since: Tue, 08 May 2018 15:49:41 GMT\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""}
-response_IMS_header = {"headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n",
-                       "timestamp": "1469733493.993", "body": None}
+    "body": ""
+}
+response_IMS_header = {
+    "headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": None
+}
 server.addResponse("sessionlog.json", request_IMS_header, response_IMS_header)
 
 # EtagFill
-request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagFill\r\n\r\n",
-                           "timestamp": "1469733493.993", "body": None}
+request_etagfill_header = {
+    "headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagFill\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": None
+}
 response_etagfill_header = {
     "headers": "HTTP/1.1 200 OK\r\nETag: myetag\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"}
+    "body": "xxx"
+}
 server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill_header)
 # INM revalidation
-request_INM_header = {"headers": "GET /etag HTTP/1.1\r\nUID: INM\r\nIf-None-Match: myetag\r\nHost: www.example.com\r\n\r\n",
-                      "timestamp": "1469733493.993", "body": None}
+request_INM_header = {
+    "headers": "GET /etag HTTP/1.1\r\nUID: INM\r\nIf-None-Match: myetag\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": None
+}
 response_INM_header = {
     "headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nETag: myetag\r\nCache-Control: max-age=1\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": None}
+    "body": None
+}
 server.addResponse("sessionlog.json", request_INM_header, response_INM_header)
 
 # object changed to 0 byte
-request_noBody_header = {"headers": "GET / HTTP/1.1\r\nUID: noBody\r\nHost: www.example.com\r\n\r\n",
-                         "timestamp": "1469733493.993", "body": ""}
+request_noBody_header = {
+    "headers": "GET / HTTP/1.1\r\nUID: noBody\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 response_noBody_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: max-age=3\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""}
+    "body": ""
+}
 server.addResponse("sessionlog.json", request_noBody_header, response_noBody_header)
 
 # etag object now is a 404. Yeah, 404s don't usually have Cache-Control, but, ATS's default is to cache 404s for a while.
-request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagError\r\n\r\n",
-                           "timestamp": "1469733493.993", "body": None}
+request_etagfill_header = {
+    "headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagError\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": None
+}
 response_etagfill_header = {
     "headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: max-age=3\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""}
+    "body": ""
+}
 server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill_header)
 
 # ATS Configuration
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 ts.Disk.plugin_config.AddLine('xdebug.so')
 ts.addDefaultSSLFiles()
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.response_via_str': 3,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.response_via_str': 3,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
 default_304_host = 'www.default304.test'
 regex_remap_conf_file = "maps.reg"
-ts.Disk.remap_config.AddLines([
-    f'map https://{default_304_host}/ http://127.0.0.1:{server.Variables.Port}/ '
-    f'@plugin=regex_remap.so @pparam={regex_remap_conf_file} @pparam=no-query-string @pparam=host',
+ts.Disk.remap_config.AddLines(
+    [
+        f'map https://{default_304_host}/ http://127.0.0.1:{server.Variables.Port}/ '
+        f'@plugin=regex_remap.so @pparam={regex_remap_conf_file} @pparam=no-query-string @pparam=host',
+        f'map http://{default_304_host}/ http://127.0.0.1:{server.Variables.Port}/ '
+        f'@plugin=regex_remap.so @pparam={regex_remap_conf_file} @pparam=no-query-string @pparam=host',
+        f'map / http://127.0.0.1:{server.Variables.Port}',
+    ])
 
-    f'map http://{default_304_host}/ http://127.0.0.1:{server.Variables.Port}/ '
-    f'@plugin=regex_remap.so @pparam={regex_remap_conf_file} @pparam=no-query-string @pparam=host',
-
-    f'map / http://127.0.0.1:{server.Variables.Port}',
-])
-
-ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
-    f'//.*/ http://127.0.0.1:{server.Variables.Port} @status=304'
-)
+ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(f'//.*/ http://127.0.0.1:{server.Variables.Port} @status=304')
 
 # Test 0 - Fill a 3 byte object with Last-Modified time into cache.
 tr = Test.AddTestRun()

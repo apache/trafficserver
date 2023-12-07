@@ -18,13 +18,12 @@
 
 import os
 import subprocess
+
 Test.Summary = '''
 Test transactions and sessions over http2, making sure they open and close in the proper order.
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager", enable_cache=False)
@@ -33,36 +32,33 @@ server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'ssntxnorder_verify.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
-ts.Disk.records_config.update({
-    'proxy.config.http2.zombie_debug_timeout_in': 10,
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'ssntxnorder_verify',
-    'proxy.config.cache.enable_read_while_writer': 0,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http2.zombie_debug_timeout_in': 10,
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'ssntxnorder_verify',
+        'proxy.config.cache.enable_read_while_writer': 0,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map https://oc.test:{0} http://127.0.0.1:{1}'.format(
-        ts.Variables.ssl_port, server.Variables.Port)
-)
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.remap_config.AddLine('map https://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 cmd = 'curl -k --resolve oc.test:{0}:127.0.0.1 --http2 https://oc.test:{0}'.format(ts.Variables.ssl_port)
 numberOfRequests = 100
@@ -76,8 +72,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
-tr.Processes.Default.StartBefore(
-    server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 # Don't know why we need both the start before and the start after
 ts.StartAfter(*ps)
@@ -98,6 +93,7 @@ tr.StillRunningAfter = ts
 
 
 def make_done_stat_ready(tsenv):
+
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
             "traffic_ctl metric get ssntxnorder_verify.test.done",
@@ -137,10 +133,8 @@ tr = Test.AddTestRun("Check for ssn open/close")
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "yes", 'should verify contents')
-tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "ssntxnorder_verify.ssn.start 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("ssntxnorder_verify.ssn.start 0", 'should be nonzero')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -148,10 +142,8 @@ tr = Test.AddTestRun("Check for txn/open/close")
 tr.Processes.Default.Command = comparator_command.format('txn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "yes", 'should verify contents')
-tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "ssntxnorder_verify.txn.start 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("ssntxnorder_verify.txn.start 0", 'should be nonzero')
 # and we receive the same number of transactions as we asked it to make
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "ssntxnorder_verify.txn.start {}".format(numberOfRequests), 'should be the number of transactions we made')

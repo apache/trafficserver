@@ -24,15 +24,12 @@ Test.Summary = '''
 Verify traffic_dump functionality.
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists('traffic_dump.so'),
-)
+Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
 
 schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 replay_file = "replay/various_sni.yaml"
 server = Test.MakeVerifierServerProcess(
-    "server-various-sni", replay_file,
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+    "server-various-sni", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
@@ -42,27 +39,23 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'traffic_dump',
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'traffic_dump',
+        'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.http.host_sni_policy': 2,
+        'proxy.config.ssl.TLSv1_3': 0,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
-    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.http.host_sni_policy': 2,
-    'proxy.config.ssl.TLSv1_3': 0,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-
-ts.Disk.remap_config.AddLine(
-    f'map / https://127.0.0.1:{server.Variables.https_port}'
-)
+ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
@@ -73,19 +66,15 @@ ts.Disk.sni_yaml.AddLines([
 
 # Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
 sni_filter = "bob.com"
-ts.Disk.plugin_config.AddLine(
-    f'traffic_dump.so --logdir {replay_dir} --sample 1 '
-    f'--sni-filter "{sni_filter}"'
-)
+ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 '
+                              f'--sni-filter "{sni_filter}"')
 
 # Set up trafficserver expectations.
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"Filtering to only dump connections with SNI: {sni_filter}",
-    "Verify filtering for the expected SNI.")
+    f"Filtering to only dump connections with SNI: {sni_filter}", "Verify filtering for the expected SNI.")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Ignore HTTPS session with non-filtered SNI: dave",
-    "Verify that the non-desired SNI session was filtered out.")
+    "Ignore HTTPS session with non-filtered SNI: dave", "Verify that the non-desired SNI session was filtered out.")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size of 1 bytes and unlimited disk utilization",
@@ -111,8 +100,11 @@ tr = Test.AddTestRun("Test SNI filter with various SNI values in the handshakes.
 # across both.
 server_port = server.Variables.http_port
 tr.AddVerifierClientProcess(
-    "client-various-sni", replay_file, https_ports=[ts.Variables.ssl_port],
-    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+    "client-various-sni",
+    replay_file,
+    https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem",
+    ca_cert="ssl/signer.pem")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = server

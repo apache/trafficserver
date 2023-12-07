@@ -18,6 +18,7 @@
 
 import os
 import time
+
 Test.Summary = '''
 regex_revalidate plugin test, reload epoch state on ats start
 '''
@@ -26,9 +27,7 @@ regex_revalidate plugin test, reload epoch state on ats start
 # Ensures that that the regex revalidate config file is loaded,
 # then epoch times from the state file are properly merged.
 
-Test.SkipUnless(
-    Condition.PluginExists('regex_revalidate.so')
-)
+Test.SkipUnless(Condition.PluginExists('regex_revalidate.so'))
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -41,22 +40,17 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager")
 testName = "regex_revalidate_state"
 
 # default root
-request_header_0 = {"headers":
-                    "GET / HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": "",
-                    }
+request_header_0 = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_0 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     "Cache-Control: max-age=300\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "xxx",
-                     }
+response_header_0 = {
+    "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=300\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "xxx",
+}
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 
@@ -64,9 +58,7 @@ reval_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'reval.conf')
 reval_state_path = os.path.join(Test.Variables.RUNTIMEDIR, 'reval.state')
 
 # Configure ATS server
-ts.Disk.plugin_config.AddLine(
-    f"regex_revalidate.so -d -c reval.conf -l reval.log -f {reval_state_path}"
-)
+ts.Disk.plugin_config.AddLine(f"regex_revalidate.so -d -c reval.conf -l reval.log -f {reval_state_path}")
 
 sep = ' '
 
@@ -84,10 +76,12 @@ path1_rule = sep.join([path1_regex, path1_expiry, path1_type])
 
 # Create gold files
 gold_path_good = reval_state_path + ".good"
-ts.Disk.File(gold_path_good, typename="ats:config").AddLines([
-    sep.join([path0_regex, "``", path0_expiry, path0_type]),
-    sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
-])
+ts.Disk.File(
+    gold_path_good, typename="ats:config").AddLines(
+        [
+            sep.join([path0_regex, "``", path0_expiry, path0_type]),
+            sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
+        ])
 
 # It seems there's no API for negative gold file matching
 '''
@@ -99,29 +93,31 @@ ts.Disk.File(gold_path_bad, typename="ats:config").AddLines([
 '''
 
 # Create a state file, second line will be discarded and not merged
-ts.Disk.File(reval_state_path, typename="ats:config").AddLines([
-    sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
-    sep.join(["dummy", path1_epoch, path1_expiry, path1_type]),
-])
+ts.Disk.File(
+    reval_state_path, typename="ats:config").AddLines(
+        [
+            sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
+            sep.join(["dummy", path1_epoch, path1_expiry, path1_type]),
+        ])
 
 # Write out reval.conf file
-ts.Disk.File(reval_conf_path, typename="ats:config").AddLines([
-    path0_rule, path1_rule,
-])
+ts.Disk.File(
+    reval_conf_path, typename="ats:config").AddLines([
+        path0_rule,
+        path1_rule,
+    ])
 
 ts.chownForATSProcess(reval_state_path)
 
-ts.Disk.remap_config.AddLine(
-    f"map http://ats/ http://127.0.0.1:{server.Variables.Port}"
-)
+ts.Disk.remap_config.AddLine(f"map http://ats/ http://127.0.0.1:{server.Variables.Port}")
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'regex_revalidate',
-    'proxy.config.http.wait_for_cache': 1,
-})
-
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'regex_revalidate',
+        'proxy.config.http.wait_for_cache': 1,
+    })
 
 # This TestRun creates the state file so it exists when the ts process's Setup
 # logic is run so that it can be chowned at that point.

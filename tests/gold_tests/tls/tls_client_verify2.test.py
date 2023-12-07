@@ -37,35 +37,33 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.client.certification_level': 0,
-    'proxy.config.ssl.CA.cert.path': '',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir)
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.client.certification_level': 0,
+        'proxy.config.ssl.CA.cert.path': '',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir)
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # Scenario 1:  Default no client cert required.  cert required for bar.com
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bob.bar.com',
-    '  verify_client: STRICT',
-    '- fqdn: bob.*.com',
-    '  verify_client: STRICT',
-    '- fqdn: "*bar.com"',
-    '  verify_client: NONE',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bob.bar.com',
+        '  verify_client: STRICT',
+        '- fqdn: bob.*.com',
+        '  verify_client: STRICT',
+        '- fqdn: "*bar.com"',
+        '  verify_client: NONE',
+    ])
 
 # to foo.com w/o client cert.  Should succeed
 tr = Test.AddTestRun("Connect to foo.com without cert")

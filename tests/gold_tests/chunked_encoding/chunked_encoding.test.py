@@ -22,9 +22,7 @@ Test.Summary = '''
 Test chunked encoding processing
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")
@@ -36,29 +34,36 @@ server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")
 
 testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993",
-                  "body": ""
-                  }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-                   "timestamp": "1469733493.993",
-                   "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
 request_header2 = {
-    "headers": "POST / HTTP/1.1\r\nHost: www.anotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers":
+        "POST / HTTP/1.1\r\nHost: www.anotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": "knock knock"}
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-                    "timestamp": "1415926535.898",
-                    "body": ""}
+    "body": "knock knock"
+}
+response_header2 = {
+    "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+    "timestamp": "1415926535.898",
+    "body": ""
+}
 
 request_header3 = {
-    "headers": "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers":
+        "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": "knock knock"}
-response_header3 = {"headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-                    "timestamp": "1415926535.898",
-                    "body": ""}
+    "body": "knock knock"
+}
+response_header3 = {
+    "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+    "timestamp": "1415926535.898",
+    "body": ""
+}
 
 server.addResponse("sessionlog.json", request_header, response_header)
 server2.addResponse("sessionlog.json", request_header2, response_header2)
@@ -67,29 +72,22 @@ server3.addResponse("sessionlog.json", request_header3, response_header3)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1,
-                               'proxy.config.diags.debug.tags': 'http',
-                               'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                               })
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map http://www.yetanotherexample.com http://127.0.0.1:{0}'.format(server3.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.yetanotherexample.com http://127.0.0.1:{0}'.format(server3.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
-)
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
-)
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port))
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # smuggle-client is built via `make`. Here we copy the built binary down to the
 # test directory so that the test runs in this file can use it.
@@ -98,8 +96,7 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'chunked_encod
 # HTTP1.1 GET: www.example.com
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.Processes.Default.Command = 'curl --http1.1 --proxy 127.0.0.1:{0} http://www.example.com  --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl --http1.1 --proxy 127.0.0.1:{0} http://www.example.com  --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)

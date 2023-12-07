@@ -22,9 +22,7 @@ import sys
 Test.Summary = '''
 Test custom log file format
 '''
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_HAS_PIPE_BUFFER_SIZE_CONFIG')
-)
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_PIPE_BUFFER_SIZE_CONFIG'))
 
 ts_counter = 1
 
@@ -37,18 +35,17 @@ def get_ts(logging_config):
     ts = Test.MakeATSProcess("ts{}".format(ts_counter))
     ts_counter += 1
 
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'log-file',
-        'proxy.config.log.max_secs_per_buffer': 1,
-    })
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'log-file',
+            'proxy.config.log.max_secs_per_buffer': 1,
+        })
 
     # Since we're only verifying logs and not traffic, we don't need an origin
     # server. The following will simply deny the requests and emit a log
     # message.
-    ts.Disk.remap_config.AddLine(
-        'map / http://www.linkedin.com/ @action=deny'
-    )
+    ts.Disk.remap_config.AddLine('map / http://www.linkedin.com/ @action=deny')
 
     ts.Disk.logging_yaml.AddLines(logging_config)
 
@@ -70,25 +67,20 @@ logging:
     - filename: '{}'
       mode: ascii_pipe
       format: custom
-'''.format(pipe_name).split("\n")
-)
+'''.format(pipe_name).split("\n"))
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Created named pipe .*{}".format(pipe_name),
-    "Verify that the named pipe was created")
+    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "no readers for pipe .*{}".format(pipe_name),
-    "Verify that no readers for the pipe was detected.")
+    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected.")
 
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "New buffer size for pipe".format(pipe_name),
-    "Verify that the default pipe size was used.")
+    "New buffer size for pipe".format(pipe_name), "Verify that the default pipe size was used.")
 
-curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --verbose'.format(
-    ts.Variables.port))
+curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 
 reader_output = os.path.join(ts.Variables.LOGDIR, "reader_output")
 pipe_reader = tr.Processes.Process("pipe_reader", 'cat {} | tee {}'.format(pipe_path, reader_output))
@@ -111,7 +103,6 @@ wait_for_log.StartBefore(curl)
 curl.StartBefore(pipe_reader)
 pipe_reader.StartBefore(ts)
 
-
 #
 # Test 2: Change the log's buffer size.
 #
@@ -131,22 +122,18 @@ logging:
       mode: ascii_pipe
       format: custom
       pipe_buffer_size: {}
-      '''.format(pipe_name, pipe_size).split("\n")
-)
+      '''.format(pipe_name, pipe_size).split("\n"))
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Created named pipe .*{}".format(pipe_name),
-    "Verify that the named pipe was created")
+    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "no readers for pipe .*{}".format(pipe_name),
-    "Verify that no readers for the pipe was detected.")
+    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected.")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Previous buffer size for pipe .*{}".format(pipe_name),
-    "Verify that the named pipe's size was adjusted")
+    "Previous buffer size for pipe .*{}".format(pipe_name), "Verify that the named pipe's size was adjusted")
 
 # See fcntl:
 #   "Attempts to set the pipe capacity below the page size
@@ -157,20 +144,14 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 # pipe_buffer_is_larger_than.py helper script to verify that the pipe grew in
 # size.
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "New buffer size for pipe.*{}".format(pipe_name),
-    "Verify that the named pipe's size was adjusted")
+    "New buffer size for pipe.*{}".format(pipe_name), "Verify that the named pipe's size was adjusted")
 buffer_verifier = "pipe_buffer_is_larger_than.py"
 tr.Setup.Copy(buffer_verifier)
-verify_buffer_size = tr.Processes.Process(
-    "verify_buffer_size",
-    f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size}")
+verify_buffer_size = tr.Processes.Process("verify_buffer_size", f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size}")
 verify_buffer_size.Return = 0
-verify_buffer_size.Streams.All += Testers.ContainsExpression(
-    "Success",
-    "The buffer size verifier should report success.")
+verify_buffer_size.Streams.All += Testers.ContainsExpression("Success", "The buffer size verifier should report success.")
 
-curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --verbose'.format(
-    ts.Variables.port))
+curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 
 reader_output = os.path.join(ts.Variables.LOGDIR, "reader_output")
 pipe_reader = tr.Processes.Process("pipe_reader", 'cat {} | tee {}'.format(pipe_path, reader_output))
@@ -186,7 +167,6 @@ wait_for_log.Ready = When.FileContains(reader_output, '127.0.0.1')
 # ordering of the Processes.
 tr.Processes.Default.Command = "echo 'Default place holder for process ordering.'"
 tr.Processes.Default.Return = 0
-
 
 # Process ordering.
 tr.Processes.Default.StartBefore(verify_buffer_size)

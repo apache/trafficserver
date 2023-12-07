@@ -15,7 +15,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 '''
 A simple tool to generate some raw http2 frames for 0-rtt testing.
 '''
@@ -91,8 +90,7 @@ def make_settins_frame(ack=False, empty=False):
         frame_type=TYPE_SETTINGS_FRAME,
         frame_flags=1 if ack else 0,
         frame_stream_id=0,
-        frame_payload=payload
-    )
+        frame_payload=payload)
 
     return frame
 
@@ -102,12 +100,7 @@ def make_window_update_frame():
     payload = bytes.fromhex(payload)
 
     frame = make_frame(
-        frame_length=len(payload),
-        frame_type=TYPE_WINDOW_UPDATE_FRAME,
-        frame_flags=0,
-        frame_stream_id=0,
-        frame_payload=payload
-    )
+        frame_length=len(payload), frame_type=TYPE_WINDOW_UPDATE_FRAME, frame_flags=0, frame_stream_id=0, frame_payload=payload)
     return frame
 
 
@@ -126,12 +119,7 @@ def make_headers_frame(method, path='', stream_id=0x01):
         else:
             headers.append((':path', '/early_post'))
 
-    headers.extend([
-        (':scheme', 'https'),
-        (':authority', '127.0.0.1'),
-        ('host', '127.0.0.1'),
-        ('accept', '*/*')
-    ])
+    headers.extend([(':scheme', 'https'), (':authority', '127.0.0.1'), ('host', '127.0.0.1'), ('accept', '*/*')])
 
     headers_encoded = encode_payload(headers)
 
@@ -140,8 +128,7 @@ def make_headers_frame(method, path='', stream_id=0x01):
         frame_type=TYPE_HEADERS_FRAME,
         frame_flags=HEADERS_FLAG_END_STREAM | HEADERS_FLAG_END_HEADERS,
         frame_stream_id=stream_id,
-        frame_payload=headers_encoded
-    )
+        frame_payload=headers_encoded)
 
     return frame
 
@@ -149,10 +136,7 @@ def make_headers_frame(method, path='', stream_id=0x01):
 def make_h2_req(test):
     h2_req = H2_PREFACE
     if test == 'get' or test == 'post':
-        frames = [
-            make_settins_frame(ack=True),
-            make_headers_frame(test)
-        ]
+        frames = [make_settins_frame(ack=True), make_headers_frame(test)]
         for frame in frames:
             h2_req += frame
     elif test == 'multi1':

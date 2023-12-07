@@ -29,22 +29,22 @@ ts = Test.MakeATSProcess("ts1", select_ports=True, enable_tls=False)
 server = Test.MakeOriginServer("server")
 
 testName = ""
-request_header = {"headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n",
-                  "timestamp": "1469733493.993",
-                  "body": "stuff"
-                  }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-                   "timestamp": "1469733493.993",
-                   "body": "more stuff"}
+request_header = {
+    "headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "stuff"
+}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": "more stuff"
+}
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 0,
-                               'proxy.config.diags.debug.tags': 'http'})
+ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 0, 'proxy.config.diags.debug.tags': 'http'})
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # HTTP1.1 POST: www.example.com/case1 with gzip transfer-encoding
 tr = Test.AddTestRun()
@@ -84,19 +84,16 @@ class HTTP10Test:
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts2", enable_tls=True, enable_cache=False)
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-        })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
 
     def runChunkedTraffic(self):
         tr = Test.AddTestRun()
@@ -132,37 +129,29 @@ class MalformedChunkHeaderTest:
         # because ATS will close the connection due to the malformed
         # chunk headers.
         self.server.Streams.stdout += Testers.ContainsExpression(
-            "Unexpected chunked content for key 1: too small",
-            "Verify that writing the first response failed.")
+            "Unexpected chunked content for key 1: too small", "Verify that writing the first response failed.")
         self.server.Streams.stdout += Testers.ContainsExpression(
-            "Unexpected chunked content for key 2: too small",
-            "Verify that writing the second response failed.")
+            "Unexpected chunked content for key 2: too small", "Verify that writing the second response failed.")
 
         # ATS should close the connection before any body gets through. "abc"
         # is the body sent by the client for each of these chunked cases.
-        self.server.Streams.stdout += Testers.ExcludesExpression(
-            "abc",
-            "Verify that the body never got through.")
+        self.server.Streams.stdout += Testers.ExcludesExpression("abc", "Verify that the body never got through.")
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts3", enable_tls=True, enable_cache=False)
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-        })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-        )
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+            })
+        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "user agent post chunk decoding error",
-            "Verify that ATS detected a problem parsing a chunk.")
+            "user agent post chunk decoding error", "Verify that ATS detected a problem parsing a chunk.")
 
     def runChunkedTraffic(self):
         tr = Test.AddTestRun()
@@ -189,9 +178,7 @@ class MalformedChunkHeaderTest:
 
         # ATS should close the connection before any body gets through. "def"
         # is the body sent by the server for each of these chunked cases.
-        tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            "def",
-            "Verify that the body never got through.")
+        tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("def", "Verify that the body never got through.")
 
     def run(self):
         self.runChunkedTraffic()

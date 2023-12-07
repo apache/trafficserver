@@ -19,9 +19,7 @@
 from enum import Enum
 
 Test.Summary = 'Exercise Background Fill'
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'),)
 Test.ContinueOnFail = True
 
 
@@ -46,24 +44,23 @@ class BackgroundFillTest:
         self.httpbin = Test.MakeHttpBinServer("httpbin")
 
     def __setupTS(self):
-        self.ts = Test.MakeATSProcess(
-            "ts", select_ports=True, enable_tls=True, enable_cache=True)
+        self.ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=True)
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            "dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
-        self.ts.Disk.records_config.update({
-            "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.ssl_port}:ssl",
-            'proxy.config.ssl.server.cert.path': f"{self.ts.Variables.SSLDir}",
-            'proxy.config.ssl.server.private_key.path': f"{self.ts.Variables.SSLDir}",
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-            "proxy.config.http.background_fill_active_timeout": "0",
-            "proxy.config.http.background_fill_completed_threshold": "0.0",
-            "proxy.config.http.cache.required_headers": 0,  # Force cache
-            "proxy.config.http.insert_response_via_str": 2,
-        })
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.ssl_port}:ssl",
+                'proxy.config.ssl.server.cert.path': f"{self.ts.Variables.SSLDir}",
+                'proxy.config.ssl.server.private_key.path': f"{self.ts.Variables.SSLDir}",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http.background_fill_active_timeout": "0",
+                "proxy.config.http.background_fill_completed_threshold": "0.0",
+                "proxy.config.http.cache.required_headers": 0,  # Force cache
+                "proxy.config.http.insert_response_via_str": 2,
+            })
 
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.httpbin.Variables.Port}/",

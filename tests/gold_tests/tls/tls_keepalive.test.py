@@ -23,9 +23,7 @@ Test.Summary = '''
 Verify that the client-side keep alive is honored for TLS and different versions of HTTP
 '''
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
@@ -37,21 +35,19 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.TLSv1_3': 0,
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.log.max_secs_per_buffer': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.TLSv1_3': 0,
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.log.max_secs_per_buffer': 1
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
-)
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -63,8 +59,7 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n")
-)
+'''.split("\n"))
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-preaccept=1')
 

@@ -16,38 +16,30 @@
 
 import os
 
-
 Test.Summary = '''
 Test CPPAPI example plugin DelayTransformation
 '''
 
-Test.SkipUnless(
-    Condition.PluginExists("DelayTransformationPlugin.so")
-)
+Test.SkipUnless(Condition.PluginExists("DelayTransformationPlugin.so"))
 
 server = Test.MakeOriginServer("server")
 
 resp_body = "1234567890" "1234567890" "1234567890" "1234567890" "1234567890" "\n"
 
 server.addResponse(
-    "sessionlog.json",
-    {
-        "headers":
-            "GET / HTTP/1.1\r\n"
-            "Host: does_not_matter"
-            "\r\n",
+    "sessionlog.json", {
+        "headers": "GET / HTTP/1.1\r\n"
+                   "Host: does_not_matter"
+                   "\r\n",
         "timestamp": "1469733493.993",
-    },
-    {
-        "headers":
-            "HTTP/1.1 200 OK\r\n"
-            "Connection: close\r\n"
-            f"Content-Length: {len(resp_body)}\r\n"
-            "\r\n",
+    }, {
+        "headers": "HTTP/1.1 200 OK\r\n"
+                   "Connection: close\r\n"
+                   f"Content-Length: {len(resp_body)}\r\n"
+                   "\r\n",
         "timestamp": "1469733493.993",
         "body": resp_body
-    }
-)
+    })
 
 ts = Test.MakeATSProcess("ts")
 
@@ -58,9 +50,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'delay_transformation',
 })
 
-ts.Disk.remap_config.AddLine(
-    f'map http://xyz/ http://127.0.0.1:{server.Variables.Port}/'
-)
+ts.Disk.remap_config.AddLine(f'map http://xyz/ http://127.0.0.1:{server.Variables.Port}/')
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)

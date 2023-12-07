@@ -18,9 +18,7 @@
 
 Test.Summary = 'Testing ATS inactivity timeout'
 
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server", delay=8)
@@ -33,19 +31,17 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.addSSLfile("../tls/ssl/server.pem")
 ts.addSSLfile("../tls/ssl/server.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.remap_required': 1,
-    'proxy.config.http.transaction_no_activity_timeout_out': 2,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.remap_required': 1,
+        'proxy.config.http.transaction_no_activity_timeout_out': 2,
+    })
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)

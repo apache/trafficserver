@@ -32,13 +32,17 @@ Test.ContinueOnFail = True
 server = Test.MakeOriginServer("server")
 
 # Test Case 0:
-server.addResponse("sessionlog.json",
-                   {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": ""})
+server.addResponse(
+    "sessionlog.json", {
+        "headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers":
+            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    })
 
 # ----
 # Setup ATS
@@ -47,20 +51,17 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.http2.stream_priority_enabled': 1,
-    'proxy.config.http2.no_activity_timeout_in': 3,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2',
-})
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http2.stream_priority_enabled': 1,
+        'proxy.config.http2.no_activity_timeout_in': 3,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http2',
+    })
 
 # ----
 # Test Cases

@@ -25,18 +25,24 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
-server = Test.MakeOriginServer("server",
-                               ssl=True,
-                               options={"--clientCA": cafile,
-                                        "--clientverify": ""},
-                               clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
-                               clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
-server2 = Test.MakeOriginServer("server2",
-                                ssl=True,
-                                options={"--clientCA": cafile2,
-                                         "--clientverify": ""},
-                                clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
-                                clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server = Test.MakeOriginServer(
+    "server",
+    ssl=True,
+    options={
+        "--clientCA": cafile,
+        "--clientverify": ""
+    },
+    clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
+    clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+server2 = Test.MakeOriginServer(
+    "server2",
+    ssl=True,
+    options={
+        "--clientCA": cafile2,
+        "--clientverify": ""
+    },
+    clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
 server3 = Test.MakeOriginServer("server3")
 server4 = Test.MakeOriginServer("server4")
 server.Setup.Copy("ssl/signer.pem")
@@ -70,39 +76,30 @@ ts.addSSLfile("ssl/signed-bar.pem")
 ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl_verify_test',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.cert.filename': 'signed-foo.pem',
-    'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl_verify_test',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.cert.filename': 'signed-foo.pem',
+        'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port)
-)
+ts.Disk.remap_config.AddLine('map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port))
 
-ts.Disk.sni_yaml.AddLine(
-    'sni:')
-ts.Disk.sni_yaml.AddLine(
-    '- fqdn: bar.com')
-ts.Disk.sni_yaml.AddLine(
-    '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir))
-ts.Disk.sni_yaml.AddLine(
-    '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
+ts.Disk.sni_yaml.AddLine('sni:')
+ts.Disk.sni_yaml.AddLine('- fqdn: bar.com')
+ts.Disk.sni_yaml.AddLine('  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir))
+ts.Disk.sni_yaml.AddLine('  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -114,8 +111,7 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n")
-)
+'''.split("\n"))
 
 # Should succeed
 tr = Test.AddTestRun("Connect with first client cert to first server")
@@ -161,26 +157,23 @@ tr2 = Test.AddTestRun("Update config files")
 snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
 tr2.Disk.File(snipath, id="sni_yaml", typename="ats:config"),
-tr2.Disk.sni_yaml.AddLine(
-    'sni:')
-tr2.Disk.sni_yaml.AddLine(
-    '- fqdn: bar.com')
-tr2.Disk.sni_yaml.AddLine(
-    '  client_cert: {0}/signed-bar.pem'.format(ts.Variables.SSLDir))
-tr2.Disk.sni_yaml.AddLine(
-    '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
+tr2.Disk.sni_yaml.AddLine('sni:')
+tr2.Disk.sni_yaml.AddLine('- fqdn: bar.com')
+tr2.Disk.sni_yaml.AddLine('  client_cert: {0}/signed-bar.pem'.format(ts.Variables.SSLDir))
+tr2.Disk.sni_yaml.AddLine('  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 # recreate the records.config with the cert filename changed
 tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
-tr2.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.cert.filename': 'signed2-foo.pem',
-    'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-})
+tr2.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.cert.filename': 'signed2-foo.pem',
+        'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    })
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = server2
@@ -197,7 +190,6 @@ tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr2reload.Processes.Default.Env = ts.Env
 tr2reload.Processes.Default.ReturnCode = 0
-
 
 # Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
@@ -237,7 +229,6 @@ tr3fail.StillRunningAfter = server2
 tr3fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr3fail.Processes.Default.ReturnCode = 0
 tr3fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-
 
 # Test the case of updating certificate contents without changing file name.
 trupdate = Test.AddTestRun("Update client cert file in place")

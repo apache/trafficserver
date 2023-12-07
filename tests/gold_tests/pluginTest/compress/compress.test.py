@@ -25,10 +25,7 @@ Test compress plugin
 # Skip if plugins not present.
 #
 Test.SkipUnless(
-    Condition.PluginExists('compress.so'),
-    Condition.PluginExists('conf_remap.so'),
-    Condition.HasATSFeature('TS_HAS_BROTLI')
-)
+    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'))
 
 server = Test.MakeOriginServer("server", options={'--load': '{}/compress_observer.py'.format(Test.TestDirectory)})
 
@@ -47,28 +44,28 @@ body = body + "lets go surfin now everybodys learnin how"
 
 # expected response from the origin server
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n" +
-    'Etag: "359670651"\r\n' +
-    "Cache-Control: public, max-age=31536000\r\n" +
-    "Accept-Ranges: bytes\r\n" +
-    "Content-Type: text/javascript\r\n" +
-    "\r\n",
+    "headers":
+        "HTTP/1.1 200 OK\r\nConnection: close\r\n" + 'Etag: "359670651"\r\n' + "Cache-Control: public, max-age=31536000\r\n" +
+        "Accept-Ranges: bytes\r\n" + "Content-Type: text/javascript\r\n" + "\r\n",
     "timestamp": "1469733493.993",
     "body": body
 }
 for i in range(3):
     # add request/response to the server dictionary
     request_header = {
-        "headers": "GET /obj{} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n".format(i), "timestamp": "1469733493.993", "body": ""
+        "headers": "GET /obj{} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n".format(i),
+        "timestamp": "1469733493.993",
+        "body": ""
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
-
 # post for the origin server
 post_request_header = {
-    "headers": "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers":
+        "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "knock knock"}
+    "body": "knock knock"
+}
 server.addResponse("sessionfile.log", post_request_header, response_header)
 
 
@@ -77,8 +74,7 @@ def curl(ts, idx, encodingList):
         "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
         " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
         " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
-        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
-    )
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log")
 
 
 def curl_post(ts, idx, encodingList):
@@ -86,8 +82,7 @@ def curl_post(ts, idx, encodingList):
         "curl --verbose -d 'knock knock' --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
         " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
         " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
-        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
-    )
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log")
 
 
 waitForServer = True
@@ -96,33 +91,30 @@ waitForTs = True
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'compress',
-    'proxy.config.http.normalize_ae': 0,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'compress',
+        'proxy.config.http.normalize_ae': 0,
+    })
 
 ts.Setup.Copy("compress.config")
 ts.Setup.Copy("compress2.config")
 
 ts.Disk.remap_config.AddLine(
     'map http://ae-0/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
-)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
     'map http://ae-1/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
-)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
     'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-    ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.RunDirectory)
-)
+    ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
     'map http://ae-3/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
-)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory))
 
 for i in range(3):
 
@@ -199,8 +191,8 @@ tr.Processes.Default.Command = curl_post(ts, 3, "gzip")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log"
-).format(Test.TestDirectory)
+    r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log").format(
+        Test.TestDirectory)
 f = tr.Disk.File("compress_short.log")
 f.Content = "compress.gold"
 

@@ -36,30 +36,26 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Disk.records_config.update({
-    # Test looks for debug output from the plugin
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl_client_verify_test',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1
-})
+ts.Disk.records_config.update(
+    {
+        # Test looks for debug output from the plugin
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl_client_verify_test',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
-    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
-)
+    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
@@ -84,7 +80,6 @@ tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.all = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-
 
 tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts

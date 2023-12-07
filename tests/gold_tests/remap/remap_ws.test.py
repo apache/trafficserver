@@ -26,28 +26,32 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 testName = "Test WebSocket Remaps"
-request_header = {"headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
-                  "body": None}
+request_header = {
+    "headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+    "body": None
+}
 response_header = {
-    "headers": "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
-    "body": None}
+    "headers":
+        "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
+    "body": None
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.addDefaultSSLFiles()
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    })
 
-ts.Disk.remap_config.AddLines([
-    'map ws://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.port),
-    'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
-])
+ts.Disk.remap_config.AddLines(
+    [
+        'map ws://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.port),
+        'map wss://www.example.com:{1} ws://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port),
+    ])
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # wss mapping
 tr = Test.AddTestRun()

@@ -23,17 +23,13 @@ Test custom log file format
 '''
 
 # this test depends on Linux specific behavior regarding loopback addresses
-Test.SkipUnless(
-    Condition.IsPlatform("linux")
-)
+Test.SkipUnless(Condition.IsPlatform("linux"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 
 # setup some config file for this server
-ts.Disk.remap_config.AddLine(
-    'map / http://www.linkedin.com/ @action=deny'
-)
+ts.Disk.remap_config.AddLine('map / http://www.linkedin.com/ @action=deny')
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -44,62 +40,51 @@ logging:
   logs:
     - filename: test_log_field
       format: custom
-'''.split("\n")
-)
+'''.split("\n"))
 
 # #########################################################################
 # at the end of the different test run a custom log file should exist
 # Because of this we expect the testruns to pass the real test is if the
 # customlog file exists and passes the format check
-Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'),
-               exists=True, content='gold/custom.gold')
+Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'), exists=True, content='gold/custom.gold')
 
 # first test is a miss for default
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.1.1.1:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.1.1.1:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.2.2.2:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.2.2.2:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.3.3.3:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.3.3.3:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.3.0.1:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.3.0.1:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.43.2.1:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.43.2.1:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.213.213.132:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.213.213.132:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.123.32.243:{0}" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl "http://127.123.32.243:{0}" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
     os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'test_log_field.log')
-)
+    os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'))
 test_run.Processes.Default.ReturnCode = 0

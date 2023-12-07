@@ -16,9 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import os
-
 
 # Someday should add client cert to origin to exercise the
 # engine interface on the other side
@@ -40,55 +38,58 @@ server = Test.MakeOriginServer("server")
 ts.Setup.Copy(os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so'), Test.RunDirectory)
 
 # Add info the origin server responses
-server.addResponse("sessionlog.json",
-                   {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": "ok"})
+server.addResponse(
+    "sessionlog.json", {
+        "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers":
+            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "ok"
+    })
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
-    'proxy.config.ssl.async.handshake.enabled': 1,
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'ssl|http'
-})
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
+        'proxy.config.ssl.async.handshake.enabled': 1,
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'ssl|http'
+    })
 
-ts.Disk.MakeConfigFile('load_engine.cnf').AddLines([
-    'openssl_conf = openssl_init',
-    '',
-    '[openssl_init]',
-    '',
-    'engines = engine_section',
-    '',
-    '[engine_section]',
-    '',
-    'async = async_section',
-    '',
-    '[async_section]',
-    '',
-    'dynamic_path = {0}/async_engine.so'.format(Test.RunDirectory),
-    '',
-    'engine_id = async-test',
-    '',
-    'default_algorithms = RSA',
-    '',
-    'init = 1'])
+ts.Disk.MakeConfigFile('load_engine.cnf').AddLines(
+    [
+        'openssl_conf = openssl_init',
+        '',
+        '[openssl_init]',
+        '',
+        'engines = engine_section',
+        '',
+        '[engine_section]',
+        '',
+        'async = async_section',
+        '',
+        '[async_section]',
+        '',
+        'dynamic_path = {0}/async_engine.so'.format(Test.RunDirectory),
+        '',
+        'engine_id = async-test',
+        '',
+        'default_algorithms = RSA',
+        '',
+        'init = 1',
+    ])
 
 # Make a basic request.  Hopefully it goes through
 tr = Test.AddTestRun("Run-Test")

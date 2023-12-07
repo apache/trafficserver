@@ -50,40 +50,41 @@ dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,
-                                                                                       server_foo.Variables.SSL_Port,
-                                                                                       server_bar.Variables.SSL_Port),
-                               'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-                               'proxy.config.exec_thread.autoconfig.scale': 1.0,
-                               'proxy.config.url_remap.pristine_host_hdr': 1,
-                               'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-                               'proxy.config.dns.resolv_conf': 'NULL'})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.http.connect_ports':
+            '{0} {1} {2}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port),
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
 # empty SNI should tunnel to server_bar
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: foo.com',
-    "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
-    "- fqdn: bob.*.com",
-    "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
-    "- fqdn: '*.match.com'",
-    "  tunnel_route: $1.testmatch:{0}".format(server_foo.Variables.SSL_Port),
-    "- fqdn: '*.ok.*.com'",
-    "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
-    "- fqdn: ''",  # No SNI sent
-    "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: foo.com',
+        "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
+        "- fqdn: bob.*.com",
+        "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
+        "- fqdn: '*.match.com'",
+        "  tunnel_route: $1.testmatch:{0}".format(server_foo.Variables.SSL_Port),
+        "- fqdn: '*.ok.*.com'",
+        "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
+        "- fqdn: ''",  # No SNI sent
+        "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
+    ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
@@ -133,7 +134,6 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 
-
 tr = Test.AddTestRun("one.match.com Tunnel-test")
 tr.Processes.Default.Command = "curl -vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(
     ts.Variables.ssl_port)
@@ -147,7 +147,6 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
-
 tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
 tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https:/one.ok.two.com:{0}".format(
     ts.Variables.ssl_port)
@@ -160,7 +159,6 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Sh
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
-
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")

@@ -16,7 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import os
 
 Test.Summary = 'Test TSContThreadAffinity APIs'
@@ -27,15 +26,16 @@ ts = Test.MakeATSProcess('ts')
 
 Test.testName = 'Test TSContThreadAffinity APIs'
 
-ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
-    'proxy.config.exec_thread.autoconfig.scale': 1.5,
-    'proxy.config.exec_thread.limit': 32,
-    'proxy.config.accept_threads': 1,
-    'proxy.config.task_threads': 2,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'TSContSchedule_test'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.autoconfig.scale': 1.5,
+        'proxy.config.exec_thread.limit': 32,
+        'proxy.config.accept_threads': 1,
+        'proxy.config.task_threads': 2,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'TSContSchedule_test'
+    })
 
 # Load plugin
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'cont_schedule.so'), ts, 'affinity')

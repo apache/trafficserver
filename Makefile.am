@@ -113,9 +113,9 @@ endif
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
-.PHONY: autopep8
-autopep8:
-	@$(top_srcdir)/tools/autopep8.sh $(top_srcdir)
+.PHONY: yapf
+yapf:
+	@$(top_srcdir)/tools/yapf.sh $(top_srcdir)
 
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
@@ -174,7 +174,7 @@ clang-format-tests:
 # Run the various format targets. perltidy is not included because the user may
 # not have it installed.
 .PHONY: format
-format: clang-format autopep8
+format: clang-format yapf
 
 .PHONY: perltidy
 perltidy:
@@ -200,4 +200,4 @@ help:
 	@echo 'rat              produce a RAT licence compliance report of the source'
 	@echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag'
 	@echo 'release          recreate a signed release source package and a signed git tag'
-	@echo 'autopep8         run autopep8 over python files'
+	@echo 'yapf             run yapf over python files'

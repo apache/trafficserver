@@ -28,51 +28,38 @@ server2 = Test.MakeOriginServer("server2", lookup_key="{%Host}{PATH}")
 dns = Test.MakeDNServer("dns")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
-request_header2 = {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+request_header2 = {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": ""}
+response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 server2.addResponse("sessionfile.log", request_header2, response_header2)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
-    'proxy.config.http.referer_filter': 1,
-    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
+        'proxy.config.http.referer_filter': 1,
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
+
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map_with_recv_port http://www.example2.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
+ts.Disk.remap_config.AddLine('map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('redirect http://test3.com http://httpbin.org'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map_with_referer http://test4.com http://127.0.0.1:{0} http://httpbin.org (.*[.])?persia[.]com'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine('map http://testDNS.com http://audrey.hepburn.com:{0}'.format(server.Variables.Port))
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map_with_recv_port http://www.example2.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'redirect http://test3.com http://httpbin.org'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map_with_referer http://test4.com http://127.0.0.1:{0} http://httpbin.org (.*[.])?persia[.]com'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map http://testDNS.com http://audrey.hepburn.com:{0}'.format(server.Variables.Port)
-)
-
-ts.Disk.remap_config.AddLine(
-    'map http://www.testexample.com http://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1'.format(
-        server2.Variables.Port))
+    'map http://www.testexample.com http://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1'
+    .format(server2.Variables.Port))
 
 dns.addRecords(records={"audrey.hepburn.com.": ["127.0.0.1"]})
 dns.addRecords(records={"whatever.com.": ["127.0.0.1"]})
@@ -151,8 +138,7 @@ tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
 
 # DNS test
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-DNS-200.gold"
 

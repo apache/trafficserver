@@ -23,9 +23,19 @@ from ports import get_port
 from verifier_common import create_address_argument, substitute_context_in_replay_file
 
 
-def _configure_server(obj, process, name, replay_path, http_ports=None, https_ports=None,
-                      http3_ports=None, ssl_cert='', ca_cert='', verbose=True,
-                      other_args='', context=None):
+def _configure_server(
+        obj,
+        process,
+        name,
+        replay_path,
+        http_ports=None,
+        https_ports=None,
+        http3_ports=None,
+        ssl_cert='',
+        ca_cert='',
+        verbose=True,
+        other_args='',
+        context=None):
     """
     Configure the provided process to run a verifier-server command.
 
@@ -91,8 +101,7 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
 
     if https_ports or http3_ports:
         if ssl_cert == '':
-            ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
-                                    "proxy-verifier", "ssl", "server.pem")
+            ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "server.pem")
 
             if not os.path.isfile(ssl_cert):
                 raise ValueError("Tried to use '{}' for --server-cert, but it is not "
@@ -108,8 +117,7 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
             obj.Variables['tls_secrets_log_path'] = tls_secrets_log_path
 
         if ca_cert == '':
-            ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
-                                   "proxy-verifier", "ssl", "ca.pem")
+            ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "ca.pem")
 
             if not os.path.isfile(ca_cert):
                 raise ValueError("Tried to use '{}' for --ca-certs, but it is not "
@@ -140,14 +148,21 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
     process.Ready = When.PortOpenv4(process.Variables.http_port)
     process.ReturnCode = 0
 
-    process.Streams.stdout = Testers.ExcludesExpression(
-        "Violation",
-        "There should be no Proxy Verifier violation errors.")
+    process.Streams.stdout = Testers.ExcludesExpression("Violation", "There should be no Proxy Verifier violation errors.")
 
 
-def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
-                              https_ports=None, http3_ports=None, ssl_cert='',
-                              ca_cert='', verbose=True, other_args='', context=None):
+def MakeVerifierServerProcess(
+        test,
+        name,
+        replay_path,
+        http_ports=None,
+        https_ports=None,
+        http3_ports=None,
+        ssl_cert='',
+        ca_cert='',
+        verbose=True,
+        other_args='',
+        context=None):
     """
     Create a verifier-server process for the Test.
 
@@ -196,14 +211,23 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
         KeyError if placeholders are missing from the mapping between context and the replay file.
     """
     server = test.Processes.Process(name)
-    _configure_server(test, server, name, replay_path, http_ports, https_ports,
-                      http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
+    _configure_server(
+        test, server, name, replay_path, http_ports, https_ports, http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
     return server
 
 
-def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
-                             https_ports=None, http3_ports=None, ssl_cert='',
-                             ca_cert='', verbose=True, other_args='', context=None):
+def AddVerifierServerProcess(
+        run,
+        name,
+        replay_path,
+        http_ports=None,
+        https_ports=None,
+        http3_ports=None,
+        ssl_cert='',
+        ca_cert='',
+        verbose=True,
+        other_args='',
+        context=None):
     """
     Create a verifier-server process and configure it for the given TestRun.
 
@@ -217,8 +241,8 @@ def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
     """
 
     server = run.Processes.Process(name)
-    _configure_server(run, server, name, replay_path, http_ports, https_ports,
-                      http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
+    _configure_server(
+        run, server, name, replay_path, http_ports, https_ports, http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
 
     client = run.Processes.Default
     client.StartBefore(server)

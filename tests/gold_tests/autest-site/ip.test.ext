@@ -17,7 +17,6 @@ Extend Autest with IP-related utilities.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 from ports import get_port
 
 # this forms is for the global process define

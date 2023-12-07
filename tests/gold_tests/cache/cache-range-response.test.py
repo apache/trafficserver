@@ -24,16 +24,15 @@ Verify correct caching behavior for range requests.
 ts = Test.MakeATSProcess("ts")
 replay_file = "replay/cache-range-response.replay.yaml"
 server = Test.MakeVerifierServerProcess("server0", replay_file)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http.*|cache.*',
-    'proxy.config.http.cache.range.write': 1,
-    'proxy.config.http.cache.when_to_revalidate': 4,
-    'proxy.config.http.insert_response_via_str': 3,
-})
-ts.Disk.remap_config.AddLine(
-    f'map / http://127.0.0.1:{server.Variables.http_port}'
-)
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http.*|cache.*',
+        'proxy.config.http.cache.range.write': 1,
+        'proxy.config.http.cache.when_to_revalidate': 4,
+        'proxy.config.http.insert_response_via_str': 3,
+    })
+ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
 tr = Test.AddTestRun("Verify range request is transformed from a 200 response")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

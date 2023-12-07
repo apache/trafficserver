@@ -19,7 +19,6 @@ Test exercising host and SNI mismatch controls
 
 import os
 
-
 Test.Summary = '''
 Test exercising host and SNI mismatch controls
 '''
@@ -40,38 +39,36 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.http.host_sni_policy': 2,
-    'proxy.config.ssl.TLSv1_3': 0,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+        'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.http.host_sni_policy': 2,
+        'proxy.config.ssl.TLSv1_3': 0,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl',
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # Scenario 1:  Default no client cert required.  cert required for bar.com.
 # Make boblite and bob mixed case to verify that we can match hostnames case
 # insensitively.
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: boBliTe',
-    '  verify_client: STRICT',
-    '  host_sni_policy: PERMISSIVE',
-    '- fqdn: bOb',
-    '  verify_client: STRICT',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: boBliTe',
+        '  verify_client: STRICT',
+        '  host_sni_policy: PERMISSIVE',
+        '- fqdn: bOb',
+        '  verify_client: STRICT',
+    ])
 
 # case 1
 # sni=Bob and host=dave.  Do not provide client cert.  This should match fqdn bOb which has
@@ -174,16 +171,14 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 # Wait for the error.log to appaer.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'error.log')
-)
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'error.log'))
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI/hostname mismatch sni=ellen host=fran",
-                                                        "Should not have warning on mismatch with non-policy host")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host")
 
 test_run.Processes.Default.ReturnCode = 0
 ts.Disk.error_log.Content += Testers.ContainsExpression(

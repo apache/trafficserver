@@ -17,6 +17,7 @@
 import os
 import time
 import json
+
 Test.Summary = '''
 Test regex_remap
 '''
@@ -31,9 +32,7 @@ Test regex_remap
 # If the rule disappears from regex_revalidate.conf its still loaded!!
 # A rule's expiry can't be changed after the fact!
 
-Test.SkipUnless(
-    Condition.PluginExists('regex_remap.so'),
-)
+Test.SkipUnless(Condition.PluginExists('regex_remap.so'),)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -56,36 +55,37 @@ regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
 regex_remap2_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap2.conf')
 curl_and_args = 'curl -s -D - -v --proxy localhost:{} '.format(ts.Variables.port)
 
-ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines([
-    "# regex_remap configuration\n"
-    "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301\n"
-])
+ts.Disk.File(
+    regex_remap_conf_path, typename="ats:config").AddLines(
+        [
+            "# regex_remap configuration\n"
+            "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301\n"
+        ])
 
-ts.Disk.File(regex_remap2_conf_path, typename="ats:config").AddLines([
-    "# 2nd regex_remap configuration\n"
-    "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " +
-    f"http://localhost:{server.Variables.Port}\n"
-])
+ts.Disk.File(
+    regex_remap2_conf_path, typename="ats:config").AddLines(
+        [
+            "# 2nd regex_remap configuration\n"
+            "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " + f"http://localhost:{server.Variables.Port}\n"
+        ])
 
 ts.Disk.remap_config.AddLine(
-    "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port)
-)
+    "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
-    "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n"
-)
+    "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n")
 ts.Disk.remap_config.AddLine(
     "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port) +
-    "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n"
-)
+    "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n")
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|regex_remap',
-    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-    'proxy.config.dns.resolv_conf': 'NULL'
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|regex_remap',
+        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+        'proxy.config.dns.resolv_conf': 'NULL'
+    })
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("smoke test")
@@ -101,10 +101,8 @@ tr.StillRunningAfter = ts
 # 1 Test - Match and redirect
 tr = Test.AddTestRun("pristine test")
 tr.Processes.Default.Command = (
-    curl_and_args +
-    "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-    f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'"
-)
+    curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
+    f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
@@ -114,8 +112,7 @@ tr = Test.AddTestRun("2nd pristine test")
 tr.Processes.Default.Command = (
     curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
     " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-    " | grep -e '^HTTP/' -e '^Content-Length'"
-)
+    " | grep -e '^HTTP/' -e '^Content-Length'")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts

@@ -29,17 +29,12 @@ server = Test.MakeOriginServer("server")
 
 DEFAULT_304_HOST = 'www.default304.test'
 
-
 regex_remap_conf_file = "maps.reg"
 
 ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'
-                    .format(DEFAULT_304_HOST, server.Variables.Port, regex_remap_conf_file)
-)
-ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
-    '//.*/ http://127.0.0.1:{0} @status=304'
-    .format(server.Variables.Port)
-)
+    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'.format(
+        DEFAULT_304_HOST, server.Variables.Port, regex_remap_conf_file))
+ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://127.0.0.1:{0} @status=304'.format(server.Variables.Port))
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')

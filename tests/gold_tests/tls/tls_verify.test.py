@@ -22,18 +22,27 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar",
-                                   ssl=True,
-                                   options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-                                            "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
-server_wild = Test.MakeOriginServer("server_wild",
-                                    ssl=True,
-                                    options={"--key": "{0}/signed-wild.key".format(Test.RunDirectory),
-                                             "--cert": "{0}/signed-wild.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer(
+    "server_foo",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
+    })
+server_bar = Test.MakeOriginServer(
+    "server_bar",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
+    })
+server_wild = Test.MakeOriginServer(
+    "server_wild",
+    ssl=True,
+    options={
+        "--key": "{0}/signed-wild.key".format(Test.RunDirectory),
+        "--cert": "{0}/signed-wild.pem".format(Test.RunDirectory)
+    })
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -59,51 +68,44 @@ ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/signed-wild.key")
 ts.addSSLfile("ssl/signed-wild.pem")
 
-ts.Disk.remap_config.AddLine(
-    'map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bad_foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bad_bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://foo.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
-ts.Disk.remap_config.AddLine(
-    'map https://foo_bar.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://bad_foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://bad_bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://foo.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine('map https://foo_bar.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # set global policy
-    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
-    'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr': 1
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        # set global policy
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
+        'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+        'proxy.config.exec_thread.autoconfig.scale': 1.0,
+        'proxy.config.url_remap.pristine_host_hdr': 1
+    })
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bar.com',
-    '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: ALL',
-    '- fqdn: "*.wild.com"',
-    '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: ALL',
-    '- fqdn: bad_bar.com',
-    '  verify_server_policy: ENFORCED',
-    '  verify_server_properties: ALL'
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bar.com',
+        '  verify_server_policy: ENFORCED',
+        '  verify_server_properties: ALL',
+        '- fqdn: "*.wild.com"',
+        '  verify_server_policy: ENFORCED',
+        '  verify_server_properties: ALL',
+        '- fqdn: bad_bar.com',
+        '  verify_server_policy: ENFORCED',
+        '  verify_server_properties: ALL',
+    ])
 
 tr = Test.AddTestRun("Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")

@@ -17,7 +17,6 @@ Test the client_context_dump plugin.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 Test.Summary = '''
 Test client_context_dump plugin
 '''
@@ -31,26 +30,26 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, ena
 ts.addSSLfile("ssl/one.com.pem")
 ts.addSSLfile("ssl/two.com.pem")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'client_context_dump',
-    'proxy.config.ssl.server.cert.path': '{}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.cert.path': '{}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.private_key.path': '{}'.format(ts.Variables.SSLDir),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'client_context_dump',
+        'proxy.config.ssl.server.cert.path': '{}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.cert.path': '{}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.client.private_key.path': '{}'.format(ts.Variables.SSLDir),
+    })
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=one.com.pem ssl_key_name=one.com.pem'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=one.com.pem ssl_key_name=one.com.pem')
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*one.com"',
-    '  client_cert: "one.com.pem"',
-    '- fqdn: "*two.com"',
-    '  client_cert: "two.com.pem"'
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: "*one.com"',
+        '  client_cert: "one.com.pem"',
+        '- fqdn: "*two.com"',
+        '  client_cert: "two.com.pem"',
+    ])
 
 # Set up plugin
 Test.PrepareInstalledPlugin('client_context_dump.so', ts)
@@ -72,7 +71,5 @@ p.StartBefore(Test.Processes.ts)
 # Client contexts test
 tr = Test.AddTestRun()
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = (
-    '{0}/traffic_ctl plugin msg client_context_dump.t 1'.format(ts.Variables.BINDIR)
-)
+tr.Processes.Default.Command = ('{0}/traffic_ctl plugin msg client_context_dump.t 1'.format(ts.Variables.BINDIR))
 tr.Processes.Default.ReturnCode = 0

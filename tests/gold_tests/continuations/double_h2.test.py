@@ -18,12 +18,11 @@
 
 import os
 import subprocess
+
 Test.Summary = '''
 Test transactions and sessions for http2, making sure the two continuations catch the same number of hooks.
 '''
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
-)
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager", enable_cache=False)
@@ -33,8 +32,11 @@ server2 = Test.MakeOriginServer("server2")
 Test.testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: double_h2.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
@@ -43,26 +45,22 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.addDefaultSSLFiles()
 
 # add port and remap rule
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'continuations_verify',
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.cache.enable_read_while_writer': 0,
-    'proxy.config.http2.max_concurrent_streams_in': 65535
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'continuations_verify',
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.cache.enable_read_while_writer': 0,
+        'proxy.config.http2.max_concurrent_streams_in': 65535
+    })
 
 # add plugin to assist with test metrics
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                    'continuations_verify.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'continuations_verify.so'), ts)
 
 comparator_command = '''
 if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get continuations_verify.{0}.close.2 | cut -d ' ' -f 2`" ; then\
@@ -87,8 +85,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
-tr.Processes.Default.StartBefore(
-    server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
@@ -108,6 +105,7 @@ tr.StillRunningAfter = ts
 
 
 def make_done_stat_ready(tsenv):
+
     def done_stat_ready(process, hasRunFor, **kw):
         retval = subprocess.run(
             "traffic_ctl metric get continuations_verify.test.done",

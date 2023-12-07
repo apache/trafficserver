@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 An h2 client built to trigger active timeout.
 '''
@@ -132,14 +131,9 @@ def makerequest(port: int, path: str, delay: int) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("port",
-                        type=int,
-                        help="Port to use")
-    parser.add_argument("path",
-                        help="The path to request")
-    parser.add_argument("delay",
-                        type=int,
-                        help="The number of seconds to delay betwen requests in a stream")
+    parser.add_argument("port", type=int, help="Port to use")
+    parser.add_argument("path", help="The path to request")
+    parser.add_argument("delay", type=int, help="The number of seconds to delay betwen requests in a stream")
     args = parser.parse_args()
 
     makerequest(args.port, args.path, args.delay)

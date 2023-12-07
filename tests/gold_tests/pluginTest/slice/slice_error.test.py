@@ -25,9 +25,7 @@ Slice plugin error.log test
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
 
-Test.SkipUnless(
-    Condition.PluginExists('slice.so'),
-)
+Test.SkipUnless(Condition.PluginExists('slice.so'),)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -39,22 +37,17 @@ ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 body = "the quick brown fox"  # len 19
 
 # default root
-request_header_chk = {"headers":
-                      "GET / HTTP/1.1\r\n" +
-                      "Host: ats\r\n" +
-                      "Range: bytes=0-\r\n" +
-                      "\r\n",
-                      "timestamp": "1469733493.993",
-                      "body": "",
-                      }
+request_header_chk = {
+    "headers": "GET / HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes=0-\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_chk = {"headers":
-                       "HTTP/1.1 206 Partial Content\r\n" +
-                       "Connection: close\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": body,
-                       }
+response_header_chk = {
+    "headers": "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body,
+}
 
 server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
@@ -68,217 +61,174 @@ body1 = body[blockbytes:2 * blockbytes]
 
 # Mismatch etag
 
-request_header_etag0 = {"headers":
-                        "GET /etag HTTP/1.1\r\n" +
-                        "Host: ats\r\n" +
-                        "Range: bytes={}\r\n".format(range0) +
-                        "X-Slicer-Info: full content request\r\n" +
-                        "\r\n",
-                        "timestamp": "1469733493.993",
-                        "body": "",
-                        }
+request_header_etag0 = {
+    "headers":
+        "GET /etag HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_etag0 = {"headers":
-                         "HTTP/1.1 206 Partial Content\r\n" +
-                         "Connection: close\r\n" +
-                         'Etag: "etag0"\r\n' +
-                         "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-                         "Cache-Control: max-age=500\r\n" +
-                         "\r\n",
-                         "timestamp": "1469733493.993",
-                         "body": body0,
-                         }
+response_header_etag0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag0"\r\n' +
+        "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body0,
+}
 
 server.addResponse("sessionlog.json", request_header_etag0, response_header_etag0)
 
-request_header_etag1 = {"headers":
-                        "GET /etag HTTP/1.1\r\n" +
-                        "Host: ats\r\n" +
-                        "Range: bytes={}\r\n".format(range1) +
-                        "X-Slicer-Info: full content request\r\n" +
-                        "\r\n",
-                        "timestamp": "1469733493.993",
-                        "body": "",
-                        }
+request_header_etag1 = {
+    "headers":
+        "GET /etag HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_etag1 = {"headers":
-                         "HTTP/1.1 206 Partial Content\r\n" +
-                         "Connection: close\r\n" +
-                         'Etag: "etag1"\r\n' +
-                         "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) +
-                         "Cache-Control: max-age=500\r\n" +
-                         "\r\n",
-                         "timestamp": "1469733493.993",
-                         "body": body1,
-                         }
+response_header_etag1 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag1"\r\n' +
+        "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body1,
+}
 
 server.addResponse("sessionlog.json", request_header_etag1, response_header_etag1)
 
 # mismatch Last-Modified
 
-request_header_lm0 = {"headers":
-                      "GET /lastmodified HTTP/1.1\r\n" +
-                      "Host: ats\r\n" +
-                      "Range: bytes={}\r\n".format(range0) +
-                      "X-Slicer-Info: full content request\r\n" +
-                      "\r\n",
-                      "timestamp": "1469733493.993",
-                      "body": "",
-                      }
+request_header_lm0 = {
+    "headers":
+        "GET /lastmodified HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_lm0 = {"headers":
-                       "HTTP/1.1 206 Partial Content\r\n" +
-                       "Connection: close\r\n" +
-                       "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" +
-                       "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-                       "Cache-Control: max-age=500\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": body0,
-                       }
+response_header_lm0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" +
+        "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body0,
+}
 
 server.addResponse("sessionlog.json", request_header_lm0, response_header_lm0)
 
-request_header_lm1 = {"headers":
-                      "GET /lastmodified HTTP/1.1\r\n" +
-                      "Host: ats\r\n" +
-                      "Range: bytes={}\r\n".format(range1) +
-                      "X-Slicer-Info: full content request\r\n" +
-                      "\r\n",
-                      "timestamp": "1469733493.993",
-                      "body": "",
-                      }
+request_header_lm1 = {
+    "headers":
+        "GET /lastmodified HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_lm1 = {"headers":
-                       "HTTP/1.1 206 Partial Content\r\n" +
-                       "Connection: close\r\n" +
-                       "Last-Modified: Tue, 08 Apr 2019 18:00:00 GMT\r\n" +
-                       "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) +
-                       "Cache-Control: max-age=500\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": body1,
-                       }
+response_header_lm1 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Last-Modified: Tue, 08 Apr 2019 18:00:00 GMT\r\n" +
+        "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body1,
+}
 
 server.addResponse("sessionlog.json", request_header_lm1, response_header_lm1)
 
 # non 206 slice block
 
-request_header_n206_0 = {"headers":
-                         "GET /non206 HTTP/1.1\r\n" +
-                         "Host: ats\r\n" +
-                         "Range: bytes={}\r\n".format(range0) +
-                         "X-Slicer-Info: full content request\r\n" +
-                         "\r\n",
-                         "timestamp": "1469733493.993",
-                         "body": "",
-                         }
+request_header_n206_0 = {
+    "headers":
+        "GET /non206 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_n206_0 = {"headers":
-                          "HTTP/1.1 206 Partial Content\r\n" +
-                          "Connection: close\r\n" +
-                          'Etag: "etag"\r\n' +
-                          "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" +
-                          "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-                          "Cache-Control: max-age=500\r\n" +
-                          "\r\n",
-                          "timestamp": "1469733493.993",
-                          "body": body0,
-                          }
+response_header_n206_0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' +
+        "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" + "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
+        "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body0,
+}
 
 server.addResponse("sessionlog.json", request_header_n206_0, response_header_n206_0)
 
-request_header_n206_1 = {"headers":
-                         "GET /non206 HTTP/1.1\r\n" +
-                         "Host: ats\r\n" +
-                         "Range: bytes={}\r\n".format(range1) +
-                         "X-Slicer-Info: full content request\r\n" +
-                         "\r\n",
-                         "timestamp": "1469733493.993",
-                         "body": "",
-                         }
+request_header_n206_1 = {
+    "headers":
+        "GET /non206 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_n206_1 = {"headers":
-                          "HTTP/1.1 502 Bad Gateway\r\n" +
-                          "Connection: close\r\n" +
-                          "\r\n",
-                          "timestamp": "1469733493.993",
-                          "body": body1,
-                          }
+response_header_n206_1 = {
+    "headers": "HTTP/1.1 502 Bad Gateway\r\n" + "Connection: close\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body1,
+}
 
 server.addResponse("sessionlog.json", request_header_n206_1, response_header_n206_1)
 
 # mismatch content-range
 
-request_header_crr0 = {"headers":
-                       "GET /crr HTTP/1.1\r\n" +
-                       "Host: ats\r\n" +
-                       "Range: bytes={}\r\n".format(range0) +
-                       "X-Slicer-Info: full content request\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": "",
-                       }
+request_header_crr0 = {
+    "headers":
+        "GET /crr HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_crr0 = {"headers":
-                        "HTTP/1.1 206 Partial Content\r\n" +
-                        "Connection: close\r\n" +
-                        "Etag: crr\r\n" +
-                        "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-                        "Cache-Control: max-age=500\r\n" +
-                        "\r\n",
-                        "timestamp": "1469733493.993",
-                        "body": body0,
-                        }
+response_header_crr0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Etag: crr\r\n" +
+        "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body0,
+}
 
 server.addResponse("sessionlog.json", request_header_crr0, response_header_crr0)
 
-request_header_crr1 = {"headers":
-                       "GET /crr HTTP/1.1\r\n" +
-                       "Host: ats\r\n" +
-                       "Range: bytes={}\r\n".format(range1) +
-                       "X-Slicer-Info: full content request\r\n" +
-                       "\r\n",
-                       "timestamp": "1469733493.993",
-                       "body": "",
-                       }
+request_header_crr1 = {
+    "headers":
+        "GET /crr HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_crr1 = {"headers":
-                        "HTTP/1.1 206 Partial Content\r\n" +
-                        "Connection: close\r\n" +
-                        "Etag: crr\r\n" +
-                        "Content-Range: bytes {}/{}\r\n".format(range1, len(body) - 1) +
-                        "Cache-Control: max-age=500\r\n" +
-                        "\r\n",
-                        "timestamp": "1469733493.993",
-                        "body": body1,
-                        }
+response_header_crr1 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Etag: crr\r\n" +
+        "Content-Range: bytes {}/{}\r\n".format(range1,
+                                                len(body) - 1) + "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body1,
+}
 
 server.addResponse("sessionlog.json", request_header_crr1, response_header_crr1)
 
 # 404 internal block
 
-request_header_internal404_0 = {"headers":
-                                "GET /internal404 HTTP/1.1\r\n" +
-                                "Host: ats\r\n" +
-                                "Range: bytes={}\r\n".format(range0) +
-                                "X-Slicer-Info: full content request\r\n" +
-                                "\r\n",
-                                "timestamp": "1469733493.993",
-                                "body": "",
-                                }
+request_header_internal404_0 = {
+    "headers":
+        "GET /internal404 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
+        "X-Slicer-Info: full content request\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
 
-response_header_internal404_0 = {"headers":
-                                 "HTTP/1.1 206 Partial Content\r\n" +
-                                 "Connection: close\r\n" +
-                                 'Etag: "etag"\r\n' +
-                                 "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" +
-                                 "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-                                 "Cache-Control: max-age=500\r\n" +
-                                 "\r\n",
-                                 "timestamp": "1469733493.993",
-                                 "body": body0,
-                                 }
+response_header_internal404_0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' +
+        "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" + "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
+        "Cache-Control: max-age=500\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": body0,
+}
 
 server.addResponse("sessionlog.json", request_header_internal404_0, response_header_internal404_0)
 
@@ -286,9 +236,7 @@ curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.f
 
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(blockbytes)
-)
+    'map / http://127.0.0.1:{}'.format(server.Variables.Port) + ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(blockbytes))
 
 # minimal configuration
 ts.Disk.records_config.update({
@@ -300,8 +248,8 @@ ts.Disk.records_config.update({
 # taken from the slice plug code
 ts.Disk.diags_log.Content = Testers.ContainsExpression('reason="Mismatch block Etag', "Mismatch block etag")
 ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="Mismatch block Last-Modified', "Mismatch block Last-Modified")
-ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="Mismatch/Bad block Content-Range',
-                                                        "Mismatch/Bad block Content-Range")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    'reason="Mismatch/Bad block Content-Range', "Mismatch/Bad block Content-Range")
 ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="404 internal block response', "404 internal block response")
 
 # 0 Test - Etag mismatch test
