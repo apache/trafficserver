@@ -110,9 +110,14 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////
 
-struct HttpBodySetRawData {
+class HttpBodySetRawData
+{
+public:
   using TemplateTable = std::unordered_map<std::string, HttpBodyTemplate *>;
-  unsigned int magic  = 0;
+
+  virtual ~HttpBodySetRawData() {}
+
+  unsigned int magic = 0;
   char *set_name;
   char *content_language;
   char *content_charset;
