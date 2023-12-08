@@ -742,6 +742,8 @@ ats_ip_copy(sockaddr *dst,      ///< Destination object.
   }
   if (n) {
     if (src != dst) {
+      // It can access beyond sizeof(sockaddr) but the real size is checked above
+      // coverity[access_dbuff_const]
       memcpy(dst, src, n);
 #if HAVE_STRUCT_SOCKADDR_SA_LEN
       dst->sa_len = n;
