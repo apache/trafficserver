@@ -27,6 +27,8 @@
 #include <cstdlib>
 #include <atomic>
 #include <string>
+#include <list>
+#include <memory>
 
 #include "rules.h"
 
@@ -41,11 +43,12 @@ extern DbgCtl Bg_dbg_ctl;
 class BgFetchConfig
 {
 public:
+  using list_type = std::list<BgFetchRule>;
+
   explicit BgFetchConfig(TSCont cont) : _cont(cont) { TSContDataSet(cont, static_cast<void *>(this)); }
 
   ~BgFetchConfig()
   {
-    delete _rules;
     if (_cont) {
       TSContDestroy(_cont);
     }
@@ -53,7 +56,7 @@ public:
 
   bool parseOptions(int argc, const char *argv[]);
 
-  BgFetchRule *
+  list_type const &
   getRules() const
   {
     return _rules;
@@ -83,8 +86,8 @@ public:
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  TSCont _cont        = nullptr;
-  BgFetchRule *_rules = nullptr;
-  bool _allow_304     = false;
+  TSCont _cont = nullptr;
+  list_type _rules;
+  bool _allow_304 = false;
   std::string _log_file;
 };

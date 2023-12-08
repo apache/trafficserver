@@ -26,50 +26,107 @@
 #include <string_view>
 #include <cstring>
 
+#include <swoc/IPEndpoint.h>
+#include <swoc/swoc_meta.h>
+
 #include "configs.h"
 #include "rules.h"
+
+#include "tscpp/util/ts_bw_format.h"
+#include "tscpp/util/ts_ip.h"
 
 ///////////////////////////////////////////////////////////////////////////
 // These are little helper functions for the main rules evaluator.
 //
 static bool
-check_client_ip_configured(TSHttpTxn txnp, const char *cfg_ip)
+check_value(TSHttpTxn txnp, swoc::IPRange const &range)
 {
   const sockaddr *client_ip = TSHttpTxnClientAddrGet(txnp);
-  char ip_buf[INET6_ADDRSTRLEN];
-
-  if (AF_INET == client_ip->sa_family) {
-    inet_ntop(AF_INET, &(reinterpret_cast<const sockaddr_in *>(client_ip)->sin_addr), ip_buf, INET_ADDRSTRLEN);
-  } else if (AF_INET6 == client_ip->sa_family) {
-    inet_ntop(AF_INET6, &(reinterpret_cast<const sockaddr_in6 *>(client_ip)->sin6_addr), ip_buf, INET6_ADDRSTRLEN);
-  } else {
-    TSError("[%s] Unknown family %d", PLUGIN_NAME, client_ip->sa_family);
+  if (!client_ip) {
     return false;
   }
 
-  Dbg(Bg_dbg_ctl, "cfg_ip %s, client_ip %s", cfg_ip, ip_buf);
-
-  if ((strlen(cfg_ip) == strlen(ip_buf)) && !strcmp(cfg_ip, ip_buf)) {
-    Dbg(Bg_dbg_ctl, "bg fetch for ip %s, configured ip %s", ip_buf, cfg_ip);
+  if (range.empty()) { // this means "match any address".
     return true;
+  }
+
+  swoc::IPEndpoint client_addr{client_ip};
+
+  swoc::bwprint(ts::bw_dbg, "cfg_ip {::c}, client_ip {}", range, client_addr);
+  Dbg(Bg_dbg_ctl, "%s", ts::bw_dbg.c_str());
+
+  if (client_addr.family() == range.family()) {
+    return (range.is_ip4() && range.ip4().contains(swoc::IP4Addr(client_addr.ip4()))) ||
+           (range.is_ip6() && range.ip6().contains(swoc::IP6Addr(client_addr.ip6())));
+  }
+
+  return false; // Different family, no match.
+}
+
+static bool
+check_value(TSHttpTxn txnp, BgFetchRule::size_cmp_type const &cmp)
+{
+  TSMBuffer hdr_bufp;
+  TSMLoc hdr_loc;
+
+  if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &hdr_bufp, &hdr_loc)) {
+    TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
+    return false;
+  }
+
+  TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  if (TS_NULL_MLOC == loc) {
+    Dbg(Bg_dbg_ctl, "No content-length field in resp");
+    return false; // Field not found.
+  }
+
+  auto content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
+  TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
+
+  if (cmp._op == BgFetchRule::size_cmp_type::OP::GREATER_THAN_OR_EQUAL) {
+    return content_len >= cmp._size;
+  } else if (cmp._op == BgFetchRule::size_cmp_type::OP::LESS_THAN_OR_EQUAL) {
+    return content_len <= cmp._size;
   }
 
   return false;
 }
 
 static bool
-check_content_length(const uint32_t len, const char *cfg_val)
+check_value(TSHttpTxn txnp, BgFetchRule::field_cmp_type const &cmp)
 {
-  uint32_t cfg_cont_len = atoi(&cfg_val[1]);
+  TSMBuffer hdr_bufp;
+  TSMLoc hdr_loc;
 
-  if (cfg_val[0] == '<') {
-    return (len <= cfg_cont_len);
-  } else if (cfg_val[0] == '>') {
-    return (len >= cfg_cont_len);
-  } else {
-    TSError("[%s] Invalid content length condition %c", PLUGIN_NAME, cfg_val[0]);
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &hdr_bufp, &hdr_loc)) {
+    TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
     return false;
   }
+
+  TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, cmp._name.data(), cmp._name.size());
+
+  if (TS_NULL_MLOC == loc) {
+    Dbg(Bg_dbg_ctl, "no field %s in request header", cmp._name.c_str());
+    return false;
+  }
+
+  if (cmp._name.size() == 1 && cmp._name.front() == '*') {
+    Dbg(Bg_dbg_ctl, "Found %s wild card", cmp._name.c_str());
+    return true;
+  }
+
+  int val_len         = 0;
+  char const *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, hdr_loc, loc, 0, &val_len);
+  bool zret           = false;
+
+  if (!val_str || val_len <= 0) {
+    Dbg(Bg_dbg_ctl, "invalid field");
+  } else {
+    Dbg(Bg_dbg_ctl, "comparing with %s", cmp._value.c_str());
+    zret = std::string_view::npos != std::string_view(val_str, val_len).find(cmp._value);
+  }
+  TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
+  return zret;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -78,74 +135,9 @@ check_content_length(const uint32_t len, const char *cfg_val)
 bool
 BgFetchRule::check_field_configured(TSHttpTxn txnp) const
 {
-  // check for client-ip first
-  if (!strcmp(_field, "Client-IP")) {
-    if (!strcmp(_value, "*")) {
-      Dbg(Bg_dbg_ctl, "Found client_ip wild card");
-      return true;
-    }
-    if (check_client_ip_configured(txnp, _value)) {
-      Dbg(Bg_dbg_ctl, "Found client_ip match");
-      return true;
-    }
-  }
-
-  bool hdr_found = false;
-  TSMBuffer hdr_bufp;
-  TSMLoc hdr_loc;
-
-  // Check response headers. ToDo: This doesn't check e.g. Content-Type :-/.
-  if (!strcmp(_field, "Content-Length")) {
-    if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &hdr_bufp, &hdr_loc)) {
-      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
-
-      if (TS_NULL_MLOC != loc) {
-        unsigned int content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
-
-        if (check_content_length(content_len, _value)) {
-          Dbg(Bg_dbg_ctl, "Found content-length match");
-          hdr_found = true;
-        }
-        TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
-      } else {
-        Dbg(Bg_dbg_ctl, "No content-length field in resp");
-      }
-      TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
-    } else {
-      TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
-    }
-    return hdr_found;
-  }
-
-  // Check request headers
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &hdr_loc)) {
-    TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
-
-    if (TS_NULL_MLOC != loc) {
-      if (!strcmp(_value, "*")) {
-        Dbg(Bg_dbg_ctl, "Found %s wild card", _field);
-        hdr_found = true;
-      } else {
-        int val_len         = 0;
-        const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, hdr_loc, loc, 0, &val_len);
-
-        if (!val_str || val_len <= 0) {
-          Dbg(Bg_dbg_ctl, "invalid field");
-        } else {
-          Dbg(Bg_dbg_ctl, "comparing with %s", _value);
-          if (std::string_view::npos != std::string_view(val_str, val_len).find(_value)) {
-            hdr_found = true;
-          }
-        }
-      }
-      TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
-    } else {
-      Dbg(Bg_dbg_ctl, "no field %s in request header", _field);
-    }
-    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
-  } else {
-    TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
-  }
-
-  return hdr_found;
+  return std::visit(swoc::meta::vary{[=](std::monostate) { return false; },
+                                     [=](swoc::IPRange const &range) { return check_value(txnp, range); },
+                                     [=](size_cmp_type const &cmp) { return check_value(txnp, cmp); },
+                                     [=](field_cmp_type const &cmp) { return check_value(txnp, cmp); }},
+                    _value);
 }
