@@ -1392,18 +1392,6 @@ tsapi::c::TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_
 //
 ////////////////////////////////////////////////////////////////////
 
-unsigned int
-tsapi::c::TSrandom()
-{
-  return this_ethread()->generator.random();
-}
-
-double
-tsapi::c::TSdrandom()
-{
-  return this_ethread()->generator.drandom();
-}
-
 ink_hrtime
 tsapi::c::TShrtime()
 {
@@ -2414,22 +2402,6 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
 
 // TSMBuffer: pointers to HdrHeapSDKHandle objects
 // TSMLoc:    pointers to MIMEFieldSDKHandle objects
-
-int
-tsapi::c::TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1_obj, TSMLoc field2_obj)
-{
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_field_handle(field1_obj, hdr_obj) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_field_handle(field2_obj, hdr_obj) == TS_SUCCESS);
-
-  MIMEFieldSDKHandle *field1_handle = (MIMEFieldSDKHandle *)field1_obj;
-  MIMEFieldSDKHandle *field2_handle = (MIMEFieldSDKHandle *)field2_obj;
-
-  if ((field1_handle == nullptr) || (field2_handle == nullptr)) {
-    return (field1_handle == field2_handle);
-  }
-  return (field1_handle->field_ptr == field2_handle->field_ptr);
-}
 
 tsapi::c::TSMLoc
 tsapi::c::TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr_obj, int idx)
@@ -4553,24 +4525,6 @@ tsapi::c::TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
   sm->txn_hook_add(id, (INKContInternal *)contp);
 }
 
-// Private api function for gzip plugin.
-//  This function should only appear in TsapiPrivate.h
-TSReturnCode
-tsapi::c::TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
-{
-  HttpSM *sm    = (HttpSM *)txnp;
-  APIHook *hook = sm->txn_hook_get(id);
-
-  while (hook != nullptr) {
-    if (hook->m_cont && hook->m_cont->m_event_func == funcp) {
-      return TS_SUCCESS;
-    }
-    hook = hook->m_link.next;
-  }
-
-  return TS_ERROR;
-}
-
 tsapi::c::TSHttpSsn
 tsapi::c::TSHttpTxnSsnGet(TSHttpTxn txnp)
 {
@@ -4578,16 +4532,6 @@ tsapi::c::TSHttpTxnSsnGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return reinterpret_cast<TSHttpSsn>(sm->get_ua_txn() ? (TSHttpSsn)sm->get_ua_txn()->get_proxy_ssn() : nullptr);
-}
-
-// TODO: Is this still necessary ??
-void
-tsapi::c::TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set)
-{
-  HttpSM *sm             = (HttpSM *)txnp;
-  HttpTransact::State *s = &(sm->t_state);
-
-  s->hdr_info.trust_response_cl = (set != 0);
 }
 
 TSReturnCode
@@ -5236,15 +5180,6 @@ tsapi::c::TSHttpTxnClientReqIsServerStyle(TSHttpTxn txnp)
 
   HttpSM *sm = (HttpSM *)txnp;
   return (sm->t_state.hdr_info.client_req_is_server_style ? 1 : 0);
-}
-
-void
-tsapi::c::TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s    = &(((HttpSM *)txnp)->t_state);
-  s->plugin_set_expire_time = expire_time;
 }
 
 TSReturnCode
@@ -6152,17 +6087,6 @@ tsapi::c::TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
 }
 
 int
-tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm             = (HttpSM *)txnp;
-  HttpTransact::State *s = &(sm->t_state);
-
-  return (int)(s->current.request_to);
-}
-
-int
 tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
   return Metrics::Gauge::load(http_rsb.current_client_connections);
@@ -6871,40 +6795,6 @@ tsapi::c::TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
  * checks if the cache is ready
  */
 
-/* Only TSCacheReady exposed in SDK. No need of TSCacheDataTypeReady */
-/* because SDK cache API supports only the data type: NONE */
-TSReturnCode
-tsapi::c::TSCacheReady(int *is_ready)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)is_ready) == TS_SUCCESS);
-  return TSCacheDataTypeReady(TS_CACHE_DATA_TYPE_NONE, is_ready);
-}
-
-/* Private API (used by Mixt) */
-TSReturnCode
-tsapi::c::TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)is_ready) == TS_SUCCESS);
-
-  CacheFragType frag_type;
-
-  switch (type) {
-  case TS_CACHE_DATA_TYPE_NONE:
-    frag_type = CACHE_FRAG_TYPE_NONE;
-    break;
-  case TS_CACHE_DATA_TYPE_OTHER: /* other maps to http */
-  case TS_CACHE_DATA_TYPE_HTTP:
-    frag_type = CACHE_FRAG_TYPE_HTTP;
-    break;
-  default:
-    *is_ready = 0;
-    return TS_ERROR;
-  }
-
-  *is_ready = cacheProcessor.IsCacheReady(frag_type);
-  return TS_SUCCESS;
-}
-
 /* Cache VConnections */
 tsapi::c::TSAction
 tsapi::c::TSCacheRead(TSCont contp, TSCacheKey key)
@@ -7199,72 +7089,6 @@ tsapi::c::TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
     }
   }
   return retval;
-}
-
-/* Matcher Utils */
-char *
-tsapi::c::TSMatcherReadIntoBuffer(char *file_name, int *file_len)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)file_name) == TS_SUCCESS);
-  return readIntoBuffer(file_name, "TSMatcher", file_len);
-}
-
-char *
-tsapi::c::TSMatcherTokLine(char *buffer, char **last)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)buffer) == TS_SUCCESS);
-  return tokLine(buffer, last);
-}
-
-char *
-tsapi::c::TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)match_str) == TS_SUCCESS);
-  return (char *)ExtractIpRange(match_str, addr1, addr2);
-}
-
-#if 0 // Not used
-// Conflict in header due to overload (must be C compatible).
-char *
-tsapi::c::TSMatcherExtractIPRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)match_str) == TS_SUCCESS);
-  return (char *)ExtractIpRange(match_str, addr1, addr2);
-}
-#endif
-
-tsapi::c::TSMatcherLine
-tsapi::c::TSMatcherLineCreate()
-{
-  return reinterpret_cast<TSMatcherLine>(ats_malloc(sizeof(matcher_line)));
-}
-
-void
-tsapi::c::TSMatcherLineDestroy(TSMatcherLine ml)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
-  ats_free(ml);
-}
-
-const char *
-tsapi::c::TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)line) == TS_SUCCESS);
-  return parseConfigLine(line, (matcher_line *)ml, &ip_allow_src_tags);
-}
-
-char *
-tsapi::c::TSMatcherLineName(TSMatcherLine ml, int element)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
-  return (((matcher_line *)ml)->line)[0][element];
-}
-
-char *
-tsapi::c::TSMatcherLineValue(TSMatcherLine ml, int element)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
-  return (((matcher_line *)ml)->line)[1][element];
 }
 
 void

@@ -774,7 +774,6 @@ public:
     ink_time_t client_request_time    = UNDEFINED_TIME; // internal
     ink_time_t request_sent_time      = UNDEFINED_TIME; // internal
     ink_time_t response_received_time = UNDEFINED_TIME; // internal
-    ink_time_t plugin_set_expire_time = UNDEFINED_TIME;
 
     char via_string[MAX_VIA_INDICES + 1];
 
