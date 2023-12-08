@@ -99,4 +99,13 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
     REQUIRE(mid == fmid);
   }
+
+  SECTION("histogram")
+  {
+    auto h = Metrics::Histogram<7, 2>();
+
+    h(42);
+
+    h.decay();
+  }
 }

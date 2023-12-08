@@ -36,37 +36,58 @@
 #include "swoc/MemSpan.h"
 
 #include "tscore/ink_assert.h"
+#include "tscpp/util/Histogram.h"
 
 namespace ts
 {
+
+class AtomicType
+{
+  friend class Metrics;
+  friend struct HistogramTraits<AtomicType, uint64_t>;
+
+public:
+  AtomicType() = default;
+
+  int64_t
+  load() const
+  {
+    return _value.load();
+  }
+
+  // ToDo: This is a little sketchy, but needed for the old InkAPI metrics.
+  void
+  store(int64_t val)
+  {
+    _value.store(val);
+  }
+
+protected:
+  std::atomic<int64_t> _value{0};
+};
+
+template <> struct HistogramTraits<AtomicType, uint64_t> {
+  static void
+  increment(AtomicType &v, uint64_t i = 1)
+  {
+    v._value += i;
+  }
+  static uint64_t
+  load(const AtomicType &v)
+  {
+    return v.load();
+  }
+  static void
+  store(AtomicType &v, uint64_t n)
+  {
+    v.store(n);
+  }
+};
+
 class Metrics
 {
 private:
   using self_type = Metrics;
-
-  class AtomicType
-  {
-    friend class Metrics;
-
-  public:
-    AtomicType() = default;
-
-    int64_t
-    load() const
-    {
-      return _value.load();
-    }
-
-    // ToDo: This is a little sketchy, but needed for the old InkAPI metrics.
-    void
-    store(int64_t val)
-    {
-      _value.store(val);
-    }
-
-  protected:
-    std::atomic<int64_t> _value{0};
-  };
 
 public:
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
@@ -280,9 +301,7 @@ public:
     using self_type = Gauge;
     using SpanType  = Metrics::SpanType;
 
-    class AtomicType : public Metrics::AtomicType
-    {
-    };
+    using AtomicType = ts::AtomicType;
 
     static IdType
     lookup(const std::string_view name)
@@ -368,9 +387,7 @@ public:
     using self_type = Counter;
     using SpanType  = Metrics::SpanType;
 
-    class AtomicType : public Metrics::AtomicType
-    {
-    };
+    using AtomicType = ts::AtomicType;
 
     static IdType
     lookup(const std::string_view name)
@@ -436,6 +453,7 @@ public:
 
   }; // class Counter
 
+  template <auto R, auto S> using Histogram = ts::Histogram<R, S, AtomicType>;
 }; // class Metrics
 
 } // namespace ts

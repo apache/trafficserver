@@ -28,6 +28,25 @@
 
 namespace ts
 {
+
+template <typename ST, typename RT> struct HistogramTraits {
+  static void
+  increment(ST &v, RT i = 1)
+  {
+    v += i;
+  }
+  static RT
+  load(const ST &v)
+  {
+    return v;
+  }
+  static void
+  store(ST &v, RT n)
+  {
+    v = n;
+  }
+};
+
 /** Small fast histogram.
  *
  * This is a stepped logarithmic histogram. Each range is twice the size of the previous range. Each range is divided into equal
@@ -53,7 +72,7 @@ namespace ts
  * @tparam S Bits used for spans inside a range.
  *
  */
-template <auto R, auto S> class Histogram
+template <auto R, auto S, typename ST = uint64_t> class Histogram
 {
   using self_type = Histogram; ///< Self reference type.
 
@@ -115,32 +134,34 @@ public:
 
 protected:
   /// The buckets.
-  std::array<raw_type, N_BUCKETS> _bucket = {0};
+  std::array<ST, N_BUCKETS> _bucket = {ST{}};
 };
 
 /// @cond INTERNAL_DETAIL
-template <auto R, auto S>
+template <auto R, auto S, typename ST>
 auto
-Histogram<R, S>::operator[](unsigned int idx) -> raw_type
+Histogram<R, S, ST>::operator[](unsigned int idx) -> raw_type
 {
-  return _bucket[idx];
+  return HistogramTraits<ST, raw_type>::load(_bucket[idx]);
 }
 
-template <auto R, auto S>
+template <auto R, auto S, typename ST>
 auto
-Histogram<R, S>::operator+=(self_type const &that) -> self_type &
+Histogram<R, S, ST>::operator+=(self_type const &that) -> self_type &
 {
   auto dst = _bucket.data();
   auto src = that._bucket.data();
   for (raw_type idx = 0; idx < N_BUCKETS; ++idx) {
-    *dst++ += *src++;
+    HistogramTraits<ST, raw_type>::store(*dst, HistogramTraits<ST, raw_type>::load(*src));
+    ++dst;
+    ++src;
   }
   return *this;
 }
 
-template <auto R, auto S>
+template <auto R, auto S, typename ST>
 auto
-Histogram<R, S>::operator()(raw_type sample) -> self_type &
+Histogram<R, S, ST>::operator()(raw_type sample) -> self_type &
 {
   int idx = N_BUCKETS - 1; // index of overflow bucket
   if (sample < UNDERFLOW_BOUND) {
@@ -160,13 +181,13 @@ Histogram<R, S>::operator()(raw_type sample) -> self_type &
     }
     idx += (sample >> normalize_shift_count) & SPAN_MASK;
   } // else idx remains the overflow bucket.
-  ++_bucket[idx];
+  HistogramTraits<ST, raw_type>::increment(_bucket[idx]);
   return *this;
 }
 
-template <auto R, auto S>
+template <auto R, auto S, typename ST>
 auto
-Histogram<R, S>::min_for_bucket(unsigned idx) -> raw_type
+Histogram<R, S, ST>::min_for_bucket(unsigned idx) -> raw_type
 {
   auto range         = idx / N_SPAN_BUCKETS;
   raw_type base      = 0; // minimum value for the range (not span!).
@@ -180,12 +201,12 @@ Histogram<R, S>::min_for_bucket(unsigned idx) -> raw_type
   return base + span_size * (idx & SPAN_MASK);
 }
 
-template <auto R, auto S>
+template <auto R, auto S, typename ST>
 auto
-Histogram<R, S>::decay() -> self_type &
+Histogram<R, S, ST>::decay() -> self_type &
 {
   for (auto &v : _bucket) {
-    v >>= 1;
+    HistogramTraits<ST, raw_type>::store(v, HistogramTraits<ST, raw_type>::load(v) >> 1);
   }
   return *this;
 }
