@@ -50,6 +50,7 @@ public:
     }
   };
   CacheScan(Stripe *str) : stripe(str) {}
+  ~CacheScan() { delete u_matcher; }
   Errata Scan(bool search = false);
   Errata get_alternates(const char *buf, int length, bool search);
   int unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
