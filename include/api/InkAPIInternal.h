@@ -39,7 +39,6 @@
 
 #include "swoc/swoc_file.h"
 #include "ts/InkAPIPrivateIOCore.h"
-#include "ts/experimental.h"
 
 #include <typeinfo>
 

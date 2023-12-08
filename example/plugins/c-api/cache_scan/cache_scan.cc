@@ -31,7 +31,6 @@
 #include <cstdlib>
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "cache_scan"

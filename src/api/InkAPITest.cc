@@ -43,7 +43,6 @@
 #include "tscore/Regression.h"
 #include "tscore/Filenames.h"
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "records/RecCore.h"
 
 #include "../iocore/net/P_Net.h"

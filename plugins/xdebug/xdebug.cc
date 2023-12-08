@@ -32,7 +32,6 @@
 #include <unistd.h>
 
 #include <ts/ts.h>
-#include "ts/experimental.h"
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "swoc/TextView.h"
