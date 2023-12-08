@@ -32,8 +32,8 @@ math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR}
 # for testing purposes. For example, it can be used on CI to check compatibility
 # with a newer standard than what our codebase currently has to comply with.
 set(CMAKE_CXX_STANDARD
-    17
-    CACHE STRING "The C++ standard to compile with (default 17)"
+    20
+    CACHE STRING "The C++ standard to compile with (default 20)"
 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
