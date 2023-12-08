@@ -66,24 +66,6 @@ protected:
   std::atomic<int64_t> _value{0};
 };
 
-template <> struct HistogramTraits<AtomicType, uint64_t> {
-  static void
-  increment(AtomicType &v, uint64_t i = 1)
-  {
-    v._value += i;
-  }
-  static uint64_t
-  load(const AtomicType &v)
-  {
-    return v.load();
-  }
-  static void
-  store(AtomicType &v, uint64_t n)
-  {
-    v.store(n);
-  }
-};
-
 class Metrics
 {
 private:
@@ -455,5 +437,29 @@ public:
 
   template <auto R, auto S> using Histogram = ts::Histogram<R, S, AtomicType>;
 }; // class Metrics
+   //
+template <> struct HistogramTraits<AtomicType, uint64_t> {
+  static void
+  increment(AtomicType &v, uint64_t i = 1)
+  {
+    v._value += i;
+  }
+  static uint64_t
+  load(const AtomicType &v)
+  {
+    return v.load();
+  }
+  static void
+  store(AtomicType &v, uint64_t n)
+  {
+    v.store(n);
+  }
+
+  template <int N> struct SpanStorage : Metrics::Gauge::SpanType {
+    SpanStorage() : Metrics::Gauge::SpanType(Metrics::Gauge::createSpan(N)) {}
+  };
+
+  template <int N> using Storage = SpanStorage<N>;
+};
 
 } // namespace ts

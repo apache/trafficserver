@@ -45,6 +45,8 @@ template <typename ST, typename RT> struct HistogramTraits {
   {
     v = n;
   }
+
+  template <int N> using Storage = std::array<ST, N>;
 };
 
 /** Small fast histogram.
@@ -135,7 +137,7 @@ public:
 
 protected:
   /// The buckets.
-  std::array<ST, N_BUCKETS> _bucket = {ST{}};
+  typename storage::template Storage<N_BUCKETS> _bucket = {};
 };
 
 /// @cond INTERNAL_DETAIL
