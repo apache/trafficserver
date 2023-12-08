@@ -28,6 +28,12 @@
 
 #include "configs.h"
 
+#include <swoc/TextView.h>
+#include <swoc/swoc_file.h>
+#include <tscpp/util/ts_bw_format.h>
+
+using namespace swoc::literals;
+
 // Parse the command line options. This got a little wonky, since we decided to have different
 // syntax for remap vs global plugin initialization, and the global BG fetch state :-/. Clean up
 // later...
@@ -78,98 +84,102 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
 bool
 BgFetchConfig::readConfig(const char *config_file)
 {
-  char file_path[4096];
-  TSFile file;
-
   if (nullptr == config_file) {
     TSError("[%s] invalid config file", PLUGIN_NAME);
     return false;
   }
 
+  swoc::file::path path(config_file);
+
   Dbg(Bg_dbg_ctl, "trying to open config file in this path: %s", config_file);
 
-  if (*config_file == '/') {
-    snprintf(file_path, sizeof(file_path), "%s", config_file);
-  } else {
-    snprintf(file_path, sizeof(file_path), "%s/%s", TSConfigDirGet(), config_file);
+  if (!path.is_absolute()) {
+    path = swoc::file::path(TSConfigDirGet()) / path;
   }
-  Dbg(Bg_dbg_ctl, "chosen config file is at: %s", file_path);
+  Dbg(Bg_dbg_ctl, "chosen config file is at: %s", path.c_str());
 
-  file = TSfopen(file_path, "r");
-  if (nullptr == file) {
-    TSError("[%s] invalid config file:  %s", PLUGIN_NAME, file_path);
-    Dbg(Bg_dbg_ctl, "invalid config file: %s", file_path);
+  std::error_code ec;
+  auto content = swoc::file::load(path, ec);
+  if (ec) {
+    swoc::bwprint(ts::bw_dbg, "[{}] invalid config file: {} {}", PLUGIN_NAME, path, ec);
+    TSError("%s", ts::bw_dbg.c_str());
+    Dbg(Bg_dbg_ctl, "%s", ts::bw_dbg.c_str());
     return false;
   }
 
-  BgFetchRule *cur = nullptr;
-  char buffer[8192];
+  swoc::TextView text{content};
+  while (text) {
+    auto line = text.take_prefix_at('\n').ltrim_if(&isspace);
 
-  memset(buffer, 0, sizeof(buffer));
-  while (TSfgets(file, buffer, sizeof(buffer) - 1) != nullptr) {
-    char *eol = nullptr;
-
-    // make sure line was not bigger than buffer
-    if (nullptr == (eol = strchr(buffer, '\n')) && nullptr == (eol = strstr(buffer, "\r\n"))) {
-      TSError("[%s] exclusion line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
-      memset(buffer, 0, sizeof(buffer));
-      continue;
-    }
-    // make sure line has something useful on it
-    if (eol - buffer < 2 || buffer[0] == '#') {
-      memset(buffer, 0, sizeof(buffer));
+    if (line.empty() || line.front() == '#') {
       continue;
     }
 
-    char *savePtr = nullptr;
-    char *cfg     = strtok_r(buffer, "\n\r\n", &savePtr);
+    auto cfg_type = line.take_prefix_if(&isspace);
+    if (cfg_type.empty()) {
+      continue;
+    }
 
-    if (nullptr != cfg) {
-      Dbg(Bg_dbg_ctl, "setting background_fetch exclusion criterion based on string: %s", cfg);
-      char *cfg_type  = strtok_r(buffer, " ", &savePtr);
-      char *cfg_name  = nullptr;
-      char *cfg_value = nullptr;
+    Dbg(Bg_dbg_ctl, "setting background_fetch exclusion criterion based on string: %.*s", int(cfg_type.size()), cfg_type.data());
 
-      if (cfg_type) {
-        bool exclude = false;
-        if (!strcmp(cfg_type, "exclude")) {
-          exclude = true;
-        } else if (strcmp(cfg_type, "include")) {
-          TSError("[%s] invalid specifier %s, skipping config line", PLUGIN_NAME, cfg_type);
-          memset(buffer, 0, sizeof(buffer));
-          continue;
-        }
-        cfg_name = strtok_r(nullptr, " ", &savePtr);
-        if (cfg_name) {
-          cfg_value = strtok_r(nullptr, " ", &savePtr);
-          if (cfg_value) {
-            if (!strcmp(cfg_name, "Content-Length")) {
-              if ((cfg_value[0] != '<') && (cfg_value[0] != '>')) {
-                TSError("[%s] invalid content-len condition %s, skipping config value", PLUGIN_NAME, cfg_value);
-                memset(buffer, 0, sizeof(buffer));
-                continue;
-              }
+    bool exclude = false;
+    if (0 == strcasecmp(cfg_type, "exclude")) {
+      exclude = true;
+    } else if (0 != strcasecmp(cfg_type, "include")) {
+      swoc::bwprint(ts::bw_dbg, "[{}] invalid specifier {}, skipping config line", PLUGIN_NAME, cfg_type);
+      TSError("%s", ts::bw_dbg.c_str());
+      continue;
+    }
+
+    if (auto cfg_name = line.take_prefix_if(&isspace); !cfg_name.empty()) {
+      if (auto cfg_value = line.take_prefix_if(&isspace); !cfg_value.empty()) {
+        if ("Client-IP"_tv == cfg_name) {
+          swoc::IPRange r;
+          // '*' is special - match any address. Signalled by empty range.
+          if (cfg_value.size() != 1 || cfg_value.front() == '*') {
+            if (!r.load(cfg_value)) { // assume if it loads, it's not empty.
+              TSError("[%s] invalid IP address range %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
+                      cfg_value.data());
+              continue;
             }
-            BgFetchRule *r = new BgFetchRule(exclude, cfg_name, cfg_value);
-
-            if (nullptr == cur) {
-              _rules = r;
-            } else {
-              cur->chain(r);
-            }
-            cur = r;
-
-            Dbg(Bg_dbg_ctl, "adding background_fetch exclusion rule %d for %s: %s", exclude, cfg_name, cfg_value);
-          } else {
-            TSError("[%s] invalid value %s, skipping config line", PLUGIN_NAME, cfg_name);
           }
+          _rules.emplace_back(exclude, r);
+          swoc::bwprint(ts::bw_dbg, "adding background_fetch address range rule {} for {}: {}", exclude, cfg_name, cfg_value);
+          Dbg(Bg_dbg_ctl, "%s", ts::bw_dbg.c_str());
+        } else if ("Content-Length"_tv == cfg_name) {
+          BgFetchRule::size_cmp_type::OP op;
+          if (cfg_value[0] == '<') {
+            op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
+          } else if (cfg_value[0] == '>') {
+            op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
+          } else {
+            TSError("[%s] invalid Content-Length condition %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
+                    cfg_value.data());
+            continue;
+          }
+          ++cfg_value; // Drop leading character.
+          swoc::TextView parsed;
+          auto n = swoc::svtou(cfg_value, &parsed);
+          if (parsed.size() != cfg_value.size()) {
+            TSError("[%s] invalid Content-Length size value %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
+                    cfg_value.data());
+            continue;
+          }
+          _rules.emplace_back(exclude, op, size_t(n));
+
+          swoc::bwprint(ts::bw_dbg, "adding background_fetch content length rule {} for {}: {}", exclude, cfg_name, cfg_value);
+          Dbg(Bg_dbg_ctl, "%s", ts::bw_dbg.c_str());
+        } else {
+          _rules.emplace_back(exclude, cfg_name, cfg_value);
+          swoc::bwprint(ts::bw_dbg, "adding background_fetch field compare rule {} for {}: {}", exclude, cfg_name, cfg_value);
+          Dbg(Bg_dbg_ctl, "%s", ts::bw_dbg.c_str());
         }
+      } else {
+        TSError("[%s] invalid value %.*s, skipping config line", PLUGIN_NAME, int(cfg_name.size()), cfg_name.data());
       }
-      memset(buffer, 0, sizeof(buffer));
     }
   }
 
-  TSfclose(file);
   Dbg(Bg_dbg_ctl, "Done parsing config");
 
   return true;
@@ -190,10 +200,10 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
   bool allow_bg_fetch = true;
 
   // We could do this recursively, but following the linked list is probably more efficient.
-  for (const BgFetchRule *r = _rules; nullptr != r; r = r->_next) {
-    if (r->check_field_configured(txnp)) {
-      Dbg(Bg_dbg_ctl, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
-      allow_bg_fetch = !r->_exclude;
+  for (auto const &r : _rules) {
+    if (r.check_field_configured(txnp)) {
+      Dbg(Bg_dbg_ctl, "found %s rule match", r._exclude ? "exclude" : "include");
+      allow_bg_fetch = !r._exclude;
       break;
     }
   }

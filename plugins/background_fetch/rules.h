@@ -27,6 +27,10 @@
 #include <cstdlib>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <variant>
+
+#include <swoc/TextView.h>
+#include <swoc/IPRange.h>
 
 #include "ts/ts.h"
 
@@ -36,32 +40,38 @@
 //
 class BgFetchRule
 {
+  using self_type = BgFetchRule;
+
 public:
-  BgFetchRule(bool exc, const char *field, const char *value)
-    : _exclude(exc), _field(TSstrdup(field)), _value(TSstrdup(value)), _next(nullptr)
+  /// Content length / size comparison.
+  struct size_cmp_type {
+    enum OP { LESS_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL } _op; ///< Comparison to use.
+    size_t _size;                                              ///< Size for comparison.
+  };
+
+  /// Field value comparison.
+  struct field_cmp_type {
+    std::string _name;  ///< Field name.
+    std::string _value; ///< Value to compare. A single '*' means match anything - check for field presence.
+  };
+
+  BgFetchRule(bool exc, size_cmp_type::OP op, size_t n) : _exclude(exc), _value(size_cmp_type{op, n}) {}
+  BgFetchRule(bool exc, swoc::IPRange const &range) : _exclude(exc), _value(range) {}
+
+  BgFetchRule(bool exc, swoc::TextView name, swoc::TextView value)
+    : _exclude(exc), _value(field_cmp_type{std::string(name), std::string(value)})
   {
   }
 
-  ~BgFetchRule()
-  {
-    delete _field;
-    delete _value;
-    delete _next;
-  }
-
-  // For chaining the linked list
-  void
-  chain(BgFetchRule *n)
-  {
-    _next = n;
-  }
+  BgFetchRule(self_type &&that) = default;
 
   // Main evaluation entry point.
   bool bgFetchAllowed(TSHttpTxn txnp) const;
   bool check_field_configured(TSHttpTxn txnp) const;
 
-  bool _exclude;
-  const char *_field;
-  const char *_value;
-  BgFetchRule *_next; // For the linked list
+  bool _exclude; ///< Exclusion @c true or inclusion @c false.
+
+  /// Value type for the rule, which also indicates the type of check.
+  using value_type = std::variant<std::monostate, size_cmp_type, field_cmp_type, swoc::IPRange>;
+  value_type _value; ///< Value instance for checking.
 };
