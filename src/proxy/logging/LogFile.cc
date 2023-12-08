@@ -281,7 +281,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
   ats_free(name);
 
   // Open the directory
-  int dirfd = ::open(logfile_dir.c_str(), O_RDONLY);
+  int dirfd = open(logfile_dir.c_str(), O_RDONLY);
   if (dirfd < 0) {
     Error("Error opening logging directory %s to collect trim candidates: %s", logfile_dir.c_str(), strerror(errno));
     return false;
@@ -290,17 +290,19 @@ LogFile::trim_rolled(size_t rolling_max_count)
   // Check logging directory access
   int err;
   do {
-    err = ::faccessat(dirfd, logfile_dir.c_str(), R_OK | W_OK | X_OK, 0);
+    err = faccessat(dirfd, logfile_dir.c_str(), R_OK | W_OK | X_OK, 0);
   } while ((err < 0) && (errno == EINTR));
 
   if (err < 0) {
+    close(dirfd);
     Error("Error accessing logging directory %s: %s", logfile_dir.c_str(), strerror(errno));
     return false;
   }
 
   // Open the logging directory
-  DIR *ld = ::fdopendir(dirfd);
+  DIR *ld = fdopendir(dirfd);
   if (ld == nullptr) {
+    close(dirfd);
     Error("Error opening logging directory %s to collect trim candidates: %s", logfile_dir.c_str(), strerror(errno));
     return false;
   }
@@ -322,7 +324,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
     }
   }
 
-  ::closedir(ld);
+  closedir(ld);
 
   bool result = true;
   std::sort(rolled.begin(), rolled.end(), [](const RolledFile &a, const RolledFile &b) { return a._mtime > b._mtime; });
