@@ -7122,16 +7122,10 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     TxnDebug("http_match", "freshness_limit = %d", freshness_limit);
   } else {
     date_set = last_modified_set = false;
+    expires_set                  = (response->presence(MIME_PRESENCE_EXPIRES) != 0);
+    expires_value                = response->get_expires();
+    date_value                   = response_date;
 
-    if (s->plugin_set_expire_time != UNDEFINED_TIME) {
-      expires_set   = true;
-      expires_value = s->plugin_set_expire_time;
-    } else {
-      expires_set   = (response->presence(MIME_PRESENCE_EXPIRES) != 0);
-      expires_value = response->get_expires();
-    }
-
-    date_value = response_date;
     if (date_value > 0) {
       date_set = true;
     } else {

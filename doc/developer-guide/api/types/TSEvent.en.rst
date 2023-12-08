@@ -83,20 +83,6 @@ Enumeration Members
 
 .. c:macro:: TS_EVENT_NET_ACCEPT_FAILED
 
-.. c:macro:: TS_EVENT_INTERNAL_206
-
-.. c:macro:: TS_EVENT_INTERNAL_207
-
-.. c:macro:: TS_EVENT_INTERNAL_208
-
-.. c:macro:: TS_EVENT_INTERNAL_209
-
-.. c:macro:: TS_EVENT_INTERNAL_210
-
-.. c:macro:: TS_EVENT_INTERNAL_211
-
-.. c:macro:: TS_EVENT_INTERNAL_212
-
 .. c:macro:: TS_EVENT_HOST_LOOKUP
 
 .. c:macro:: TS_EVENT_CACHE_OPEN_READ

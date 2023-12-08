@@ -36,22 +36,6 @@ namespace tsapi
 namespace c
 {
 
-  enum TSFetchEventExt {
-    TS_FETCH_EVENT_EXT_HEAD_READY = -1,
-    TS_FETCH_EVENT_EXT_HEAD_DONE  = -2,
-    TS_FETCH_EVENT_EXT_BODY_READY = -3,
-    TS_FETCH_EVENT_EXT_BODY_DONE  = -4,
-  };
-
-  enum TSFetchFlags {
-    TS_FETCH_FLAGS_NONE                 = 0,      // do nothing
-    TS_FETCH_FLAGS_STREAM               = 1 << 1, // enable stream IO
-    TS_FETCH_FLAGS_DECHUNK              = 1 << 2, // dechunk body content
-    TS_FETCH_FLAGS_NEWLOCK              = 1 << 3, // allocate new lock for fetch sm
-    TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4, // Allow this fetch to be created as a non-internal request.
-    TS_FETCH_FLAGS_SKIP_REMAP           = 1 << 5, // Skip remapping and allow requesting arbitary URL
-  };
-
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
   TSReturnCode TSCacheBufferInfoGet(TSCacheTxn txnp, uint64_t *length, uint64_t *offset);
 
@@ -67,26 +51,8 @@ namespace c
   time_t TSCacheHttpInfoRespReceivedTimeGet(TSCacheHttpInfo infop);
   int64_t TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop);
 
-  /* Do not edit these apis, used internally */
-  int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
-  TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
-
   /* Protocols APIs */
   void TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop);
-
-  /* The rest is from the old "froze" private API include, we should consider
-     moving some of these over to ts/ts.h as well. TODO */
-
-  /****************************************************************************
-   *  Test if cache ready to accept request for a specific type of data
-   ****************************************************************************/
-  TSReturnCode TSCacheDataTypeReady(TSCacheDataType type, int *is_ready);
-
-  /****************************************************************************
-   *  When reenabling a txn in error, keep the connection open in case
-   *  of keepalive.
-   ****************************************************************************/
-  void TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set);
 
   /****************************************************************************
    *  Allow to set the body of a POST request.
@@ -97,19 +63,6 @@ namespace c
 
   /* ===== Cache ===== */
   TSReturnCode TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type);
-
-  /* ===== Utility ===== */
-  /****************************************************************************
-   *  Create a random number
-   *  Return random integer between <X> and <Y>
-   ****************************************************************************/
-  unsigned int TSrandom(void);
-
-  /****************************************************************************
-   *  Create a random double
-   *  Return random double between <X> and <Y>
-   ****************************************************************************/
-  double TSdrandom(void);
 
   /* =====  CacheHttpInfo =====  */
 
@@ -150,19 +103,7 @@ namespace c
    *  ??
    *  Return ??
    ****************************************************************************/
-  void TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time);
-
-  /****************************************************************************
-   *  ??
-   *  Return ??
-   ****************************************************************************/
   TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
-
-  /****************************************************************************
-   *  ??
-   *  TODO: This returns a LookingUp_t value, we need to SDK'ify it.
-   ****************************************************************************/
-  int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
   /**
      Attempt to attach the contp continuation to sockets that have already been
@@ -208,70 +149,7 @@ namespace c
     struct sockaddr const *to    /**< Address to which to connect. */
   );
 
-/* =====  Matcher Utils =====  */
-#define TS_MATCHER_LINE_INVALID 0
-  using TSMatcherLine = struct tsapi_matcheline *;
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  char *TSMatcherReadIntoBuffer(char *file_name, int *file_len);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  char *TSMatcherTokLine(char *buffer, char **last);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  char *TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  TSMatcherLine TSMatcherLineCreate();
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  void TSMatcherLineDestroy(TSMatcherLine ml);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  const char *TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  char *TSMatcherLineName(TSMatcherLine ml, int element);
-
-  /****************************************************************************
-   *  ??
-   *  Return
-   ****************************************************************************/
-  char *TSMatcherLineValue(TSMatcherLine ml, int element);
-
   TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
-  /* ----------------------------------------------------------------------
-   * Interfaces used by Wireless group
-   * ---------------------------------------------------------------------- */
-
-  TSEvent const TS_NET_EVENT_DATAGRAM_READ_COMPLETE  = TS_EVENT_INTERNAL_206;
-  TSEvent const TS_NET_EVENT_DATAGRAM_READ_ERROR     = TS_EVENT_INTERNAL_207;
-  TSEvent const TS_NET_EVENT_DATAGRAM_WRITE_COMPLETE = TS_EVENT_INTERNAL_208;
-  TSEvent const TS_NET_EVENT_DATAGRAM_WRITE_ERROR    = TS_EVENT_INTERNAL_209;
-  TSEvent const TS_NET_EVENT_DATAGRAM_READ_READY     = TS_EVENT_INTERNAL_210;
-  TSEvent const TS_NET_EVENT_DATAGRAM_OPEN           = TS_EVENT_INTERNAL_211;
-  TSEvent const TS_NET_EVENT_DATAGRAM_ERROR          = TS_EVENT_INTERNAL_212;
 
   /**
    * Extended FetchSM's AIPs

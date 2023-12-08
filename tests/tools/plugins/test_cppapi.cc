@@ -156,14 +156,6 @@ f()
   ALWAYS_ASSERT(!!c)
   ALWAYS_ASSERT(c.asTSCont() != nullptr)
   ALWAYS_ASSERT(c.mutex() == m)
-
-  ALWAYS_ASSERT(c.call(TS_EVENT_INTERNAL_206) == 666)
-  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_206, nullptr))
-
-  int dummy;
-
-  ALWAYS_ASSERT(c.call(TS_EVENT_INTERNAL_207, &dummy) == 666)
-  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_207, &dummy))
 }
 
 TEST(f)
