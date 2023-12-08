@@ -25,16 +25,20 @@
 #include "api/ts_bw_format.h"
 
 #include <stdexcept>
+#include <syslog.h>
 
 void
-ts::throw_assert(const SourceLocation &loc, const char *expr, const char *message)
+ts::do_abort(const SourceLocation &loc, const char *expr, const char *message)
 {
   swoc::LocalBufferWriter<1024> w;
 
-  w.print("ASSERT FAILED {}: {}", loc, expr);
+  w.print("Fatal: <{}> {}", loc, expr);
   if (message) {
     w.print(" ({})", message);
   }
 
-  throw std::runtime_error(w.data());
+  fprintf(stderr, "%s\n", w.data());
+  syslog(LOG_CRIT, "%s", w.data());
+
+  abort();
 }

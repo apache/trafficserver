@@ -28,29 +28,29 @@
 namespace ts
 {
 
-void throw_assert(const SourceLocation &loc, const char *expr, const char *message = nullptr);
+void do_abort(const SourceLocation &loc, const char *expr, const char *message = nullptr);
 
 }
 
 #if defined(DEBUG) || defined(ENABLE_ALL_ASSERTS) || defined(__clang_analyzer__) || defined(__COVERITY__)
-#define debug_assert(EX)                         \
-  if (!(EX)) {                                   \
-    ts::throw_assert(MakeSourceLocation(), #EX); \
+#define debug_assert(EX)                     \
+  if (!(EX)) {                               \
+    ts::do_abort(MakeSourceLocation(), #EX); \
   }
-#define debug_assert_message(EX, MSG)                   \
-  if (!(EX)) {                                          \
-    ts::throw_assert(MakeSourceLocation(), #EX, (MSG)); \
+#define debug_assert_message(EX, MSG)               \
+  if (!(EX)) {                                      \
+    ts::do_abort(MakeSourceLocation(), #EX, (MSG)); \
   }
 #else
 #define debug_assert(EX)              (void)(EX)
 #define debug_assert_message(EX, MSG) (void)(EX)
 #endif
 
-#define release_assert(EX)                       \
-  if (!(EX)) {                                   \
-    ts::throw_assert(MakeSourceLocation(), #EX); \
+#define release_assert(EX)                   \
+  if (!(EX)) {                               \
+    ts::do_abort(MakeSourceLocation(), #EX); \
   }
-#define release_assert_message(EX, MSG)                 \
-  if (!(EX)) {                                          \
-    ts::throw_assert(MakeSourceLocation(), #EX, (MSG)); \
+#define release_assert_message(EX, MSG)             \
+  if (!(EX)) {                                      \
+    ts::do_abort(MakeSourceLocation(), #EX, (MSG)); \
   }
