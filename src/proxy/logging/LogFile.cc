@@ -275,31 +275,39 @@ struct RolledFile {
 bool
 LogFile::trim_rolled(size_t rolling_max_count)
 {
-  /* man: "dirname() may modify the contents of path, so it may be
-   * desirable to pass a copy when calling one of these functions." */
+  // man: "dirname() may modify the contents of path, so it may be desirable to pass a copy when calling one of these functions."
   char *name = ats_strdup(m_name);
   std::string logfile_dir(::dirname((name)));
   ats_free(name);
 
-  /* Check logging directory access */
+  // Open the directory
+  int dirfd = open(logfile_dir.c_str(), O_RDONLY);
+  if (dirfd < 0) {
+    Error("Error opening logging directory %s to collect trim candidates: %s", logfile_dir.c_str(), strerror(errno));
+    return false;
+  }
+
+  // Check logging directory access
   int err;
   do {
-    err = access(logfile_dir.c_str(), R_OK | W_OK | X_OK);
+    err = faccessat(dirfd, logfile_dir.c_str(), R_OK | W_OK | X_OK, 0);
   } while ((err < 0) && (errno == EINTR));
 
   if (err < 0) {
-    Error("Error accessing logging directory %s: %s.", logfile_dir.c_str(), strerror(errno));
+    close(dirfd);
+    Error("Error accessing logging directory %s: %s", logfile_dir.c_str(), strerror(errno));
     return false;
   }
 
-  /* Open logging directory */
-  DIR *ld = ::opendir(logfile_dir.c_str());
+  // Open the logging directory
+  DIR *ld = fdopendir(dirfd);
   if (ld == nullptr) {
-    Error("Error opening logging directory %s to collect trim candidates: %s.", logfile_dir.c_str(), strerror(errno));
+    close(dirfd);
+    Error("Error opening logging directory %s to collect trim candidates: %s", logfile_dir.c_str(), strerror(errno));
     return false;
   }
 
-  /* Collect the rolled file names from the logging directory that match the specified log file name */
+  // Collect the rolled file names from the logging directory that match the specified log file name
   std::vector<RolledFile> rolled;
   char path[MAXPATHLEN];
   struct dirent *entry;
@@ -316,7 +324,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
     }
   }
 
-  ::closedir(ld);
+  closedir(ld);
 
   bool result = true;
   std::sort(rolled.begin(), rolled.end(), [](const RolledFile &a, const RolledFile &b) { return a._mtime > b._mtime; });
@@ -324,7 +332,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
     for (auto it = rolled.begin() + rolling_max_count; it != rolled.end(); it++) {
       const RolledFile &file = *it;
       if (unlink(file._name.c_str()) < 0) {
-        Error("unable to auto-delete rolled logfile %s: %s.", file._name.c_str(), strerror(errno));
+        Error("unable to auto-delete rolled logfile %s: %s", file._name.c_str(), strerror(errno));
         result = false;
       } else {
         Debug("log-file", "rolled logfile, %s, was auto-deleted", file._name.c_str());
