@@ -232,7 +232,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 {
   ink_release_assert(diags_level < DiagsLevel_Count);
   swoc::LocalBufferWriter<1024> format_writer;
-  auto timestamp_offset = generate_format_string(format_writer, debug_tag, diags_level, loc, SHOW_LOCATION_DEBUG, format_string);
+  auto timestamp_offset = generate_format_string(format_writer, debug_tag, diags_level, loc, show_location, format_string);
 
   //////////////////////////////////////
   // now, finally, output the message //
