@@ -79,6 +79,7 @@ template <auto R, auto S, typename ST = uint64_t> class Histogram
 public:
   /// Type used for internal calculations.
   using raw_type = uint64_t;
+  using storage  = HistogramTraits<ST, raw_type>;
   /// Number of bits to use for the base range.
   static constexpr raw_type N_RANGE_BITS = R;
   /// Number of bits to split each base range in to span buckets.
@@ -142,7 +143,7 @@ template <auto R, auto S, typename ST>
 auto
 Histogram<R, S, ST>::operator[](unsigned int idx) -> raw_type
 {
-  return HistogramTraits<ST, raw_type>::load(_bucket[idx]);
+  return storage::load(_bucket[idx]);
 }
 
 template <auto R, auto S, typename ST>
@@ -152,7 +153,7 @@ Histogram<R, S, ST>::operator+=(self_type const &that) -> self_type &
   auto dst = _bucket.data();
   auto src = that._bucket.data();
   for (raw_type idx = 0; idx < N_BUCKETS; ++idx) {
-    HistogramTraits<ST, raw_type>::store(*dst, HistogramTraits<ST, raw_type>::load(*src));
+    storage::store(*dst, storage::load(*src));
     ++dst;
     ++src;
   }
@@ -181,7 +182,7 @@ Histogram<R, S, ST>::operator()(raw_type sample) -> self_type &
     }
     idx += (sample >> normalize_shift_count) & SPAN_MASK;
   } // else idx remains the overflow bucket.
-  HistogramTraits<ST, raw_type>::increment(_bucket[idx]);
+  storage::increment(_bucket[idx]);
   return *this;
 }
 
@@ -206,7 +207,7 @@ auto
 Histogram<R, S, ST>::decay() -> self_type &
 {
   for (auto &v : _bucket) {
-    HistogramTraits<ST, raw_type>::store(v, HistogramTraits<ST, raw_type>::load(v) >> 1);
+    storage::store(v, storage::load(v) >> 1);
   }
   return *this;
 }
