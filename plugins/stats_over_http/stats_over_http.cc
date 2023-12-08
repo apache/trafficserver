@@ -743,7 +743,9 @@ init:
     TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
   }
 
-  Dbg(dbg_ctl, "stats module registered with path %s", config_holder->config->stats_path.c_str());
+  if (config_holder->config != nullptr) {
+    Dbg(dbg_ctl, "stats module registered with path %s", config_holder->config->stats_path.c_str());
+  }
 
 done:
   return;
