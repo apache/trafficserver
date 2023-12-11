@@ -54,6 +54,7 @@ my @proxy_header_array = (
             'H' => "in cache, fresh (a cache \"HIT\")",
             'S' => "in cache, stale (a cache \"MISS\")",
             'R' => "in cache, fresh Ram hit (a cache \"HIT\")",
+            'W' => "in cache, fresh Read While Write (a cache \"HIT\")",
             'M' => "miss (a cache \"MISS\")",
             ' ' => "no cache lookup",
         },

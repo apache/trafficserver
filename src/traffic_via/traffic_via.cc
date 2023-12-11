@@ -133,6 +133,7 @@ standardViaLookup(char flag)
     viaTable->viaData[static_cast<unsigned char>('H')] = "in cache, fresh (a cache \"HIT\")";
     viaTable->viaData[static_cast<unsigned char>('S')] = "in cache, stale (a cache \"MISS\")";
     viaTable->viaData[static_cast<unsigned char>('R')] = "in cache, fresh Ram hit (a cache \"HIT\")";
+    viaTable->viaData[static_cast<unsigned char>('W')] = "in cache, fresh Read While Write (a cache \"HIT\")";
     viaTable->viaData[static_cast<unsigned char>('M')] = "miss (a cache \"MISS\")";
     viaTable->viaData[static_cast<unsigned char>(' ')] = "no cache lookup";
     break;
