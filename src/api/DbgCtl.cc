@@ -340,7 +340,8 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const
 struct DiagThreadname {
   char name[32];
 
-  DiagThreadname() {
+  DiagThreadname()
+  {
 #if defined(HAVE_PTHREAD_GETNAME_NP)
     pthread_getname_np(pthread_self(), name, sizeof(name));
 #elif defined(HAVE_PTHREAD_GET_NAME_NP)
@@ -361,7 +362,6 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname cons
 }
 
 } // namespace
-
 
 size_t
 DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
