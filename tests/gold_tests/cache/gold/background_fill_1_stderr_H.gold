@@ -1,0 +1,17 @@
+``
+> PURGE /drip?duration=4 HTTP/1.1
+``
+< HTTP/1.1 ``
+``
+< Via: http/1.1 traffic_server (ApacheTrafficServer/``)
+``
+> GET /drip?duration=4 HTTP/1.1
+``
+< Via: http/1.1 traffic_server (ApacheTrafficServer/10.0.0 [cMsSfW])
+``
+> GET /drip?duration=4 HTTP/1.1
+``
+< HTTP/1.1 ``
+``
+< Via: http/1.1 traffic_server (ApacheTrafficServer/`` [cHs f ])
+``
