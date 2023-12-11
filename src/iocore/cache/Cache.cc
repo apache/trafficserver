@@ -664,6 +664,7 @@ CacheProcessor::cacheInitialized()
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
+          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
