@@ -66,7 +66,7 @@ set(TSAPICORE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/api/ts_diag_levels.h
     ${PROJECT_SOURCE_DIR}/include/api/ts_errata.h
 )
-add_library(tsapicore SHARED Assert.cc Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc ts_bwf.cc)
+add_library(tsapicore SHARED Assert.cc Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
 set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSAPICORE_PUBLIC_HEADERS}")
 target_link_libraries(tsapicore PUBLIC libswoc)
