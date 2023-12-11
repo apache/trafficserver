@@ -64,6 +64,7 @@ EventIO::modify(int e)
     return 0;
   }
 
+  // Session migration may result in this condition.
   if (nullptr == event_loop) {
     return 1;
   }
@@ -120,6 +121,7 @@ EventIO::refresh(int e)
     return 0;
   }
 
+  // Session migration may result in this condition.
   if (nullptr == event_loop) {
     return 1;
   }
