@@ -576,9 +576,13 @@ CacheProcessor::diskInitialized()
 void
 CacheProcessor::cacheInitialized()
 {
-  int i;
+  if (theCache == nullptr) {
+    Dbg(dbg_ctl_cache_init, "theCache is nullptr");
+    return;
+  }
 
-  if (theCache && (theCache->ready == CACHE_INITIALIZING)) {
+  if (theCache->ready == CACHE_INITIALIZING) {
+    Dbg(dbg_ctl_cache_init, "theCache is initializing");
     return;
   }
 
@@ -586,29 +590,19 @@ CacheProcessor::cacheInitialized()
   int cache_init_ok = 0;
   /* allocate ram size in proportion to the disk space the
      volume occupies */
-  int64_t total_size             = 0; // count in HTTP & MIXT
-  uint64_t total_cache_bytes     = 0; // bytes that can used in total_size
-  uint64_t total_direntries      = 0; // all the direntries in the cache
-  uint64_t used_direntries       = 0; //   and used
-  uint64_t vol_total_cache_bytes = 0;
-  uint64_t vol_total_direntries  = 0;
-  uint64_t vol_used_direntries   = 0;
-  Stripe *stripe;
+  int64_t total_size = 0; // count in HTTP & MIXT
 
-  if (theCache) {
-    total_size += theCache->cache_size;
-    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
-        total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
-    if (theCache->ready == CACHE_INIT_FAILED) {
-      Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - failed to initialize the cache "
-                              "for http: cache disabled");
-      Warning("failed to initialize the cache for http: cache disabled\n");
-    } else {
-      caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
-      caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
-      caches[CACHE_FRAG_TYPE_HTTP] = theCache;
-      caches[CACHE_FRAG_TYPE_NONE] = theCache;
-    }
+  total_size += theCache->cache_size;
+  Dbg(dbg_ctl_cache_init, "theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
+      total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
+  if (theCache->ready == CACHE_INIT_FAILED) {
+    Dbg(dbg_ctl_cache_init, "failed to initialize the cache for http: cache disabled");
+    Warning("failed to initialize the cache for http: cache disabled\n");
+  } else {
+    caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+    caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
+    caches[CACHE_FRAG_TYPE_HTTP] = theCache;
+    caches[CACHE_FRAG_TYPE_NONE] = theCache;
   }
 
   // Update stripe version data.
@@ -616,7 +610,7 @@ CacheProcessor::cacheInitialized()
     cacheProcessor.min_stripe_version = cacheProcessor.max_stripe_version = gstripes[0]->header->version;
   }
   // scan the rest of the stripes.
-  for (i = 1; i < gnstripes; i++) {
+  for (int i = 1; i < gnstripes; i++) {
     Stripe *v = gstripes[i];
     if (v->header->version < cacheProcessor.min_stripe_version) {
       cacheProcessor.min_stripe_version = v->header->version;
@@ -630,11 +624,9 @@ CacheProcessor::cacheInitialized()
     Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
         gnstripes.load());
 
-    int64_t ram_cache_bytes = 0;
-
     if (gnstripes) {
       // new ram_caches, with algorithm from the config
-      for (i = 0; i < gnstripes; i++) {
+      for (int i = 0; i < gnstripes; i++) {
         switch (cache_config_ram_cache_algorithm) {
         default:
         case RAM_CACHE_ALGORITHM_CLFUS:
@@ -645,88 +637,79 @@ CacheProcessor::cacheInitialized()
           break;
         }
       }
+
+      int64_t http_ram_cache_size = 0;
+
       // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
-        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
-        for (i = 0; i < gnstripes; i++) {
-          stripe = gstripes[i];
-
-          if (gstripes[i]->cache_vol->ramcache_enabled) {
-            gstripes[i]->ram_cache->init(stripe->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, stripe);
-            ram_cache_bytes += gstripes[i]->dirlen();
-            Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
-                ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-            Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, gstripes[i]->dirlen());
-          }
-          vol_total_cache_bytes  = gstripes[i]->len - gstripes[i]->dirlen();
-          total_cache_bytes     += vol_total_cache_bytes;
-          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
-              total_cache_bytes, total_cache_bytes / (1024 * 1024));
-
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
-
-          vol_total_direntries  = gstripes[i]->buckets * gstripes[i]->segments * DIR_DEPTH;
-          total_direntries     += vol_total_direntries;
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
-
-          vol_used_direntries = dir_entries_used(gstripes[i]);
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
-          used_direntries += vol_used_direntries;
-        }
-
+        Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
       } else {
         // we got configured memory size
         // TODO, should we check the available system memories, or you will
         //   OOM or swapout, that is not a good situation for the server
-        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - %" PRId64 " != AUTO_SIZE_RAM_CACHE",
-            cache_config_ram_cache_size);
-        int64_t http_ram_cache_size =
-          (theCache) ?
-            static_cast<int64_t>((static_cast<double>(theCache->cache_size) / total_size) * cache_config_ram_cache_size) :
-            0;
-        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
-            http_ram_cache_size, http_ram_cache_size / (1024 * 1024));
+        Dbg(dbg_ctl_cache_init, "%" PRId64 " != AUTO_SIZE_RAM_CACHE", cache_config_ram_cache_size);
+        http_ram_cache_size =
+          static_cast<int64_t>((static_cast<double>(theCache->cache_size) / total_size) * cache_config_ram_cache_size);
+
+        Dbg(dbg_ctl_cache_init, "http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", http_ram_cache_size,
+            http_ram_cache_size / (1024 * 1024));
         int64_t stream_ram_cache_size = cache_config_ram_cache_size - http_ram_cache_size;
-        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
-            stream_ram_cache_size, stream_ram_cache_size / (1024 * 1024));
+
+        Dbg(dbg_ctl_cache_init, "stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", stream_ram_cache_size,
+            stream_ram_cache_size / (1024 * 1024));
 
         // Dump some ram_cache size information in debug mode.
         Dbg(dbg_ctl_ram_cache, "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
             cache_config_ram_cache_cutoff);
+      }
 
-        for (i = 0; i < gnstripes; i++) {
-          stripe = gstripes[i];
-          double factor;
-          if (gstripes[i]->cache == theCache && gstripes[i]->cache_vol->ramcache_enabled) {
-            ink_assert(gstripes[i]->cache != nullptr);
-            factor = static_cast<double>(static_cast<int64_t>(gstripes[i]->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
-            Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gstripes[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), stripe);
-            ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
-            Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total,
+      uint64_t total_cache_bytes     = 0; // bytes that can used in total_size
+      uint64_t total_direntries      = 0; // all the direntries in the cache
+      uint64_t used_direntries       = 0; //   and used
+      uint64_t total_ram_cache_bytes = 0;
 
-                                      static_cast<int64_t>(http_ram_cache_size * factor));
-          } else if (gstripes[i]->cache_vol->ramcache_enabled) {
-            ink_release_assert(!"Unexpected non-HTTP cache volume");
+      for (int i = 0; i < gnstripes; i++) {
+        Stripe *stripe          = gstripes[i];
+        int64_t ram_cache_bytes = 0;
+
+        if (stripe->cache_vol->ramcache_enabled) {
+          if (http_ram_cache_size == 0) {
+            // AUTO_SIZE_RAM_CACHE
+            ram_cache_bytes = stripe->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER;
+          } else {
+            ink_assert(stripe->cache != nullptr);
+
+            double factor = static_cast<double>(static_cast<int64_t>(stripe->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
+            Dbg(dbg_ctl_cache_init, "factor = %f", factor);
+
+            ram_cache_bytes = static_cast<int64_t>(http_ram_cache_size * factor);
           }
+
+          stripe->ram_cache->init(ram_cache_bytes, stripe);
+          total_ram_cache_bytes += ram_cache_bytes;
+          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, ram_cache_bytes);
+
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
               ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-          vol_total_cache_bytes  = gstripes[i]->len - gstripes[i]->dirlen();
-          total_cache_bytes     += vol_total_cache_bytes;
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
-          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
-              total_cache_bytes, total_cache_bytes / (1024 * 1024));
-
-          vol_total_direntries  = gstripes[i]->buckets * gstripes[i]->segments * DIR_DEPTH;
-          total_direntries     += vol_total_direntries;
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
-
-          vol_used_direntries = dir_entries_used(gstripes[i]);
-          Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
-          used_direntries += vol_used_direntries;
         }
+
+        uint64_t vol_total_cache_bytes  = stripe->len - stripe->dirlen();
+        total_cache_bytes              += vol_total_cache_bytes;
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
+
+        Dbg(dbg_ctl_cache_init, "total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
+            total_cache_bytes / (1024 * 1024));
+
+        uint64_t vol_total_direntries  = stripe->buckets * stripe->segments * DIR_DEPTH;
+        total_direntries              += vol_total_direntries;
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
+
+        uint64_t vol_used_direntries = dir_entries_used(stripe);
+        Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
+        used_direntries += vol_used_direntries;
       }
+
       switch (cache_config_ram_cache_compress) {
       default:
         Fatal("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
@@ -742,7 +725,7 @@ CacheProcessor::cacheInitialized()
         break;
       }
 
-      Metrics::Gauge::store(cache_rsb.ram_cache_bytes_total, ram_cache_bytes);
+      Metrics::Gauge::store(cache_rsb.ram_cache_bytes_total, total_ram_cache_bytes);
       Metrics::Gauge::store(cache_rsb.bytes_total, total_cache_bytes);
       Metrics::Gauge::store(cache_rsb.direntries_total, total_direntries);
       Metrics::Gauge::store(cache_rsb.direntries_used, used_direntries);
