@@ -46,6 +46,7 @@
 #include "tscore/Regression.h"
 #include "tscore/Diags.h"
 #include "ts/ts.h"
+#include <string_view>
 
 int DiagsConfigState::_enabled[2] = {0, 0};
 
@@ -213,6 +214,42 @@ Diags::~Diags()
   deactivate_all(DiagsTagType_Action);
 }
 
+namespace
+{
+
+struct DiagTimestamp {
+  std::chrono::time_point<std::chrono::system_clock> ts = std::chrono::system_clock::now();
+};
+
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
+{
+  auto epoch = std::chrono::system_clock::to_time_t(ts.ts);
+  swoc::LocalBufferWriter<48> lw;
+
+  ctime_r(&epoch, lw.aux_data());
+  lw.commit(19); // keep only leading text.
+  lw.print(".{:03}", std::chrono::time_point_cast<std::chrono::milliseconds>(ts.ts).time_since_epoch().count() % 1000);
+  w.write(lw.view().substr(4));
+
+  return w;
+}
+
+struct DiagThreadname {
+  char name[32];
+
+  DiagThreadname() { ink_get_thread_name(name, sizeof(name)); }
+};
+
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname const &n)
+{
+  bwformat(w, spec, std::string_view{n.name});
+  return w;
+}
+
+} // namespace
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::print_va(...)
@@ -250,11 +287,10 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // Save room for optional newline and terminating NUL bytes.
   format_writer.restrict(2);
 
-  format_writer.print("[{timestamp}] "_tv);
+  format_writer.print("[{}] ", DiagTimestamp{});
   auto timestamp_offset = format_writer.size();
 
-  format_writer.print("{thread-name}");
-  format_writer.print(" {}: ", level_name(diags_level));
+  format_writer.print("{} {}: ", DiagThreadname{}, level_name(diags_level));
 
   if (location(loc, show_location, diags_level)) {
     format_writer.print("<{}> ", *loc);
