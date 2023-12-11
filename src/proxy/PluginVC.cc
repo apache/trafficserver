@@ -81,6 +81,13 @@
 
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
 
+namespace
+{
+DbgCtl dbg_ctl_pvc{"pvc"};
+DbgCtl dbg_ctl_pvc_event{"pvc_event"};
+DbgCtl dbg_ctl_pvc_test{"pvc_test"};
+} // namespace
+
 PluginVC::PluginVC(PluginVCCore *core_obj)
   : NetVConnection(),
     magic(PLUGIN_VC_MAGIC_ALIVE),
@@ -116,7 +123,7 @@ PluginVC::~PluginVC()
 int
 PluginVC::main_handler(int event, void *data)
 {
-  Debug("pvc_event", "[%u] %s: Received event %d", core_obj->id, PVC_TYPE, event);
+  Dbg(dbg_ctl_pvc_event, "[%u] %s: Received event %d", core_obj->id, PVC_TYPE, event);
 
   ink_release_assert(event == EVENT_INTERVAL || event == EVENT_IMMEDIATE);
   ink_release_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
@@ -262,7 +269,7 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   read_state.vio.vc_server = (VConnection *)this;
   read_state.vio.op        = VIO::READ;
 
-  Debug("pvc", "[%u] %s: do_io_read for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
+  Dbg(dbg_ctl_pvc, "[%u] %s: do_io_read for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
   // Since reentrant callbacks are not allowed on from do_io
   //   functions schedule ourselves get on a different stack
@@ -294,7 +301,7 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
   write_state.vio.vc_server = (VConnection *)this;
   write_state.vio.op        = VIO::WRITE;
 
-  Debug("pvc", "[%u] %s: do_io_write for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
+  Dbg(dbg_ctl_pvc, "[%u] %s: do_io_write for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
   // Since reentrant callbacks are not allowed on from do_io
   //   functions schedule ourselves get on a different stack
@@ -314,7 +321,7 @@ PluginVC::reenable(VIO *vio)
   Ptr<ProxyMutex> sm_mutex = vio->mutex;
   SCOPED_MUTEX_LOCK(lock, sm_mutex, this_ethread());
 
-  Debug("pvc", "[%u] %s: reenable %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
+  Dbg(dbg_ctl_pvc, "[%u] %s: reenable %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
   if (vio->op == VIO::WRITE) {
     ink_assert(vio == &write_state.vio);
@@ -334,7 +341,7 @@ PluginVC::reenable_re(VIO *vio)
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
   ink_assert(vio->mutex->thread_holding == this_ethread());
 
-  Debug("pvc", "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
+  Dbg(dbg_ctl_pvc, "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
@@ -368,7 +375,7 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  Debug("pvc", "[%u] %s: do_io_close", core_obj->id, PVC_TYPE);
+  Dbg(dbg_ctl_pvc, "[%u] %s: do_io_close", core_obj->id, PVC_TYPE);
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   if (!closed) { // if already closed, need to do nothing.
@@ -472,7 +479,7 @@ PluginVC::process_write_side()
   ink_assert(!deletable);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  Debug("pvc", "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
+  Dbg(dbg_ctl_pvc, "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
   need_write_process = false;
 
   // Check write_state
@@ -490,7 +497,7 @@ PluginVC::process_write_side()
   int64_t bytes_avail    = reader->read_avail();
   int64_t act_on         = std::min(bytes_avail, ntodo);
 
-  Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
+  Dbg(dbg_ctl_pvc, "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
   // Check read_state of other side
   if (other_side->read_state.vio.op != VIO::READ || other_side->closed || other_side->read_state.shutdown) {
@@ -520,8 +527,8 @@ PluginVC::process_write_side()
   ink_assert(my_ethread != nullptr);
   MUTEX_TRY_LOCK(lock, other_side->read_state.vio.mutex, my_ethread);
   if (!lock.is_locked()) {
-    Debug("pvc_event", "[%u] %s: process_read_side from other side lock miss, retrying", other_side->core_obj->id,
-          ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+    Dbg(dbg_ctl_pvc_event, "[%u] %s: process_read_side from other side lock miss, retrying", other_side->core_obj->id,
+        ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
 
     // set need_read_process to enforce the read processing
     other_side->need_read_process = true;
@@ -535,7 +542,7 @@ PluginVC::process_write_side()
   water_mark               = std::max<int64_t>(water_mark, core_obj->buffer_size);
   int64_t buf_space        = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
-    Debug("pvc", "[%u] %s: process_read_side from other side no buffer space", core_obj->id, PVC_TYPE);
+    Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side from other side no buffer space", core_obj->id, PVC_TYPE);
     return;
   }
   act_on = std::min(act_on, buf_space);
@@ -545,15 +552,15 @@ PluginVC::process_write_side()
     // Couldn't actually get the buffer space.  This only
     //   happens on small transfers with the above
     //   buffer_size factor doesn't apply
-    Debug("pvc", "[%u] %s: process_read_side from other side out of buffer space", core_obj->id, PVC_TYPE);
+    Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side from other side out of buffer space", core_obj->id, PVC_TYPE);
     return;
   }
 
   write_state.vio.ndone            += added;
   other_side->read_state.vio.ndone += added;
 
-  Debug("pvc", "[%u] %s: process_write_side and process_read_side from other side; added %" PRId64 "", core_obj->id, PVC_TYPE,
-        added);
+  Dbg(dbg_ctl_pvc, "[%u] %s: process_write_side and process_read_side from other side; added %" PRId64 "", core_obj->id, PVC_TYPE,
+      added);
 
   if (write_state.vio.ntodo() == 0) {
     write_state.vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
@@ -590,7 +597,7 @@ PluginVC::process_read_side()
   ink_assert(!deletable);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  Debug("pvc", "[%u] %s: process_read_side", core_obj->id, PVC_TYPE);
+  Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side", core_obj->id, PVC_TYPE);
   need_read_process = false;
 
   // Check read_state
@@ -608,8 +615,8 @@ PluginVC::process_read_side()
     ink_assert(my_ethread != nullptr);
     MUTEX_TRY_LOCK(lock, other_side->write_state.vio.mutex, my_ethread);
     if (!lock.is_locked()) {
-      Debug("pvc_event", "[%u] %s: process_write_side from other side lock miss, retrying", other_side->core_obj->id,
-            ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+      Dbg(dbg_ctl_pvc_event, "[%u] %s: process_write_side from other side lock miss, retrying", other_side->core_obj->id,
+          ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
 
       // set need_write_process to enforce the write processing
       other_side->need_write_process = true;
@@ -618,7 +625,7 @@ PluginVC::process_read_side()
     }
     other_side->process_write_side();
   } else {
-    Debug("pvc", "[%u] %s: write_state of other side is not available", core_obj->id, PVC_TYPE);
+    Dbg(dbg_ctl_pvc, "[%u] %s: write_state of other side is not available", core_obj->id, PVC_TYPE);
     read_state.vio.cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
   }
 }
@@ -635,7 +642,7 @@ PluginVC::process_close()
 {
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  Debug("pvc", "[%u] %s: process_close", core_obj->id, PVC_TYPE);
+  Dbg(dbg_ctl_pvc, "[%u] %s: process_close", core_obj->id, PVC_TYPE);
 
   if (!deletable) {
     deletable = true;
@@ -1008,16 +1015,16 @@ PluginVCCore::init(int64_t buffer_index, int64_t buffer_water_mark)
 
   buffer_size = BUFFER_SIZE_FOR_INDEX(buffer_index);
 
-  Debug("pvc",
-        "[%u] Created PluginVCCore at %p, active %p, passive %p, buffer_index %" PRId64 ", buffer_size %" PRId64
-        ", buffer_water_mark %" PRId64,
-        id, this, &active_vc, &passive_vc, buffer_index, buffer_size, buffer_water_mark);
+  Dbg(dbg_ctl_pvc,
+      "[%u] Created PluginVCCore at %p, active %p, passive %p, buffer_index %" PRId64 ", buffer_size %" PRId64
+      ", buffer_water_mark %" PRId64,
+      id, this, &active_vc, &passive_vc, buffer_index, buffer_size, buffer_water_mark);
 }
 
 void
 PluginVCCore::destroy()
 {
-  Debug("pvc", "[%u] Destroying PluginVCCore at %p", id, this);
+  Dbg(dbg_ctl_pvc, "[%u] Destroying PluginVCCore at %p", id, this);
 
   ink_assert(active_vc.closed == true || !connected);
   active_vc.mutex = nullptr;
@@ -1253,7 +1260,7 @@ PVCTestDriver::run_next_test()
   completions_received = 0;
   i++;
 
-  Debug("pvc_test", "Starting test %s", netvc_tests_def[a_index].test_name);
+  Dbg(dbg_ctl_pvc_test, "Starting test %s", netvc_tests_def[a_index].test_name);
 
   NetVCTest *p       = new NetVCTest;
   NetVCTest *a       = new NetVCTest;

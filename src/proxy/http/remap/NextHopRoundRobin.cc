@@ -29,7 +29,7 @@
 
 NextHopRoundRobin::~NextHopRoundRobin()
 {
-  NH_Debug(NH_DEBUG_TAG, "destructor called for strategy named: %s", strategy_name.c_str());
+  NH_Dbg(NH_DBG_CTL, "destructor called for strategy named: %s", strategy_name.c_str());
 }
 
 void
@@ -63,8 +63,8 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   if (firstcall) {
     // distance is the index into the strategies map, this is the equivalent to the old line_number in parent.config.
     result->line_number = distance;
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
-             cur_hst_index, distance);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
+           cur_hst_index, distance);
     switch (policy_type) {
     case NH_FIRST_LIVE:
       result->start_parent = cur_hst_index = 0;
@@ -93,10 +93,10 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       break;
     }
     cur_host = host_groups[cur_grp_index][cur_hst_index];
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call, cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index, cur_hst_index);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] first call, cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index, cur_hst_index);
   } else {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next call, cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
-             cur_hst_index, distance);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] next call, cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
+           cur_hst_index, distance);
     // Move to next parent due to failure
     latched_index = cur_hst_index = (result->last_parent + 1) % hst_size;
     cur_host                      = host_groups[cur_grp_index][cur_hst_index];
@@ -131,18 +131,18 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       }
     }
 
-    NH_Debug(NH_DEBUG_TAG,
-             "[%" PRIu64 "] Selected a parent, %s,  failCount (failedAt: %" PRIdMAX " failCount: %d), FailThreshold: %" PRIu64
-             ", request_info->xact_start: %ld",
-             sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold,
-             request_info.xact_start);
+    NH_Dbg(NH_DBG_CTL,
+           "[%" PRIu64 "] Selected a parent, %s,  failCount (failedAt: %" PRIdMAX " failCount: %d), FailThreshold: %" PRIu64
+           ", request_info->xact_start: %ld",
+           sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold,
+           request_info.xact_start);
     // check if 'cur_host' is available, mark it up if it is.
     if ((cur_host->failedAt == 0) || (cur_host->failCount.load() < fail_threshold)) {
       if (cur_host->available.load() && host_stat == TS_HOST_STATUS_UP) {
-        NH_Debug(NH_DEBUG_TAG,
-                 "[%" PRIu64 "] Selecting a parent, %s,  due to little failCount (failedAt: %" PRIdMAX
-                 " failCount: %d), FailThreshold: %" PRIu64,
-                 sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
+        NH_Dbg(NH_DBG_CTL,
+               "[%" PRIu64 "] Selecting a parent, %s,  due to little failCount (failedAt: %" PRIdMAX
+               " failCount: %d), FailThreshold: %" PRIu64,
+               sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
         parentUp = true;
       }
     } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
@@ -152,18 +152,18 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "]  NextHop marked for retry %s:%d", sm_id, cur_host->hostname.c_str(),
-                 host_groups[cur_grp_index][cur_hst_index]->getPort(scheme));
+        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "]  NextHop marked for retry %s:%d", sm_id, cur_host->hostname.c_str(),
+               host_groups[cur_grp_index][cur_hst_index]->getPort(scheme));
       } else { // not retryable or available.
         parentUp = false;
       }
     }
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] parentUp: %s, hostname: %s, host status: %s", sm_id, parentUp ? "true" : "false",
-             cur_host->hostname.c_str(), HostStatusNames[host_stat]);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] parentUp: %s, hostname: %s, host status: %s", sm_id, parentUp ? "true" : "false",
+           cur_host->hostname.c_str(), HostStatusNames[host_stat]);
 
     // The selected host is available or retryable, return the search result.
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
+      NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
       result->result      = PARENT_SPECIFIED;
       result->hostname    = cur_host->hostname.c_str();
       result->port        = cur_host->getPort(scheme);
@@ -173,7 +173,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       setHostHeader(txnp, result->hostname);
       ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result->hostname, result->port);
+      NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result->hostname, result->port);
       return;
     }
 
@@ -207,10 +207,10 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       }
     }
     cur_host = host_groups[cur_grp_index][cur_hst_index];
-    NH_Debug(
-      NH_DEBUG_TAG,
-      "[%" PRIu64 "] host: %s, groups: %d, cur_grp_index: %d, cur_hst_index: %d, wrapped: %s, start_group: %d, start_host: %d",
-      sm_id, cur_host->hostname.c_str(), groups, cur_grp_index, cur_hst_index, wrapped ? "true" : "false", start_group, start_host);
+    NH_Dbg(NH_DBG_CTL,
+           "[%" PRIu64 "] host: %s, groups: %d, cur_grp_index: %d, cur_hst_index: %d, wrapped: %s, start_group: %d, start_host: %d",
+           sm_id, cur_host->hostname.c_str(), groups, cur_grp_index, cur_hst_index, wrapped ? "true" : "false", start_group,
+           start_host);
   } while (!wrapped);
 
   if (go_direct == true) {

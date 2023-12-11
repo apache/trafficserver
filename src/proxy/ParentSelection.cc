@@ -47,6 +47,10 @@ static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
 
+DbgCtl ParentResult::dbg_ctl_parent_select{"parent_select"};
+static DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
+static DbgCtl dbg_ctl_parent_config{"parent_config"};
+
 //
 //  Config Callback Prototypes
 //
@@ -86,7 +90,7 @@ ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_p
 ParentConfigParams::~ParentConfigParams()
 {
   if (parent_table) {
-    Debug("parent_select", "~ParentConfigParams(): releasing parent_table %p", parent_table);
+    Dbg(dbg_ctl_parent_select, "~ParentConfigParams(): releasing parent_table %p", parent_table);
   }
   delete parent_table;
   delete DefaultParent;
@@ -116,7 +120,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     result->last_parent  = 0;
     result->url          = rdata->get_host();
 
-    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
+    Dbg(dbg_ctl_parent_select, "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
     return;
   }
 
@@ -135,7 +139,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
       rec = result->rec = defaultPtr;
     } else {
       result->result = PARENT_DIRECT;
-      Debug("parent_select", "Returning PARENT_DIRECT (no parents were found)");
+      Dbg(dbg_ctl_parent_select, "Returning PARENT_DIRECT (no parents were found)");
       return;
     }
   }
@@ -144,26 +148,28 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     selectParent(true, result, rdata, fail_threshold, retry_time);
   }
 
-  switch (result->result) {
-  case PARENT_UNDEFINED:
-    Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", result->url, ParentResultStr[result->result]);
-    break;
-  case PARENT_FAIL:
-    Debug("parent_select", "PARENT_FAIL");
-    break;
-  case PARENT_DIRECT:
-    Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", result->url, ParentResultStr[result->result]);
-    break;
-  case PARENT_SPECIFIED:
-    Debug("parent_select", "PARENT_SPECIFIED");
-    Debug("parent_select", "Result for %s was parent %s:%d", result->url, result->hostname, result->port);
-    break;
-  default:
-    // Handled here:
-    // PARENT_AGENT
-    break;
+  if (dbg_ctl_parent_select.on()) {
+    switch (result->result) {
+    case PARENT_UNDEFINED:
+      DbgPrint(dbg_ctl_parent_select, "PARENT_UNDEFINED");
+      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[result->result]);
+      break;
+    case PARENT_FAIL:
+      DbgPrint(dbg_ctl_parent_select, "PARENT_FAIL");
+      break;
+    case PARENT_DIRECT:
+      DbgPrint(dbg_ctl_parent_select, "PARENT_DIRECT");
+      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[result->result]);
+      break;
+    case PARENT_SPECIFIED:
+      DbgPrint(dbg_ctl_parent_select, "PARENT_SPECIFIED");
+      DbgPrint(dbg_ctl_parent_select, "Result for %s was parent %s:%d", result->url, result->hostname, result->port);
+      break;
+    default:
+      // Handled here:
+      // PARENT_AGENT
+      break;
+    }
   }
 }
 
@@ -172,7 +178,7 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 {
   P_table *tablePtr = parent_table;
 
-  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p", parent_table, result->rec);
+  Dbg(dbg_ctl_parent_select, "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p", parent_table, result->rec);
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
@@ -184,38 +190,40 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
   // If we were set through the API we currently have not failover
   //   so just return fail
   if (result->is_api_result()) {
-    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
+    Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
     result->result = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
+  Dbg(dbg_ctl_parent_select, "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
 
   // Find the next parent in the array
-  Debug("parent_select", "Calling selectParent() from nextParent");
+  Dbg(dbg_ctl_parent_select, "Calling selectParent() from nextParent");
   selectParent(false, result, rdata, fail_threshold, retry_time);
 
   const char *host = rdata->get_host();
 
-  switch (result->result) {
-  case PARENT_UNDEFINED:
-    Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
-    break;
-  case PARENT_FAIL:
-    Debug("parent_select", "PARENT_FAIL");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
-    break;
-  case PARENT_DIRECT:
-    Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
-    break;
-  case PARENT_SPECIFIED:
-    Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
-    break;
-  default:
-    // Handled here:
-    // PARENT_AGENT
-    break;
+  if (dbg_ctl_parent_select.on()) {
+    switch (result->result) {
+    case PARENT_UNDEFINED:
+      Dbg(dbg_ctl_parent_select, "PARENT_UNDEFINED");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+      break;
+    case PARENT_FAIL:
+      Dbg(dbg_ctl_parent_select, "PARENT_FAIL");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+      break;
+    case PARENT_DIRECT:
+      Dbg(dbg_ctl_parent_select, "PARENT_DIRECT");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+      break;
+    case PARENT_SPECIFIED:
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
+      break;
+    default:
+      // Handled here:
+      // PARENT_AGENT
+      break;
+    }
   }
 }
 
@@ -233,14 +241,14 @@ ParentConfigParams::parentExists(HttpRequestData *rdata)
   rec = result.rec;
 
   if (rec == nullptr) {
-    Debug("parent_select", "No matching parent record was found for the request.");
+    Dbg(dbg_ctl_parent_select, "No matching parent record was found for the request.");
     return false;
   }
 
   if (rec->num_parents > 0) {
     for (int ii = 0; ii < rec->num_parents; ii++) {
       if (rec->parents[ii].available) {
-        Debug("parent_select", "found available parent: %s", rec->parents[ii].hostname);
+        Dbg(dbg_ctl_parent_select, "found available parent: %s", rec->parents[ii].hostname);
         return true;
       }
     }
@@ -248,7 +256,7 @@ ParentConfigParams::parentExists(HttpRequestData *rdata)
   if (rec->secondary_parents && rec->num_secondary_parents > 0) {
     for (int ii = 0; ii < rec->num_secondary_parents; ii++) {
       if (rec->secondary_parents[ii].available) {
-        Debug("parent_select", "found available parent: %s", rec->secondary_parents[ii].hostname);
+        Dbg(dbg_ctl_parent_select, "found available parent: %s", rec->secondary_parents[ii].hostname);
         return true;
       }
     }
@@ -292,7 +300,7 @@ ParentConfig::reconfigure()
 
   m_id = configProcessor.set(m_id, params);
 
-  if (is_debug_tag_set("parent_config")) {
+  if (dbg_ctl_parent_config.on()) {
     ParentConfig::print();
   }
 
@@ -338,7 +346,7 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
     if (c > 499 && c < 600) {
-      Debug("parent_select", "loading response code: %d", c);
+      Dbg(dbg_ctl_parent_select, "loading response code: %d", c);
       codes.push_back(c);
     } else {
       Warning("UnavailableServerResponseCodes received non-5xx code '%s', ignoring!", pTok[i]);
@@ -367,7 +375,7 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
     if (c > 399 && c < 600) {
-      Debug("parent_select", "loading simple response code: %d", c);
+      Dbg(dbg_ctl_parent_select, "loading simple response code: %d", c);
       codes.push_back(c);
     } else {
       Warning("SimpleRetryResponseCodes received non-4xx or 5xx code '%s', ignoring!", pTok[i]);
@@ -395,23 +403,25 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
       strncpy(fqdn, token, length);
       if (self_detect && machine->is_self(std::string_view(fqdn))) {
         if (self_detect == 1) {
-          Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
+          Dbg(dbg_ctl_parent_select, "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
           token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
           continue;
         } else {
-          Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
+          Dbg(dbg_ctl_parent_select, "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn,
+              line_num);
           hs.setHostStatus(fqdn, TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
     } else {
       if (self_detect && machine->is_self(std::string_view(token))) {
         if (self_detect == 1) {
-          Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
+          Dbg(dbg_ctl_parent_select, "token: %s, matches this machine.  Removing self from parent list at line %d", token,
+              line_num);
           token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
           continue;
         } else {
-          Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
-                line_num);
+          Dbg(dbg_ctl_parent_select, "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
+              line_num);
           hs.setHostStatus(token, TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
@@ -611,7 +621,7 @@ ParentRecord::DefaultInit(char *val)
     return false;
   } else {
     ParentRR_t round_robin = P_NO_ROUND_ROBIN;
-    Debug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     return true;
   }
@@ -821,11 +831,11 @@ ParentRecord::Init(matcher_line *line_info)
   case P_STRICT_ROUND_ROBIN:
   case P_HASH_ROUND_ROBIN:
   case P_LATCHED_ROUND_ROBIN:
-    Debug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     break;
   case P_CONSISTENT_HASH:
-    Debug("parent_select", "allocating ParentConsistentHash() lookup strategy.");
+    Dbg(dbg_ctl_parent_select, "allocating ParentConsistentHash() lookup strategy.");
     selection_strategy = new ParentConsistentHash(this);
     break;
   default:
@@ -847,7 +857,7 @@ ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
     result->rec         = this;
     result->line_number = this->line_num;
 
-    Debug("parent_select", "Matched with %p parent node from line %d", this, this->line_num);
+    Dbg(dbg_ctl_parent_select, "Matched with %p parent node from line %d", this, this->line_num);
   }
 }
 
@@ -979,7 +989,7 @@ SocksServerConfig::reconfigure()
 
   m_id = configProcessor.set(m_id, params);
 
-  if (is_debug_tag_set("parent_config")) {
+  if (dbg_ctl_parent_config.on()) {
     SocksServerConfig::print();
   }
 
@@ -1867,7 +1877,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 int
 verify(ParentResult *r, ParentResultType e, const char *h, int p)
 {
-  if (is_debug_tag_set("parent_select")) {
+  if (dbg_ctl_parent_select.on()) {
     show_result(r);
   }
   return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));

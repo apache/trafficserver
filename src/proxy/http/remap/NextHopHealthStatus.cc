@@ -34,7 +34,7 @@ NextHopHealthStatus::insert(std::vector<std::shared_ptr<HostRecord>> &hosts)
     for (auto protocol = h->protocols.begin(); protocol != h->protocols.end(); ++protocol) {
       const std::string host_port = h->getHostPort((*protocol)->port);
       host_map.emplace(std::make_pair(host_port, h));
-      NH_Debug(NH_DEBUG_TAG, "inserting %s into host_map", host_port.c_str());
+      NH_Dbg(NH_DBG_CTL, "inserting %s into host_map", host_port.c_str());
     }
   }
 }
@@ -52,7 +52,7 @@ NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, con
   auto iter                   = host_map.find(host_port);
 
   if (iter == host_map.end()) {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
+    NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
     return false;
   }
 
@@ -95,7 +95,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   const std::string host_port = HostRecord::makeHostPort(hostname, port);
   auto iter                   = host_map.find(host_port);
   if (iter == host_map.end()) {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
+    NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
     return;
   }
 
@@ -138,15 +138,15 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
           new_fail_count = h->failCount += 1;
         }
       } // end of lock_guard
-      NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] Parent fail count increased to %d for %s", sm_id, new_fail_count, h->hostname.c_str());
+      NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] Parent fail count increased to %d for %s", sm_id, new_fail_count, h->hostname.c_str());
     }
 
     if (new_fail_count >= fail_threshold) {
       h->set_unavailable();
       NH_Note("[%" PRId64 "] Failure threshold met failcount:%d >= threshold:%" PRId64 ", http parent proxy %s marked down", sm_id,
               new_fail_count, fail_threshold, h->hostname.c_str());
-      NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] NextHop %s marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
-               (h->available.load()) ? "true" : "false");
+      NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] NextHop %s marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
+             (h->available.load()) ? "true" : "false");
     }
     break;
   }

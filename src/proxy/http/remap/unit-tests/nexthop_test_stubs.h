@@ -36,11 +36,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define NH_Debug(tag, fmt, ...) PrintToStdErr("%s %s:%d:%s() " fmt "\n", tag, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define NH_Error(fmt, ...)      PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define NH_Note(fmt, ...)       PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define NH_Warn(fmt, ...)       PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define NH_GetConfig(v, n)      GetConfigInteger(&v, n)
+#define NH_Dbg(ctl, fmt, ...) PrintToStdErr("%s %s:%d:%s() " fmt "\n", (ctl).tag(), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define NH_Error(fmt, ...)    PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define NH_Note(fmt, ...)     PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define NH_Warn(fmt, ...)     PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define NH_GetConfig(v, n)    GetConfigInteger(&v, n)
 
 class HttpRequestData;
 

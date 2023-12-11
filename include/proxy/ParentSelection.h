@@ -265,16 +265,16 @@ struct ParentResult {
   bool
   response_is_retryable(ParentRetry_t retry_type, HTTPStatus response_code) const
   {
-    Debug("parent_select", "In response_is_retryable, code: %d, type: %d", response_code, retry_type);
+    Dbg(dbg_ctl_parent_select, "In response_is_retryable, code: %d, type: %d", response_code, retry_type);
     if (retry_type == PARENT_RETRY_BOTH) {
-      Debug("parent_select", "Saw retry both");
+      Dbg(dbg_ctl_parent_select, "Saw retry both");
       return (rec->unavailable_server_retry_responses->contains(response_code) ||
               rec->simple_server_retry_responses->contains(response_code));
     } else if (retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
-      Debug("parent_select", "Saw retry unavailable server");
+      Dbg(dbg_ctl_parent_select, "Saw retry unavailable server");
       return rec->unavailable_server_retry_responses->contains(response_code);
     } else if (retry_type == PARENT_RETRY_SIMPLE) {
-      Debug("parent_select", "Saw retry simple retry");
+      Dbg(dbg_ctl_parent_select, "Saw retry simple retry");
       return rec->simple_server_retry_responses->contains(response_code);
     } else {
       return false;
@@ -302,6 +302,8 @@ struct ParentResult {
            hostname, port, (retry) ? "true" : "false", line_number, last_parent, start_parent, (wrap_around) ? "true" : "false",
            last_lookup, ParentResultStr[result]);
   }
+
+  static DbgCtl dbg_ctl_parent_select;
 
 private:
   // Internal use only

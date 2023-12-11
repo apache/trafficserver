@@ -49,9 +49,9 @@
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
-#define DUMP_HEADER(T, H, I, S)                                 \
+#define DUMP_HEADER(C, H, I, S)                                 \
   {                                                             \
-    if (is_debug_tag_set(T)) {                                  \
+    if ((C).on()) {                                             \
       fprintf(stderr, "+++++++++ %s +++++++++\n", S);           \
       fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
       char b[4096];                                             \
@@ -939,7 +939,7 @@ public:
       if (e != EIO) {
         this->cause_of_death_errno = e;
       }
-      Debug("http", "Setting upstream connection failure %d to %d", original_connect_result, this->current.server->connect_result);
+      Dbg(_dbg_ctl, "Setting upstream connection failure %d to %d", original_connect_result, this->current.server->connect_result);
     }
 
     MgmtInt
@@ -961,6 +961,8 @@ public:
   private:
     // Make this a raw byte array, so it will be accessed through the my_txn_conf() member function.
     alignas(OverridableHttpConfigParams) char _my_txn_conf[sizeof(OverridableHttpConfigParams)];
+
+    static DbgCtl _dbg_ctl;
 
   }; // End of State struct.
 

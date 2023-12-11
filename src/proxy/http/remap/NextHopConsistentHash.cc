@@ -85,7 +85,7 @@ NextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &rin
 
 NextHopConsistentHash::~NextHopConsistentHash()
 {
-  NH_Debug(NH_DEBUG_TAG, "destructor called for strategy named: %s", strategy_name.c_str());
+  NH_Dbg(NH_DBG_CTL, "destructor called for strategy named: %s", strategy_name.c_str());
 }
 
 NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n)
@@ -155,8 +155,8 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
       p->group_index = host_groups[i][j]->group_index;
       p->host_index  = host_groups[i][j]->host_index;
       hash_ring->insert(p, p->weight, &hash);
-      NH_Debug(NH_DEBUG_TAG, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, strategy: %s", i, j, p->name,
-               p->hostname.c_str(), strategy_name.c_str());
+      NH_Dbg(NH_DBG_CTL, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, strategy: %s", i, j, p->name,
+             p->hostname.c_str(), strategy_name.c_str());
     }
     hash.clear();
     rings.push_back(std::move(hash_ring));
@@ -198,7 +198,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     url_string_ref = url->string_get_ref(&len, URLNormalize::LC_SCHEME_HOST);
     if (url_string_ref && len > 0) {
       h->update(url_string_ref, len);
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] url hash string: %s", sm_id, url_string_ref);
+      NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] url hash string: %s", sm_id, url_string_ref);
     }
     break;
   // hostname hash
@@ -241,7 +241,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
       url            = *(hrdata.cache_info_parent_selection_url);
       url_string_ref = url->string_get_ref(&len);
       if (url_string_ref && len > 0) {
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] using parent selection over-ride string:'%.*s'.", sm_id, len, url_string_ref);
+        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] using parent selection over-ride string:'%.*s'.", sm_id, len, url_string_ref);
         h->update(url_string_ref, len);
       }
     } else {
@@ -249,8 +249,8 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
       url_string_ref = url->path_get(&len);
       h->update("/", 1);
       if (url_string_ref && len > 0) {
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] the parent selection over-ride url is not set, using default path: %s.", sm_id,
-                 url_string_ref);
+        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] the parent selection over-ride url is not set, using default path: %s.", sm_id,
+               url_string_ref);
         h->update(url_string_ref, len);
       }
     }
@@ -305,8 +305,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   // returned from the "firstcall" due to some error so, subsequent calls will not search using a hash but,
   // will instead just increment the hash table iterator to find the next parent on the ring
   if (firstcall) {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-             ParentResultStr[result.result]);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, result.line_number,
+           ParentResultStr[result.result]);
     result.line_number = distance;
     cur_ring           = 0;
     for (uint32_t i = 0; i < groups; i++) {
@@ -319,8 +319,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       first_call_host = result.hostname;
       first_call_port = result.port;
     }
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-             ParentResultStr[result.result]);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, result.line_number,
+           ParentResultStr[result.result]);
     switch (ring_mode) {
     case NH_ALTERNATE_RING:
       if (groups > 1) {
@@ -350,7 +350,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     do {
       // all host groups have been searched and there are no available parents found
       if (isWrapped(wrap_around, groups)) {
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] No available parents.", sm_id);
+        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] No available parents.", sm_id);
         pRec = nullptr;
         break;
       }
@@ -408,7 +408,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
             result.last_lookup = pRec->group_index;
             result.retry       = nextHopRetry;
             result.result      = PARENT_SPECIFIED;
-            NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
+            NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
             break;
           }
         }
@@ -438,15 +438,15 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       if (pRec) {
         // if the selected host is down, search again.
         if (!pRec->available || host_stat == TS_HOST_STATUS_DOWN) {
-          NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] hostname: %s, available: %s, host_stat: %s", sm_id, pRec->hostname.c_str(),
-                   pRec->available ? "true" : "false", HostStatusNames[host_stat]);
+          NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] hostname: %s, available: %s, host_stat: %s", sm_id, pRec->hostname.c_str(),
+                 pRec->available ? "true" : "false", HostStatusNames[host_stat]);
           pRec = nullptr;
           continue;
         }
       }
     } while (!pRec);
 
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
   }
 
   // ----------------------------------------------------------------------------------------------------
@@ -473,21 +473,21 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     if (ring_mode == NH_PEERING_RING && !cache_peer_result && cur_ring == 0) {
       result.do_not_cache_response = true;
 
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
-               (result.do_not_cache_response) ? "true" : "false");
+      NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
+             (result.do_not_cache_response) ? "true" : "false");
     }
 
     // We want to use the pristine/pre-remap URL when going to a peer so it can handle
     // the request without needing extra remaps to handle the post-remap URL
     if (ring_mode == NH_PEERING_RING && cur_ring == 0 && use_pristine) {
       result.use_pristine = true;
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] setting use pristine to true", sm_id);
+      NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting use pristine to true", sm_id);
     }
 
     ink_assert(result.hostname != nullptr);
     ink_assert(result.port != 0);
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result.result],
-             result.hostname, result.port);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result.result],
+           result.hostname, result.port);
   } else {
     if (go_direct == true) {
       result.result = PARENT_DIRECT;
@@ -498,8 +498,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     result.port     = 0;
     result.retry    = false;
 
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
-             ParentResultStr[result.result]);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
+           ParentResultStr[result.result]);
   }
 
   setHostHeader(txnp, result.hostname);
