@@ -214,6 +214,9 @@ Diags::~Diags()
   deactivate_all(DiagsTagType_Action);
 }
 
+namespace
+{
+
 struct DiagTimestamp {
   std::chrono::time_point<std::chrono::system_clock> ts = std::chrono::system_clock::now();
 };
@@ -244,6 +247,8 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname cons
   bwformat(w, spec, std::string_view{n.name});
   return w;
 }
+
+} // namespace
 
 //////////////////////////////////////////////////////////////////////////////
 //
