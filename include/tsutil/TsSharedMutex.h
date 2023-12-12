@@ -86,7 +86,7 @@ public:
   void
   unlock()
   {
-    debug_assert(_exclusive);
+    X(debug_assert(_exclusive);)
     X(_exclusive = false;)
 
     _unlock();
@@ -99,9 +99,9 @@ public:
     if (error != 0) {
       _call_fatal("pthread_rwlock_rdlock", &_lock, error);
     }
-    debug_assert(_shared >= 0);
+    X(debug_assert(_shared >= 0);)
     X(++_shared;)
-    debug_assert(_shared > 0);
+    X(debug_assert(_shared > 0);)
   }
 
   bool
@@ -123,9 +123,9 @@ public:
   void
   unlock_shared()
   {
-    debug_assert(_shared > 0);
+    X(debug_assert(_shared > 0);)
     X(--_shared;)
-    debug_assert(_shared >= 0);
+    X(debug_assert(_shared >= 0);)
 
     _unlock();
   }
