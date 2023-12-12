@@ -221,22 +221,24 @@ EThread::execute_regular()
   // A statically initialized instance we can use as a prototype for initializing other instances.
   static const Metrics::Slice SLICE_INIT;
 
+  Metrics::Slice *current_slice{nullptr};
+
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
     loop_start_time = ink_get_hrtime();
     nq_count        = 0; // count # of elements put on negative queue.
     ev_count        = 0; // # of events handled.
 
-    metrics.current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
-    if (metrics.current_slice != prev_slice) {
+    current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
+    metrics.current_slice.store(current_slice, std::memory_order_release);
+    if (current_slice != prev_slice) {
       // I have observed multi-second event loops in production, making this necessary. [amc]
       do {
-        // Need @c const_cast to cast away @c volatile
         memcpy(prev_slice = this->metrics.next_slice(prev_slice), &SLICE_INIT, sizeof(SLICE_INIT));
-      } while (metrics.current_slice != prev_slice);
-      metrics.current_slice->record_loop_start(loop_start_time);
+      } while (current_slice != prev_slice);
+      current_slice->record_loop_start(loop_start_time);
     }
-    ++(metrics.current_slice->_count); // loop started, bump count.
+    ++(current_slice->_count); // loop started, bump count.
 
     process_queue(&NegativeQueue, &ev_count, &nq_count);
 
@@ -277,7 +279,7 @@ EThread::execute_regular()
         // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
         sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
       }
-      ++(metrics.current_slice->_wait);
+      ++(current_slice->_wait);
     } else {
       sleep_time = 0;
     }
@@ -293,7 +295,7 @@ EThread::execute_regular()
 
     metrics.decay();
     metrics.record_loop_time(delta);
-    metrics.current_slice->record_event_count(ev_count);
+    current_slice->record_event_count(ev_count);
   }
 }
 
@@ -367,7 +369,8 @@ EThread::Metrics::summarize(Metrics &global)
 
   // To avoid race conditions, we back up one from the current metric block. It's close enough
   // and won't be updated during the time this method runs so it should be thread safe.
-  Slice *slice = this->prev_slice(current_slice);
+  // The acquire fence ensures we see all the preceeding updates to the previous slice.
+  Slice *slice = this->prev_slice(current_slice.load(std::memory_order_acquire));
 
   for (unsigned t = 0; t < N_TIMESCALES; ++t) {
     int count = SLICE_SAMPLE_COUNT[t];
