@@ -23,12 +23,37 @@
 
 #pragma once
 
+#include "api/SourceLocation.h"
+#include "api/ts_diag_levels.h"
+#include "swoc/BufferWriter.h"
 #include <atomic>
 #include <utility>
+#include <functional>
 
 #include <ts/apidefs.h> // For TS_PRINTFLIKE
 
 class DiagsConfigState;
+
+enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
+
+class DebugInterface
+{
+public:
+  virtual ~DebugInterface()                            = default;
+  virtual bool debug_tag_activated(const char *) const = 0;
+  virtual bool get_override() const                    = 0;
+  virtual void print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
+                        va_list ap) const              = 0;
+
+  static DebugInterface *get_instance();
+  static void set_instance(DebugInterface *);
+
+  // Generate the default diagnostics format string for the given parameters.
+  // @return The offset in the format string of the timestamp (in case the caller doesn't want to include that)
+  static size_t generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
+                                       const SourceLocation *loc, DiagsShowLocation show_location, const char *format_string);
+  static const char *level_name(DiagsLevel dl);
+};
 
 class DbgCtl
 {
@@ -107,7 +132,7 @@ public:
 
   // Call this when the compiled regex to enable tags may have changed.
   //
-  static void update();
+  static void update(const std::function<bool(const char *)> &f);
 
   // For use in DbgPrint() only.
   //

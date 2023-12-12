@@ -27,7 +27,7 @@
 #include "tscore/ink_string.h"
 #include <tscore/ink_assert.h>
 
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 
 #ifdef TEST_LOG_UTILS
 

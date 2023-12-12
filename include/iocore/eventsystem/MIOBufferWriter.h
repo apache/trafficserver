@@ -33,7 +33,7 @@
 #define ink_assert ink_release_assert
 #endif
 
-#include "tscpp/util/ts_bw.h"
+#include "swoc/BufferWriter.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
 #include "iocore/eventsystem/IOBuffer.h"

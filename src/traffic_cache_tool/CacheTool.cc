@@ -38,7 +38,6 @@
 
 #include "tscore/ink_memory.h"
 #include "tscore/ink_file.h"
-#include "tscpp/util/ts_bw.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/ArgParser.h"
 #include <thread>

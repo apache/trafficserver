@@ -24,7 +24,6 @@
 #include "iocore/net/ProxyProtocol.h"
 #include "tscore/Diags.h"
 
-#include "tscpp/util/ts_bw.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_inet.h"

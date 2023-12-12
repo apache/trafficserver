@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ts/remap_version.h"

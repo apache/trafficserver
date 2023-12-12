@@ -29,7 +29,7 @@
 
  ****************************************************************************/
 #include "tscore/ink_config.h"
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 #include "tscore/Allocator.h"
 #include "proxy/http/Http1ServerSession.h"
 #include "proxy/http/HttpSessionManager.h"

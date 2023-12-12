@@ -20,7 +20,7 @@
 
 #include <catch.hpp> /* catch unit-test framework */
 
-#include <tscpp/util/ts_bw_format.h>
+#include <api/ts_bw_format.h>
 
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"

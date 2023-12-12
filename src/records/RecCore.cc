@@ -36,7 +36,7 @@
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
 #include "tscore/Layout.h"
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_errata.h"
 #include "api/Metrics.h"
 
 using ts::Metrics;

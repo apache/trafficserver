@@ -34,15 +34,17 @@
 #include <cstdarg>
 #include <string>
 #include <string_view>
+#include "api/DbgCtl.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/ContFlags.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_mutex.h"
 #include "tscpp/util/Regex.h"
-#include "tscore/SourceLocation.h"
+#include "api/SourceLocation.h"
 
-#include "tscpp/util/ts_diag_levels.h"
+#include "api/ts_diag_levels.h"
+#include "api/DbgCtl.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
@@ -62,8 +64,6 @@ struct DiagsModeOutput {
 enum StdStream { STDOUT = 0, STDERR };
 
 enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
-
-enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
 
 #define DiagsLevel_Count DL_Undefined
 
@@ -105,7 +105,7 @@ private:
 //
 //////////////////////////////////////////////////////////////////////////////
 
-class Diags
+class Diags : public DebugInterface
 {
 public:
   Diags(std::string_view prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
@@ -126,7 +126,7 @@ public:
   ///////////////////////////
 
   bool
-  get_override() const
+  get_override() const override
   {
     return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
   }
@@ -166,11 +166,15 @@ public:
   //
   bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
+  bool
+  debug_tag_activated(const char *tag) const override
+  {
+    return tag_activated(tag);
+  }
+
   /////////////////////////////
   // raw printing interfaces //
   /////////////////////////////
-
-  const char *level_name(DiagsLevel level) const;
 
   ///////////////////////////////////////////////////////////////////////
   // user diagnostic output interfaces --- enabled on or off based     //
@@ -187,7 +191,7 @@ public:
     va_end(ap);
   }
 
-  void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
+  void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const override;
 
   /// Print the log message only if tag is enabled.
   void

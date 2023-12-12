@@ -21,7 +21,7 @@
 
 #include <string>
 #include <variant>
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 #include <yaml-cpp/yaml.h>
 #include <tscore/ink_uuid.h>
 

@@ -23,9 +23,9 @@
 
 #include <cstdio>
 #include <cstring>
-#include "tscore/SourceLocation.h"
-#include "tscore/ink_defs.h"
-#include "tscpp/util/ts_bw_format.h"
+#include "api/SourceLocation.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_ex.h"
 
 using namespace swoc::literals;
 
@@ -53,7 +53,7 @@ SourceLocation::str(char *buf, int buflen) const
   } else {
     snprintf(buf, buflen, "%s:%d", shortname, line);
   }
-  buf[buflen - 1] = NUL;
+  buf[buflen - 1] = 0;
   return (buf);
 }
 

@@ -19,9 +19,9 @@ if(maxminddb_FOUND)
 
   add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
 
-  target_include_directories(maxmind_acl PRIVATE ${PCRE_INCLUDE_DIR})
-
-  target_link_libraries(maxmind_acl PRIVATE libswoc::libswoc ts::tsapicore yaml-cpp::yaml-cpp maxminddb::maxminddb)
+  target_link_libraries(
+    maxmind_acl PRIVATE libswoc::libswoc ts::tscore ts::tsapicore yaml-cpp::yaml-cpp maxminddb::maxminddb PCRE::PCRE
+  )
 
 else()
   message(STATUS "skipping maxmind_acl plugin (missing maxminddb)")

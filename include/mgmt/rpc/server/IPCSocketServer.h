@@ -28,7 +28,7 @@
 #include <memory>
 
 #include "swoc/MemSpan.h"
-#include "tscpp/util/ts_bw.h"
+#include "swoc/BufferWriter.h"
 #include "tscore/Layout.h"
 
 #include "mgmt/rpc/server/CommBase.h"

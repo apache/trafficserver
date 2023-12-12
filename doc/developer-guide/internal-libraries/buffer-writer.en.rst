@@ -29,8 +29,7 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include <tscpp/util/ts_bw.h> // Basic buffer writer
-   #include <tscpp/util/ts_bw_format.h> // Above plus Formatting support.
+   #include <api/ts_bw_format.h> // Above plus Formatting support.
 
 Description
 +++++++++++

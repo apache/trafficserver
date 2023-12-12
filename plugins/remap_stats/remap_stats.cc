@@ -21,7 +21,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/ts_bw_format.h"
+#include "api/ts_bw_format.h"
 
 #include "ts/ts.h"
 

@@ -27,7 +27,6 @@
 #include <string_view>
 
 #include "tscore/ink_platform.h"
-#include "tscpp/util/ts_bw.h"
 
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpTransactHeaders.h"

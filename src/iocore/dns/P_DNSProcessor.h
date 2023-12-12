@@ -44,7 +44,7 @@
 #include "tscore/PendingAction.h"
 #include "tscore/Ptr.h"
 
-#include "ts/DbgCtl.h"
+#include "api/DbgCtl.h"
 
 #include <swoc/IPEndpoint.h>
 

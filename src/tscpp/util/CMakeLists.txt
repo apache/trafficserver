@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(tscpputil SHARED ts_ip.cc ts_diags.cc YamlCfg.cc ts_unit_parser.cc Regex.cc)
+add_library(tscpputil SHARED ts_ip.cc YamlCfg.cc ts_unit_parser.cc Regex.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
 target_link_libraries(tscpputil PUBLIC PCRE::PCRE libswoc::libswoc yaml-cpp::yaml-cpp)
 set(TSCPPUTIL_PUBLIC_HEADERS
@@ -29,10 +29,6 @@ set(TSCPPUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/Regex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/TsSharedMutex.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/YamlCfg.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_bw.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_bw_format.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_diag_levels.h
-    ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_errata.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_ip.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_meta.h
     ${PROJECT_SOURCE_DIR}/include/tscpp/util/ts_time_parser.h

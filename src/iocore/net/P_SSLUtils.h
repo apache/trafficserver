@@ -29,7 +29,7 @@
 #endif
 #include <openssl/ssl.h>
 
-#include "tscpp/util/ts_errata.h"
+#include "api/ts_errata.h"
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"

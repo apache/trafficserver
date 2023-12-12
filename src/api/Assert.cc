@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Common assert definitions
 
   @section license License
 
@@ -21,16 +21,24 @@
   limitations under the License.
  */
 
-/***************************************************************************
-Assertions
+#include "api/Assert.h"
+#include "api/ts_bw_format.h"
 
-***************************************************************************/
-
-#include "tscore/ink_assert.h"
-#include "tscore/ink_error.h"
+#include <stdexcept>
+#include <syslog.h>
 
 void
-_ink_assert(const char *expression, const char *file, int line)
+ts::do_abort(const SourceLocation &loc, const char *expr, const char *message)
 {
-  ink_abort("%s:%d: failed assertion `%s`", file, line, expression);
+  swoc::LocalBufferWriter<1024> w;
+
+  w.print("Fatal: <{}> {}", loc, expr);
+  if (message) {
+    w.print(" ({})", message);
+  }
+
+  fprintf(stderr, "%s\n", w.data());
+  syslog(LOG_CRIT, "%s", w.data());
+
+  abort();
 }

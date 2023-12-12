@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "api/Assert.h"
 #include "api/Metrics.h"
 
 namespace ts
@@ -40,8 +41,8 @@ Metrics::_addBlob() // The mutex must be held before calling this!
 {
   auto blob = new Metrics::NamesAndAtomics();
 
-  ink_assert(blob);
-  ink_assert(_cur_blob < MAX_BLOBS);
+  debug_assert(blob);
+  debug_assert(_cur_blob < MAX_BLOBS);
 
   _blobs[++_cur_blob] = blob;
   _cur_off            = 0;
@@ -140,7 +141,7 @@ Metrics::name(Metrics::IdType id) const
 Metrics::SpanType
 Metrics::_createSpan(size_t size, Metrics::IdType *id)
 {
-  ink_release_assert(size <= MAX_SIZE);
+  release_assert(size <= MAX_SIZE);
   std::lock_guard<std::mutex> lock(_mutex);
 
   if (_cur_off + size > MAX_SIZE) {

@@ -22,7 +22,6 @@ add_library(ts::tsapi ALIAS tsapi)
 set(TSAPI_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/ts/ts.h
     ${PROJECT_SOURCE_DIR}/include/ts/remap.h
-    ${PROJECT_SOURCE_DIR}/include/ts/DbgCtl.h
     ${PROJECT_SOURCE_DIR}/include/ts/TsException.h
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
@@ -52,12 +51,28 @@ target_link_libraries(
 )
 
 # Items that even tscore can depend on
-add_library(tsapicore Metrics.cc DbgCtl.cc)
+set(TSAPICORE_PUBLIC_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/api/Metrics.h
+    ${PROJECT_SOURCE_DIR}/include/api/SourceLocation.h
+    ${PROJECT_SOURCE_DIR}/include/api/DbgCtl.h
+    ${PROJECT_SOURCE_DIR}/include/api/APIHook.h
+    ${PROJECT_SOURCE_DIR}/include/api/APIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/FeatureAPIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/InkAPIInternal.h
+    ${PROJECT_SOURCE_DIR}/include/api/LifecycleAPIHooks.h
+    ${PROJECT_SOURCE_DIR}/include/api/Metrics.h
+    ${PROJECT_SOURCE_DIR}/include/api/SourceLocation.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_bw_format.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_diag_levels.h
+    ${PROJECT_SOURCE_DIR}/include/api/ts_errata.h
+)
+add_library(tsapicore SHARED Assert.cc Metrics.cc DbgCtl.cc SourceLocation.cc ts_diags.cc)
 add_library(ts::tsapicore ALIAS tsapicore)
-target_link_libraries(tsapicore PRIVATE ts::tscore)
-set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(tsapicore PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSAPICORE_PUBLIC_HEADERS}")
+target_link_libraries(tsapicore PUBLIC libswoc)
 
-install(TARGETS tsapi tsapicore tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapi tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(TARGETS tsapicore PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/api)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
@@ -66,7 +81,7 @@ endif()
 if(BUILD_TESTING)
   add_executable(test_ApiCore unit_tests/test_Metrics.cc)
 
-  target_link_libraries(test_ApiCore PRIVATE tsapicore tscore catch2::catch2)
+  target_link_libraries(test_ApiCore PRIVATE tscore tsapicore catch2::catch2)
 
   add_test(NAME test_ApiCore COMMAND $<TARGET_FILE:test_ApiCore>)
 endif()

@@ -23,7 +23,7 @@ function(ADD_AUTEST_PLUGIN _NAME)
                PREFIX ""
                SUFFIX ".so"
   )
-  target_link_libraries(${_NAME} PRIVATE ts::tsapi)
+  target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsapicore)
 endfunction()
 
 add_subdirectory(tools/plugins)

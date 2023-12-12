@@ -35,7 +35,7 @@
 #include <openssl/ssl.h>
 
 #include "tscore/ink_inet.h"
-#include "ts/DbgCtl.h"
+#include "api/DbgCtl.h"
 
 class ActionItem
 {
