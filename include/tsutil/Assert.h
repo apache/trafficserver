@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tsutil/SourceLocation.h"
-#include "swoc/bwf_fwd.h"
+#include "tsutil/ts_bw_format.h"
 namespace ts
 {
 
@@ -54,3 +54,6 @@ void do_abort(const SourceLocation &loc, const char *expr, const char *message =
   if (!(EX)) {                                      \
     ts::do_abort(MakeSourceLocation(), #EX, (MSG)); \
   }
+
+#define fatal_error(format, ...) \
+  ts::do_abort(MakeSourceLocation(), "FATAL", swoc::bwprint(ts::bw_dbg, format, __VA_ARGS__).c_str());

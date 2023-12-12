@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <cstdint>
 namespace ts
 {
 template <class T = uint8_t, std::size_t EstSizeBound = 1024> class LocalBuffer

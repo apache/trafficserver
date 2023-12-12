@@ -32,8 +32,6 @@
 #include <pcre.h>
 #endif
 
-#include "tscore/ink_memory.h" // ats_pagesize()
-
 namespace
 {
 inline pcre *
@@ -75,7 +73,7 @@ pcre_jit_stack *
 get_jit_stack(void *)
 {
   if (!jit_stack) {
-    jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
+    jit_stack = pcre_jit_stack_alloc(4096, 1024 * 1024); // 1 page min and 1MB max
   }
   return jit_stack;
 }
