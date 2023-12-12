@@ -47,32 +47,52 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   http_init();
 
   HTTPParser parser;
-  HTTPHdr req_hdr, rsp_hdr, req_hdr_2;
+  HTTPHdr req_hdr, rsp_hdr, req_hdr_2, rsp_hdr_2, req_hdr_3, rsp_hdr_3;
 
   req_hdr.create(HTTP_TYPE_REQUEST);
   rsp_hdr.create(HTTP_TYPE_RESPONSE);
   req_hdr_2.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+  rsp_hdr_2.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+  req_hdr_3.create(HTTP_TYPE_REQUEST, HTTP_3_0);
+  rsp_hdr_3.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
 
   {
     http_parser_init(&parser);
-    req_hdr.parse_req(&parser, &start, end, true);
+    ParseResult result = req_hdr.parse_req(&parser, &start, end, true);
     http_parser_clear(&parser);
   }
   {
     http_parser_init(&parser);
-    rsp_hdr.parse_resp(&parser, &start, end, true);
+    ParseResult result = rsp_hdr.parse_resp(&parser, &start, end, true);
     http_parser_clear(&parser);
   }
   {
     http_parser_init(&parser);
-
-    req_hdr_2.parse_req(&parser, &start, end, true);
+    ParseResult result = req_hdr_2.parse_req(&parser, &start, end, true);
+    http_parser_clear(&parser);
+  }
+  {
+    http_parser_init(&parser);
+    ParseResult result = rsp_hdr_2.parse_resp(&parser, &start, end, true);
+    http_parser_clear(&parser);
+  }
+  {
+    http_parser_init(&parser);
+    ParseResult result = req_hdr_3.parse_req(&parser, &start, end, true);
+    http_parser_clear(&parser);
+  }
+  {
+    http_parser_init(&parser);
+    ParseResult result = rsp_hdr_3.parse_resp(&parser, &start, end, true);
     http_parser_clear(&parser);
   }
 
   req_hdr.destroy();
   rsp_hdr.destroy();
   req_hdr_2.destroy();
+  rsp_hdr_2.destroy();
+  req_hdr_3.destroy();
+  rsp_hdr_3.destroy();
 
   delete diags();
 
