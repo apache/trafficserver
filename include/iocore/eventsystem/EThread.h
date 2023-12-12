@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
 #include "tscore/Version.h"
@@ -479,7 +481,7 @@ public:
     /// The slices.
     std::array<Slice, N_SLICES> _slice;
 
-    Slice *volatile current_slice = nullptr; ///< The current slice.
+    std::atomic<Slice *> current_slice{nullptr}; ///< The current slice.
 
     /** The number of time scales used in the event statistics.
         Currently these are 10s, 100s, 1000s.
@@ -599,7 +601,7 @@ inline auto
 EThread::Metrics::record_loop_time(ink_hrtime delta) -> self_type &
 {
   static auto constexpr DIVISOR = std::chrono::duration_cast<ts_nanoseconds>(LOOP_HISTOGRAM_BUCKET_SIZE).count();
-  current_slice->record_loop_duration(delta);
+  (*current_slice).record_loop_duration(delta);
   _loop_timing(delta / DIVISOR);
   return *this;
 }

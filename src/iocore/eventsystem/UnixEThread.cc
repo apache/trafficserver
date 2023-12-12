@@ -234,9 +234,9 @@ EThread::execute_regular()
         // Need @c const_cast to cast away @c volatile
         memcpy(prev_slice = this->metrics.next_slice(prev_slice), &SLICE_INIT, sizeof(SLICE_INIT));
       } while (metrics.current_slice != prev_slice);
-      metrics.current_slice->record_loop_start(loop_start_time);
+      (*metrics.current_slice).record_loop_start(loop_start_time);
     }
-    ++(metrics.current_slice->_count); // loop started, bump count.
+    ++((*metrics.current_slice)._count); // loop started, bump count.
 
     process_queue(&NegativeQueue, &ev_count, &nq_count);
 
@@ -277,7 +277,7 @@ EThread::execute_regular()
         // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
         sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
       }
-      ++(metrics.current_slice->_wait);
+      ++((*metrics.current_slice)._wait);
     } else {
       sleep_time = 0;
     }
@@ -293,7 +293,7 @@ EThread::execute_regular()
 
     metrics.decay();
     metrics.record_loop_time(delta);
-    metrics.current_slice->record_event_count(ev_count);
+    (*metrics.current_slice).record_event_count(ev_count);
   }
 }
 
