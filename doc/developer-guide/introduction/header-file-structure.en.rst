@@ -46,17 +46,17 @@ The header files are located in the ``include/`` directory. There are several su
    data structures either directly or operationally. This is linked in to the ``traffic_server`` binary therefore
    has no explicit linkage when used in the core.
 
-"api"
-   Plugin API internal header files. These are header files for the internal ``tsapicore`` library (see below). Theses can only be used inside |TS| itself.
+"tsutil"
+   Plugin API internal header files. These are header files for the internal ``tsutil`` library (see below). Theses can only be used inside |TS| itself.
 
 New Plugin API layout
 =====================
 
 Previously, all plugin interfaces were built into the main |TS| binary. In an effort to enhance modularity and enable compile-time checks, these interfaces have been moved to ``src/api``. They are now isolated into a separate shared library ``tsapi.so``.
 
-In addition, a new static library ``tsapicore.a`` has been created, which contains code used by both the core and the plugins (via the plugin APIs), and is linked into the |TS| binary to keep functionalities consistent.
+In addition, a new static library ``tsutil.a`` has been created, which contains code used by both the core and the plugins (via the plugin APIs), and is linked into the |TS| binary to keep functionalities consistent.
 
-Note that ``tsapi.so`` depends on ``tsapicore.a`` and other static libraries in
+Note that ``tsapi.so`` depends on ``tsutil.a`` and other static libraries in
 the core. ``tsapi.so`` is not statically linked against these dependencies
 during its creation, but relies on them being linked into |TS|. To verify these
 dependencies, a compile-time sanity check links ``tsapi.so`` with the main

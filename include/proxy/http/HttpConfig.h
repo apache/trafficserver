@@ -53,7 +53,7 @@
 #include "iocore/net/SessionSharingAPIEnums.h"
 #include "records/RecProcess.h"
 #include "tscpp/util/ts_ip.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

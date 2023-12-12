@@ -44,11 +44,11 @@
 #include "tscore/PendingAction.h"
 #include "tscore/Ptr.h"
 
-#include "api/DbgCtl.h"
+#include "tsutil/DbgCtl.h"
 
 #include <swoc/IPEndpoint.h>
 
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

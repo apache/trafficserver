@@ -24,7 +24,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 using ts::Metrics;
 
 TEST_CASE("Metrics", "[libtsapi][Metrics]")

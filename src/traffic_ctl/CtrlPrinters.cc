@@ -23,7 +23,7 @@
 #include <string_view>
 
 #include <swoc/swoc_meta.h>
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 
 #include "CtrlPrinters.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"

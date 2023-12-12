@@ -30,7 +30,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "P_CacheHttp.h"
 #include "P_CacheHosting.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 #include "iocore/cache/CacheVC.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"

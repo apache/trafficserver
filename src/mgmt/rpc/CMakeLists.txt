@@ -27,7 +27,7 @@ set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE TRUE
 target_link_libraries(
   jsonrpc_protocol
   PUBLIC tscpputil ts::tscore
-  PRIVATE ts::tsapicore
+  PRIVATE ts::tsutil
 )
 
 add_library(
@@ -46,12 +46,12 @@ add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 target_link_libraries(
   rpcpublichandlers
   PUBLIC ts::overridable_txn_vars ts::tscore
-  PRIVATE ts::inkcache ts::proxy ts::tsapicore ts::tsapibackend
+  PRIVATE ts::inkcache ts::proxy ts::tsutil ts::tsapibackend
 )
 
 if(BUILD_TESTING)
   add_executable(test_jsonrpc jsonrpc/unit_tests/unit_test_main.cc jsonrpc/unit_tests/test_basic_protocol.cc)
-  target_link_libraries(test_jsonrpc ts::tsapicore catch2::catch2 ts::jsonrpc_protocol libswoc::libswoc)
+  target_link_libraries(test_jsonrpc ts::tsutil catch2::catch2 ts::jsonrpc_protocol libswoc::libswoc)
   add_test(NAME test_jsonrpc COMMAND test_jsonrpc)
 
   add_executable(

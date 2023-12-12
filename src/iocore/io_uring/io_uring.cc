@@ -32,7 +32,7 @@ Linux io_uring helper library
 #include "tscore/ink_hrtime.h"
 #include "tscore/Diags.h"
 
-#include <api/Metrics.h>
+#include <tsutil/Metrics.h>
 using ts::Metrics;
 
 std::atomic<int> main_wq_fd;

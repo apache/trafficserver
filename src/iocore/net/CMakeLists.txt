@@ -107,7 +107,7 @@ target_link_libraries(
          OpenSSL::Crypto
          OpenSSL::SSL
          ts::tsapibackend
-  PRIVATE ts::tsapicore yaml-cpp::yaml-cpp
+  PRIVATE ts::tsutil yaml-cpp::yaml-cpp
 )
 
 # Is this necessary?

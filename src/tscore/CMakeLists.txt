@@ -116,7 +116,7 @@ target_link_libraries(
          libswoc::libswoc
          yaml-cpp::yaml-cpp
          resolv::resolv
-         ts::tsapicore
+         ts::tsutil
          ts::tscpputil
 )
 
@@ -172,7 +172,7 @@ if(BUILD_TESTING)
     test_tscore
     PRIVATE libswoc::libswoc
             ts::tscore
-            ts::tsapicore
+            ts::tsutil
             yaml-cpp::yaml-cpp
             resolv::resolv
             ts::tscpputil

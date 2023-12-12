@@ -36,7 +36,7 @@ add_library(ts::records ALIAS records)
 target_link_libraries(
   records
   PUBLIC ts::inkevent ts::tscore yaml-cpp::yaml-cpp
-  PRIVATE ts::tsapicore
+  PRIVATE ts::tsutil
 )
 
 if(BUILD_TESTING)

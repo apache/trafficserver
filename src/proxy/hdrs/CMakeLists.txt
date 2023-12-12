@@ -35,7 +35,7 @@ add_library(ts::hdrs ALIAS hdrs)
 target_link_libraries(
   hdrs
   PUBLIC libswoc::libswoc ts::tscore
-  PRIVATE ts::inkevent ts::tsapicore
+  PRIVATE ts::inkevent ts::tsutil
 )
 
 if(BUILD_TESTING)
@@ -55,6 +55,6 @@ if(BUILD_TESTING)
   add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
   add_executable(test_proxy_hdrs_xpack XPACK.cc HuffmanCodec.cc unit_tests/test_XPACK.cc)
-  target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore ts::tsapicore tscpputil libswoc catch2::catch2)
+  target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::tscore ts::tsutil tscpputil libswoc catch2::catch2)
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
 endif()

@@ -570,6 +570,7 @@ configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
 add_subdirectory(src/tscpp/util)
 add_subdirectory(src/tscpp/api)
+add_subdirectory(src/tsutil)
 add_subdirectory(src/tscore)
 add_subdirectory(src/records)
 add_subdirectory(src/iocore)

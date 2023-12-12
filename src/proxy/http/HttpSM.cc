@@ -22,7 +22,7 @@
 
  */
 
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 #include "proxy/ProxyTransaction.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/ConnectingEntry.h"

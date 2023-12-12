@@ -35,7 +35,7 @@
 #include "iocore/hostdb/HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

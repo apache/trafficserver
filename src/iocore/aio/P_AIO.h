@@ -37,7 +37,7 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

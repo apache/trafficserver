@@ -23,7 +23,7 @@
 
 #include <cstdio>
 #include <cstring>
-#include "api/SourceLocation.h"
+#include "tsutil/SourceLocation.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_ex.h"
 

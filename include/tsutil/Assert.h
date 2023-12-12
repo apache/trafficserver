@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "api/SourceLocation.h"
+#include "tsutil/SourceLocation.h"
 #include "swoc/bwf_fwd.h"
 namespace ts
 {

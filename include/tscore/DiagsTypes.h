@@ -34,17 +34,15 @@
 #include <cstdarg>
 #include <string>
 #include <string_view>
-#include "api/DbgCtl.h"
+#include "tsutil/DbgCtl.h"
+#include "tsutil/SourceLocation.h"
+#include "tsutil/ts_diag_levels.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/ContFlags.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_mutex.h"
 #include "tscpp/util/Regex.h"
-#include "api/SourceLocation.h"
-
-#include "api/ts_diag_levels.h"
-#include "api/DbgCtl.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000

@@ -64,7 +64,7 @@ target_link_libraries(
           ts::quic
           ts::inkevent
           ts::records
-          ts::tsapicore
+          ts::tsutil
           ts::hdrs
           ts::tscore
 )
@@ -77,7 +77,7 @@ target_link_libraries(
           ts::quic
           ts::inkevent
           ts::records
-          ts::tsapicore
+          ts::tsutil
           ts::hdrs
           ts::tscore
 )

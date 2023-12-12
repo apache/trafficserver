@@ -30,7 +30,7 @@
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/PreWarm.h"
 
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 #include "tscore/ink_time.h"
 #include "tscpp/util/PostScript.h"
 

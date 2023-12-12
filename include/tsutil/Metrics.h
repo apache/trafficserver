@@ -35,7 +35,7 @@
 
 #include "swoc/MemSpan.h"
 
-#include "api/Assert.h"
+#include "tsutil/Assert.h"
 
 namespace ts
 {

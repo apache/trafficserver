@@ -29,7 +29,7 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include <api/ts_bw_format.h> // Above plus Formatting support.
+   #include <tsutil/ts_bw_format.h> // Above plus Formatting support.
 
 Description
 +++++++++++

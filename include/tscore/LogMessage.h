@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/DiagsTypes.h"
-#include "api/SourceLocation.h"
+#include "tsutil/SourceLocation.h"
 #include "tscore/Throttler.h"
 
 #include <atomic>

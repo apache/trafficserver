@@ -28,5 +28,5 @@ target_link_libraries(
   inkdns
   PUBLIC libswoc::libswoc ts::inkevent ts::inkhostdb
          #ts::inknet cyclic dependency
-         ts::proxy ts::tsapicore ts::tscore
+         ts::proxy ts::tsutil ts::tscore
 )

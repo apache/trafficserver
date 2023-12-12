@@ -21,7 +21,7 @@ add_library(ts::inkuring ALIAS inkuring)
 target_link_libraries(
   inkuring
   PUBLIC ts::tscore uring
-  PRIVATE ts::tsapicore
+  PRIVATE ts::tsutil
 )
 
 add_executable(test_iouring unit_tests/test_diskIO.cc)

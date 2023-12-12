@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "api/SourceLocation.h"
-#include "api/ts_diag_levels.h"
+#include "tsutil/SourceLocation.h"
+#include "tsutil/ts_diag_levels.h"
 #include "swoc/BufferWriter.h"
 #include <atomic>
 #include <utility>
