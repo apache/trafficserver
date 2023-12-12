@@ -164,15 +164,19 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, CountMap_t &map)
       c = tolower(c);
     }
 
-    if (map.find(str) == map.end()) {
-      std::unique_lock<std::shared_mutex> lock{map_mutex};
-      // Another thread may have added this entry while we were waiting for the
-      // lock, but no big deal. Regardless incrementing is the right thing to
-      // do.
-      ++map[str];
-    } else {
-      std::shared_lock<std::shared_mutex> lock{map_mutex};
-      ++map[str];
+    { // For lock scoping.
+      std::shared_lock<std::shared_mutex> reader_lock{map_mutex};
+      if (map.find(str) == map.end()) {
+        // Upgrade the lock to be exclusive.
+        reader_lock.unlock();
+        std::unique_lock<std::shared_mutex> ulock{map_mutex};
+        // There's a potential race condition here such that another thread may
+        // have inserted the key while we were upgrading the lock. Regardless,
+        // incrementing the value here always does the right thing.
+        ++map[str];
+      } else {
+        ++map[str];
+      }
     }
 
     next_hdr = TSMimeHdrFieldNext(bufp, hdr_loc, hdr);
