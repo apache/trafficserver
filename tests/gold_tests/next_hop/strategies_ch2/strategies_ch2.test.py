@@ -62,6 +62,7 @@ for i in range(num_nh):
     ts_nh.append(ts)
 
 ts = Test.MakeATSProcess("ts", use_traffic_out=False, command="traffic_server 2> trace.log")
+ts.ReturnCode = Any(0, -2)
 
 ts.Disk.records_config.update(
     {

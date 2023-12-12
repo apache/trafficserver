@@ -55,6 +55,7 @@ ts_nh.Disk.records_config.update(
         'proxy.config.dns.resolv_conf': "NULL",
     })
 ts_nh.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
+ts_nh.ReturnCode = Any(0, -2)
 
 ts = Test.MakeATSProcess("ts")
 

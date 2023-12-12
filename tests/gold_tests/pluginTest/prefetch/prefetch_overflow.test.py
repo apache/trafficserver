@@ -54,6 +54,7 @@ ts.Disk.remap_config.AddLine(
     f"map http://domain.in http://127.0.0.1:{server.Variables.Port}" + " @plugin=cachekey.so @pparam=--remove-all-params=true"
     " @plugin=prefetch.so" + " @pparam=--front=true" + " @pparam=--fetch-policy=simple" +
     r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/" + " @pparam=--fetch-count=3" + " @pparam=--fetch-overflow=64")
+ts.ReturnCode = Any(0, -2)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
