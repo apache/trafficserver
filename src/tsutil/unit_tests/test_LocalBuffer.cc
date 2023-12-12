@@ -22,7 +22,7 @@
  */
 
 #include "catch.hpp"
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/LocalBuffer.h"
 
 #include <cstring>
 

@@ -30,7 +30,7 @@
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
-#include "tscpp/util/Histogram.h"
+#include "tsutil/Histogram.h"
 
 // TODO: This would be much nicer to have "run-time" configurable (or something)
 #define PER_THREAD_DATA (1024 * 1024)

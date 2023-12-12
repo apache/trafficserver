@@ -94,7 +94,7 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_defs.h"
 #include "proxy/hdrs/HTTP.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "proxy/hdrs/URL.h"
 
 #if __has_include("pcre/pcre.h")

@@ -42,7 +42,7 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_mutex.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000

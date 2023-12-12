@@ -42,7 +42,7 @@ target_link_libraries(
   inkevent
   PUBLIC ts::records ts::tscore
   PRIVATE libswoc::libswoc resolv::resolv # transitive
-          tscpputil # transitive
+          tsutil # transitive
           yaml-cpp::yaml-cpp # transitive
 )
 

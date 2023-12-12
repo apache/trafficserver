@@ -31,7 +31,7 @@
 
 #include "iocore/net/SSLTypes.h"
 
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_ip.h"
 
 #include "tscore/Errata.h"
 

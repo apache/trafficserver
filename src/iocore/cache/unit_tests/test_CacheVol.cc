@@ -27,7 +27,7 @@
 #include "../P_CacheHosting.h"
 
 #include "tscore/Diags.h"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 // Required by main.h
 int cache_vols            = 1;

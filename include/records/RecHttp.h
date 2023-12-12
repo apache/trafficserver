@@ -27,7 +27,7 @@
 #include "swoc/swoc_ip.h"
 
 #include "tscore/ink_inet.h"
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_ip.h"
 #include "tscore/ink_resolver.h"
 #include "ts/apidefs.h"
 #include "ts/apidefs.h"

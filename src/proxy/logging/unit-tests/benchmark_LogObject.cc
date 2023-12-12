@@ -32,7 +32,7 @@ benchmark_LogObject_CPPFLAGS = \
        -I$(abs_top_srcdir)/tests/include
 benchmark_LogObject_LDADD = \
        $(top_builddir)/src/tscore/libtscore.a \
-       $(top_builddir)/src/tscpp/util/libtscpputil.la \
+       $(top_builddir)/src/tsutil/libtscpputil.la \
        $(top_builddir)/iocore/eventsystem/libinkevent.a \
        $(top_builddir)/proxy/logging/liblogging.a \
        $(top_builddir)/lib/records/librecords_p.a \

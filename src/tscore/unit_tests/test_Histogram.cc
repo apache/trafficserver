@@ -23,7 +23,7 @@
 
 #include <sstream>
 #include <catch.hpp>
-#include "tscpp/util/Histogram.h"
+#include "tsutil/Histogram.h"
 
 // -------------
 // --- TESTS ---

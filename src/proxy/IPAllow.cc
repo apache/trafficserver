@@ -36,7 +36,7 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_ip.h"
 
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 
 using swoc::TextView;
 

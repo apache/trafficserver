@@ -35,7 +35,7 @@
 #include "tscore/ink_queue.h"
 #include "tscore/X509HostnameValidator.h"
 
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 // clang-format off
 

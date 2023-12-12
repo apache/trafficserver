@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "tscpp/util/DenseThreadId.h"
+#include "tsutil/DenseThreadId.h"
 
 #include "tscore/Diags.h"
 #include "tscore/ink_assert.h"

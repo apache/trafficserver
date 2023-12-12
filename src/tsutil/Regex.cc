@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 
 #include <array>
 #include <assert.h>

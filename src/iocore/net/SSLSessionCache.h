@@ -30,7 +30,7 @@
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>
 #include <mutex>
-#include <tscpp/util/TsSharedMutex.h>
+#include <tsutil/TsSharedMutex.h>
 
 #define SSL_MAX_SESSION_SIZE      256
 #define SSL_MAX_ORIG_SESSION_SIZE 4096

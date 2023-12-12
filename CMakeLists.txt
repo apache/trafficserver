@@ -568,7 +568,6 @@ configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
 configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
-add_subdirectory(src/tscpp/util)
 add_subdirectory(src/tscpp/api)
 add_subdirectory(src/tsutil)
 add_subdirectory(src/tscore)

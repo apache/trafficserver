@@ -32,7 +32,7 @@
 
 #include "tsutil/Metrics.h"
 #include "tscore/ink_time.h"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 #include <algorithm>
 

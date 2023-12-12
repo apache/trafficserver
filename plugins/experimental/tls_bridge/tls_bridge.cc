@@ -21,7 +21,7 @@
 
 #include "ts/ts.h"
 #include "swoc/TextView.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 
 using swoc::TextView;
 

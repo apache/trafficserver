@@ -46,7 +46,7 @@
 
 #include "swoc/swoc_ip.h"
 
-#include <tscpp/util/ts_ip.h>
+#include <tsutil/ts_ip.h>
 
 #include "tscore/ink_config.h"
 #if HAVE_BROTLI_ENCODE_H

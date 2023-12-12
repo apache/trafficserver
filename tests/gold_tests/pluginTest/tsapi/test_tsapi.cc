@@ -25,7 +25,7 @@
 #include <string>
 #include <bitset>
 
-#include <tscpp/util/PostScript.h>
+#include <tsutil/PostScript.h>
 #include <tscpp/api/Cleanup.h>
 
 #include <ts/ts.h>

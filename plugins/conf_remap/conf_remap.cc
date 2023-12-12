@@ -19,7 +19,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 #include <swoc/bwf_base.h>
 
 #include <cstdio>

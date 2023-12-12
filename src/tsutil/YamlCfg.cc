@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 
 #include <algorithm>
 #include <string>

@@ -32,11 +32,11 @@ The header files are located in the ``include/`` directory. There are several su
 
   The C++ Plugin API is deprecated in ATS 10.  It will be removed in ATS 11.
 
-"tscpp/util"
+"tsutil"
    C++ utilities. These are standalone headers (although they may depend on other headers in the
    same directory). These provide functionality that is used inside the |TS| core logic but has been
    demonstrated to be useful for plugins as well [#]_. The functions are in the library
-   ``libtscpputil.so``, although many of the utilities are header only. This library is linked in to
+   ``libtsutil.so``, although many of the utilities are header only. This library is linked in to
    the ``traffic_server`` binary and so linkage may not be needed for a plugin.
 
    This library is independent of the C++ API and can be used with or without that library.
@@ -45,9 +45,6 @@ The header files are located in the ``include/`` directory. There are several su
    |TS| core header files. These can only be used inside |TS| itself because they either depend on internal
    data structures either directly or operationally. This is linked in to the ``traffic_server`` binary therefore
    has no explicit linkage when used in the core.
-
-"tsutil"
-   Plugin API internal header files. These are header files for the internal ``tsutil`` library (see below). Theses can only be used inside |TS| itself.
 
 New Plugin API layout
 =====================
@@ -81,7 +78,7 @@ The contents of "lib/ts" were broken up and moved to different locations. The he
 "include/tscore" for core only headers, while headers to be made available to plugins were moved to
 "include/tscpp/util". The corresponding source files were moved to "src/tscore" and "src/tscpp/util"
 respectively. "libtsutil" was split in to "libtscore" for the core code and "libtscpputil" for shared
-code.
+code.  Now "libtscpputil" has been combined with "tsapicore" headers into the "tsutil" library.
 
 Appendix
 ========

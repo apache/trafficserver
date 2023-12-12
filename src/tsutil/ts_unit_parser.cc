@@ -24,8 +24,8 @@
 
 #include <chrono>
 
-#include "tscpp/util/ts_unit_parser.h"
-#include "tscpp/util/ts_time_parser.h"
+#include "tsutil/ts_unit_parser.h"
+#include "tsutil/ts_time_parser.h"
 
 namespace ts
 {

@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "FileConfigCommand.h"
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 #include "swoc/TextView.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"

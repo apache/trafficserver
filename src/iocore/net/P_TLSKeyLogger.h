@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <mutex>
-#include <tscpp/util/TsSharedMutex.h>
+#include <tsutil/TsSharedMutex.h>
 
 /** A class for handling TLS secrets logging. */
 class TLSKeyLogger

@@ -26,7 +26,7 @@ set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE TRUE
 
 target_link_libraries(
   jsonrpc_protocol
-  PUBLIC tscpputil ts::tscore
+  PUBLIC ts::tscore
   PRIVATE ts::tsutil
 )
 

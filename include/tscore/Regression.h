@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "tscore/Diags.h"
 
 //   Each module should provide one or more regression tests

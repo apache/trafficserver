@@ -24,7 +24,7 @@
 #include <chrono>
 
 #include "catch.hpp"
-#include "tscpp/util/ts_time_parser.h"
+#include "tsutil/ts_time_parser.h"
 
 using namespace std::chrono;
 

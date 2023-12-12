@@ -39,7 +39,7 @@
 #include "proxy/hdrs/URL.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "proxy/http/remap/PluginFactory.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "tscore/List.h"
 
 class NextHopSelectionStrategy;

@@ -40,8 +40,8 @@
 #include "tscore/ink_memory.h"
 #include "tscore/Layout.h"
 
-#include "tscpp/util/ts_ip.h"
-#include "tscpp/util/Convert.h"
+#include "tsutil/ts_ip.h"
+#include "tsutil/Convert.h"
 
 #include "swoc/TextView.h"
 

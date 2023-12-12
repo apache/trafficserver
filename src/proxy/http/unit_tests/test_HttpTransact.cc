@@ -24,7 +24,7 @@
 #include <string_view>
 
 #include "tscore/Diags.h"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpTransact.h"
 #include "records/RecordsConfig.h"

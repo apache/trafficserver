@@ -25,7 +25,7 @@
 #pragma once
 
 #include <pthread.h>
-#include <tscpp/util/Strerror.h>
+#include <tsutil/Strerror.h>
 
 #if __has_include(<tscore/ink_assert.h>)
 // Included in core.

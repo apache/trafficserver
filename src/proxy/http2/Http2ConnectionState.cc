@@ -35,8 +35,8 @@
 #include "iocore/net/TLSSNISupport.h"
 
 #include "tscore/ink_assert.h"
-#include "tscpp/util/PostScript.h"
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/PostScript.h"
+#include "tsutil/LocalBuffer.h"
 
 #include <cstdint>
 #include <sstream>

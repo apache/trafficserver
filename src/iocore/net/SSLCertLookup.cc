@@ -31,7 +31,7 @@
 
 #include "tscore/TestBox.h"
 
-#include "tscpp/util/Convert.h"
+#include "tsutil/Convert.h"
 
 #include "P_SSLUtils.h"
 

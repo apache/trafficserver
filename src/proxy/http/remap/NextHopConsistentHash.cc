@@ -25,7 +25,7 @@
 
 #include "proxy/http/HttpSM.h"
 #include "iocore/utils/Machine.h"
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
 
 // hash_key strings.

@@ -33,7 +33,7 @@
 #include "tscore/ink_hrtime.h"
 
 #include "tscore/Version.h"
-#include "tscpp/util/TsSharedMutex.h"
+#include "tsutil/TsSharedMutex.h"
 
 #include "tsutil/Metrics.h"
 #include <cstdint>
