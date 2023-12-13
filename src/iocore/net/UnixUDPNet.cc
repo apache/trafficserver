@@ -1173,6 +1173,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
       Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto Lerror;
     }
+#ifdef IP_MTU_DISCOVER
+    int probe = IP_PMTUDISC_PROBE; // Set DF but ignore Path MTU
+    if (safe_setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
+      Dbg(dbg_ctl_udpnet, "setsockeopt for IP_MTU_DISCOVER failed");
+    }
+#endif
   } else if (addr->sa_family == AF_INET6) {
     bool succeeded = false;
 #ifdef IPV6_PKTINFO
@@ -1189,14 +1195,18 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
       Dbg(dbg_ctl_udpnet, "setsockeopt for pktinfo failed");
       goto Lerror;
     }
+#ifdef IPV6_MTU_DISCOVER
+    int probe = IPV6_PMTUDISC_PROBE; // Set DF but ignore Path MTU
+    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
+      Dbg(dbg_ctl_udpnet, "setsockeopt for IPV6_MTU_DISCOVER failed");
+    }
+#endif
   }
 
 #ifdef SOL_UDP
   if (G_udp_config.enable_gro) {
     int gro = 1;
-    if (safe_setsockopt(fd, IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == 0) {
-      Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO ok");
-    } else {
+    if (safe_setsockopt(fd, IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == -1) {
       Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO. errno=%d", errno);
     }
   }
