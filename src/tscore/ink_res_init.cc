@@ -150,21 +150,6 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
   statp->nscount = nserv;
 }
 
-int
-ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt)
-{
-  int zret              = 0; // return count.
-  IpEndpoint const *src = statp->nsaddr_list;
-
-  for (int i = 0; i < statp->nscount && i < cnt; ++i, ++src) {
-    if (ats_ip_copy(set, &src->sa)) {
-      ++set;
-      ++zret;
-    }
-  }
-  return zret;
-}
-
 static void
 ink_res_setoptions(ink_res_state statp, const char *options, const char *source ATS_UNUSED)
 {
