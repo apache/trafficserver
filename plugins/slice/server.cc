@@ -675,8 +675,8 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       // Don't immediately request the next slice if the client
       // isn't keeping up
 
+      bool start_next_block = false;
       if (data->m_dnstream.m_write.isOpen()) {
-        bool start_next_block = true;
         // check throttle condition
         TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
         int64_t const output_done = TSVIONDoneGet(output_vio);
@@ -686,18 +686,14 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 
         // for PURGE requests, clients won't request more data (no body content)
         if (threshout < buffered && data->m_method_type != TS_HTTP_METHOD_PURGE) {
-          start_next_block = false;
           DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, buffered);
-        }
-
-        if (start_next_block) {
-          if (!request_block(contp, data)) {
-            data->m_blockstate = BlockState::Fail;
-            abort(contp, data);
-            return;
-          }
+        } else {
+          start_next_block = true;
         }
       } else if (data->m_method_type == TS_HTTP_METHOD_PURGE) {
+        start_next_block = true;
+      }
+      if (start_next_block) {
         if (!request_block(contp, data)) {
           data->m_blockstate = BlockState::Fail;
           abort(contp, data);
