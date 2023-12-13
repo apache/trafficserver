@@ -49,5 +49,6 @@ add_custom_command(
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapicore> ${CMAKE_CURRENT_BINARY_DIR}/lib/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tscpputil> ${CMAKE_CURRENT_BINARY_DIR}/lib/
 )
