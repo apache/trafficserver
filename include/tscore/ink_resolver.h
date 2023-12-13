@@ -195,7 +195,7 @@ extern void parse_host_res_preference(const char *value,            ///< [in] Co
 /// Configure the preference order to hold only what's from the client address.
 /// @addr[in] client's address.
 /// @order[out] Order to update
-extern void ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order);
+extern void ats_force_order_by_family(sa_family_t family, HostResPreferenceOrder order);
 
 // Domain resolution priority for origin.
 struct HostResData {
