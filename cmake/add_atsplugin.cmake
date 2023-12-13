@@ -19,7 +19,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 function(add_atsplugin name)
   add_library(${name} MODULE ${ARGN})
-  target_link_libraries(${name} PRIVATE ts::tsapi ts::tsapicore)
+  target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
   install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})

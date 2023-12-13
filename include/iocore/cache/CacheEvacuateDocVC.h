@@ -39,7 +39,7 @@
 #include "tscore/ink_assert.h"
 
 // ts
-#include "api/DbgCtl.h"
+#include "tsutil/DbgCtl.h"
 
 class CacheEvacuateDocVC : public CacheVC
 {

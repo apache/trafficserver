@@ -29,12 +29,12 @@
 #include <cstdarg>
 #include <cinttypes>
 
-#include "api/SourceLocation.h"
+#include "tsutil/SourceLocation.h"
 
-#include "api/ts_diag_levels.h"
-#include "api/ts_bw_format.h"
-#include "api/DbgCtl.h"
-#include "api/Assert.h"
+#include "tsutil/ts_diag_levels.h"
+#include "tsutil/ts_bw_format.h"
+#include "tsutil/DbgCtl.h"
+#include "tsutil/Assert.h"
 
 #include "tscore/ink_config.h"
 

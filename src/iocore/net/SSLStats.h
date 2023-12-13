@@ -28,7 +28,7 @@
 #include "records/RecProcess.h"
 #include "iocore/net/SSLDiags.h"
 
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

@@ -26,7 +26,7 @@
 #include "records/RecYAMLDefs.h"
 
 #include "tscore/Diags.h"
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 #include "records/RecordsConfig.h"
 
 #include <string_view>

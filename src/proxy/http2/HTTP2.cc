@@ -27,7 +27,7 @@
 #include "proxy/http2/HPACK.h"
 
 #include "tscore/ink_assert.h"
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/LocalBuffer.h"
 
 #include "../../records/P_RecCore.h"
 #include "../../records/P_RecProcess.h"

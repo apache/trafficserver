@@ -45,7 +45,7 @@
 #error "Unable to locate PCRE heeader"
 #endif
 
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_ip.h"
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SNIActionItem.h"

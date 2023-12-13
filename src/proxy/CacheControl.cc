@@ -39,7 +39,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpConfig.h"
 #include "../iocore/cache/P_Cache.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 
 static const char modulePrefix[] = "[CacheControl]";
 

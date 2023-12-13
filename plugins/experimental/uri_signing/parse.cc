@@ -26,7 +26,7 @@
 #include <jansson.h>
 #include <cstring>
 #include <cinttypes>
-#include <tscpp/util/PostScript.h>
+#include <tsutil/PostScript.h>
 
 cjose_jws_t *
 get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *strip_uri, size_t buff_ct, size_t *strip_ct)

@@ -34,7 +34,7 @@
 #include "swoc/bwf_ip.h"
 
 #include "tscore/ink_platform.h"
-#include "api/ts_errata.h"
+#include "tsutil/ts_errata.h"
 
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogFilter.h"

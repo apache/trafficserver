@@ -30,11 +30,11 @@
 #include "swoc/swoc_file.h"
 #include "swoc/Scalar.h"
 #include "swoc/TextView.h"
-#include "api/ts_errata.h"
+#include "tsutil/ts_errata.h"
 
 #include "tscore/Version.h"
 #include "tscore/ink_memory.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
 

@@ -24,7 +24,7 @@
 #include <optional>
 
 #include <yaml-cpp/yaml.h>
-#include <tscpp/util/YamlCfg.h>
+#include <tsutil/YamlCfg.h>
 #include "iocore/utils/Machine.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"

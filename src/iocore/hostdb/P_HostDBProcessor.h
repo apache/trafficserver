@@ -30,12 +30,12 @@
 #include <unordered_map>
 
 #include "swoc/swoc_file.h"
-#include <tscpp/util/TsSharedMutex.h>
+#include <tsutil/TsSharedMutex.h>
 
 #include "iocore/hostdb/HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

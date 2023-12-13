@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "api/Assert.h"
-#include "api/Metrics.h"
+#include "tsutil/Assert.h"
+#include "tsutil/Metrics.h"
 
 namespace ts
 {

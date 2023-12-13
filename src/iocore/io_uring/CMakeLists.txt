@@ -21,11 +21,11 @@ add_library(ts::inkuring ALIAS inkuring)
 target_link_libraries(
   inkuring
   PUBLIC ts::tscore uring
-  PRIVATE ts::tsapicore
+  PRIVATE ts::tsutil
 )
 
 add_executable(test_iouring unit_tests/test_diskIO.cc)
-target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tscpputil catch2::catch2)
+target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil catch2::catch2)
 
 target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
 

@@ -47,7 +47,7 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/remap_version.h>
-#include <tscpp/util/TsSharedMutex.h>
+#include <tsutil/TsSharedMutex.h>
 #include "tscore/ink_config.h"
 #include "swoc/TextView.h"
 

@@ -21,14 +21,12 @@
   limitations under the License.
  */
 
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 
 #include <algorithm>
 #include <string>
 
-#include "api/ts_bw_format.h"
-
-#include <tscore/ink_assert.h>
+#include "tsutil/ts_bw_format.h"
 
 namespace ts
 {
@@ -61,8 +59,6 @@ namespace Yaml
   Map::done()
   {
     if (!_bad && (_used_key.size() != _map.size())) {
-      // ink_assert(_used_key.size() < _map.size());
-
       std::string msg{(_map.size() - _used_key.size()) > 1 ? "keys " : "key "};
       bool first{true};
 

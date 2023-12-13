@@ -30,7 +30,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrToken.h"
 #include "proxy/hdrs/MIME.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "proxy/hdrs/URL.h"
 
 /*

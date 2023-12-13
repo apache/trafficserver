@@ -25,7 +25,7 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "catch.hpp"
 
 struct subject_match_t {

@@ -20,7 +20,7 @@
 
 #include <cstring>
 
-#include "tscpp/util/ts_meta.h"
+#include "tsutil/ts_meta.h"
 #include "swoc/TextView.h"
 
 #include "catch.hpp"

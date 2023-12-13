@@ -21,7 +21,7 @@ target_link_libraries(
   PRIVATE ts::tscore
           ts::tsapi
           ts::overridable_txn_vars
-          ts::tsapicore
+          ts::tsutil
           ts::http
           ts::http_remap
           ts::http2

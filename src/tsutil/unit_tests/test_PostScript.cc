@@ -22,7 +22,7 @@
  */
 
 #include "catch.hpp"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 namespace
 {

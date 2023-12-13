@@ -35,9 +35,9 @@
 
 #include <type_traits>
 
-#include <api/DbgCtl.h>
-#include <ts/apidefs.h>
-#include <ts/parentselectdefs.h>
+#include "tsutil/DbgCtl.h"
+#include "ts/apidefs.h"
+#include "ts/parentselectdefs.h"
 
 class DiagsConfigState;
 

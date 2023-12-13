@@ -28,7 +28,7 @@
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
 #include "proxy/http/HttpTransact.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "proxy/http/remap/PluginFactory.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 

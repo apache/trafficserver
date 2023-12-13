@@ -34,7 +34,7 @@
 #include <ts/ts.h>
 #include "ts/experimental.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 #include "swoc/TextView.h"
 #include "tscpp/api/Cleanup.h"
 

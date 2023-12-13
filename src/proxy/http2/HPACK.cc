@@ -23,7 +23,7 @@
 
 #include "proxy/http2/HPACK.h"
 
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/LocalBuffer.h"
 #include "swoc/TextView.h"
 
 namespace

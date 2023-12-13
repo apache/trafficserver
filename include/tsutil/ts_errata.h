@@ -23,9 +23,9 @@ limitations under the License.
 
 #include <utility>
 
-#include "api/ts_diag_levels.h"
+#include "tsutil/ts_diag_levels.h"
 #include "swoc/TextView.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 #include "swoc/Errata.h"
 
 static constexpr swoc::Errata::Severity ERRATA_DIAG{DL_Diag};

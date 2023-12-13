@@ -34,9 +34,9 @@
 
  ****************************************************************************/
 
-#include "api/DbgCtl.h"
+#include "tsutil/DbgCtl.h"
 #include "tscore/DiagsTypes.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_defs.h"

@@ -25,20 +25,8 @@
 #pragma once
 
 #include <pthread.h>
-#include <tscpp/util/Strerror.h>
-
-#if __has_include(<tscore/ink_assert.h>)
-// Included in core.
-#include <tscore/ink_assert.h>
-#define L_Assert ink_assert
-#include <tscore/Diags.h>
-#define L_Fatal Fatal
-#else
-// Should be plugin code.
-#include <ts/ts.h>
-#define L_Assert TSAssert
-#define L_Fatal  TSFatal
-#endif
+#include "tsutil/Strerror.h"
+#include "tsutil/Assert.h"
 
 #ifdef X
 #error "X preprocessor symbol defined"
@@ -98,7 +86,7 @@ public:
   void
   unlock()
   {
-    X(L_Assert(_exclusive);)
+    X(debug_assert(_exclusive);)
     X(_exclusive = false;)
 
     _unlock();
@@ -111,9 +99,9 @@ public:
     if (error != 0) {
       _call_fatal("pthread_rwlock_rdlock", &_lock, error);
     }
-    X(L_Assert(_shared >= 0);)
+    X(debug_assert(_shared >= 0);)
     X(++_shared;)
-    X(L_Assert(_shared > 0);)
+    X(debug_assert(_shared > 0);)
   }
 
   bool
@@ -135,9 +123,9 @@ public:
   void
   unlock_shared()
   {
-    X(L_Assert(_shared > 0);)
+    X(debug_assert(_shared > 0);)
     X(--_shared;)
-    X(L_Assert(_shared >= 0);)
+    X(debug_assert(_shared >= 0);)
 
     _unlock();
   }
@@ -181,7 +169,7 @@ private:
   static void
   _call_fatal(char const *func_name, void *ptr, int errnum)
   {
-    L_Fatal("%s(%p) failed: %s (%d)", func_name, ptr, Strerror(errnum).c_str(), errnum);
+    fatal_error("{}({}) failed: {} ({})", func_name, ptr, Strerror(errnum).c_str(), errnum);
   }
 
   // In debug builds, make sure shared vs. exclusive locks and unlocks are properly paired.
@@ -193,5 +181,3 @@ private:
 } // end namespace ts
 
 #undef X
-#undef L_Assert
-#undef L_Fatal

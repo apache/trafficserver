@@ -17,7 +17,7 @@
 
 add_executable(traffic_crashlog procinfo.cc backtrace.cc traffic_crashlog.cc)
 
-target_link_libraries(traffic_crashlog PRIVATE ts::inkevent ts::records ts::tscore ts::tsapicore)
+target_link_libraries(traffic_crashlog PRIVATE ts::inkevent ts::records ts::tscore ts::tsutil)
 
 if(TS_USE_REMOTE_UNWINDING)
   target_link_libraries(traffic_crashlog PRIVATE unwind::unwind)

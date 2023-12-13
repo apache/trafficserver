@@ -22,7 +22,7 @@
  */
 
 #include "swoc/swoc_file.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 
 #include "P_HostDB.h"
 #include "tscore/Layout.h"

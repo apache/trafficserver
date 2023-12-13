@@ -27,7 +27,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <swoc/BufferWriter.h>
-#include "api/ts_errata.h"
+#include "tsutil/ts_errata.h"
 
 struct CfgNode;
 

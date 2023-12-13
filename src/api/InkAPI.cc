@@ -33,7 +33,7 @@
 #include "tscore/PluginUserArgs.h"
 #include "tscore/Layout.h"
 #include "tscore/Diags.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 #include "tscore/Version.h"
 #include "api/InkAPIInternal.h"

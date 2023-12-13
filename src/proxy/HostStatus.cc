@@ -21,7 +21,7 @@
   limitations under the License.
  */
 #include <fstream>
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 #include "proxy/HostStatus.h"
 #include "iocore/eventsystem/Tasks.h"
 

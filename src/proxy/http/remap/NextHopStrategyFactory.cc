@@ -29,7 +29,7 @@
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
 #include "proxy/http/remap/NextHopRoundRobin.h"
-#include <tscpp/util/YamlCfg.h>
+#include <tsutil/YamlCfg.h>
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {

@@ -40,7 +40,7 @@
 
 // tsapi
 #if DEBUG
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 #endif
 #include "tscore/Version.h"
 
@@ -61,7 +61,7 @@
 #include "tscore/Ptr.h"
 
 // ts
-#include "api/DbgCtl.h"
+#include "tsutil/DbgCtl.h"
 
 #include <cstddef>
 #include <cstdint>

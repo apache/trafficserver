@@ -25,7 +25,7 @@
 
 #include <string.h>
 #include <errno.h>
-#include <tscpp/util/Strerror.h>
+#include <tsutil/Strerror.h>
 
 TEST_CASE("Strerror", "[STE]")
 {

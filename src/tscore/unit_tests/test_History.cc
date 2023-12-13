@@ -24,7 +24,7 @@
 #include <string_view>
 
 #include "tscore/History.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 #include "catch.hpp"
 
 using std::string_view;

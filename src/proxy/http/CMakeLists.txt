@@ -46,7 +46,7 @@ endif()
 
 target_link_libraries(
   http
-  PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tsapicore ts::tscore
+  PUBLIC ts::inkevent ts::inkhostdb ts::proxy ts::tsutil ts::tscore
   PRIVATE ts::http2 ts::http_remap ts::inkcache ts::inkutils ts::logging
 )
 

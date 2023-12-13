@@ -30,7 +30,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_string.h"
 #include "tscore/Allocator.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "tscore/ink_apidefs.h"
 
 ////////////////////////////////////////////////////////////////////////////

@@ -29,10 +29,10 @@
 #include <cstdio>
 #include <memory>
 
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "tscore/ink_time.h"
 #include "tscore/Random.h"
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 #include "catch.hpp"
 

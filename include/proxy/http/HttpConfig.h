@@ -47,13 +47,13 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
-#include "tscpp/util/Regex.h"
+#include "tsutil/Regex.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/SessionSharingAPIEnums.h"
 #include "records/RecProcess.h"
-#include "tscpp/util/ts_ip.h"
-#include "api/Metrics.h"
+#include "tsutil/ts_ip.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

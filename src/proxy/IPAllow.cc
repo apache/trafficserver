@@ -28,7 +28,7 @@
 
 #include "proxy/IPAllow.h"
 #include "tscore/Filenames.h"
-#include "api/ts_errata.h"
+#include "tsutil/ts_errata.h"
 
 #include "swoc/Vectray.h"
 #include "swoc/BufferWriter.h"
@@ -36,7 +36,7 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_ip.h"
 
-#include "tscpp/util/YamlCfg.h"
+#include "tsutil/YamlCfg.h"
 
 using swoc::TextView;
 

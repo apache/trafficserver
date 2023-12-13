@@ -24,9 +24,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include <tscore/ink_memory.h>
-
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_ip.h"
 
 namespace ts
 {
@@ -71,12 +69,11 @@ getbestaddrinfo(swoc::TextView name)
     GL  // Global.
   } spot_type = NA,
     ip4_type = NA, ip6_type = NA;
-  addrinfo ai_hints;
+  addrinfo ai_hints{};
   addrinfo *ai_result;
   IPAddrPair zret;
 
   // Do the resolution
-  ink_zero(ai_hints);
   ai_hints.ai_family = AF_UNSPEC;
   ai_hints.ai_flags  = AI_ADDRCONFIG;
 

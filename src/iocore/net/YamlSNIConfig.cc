@@ -42,7 +42,7 @@
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
 
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_ip.h"
 
 #include "swoc/bwf_fwd.h"
 #include "tscore/Diags.h"

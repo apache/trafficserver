@@ -26,7 +26,7 @@
 
 #include "tscore/Arena.h"
 #include "tscore/ink_memory.h"
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/LocalBuffer.h"
 
 //
 // [RFC 7541] 5.1. Integer representation

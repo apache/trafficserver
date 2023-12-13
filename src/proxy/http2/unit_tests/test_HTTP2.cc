@@ -25,7 +25,7 @@
 
 #include "proxy/http2/HTTP2.h"
 
-#include "tscpp/util/PostScript.h"
+#include "tsutil/PostScript.h"
 
 TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 {

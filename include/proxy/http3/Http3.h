@@ -24,7 +24,7 @@
 #pragma once
 
 #include "tscore/ink_defs.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

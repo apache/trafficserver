@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_inet.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/ts_bw_format.h"
 
 #include "ts/parentselectdefs.h"
 #include "tscore/ink_platform.h"

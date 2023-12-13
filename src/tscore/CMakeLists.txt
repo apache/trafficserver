@@ -110,14 +110,7 @@ else()
 endif()
 
 target_link_libraries(
-  tscore
-  PUBLIC OpenSSL::Crypto
-         PCRE::PCRE
-         libswoc::libswoc
-         yaml-cpp::yaml-cpp
-         resolv::resolv
-         ts::tsapicore
-         ts::tscpputil
+  tscore PUBLIC OpenSSL::Crypto PCRE::PCRE libswoc::libswoc yaml-cpp::yaml-cpp resolv::resolv ts::tsutil
 )
 
 if(TS_USE_POSIX_CAP)
@@ -172,10 +165,9 @@ if(BUILD_TESTING)
     test_tscore
     PRIVATE libswoc::libswoc
             ts::tscore
-            ts::tsapicore
+            ts::tsutil
             yaml-cpp::yaml-cpp
             resolv::resolv
-            ts::tscpputil
             OpenSSL::Crypto
             OpenSSL::SSL
             catch2::catch2

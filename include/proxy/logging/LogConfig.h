@@ -32,7 +32,7 @@
 #include "proxy/logging/LogObject.h"
 #include "proxy/logging/RolledLogDeleter.h"
 #include "swoc/MemSpan.h"
-#include "api/Metrics.h"
+#include "tsutil/Metrics.h"
 
 using ts::Metrics;
 

@@ -23,7 +23,7 @@
 
 #include "proxy/hdrs/VersionConverter.h"
 #include "proxy/hdrs/HTTP.h"
-#include "tscpp/util/LocalBuffer.h"
+#include "tsutil/LocalBuffer.h"
 
 int
 VersionConverter::convert(HTTPHdr &header, int from, int to) const

@@ -25,18 +25,7 @@
 
 #pragma once
 
-#if __has_include(<tscore/ink_assert.h>)
-// Included in core.
-#include <tscore/ink_assert.h>
-#define L_Assert ink_assert
-#include <tscore/Diags.h>
-#define L_Fatal Fatal
-#else
-// Should be plugin code.
-#include <ts/ts.h>
-#define L_Assert TSAssert
-#define L_Fatal  TSFatal
-#endif
+#include "tsutil/Assert.h"
 
 #include <cstddef>
 #include <mutex>
@@ -94,7 +83,7 @@ private:
         _inited = true;
       }
       if (_id_stack.size() == _stack_top_idx) {
-        L_Fatal("DenseThreadId:  number of threads exceeded maximum (%u)", unsigned(_id_stack.size()));
+        fatal_error("DenseThreadId:  number of threads exceeded maximum {}", unsigned(_id_stack.size()));
       }
       val            = _stack_top_idx;
       _stack_top_idx = _id_stack[_stack_top_idx];

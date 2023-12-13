@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "api/Assert.h"
-#include "api/ts_bw_format.h"
+#include "tsutil/Assert.h"
+#include "tsutil/ts_bw_format.h"
 
 #include <stdexcept>
 #include <syslog.h>
