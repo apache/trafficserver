@@ -34,7 +34,7 @@ set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
 add_library(
-  tsapibackend
+  tsapibackend STATIC # need to fix circular dep to remove this
   ConfigUpdateCbTable.cc # configmanager
   InkContInternal.cc # proxy, http
   InkVConnInternal.cc # proxy, http
@@ -50,7 +50,18 @@ target_link_libraries(
   PRIVATE ts::proxy ts::hdrs ts::tscore
 )
 
-install(TARGETS tsapi tsapibackend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts)
+install(
+  TARGETS tsapi tsapibackend
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts
+)
+
+install(
+  TARGETS tsapibackend
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
