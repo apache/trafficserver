@@ -264,15 +264,15 @@ DNSProcessor::open(sockaddr const *target)
 {
   DNSHandler *h = new DNSHandler;
 
-  h->mutex = thread->mutex;
-  h->m_res = &l_res;
-  ats_ip_copy(&h->local_ipv4.sa, &local_ipv4.sa);
-  ats_ip_copy(&h->local_ipv6.sa, &local_ipv6.sa);
+  h->mutex      = thread->mutex;
+  h->m_res      = &l_res;
+  h->local_ipv4 = local_ipv4;
+  h->local_ipv6 = local_ipv6;
 
   if (target) {
-    ats_ip_copy(&h->ip, target);
+    h->ip = target;
   } else {
-    ats_ip_invalidate(&h->ip); // marked to use default.
+    h->ip.invalidate();
   }
 
   if (!dns_handler_initialized) {
@@ -293,7 +293,7 @@ DNSProcessor::dns_init()
   Dbg(dbg_ctl_dns, "localhost=%s", try_server_names[0]);
   Dbg(dbg_ctl_dns, "Round-robin nameservers = %d", dns_ns_rr);
 
-  IpEndpoint nameserver[MAX_NAMED];
+  std::array<swoc::IPEndpoint, MAX_NAMED> nameserver;
   size_t nserv = 0;
 
   if (dns_ns_list) {
@@ -361,22 +361,20 @@ DNSProcessor::dns_init()
   // Check for local forced bindings.
 
   if (dns_local_ipv6) {
-    if (0 != ats_ip_pton(dns_local_ipv6, &local_ipv6)) {
-      ats_ip_invalidate(&local_ipv6);
-      Warning("Invalid IP address '%s' for dns.local_ipv6 value, discarding.", dns_local_ipv6);
-    } else if (!ats_is_ip6(&local_ipv6.sa)) {
-      ats_ip_invalidate(&local_ipv6);
-      Warning("IP address '%s' for dns.local_ipv6 value was not IPv6, discarding.", dns_local_ipv6);
+    if (swoc::IP6Addr addr; addr.load(dns_local_ipv6)) {
+      local_ipv6 = addr;
+    } else {
+      local_ipv6.invalidate();
+      Warning("Invalid IPv6 address '%s' for dns.local_ipv6 value, discarding.", dns_local_ipv6);
     }
   }
 
   if (dns_local_ipv4) {
-    if (0 != ats_ip_pton(dns_local_ipv4, &local_ipv4)) {
-      ats_ip_invalidate(&local_ipv4);
-      Warning("Invalid IP address '%s' for dns.local_ipv4 value, discarding.", dns_local_ipv4);
-    } else if (!ats_is_ip4(&local_ipv4.sa)) {
-      ats_ip_invalidate(&local_ipv4);
-      Warning("IP address '%s' for dns.local_ipv4 value was not IPv4, discarding.", dns_local_ipv4);
+    if (swoc::IP4Addr addr; addr.load(dns_local_ipv4)) {
+      local_ipv4 = addr;
+    } else {
+      local_ipv4.invalidate();
+      Warning("Invalid IPv4 address '%s' for dns.local_ipv4 value, discarding.", dns_local_ipv4);
     }
   }
 }
@@ -454,7 +452,7 @@ DNSEntry::init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProce
  */
 
 void
-DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
+DNSHandler::open_cons(swoc::IPEndpoint const &target, bool failed, int icon)
 {
   if (dns_conn_mode != DNS_CONN_MODE::TCP_ONLY) {
     open_con(target, failed, icon, false);
@@ -490,35 +488,39 @@ DNSHandler::reset_tcp_conn(int ndx)
       open connection to target.
 */
 bool
-DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tcp)
+DNSHandler::open_con(swoc::IPEndpoint const &target, bool failed, int icon, bool over_tcp)
 {
-  ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
   bool ret           = false;
 
-  ink_assert(target != &ip.sa);
+  ink_assert(target != ip);
 
-  if (!icon && target) {
-    ats_ip_copy(&ip, target);
-  } else if (!target) {
-    target = &ip.sa;
+  if (icon == 0 && target.is_valid()) {
+    ip = target; // update default.
   }
+
+  swoc::IPEndpoint addr{ip};
   DNSConnection &cur_con = over_tcp ? tcpcon[icon] : udpcon[icon];
 
-  Dbg(dbg_ctl_dns, "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
+  swoc::bwprint(ts::bw_dbg, "open_con: opening connection {}", addr);
+  Dbg(dbg_ctl_dns, "%s", ts::bw_dbg.c_str());
 
   if (cur_con.fd != NO_FD) { // Remove old FD from epoll fd
     cur_con.close();
   }
 
+  // Temporary until the options are updated.
+  swoc::IPEndpoint ipv6{local_ipv6};
+  swoc::IPEndpoint ipv4(local_ipv4);
   if (cur_con.connect(target, DNSConnection::Options()
                                 .setNonBlockingConnect(true)
                                 .setNonBlockingIo(true)
                                 .setUseTcp(over_tcp)
                                 .setBindRandomPort(true)
-                                .setLocalIpv6(&local_ipv6.sa)
-                                .setLocalIpv4(&local_ipv4.sa)) < 0) {
-    Dbg(dbg_ctl_dns, "opening connection %s FAILED for %d", ip_text, icon);
+                                .setLocalIpv6(&ipv6.sa)
+                                .setLocalIpv4(&ipv4.sa)) < 0) {
+    swoc::bwprint(ts::bw_dbg, "opening connection {} FAILED for {} - {}", addr, icon, swoc::bwf::Errno());
+    Dbg(dbg_ctl_dns, "%s", ts::bw_dbg.c_str());
     if (!failed) {
       if (dns_ns_rr) {
         rr_failure(icon);
@@ -533,7 +535,8 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
     } else {
       cur_con.num   = icon;
       ns_down[icon] = 0;
-      Dbg(dbg_ctl_dns, "opening connection %s on fd %d SUCCEEDED for %d", ip_text, cur_con.fd, icon);
+      swoc::bwprint(ts::bw_dbg, "opening connection {} on fd {} SUCCEEDED for {}", addr, cur_con.fd, icon);
+      Dbg(dbg_ctl_dns, "%s", ts::bw_dbg.c_str());
     }
     ret = true;
   }
@@ -544,12 +547,12 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
 void
 DNSHandler::validate_ip()
 {
-  if (!ip.isValid()) {
+  if (!ip.is_valid()) {
     // Invalid, switch to default.
     // seems that res_init always sets m_res.nscount to at least 1!
-    if (!m_res->nscount || !ats_ip_copy(&ip.sa, &m_res->nsaddr_list[0].sa)) {
+    if (!m_res->nscount || !(ip = m_res->nsaddr_list[0]).is_valid()) {
       Warning("bad nameserver config, fallback to loopback");
-      ip.setToLoopback(AF_INET);
+      ip = swoc::IP4Addr(INADDR_LOOPBACK);
     }
   }
 }
@@ -609,7 +612,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
        *
        *   The first DNS server is the Primary DNS server, and it is assigned to DNSHandler::ip within validate_ip() function.
        */
-      open_cons(nullptr); // use current target address.
+      open_cons({}); // use current target address.
       n_con = 1;
     }
 
@@ -636,7 +639,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   this->validate_ip();
 
   SET_HANDLER(&DNSHandler::mainEvent);
-  open_cons(nullptr, false, 0);
+  open_cons({}, false, 0);
   n_con = 1;
 
   return EVENT_CONT;
@@ -656,8 +659,8 @@ _ink_res_mkquery(ink_res_state res, char *qname, int qtype, unsigned char *buffe
 void
 DNSHandler::recover()
 {
-  ip_text_buffer buff;
-  Warning("connection to DNS server %s restored", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
+  swoc::bwprint(ts::bw_dbg, "connection to DNS server {} restored", ip);
+  Warning("%s", ts::bw_dbg.c_str());
   name_server = 0;
   switch_named(name_server);
 }
@@ -696,7 +699,7 @@ DNSHandler::try_primary_named(bool reopen)
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Dbg(dbg_ctl_dns, "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
-    open_cons(nullptr, true, 0);
+    open_cons({}, true, 0);
   }
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
     unsigned char buffer[MAX_DNS_REQUEST_LEN];
@@ -781,8 +784,8 @@ DNSHandler::failover()
     if (dns_conn_mode != DNS_CONN_MODE::UDP_ONLY) {
       tcpcon[0].close();
     }
-    ip_text_buffer buff;
-    Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
+    swoc::bwprint(ts::bw_dbg, "failover: connection to DNS server {} lost, retrying", ip);
+    Warning("%s", ts::bw_dbg.c_str());
   }
 }
 

@@ -484,7 +484,6 @@ SplitDNSRecord::Init(matcher_line *line_info)
   DNSHandler *dnsH  = new DNSHandler;
   ink_res_state res = new ts_imp_res_state;
 
-  memset(res, 0, sizeof(ts_imp_res_state));
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,
                           m_servers.x_domain_srch_list, nullptr))) {
     char ab[INET6_ADDRPORTSTRLEN];
@@ -494,7 +493,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
   dnsH->m_res = res;
   dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
-  ats_ip_invalidate(&dnsH->ip.sa); // Mark to use default DNS.
+  dnsH->ip.invalidate(); // Mark to use default DNS.
 
   m_servers.x_dnsH = dnsH;
 

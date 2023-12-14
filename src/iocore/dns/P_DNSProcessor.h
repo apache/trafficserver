@@ -46,7 +46,7 @@
 
 #include "ts/DbgCtl.h"
 
-#include <swoc/IPEndpoint.h>
+#include <swoc/IPAddr.h>
 
 #include "api/Metrics.h"
 
@@ -175,9 +175,9 @@ struct DNSEntry;
 */
 struct DNSHandler : public Continuation {
   /// This is used as the target if round robin isn't set.
-  IpEndpoint ip;
-  IpEndpoint local_ipv6; ///< Local V6 address if set.
-  IpEndpoint local_ipv4; ///< Local V4 address if set.
+  swoc::IPAddr ip;
+  swoc::IPAddr local_ipv6; ///< Local V6 address if set.
+  swoc::IPAddr local_ipv4; ///< Local V4 address if set.
   int ifd[MAX_NAMED];
   int n_con = 0;
   DNSConnection tcpcon[MAX_NAMED];
@@ -245,8 +245,8 @@ struct DNSHandler : public Continuation {
   int startEvent_sdns(int event, Event *e);
   int mainEvent(int event, Event *e);
 
-  void open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
-  bool open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
+  void open_cons(swoc::IPEndpoint const &target, bool failed = false, int icon = 0);
+  bool open_con(swoc::IPEndpoint const &target, bool failed = false, int icon = 0, bool over_tcp = false);
   void failover();
   void rr_failure(int ndx);
   void recover();
@@ -296,7 +296,7 @@ private:
    A record for an single server
    -------------------------------------------------------------- */
 struct DNSServer {
-  IpEndpoint x_server_ip[MAXNS];
+  std::array<swoc::IPEndpoint, MAXNS> x_server_ip;
   char x_dns_ip_line[MAXDNAME * 2];
 
   char x_def_domain[MAXDNAME];
@@ -306,8 +306,6 @@ struct DNSServer {
 
   DNSServer()
   {
-    memset(x_server_ip, 0, sizeof(x_server_ip));
-
     memset(x_def_domain, 0, MAXDNAME);
     memset(x_domain_srch_list, 0, MAXDNAME);
     memset(x_dns_ip_line, 0, MAXDNAME * 2);
@@ -320,7 +318,7 @@ DNSHandler::DNSHandler()
 
     generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {
-  ats_ip_invalidate(&ip);
+  ip.invalidate();
   for (int i = 0; i < MAX_NAMED; i++) {
     ifd[i]                     = -1;
     failover_number[i]         = 0;

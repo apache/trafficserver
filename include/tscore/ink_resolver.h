@@ -68,8 +68,10 @@
 
 #pragma once
 
+#include <swoc/IPEndpoint.h>
+
 #include "tscore/ink_platform.h"
-#include "tscore/ink_inet.h"
+// #include "tscore/ink_inet.h"
 
 #include <resolv.h>
 #include <arpa/nameser.h>
@@ -195,7 +197,7 @@ extern void parse_host_res_preference(const char *value,            ///< [in] Co
 /// Configure the preference order to hold only what's from the client address.
 /// @addr[in] client's address.
 /// @order[out] Order to update
-extern void ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order);
+extern void ats_force_order_by_family(sa_family_t family, HostResPreferenceOrder order);
 
 // Domain resolution priority for origin.
 struct HostResData {
@@ -248,36 +250,38 @@ struct HostResData {
 
 // Do we really need these to be C compatible? - AMC
 struct ts_imp_res_state {
-  int retrans; /*%< retransmission time interval */
-  int retry;   /*%< number of times to retransmit */
+  ts_imp_res_state() : ndots(0), nsort(0) {}
+
+  int retrans = 0; /*%< retransmission time interval */
+  int retry   = 0; /*%< number of times to retransmit */
 #ifdef sun
-  unsigned options; /*%< option flags - see below. */
+  unsigned options = 0; /*%< option flags - see below. */
 #else
-  u_long options; /*%< option flags - see below. */
+  u_long options = 0; /*%< option flags - see below. */
 #endif
-  int nscount;                       /*%< number of name servers */
-  IpEndpoint nsaddr_list[INK_MAXNS]; /*%< address of name server */
-  u_short id;                        /*%< current message id */
-  char *dnsrch[MAXDNSRCH + 1];       /*%< components of domain to search */
-  char defdname[256];                /*%< default domain (deprecated) */
+  int nscount = 0;                         /*%< number of name servers */
+  swoc::IPEndpoint nsaddr_list[INK_MAXNS]; /*%< address/port of name server */
+  u_short id                  = 0;         /*%< current message id */
+  char *dnsrch[MAXDNSRCH + 1] = {0};       /*%< components of domain to search */
+  char defdname[256]          = {0};       /*%< default domain (deprecated) */
 #ifdef sun
-  unsigned pfcode; /*%< RES_PRF_ flags - see below. */
+  unsigned pfcode = 0; /*%< RES_PRF_ flags - see below. */
 #else
-  u_long pfcode; /*%< RES_PRF_ flags - see below. */
+  u_long pfcode = 0; /*%< RES_PRF_ flags - see below. */
 #endif
   unsigned ndots : 4; /*%< threshold for initial abs. query */
   unsigned nsort : 4; /*%< number of elements in sort_list[] */
   char unused[3];
-  int res_h_errno;              /*%< last one set for this context */
-  int _vcsock;                  /*%< PRIVATE: for res_send VC i/o */
-  unsigned _flags;              /*%< PRIVATE: see below */
-  unsigned _pad;                /*%< make _u 64 bit aligned */
-  uint16_t _nstimes[INK_MAXNS]; /*%< ms. */
+  int res_h_errno = 0;                /*%< last one set for this context */
+  int _vcsock     = 0;                /*%< PRIVATE: for res_send VC i/o */
+  unsigned _flags = 0;                /*%< PRIVATE: see below */
+  unsigned _pad;                      /*%< make _u 64 bit aligned */
+  uint16_t _nstimes[INK_MAXNS] = {0}; /*%< ms. */
 };
 using ink_res_state = ts_imp_res_state *;
 
-int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = nullptr,
-                 const char *pSearchList = nullptr, const char *pResolvConf = nullptr);
+int ink_res_init(ink_res_state, swoc::MemSpan<swoc::IPEndpoint const> pHostList, size_t pHostListSize, int dnsSearch,
+                 const char *pDefDomain = nullptr, const char *pSearchList = nullptr, const char *pResolvConf = nullptr);
 
 int ink_res_mkquery(ink_res_state, int, const char *, int, int, const unsigned char *, int, const unsigned char *, unsigned char *,
                     int);

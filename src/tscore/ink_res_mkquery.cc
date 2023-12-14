@@ -550,12 +550,12 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
 }
 
 void
-ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order)
+ats_force_order_by_family(sa_family_t family, HostResPreferenceOrder order)
 {
   HostResPreferenceOrder::size_type pos{0};
-  if (ats_is_ip6(addr)) {
+  if (AF_INET6 == family) {
     order[pos++] = HOST_RES_PREFER_IPV6;
-  } else if (ats_is_ip4(addr)) {
+  } else if (AF_INET == family) {
     order[pos++] = HOST_RES_PREFER_IPV4;
   }
   for (; pos < order.size(); pos++) {

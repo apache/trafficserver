@@ -123,7 +123,7 @@ ink_res_nclose(ink_res_state statp)
 }
 
 static void
-ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
+ink_res_setservers(ink_res_state statp, swoc::IPEndpoint const *set, int cnt)
 {
   /* close open servers */
   ink_res_nclose(statp);
@@ -136,33 +136,19 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
      the destination and source are the same.
   */
   int nserv = 0;
-  for (IpEndpoint const *limit = set + cnt; nserv < INK_MAXNS && set < limit; ++set) {
-    IpEndpoint *dst = &statp->nsaddr_list[nserv];
+  for (auto const *limit = set + cnt; nserv < INK_MAXNS && set < limit; ++set) {
+    auto *dst = &statp->nsaddr_list[nserv];
 
     if (dst == set) {
-      if (ats_is_ip(&set->sa)) {
+      if (set->is_valid()) {
         ++nserv;
       }
-    } else if (ats_ip_copy(&dst->sa, &set->sa)) {
+    } else {
+      *dst = *set;
       ++nserv;
     }
   }
   statp->nscount = nserv;
-}
-
-int
-ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt)
-{
-  int zret              = 0; // return count.
-  IpEndpoint const *src = statp->nsaddr_list;
-
-  for (int i = 0; i < statp->nscount && i < cnt; ++i, ++src) {
-    if (ats_ip_copy(set, &src->sa)) {
-      ++set;
-      ++zret;
-    }
-  }
-  return zret;
 }
 
 static void
@@ -286,13 +272,13 @@ ink_res_randomid()
  * @internal This function has to be reachable by res_data.c but not publicly.
  */
 int
-ink_res_init(ink_res_state statp,         ///< State object to update.
-             IpEndpoint const *pHostList, ///< Additional servers.
-             size_t pHostListSize,        ///< # of entries in @a pHostList.
-             int dnsSearch,               /// Option of search_default_domains.
-             const char *pDefDomain,      ///< Default domain (may be nullptr).
-             const char *pSearchList,     ///< Unknown
-             const char *pResolvConf      ///< Path to configuration file.
+ink_res_init(ink_res_state statp,                             ///< State object to update.
+             swoc::MemSpan<swoc::IPEndpoint const> pHostList, ///< Additional servers.
+             size_t pHostListSize,                            ///< # of entries in @a pHostList.
+             int dnsSearch,                                   /// Option of search_default_domains.
+             const char *pDefDomain,                          ///< Default domain (may be nullptr).
+             const char *pSearchList,                         ///< Unknown
+             const char *pResolvConf                          ///< Path to configuration file.
 )
 {
   FILE *fp;
