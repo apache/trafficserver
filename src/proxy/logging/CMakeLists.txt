@@ -36,7 +36,7 @@ add_library(ts::logging ALIAS logging)
 
 target_include_directories(logging PRIVATE ${SWOC_INCLUDE_DIR})
 
-target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::proxy ts::tscore yaml-cpp::yaml-cpp)
+target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::http ts::hdrs ts::tscore yaml-cpp::yaml-cpp)
 
 if(BUILD_TESTING)
   add_executable(test_LogUtils LogUtils.cc unit-tests/test_LogUtils.cc)

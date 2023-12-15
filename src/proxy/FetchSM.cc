@@ -653,7 +653,7 @@ FetchSM::ext_init(Continuation *cont, const char *method, const char *url, const
 void
 FetchSM::ext_add_header(const char *name, int name_len, const char *value, int value_len)
 {
-  if (TS_MIME_LEN_CONTENT_LENGTH == name_len && !strncasecmp(TS_MIME_FIELD_CONTENT_LENGTH, name, name_len)) {
+  if (MIME_LEN_CONTENT_LENGTH == name_len && !strncasecmp(MIME_FIELD_CONTENT_LENGTH, name, name_len)) {
     req_content_length = atoll(value);
   }
 

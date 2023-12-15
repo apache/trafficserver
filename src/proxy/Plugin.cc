@@ -27,7 +27,6 @@
 #include "tscore/ParseRules.h"
 #include "records/RecCore.h"
 #include "tscore/Layout.h"
-#include "api/InkAPIInternal.h"
 #include "proxy/Plugin.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
@@ -274,7 +273,6 @@ plugin_init(bool validateOnly)
   static bool INIT_ONCE = true;
 
   if (INIT_ONCE) {
-    api_init();
     plugin_dir = ats_stringdup(RecConfigReadPluginDir());
     INIT_ONCE  = false;
   }
