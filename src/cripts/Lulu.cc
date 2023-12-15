@@ -79,7 +79,7 @@ namespace Cript::details
 
 template <typename T>
 std::vector<T>
-splitter(Cript::string_view input, char delim)
+splitter(T input, char delim)
 {
   std::vector<T> output;
   size_t first = 0;
@@ -100,12 +100,6 @@ splitter(Cript::string_view input, char delim)
 }
 
 } // namespace Cript::details
-
-std::vector<Cript::string_view>
-Cript::splitter(Cript::string_view input, char delim)
-{
-  return details::splitter<Cript::string_view>(input, delim);
-}
 
 Cript::string
 Cript::hex(const Cript::string &str)

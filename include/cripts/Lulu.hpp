@@ -46,6 +46,12 @@ namespace Cript
 // Use Cript::string_view consistently, so that it's a one-stop shop for all string_view needs.
 using string_view = swoc::TextView;
 
+namespace details
+{
+  template <typename T> std::vector<T> splitter(T input, char delim);
+
+} // namespace details
+
 namespace Pacing
 {
   static constexpr uint32_t Off = std::numeric_limits<uint32_t>::max();
@@ -82,7 +88,11 @@ public:
     return integer(*this);
   }
 
-  std::vector<mixin_type> splitter(mixin_type input, char delim);
+  std::vector<mixin_type>
+  splitter(mixin_type input, char delim)
+  {
+    return details::splitter<mixin_type>(input, delim);
+  }
 
   [[nodiscard]] std::vector<mixin_type>
   split(char delim)
@@ -278,19 +288,22 @@ public:
   using super_type::operator+=;
   using super_type::operator[];
 
-  self_type& operator=(const self_type& str)
+  self_type &
+  operator=(const self_type &str)
   {
     super_type::operator=(str);
     return *this;
   }
 
-  self_type& operator=(const Cript::string_view& str)
+  self_type &
+  operator=(const Cript::string_view &str)
   {
     super_type::operator=(str);
     return *this;
   }
 
-  self_type& operator=(const char *str)
+  self_type &
+  operator=(const char *str)
   {
     super_type::operator=(str);
     return *this;

@@ -18,3 +18,6 @@
 # It might be better if this is a subproject
 
 add_subdirectory(plugins)
+if(ENABLE_CRIPTS)
+  add_subdirectory(cripts)
+endif()

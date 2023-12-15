@@ -17,18 +17,12 @@
 #
 # ##############################################################################
 
-# Todo: It'd be useful to build all Cripts that are put into this directory,
-# using GLOB etc. like this:
-# file(GLOB CRIPTS_EXAMPLES ${PROJECT_SOURCE_DIR}/example/cripts/*.cc)
-#
-# foreach(EXA ${CRIPTS_EXAMPLES})
-#    get_filename_component(EXA ${EXA} NAME_WLE)
-#    ....
-# endforeach()
-
-add_atsplugin(cripts_example1 example1.cc)
-
-target_link_libraries(cripts_example1 PRIVATE ts::cripts)
+file(GLOB CRIPTS_EXAMPLES ${PROJECT_SOURCE_DIR}/example/cripts/*.cc)
+foreach(EXA ${CRIPTS_EXAMPLES})
+  get_filename_component(EXA ${EXA} NAME_WLE)
+  add_atsplugin(cripts_${EXA} ${EXA}.cc)
+  target_link_libraries(cripts_${EXA} PRIVATE ts::cripts)
+endforeach()
 
 # This is a hack, but useful to run clang-tidy across all of Cripts
 # Todo: why is this not working??

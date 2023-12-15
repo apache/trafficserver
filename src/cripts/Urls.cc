@@ -108,7 +108,7 @@ Url::Path::getSV()
       _storage.pop_back(); // Removes the trailing /
     }
 
-    return Cript::string_view(_storage);
+    return {_storage};
   } else if (_owner && _data.empty()) {
     const char *value = nullptr;
     int len           = 0;
@@ -245,7 +245,7 @@ Url::Query::getSV()
       }
     }
 
-    return Cript::string_view(_storage);
+    return {_storage};
   }
 
   // This gets weird when we modify the query parameter components, and can possibly empty

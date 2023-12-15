@@ -243,3 +243,9 @@ Server::Connection::fd() const
 
   return connfd;
 }
+
+int
+Server::Connection::count() const
+{
+  return TSHttpTxnServerSsnTransactionCount(_state->txnp);
+}

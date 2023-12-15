@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#include <math.h>
+#include <cmath>
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
@@ -112,7 +112,7 @@ Crypto::detail::Digest::hex() const
 {
   // ToDo: Need to make this without Boost
   // return boost::algorithm::hex(Cript::string(reinterpret_cast<const char *>(_hash), _length));
-  return Cript::string(reinterpret_cast<const char *>(_hash), _length);
+  return {reinterpret_cast<const char *>(_hash), _length};
 }
 
 Cript::string
@@ -174,7 +174,7 @@ Crypto::detail::Cipher::_initialize()
 
   memset(iv, 0, sizeof(iv)); // The IV is always '0x0'
   _ctx = EVP_CIPHER_CTX_new();
-  EVP_EncryptInit_ex(_ctx, _cipher, NULL, _key, iv);
+  EVP_EncryptInit_ex(_ctx, _cipher, nullptr, _key, iv);
 }
 
 void
@@ -224,7 +224,8 @@ Crypto::HMAC::SHA256::encrypt(Cript::string_view str, const Cript::string &key)
 {
   Crypto::HMAC::SHA256 retval;
 
-  ::HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(str.data()), str.size(), retval._hash, NULL);
+  ::HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(str.data()), str.size(), retval._hash,
+         nullptr);
 
   return retval;
 }

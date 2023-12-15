@@ -27,9 +27,9 @@ Error::execute(Cript::Context *context)
   }
 }
 
-// These are static, to be used with the get() wrapper
+// These are static, to be used with the set() wrapper define
 void
-Error::Message::_set(Cript::Context *context, Cript::string msg)
+Error::Message::_set(Cript::Context *context, const Cript::string_view msg)
 {
   context->state.error.fail();
   context->state.error._message.setter(msg);
