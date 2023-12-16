@@ -44,6 +44,7 @@ class Metrics
 private:
   using self_type = Metrics;
 
+public:
   class AtomicType
   {
     friend class Metrics;
@@ -57,18 +58,29 @@ private:
       return _value.load();
     }
 
-    // ToDo: This is a little sketchy, but needed for the old InkAPI metrics.
+    void
+    increment(int64_t val)
+    {
+      _value.fetch_add(val, MEMORY_ORDER);
+    }
+
+    // Use with care ...
     void
     store(int64_t val)
     {
       _value.store(val);
     }
 
+    void
+    decrement(int64_t val)
+    {
+      _value.fetch_sub(val, MEMORY_ORDER);
+    }
+
   protected:
     std::atomic<int64_t> _value{0};
   };
 
-public:
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
   using SpanType = swoc::MemSpan<AtomicType>;
 

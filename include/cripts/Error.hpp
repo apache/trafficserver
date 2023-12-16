@@ -17,8 +17,8 @@
 */
 #pragma once
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 #include <utility>
 

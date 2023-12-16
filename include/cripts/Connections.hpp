@@ -26,14 +26,13 @@ class Context;
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 
-#include <ts/apidefs.h>
+#include "ts/apidefs.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
-#include <swoc/swoc_ip.h>
+#include "swoc/swoc_ip.h"
 
-#include <ts/ts.h>
-#include <ts/remap.h>
-
-#include <cripts/Matcher.hpp>
+#include "cripts/Matcher.hpp"
 
 namespace Cript
 {

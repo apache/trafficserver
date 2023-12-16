@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#include <cripts/Preamble.hpp>
+#include "cripts/Preamble.hpp"
 
 #if CRIPTS_HAS_MAXMIND
 #include <maxminddb.h>

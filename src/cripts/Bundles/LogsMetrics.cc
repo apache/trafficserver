@@ -50,27 +50,27 @@ namespace Bundle
   };
 
   // This has to align with the enum above!!
-  static constexpr std::tuple<Cript::string_view, bool> PROPSTAT_SUFFIXES[] = {
-  // clang-format off
-  {"cache.miss", true},
-  {"cache.hit_stale", true},
-  {"cache.hit_fresh", true},
-  {"cache.skip", true},
-  {"client.bytes_in", false},
-  {"client.bytes_out", false},
-  {"http.2XX_responses",true},
-  {"http.200_responses",true},
-  {"http.206_responses",true},
-  {"http.3XX_responses",true},
-  {"http.4XX_responses",true},
-  {"http.404_responses",true},
-  {"http.5XX_responses",true},
-  {"http.504_responses",true},
-  {"server.bytes_in", false},
-  {"server.bytes_out", false},
-  {"http.aborted_requests", true},
-  {"http.completed_requests",true},
-  // clang-format on
+  static constexpr Cript::string_view PROPSTAT_SUFFIXES[] = {
+    // clang-format off
+    "cache.miss",
+    "cache.hit_stale",
+    "cache.hit_fresh",
+    "cache.skip",
+    "client.bytes_in",
+    "client.bytes_out",
+    "http.2XX_responses",
+    "http.200_responses",
+    "http.206_responses",
+    "http.3XX_responses",
+    "http.4XX_responses",
+    "http.404_responses",
+    "http.5XX_responses",
+    "http.504_responses",
+    "server.bytes_in",
+    "server.bytes_out",
+    "http.aborted_requests",
+    "http.completed_requests"
+    // clang-format on
   };
 
 } // namespace Bundle
@@ -85,14 +85,10 @@ LogsMetrics::propstats(const Cript::string_view &label)
     needCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
 
     for (int ix = 0; ix < Bundle::PROPSTAT_MAX; ++ix) {
-      auto name = format("{}.{}", _label, std::get<0>(Bundle::PROPSTAT_SUFFIXES[ix]));
+      auto name = format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
 
       _inst->debug("Creating metrics for: {}", name);
-      if (std::get<1>(Bundle::PROPSTAT_SUFFIXES[ix])) {
-        _inst->metrics[ix] = Metrics::Counter::create(name);
-      } else {
-        _inst->metrics[ix] = Metrics::Sum::create(name);
-      }
+      _inst->metrics[ix] = Metrics::Counter::create(name);
     }
   }
 

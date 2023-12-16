@@ -16,10 +16,10 @@
   limitations under the License.
 */
 
-#include <ts/ts.h>
+#include "ts/ts.h"
 
-#include <cripts/Lulu.hpp>
-#include <cripts/Instance.hpp>
+#include "cripts/Lulu.hpp"
+#include "cripts/Instance.hpp"
 
 void
 Cript::Instance::initialize(int argc, char *argv[], const char *filename)

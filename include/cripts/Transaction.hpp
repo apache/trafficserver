@@ -25,12 +25,12 @@
 #include <chrono>
 #include <climits>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
-
 #include <fmt/core.h>
 
-#include <cripts/Error.hpp>
+#include "ts/ts.h"
+#include "ts/remap.h"
+
+#include "cripts/Error.hpp"
 
 // This had to be extraced out of the CriptContex class, to avoid the circular references. And
 // doing this lets us have the various headers, URLs etc. as uninitialized members of the Context.

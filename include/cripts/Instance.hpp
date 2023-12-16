@@ -21,13 +21,13 @@
 #include <variant>
 #include <unordered_map>
 
-#include <ts/remap.h>
-#include <ts/ts.h>
+#include "ts/remap.h"
+#include "ts/ts.h"
 
-#include <cripts/Plugins.hpp>
-#include <cripts/Metrics.hpp>
-#include <cripts/Transaction.hpp>
-#include <cripts/Bundle.hpp>
+#include "cripts/Plugins.hpp"
+#include "cripts/Metrics.hpp"
+#include "cripts/Transaction.hpp"
+#include "cripts/Bundle.hpp"
 
 namespace Cript
 {
