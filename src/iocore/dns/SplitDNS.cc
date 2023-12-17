@@ -349,11 +349,12 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
       *tmp = 0;
     }
 
-    if (0 != ats_ip_pton(current, &m_servers.x_server_ip[i].sa)) {
+    swoc::IPAddr addr;
+    if (!addr.load(current)) {
       return "invalid IP address given for a DNS server";
     }
 
-    ats_ip_port_cast(&m_servers.x_server_ip[i].sa) = htons(port ? port : NAMESERVER_PORT);
+    m_servers.x_server_ip[i].assign(addr, port ? port : NAMESERVER_PORT);
 
     if ((MAXDNAME * 2 - 1) > totsz) {
       sz = strlen(current);
@@ -477,7 +478,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
     }
   }
 
-  if (!ats_is_ip(&m_servers.x_server_ip[0].sa)) {
+  if (!m_servers.x_server_ip[0].is_valid()) {
     return Result::failure("%s No server specified in %s at line %d", modulePrefix, ts::filename::SPLITDNS, line_num);
   }
 

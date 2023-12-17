@@ -245,8 +245,8 @@ struct DNSHandler : public Continuation {
   int startEvent_sdns(int event, Event *e);
   int mainEvent(int event, Event *e);
 
-  void open_cons(swoc::IPEndpoint const &target, bool failed = false, int icon = 0);
-  bool open_con(swoc::IPEndpoint const &target, bool failed = false, int icon = 0, bool over_tcp = false);
+  void open_cons(swoc::IPSrv const &target, bool failed = false, int icon = 0);
+  bool open_con(swoc::IPSrv const &target, bool failed = false, int icon = 0, bool over_tcp = false);
   void failover();
   void rr_failure(int ndx);
   void recover();
@@ -296,7 +296,7 @@ private:
    A record for an single server
    -------------------------------------------------------------- */
 struct DNSServer {
-  std::array<swoc::IPEndpoint, MAXNS> x_server_ip;
+  std::array<swoc::IPSrv, MAXNS> x_server_ip;
   char x_dns_ip_line[MAXDNAME * 2];
 
   char x_def_domain[MAXDNAME];

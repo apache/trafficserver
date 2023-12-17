@@ -452,7 +452,7 @@ DNSEntry::init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProce
  */
 
 void
-DNSHandler::open_cons(swoc::IPEndpoint const &target, bool failed, int icon)
+DNSHandler::open_cons(swoc::IPSrv const &target, bool failed, int icon)
 {
   if (dns_conn_mode != DNS_CONN_MODE::TCP_ONLY) {
     open_con(target, failed, icon, false);
@@ -470,7 +470,7 @@ DNSHandler::reset_tcp_conn(int ndx)
 {
   Metrics::Counter::increment(dns_rsb.tcp_reset);
   tcpcon[ndx].close();
-  return open_con(&m_res->nsaddr_list[ndx].sa, true, ndx, true);
+  return open_con(m_res->nsaddr_list[ndx], true, ndx, true);
 }
 
 /**
@@ -488,7 +488,7 @@ DNSHandler::reset_tcp_conn(int ndx)
       open connection to target.
 */
 bool
-DNSHandler::open_con(swoc::IPEndpoint const &target, bool failed, int icon, bool over_tcp)
+DNSHandler::open_con(swoc::IPSrv const &target, bool failed, int icon, bool over_tcp)
 {
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
   bool ret           = false;

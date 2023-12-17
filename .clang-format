@@ -27,11 +27,11 @@ AlignConsecutiveMacros:
   AcrossComments:  false
   AlignCompound:   false
   PadOperators:    true
-AlignConsecutiveShortCaseStatements:
-  Enabled:         false
-  AcrossEmptyLines: false
-  AcrossComments:  false
-  AlignCaseColons: false
+#AlignConsecutiveShortCaseStatements:
+#  Enabled:         false
+#  AcrossEmptyLines: false
+#  AcrossComments:  false
+#  AlignCaseColons: false
 AlignEscapedNewlines: Left
 AlignOperands:   Align
 AlignTrailingComments:
@@ -212,7 +212,7 @@ SpacesInContainerLiterals: true
 SpacesInLineCommentPrefix:
   Minimum:         1
   Maximum:         -1
-SpacesInParens:  Never
+#SpacesInParens:  Never
 SpacesInParensOptions:
   InCStyleCasts:   false
   InConditionalStatements: false

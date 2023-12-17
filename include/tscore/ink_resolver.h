@@ -69,9 +69,9 @@
 #pragma once
 
 #include <swoc/IPEndpoint.h>
+#include <swoc/IPSrv.h>
 
 #include "tscore/ink_platform.h"
-// #include "tscore/ink_inet.h"
 
 #include <resolv.h>
 #include <arpa/nameser.h>
@@ -259,11 +259,11 @@ struct ts_imp_res_state {
 #else
   u_long options = 0; /*%< option flags - see below. */
 #endif
-  int nscount = 0;                         /*%< number of name servers */
-  swoc::IPEndpoint nsaddr_list[INK_MAXNS]; /*%< address/port of name server */
-  u_short id                  = 0;         /*%< current message id */
-  char *dnsrch[MAXDNSRCH + 1] = {0};       /*%< components of domain to search */
-  char defdname[256]          = {0};       /*%< default domain (deprecated) */
+  int nscount = 0;                    /*%< number of name servers */
+  swoc::IPSrv nsaddr_list[INK_MAXNS]; /*%< address/port of name server */
+  u_short id                  = 0;    /*%< current message id */
+  char *dnsrch[MAXDNSRCH + 1] = {0};  /*%< components of domain to search */
+  char defdname[256]          = {0};  /*%< default domain (deprecated) */
 #ifdef sun
   unsigned pfcode = 0; /*%< RES_PRF_ flags - see below. */
 #else

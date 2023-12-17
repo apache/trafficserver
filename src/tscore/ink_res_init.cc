@@ -123,7 +123,7 @@ ink_res_nclose(ink_res_state statp)
 }
 
 static void
-ink_res_setservers(ink_res_state statp, swoc::IPEndpoint const *set, int cnt)
+ink_res_setservers(ink_res_state statp, swoc::IPSrv const *set, int cnt)
 {
   /* close open servers */
   ink_res_nclose(statp);
@@ -272,13 +272,13 @@ ink_res_randomid()
  * @internal This function has to be reachable by res_data.c but not publicly.
  */
 int
-ink_res_init(ink_res_state statp,                             ///< State object to update.
-             swoc::MemSpan<swoc::IPEndpoint const> pHostList, ///< Additional servers.
-             size_t pHostListSize,                            ///< # of entries in @a pHostList.
-             int dnsSearch,                                   /// Option of search_default_domains.
-             const char *pDefDomain,                          ///< Default domain (may be nullptr).
-             const char *pSearchList,                         ///< Unknown
-             const char *pResolvConf                          ///< Path to configuration file.
+ink_res_init(ink_res_state statp,                        ///< State object to update.
+             swoc::MemSpan<swoc::IPSrv const> pHostList, ///< Additional servers.
+             size_t pHostListSize,                       ///< # of entries in @a pHostList.
+             int dnsSearch,                              /// Option of search_default_domains.
+             const char *pDefDomain,                     ///< Default domain (may be nullptr).
+             const char *pSearchList,                    ///< Unknown
+             const char *pResolvConf                     ///< Path to configuration file.
 )
 {
   FILE *fp;
@@ -392,8 +392,8 @@ ink_res_init(ink_res_state statp,                             ///< State object 
     if (pHostListSize > INK_MAXNS) {
       pHostListSize = INK_MAXNS;
     }
-    for (; nserv < pHostListSize && ats_is_ip(&pHostList[nserv].sa); ++nserv) {
-      ats_ip_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
+    for (; nserv < pHostListSize && pHostList[nserv].is_valid(); ++nserv) {
+      statp->nsaddr_list[nserv] = pHostList[nserv];
     }
   }
 
@@ -475,10 +475,10 @@ ink_res_init(ink_res_state statp,                             ///< State object 
         }
         if ((*cp != '\0') && (*cp != '\n')) {
           std::string_view host(cp, strcspn(cp, ";# \t\n"));
-          if (0 == ats_ip_pton(host, &statp->nsaddr_list[nserv].sa)) {
+          if (statp->nsaddr_list[nserv].load(host)) {
             // If there was no port in the config, lets use NAMESERVER_PORT
-            if (ats_ip_port_host_order(&statp->nsaddr_list[nserv].sa) == 0) {
-              ats_ip_port_cast(&statp->nsaddr_list[nserv].sa) = htons(NAMESERVER_PORT);
+            if (statp->nsaddr_list[nserv].host_order_port() == 0) {
+              statp->nsaddr_list[nserv].assign(NAMESERVER_PORT);
             }
             ++nserv;
           }
