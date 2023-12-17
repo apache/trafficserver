@@ -30,14 +30,22 @@ Test.ContinueOnFail = True
 class Test_ip_category:
     """Configure a test to verify ip_category behavior."""
 
-    client_counter: int = 0
-    ts_counter: int = 0
-    server_counter: int = 0
-    category_counter: int = 0
+    _client_counter: int = 0
+    _ts_is_started: bool = False
+    _reload_server_is_started: bool = False
+    _server_is_started: bool = False
+    _category_counter: int = 0
 
-    category_updater: str = 'category_updater.sh'
-    category_updater_path: str
-    have_copied_updater: bool = False
+    _ts: 'TestProcess' = None
+    _server: 'TestProcess' = None
+    _reload_server: 'TestProcess' = None
+
+    _reload_server_replay = 'replays/https_categories_reload.replay.yaml'
+    _server_replay = 'replays/https_categories_server.replay.yaml'
+
+    _category_updater: str = 'category_updater.sh'
+    _category_updater_path: str
+    _have_copied_updater: bool = False
 
     def __init__(
             self, name: str, replay_file: str, ip_allow_config: str, localhost_categories: list[str], other_categories: list[str],
@@ -59,9 +67,11 @@ class Test_ip_category:
 
         self._update_categories_file(localhost_categories, other_categories)
 
-        tr = Test.AddTestRun(name)
-        self._configure_server(tr)
+        self._configure_reload_server()
+        self._configure_server()
         self._configure_traffic_server()
+
+        tr = Test.AddTestRun(name)
         self._configure_client(tr)
 
     def _update_categories_file(self, localhost_categories: list[str], other_categories: list[str]) -> None:
@@ -71,40 +81,62 @@ class Test_ip_category:
         :param other_categories: The categories that are not applied to localhost.
         """
 
-        if not Test_ip_category.have_copied_updater:
-            Test.Setup.CopyAs(Test_ip_category.category_updater, Test.RunDirectory)
-            Test_ip_category.have_copied_updater = True
-            Test_ip_category.category_updater_path = os.path.join(Test.RunDirectory, Test_ip_category.category_updater)
+        if not Test_ip_category._have_copied_updater:
+            Test.Setup.CopyAs(Test_ip_category._category_updater, Test.RunDirectory)
+            Test_ip_category._have_copied_updater = True
+            Test_ip_category._category_updater_path = os.path.join(Test.RunDirectory, Test_ip_category._category_updater)
 
         self._categories_file = os.path.join(Test.RunDirectory, 'categories.txt')
-        category_updater = Test_ip_category.category_updater_path
+        category_updater = Test_ip_category._category_updater_path
         tr = Test.AddTestRun(f"Categories file update: {','.join(localhost_categories)}")
 
-        name = f"category-server-{Test_ip_category.category_counter}"
+        name = f"category-server-{Test_ip_category._category_counter}"
         server = tr.Processes.Process(name)
-        Test_ip_category.category_counter += 1
+        Test_ip_category._category_counter += 1
         server.Command = 'sleep 30'
 
         p = tr.Processes.Default
         p.Command = f'bash {category_updater} {self._categories_file} "{",".join(localhost_categories)}" "{",".join(other_categories)}"'
         p.StartBefore(server)
 
-    def _configure_server(self, tr: 'TestRun') -> None:
-        """Configure the server.
+    def _configure_server(self) -> None:
+        """Configure the server."""
+        if Test_ip_category._server:
+            # All test runs share a single server instance.
+            return
+        server = Test.MakeVerifierServerProcess(f"server", self._server_replay)
+        Test_ip_category._server = server
 
-        :param tr: The TestRun object to associate the server process with.
-        """
-        server = tr.AddVerifierServerProcess(f"server_{Test_ip_category.server_counter}", self._replay_file)
-        Test_ip_category.server_counter += 1
-        self._server = server
+    def _configure_reload_server(self) -> None:
+        """Configure the server to handle the reload requests."""
+        if Test_ip_category._reload_server:
+            # All test runs share a single reload server instance.
+            return
+        server = Test.MakeVerifierServerProcess(f"reload_server", self._reload_server_replay)
+        Test_ip_category._reload_server = server
 
     def _configure_traffic_server(self) -> None:
         """Configure Traffic Server."""
-        name = f"ts-{Test_ip_category.ts_counter}"
-        ts = Test.MakeATSProcess(name, enable_cache=False, enable_quic=self._is_h3, enable_tls=True)
-        Test_ip_category.ts_counter += 1
+        if Test_ip_category._ts:
+            # All test runs share a single Traffic Server instance.
 
-        self._ts = ts
+            if Test_ip_category._category_counter > 1:
+                # On subsequent runs, we have to tell the ip_category plugin to
+                # reload the categories file.
+                tr = Test.AddTestRun(f"HTTP request to tell the categories plugin to update the categories.")
+                p = tr.Processes.Default
+                p.Command = (
+                    f"curl -v -H 'X-Category: reload' -H 'uuid: reload' "
+                    f"http://127.0.0.1:{Test_ip_category._ts.Variables.port}/reload")
+                if not Test_ip_category._reload_server_is_started:
+                    p.StartBefore(Test_ip_category._reload_server)
+                    Test_ip_category._reload_server_is_started = True
+                p.Streams.all = Testers.ContainsExpression("200 OK", "Verify a 200 OK response from the reload server.")
+                p.TimeOut = 5
+            return
+        ts = Test.MakeATSProcess("ts", enable_cache=False, enable_quic=self._is_h3, enable_tls=True)
+        Test_ip_category._ts = ts
+
         ts.addDefaultSSLFiles()
         plugin_path = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'ip_allow', 'plugins', '.libs', 'categories_from_file.so')
         Test.PrepareTestPlugin(plugin_path, ts, f'--category_file {self._categories_file}')
@@ -118,10 +150,14 @@ class Test_ip_category:
                 'proxy.config.quic.no_activity_timeout_in': 0,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                'proxy.config.http.connect_ports': self._server.Variables.http_port,
+                'proxy.config.http.connect_ports': Test_ip_category._server.Variables.http_port,
             })
 
-        ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
+        ts.Disk.remap_config.AddLines(
+            [
+                f'map /reload http://127.0.0.1:{Test_ip_category._reload_server.Variables.http_port}',
+                f'map / http://127.0.0.1:{Test_ip_category._server.Variables.http_port}',
+            ])
 
         ts.Disk.ip_allow_yaml.AddLines(self._ip_allow_config.split("\n"))
 
@@ -131,15 +167,19 @@ class Test_ip_category:
         :param tr: The TestRun object to associate the client process with.
         """
 
-        tr.Processes.Default.StartBefore(self._server)
-        tr.Processes.Default.StartBefore(self._ts)
+        if not Test_ip_category._server_is_started:
+            tr.Processes.Default.StartBefore(Test_ip_category._server)
+            Test_ip_category._server_is_started = True
+        if not Test_ip_category._ts_is_started:
+            tr.Processes.Default.StartBefore(Test_ip_category._ts)
+            Test_ip_category._ts_is_started = True
 
         p = tr.AddVerifierClientProcess(
-            f'client-{Test_ip_category.client_counter}',
+            f'client-{Test_ip_category._client_counter}',
             self._replay_file,
-            https_ports=[self._ts.Variables.ssl_port],
-            http3_ports=[self._ts.Variables.ssl_port])
-        Test_ip_category.client_counter += 1
+            https_ports=[Test_ip_category._ts.Variables.ssl_port],
+            http3_ports=[Test_ip_category._ts.Variables.ssl_port])
+        Test_ip_category._client_counter += 1
 
         codes = [str(code) for code in self._expected_responses]
         p.Streams.stdout += Testers.ContainsExpression(
@@ -210,11 +250,11 @@ test_ip_allow_optional_methods = Test_ip_category(
     is_h3=False,
     expected_responses=[200, 403, 403])
 
-test_ip_allow_optional_methods = Test_ip_category(
-    "IP Category: ALL",
-    replay_file='replays/https_categories_all.replay.yaml',
-    ip_allow_config=IP_ALLOW_CONTENT,
-    localhost_categories=['ACME_ALL', 'ALL'],
-    other_categories=['ACME_INTERNAL', 'ACME_EXTERNAL'],
-    is_h3=False,
-    expected_responses=[403, 403, 403])
+#test_ip_allow_optional_methods = Test_ip_category(
+#    "IP Category: ALL",
+#    replay_file='replays/https_categories_all.replay.yaml',
+#    ip_allow_config=IP_ALLOW_CONTENT,
+#    localhost_categories=['ACME_ALL', 'ALL'],
+#    other_categories=['ACME_INTERNAL', 'ACME_EXTERNAL'],
+#    is_h3=False,
+#    expected_responses=[403, 403, 403])

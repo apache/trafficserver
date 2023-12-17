@@ -149,6 +149,7 @@ parse_and_set_new_categories()
 int
 read_request_hdr_event_handler(TSCont contp, TSEvent event, void *edata)
 {
+  Dbg(dbg_ctl, "read_request_hdr_event_handler(): event: %d", event);
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_READ_REQUEST_HDR) {
     TSError("[%s] Unexpected event %d", PLUGIN_NAME.c_str(), event);
@@ -189,6 +190,7 @@ read_request_hdr_event_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
+  Dbg(dbg_ctl, "\"X-Category: reload\" received, Reloading the configuration.");
 
   // The user has asked us to reload the config.
   parse_and_set_new_categories();

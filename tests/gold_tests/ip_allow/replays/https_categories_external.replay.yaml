@@ -45,7 +45,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
-        - [ uuid, get-allowed ]
+        - [ uuid, get ]
         - [ X-Request, get ]
 
     <<: *standard_response
@@ -61,7 +61,7 @@ sessions:
       headers:
         fields:
         - [Content-Length, 10]
-        - [ uuid, post-rejected ]
+        - [ uuid, post ]
         - [ X-Request, post ]
 
     # Shouldn't be used.
@@ -78,7 +78,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, push-rejected ]
+        - [ uuid, push ]
         - [ X-Request, push ]
         - [ Content-Length, 113 ]
       content:
