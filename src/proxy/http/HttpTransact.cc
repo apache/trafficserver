@@ -930,14 +930,13 @@ HttpTransact::OriginDown(State *s)
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
   Metrics::Counter::increment(http_rsb.down_server_no_requests);
-  char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+  char *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
   std::string_view host_name{host_name_ptr, size_t(host_len)};
   swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
                 host_name, swoc::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
-  s->arena.str_free(url_str);
 
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
