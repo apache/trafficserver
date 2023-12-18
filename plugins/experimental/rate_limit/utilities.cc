@@ -109,7 +109,8 @@ getDescriptionFromUrl(const char *url)
     // only append the port when it is non-standard
     if (!(strncmp(s, TS_URL_SCHEME_HTTP, scheme_len) == 0 && port == 80) &&
         !(strncmp(s, TS_URL_SCHEME_HTTPS, scheme_len) == 0 && port == 443)) {
-      description.append(":" + std::to_string(port));
+      description.push_back(':');
+      description.append(std::to_string(port));
     }
   }
 

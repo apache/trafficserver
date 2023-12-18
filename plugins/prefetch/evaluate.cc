@@ -164,7 +164,7 @@ sub(StringView const lhs, StringView const rhs)
 
   // if result would have been negative.
   if (borrow) {
-    result = "0";
+    result = std::string{"0"};
   }
 
   return result;

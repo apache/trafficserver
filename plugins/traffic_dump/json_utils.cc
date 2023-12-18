@@ -142,19 +142,19 @@ namespace traffic_dump
 std::string
 json_entry(std::string_view name, std::string_view value)
 {
-  return "\"" + escape_json(name) + "\":\"" + escape_json(value) + "\"";
+  return std::string{"\""} + escape_json(name) + "\":\"" + escape_json(value) + "\"";
 }
 
 std::string
 json_entry(std::string_view name, char const *value, int64_t size)
 {
-  return "\"" + escape_json(name) + "\":\"" + escape_json(value, size) + "\"";
+  return std::string{"\""} + escape_json(name) + "\":\"" + escape_json(value, size) + "\"";
 }
 
 std::string
 json_entry_array(std::string_view name, std::string_view value)
 {
-  return "[\"" + escape_json(name) + "\",\"" + escape_json(value) + "\"]";
+  return std::string{"[\""} + escape_json(name) + "\",\"" + escape_json(value) + "\"]";
 }
 
 std::string

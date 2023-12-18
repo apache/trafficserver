@@ -117,12 +117,15 @@ public:
     memset(_metrics, 0, sizeof(_metrics));
 
     std::string metric_prefix = prefix;
-    metric_prefix.append("." + std::string(types[type]));
+    metric_prefix.push_back('.');
+    metric_prefix.append(types[type]);
 
     if (!tag.empty()) {
-      metric_prefix.append("." + tag);
+      metric_prefix.push_back('.');
+      metric_prefix.append(tag);
     } else if (!name().empty()) {
-      metric_prefix.append("." + name());
+      metric_prefix.push_back('.');
+      metric_prefix.append(name());
     }
 
     for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {

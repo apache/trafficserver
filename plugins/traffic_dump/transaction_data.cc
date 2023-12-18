@@ -218,7 +218,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     // 3. "method":(string)
     cp = TSHttpHdrMethodGet(buffer, hdr_loc, &len);
     Dbg(dbg_ctl, "write_message_node(): found method %.*s ", len, cp);
-    result += "," + traffic_dump::json_entry("method", cp, len);
+    result += ',' + traffic_dump::json_entry("method", cp, len);
 
     // 4. "url"
     cp = TSUrlHostGet(buffer, url_loc, &len);

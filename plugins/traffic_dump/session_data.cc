@@ -365,8 +365,8 @@ SessionData::write_transaction_to_disk(std::string_view content)
     // Prepend a comma.
     std::string with_comma;
     with_comma.reserve(content.size() + 1);
-    with_comma.insert(0, ",");
-    with_comma.insert(1, content);
+    with_comma.push_back(',');
+    with_comma.append(content);
     result = write_to_disk_no_lock(with_comma);
   } else {
     result                        = write_to_disk_no_lock(content);
