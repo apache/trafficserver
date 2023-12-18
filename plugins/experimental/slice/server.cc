@@ -111,7 +111,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     // Should run TSVIONSetBytes(output_io, hlen + bodybytes);
     int64_t const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
     int64_t const clen = contentLengthFrom(header);
-    if (TS_HTTP_STATUS_OK == header.status() && data->m_config->onlyHeader()) {
+    if (TS_HTTP_STATUS_OK == header.status() && data->onlyHeader()) {
       DEBUG_LOG("HEAD/PURGE request stripped Range header: expects 200");
       data->m_bytestosend   = hlen;
       data->m_blockexpected = 0;
@@ -220,7 +220,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   int const hbytes = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
 
   // HEAD request only sends header
-  if (data->m_config->onlyHeader()) {
+  if (data->onlyHeader()) {
     data->m_bytestosend   = hbytes;
     data->m_blockexpected = 0;
   } else {
@@ -364,7 +364,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 
   switch (header.status()) {
   case TS_HTTP_STATUS_NOT_FOUND:
-    if (data->m_config->onlyHeader()) {
+    if (data->onlyHeader()) {
       return false;
     }
     // need to reissue reference slice
@@ -374,7 +374,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   case TS_HTTP_STATUS_PARTIAL_CONTENT:
     break;
   default:
-    if (data->m_config->onlyHeader() && header.status() == TS_HTTP_STATUS_OK) {
+    if (data->onlyHeader() && header.status() == TS_HTTP_STATUS_OK) {
       return true;
     }
     DEBUG_LOG("Non 206/404 internal block response encountered");
@@ -640,7 +640,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // corner condition, good source header + 0 length aborted content
     // results in no header being read, just an EOS.
     // trying to delete the upstream will crash ATS (??)
-    if (0 == data->m_blockexpected && !data->m_config->onlyHeader()) {
+    if (0 == data->m_blockexpected && !data->onlyHeader()) {
       shutdown(contp, data); // this will crash if first block
       return;
     }
@@ -673,12 +673,15 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // continue processing blocks if more requests need to be made
     // HEAD requests only has one slice block
     if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum) &&
-        data->m_config->m_method_type != TS_HTTP_METHOD_HEAD) {
+        data->m_method_type != TS_HTTP_METHOD_HEAD) {
       // Don't immediately request the next slice if the client
       // isn't keeping up
 
-      bool start_next_block = true;
-      if (data->m_dnstream.m_write.isOpen()) {
+      bool start_next_block = false;
+      if (data->m_method_type == TS_HTTP_METHOD_PURGE) {
+        // for PURGE requests, clients won't request more data (no body content)
+        start_next_block = true;
+      } else if (data->m_dnstream.m_write.isOpen()) {
         // check throttle condition
         TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
         int64_t const output_done = TSVIONDoneGet(output_vio);
@@ -686,10 +689,10 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         int64_t const threshout   = data->m_config->m_blockbytes;
         int64_t const buffered    = output_sent - output_done;
 
-        // for PURGE requests, clients won't request more data (no body content)
-        if (threshout < buffered && !data->m_config->onlyHeader()) {
-          start_next_block = false;
+        if (threshout < buffered) {
           DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, buffered);
+        } else {
+          start_next_block = true;
         }
       }
       if (start_next_block) {

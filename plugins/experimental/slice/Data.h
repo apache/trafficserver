@@ -71,6 +71,8 @@ struct Data {
 
   TSHttpStatus m_statustype{TS_HTTP_STATUS_NONE}; // 200 or 206
 
+  const char *m_method_type{nullptr}; // type of header request
+
   Range m_req_range; // converted to half open interval
 
   int64_t m_blocknum{-1};     // block number to work on, -1 bad/stop
@@ -106,6 +108,13 @@ struct Data {
     m_hostname[0]     = '\0';
     m_etag[0]         = '\0';
     m_lastmodified[0] = '\0';
+  }
+
+  // Check if response only expects header
+  bool
+  onlyHeader() const
+  {
+    return (m_method_type == TS_HTTP_METHOD_HEAD || m_method_type == TS_HTTP_METHOD_PURGE);
   }
 
   ~Data()

@@ -80,7 +80,7 @@ request_block(TSCont contp, Data *const data)
   HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
   // if configured, remove range header from head requests
-  if (data->m_config->m_method_type == TS_HTTP_METHOD_HEAD && data->m_config->m_head_strip_range) {
+  if (data->m_method_type == TS_HTTP_METHOD_HEAD && data->m_config->m_head_strip_range) {
     header.removeKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
   } else {
     // add/set sub range key and add slicer tag

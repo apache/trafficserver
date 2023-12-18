@@ -50,9 +50,6 @@ read_request(TSHttpTxn txnp, Config *const config)
         return false;
       }
 
-      // set header method config to only expect header response
-      config->m_method_type = header.method();
-
       if (config->hasRegex()) {
         int urllen         = 0;
         char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
@@ -84,7 +81,8 @@ read_request(TSHttpTxn txnp, Config *const config)
       TSAssert(nullptr != config);
       Data *const data = new Data(config);
 
-      data->m_txnp = txnp;
+      data->m_method_type = header.method();
+      data->m_txnp        = txnp;
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
