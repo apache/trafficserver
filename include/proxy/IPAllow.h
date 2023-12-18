@@ -52,8 +52,6 @@ class Node;
  */
 class IpAllow : public ConfigInfo
 {
-  friend struct IpAllowUpdate;
-
   using MethodNames = swoc::MemSpan<swoc::TextView>;
 
   static constexpr uint32_t ALL_METHOD_MASK = ~0; // Mask for all methods.
