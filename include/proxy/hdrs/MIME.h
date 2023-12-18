@@ -36,6 +36,15 @@
 
 #include "swoc/TextView.h"
 
+#ifdef __GNUC__
+#define DEPRECATED(func) func __attribute__ ((deprecated))
+#elif defined(_MSC_VER)
+#define DEPRECATED(func) __declspec(deprecated) func
+#else
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+#define DEPRECATED(func) func
+#endif
+
 /***********************************************************************
  *                                                                     *
  *                              Defines                                *
@@ -143,7 +152,7 @@ struct MIMEField {
 
   /// @return The name of @a this field.
   std::string_view name_get() const;
-  [[deprecated("Use std::string_view name_get()")]] const char *name_get(int *length) const;
+  DEPRECATED(const char *name_get(int *length) const);
 
   /** Find the index of the value in the multi-value field.
 
@@ -161,7 +170,7 @@ struct MIMEField {
 
   /// @return The value of @a this field.
   std::string_view value_get() const;
-  [[deprecated("Use std::string_view value_get()")]] const char *value_get(int *length) const;
+  DEPRECATED(const char *value_get(int *length) const);
 
   int32_t value_get_int() const;
   uint32_t value_get_uint() const;
