@@ -6,15 +6,13 @@
 
 #pragma once
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-
 #include <stdexcept>
 
 #include "swoc/swoc_version.h"
 #include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
 #include "swoc/string_view_util.h"
+#include "swoc/swoc_ip_util.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
@@ -198,6 +196,24 @@ union IPEndpoint {
   /// @return @c true if this is a loopback address, @c false if not.
   bool is_loopback() const;
 
+  /// @return @c true if the address is in the link local network.
+  bool is_link_local() const;
+
+  /// @return @c true if the address is in the link local network.
+  static bool is_link_local(sockaddr const * sa);
+
+  /// @return @c true if the address is private.
+  bool is_private() const;
+
+  /// @return @c true if the address is private.
+  static bool is_private(sockaddr const * sa);
+
+  /// @return @c true if the address is multicast.
+  bool is_multicast() const;
+
+  /// @return @c true if the address is multicast.
+  static bool is_multicast(sockaddr const * sa);
+
   /** Port in network order.
    *
    * @return The port or 0 if not a valid IP address.
@@ -217,8 +233,9 @@ union IPEndpoint {
   static bool is_valid(sockaddr const *sa);
 
   /// Direct access to port.
-  /// @return Refernec to the port in the socket address.
+  /// @return Reference to the port in the socket address.
   /// @note If @a sa is not a valid IP address an assertion is thrown.
+  /// @note The raw port is in network order.
   /// @a is_valid
   static in_port_t &port(sockaddr *sa);
 
@@ -237,10 +254,16 @@ union IPEndpoint {
   static in_port_t host_order_port(sockaddr const *sa);
 
   /// Automatic conversion to @c sockaddr.
-  operator sockaddr *() { return &sa; }
+  operator sockaddr *();
 
   /// Automatic conversion to @c sockaddr.
-  operator sockaddr const *() const { return &sa; }
+  operator sockaddr const *() const;
+
+  /// Size of the sockaddr variant based on the family.
+  size_t sa_size() const;
+
+  /// Size of the sockaddr based on the family.
+  static size_t sa_size(sockaddr const* sa);
 
   /** The address as a byte sequence.
    *
@@ -399,6 +422,42 @@ IPEndpoint::raw_addr() const {
     return {&sa6.sin6_addr, sizeof(sa6.sin6_addr)};
   }
   return {};
+}
+
+inline bool IPEndpoint::is_link_local() const {
+  return swoc::ip::is_link_local(&sa);
+}
+
+inline bool IPEndpoint::is_link_local(sockaddr const * sa) {
+  return swoc::ip::is_link_local(sa);
+}
+
+inline bool IPEndpoint::is_private() const {
+  return swoc::ip::is_private(&sa);
+}
+
+inline bool IPEndpoint::is_private(sockaddr const * sa) {
+  return swoc::ip::is_private(sa);
+}
+
+inline bool IPEndpoint::is_multicast() const {
+  return swoc::ip::is_multicast(&sa);
+}
+
+inline bool IPEndpoint::is_multicast(sockaddr const * sa) {
+  return swoc::ip::is_multicast(sa);
+}
+
+inline IPEndpoint::operator sockaddr *() { return &sa; }
+
+inline IPEndpoint::operator sockaddr const *() const { return &sa; }
+
+inline size_t IPEndpoint::sa_size() const {
+  return sa_size(&sa);
+}
+
+inline size_t IPEndpoint::sa_size(sockaddr const* sa) {
+  return AF_INET == sa->sa_family ? sizeof(sockaddr_in) : AF_INET6 == sa->sa_family ? sizeof(sockaddr_in6) : sizeof(sockaddr);
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
