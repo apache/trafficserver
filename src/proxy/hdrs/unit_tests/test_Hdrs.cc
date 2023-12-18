@@ -521,10 +521,11 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
   return (1);
 }
 
+#if 0
 int
-test_arena_aux(Arena *arena, int len)
+test_arena_aux(swoc::MemArena *arena, int len)
 {
-  char *str      = arena->str_alloc(len);
+  char *str      = arena->alloc(len).rebind<char>().data();
   int verify_len = static_cast<int>(arena->str_length(str));
 
   if (len != verify_len) {
@@ -534,6 +535,7 @@ test_arena_aux(Arena *arena, int len)
     return (0); // no errors (different return convention)
   }
 }
+#endif
 
 } // end anonymous namespace
 
@@ -1669,30 +1671,6 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     std::printf("]\n\n");
 
     resp_hdr.destroy();
-  }
-
-  SECTION("Test arena")
-  {
-    Arena *arena;
-
-    arena = new Arena;
-
-    CHECK(test_arena_aux(arena, 1) != 1);
-    CHECK(test_arena_aux(arena, 127) != 1);
-    CHECK(test_arena_aux(arena, 128) != 1);
-    CHECK(test_arena_aux(arena, 129) != 1);
-    CHECK(test_arena_aux(arena, 255) != 1);
-    CHECK(test_arena_aux(arena, 256) != 1);
-    CHECK(test_arena_aux(arena, 16384) != 1);
-    CHECK(test_arena_aux(arena, 16385) != 1);
-    CHECK(test_arena_aux(arena, 16511) != 1);
-    CHECK(test_arena_aux(arena, 16512) != 1);
-    CHECK(test_arena_aux(arena, 2097152) != 1);
-    CHECK(test_arena_aux(arena, 2097153) != 1);
-    CHECK(test_arena_aux(arena, 2097279) != 1);
-    CHECK(test_arena_aux(arena, 2097280) != 1);
-
-    delete arena;
   }
 
   SECTION("Test regex")

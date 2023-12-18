@@ -115,7 +115,7 @@ TEST_CASE("XPACK_String", "[xpack]")
     hpack_huffman_init();
 
     for (const auto &i : string_test_case) {
-      Arena arena;
+      swoc::MemArena arena;
       char *actual        = nullptr;
       uint64_t actual_len = 0;
       int len             = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);

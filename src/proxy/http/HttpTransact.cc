@@ -665,7 +665,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
 
   switch (s->parent_result.result) {
   case PARENT_SPECIFIED:
-    s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
+    s->parent_info.name = s->arena.localize_c(std::string_view(s->parent_result.hostname)).data();
     update_current_info(&s->current, &s->parent_info, ResolveInfo::PARENT_PROXY, false);
     update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == ResolveInfo::PARENT_PROXY);
@@ -933,9 +933,8 @@ HttpTransact::OriginDown(State *s)
   char *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
-  std::string_view host_name{host_name_ptr, size_t(host_len)};
   swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
-                host_name, swoc::bwf::FirstOf(url_str, "<none>"));
+                std::string_view(host_name_ptr, host_len), swoc::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
 
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
@@ -1479,9 +1478,7 @@ HttpTransact::handleIfRedirect(State *s)
 
   answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, s->state_machine->m_remap);
   if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
-    int remap_redirect_len;
-
-    s->remap_redirect = redirect_url.string_get(&s->arena, &remap_redirect_len);
+    s->remap_redirect = redirect_url.string_get_ref(nullptr);
     redirect_url.destroy();
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version == HTTP_1_1) {
@@ -1492,7 +1489,6 @@ HttpTransact::handleIfRedirect(State *s)
     } else {
       build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently");
     }
-    s->arena.str_free(s->remap_redirect);
     s->remap_redirect = nullptr;
     return true;
   }
@@ -3801,8 +3797,6 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
                   swoc::bwf::Errno(s->current.server->connect_result), swoc::bwf::Errno(s->cause_of_death_errno),
                   s->current.retry_attempts.get(), swoc::bwf::FirstOf(url_str, "<none>"));
     Log::error("%s", error_bw_buffer.c_str());
-
-    s->arena.str_free(url_str);
   }
 }
 
@@ -5389,7 +5383,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
   if (incoming_hdr->presence(MIME_PRESENCE_TE)) {
     MIMEField *te_field = incoming_hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
-    HTTPValTE *te_val;
+    HTTPValTE te_val;
+    swoc::TextView HTTP_VALUE_IDENTITY_TV{HTTP_VALUE_IDENTITY}; // don't do the conversion every loop.
 
     if (te_field) {
       HdrCsvIter csv_iter;
@@ -5397,14 +5392,12 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       const char *te_raw = csv_iter.get_first(te_field, &te_raw_len);
 
       while (te_raw) {
-        te_val = http_parse_te(te_raw, te_raw_len, &s->arena);
-        if (te_val->encoding == HTTP_VALUE_IDENTITY) {
-          if (te_val->qvalue <= 0.0) {
-            s->arena.free(te_val, sizeof(HTTPValTE));
-            return UNACCEPTABLE_TE_REQUIRED;
-          }
+        http_parse_te(s->arena, te_val, {te_raw, te_raw_len});
+        bool unacceptable_p = (te_val.encoding == HTTP_VALUE_IDENTITY_TV && te_val.qvalue <= 0.0);
+        s->arena.discard(te_val.encoding); // stored string includes a nul
+        if (unacceptable_p) {
+          return UNACCEPTABLE_TE_REQUIRED;
         }
-        s->arena.free(te_val, sizeof(HTTPValTE));
         te_raw = csv_iter.get_next(&te_raw_len);
       }
     }
@@ -5646,7 +5639,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
-    s->server_info.name = s->arena.str_store(host_name, host_len);
+    s->server_info.name = s->arena.localize_c(std::string_view(host_name, host_len)).data();
     s->server_info.name_addr.load(s->server_info.name);
   }
 
@@ -5697,7 +5690,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
   s->request_data.hdr = &s->hdr_info.client_request;
 
-  s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
+  s->request_data.hostname_str = s->arena.localize_c({host_name, size_t(host_len)}).data();
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {
@@ -8195,8 +8188,6 @@ HttpTransact::build_redirect_response(State *s)
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
-
-  s->arena.str_free(to_free);
 }
 
 const char *

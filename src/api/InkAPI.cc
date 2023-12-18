@@ -4730,7 +4730,7 @@ tsapi::c::TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   HdrHeapSDKHandle **handle = &(sm->t_state.cache_req_hdr_heap_handle);
 
   if (*handle == nullptr) {
-    *handle           = (HdrHeapSDKHandle *)sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
+    *handle           = sm->t_state.arena.make<HdrHeapSDKHandle>();
     (*handle)->m_heap = cached_hdr->m_heap;
   }
 
@@ -4768,7 +4768,7 @@ tsapi::c::TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   HdrHeapSDKHandle **handle = &(sm->t_state.cache_resp_hdr_heap_handle);
 
   if (*handle == nullptr) {
-    *handle = (HdrHeapSDKHandle *)sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
+    *handle = sm->t_state.arena.make<HdrHeapSDKHandle>();
   }
   // Always reset the m_heap to make sure the heap is not stale
   (*handle)->m_heap = cached_hdr->m_heap;
@@ -5537,7 +5537,7 @@ tsapi::c::TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port
 
   HttpSM *sm = (HttpSM *)txnp;
 
-  sm->t_state.api_info.parent_proxy_name = sm->t_state.arena.str_store(hostname, strlen(hostname));
+  sm->t_state.api_info.parent_proxy_name = sm->t_state.arena.localize_c({hostname, swoc::TextView::npos}).data();
   sm->t_state.api_info.parent_proxy_port = port;
 }
 

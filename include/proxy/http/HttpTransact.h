@@ -25,6 +25,8 @@
 
 #include <cstddef>
 
+#include <swoc/MemArena.h>
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "iocore/hostdb/HostDB.h"
@@ -676,7 +678,7 @@ public:
     HTTPStatus http_return_code             = HTTP_STATUS_NONE;
     CacheAuth_t www_auth_content            = CACHE_AUTH_NONE;
 
-    Arena arena;
+    swoc::MemArena arena;
 
     bool force_dns                    = false;
     bool is_upgrade_request           = false;
@@ -884,7 +886,7 @@ public:
       redirect_info.original_url.destroy();
 
       url_map.clear();
-      arena.reset();
+      arena.discard(); // drop allocations but keep blocks.
       unmapped_url.clear();
       dns_info.~ResolveInfo();
       outbound_conn_track_state.clear();

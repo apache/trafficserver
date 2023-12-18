@@ -38,8 +38,8 @@
 namespace
 {
 char *
-escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map,
-                    bool pure_escape)
+escapify_url_common(swoc::MemArena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                    const unsigned char *map, bool pure_escape)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
   // These are all the codes defined in section 2.4.3 of RFC 2396
@@ -128,7 +128,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   if (dst) {
     new_url = dst;
   } else {
-    new_url = arena->str_alloc(out_len + 1);
+    new_url = arena->alloc_span<char>(out_len + 1).data();
   }
 
   char *from = url;
@@ -171,13 +171,14 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 namespace Encoding
 {
 char *
-escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+escapify_url(swoc::MemArena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
 {
   return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, false);
 }
 
 char *
-pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+pure_escapify_url(swoc::MemArena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                  const unsigned char *map)
 {
   return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, true);
 }
