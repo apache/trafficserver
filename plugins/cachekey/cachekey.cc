@@ -223,7 +223,7 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
   } else {
     if (provideDefaultKey) {
       /* return the key default - results in '/host/port' */
-      canonicalUrl.assign("/").append(host).append("/").append(port);
+      canonicalUrl.assign(1, '/').append(host).append("/").append(port);
     } else {
       /* return regex input string - results in 'host:port' (use-case kept for compatibility reasons) */
       canonicalUrl.assign(host).append(":").append(port);
