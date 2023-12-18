@@ -41,6 +41,11 @@ IP4Addr const IP4Addr::MAX{INADDR_BROADCAST};
 IP6Addr const IP6Addr::MIN{0, 0};
 IP6Addr const IP6Addr::MAX{std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max()};
 
+IPEndpoint::IPEndpoint(string_view const &text) {
+  this->invalidate();
+  this->parse(text);
+}
+
 bool
 IPEndpoint::assign(sockaddr *dst, sockaddr const *src) {
   size_t n = 0;
@@ -642,9 +647,16 @@ IPAddr::is_multicast() const {
   return (AF_INET == _family && _addr._ip4.is_multicast()) || (AF_INET6 == _family && _addr._ip6.is_multicast());
 }
 
-IPEndpoint::IPEndpoint(string_view const &text) {
-  this->invalidate();
-  this->parse(text);
+bool operator == (IPAddr const& lhs, sockaddr const * sa) {
+  using sa4 = sockaddr_in const *;
+  using sa6 = sockaddr_in6 const *;
+
+  if (lhs.family() != sa->sa_family) {
+    return false;
+  }
+  return lhs.family() == AF_UNSPEC ||
+  ( lhs.is_ip4() && (lhs.ip4().network_order() == sa4(sa)->sin_addr.s_addr) ) ||
+  ( lhs.is_ip6() && (lhs.ip6().network_order() == sa6(sa)->sin6_addr) );
 }
 
 bool

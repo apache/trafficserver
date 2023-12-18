@@ -70,7 +70,7 @@ LogAccess::init()
 
     // make a copy of the incoming url into the arena
     const char *url_string_ref = m_client_request->url_string_get_ref(&m_client_req_url_len);
-    m_client_req_url_str       = m_arena.str_alloc(m_client_req_url_len + 1);
+    m_client_req_url_str       = m_arena.alloc_span<char>(m_client_req_url_len + 1).data();
     memcpy(m_client_req_url_str, url_string_ref, m_client_req_url_len);
     m_client_req_url_str[m_client_req_url_len] = '\0';
 

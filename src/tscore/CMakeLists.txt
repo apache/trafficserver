@@ -31,7 +31,6 @@ add_library(
   tscore
   AcidPtr.cc
   AcidPtr.cc
-  Arena.cc
   ArgParser.cc
   BaseLogFile.cc
   ConsistentHash.cc
@@ -152,7 +151,6 @@ if(BUILD_TESTING)
     unit_tests/test_Random.cc
     unit_tests/test_Throttler.cc
     unit_tests/test_Tokenizer.cc
-    unit_tests/test_arena.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc

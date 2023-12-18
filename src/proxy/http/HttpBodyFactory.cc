@@ -92,9 +92,6 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
         url[i] = s[i];
       }
       url[i] = '\0';
-      if (s) {
-        context->arena.str_free(s);
-      }
     }
   }
 

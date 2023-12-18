@@ -24,7 +24,7 @@
 #pragma once
 
 #include <cassert>
-#include "tscore/Arena.h"
+#include <swoc/MemArena.h>
 #include "tscore/CryptoHash.h"
 #include "tscore/HTTPVersion.h"
 #include "proxy/hdrs/MIME.h"
@@ -324,7 +324,7 @@ struct HTTPValRange {
 };
 
 struct HTTPValTE {
-  char *encoding;
+  std::string_view encoding;
   double qvalue;
 };
 
@@ -469,7 +469,7 @@ HTTPValCacheControl*   http_parse_cache_control (const char *buf, Arena *arena);
 const char*            http_parse_cache_directive (const char **buf);
 HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
-HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
+void http_parse_te(swoc::MemArena &arena, HTTPValTE &val, swoc::TextView s);
 
 bool is_http1_hdr_version_supported(const HTTPVersion &http_version);
 
@@ -531,8 +531,8 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
-                       int *length  = nullptr  ///< Store string length here.
+  char *url_string_get(swoc::MemArena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int *length           = nullptr  ///< Store string length here.
   );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
@@ -669,7 +669,7 @@ protected:
   */
   void _test_and_fill_target_cache() const;
 
-  static Arena *const USE_HDR_HEAP_MAGIC;
+  static swoc::MemArena *const USE_HDR_HEAP_MAGIC;
 
   // No gratuitous copies!
   HTTPHdr(const HTTPHdr &m)            = delete;
