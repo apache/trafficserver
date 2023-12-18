@@ -17,8 +17,7 @@
 
 if("$ENV{USER}" STREQUAL root)
   foreach(DIR ${CHOWN_DIRS})
-    message(STATUS "Changing ${DIR} ownership to ${OWNER_USER}:${OWNER_GROUP}")
+    message(STATUS "Changing $ENV{DESTDIR}${DIR} ownership to ${OWNER_USER}:${OWNER_GROUP}")
     execute_process(COMMAND chown ${OWNER_USER}:${OWNER_GROUP} "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${DIR}")
   endforeach()
-
 endif()
