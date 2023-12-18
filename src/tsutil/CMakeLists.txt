@@ -16,6 +16,7 @@
 #######################
 
 set(TSUTIL_PUBLIC_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/tsutil/Assert.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/Metrics.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/SourceLocation.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/DbgCtl.h
