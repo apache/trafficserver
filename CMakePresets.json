@@ -147,7 +147,7 @@
         "OPENSSL_ROOT_DIR": "/opt/boringssl",
         "quiche_ROOT": "/opt/quiche",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
-	"ENABLE_QUICHE": true
+        "ENABLE_QUICHE": true
       }
     },
     {
@@ -222,6 +222,153 @@
         "ENABLE_CCACHE": "OFF",
         "ENABLE_EXAMPLE": "OFF",
         "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "branch",
+      "displayName": "CI branch defaults",
+      "inherits": ["ci"],
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "branch-release",
+      "displayName": "CI branch release",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "branch-debug",
+      "displayName": "CI branch debug",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "branch-asan",
+      "description": "Inherit to enable asan, build feature",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=address",
+        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=address"
+      }
+    },
+    {
+      "name": "branch-lsan",
+      "description": "Inherit to enable lsan, build feature",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=leak",
+        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=leak"
+      }
+    },
+    {
+      "name": "branch-tsan",
+      "description": "Inherit to enable tsan, build feature",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=thread",
+        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=thread"
+      }
+    },
+    {
+      "name": "branch-hardened",
+      "description": "Inherit to enable hardening, build feature",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-D_FORTIFY_SOURCE=2 -fPIE -fstack-protector",
+        "CMAKE_EXE_LINKER_FLAGS": "-pie -Wl,-z,relro -Wl,-z,now"
+      }
+    },
+    {
+      "name": "branch-quiche",
+      "displayName": "CI branch Quiche",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "OPENSSL_ROOT_DIR": "/opt/boringssl",
+        "quiche_ROOT": "/opt/quiche",
+        "ENABLE_QUICHE": true
+      }
+    },
+    {
+      "name": "branch-quic",
+      "displayName": "CI branch QUIC",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic"
+      }
+    },
+    {
+      "name": "branch-autest",
+      "displayName": "CI branch autest",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "ENABLE_EXAMPLE": "ON"
+      }
+    },
+    {
+      "name": "branch-freebsd",
+      "displayName": "CI branch freebsd",
+      "description": "Defaults for branch freebsd builds",
+      "inherits": ["branch"],
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "branch-osx",
+      "displayName": "CI branch OSX",
+      "description": "Defaults for branch osx builds",
+      "inherits": ["branch"],
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/usr/local/opt/openssl"
+      }
+    },
+    {
+      "name": "branch-osx-m1",
+      "displayName": "CI branch OSX m1",
+      "description": "Defaults for branch osx-m1 builds",
+      "inherits": ["branch"],
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "OPENSSL_ROOT_DIR": "/opt/homebrew/opt/openssl"
+      }
+    },
+    {
+      "name": "branch-clang-analyzer",
+      "displayName": "CI branch clang analyzer",
+      "description": "Defaults for branch clang analyzer builds",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ENABLE_CCACHE": "OFF",
+        "ENABLE_EXAMPLE": "OFF",
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "branch-coverity",
+      "displayName": "CI branch coverity",
+      "description": "Defaults for branch coverity builds",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_EXAMPLE": "ON"
+      }
+    },
+    {
+      "name": "branch-coverage",
+      "displayName": "CI branch coverage",
+      "description": "Defaults for branch coverage builds",
+      "inherits": ["branch-autest"],
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_DEBUG": "--coverage",
+        "CMAKE_C_FLAGS_DEBUG": "--coverage"
       }
     }
   ],
