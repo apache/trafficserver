@@ -444,32 +444,29 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
         retval   = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         acquired = (HSM_DONE == retval);
         Debug("http_ss", "[acquire session] global pool search %s", to_return ? "successful" : "failed");
-      }
 
-      // At this point to_return has been removed from the pool.
-      if (nullptr != to_return) {
-        server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
-        if (nullptr != server_vc) {
-          // Keep things from timing out on us
-          server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
-
-          // If thread must be migrated, clear out the VC's
-          // data and event handling on the original thread.
-          if (ethread != server_vc->get_thread()) {
-            SCOPED_MUTEX_LOCK(vclock, server_vc->mutex, ethread);
-            server_vc->do_io_read(m_g_pool, 0, nullptr);
-            server_vc->do_io_write(m_g_pool, 0, nullptr);
-            server_vc->ep.stop();
+        // If thread must be migrated, clear out the VC's
+        // data and event handling on the original thread.
+        if (nullptr != to_return) {
+          server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
+          if (nullptr != server_vc) {
+            if (ethread != server_vc->get_thread()) {
+              SCOPED_MUTEX_LOCK(vclock, server_vc->mutex, ethread);
+              server_vc->do_io_read(m_g_pool, 0, nullptr);
+              server_vc->do_io_write(m_g_pool, 0, nullptr);
+              server_vc->ep.stop();
+              server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
+            }
           }
         }
       }
-    } else { // Didn't get the lock.  to_return is still NULL
+    } else { // Didn't get the lock.  to_return is still nullptr
       retval = HSM_RETRY;
     }
   }
 
-  // now the vc is out of the pool
-  if (nullptr != to_return && nullptr != server_vc) {
+  // now the vc is out of the pool with chance of thread migration
+  if (TS_SERVER_SESSION_SHARING_POOL_THREAD != pool_type && nullptr != to_return && nullptr != server_vc) {
     UnixNetVConnection *const new_vc = server_vc->migrateToCurrentThread(sm, ethread);
     // The VC moved, free up the original one
     if (new_vc != server_vc) {
@@ -481,7 +478,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
         to_return = nullptr;
         retval    = HSM_NOT_FOUND;
       } else {
-        // Keep things from timing out on us
+        // Keep the new session from timing out on us
         new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
         to_return->set_netvc(new_vc);
       }
