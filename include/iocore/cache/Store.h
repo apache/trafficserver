@@ -79,29 +79,14 @@ struct Span {
   unsigned hw_sector_size = DEFAULT_HW_SECTOR_SIZE;
   unsigned alignment      = 0;
   span_diskid_t disk_id;
-  int forced_volume_num = -1; ///< Force span in to specific volume.
-private:
-  bool is_mmapable_internal = false;
-
-public:
-  bool file_pathname = false; // the pathname is a file
+  int forced_volume_num = -1;    ///< Force span in to specific volume.
+  bool file_pathname    = false; // the pathname is a file
   // v- used as a magic location for copy constructor.
   // we memcpy everything before this member and do explicit assignment for the rest.
   ats_scoped_str pathname;
   ats_scoped_str hash_base_string; ///< Used to seed the stripe assignment hash.
+
   SLINK(Span, link);
-
-  bool
-  is_mmapable() const
-  {
-    return is_mmapable_internal;
-  }
-
-  void
-  set_mmapable(bool s)
-  {
-    is_mmapable_internal = s;
-  }
 
   int64_t
   size() const
@@ -109,39 +94,6 @@ public:
     return blocks * STORE_BLOCK_SIZE;
   }
 
-  int64_t
-  total_blocks() const
-  {
-    if (link.next) {
-      return blocks + link.next->total_blocks();
-    } else {
-      return blocks;
-    }
-  }
-
-  Span *
-  nth(unsigned i)
-  {
-    Span *x = this;
-    while (x && i--) {
-      x = x->link.next;
-    }
-    return x;
-  }
-
-  unsigned
-  paths() const
-  {
-    int i = 0;
-    for (const Span *x = this; x; i++, x = x->link.next) {
-      ;
-    }
-
-    return i;
-  }
-
-  /// Duplicate this span and all chained spans.
-  Span *dup();
   int64_t
   end() const
   {
@@ -189,25 +141,23 @@ struct Store {
   void
   extend(unsigned i)
   {
-    if (i > n_disks) {
-      disk = (Span **)ats_realloc(disk, i * sizeof(Span *));
-      for (unsigned j = n_disks; j < i; j++) {
-        disk[j] = nullptr;
+    if (i > n_spans) {
+      spans = static_cast<Span **>(ats_realloc(spans, i * sizeof(Span *)));
+      for (unsigned j = n_spans; j < i; j++) {
+        spans[j] = nullptr;
       }
-      n_disks = i;
+      n_spans = i;
     }
   }
 
   void delete_all();
 
-  Store();
+  Store(){};
   ~Store();
 
-  // The number of disks/paths defined in storage.config
-  unsigned n_disks_in_config = 0;
-  // The number of disks/paths we could actually read and parse.
-  unsigned n_disks = 0;
-  Span **disk      = nullptr;
+  unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.config
+  unsigned n_spans           = 0; ///< The number of disks/paths we could actually read and parse
+  Span **spans               = nullptr;
 
   Result read_config();
 
