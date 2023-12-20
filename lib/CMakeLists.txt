@@ -23,7 +23,7 @@ if(NOT TARGET yaml-cpp::yaml-cpp)
   # Turning CLANG_FORMAT off causes yamlcpp to not add its format target which
   # otherwise conflicts with our format target.
   set(YAML_CPP_CLANG_FORMAT_EXE OFF)
-  set(YAML_CPP_INSTALL OFF)
+  set(YAML_CPP_INSTALL ON)
   add_subdirectory(yamlcpp)
   install(TARGETS yaml-cpp)
 endif()
