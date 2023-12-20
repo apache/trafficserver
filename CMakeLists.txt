@@ -281,10 +281,20 @@ find_package(PCRE REQUIRED)
 
 include(CheckOpenSSLIsBoringSSL)
 find_package(OpenSSL REQUIRED)
-check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
+check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 
-if(NOT OPENSSL_IS_BORINGSSL AND OPENSSL_VERSION VERSION_LESS "1.1.1")
-  message(FATAL_ERROR "OpenSSL version greater than 1.0.1 or BoringSSL required")
+if(OPENSSL_IS_BORINGSSL)
+  # The consensus is a commit newer than a1843d660b47116207877614af53defa767be46a
+  # The commit that changes API_VERSION to 27 is actually a little bit older than the commit but still a reasonable commit
+  set(min_bssl "27")
+  if(BORINGSSL_VERSION VERSION_LESS "${min_bssl}")
+    message(FATAL_ERROR "BoringSSL API version >= ${min_bssl} or OpenSSL required")
+  endif()
+else()
+  set(min_ossl "1.1.1")
+  if(OPENSSL_VERSION VERSION_LESS "${min_ossl}")
+    message(FATAL_ERROR "OpenSSL version >= ${min_ossl} or BoringSSL required")
+  endif()
 endif()
 
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
