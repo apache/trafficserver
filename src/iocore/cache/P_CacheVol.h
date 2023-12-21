@@ -350,8 +350,8 @@ struct Doc {
 
 // Global Data
 
-extern Stripe **gvol;
-extern std::atomic<int> gnvol;
+extern Stripe **gstripes;
+extern std::atomic<int> gnstripes;
 extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey> evacuationKeyAllocator;

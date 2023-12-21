@@ -693,9 +693,9 @@ Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
     return EVENT_CONT;
   } else {
-    int vol_no = gnvol++;
-    ink_assert(!gvol[vol_no]);
-    gvol[vol_no] = this;
+    int i = gnstripes++;
+    ink_assert(!gstripes[i]);
+    gstripes[i] = this;
     SET_HANDLER(&Stripe::aggWrite);
     cache->vol_initialized(fd != -1);
     return EVENT_DONE;
