@@ -973,12 +973,12 @@ sync_cache_dir_on_shutdown()
   bool buf_huge = false;
 
   EThread *t = (EThread *)0xdeadbeef;
-  for (int i = 0; i < gnvol; i++) {
+  for (int i = 0; i < gnstripes; i++) {
     // the process is going down, do a blocking call
     // dont release the volume's lock, there could
     // be another aggWrite in progress
-    MUTEX_TAKE_LOCK(gvol[i]->mutex, t);
-    Stripe *stripe = gvol[i];
+    MUTEX_TAKE_LOCK(gstripes[i]->mutex, t);
+    Stripe *stripe = gstripes[i];
 
     if (DISK_BAD(stripe->disk)) {
       Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", stripe->hash_text.get());
@@ -1056,8 +1056,8 @@ CacheSync::mainEvent(int event, Event *e)
   }
 
 Lrestart:
-  if (vol_idx >= gnvol) {
-    vol_idx = 0;
+  if (stripe_index >= gnstripes) {
+    stripe_index = 0;
     if (buf) {
       if (buf_huge) {
         ats_free_hugepage(buf, buflen);
@@ -1077,12 +1077,12 @@ Lrestart:
     return EVENT_CONT;
   }
 
-  Stripe *stripe = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
+  Stripe *stripe = gstripes[stripe_index]; // must be named "vol" to make STAT macros work.
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
     if (!io.ok()) {
-      Warning("vol write error during directory sync '%s'", gvol[vol_idx]->hash_text.get());
+      Warning("vol write error during directory sync '%s'", gstripes[stripe_index]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
     }
@@ -1092,7 +1092,7 @@ Lrestart:
     return EVENT_CONT;
   }
   {
-    CACHE_TRY_LOCK(lock, gvol[vol_idx]->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, gstripes[stripe_index]->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
@@ -1193,7 +1193,7 @@ Lrestart:
 Ldone:
   // done
   writepos = 0;
-  ++vol_idx;
+  ++stripe_index;
   goto Lrestart;
 }
 

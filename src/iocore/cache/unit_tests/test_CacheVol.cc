@@ -58,7 +58,7 @@ static int configs = 4;
 Queue<CacheVol> saved_cp_list;
 int saved_cp_list_len;
 ConfigVolumes saved_config_volumes;
-int saved_gnvol;
+int saved_gnstripes;
 
 int ClearConfigVol(ConfigVolumes *configp);
 int ClearCacheVolList(Queue<CacheVol> *cpl, int len);
@@ -342,10 +342,10 @@ save_state()
   saved_cp_list     = cp_list;
   saved_cp_list_len = cp_list_len;
   memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
-  saved_gnvol = gnvol;
+  saved_gnstripes = gnstripes;
   memset(static_cast<void *>(&cp_list), 0, sizeof(Queue<CacheVol>));
   memset(static_cast<void *>(&config_volumes), 0, sizeof(ConfigVolumes));
-  gnvol = 0;
+  gnstripes = 0;
 }
 
 void
@@ -354,7 +354,7 @@ restore_state()
   cp_list     = saved_cp_list;
   cp_list_len = saved_cp_list_len;
   memcpy(&config_volumes, &saved_config_volumes, sizeof(ConfigVolumes));
-  gnvol = saved_gnvol;
+  gnstripes = saved_gnstripes;
 }
 } // end anonymous namespace
 

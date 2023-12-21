@@ -248,11 +248,11 @@ struct OpenDir : public Continuation {
 };
 
 struct CacheSync : public Continuation {
-  int vol_idx    = 0;
-  char *buf      = nullptr;
-  size_t buflen  = 0;
-  bool buf_huge  = false;
-  off_t writepos = 0;
+  int stripe_index = 0;
+  char *buf        = nullptr;
+  size_t buflen    = 0;
+  bool buf_huge    = false;
+  off_t writepos   = 0;
   AIOCallbackInternal io;
   Event *trigger        = nullptr;
   ink_hrtime start_time = 0;

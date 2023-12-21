@@ -87,8 +87,8 @@ bool CacheProcessor::check               = false;
 int CacheProcessor::start_internal_flags = 0;
 int CacheProcessor::auto_clear_flag      = 0;
 CacheProcessor cacheProcessor;
-Stripe **gvol          = nullptr;
-std::atomic<int> gnvol = 0;
+Stripe **gstripes          = nullptr;
+std::atomic<int> gnstripes = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
@@ -193,13 +193,13 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string prefix)
 
 // ToDo: This gets called as part of librecords collection continuation, probably change this later.
 inline int64_t
-cache_bytes_used(int vol_ix)
+cache_bytes_used(int index)
 {
-  if (!DISK_BAD(gvol[vol_ix]->disk)) {
-    if (!gvol[vol_ix]->header->cycle) {
-      return gvol[vol_ix]->header->write_pos - gvol[vol_ix]->start;
+  if (!DISK_BAD(gstripes[index]->disk)) {
+    if (!gstripes[index]->header->cycle) {
+      return gstripes[index]->header->write_pos - gstripes[index]->start;
     } else {
-      return gvol[vol_ix]->len - gvol[vol_ix]->dirlen() - EVACUATION_SIZE;
+      return gstripes[index]->len - gstripes[index]->dirlen() - EVACUATION_SIZE;
     }
   }
 
@@ -214,14 +214,14 @@ CachePeriodicMetricsUpdate()
   // Make sure the bytes_used per volume is always reset to zero, this can update the
   // volume metric more than once (once per disk). This happens once every sync
   // period (5s), and nothing else modifies these metrics.
-  for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
-    Metrics::Gauge::store(gvol[vol_ix]->cache_vol->vol_rsb.bytes_used, 0);
+  for (int i = 0; i < gnstripes; ++i) {
+    Metrics::Gauge::store(gstripes[i]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
-    for (int vol_ix = 0; vol_ix < gnvol; ++vol_ix) {
-      Stripe *v    = gvol[vol_ix];
-      int64_t used = cache_bytes_used(vol_ix);
+    for (int i = 0; i < gnstripes; ++i) {
+      Stripe *v    = gstripes[i];
+      int64_t used = cache_bytes_used(i);
 
       Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
       total_sum += used;
@@ -526,7 +526,7 @@ CacheProcessor::diskInitialized()
 
   if (res == -1) {
     /* problems initializing the volume.config. Punt */
-    gnvol = 0;
+    gnstripes = 0;
     cacheInitialized();
     return;
   } else {
@@ -539,9 +539,9 @@ CacheProcessor::diskInitialized()
     }
   }
 
-  gvol = static_cast<Stripe **>(ats_malloc(gnvol * sizeof(Stripe *)));
-  memset(gvol, 0, gnvol * sizeof(Stripe *));
-  gnvol = 0;
+  gstripes = static_cast<Stripe **>(ats_malloc(gnstripes * sizeof(Stripe *)));
+  memset(gstripes, 0, gnstripes * sizeof(Stripe *));
+  gnstripes = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
     if (dbg_ctl_cache_hosting.on()) {
@@ -612,12 +612,12 @@ CacheProcessor::cacheInitialized()
   }
 
   // Update stripe version data.
-  if (gnvol) { // start with whatever the first stripe is.
-    cacheProcessor.min_stripe_version = cacheProcessor.max_stripe_version = gvol[0]->header->version;
+  if (gnstripes) { // start with whatever the first stripe is.
+    cacheProcessor.min_stripe_version = cacheProcessor.max_stripe_version = gstripes[0]->header->version;
   }
   // scan the rest of the stripes.
-  for (i = 1; i < gnvol; i++) {
-    Stripe *v = gvol[i];
+  for (i = 1; i < gnstripes; i++) {
+    Stripe *v = gstripes[i];
     if (v->header->version < cacheProcessor.min_stripe_version) {
       cacheProcessor.min_stripe_version = v->header->version;
     }
@@ -628,48 +628,48 @@ CacheProcessor::cacheInitialized()
 
   if (caches_ready) {
     Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
-        gnvol.load());
+        gnstripes.load());
 
     int64_t ram_cache_bytes = 0;
 
-    if (gnvol) {
+    if (gnstripes) {
       // new ram_caches, with algorithm from the config
-      for (i = 0; i < gnvol; i++) {
+      for (i = 0; i < gnstripes; i++) {
         switch (cache_config_ram_cache_algorithm) {
         default:
         case RAM_CACHE_ALGORITHM_CLFUS:
-          gvol[i]->ram_cache = new_RamCacheCLFUS();
+          gstripes[i]->ram_cache = new_RamCacheCLFUS();
           break;
         case RAM_CACHE_ALGORITHM_LRU:
-          gvol[i]->ram_cache = new_RamCacheLRU();
+          gstripes[i]->ram_cache = new_RamCacheLRU();
           break;
         }
       }
       // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
         Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
-        for (i = 0; i < gnvol; i++) {
-          stripe = gvol[i];
+        for (i = 0; i < gnstripes; i++) {
+          stripe = gstripes[i];
 
-          if (gvol[i]->cache_vol->ramcache_enabled) {
-            gvol[i]->ram_cache->init(stripe->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, stripe);
-            ram_cache_bytes += gvol[i]->dirlen();
+          if (gstripes[i]->cache_vol->ramcache_enabled) {
+            gstripes[i]->ram_cache->init(stripe->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, stripe);
+            ram_cache_bytes += gstripes[i]->dirlen();
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-            Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, gvol[i]->dirlen());
+            Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, gstripes[i]->dirlen());
           }
-          vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
+          vol_total_cache_bytes  = gstripes[i]->len - gstripes[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
 
-          vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
+          vol_total_direntries  = gstripes[i]->buckets * gstripes[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
-          vol_used_direntries = dir_entries_used(gvol[i]);
+          vol_used_direntries = dir_entries_used(gstripes[i]);
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
@@ -694,35 +694,35 @@ CacheProcessor::cacheInitialized()
         Dbg(dbg_ctl_ram_cache, "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
             cache_config_ram_cache_cutoff);
 
-        for (i = 0; i < gnvol; i++) {
-          stripe = gvol[i];
+        for (i = 0; i < gnstripes; i++) {
+          stripe = gstripes[i];
           double factor;
-          if (gvol[i]->cache == theCache && gvol[i]->cache_vol->ramcache_enabled) {
-            ink_assert(gvol[i]->cache != nullptr);
-            factor = static_cast<double>(static_cast<int64_t>(gvol[i]->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
+          if (gstripes[i]->cache == theCache && gstripes[i]->cache_vol->ramcache_enabled) {
+            ink_assert(gstripes[i]->cache != nullptr);
+            factor = static_cast<double>(static_cast<int64_t>(gstripes[i]->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
             Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), stripe);
+            gstripes[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), stripe);
             ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
             Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total,
 
                                       static_cast<int64_t>(http_ram_cache_size * factor));
-          } else if (gvol[i]->cache_vol->ramcache_enabled) {
+          } else if (gstripes[i]->cache_vol->ramcache_enabled) {
             ink_release_assert(!"Unexpected non-HTTP cache volume");
           }
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
               ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-          vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
+          vol_total_cache_bytes  = gstripes[i]->len - gstripes[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
           Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
               total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
-          vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
+          vol_total_direntries  = gstripes[i]->buckets * gstripes[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
-          vol_used_direntries = dir_entries_used(gvol[i]);
+          vol_used_direntries = dir_entries_used(gstripes[i]);
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
           used_direntries += vol_used_direntries;
         }
@@ -784,8 +784,8 @@ CacheProcessor::stop()
 int
 CacheProcessor::dir_check(bool afix)
 {
-  for (int i = 0; i < gnvol; i++) {
-    gvol[i]->dir_check(afix);
+  for (int i = 0; i < gnstripes; i++) {
+    gstripes[i]->dir_check(afix);
   }
   return 0;
 }
@@ -1007,11 +1007,11 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
     SET_DISK_BAD(d);
   }
 
-  for (p = 0; p < gnvol; p++) {
-    if (d->fd == gvol[p]->fd) {
-      total_dir_delete   += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
-      used_dir_delete    += dir_entries_used(gvol[p]);
-      total_bytes_delete += gvol[p]->len - gvol[p]->dirlen();
+  for (p = 0; p < gnstripes; p++) {
+    if (d->fd == gstripes[p]->fd) {
+      total_dir_delete   += gstripes[p]->buckets * gstripes[p]->segments * DIR_DEPTH;
+      used_dir_delete    += dir_entries_used(gstripes[p]);
+      total_bytes_delete += gstripes[p]->len - gstripes[p]->dirlen();
     }
   }
 
@@ -1461,7 +1461,7 @@ cplist_reconfigure()
   ConfigVol *config_vol;
   int assignedVol = 0; // Number of assigned volumes
 
-  gnvol = 0;
+  gnstripes = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
     CacheVol *cp     = new CacheVol();
@@ -1492,7 +1492,7 @@ cplist_reconfigure()
 
       ink_assert(gdisks[i]->header->num_volumes == 1);
       DiskStripe **dp      = gdisks[i]->disk_stripes;
-      gnvol               += dp[0]->num_volblocks;
+      gnstripes           += dp[0]->num_volblocks;
       cp->size            += dp[0]->size;
       cp->num_vols        += dp[0]->num_volblocks;
       cp->disk_stripes[i]  = dp[0];
@@ -1582,7 +1582,7 @@ cplist_reconfigure()
       size_in_blocks = (static_cast<off_t>(size) * 1024 * 1024) / STORE_BLOCK_SIZE;
 
       if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
-        gnvol += config_vol->cachep->num_vols;
+        gnstripes += config_vol->cachep->num_vols;
         continue;
       }
 
@@ -1601,14 +1601,14 @@ cplist_reconfigure()
         cp_list.enqueue(new_cp);
         cp_list_len++;
         config_vol->cachep  = new_cp;
-        gnvol              += new_cp->num_vols;
+        gnstripes          += new_cp->num_vols;
         continue;
       }
       //    else
       CacheVol *cp = config_vol->cachep;
       ink_assert(cp->size <= size_in_blocks);
       if (cp->size == size_in_blocks) {
-        gnvol += cp->num_vols;
+        gnstripes += cp->num_vols;
         continue;
       }
       // else the size is greater...
@@ -1684,11 +1684,11 @@ cplist_reconfigure()
           return -1;
         }
       }
-      gnvol += cp->num_vols;
+      gnstripes += cp->num_vols;
     }
   }
 
-  Metrics::Gauge::store(cache_rsb.stripes, gnvol + assignedVol);
+  Metrics::Gauge::store(cache_rsb.stripes, gnstripes + assignedVol);
 
   return 0;
 }

@@ -78,9 +78,9 @@ public:
     ink_hrtime ttime;
 
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
-    REQUIRE(gnvol >= 1);
+    REQUIRE(gnstripes >= 1);
 
-    Stripe *stripe  = gvol[0];
+    Stripe *stripe  = gstripes[0];
     EThread *thread = this_ethread();
     MUTEX_TRY_LOCK(lock, stripe->mutex, thread);
     if (!lock.is_locked()) {
