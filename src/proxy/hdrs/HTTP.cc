@@ -733,7 +733,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
       // Make sure there is a read_write heap
       if (heap->m_read_write_heap.get() == nullptr) {
         int url_string_length   = url->strings_length();
-        heap->m_read_write_heap = new_HdrStrHeap(url_string_length);
+        heap->m_read_write_heap = HdrStrHeap::alloc(url_string_length);
       }
       hh->u.req.m_url_impl->rehome_strings(heap);
     } else {

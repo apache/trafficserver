@@ -136,19 +136,32 @@ public:
 
   char *allocate(int nbytes);
   char *expand(char *ptr, int old_size, int new_size);
-  int space_avail();
-
-  uint32_t m_heap_size;
-  char *m_free_start;
-  uint32_t m_free_size;
+  uint32_t
+  space_avail() const
+  {
+    return _avail_size;
+  }
+  uint32_t
+  total_size() const
+  {
+    return _total_size;
+  }
 
   bool contains(const char *str) const;
+
+  static HdrStrHeap *alloc(int heap_size);
+
+private:
+  HdrStrHeap(uint32_t total_size) : _total_size{total_size} {}
+
+  uint32_t const _total_size;
+  uint32_t _avail_size;
 };
 
 inline bool
 HdrStrHeap::contains(const char *str) const
 {
-  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + m_heap_size;
+  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + _total_size;
 }
 
 struct StrHeapDesc {
@@ -497,7 +510,6 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
   m_heap = from->m_heap;
 }
 
-HdrStrHeap *new_HdrStrHeap(int requested_size);
 HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
 
 void hdr_heap_test();

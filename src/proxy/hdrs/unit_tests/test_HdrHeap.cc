@@ -45,7 +45,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   url->set_path(heap, buf, next_required_overflow_size, true);
 
   // Checking that we've completely consumed the rw heap
-  CHECK(heap->m_read_write_heap->m_free_size == 0);
+  CHECK(heap->m_read_write_heap->space_avail() == 0);
 
   // Checking ronly_heaps are empty
   for (unsigned i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
@@ -55,7 +55,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   // Now we have no ronly heaps in use and a completely full rwheap, so we will test that
   // we demote to ronly heaps HDR_BUF_RONLY_HEAPS times.
   for (unsigned ronly_heap = 0; ronly_heap < HDR_BUF_RONLY_HEAPS; ++ronly_heap) {
-    next_rw_heap_size           = 2 * heap->m_read_write_heap->m_heap_size;
+    next_rw_heap_size           = 2 * heap->m_read_write_heap->total_size();
     next_required_overflow_size = next_rw_heap_size - sizeof(HdrStrHeap);
     char buf2[next_required_overflow_size];
     for (unsigned int i = 0; i < sizeof(buf2); ++i) {
@@ -66,9 +66,9 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
     url2->set_path(heap, buf2, next_required_overflow_size, true);
 
     // Checking the current rw heap is next_rw_heap_size bytes
-    CHECK(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size);
+    CHECK(heap->m_read_write_heap->total_size() == (uint32_t)next_rw_heap_size);
     // Checking that we've completely consumed the rw heap
-    CHECK(heap->m_read_write_heap->m_free_size == 0);
+    CHECK(heap->m_read_write_heap->space_avail() == 0);
     // Checking that we properly demoted the previous rw heap
     CHECK(heap->m_ronly_heap[ronly_heap].m_heap_start != nullptr);
 
@@ -103,7 +103,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
     CHECK(heap->m_ronly_heap[i].m_heap_start != nullptr);
   }
   // Checking that we've completely consumed the rw heap
-  CHECK(heap->m_read_write_heap->m_free_size == 0);
+  CHECK(heap->m_read_write_heap->space_avail() == 0);
   // Checking that we dont have any chained heaps
   CHECK(heap->m_next == nullptr);
 
