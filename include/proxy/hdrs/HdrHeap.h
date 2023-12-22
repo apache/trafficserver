@@ -302,16 +302,18 @@ public:
       the reference is dropped. This is useful inside a method or block
       to keep the required heap data around until leaving the scope.
   */
-  struct HeapGuard {
+  class HeapGuard
+  {
+  public:
     /// Construct the protection.
     HeapGuard(HdrHeap *heap, const char *str)
     {
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
-        m_ptr = heap->m_read_write_heap.get();
+        _ptr = heap->m_read_write_heap.get();
       } else {
         for (auto &i : heap->m_ronly_heap) {
           if (i.contains(str)) {
-            m_ptr = i.m_ref_count_ptr;
+            _ptr = i.m_ref_count_ptr;
             break;
           }
         }
@@ -321,8 +323,9 @@ public:
     // There's no need to have a destructor here, the default dtor will take care of
     // releasing the (potentially) locked heap.
 
+  private:
     /// The heap we protect (if any)
-    Ptr<RefCountObj> m_ptr;
+    Ptr<RefCountObj> _ptr;
   };
 
   // String Heap access
