@@ -158,8 +158,8 @@ struct DNSProcessor : public Processor {
   EThread *thread     = nullptr;
   DNSHandler *handler = nullptr;
   ts_imp_res_state l_res;
-  IpEndpoint local_ipv6;
-  IpEndpoint local_ipv4;
+  swoc::IPAddr local_ipv6;
+  swoc::IPAddr local_ipv4;
 
   /** Internal implementation for all getXbyY methods.
       For host resolution queries pass @c T_A for @a type. It will be adjusted

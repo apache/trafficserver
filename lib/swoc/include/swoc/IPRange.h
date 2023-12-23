@@ -432,6 +432,27 @@ public:
    */
   bool load(std::string_view const &text);
 
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IPAddr const& addr) const;
+
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IP6Addr const& addr) const;
+
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IP4Addr const& addr) const;
+
   /// @return The minimum address in the range.
   IPAddr min() const;
 
@@ -445,22 +466,13 @@ public:
   self_type &clear();
 
   /// @return The IPv4 range.
-  IP4Range const &
-  ip4() const {
-    return _range._ip4;
-  }
+  IP4Range const & ip4() const;
 
   /// @return The IPv6 range.
-  IP6Range const &
-  ip6() const {
-    return _range._ip6;
-  }
+  IP6Range const & ip6() const;
 
   /// @return The range family.
-  sa_family_t
-  family() const {
-    return _family;
-  }
+  sa_family_t family() const;
 
   /** Compute the mask for @a this as a network.
    *
@@ -641,6 +653,27 @@ public:
    * @return @c true if this is @a family, @c false if not.
    */
   bool is(sa_family_t family) const;
+
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IPAddr const& addr) const;
+
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IP6Addr const& addr) const;
+
+  /** Test if an address is in the range.
+   *
+   * @param addr Address to test.
+   * @return @c true if in @a this range, @c false if not.
+   */
+  bool contains(IP4Addr const& addr) const;
 
   /// @return Reference to the viewed IPv4 range.
   IP4Range const &ip4() const;
@@ -1933,6 +1966,17 @@ IPRange::is_ip6() const {
   return AF_INET6 == _family;
 }
 
+inline sa_family_t IPRange::family() const {
+  return _family;
+}
+inline IP4Range const& IPRange::ip4() const {
+  return _range._ip4;
+}
+
+inline IP6Range const& IPRange::ip6() const {
+  return _range._ip6;
+}
+
 inline auto
 IPRangeView::clear() -> self_type & {
   _family = AF_UNSPEC;
@@ -1957,6 +2001,26 @@ IPRangeView::is_ip6() const {
 inline bool
 IPRangeView::is(sa_family_t f) const {
   return f == _family;
+}
+
+inline bool IPRange::contains(IPAddr const & addr) const {
+  if (addr.family() != _family) {
+    return false;
+  }
+  if (this->ip4()) {
+    return _range._ip4.contains(addr.ip4());
+  } else if (this->is_ip6()) {
+    return _range._ip6.contains(addr.ip6());
+  }
+  return false;
+}
+
+inline bool IPRange::contains(IP6Addr const & addr) const {
+  return this->is_ip6() && _range._ip6.contains(addr);
+}
+
+inline bool IPRange::contains(IP4Addr const & addr) const {
+  return this->is_ip4() && _range._ip4.contains(addr);
 }
 
 inline IP4Range const &
@@ -2001,6 +2065,24 @@ IPRangeView::min() const {
 inline IPAddr
 IPRangeView::max() const {
   return AF_INET == _family ? _raw._4->max() : AF_INET6 == _family ? _raw._6->max() : IPAddr::INVALID;
+}
+
+inline bool IPRangeView::contains(IPAddr const& addr) const {
+  if (_family != addr.family()) {
+    return false;
+  }
+  return (_family == addr.family() ) &&
+         ( ( this->is_ip4() && _raw._4->contains(addr.ip4()) ) ||
+           ( this->is_ip6() && _raw._6->contains(addr.ip6()) )
+         );
+}
+
+inline bool IPRangeView::contains(IP6Addr const& addr) const {
+  return this->is_ip6() && _raw._6->contains(addr);
+}
+
+inline bool IPRangeView::contains(IP4Addr const& addr) const {
+  return this->is_ip4() && _raw._4->contains(addr);
 }
 
 // +++ IPNet +++

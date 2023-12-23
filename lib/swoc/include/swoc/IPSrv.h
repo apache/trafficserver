@@ -228,11 +228,17 @@ private:
 public:
   IPSrv() = default; ///< Default constructor.
   explicit IPSrv(IP4Addr addr, in_port_t port = 0) : _srv(IP4Srv{addr, port}), _family(addr.family()) {}
+  /// Construct for IPv6 address and port.
   explicit IPSrv(IP6Addr addr, in_port_t port = 0) : _srv(IP6Srv{addr, port}), _family(addr.family()) {}
+  /// Construct from generic address and port.
   explicit IPSrv(IPAddr addr, in_port_t port = 0);
+  /// Construct from socket address.
   explicit IPSrv(sockaddr const *sa);
+  /// Construct IPv4 service from socket address.
   explicit IPSrv(sockaddr_in const *s);
+  /// Construct IPv6 service from socket address.
   explicit IPSrv(sockaddr_in6 const *s);
+  /// Construct from Endpoint.
   explicit IPSrv(IPEndpoint const &ep);
 
   /** Construct from a string.
@@ -259,21 +265,17 @@ public:
   /// @return The protocol of the current value.
   constexpr sa_family_t family() const;
 
+  /// @return @c true if this is a valid service, @c false if not.
+  bool is_valid() const;
   /// @return @c true if the data is IPv4, @c false if not.
   bool is_ip4() const;
   /// @return @c true if hte data is IPv6, @c false if not.
   bool is_ip6() const;
 
   /// @return The IPv4 data.
-  IP4Srv const &
-  ip4() const {
-    return _srv._ip4;
-  }
+  IP4Srv const & ip4() const;
   /// @return The IPv6 data.
-  IP6Srv const &
-  ip6() const {
-    return _srv._ip6;
-  }
+  IP6Srv const & ip6() const;
 
   /** Change the address.
    *
@@ -352,25 +354,23 @@ public:
    */
   self_type &assign(IPAddr const &addr, in_port_t port);
 
+  /// Copy assignment.
   self_type &operator=(self_type const &that) = default;
+  /// Assign from IPv4.
   self_type &operator=(IP4Srv const &that);
+  /// Assign from IPv6.
   self_type &operator=(IP6Srv const &that);
-  self_type &
-  operator=(sockaddr const *sa) {
-    return this->assign(sa);
-  }
-  self_type &
-  operator=(sockaddr_in const *s) {
-    return this->assign(s);
-  }
-  self_type &
-  operator=(sockaddr_in6 const *s) {
-    return this->assign(s);
-  }
+  /// Assign from generic socket address.
+  self_type & operator=(sockaddr const *sa);
+  /// Assign from IPv4 socket address.
+  self_type & operator=(sockaddr_in const *s);
+  /// Assign from IPv6 socket address.
+  self_type & operator=(sockaddr_in6 const *s);
 
 protected:
   /// Family specialized data.
   union data {
+    struct NIL {} _nil; ///< Nil / invalid state.
     IP4Srv _ip4; ///< IPv4 address (host)
     IP6Srv _ip6; ///< IPv6 address (host)
 
@@ -555,17 +555,40 @@ inline IPAddr
 IPSrv::addr() const {
   return _srv.addr(_family);
 }
+
 inline constexpr sa_family_t
 IPSrv::family() const {
   return _family;
 }
+
+inline bool IPSrv::is_valid() const { return AF_INET == _family || AF_INET6 == _family; }
+
 inline bool
 IPSrv::is_ip4() const {
   return _family == AF_INET;
 }
+
 inline bool
 IPSrv::is_ip6() const {
   return _family == AF_INET6;
+}
+
+inline IP4Srv const& IPSrv::ip4() const {
+  return _srv._ip4;
+}
+
+inline IP6Srv const& IPSrv::ip6() const {
+  return _srv._ip6;
+}
+
+inline constexpr in_port_t
+IPSrv::host_order_port() const {
+  return _srv.port(_family);
+}
+
+inline in_port_t
+IPSrv::network_order_port() const {
+  return ntohs(_srv.port(_family));
 }
 
 inline auto
@@ -656,14 +679,16 @@ IPSrv::assign(sockaddr_in6 const *s) -> self_type & {
   return *this;
 }
 
-inline constexpr in_port_t
-IPSrv::host_order_port() const {
-  return _srv.port(_family);
+inline IPSrv::self_type & IPSrv::operator=(sockaddr const *sa) {
+  return this->assign(sa);
 }
 
-inline in_port_t
-IPSrv::network_order_port() const {
-  return ntohs(_srv.port(_family));
+inline IPSrv::self_type & IPSrv::operator=(sockaddr_in const *s) {
+  return this->assign(s);
+}
+
+inline IPSrv::self_type & IPSrv::operator=(sockaddr_in6 const *s) {
+  return this->assign(s);
 }
 
 inline IPAddr
@@ -675,6 +700,7 @@ constexpr inline in_port_t
 IPSrv::data::port(sa_family_t f) const {
   return (f == AF_INET) ? _ip4.host_order_port() : (f == AF_INET6) ? _ip6.host_order_port() : 0;
 }
+
 // --- Independent comparisons.
 
 inline bool

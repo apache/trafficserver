@@ -43,6 +43,8 @@ const int8_t svtoi_convert[256] = {
 
 intmax_t
 svtoi(TextView src, TextView *out, int base) {
+  static constexpr uintmax_t ABS_MAX = std::numeric_limits<intmax_t>::max();
+  static constexpr uintmax_t ABS_MIN = uintmax_t(std::numeric_limits<intmax_t>::min());
   intmax_t zret = 0;
 
   if (src.ltrim_if(&isspace)) {
@@ -55,13 +57,15 @@ svtoi(TextView src, TextView *out, int base) {
     } else if ('+' == *src) {
       ++src;
     }
-    zret = intmax_t(svtou(src, &parsed, base));
+    auto n = svtou(src, &parsed, base);
     if (!parsed.empty()) {
       if (out) {
         out->assign(start, parsed.data_end());
       }
       if (neg) {
-        zret = -zret;
+        zret = -intmax_t(std::min<uintmax_t>(n, ABS_MIN));
+      } else {
+        zret = std::min(n, ABS_MAX);
       }
     }
   }
@@ -75,12 +79,9 @@ svtou(TextView src, TextView *out, int base) {
   if (out) {
     out->clear();
   }
-  if (!(0 <= base && base <= 36)) {
-    return 0;
-  }
+
   if (src.ltrim_if(&isspace).size()) {
-    auto origin = src.data();
-    int8_t v    = 0;
+    auto origin = src.data(); // cache to handle prefix skipping.
     // If base is 0, it wasn't specified - check for standard base prefixes
     if (0 == base) {
       base = 10;
@@ -103,6 +104,9 @@ svtou(TextView src, TextView *out, int base) {
         }
       }
     }
+    if (!(1 <= base && base <= 36)) {
+      return 0;
+    }
 
     // For performance in common cases, use the templated conversion.
     switch (base) {
@@ -118,17 +122,20 @@ svtou(TextView src, TextView *out, int base) {
     case 16:
       zret = svto_radix<16>(src);
       break;
-    default:
+    default: {
+      static constexpr auto MAX            = std::numeric_limits<uintmax_t>::max();
+      const auto OVERFLOW_LIMIT = MAX / base;
+      intmax_t v    = 0;
       while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
-        auto n = zret * base + v;
-        if (n < zret) {
-          zret = std::numeric_limits<uintmax_t>::max();
-          break; // overflow, stop parsing.
-        }
-        zret = n;
         ++src;
+        if (zret <= OVERFLOW_LIMIT && uintmax_t(v) <= (MAX - (zret *= base))) {
+          zret += v;
+        } else {
+          zret = MAX;
+        }
       }
       break;
+      }
     }
 
     if (out) {

@@ -349,11 +349,12 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
       *tmp = 0;
     }
 
-    if (0 != ats_ip_pton(current, &m_servers.x_server_ip[i].sa)) {
+    swoc::IPAddr addr;
+    if (!addr.load(current)) {
       return "invalid IP address given for a DNS server";
     }
 
-    ats_ip_port_cast(&m_servers.x_server_ip[i].sa) = htons(port ? port : NAMESERVER_PORT);
+    m_servers.x_server_ip[i].assign(addr, port ? port : NAMESERVER_PORT);
 
     if ((MAXDNAME * 2 - 1) > totsz) {
       sz = strlen(current);
@@ -477,14 +478,13 @@ SplitDNSRecord::Init(matcher_line *line_info)
     }
   }
 
-  if (!ats_is_ip(&m_servers.x_server_ip[0].sa)) {
+  if (!m_servers.x_server_ip[0].is_valid()) {
     return Result::failure("%s No server specified in %s at line %d", modulePrefix, ts::filename::SPLITDNS, line_num);
   }
 
   DNSHandler *dnsH  = new DNSHandler;
   ink_res_state res = new ts_imp_res_state;
 
-  memset(res, 0, sizeof(ts_imp_res_state));
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,
                           m_servers.x_domain_srch_list, nullptr))) {
     char ab[INET6_ADDRPORTSTRLEN];
@@ -494,7 +494,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
   dnsH->m_res = res;
   dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
-  ats_ip_invalidate(&dnsH->ip.sa); // Mark to use default DNS.
+  dnsH->ip.invalidate(); // Mark to use default DNS.
 
   m_servers.x_dnsH = dnsH;
 

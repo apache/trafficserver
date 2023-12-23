@@ -61,16 +61,6 @@ Errata::sink() {
   return *this;
 }
 
-Errata &
-Errata::note(code_type const &code) {
-  return this->note("{}"_sv, code);
-}
-
-Errata &
-Errata::note(code_type const &code, Severity severity) {
-  return this->note(severity, "{}"_sv, code);
-}
-
 Errata::Data *
 Errata::data() {
   if (!_data) {
@@ -78,6 +68,11 @@ Errata::data() {
     _data = arena.make<Data>(std::move(arena));
   }
   return _data;
+}
+
+MemSpan<char>
+Errata::alloc(size_t n) {
+  return this->data()->_arena.alloc(n).rebind<char>();
 }
 
 Errata &
@@ -99,11 +94,6 @@ Errata::note_localized(std::string_view const &text, std::optional<Severity> sev
   auto *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
-}
-
-MemSpan<char>
-Errata::alloc(size_t n) {
-  return this->data()->_arena.alloc(n).rebind<char>();
 }
 
 Errata &

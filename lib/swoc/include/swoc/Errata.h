@@ -337,26 +337,38 @@ public:
    * @param text Text of the message.
    * @return *this
    *
-   * The error code is set to the default.
    * @a text is localized to @a this and does not need to be persistent.
    * The severity is updated to @a severity if the latter is more severe.
    */
   self_type &note(Severity severity, std::string_view text);
 
+  /** Add an @c Annotation to the top with @a text and local @a severity.
+   * @param severity The local severity.
+   * @return *this
+   *
+   * The annotation uses the format @c AUTOTEXT_SEVERITY with the argument @a severity.
+   * @see AUTOTEXT_SEVERITY
+   */
+  self_type &note(Severity severity);
+
   /** Add an @c Annotation to the top based on error code @a code.
    * @param code Error code.
    * @return *this
    *
-   * The annotation text is constructed as the short, long, and numeric value of @a code.
+   * The annotation uses the format @c AUTOTEXT_CODE with the argument @a ec.
+   * @see AUTOTEXT_CODE
+   *
+   * @note @a ec is used only for formatting, the @c Errata error code is unchanged.
    */
-  self_type &note(code_type const &code);
+  self_type &note(code_type const &ec);
 
   /** Append an @c Annotation to the top based on error code @a code with @a severity.
    * @param severity Local severity.
    * @param code Error code.
    * @return *this
    *
-   * The annotation text is constructed as the short, long, and numeric value of @a code.
+   * The annotation uses the format @c AUTOTEXT_SEVERITY_CODE with the argument @a severity.
+   * @see AUTOTEXT_SEVERITY_CODE
    */
   self_type &note(code_type const &code, Severity severity);
 
@@ -1171,6 +1183,21 @@ Errata::note(std::string_view text) {
 inline Errata &
 Errata::note(Severity severity, std::string_view text) {
   return this->note_s(severity, text);
+}
+
+inline Errata &
+Errata::note(Severity severity) {
+  return this->note(severity, AUTOTEXT_SEVERITY, severity);
+}
+
+inline Errata &
+Errata::note(code_type const &code) {
+  return this->note(AUTOTEXT_CODE, code);
+}
+
+inline Errata &
+Errata::note(code_type const &ec, Severity severity) {
+  return this->note(severity, AUTOTEXT_SEVERITY_CODE, severity, ec);
 }
 
 template <typename... Args>
