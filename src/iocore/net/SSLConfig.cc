@@ -129,6 +129,7 @@ SSLConfigParams::reset()
   ssl_session_cache_timeout            = 0;
   ssl_session_cache_auto_clear         = 1;
   configExitOnLoadError                = 1;
+  clientCertExitOnLoadError            = 0;
 }
 
 void
@@ -502,6 +503,7 @@ SSLConfigParams::initialize()
   ssl_client_cert_path     = nullptr;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
+  REC_ReadConfigInteger(clientCertExitOnLoadError, "proxy.config.ssl.client.cert.exit_on_load_fail");
   set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, &clientCertPathOnly, &clientCertPath);
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
@@ -542,7 +544,13 @@ SSLConfigParams::initialize()
   // can cause HTTP layer to connect using SSL. But only if SSL
   // initialization hasn't failed already.
   client_ctx = this->getCTX(this->clientCertPath, this->clientKeyPath, this->clientCACertFilename, this->clientCACertPath);
-  if (!client_ctx) {
+  if (client_ctx) {
+    return;
+  }
+  // Can't get SSL client context.
+  if (this->clientCertExitOnLoadError) {
+    Fatal("Can't initialize the SSL client, HTTPS in remap rules will not function");
+  } else {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 }
