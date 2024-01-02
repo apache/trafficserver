@@ -918,6 +918,11 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
     Debug("ssl_client_ctx", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
     client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
 
+    // Upon configuration, elevate file access to be able to read root-only
+    // certificates. The destructor will drop privilege.
+    uint32_t elevate_setting = 0;
+    REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+    ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
     // Set public and private keys
     if (!client_cert.empty()) {
       std::string secret_data;
