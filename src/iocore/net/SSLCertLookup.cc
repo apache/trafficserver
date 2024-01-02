@@ -371,15 +371,31 @@ SSLCertLookup::insert(const IpEndpoint &address, SSLCertContext const &cc)
 }
 
 unsigned
-SSLCertLookup::count() const
+SSLCertLookup::count(SSLCertContextType ctxType) const
 {
-  return ssl_storage->count();
+  switch (ctxType) {
+  case SSLCertContextType::EC:
+#ifdef OPENSSL_IS_BORINGSSL
+    return ec_storage->count();
+#endif
+  case SSLCertContextType::RSA:
+  default:
+    return ssl_storage->count();
+  }
 }
 
 SSLCertContext *
-SSLCertLookup::get(unsigned i) const
+SSLCertLookup::get(unsigned i, SSLCertContextType ctxType) const
 {
-  return ssl_storage->get(i);
+  switch (ctxType) {
+  case SSLCertContextType::EC:
+#ifdef OPENSSL_IS_BORINGSSL
+    return ec_storage->get(i);
+#endif
+  case SSLCertContextType::RSA:
+  default:
+    return ssl_storage->get(i);
+  }
 }
 
 void
