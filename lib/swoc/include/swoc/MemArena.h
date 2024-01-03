@@ -7,10 +7,6 @@
 
 #pragma once
 
-#include "swoc/MemSpan.h"
-#include "swoc/Scalar.h"
-#include "swoc/IntrusiveDList.h"
-
 #include <mutex>
 #include <memory>
 #include <utility>
@@ -19,7 +15,13 @@
 #include <memory_resource>
 #endif
 
+#include "swoc/MemSpan.h"
+#include "swoc/Scalar.h"
+#include "swoc/IntrusiveDList.h"
+#include "swoc/TextView.h"
+
 namespace swoc { inline namespace SWOC_VERSION_NS {
+
 /** A memory arena.
 
     The intended use is for allocating many small chunks of memory - few, large allocations are best
@@ -64,6 +66,12 @@ public:
 
     /// Get the start of the data in this block.
     const char *data() const;
+
+    /// @return The first byte past allocated storage.
+    char *allocated_data_end();
+
+    /// @return The first byte past allocated storage.
+    const char *allocated_data_end() const;
 
     /// Amount of unallocated storage.
     size_t remaining() const;
@@ -281,6 +289,40 @@ public:
   */
   template <typename T, typename... Args> T *make(Args &&...args);
 
+  /** Copy the contents of a string view into the arena.
+   *
+   * @param s Original string.
+   * @return A view of the copy of @a s.
+   */
+  MemSpan<char> localize(MemSpan<char const> s);
+
+  /** Copy the contents of a string view into the arena.
+   *
+   * @param s Original string.
+   * @return A view of the copy of @a s.
+   */
+  MemSpan<char> localize(char const * s);
+
+  /** Copy the contents of a string view into the arena as a C string.
+   *
+   * @param s Original string.
+   * @return A view of the copy of @a s.
+   *
+   * A terminating nul character is added to the copy which is not included in the returned view.
+   * This enables using the string view as a C string.
+   */
+  MemSpan<char> localize_c(MemSpan<char const> s);
+
+  /** Copy the contents of a string view into the arena as a C string.
+   *
+   * @param s Original string.
+   * @return A view of the copy of @a s.
+   *
+   * A terminating nul character is added to the copy which is not included in the returned view.
+   * This enables using the string view as a C string.
+   */
+  MemSpan<char> localize_c(char const * s);
+
   /** Freeze reserved memory.
 
       All internal memory blocks are frozen and will not be involved in future allocations.
@@ -314,6 +356,25 @@ public:
 
    */
   MemArena &clear(size_t hint = 0);
+
+  /** Best effort allocation discard.
+   *
+   * The allocation is discard (become unallocated memory) if and only if it is at the end of
+   * a recent allocation block. If nothing has been allocated, this always works. Otherwise if later
+   * allocation exists, this method silently fails. This can work with multiple allocations in a
+   * stack - if all later allocations are discarded when this method is invoked it will succeed.
+   *
+   * @note This is purely a performance enhancement to enable computing with internally allocated
+   * but unused memory. Compare with @c remnant
+   *
+   * @note No destruction or other clean up is done, the span is simply marked as unallocated.
+   *
+   * @param hint Size hint for the next internal allocation.
+   * @return @a this.
+   *
+   * @see remnant
+   */
+  MemArena &discard(MemSpan<void const> span);
 
   /** Discard all allocations.
    *
@@ -421,11 +482,10 @@ protected:
   static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
-  size_t _active_reserved  = 0; ///< Total current reserved memory.
+  size_t _active_reserved  = 0; ///< Total reserved memory (allocated from OS).
   /// Total allocations in the previous generation. This is only non-zero while the arena is frozen.
   size_t _frozen_allocated = 0;
-  /// Total frozen reserved memory.
-  size_t _frozen_reserved = 0;
+  size_t _frozen_reserved = 0; ///< Total frozen reserved memory.
 
   /// Minimum free space needed in the next allocated block.
   /// This is not zero iff @c reserve was called.
@@ -531,6 +591,16 @@ MemArena::Block::data() const {
   return reinterpret_cast<const char *>(this + 1);
 }
 
+inline char *
+MemArena::Block::allocated_data_end() {
+  return this->data() + allocated;
+}
+
+inline const char *
+MemArena::Block::allocated_data_end() const {
+  return this->data() + allocated;
+}
+
 inline bool
 MemArena::Block::contains(const void *ptr) const {
   const char *base = this->data();
@@ -600,6 +670,27 @@ template <typename T, typename... Args>
 T *
 MemArena::make(Args &&...args) {
   return new (this->alloc(sizeof(T), alignof(T)).data()) T(std::forward<Args>(args)...);
+}
+
+inline MemSpan<char> MemArena::localize(MemSpan<char const> s) {
+  auto span = this->alloc(s.size()).rebind<char>();
+  memcpy(span.data(), s.data(), span.size());
+  return { span.data(), span.size() };
+}
+
+inline MemSpan<char> MemArena::localize(char const * s) {
+  return this->localize(MemSpan<char const>(s, strlen(s)));
+}
+
+inline MemSpan<char> MemArena::localize_c(MemSpan<char const> s) {
+  auto span = this->alloc(s.size() + 1).rebind<char>();
+  memcpy(span.data(), s.data(), span.size());
+  span[s.size()] = '\0';
+  return { span.data(), span.size() };
+}
+
+inline MemSpan<char> MemArena::localize_c(char const * s) {
+  return this->localize_c(MemSpan<char const>(s, strlen(s)));
 }
 
 template <typename T>

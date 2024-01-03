@@ -210,8 +210,42 @@ MemArena::clear(size_t hint) {
 }
 
 MemArena &
+MemArena::discard(MemSpan<const void> span) {
+  // This is intended to iterate over empty blocks until @a span is found.
+  for ( auto & block : _active) {
+    if (block.contains(span.data())) { // it's in this block, final iteration.
+      if (block.allocated_data_end() == span.data_end()) {
+        block.allocated -= span.size();
+        _active_allocated -= span.size();
+      }
+      break;
+    } else if (block.allocated > 0) {
+      // If the block wasn't empty the only other place
+      // @a span could be is in the most recent filled block, which is last in the list.
+      // Invariant - the first block does not contain @a span.
+      // Therefore, if the last block contains @a span, it is not the first block.
+      auto lfb = _active.tail(); // list is not empty, must exist.
+      if (lfb->contains(span.data()) && lfb->allocated_data_end() == span.data_end()) {
+        lfb->allocated -= span.size();
+        _active_allocated -= span.size();
+        if (!lfb->is_full()) {
+          _active.erase(lfb);
+          _active.prepend(lfb);
+        }
+      }
+      break; // loop always ends after hitting a non-empty block.
+    }
+  }
+  return *this;
+}
+
+MemArena &
 MemArena::discard(size_t hint) {
-  _reserve_hint = hint ? hint : _frozen_allocated + _active_allocated;
+  // Because existing blocks remain, clear the reserve hint so then when a new block is allocated
+  // it uses the allocation size then, not what it is now. Now is handled by the existing blocks,
+  // unless the caller explicitly provides a hint,
+  _reserve_hint = hint ? hint : 0;
+
   for (auto &block : _active) {
     block.discard();
   }

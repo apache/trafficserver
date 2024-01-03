@@ -1057,15 +1057,15 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
 template <int RADIX>
 uintmax_t
 svto_radix(TextView &src) {
-  static_assert(0 < RADIX && RADIX <= 36, "Radix must be in the range 1..36");
+  static_assert(1 <= RADIX && RADIX <= 36, "Radix must be in the range 2..36");
   static constexpr auto MAX            = std::numeric_limits<uintmax_t>::max();
   static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
   uintmax_t zret                       = 0;
-  int8_t v;
+  uintmax_t v;
   while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < RADIX) {
     // Tweaked for performance - need to check range after @a RADIX multiply.
     ++src; // Update view iff the character is parsed.
-    if (zret <= OVERFLOW_LIMIT && uintmax_t(v) <= MAX - (zret *= RADIX)) {
+    if (zret <= OVERFLOW_LIMIT && v <= (MAX - (zret *= RADIX)) ) {
       zret += v;
     } else {
       zret = MAX; // clamp to max - once set will always hit this case for subsequent input.

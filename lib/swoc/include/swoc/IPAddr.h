@@ -6,14 +6,12 @@
 
 #pragma once
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-
 #include <cstddef>
 
 #include "swoc/swoc_version.h"
 #include "swoc/swoc_meta.h"
 #include "swoc/MemSpan.h"
+#include "swoc/swoc_ip_util.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
@@ -836,6 +834,7 @@ IP4Addr::copy_to(sockaddr *sa) const {
 }
 
 /// Equality.
+
 inline bool
 operator==(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr == rhs._addr;
@@ -900,16 +899,12 @@ IP4Addr::is_multicast() const {
 
 inline bool
 IP4Addr::is_link_local() const {
-  return (_addr & 0xFFFF0000) == 0xA9FE0000; // 169.254.0.0/16
+  return ip::is_link_local_host_order(_addr);
 }
 
 inline bool
 IP4Addr::is_private() const {
-  return (((_addr & 0xFF000000) == 0x0A000000) || // 10.0.0.0/8
-          ((_addr & 0xFFC00000) == 0x64400000) || // 100.64.0.0/10
-          ((_addr & 0xFFF00000) == 0xAC100000) || // 172.16.0.0/12
-          ((_addr & 0xFFFF0000) == 0xC0A80000)    // 192.168.0.0/16
-  );
+  return ip::is_private_host_order(_addr);
 }
 
 inline uint8_t
@@ -1388,14 +1383,12 @@ inline IPAddr::operator IP6Addr() const {
 
 inline bool
 IPAddr::operator==(self_type const &that) const {
-  switch (_family) {
-  case AF_INET:
-    return that._family == AF_INET && _addr._ip4 == that._addr._ip4;
-  case AF_INET6:
-    return that._family == AF_INET6 && _addr._ip6 == that._addr._ip6;
-  default:
-    return !that.is_valid();
-  }
+  return _family == that.family() &&
+         (
+           ( this->is_ip4() && _addr._ip4 == that._addr._ip4 ) ||
+           ( this->is_ip6() && _addr._ip6 == that._addr._ip6 ) ||
+           _family == AF_UNSPEC
+         );
 }
 
 inline bool
