@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  YAML loader for SplitDNS configuration - header
 
   @section license License
 

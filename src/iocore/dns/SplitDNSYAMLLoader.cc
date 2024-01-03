@@ -1,6 +1,6 @@
 /** @file
 
-  Catch based unit tests for libinknet
+  YAML loader for SplitDNS configuration
 
   @section license License
 
