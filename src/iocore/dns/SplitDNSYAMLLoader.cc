@@ -25,7 +25,6 @@
 
 #include "tscpp/util/ts_errata.h"
 
-#include <swoc/Errata.h>
 #include <yaml-cpp/yaml.h>
 
 #include <sstream>
