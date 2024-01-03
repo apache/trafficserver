@@ -43,15 +43,16 @@ namespace splitdns
 namespace yaml
 {
   swoc::Errata
-  SplitDNSYAMLLoader::setUpSplitDNSFromYAMLTree()
+  SplitDNSYAMLLoader::setUpSplitDNSFromYAMLTree(YAML::Node const &current_node)
   {
     swoc::Errata err;
-    if (!this->current_node["dns"]) {
+
+    if (!current_node["dns"]) {
       err = swoc::Errata(ERRATA_ERROR, "Root tag 'dns' not found.");
-      err.note(mark_to_error_message(this->current_node.Mark()));
-    } else if (!this->current_node["dns"]["split"]) {
+      err.note(mark_to_error_message(current_node.Mark()));
+    } else if (!current_node["dns"]["split"]) {
       err = swoc::Errata(ERRATA_ERROR, "Tag 'split' not found.");
-      err.note(mark_to_error_message(this->current_node["dns"].Mark()));
+      err.note(mark_to_error_message(current_node["dns"].Mark()));
     }
 
     return err;
