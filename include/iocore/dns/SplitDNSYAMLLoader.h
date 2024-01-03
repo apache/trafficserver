@@ -25,7 +25,7 @@
 
 #include "P_SplitDNSProcessor.h"
 
-#include "tscpp/util/ts_errata.h"
+#include "tsutil/ts_errata.h"
 
 #include <swoc/swoc_file.h>
 #include <yaml-cpp/yaml.h>

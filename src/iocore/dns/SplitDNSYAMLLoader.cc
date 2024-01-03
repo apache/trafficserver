@@ -23,20 +23,13 @@
 
 #include "iocore/dns/SplitDNSYAMLLoader.h"
 
-#include "tscpp/util/ts_errata.h"
+#include "tsutil/ts_errata.h"
+#include "tsutil/YamlCfg.h"
 
 #include <yaml-cpp/yaml.h>
 
 #include <sstream>
 #include <string>
-
-static std::string
-mark_to_error_message(YAML::Mark mark)
-{
-  std::stringstream ss;
-  ss << "At line " << mark.line << " column " << mark.column << '.';
-  return ss.str();
-}
 
 namespace splitdns
 {
@@ -49,10 +42,14 @@ namespace yaml
 
     if (!current_node["dns"]) {
       err = swoc::Errata(ERRATA_ERROR, "Root tag 'dns' not found.");
-      err.note(mark_to_error_message(current_node.Mark()));
+      std::string text;
+      swoc::bwprint(text, "{}", current_node.Mark());
+      err.note(text);
     } else if (!current_node["dns"]["split"]) {
       err = swoc::Errata(ERRATA_ERROR, "Tag 'split' not found.");
-      err.note(mark_to_error_message(current_node["dns"].Mark()));
+      std::string text;
+      swoc::bwprint(text, "{}", current_node["dns"].Mark());
+      err.note(text);
     }
 
     return err;

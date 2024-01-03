@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "api/FetchSM.h"
 #include "api/InkAPIInternal.h"
+
+#include "proxy/FetchSM.h"
 
 #include "iocore/eventsystem/Continuation.h"
 

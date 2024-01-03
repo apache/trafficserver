@@ -64,7 +64,7 @@ TEST_CASE("loading a YAML config file")
     auto got{errorstream.str()};
     INFO(got);
     CHECK(error_contains(got, "Root tag 'dns' not found."));
-    CHECK(error_contains(got, "At line 0 column 0."));
+    CHECK(error_contains(got, "Line 0"));
     CHECK(error_contains(got, "While loading wrong-root.yaml."));
   }
 
@@ -76,7 +76,7 @@ TEST_CASE("loading a YAML config file")
     auto got{errorstream.str()};
     INFO(got);
     CHECK(error_contains(got, "Tag 'split' not found."));
-    CHECK(error_contains(got, "At line 1 column 2."));
+    CHECK(error_contains(got, "Line 1"));
     CHECK(error_contains(got, "While loading wrong-subroot.yaml."));
   }
 }
