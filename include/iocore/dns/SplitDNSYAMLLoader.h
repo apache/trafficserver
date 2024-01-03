@@ -47,20 +47,17 @@ namespace yaml
     load(std::string const &content, SplitDNS &out)
     {
       self_type loader{content, out};
-      loader.setUpSplitDNSFromYAMLTree();
-      // A swoc::Errata may not be copied so we have to explicitly move it.
-      return std::move(loader.err);
+      return loader.setUpSplitDNSFromYAMLTree();
     }
 
   private:
     using self_type = SplitDNSYAMLLoader;
 
     YAML::Node current_node;
-    swoc::Errata err;
 
     SplitDNSYAMLLoader(std::string const &content, SplitDNS &out) { this->current_node = YAML::Load(content); }
 
-    void setUpSplitDNSFromYAMLTree();
+    swoc::Errata setUpSplitDNSFromYAMLTree();
   };
 
   inline void
