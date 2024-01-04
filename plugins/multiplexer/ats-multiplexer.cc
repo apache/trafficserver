@@ -143,7 +143,8 @@ DoRemap(const Instance &i, TSHttpTxn t)
     generateRequests(i.origins, buffer, location, requests);
     assert(requests.size() == i.origins.size());
 
-    if (length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) {
+    if ((length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) ||
+        (length == TS_HTTP_LEN_PUT && memcmp(TS_HTTP_METHOD_PUT, method, TS_HTTP_LEN_PUT) == 0)) {
       const TSVConn vconnection = TSTransformCreate(handlePost, t);
       assert(vconnection != nullptr);
       TSContDataSet(vconnection, new PostState(requests));
