@@ -30,9 +30,10 @@
 struct PostState {
   Requests requests;
 
-  TSIOBuffer buffer;
-  TSIOBufferReader reader;
-  TSVIO vio;
+  TSIOBuffer origin_buffer;
+  TSIOBufferReader clone_reader;
+  /// The VIO for the original (non-clone) origin.
+  TSVIO output_vio;
 
   ~PostState();
   PostState(Requests &);

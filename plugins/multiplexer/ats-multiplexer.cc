@@ -35,6 +35,8 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
+using multiplexer_ns::dbg_ctl;
+
 // 1s
 const size_t DEFAULT_TIMEOUT = 1000000000000;
 

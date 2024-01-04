@@ -37,3 +37,8 @@ namespace io
 
 } // namespace io
 } // namespace ats
+
+namespace multiplexer_ns
+{
+DbgCtl dbg_ctl{PLUGIN_TAG};
+}
