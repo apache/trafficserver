@@ -24,20 +24,24 @@
 #include <limits>
 
 #include "post.h"
+#include "ts/ts.h"
+#include "tsutil/DbgCtl.h"
 
 #ifndef PLUGIN_TAG
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
+using multiplexer_ns::dbg_ctl;
+
 PostState::~PostState()
 {
-  if (buffer != nullptr) {
-    TSIOBufferDestroy(buffer);
-    buffer = nullptr;
+  if (origin_buffer != nullptr) {
+    TSIOBufferDestroy(origin_buffer);
+    origin_buffer = nullptr;
   }
 }
 
-PostState::PostState(Requests &r) : buffer(nullptr), reader(nullptr), vio(nullptr)
+PostState::PostState(Requests &r) : origin_buffer(nullptr), clone_reader(nullptr), output_vio(nullptr)
 {
   assert(!r.empty());
   requests.swap(r);
@@ -48,55 +52,65 @@ postTransform(const TSCont c, PostState &s)
 {
   assert(c != nullptr);
 
-  const TSVConn vconnection = TSTransformOutputVConnGet(c);
-  assert(vconnection != nullptr);
+  // As we collect data from the client, we need to write it to the origin. This
+  // is for the original origin. The copies are handled via HttpTransaction
+  // logic in fetcher.h.
+  const TSVConn output_vconn = TSTransformOutputVConnGet(c);
+  assert(output_vconn != nullptr);
 
-  const TSVIO vio = TSVConnWriteVIOGet(c);
-  assert(vio != nullptr);
+  // The VIO from which we pull out the client's request.
+  const TSVIO input_vio = TSVConnWriteVIOGet(c);
+  assert(input_vio != nullptr);
 
-  if (!s.buffer) {
-    s.buffer = TSIOBufferCreate();
-    assert(s.buffer != nullptr);
+  if (!s.origin_buffer) {
+    s.origin_buffer = TSIOBufferCreate();
+    assert(s.origin_buffer != nullptr);
 
-    const TSIOBufferReader reader = TSIOBufferReaderAlloc(s.buffer);
-    assert(reader != nullptr);
+    TSIOBufferReader origin_reader = TSIOBufferReaderAlloc(s.origin_buffer);
+    assert(origin_reader != nullptr);
 
-    s.reader = TSIOBufferReaderClone(reader);
-    assert(s.reader != nullptr);
+    s.clone_reader = TSIOBufferReaderClone(origin_reader);
+    assert(s.clone_reader != nullptr);
 
-    s.vio = TSVConnWrite(vconnection, c, reader, std::numeric_limits<int64_t>::max());
-    assert(s.vio != nullptr);
+    s.output_vio = TSVConnWrite(output_vconn, c, origin_reader, std::numeric_limits<int64_t>::max());
+    assert(s.output_vio != nullptr);
   }
 
-  if (!TSVIOBufferGet(vio)) {
-    TSVIONBytesSet(s.vio, TSVIONDoneGet(vio));
-    TSVIOReenable(s.vio);
+  if (!TSVIOBufferGet(input_vio)) {
+    if (s.output_vio) {
+      // This indicates that the request is done.
+      TSVIONBytesSet(s.output_vio, TSVIONDoneGet(input_vio));
+      TSVIOReenable(s.output_vio);
+    } else {
+      Dbg(dbg_ctl, "PostState::postTransform no input nor output VIO. Returning.");
+    }
     return;
   }
 
-  int64_t toWrite = TSVIONTodoGet(vio);
+  int64_t toWrite = TSVIONTodoGet(input_vio);
   assert(toWrite >= 0);
 
   if (toWrite > 0) {
-    toWrite = std::min(toWrite, TSIOBufferReaderAvail(TSVIOReaderGet(vio)));
+    toWrite = std::min(toWrite, TSIOBufferReaderAvail(TSVIOReaderGet(input_vio)));
     assert(toWrite >= 0);
 
     if (toWrite > 0) {
-      TSIOBufferCopy(TSVIOBufferGet(s.vio), TSVIOReaderGet(vio), toWrite, 0);
-      TSIOBufferReaderConsume(TSVIOReaderGet(vio), toWrite);
-      TSVIONDoneSet(vio, TSVIONDoneGet(vio) + toWrite);
+      TSIOBufferCopy(TSVIOBufferGet(s.output_vio), TSVIOReaderGet(input_vio), toWrite, 0);
+      TSIOBufferReaderConsume(TSVIOReaderGet(input_vio), toWrite);
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + toWrite);
     }
   }
 
-  if (TSVIONTodoGet(vio) > 0) {
+  if (TSVIONTodoGet(input_vio) > 0) {
     if (toWrite > 0) {
-      TSVIOReenable(s.vio);
-      TSContCall(TSVIOContGet(vio), TS_EVENT_VCONN_WRITE_READY, vio);
+      assert(s.output_vio != nullptr);
+      TSVIOReenable(s.output_vio);
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
     }
   } else {
-    TSVIONBytesSet(s.vio, TSVIONDoneGet(vio));
-    TSVIOReenable(s.vio);
-    TSContCall(TSVIOContGet(vio), TS_EVENT_VCONN_WRITE_COMPLETE, vio);
+    TSVIONBytesSet(s.output_vio, TSVIONDoneGet(input_vio));
+    TSVIOReenable(s.output_vio);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
 }
 
@@ -109,8 +123,8 @@ handlePost(TSCont c, TSEvent e, void *data)
   assert(state != nullptr);
   if (TSVConnClosedGet(c)) {
     assert(data != nullptr);
-    if (state->reader != nullptr) {
-      addBody(state->requests, state->reader);
+    if (state->clone_reader != nullptr) {
+      addBody(state->requests, state->clone_reader);
     }
     dispatch(state->requests, timeout);
     delete state;

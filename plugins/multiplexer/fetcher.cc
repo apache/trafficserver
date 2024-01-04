@@ -37,6 +37,7 @@ HttpParser::destroyParser()
 bool
 HttpParser::parse(io::IO &io)
 {
+  using multiplexer_ns::dbg_ctl;
   if (parsed_) {
     return true;
   }
@@ -62,8 +63,3 @@ HttpParser::parse(io::IO &io)
 }
 
 } // namespace ats
-
-namespace multiplexer_ns
-{
-DbgCtl dbg_ctl{PLUGIN_TAG};
-}

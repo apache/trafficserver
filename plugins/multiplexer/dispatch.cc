@@ -31,6 +31,8 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
+using multiplexer_ns::dbg_ctl;
+
 extern Statistics statistics;
 
 size_t timeout;
@@ -229,6 +231,7 @@ generateRequests(const Origins &o, const TSMBuffer buffer, const TSMLoc location
     const std::string &host = *iterator;
     assert(!host.empty());
     request.hostHeader(host);
+    Dbg(dbg_ctl, "Preparing request for \"%s\"", host.c_str());
     r.push_back(Request(host, buffer, location));
   }
 }

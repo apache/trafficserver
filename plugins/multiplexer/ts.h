@@ -31,6 +31,11 @@
 #include <string>
 #include <ts/ts.h>
 
+namespace multiplexer_ns
+{
+extern DbgCtl dbg_ctl;
+}
+
 namespace ats
 {
 namespace io

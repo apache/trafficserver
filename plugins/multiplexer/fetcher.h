@@ -39,12 +39,6 @@
 
 #define unlikely(x) __builtin_expect((x), 0)
 
-namespace multiplexer_ns
-{
-extern DbgCtl dbg_ctl;
-}
-using namespace multiplexer_ns;
-
 namespace ats
 {
 struct HttpParser {
@@ -181,6 +175,8 @@ template <class T> struct HttpTransaction {
   static int
   handle(TSCont c, TSEvent e, void *data)
   {
+    using multiplexer_ns::dbg_ctl;
+
     Self *const self = static_cast<Self *const>(TSContDataGet(c));
     assert(self != NULL);
     switch (e) {
@@ -288,6 +284,7 @@ template <class T>
 bool
 get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
+  using multiplexer_ns::dbg_ctl;
   using Transaction = HttpTransaction<T>;
   struct sockaddr_in socket;
   socket.sin_family = AF_INET;
