@@ -50,6 +50,10 @@
 #include <sys/mount.h>
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
+#endif
+
 /*===========================================================================*
 
                             Function Prototypes
