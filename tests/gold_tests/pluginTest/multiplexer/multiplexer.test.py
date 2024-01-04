@@ -31,6 +31,7 @@ class MultiplexerTestBase:
     """
 
     client_counter = 0
+    dns_counter = 0
     server_counter = 0
     ts_counter = 0
 
@@ -39,7 +40,13 @@ class MultiplexerTestBase:
         self.multiplexed_host_replay_file = multiplexed_host_replay_file
 
         self.setupServers()
+        self.setupDns()
         self.setupTS(skip_post)
+
+    def setupDns(self):
+        counter = MultiplexerTestBase.dns_counter
+        MultiplexerTestBase.dns_counter += 1
+        self.dns = Test.MakeDNServer(f"dns_{counter}", default='127.0.0.1')
 
     def setupServers(self):
         counter = MultiplexerTestBase.server_counter
@@ -57,6 +64,7 @@ class MultiplexerTestBase:
             'X-Multiplexer: original', 'Verify the HTTP multiplexed host does not receive an "original".')
         self.server_https.Streams.All += Testers.ExcludesExpression(
             'X-Multiplexer: original', 'Verify the HTTPS multiplexed host does not receive an "original".')
+        self.server_https.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         # In addition, the original server should always receive the POST and
         # PUT requests.
@@ -64,6 +72,7 @@ class MultiplexerTestBase:
             'uuid: POST', "Verify the client's original target received the POST transaction.")
         self.server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: PUT', "Verify the client's original target received the PUT transaction.")
+        self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         # Under all configurations, the GET request should be multiplexed.
         self.server_origin.Streams.All += Testers.ContainsExpression(
@@ -74,6 +83,7 @@ class MultiplexerTestBase:
         self.server_http.Streams.All += Testers.ContainsExpression(
             'X-Multiplexer: copy', 'Verify the HTTP server received a "copy" of the request.')
         self.server_http.Streams.All += Testers.ContainsExpression('uuid: GET', "Verify the HTTP server received the GET request.")
+        self.server_http.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         self.server_https.Streams.All += Testers.ContainsExpression(
             'X-Multiplexer: copy', 'Verify the HTTPS server received a "copy" of the request.')
@@ -96,6 +106,8 @@ class MultiplexerTestBase:
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|multiplexer',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
             })
         self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         skip_remap_param = ''
@@ -103,18 +115,19 @@ class MultiplexerTestBase:
             skip_remap_param = ' @pparam=proxy.config.multiplexer.skip_post_put=1'
         self.ts.Disk.remap_config.AddLines(
             [
-                f'map https://origin.server.com https://127.0.0.1:{self.server_origin.Variables.https_port} '
+                f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
                 f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com'
                 f'{skip_remap_param}',
 
                 # Now create remap entries for the multiplexed hosts: one that
                 # verifies HTTP, and another that verifies HTTPS.
-                f'map http://nontls.server.com http://127.0.0.1:{self.server_http.Variables.http_port}',
-                f'map http://tls.server.com https://127.0.0.1:{self.server_https.Variables.https_port}',
+                f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
+                f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
             ])
 
     def run(self):
         tr = Test.AddTestRun()
+        self.ts.StartBefore(self.dns)
         tr.Processes.Default.StartBefore(self.server_origin)
         tr.Processes.Default.StartBefore(self.server_http)
         tr.Processes.Default.StartBefore(self.server_https)
@@ -122,7 +135,8 @@ class MultiplexerTestBase:
 
         counter = MultiplexerTestBase.client_counter
         MultiplexerTestBase.client_counter += 1
-        tr.AddVerifierClientProcess(f"client_{counter}", self.replay_file, https_ports=[self.ts.Variables.ssl_port])
+        client = tr.AddVerifierClientProcess(f"client_{counter}", self.replay_file, https_ports=[self.ts.Variables.ssl_port])
+        client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
 
 class MultiplexerTest(MultiplexerTestBase):

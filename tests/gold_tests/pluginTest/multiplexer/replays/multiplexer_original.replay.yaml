@@ -48,7 +48,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, first ]
 
     proxy-response:
@@ -64,7 +64,7 @@ sessions:
       headers:
         fields:
         - [ Host, origin.server.com ]
-        - [ Content-Length, 8 ]
+        - [ Content-Length, 320000 ]
         - [ X-Request, second ]
         - [ uuid, POST ]
 
@@ -80,7 +80,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, second ]
 
     proxy-response:
@@ -96,7 +96,7 @@ sessions:
       headers:
         fields:
         - [ Host, origin.server.com ]
-        - [ Content-Length, 8 ]
+        - [ Content-Length, 320000 ]
         - [ X-Request, third ]
         - [ uuid, PUT ]
 
@@ -112,7 +112,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, third ]
 
     proxy-response:

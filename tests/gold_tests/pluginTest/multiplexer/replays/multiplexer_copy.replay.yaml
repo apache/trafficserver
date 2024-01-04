@@ -48,7 +48,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, first ]
 
     # There is no client since this response terminates at ATS, so no need for
@@ -77,7 +77,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, second ]
 
     # There is no client since this response terminates at ATS, so no need for
@@ -106,7 +106,7 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Content-Length, 320000 ]
         - [ X-Response, third ]
 
     # There is no client since this response terminates at ATS, so no need for
