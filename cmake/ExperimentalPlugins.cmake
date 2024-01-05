@@ -113,7 +113,7 @@ auto_option(
   FEATURE_VAR
   BUILD_HOOK_TRACE
   WITH_SUBDIRECTORY
-  plugins/experimental/hook_trace
+  plugins/experimental/hook-trace
   DEFAULT
   ${_DEFAULT}
 )
