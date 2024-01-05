@@ -28,7 +28,7 @@ add_atsplugin(
   utils.cc
 )
 
-target_link_libraries(access_control PRIVATE PCRE::PCRE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(access_control PRIVATE PCRE::PCRE OpenSSL::SSL OpenSSL::Crypto ts::tscore)
 
 if(BUILD_TESTING)
   add_subdirectory(unit_tests)
