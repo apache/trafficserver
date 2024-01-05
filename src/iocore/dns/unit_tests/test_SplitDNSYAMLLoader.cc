@@ -25,14 +25,23 @@
 #include "P_SplitDNSProcessor.h"
 
 #include <catch.hpp>
+#include <swoc/bwf_base.h>
 
 #include <sstream>
+#include <string>
 #include <string_view>
 
-static bool
-error_contains(std::string_view error, std::string_view substr)
+static void
+check_error_contains(splitdns::yaml::err_type const &error, std::string_view substr)
 {
-  return error.find(substr) != std::string_view::npos;
+  std::stringstream errorstream;
+  errorstream << error;
+  std::string info_msg;
+  swoc::bwprint(info_msg, "Looking for \"{}\" in:\n\"\n{}\"", substr, errorstream.str());
+  INFO(info_msg);
+  // Expression is kept outside CHECK macro so error message is clean.
+  bool found{errorstream.str().find(substr) != std::string_view::npos};
+  CHECK(found);
 }
 
 TEST_CASE("loading a YAML config file")
@@ -44,39 +53,35 @@ TEST_CASE("loading a YAML config file")
           "when we try to load the SplitDNS from it, "
           "we should get \"Failed to load does-not-exist.yaml.\"")
   {
-    splitdns::yaml::load("does-not-exist.yaml", got, errorstream);
-    CHECK(errorstream.str() == "Failed to load does-not-exist.yaml.");
+    auto zret{splitdns::yaml::load("does-not-exist.yaml", got)};
+    check_error_contains(zret, "Failed to load does-not-exist.yaml");
   }
 
   SECTION("Given does-not-exist-also.yaml does not exist, "
           "when we try to load the SplitDNS from it, "
           "we should get \"Failed to load does-not-exist-also.yaml.\"")
   {
-    splitdns::yaml::load("does-not-exist-also.yaml", got, errorstream);
-    CHECK(errorstream.str() == "Failed to load does-not-exist-also.yaml.");
+    auto zret{splitdns::yaml::load("does-not-exist-also.yaml", got)};
+    check_error_contains(zret, "Failed to load does-not-exist-also.yaml");
   }
 
   SECTION("Given wrong-root.yaml does not have root 'dns', "
           "when we try to load the SplitDNS from it, "
           "we should get the specified error.")
   {
-    splitdns::yaml::load("wrong-root.yaml", got, errorstream);
-    auto got{errorstream.str()};
-    INFO(got);
-    CHECK(error_contains(got, "Root tag 'dns' not found."));
-    CHECK(error_contains(got, "Line 0"));
-    CHECK(error_contains(got, "While loading wrong-root.yaml."));
+    auto zret{splitdns::yaml::load("wrong-root.yaml", got)};
+    check_error_contains(zret, "Root tag 'dns' not found");
+    check_error_contains(zret, "Line 0");
+    check_error_contains(zret, "While loading wrong-root.yaml");
   }
 
   SECTION("Given wrong-subroot.yaml does not have subroot 'split', "
           "when we try to load the SplitDNS from it, "
           "we should get the specified error.")
   {
-    splitdns::yaml::load("wrong-subroot.yaml", got, errorstream);
-    auto got{errorstream.str()};
-    INFO(got);
-    CHECK(error_contains(got, "Tag 'split' not found."));
-    CHECK(error_contains(got, "Line 1"));
-    CHECK(error_contains(got, "While loading wrong-subroot.yaml."));
+    auto zret{splitdns::yaml::load("wrong-subroot.yaml", got)};
+    check_error_contains(zret, "Tag 'split' not found");
+    check_error_contains(zret, "Line 1");
+    check_error_contains(zret, "While loading wrong-subroot.yaml");
   }
 }

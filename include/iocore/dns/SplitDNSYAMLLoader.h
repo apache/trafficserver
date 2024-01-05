@@ -27,6 +27,7 @@
 
 #include "tsutil/ts_errata.h"
 
+#include <swoc/bwf_base.h>
 #include <swoc/swoc_file.h>
 #include <yaml-cpp/yaml.h>
 
@@ -40,6 +41,8 @@ namespace splitdns
 {
 namespace yaml
 {
+  using err_type = swoc::Errata;
+
   class SplitDNSYAMLLoader
   {
   public:
@@ -56,18 +59,23 @@ namespace yaml
     static swoc::Errata setUpSplitDNSFromYAMLTree(YAML::Node const &current_node);
   };
 
-  inline void
-  load(std::string_view config_filename, SplitDNS &out, std::ostream &errorstream)
+  inline swoc::Errata
+  load(std::string_view config_filename, SplitDNS &out)
   {
     std::error_code ec;
     auto content{swoc::file::load(config_filename, ec)};
-    if (ec.value() == 0) {
-      if (auto err{SplitDNSYAMLLoader::load(content, out)}; !err.is_ok()) {
-        errorstream << err << "While loading " << config_filename << ".\n";
-      }
-    } else {
-      errorstream << "Failed to load " << config_filename << '.';
+    if (ec.value() != 0) {
+      return swoc::Errata{ec, ERRATA_ERROR, "Failed to load {} : {}", config_filename, ec};
     }
+
+    if (auto err{SplitDNSYAMLLoader::load(content, out)}; !err.is_ok()) {
+      std::string while_loading_note;
+      swoc::bwprint(while_loading_note, "While loading {}", config_filename);
+      err.note(while_loading_note);
+      return err;
+    }
+
+    return swoc::Errata{};
   }
 
 } // namespace yaml
