@@ -107,9 +107,13 @@ class Test_exit_on_cert_load_fail:
 
 
 # Test server cert loading.
-Test_exit_on_cert_load_fail("load_on_cert", is_testing_server_side=True, enable_exit_on_load=False).run()
-Test_exit_on_cert_load_fail("load_on_cert", is_testing_server_side=True, enable_exit_on_load=True).run()
+Test_exit_on_cert_load_fail(
+    "load server cert with exit on load disabled", is_testing_server_side=True, enable_exit_on_load=False).run()
+Test_exit_on_cert_load_fail(
+    "load server cert with exit on load enabled", is_testing_server_side=True, enable_exit_on_load=True).run()
 
 # Test client cert loading.
-Test_exit_on_cert_load_fail("load_on_cert", is_testing_server_side=False, enable_exit_on_load=False).run()
-Test_exit_on_cert_load_fail("load_on_cert", is_testing_server_side=False, enable_exit_on_load=True).run()
+Test_exit_on_cert_load_fail(
+    "load client cert with exit on load disabled", is_testing_server_side=False, enable_exit_on_load=False).run()
+Test_exit_on_cert_load_fail(
+    "load client cert with exit on load enabled", is_testing_server_side=False, enable_exit_on_load=True).run()
