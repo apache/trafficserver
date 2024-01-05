@@ -28,6 +28,123 @@ else()
 endif()
 
 auto_option(
+  ACCESS_CONTROL
+  FEATURE_VAR
+  BUILD_ACCESS_CONTROL
+  WITH_SUBDIRECTORY
+  plugins/experimental/access_control
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  BLOCK_ERRORS
+  FEATURE_VAR
+  BUILD_BLOCK_ERRORS
+  WITH_SUBDIRECTORY
+  plugins/experimental/block_errors
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  CACHE_FILL
+  FEATURE_VAR
+  BUILD_CACHE_FILL
+  WITH_SUBDIRECTORY
+  plugins/experimental/cache_fill
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  CERT_REPORTING_TOOL
+  FEATURE_VAR
+  BUILD_CERT_REPORTING_TOOL
+  WITH_SUBDIRECTORY
+  plugins/experimental/cert_reporting_tool
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  COOKIE_REMAP
+  FEATURE_VAR
+  BUILD_COOKIE_REMAP
+  WITH_SUBDIRECTORY
+  plugins/experimental/cookie_remap
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  CUSTOM_REDIRECT
+  FEATURE_VAR
+  BUILD_CUSTOM_REDIRECT
+  WITH_SUBDIRECTORY
+  plugins/experimental/custom_redirect
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  FQ_PACING
+  FEATURE_VAR
+  BUILD_FQ_PACING
+  WITH_SUBDIRECTORY
+  plugins/experimental/fq_pacing
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  GEOIP_ACL
+  FEATURE_VAR
+  BUILD_GEOIP_ACL
+  WITH_SUBDIRECTORY
+  plugins/experimental/geoip_acl
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  HEADER_FREQ
+  FEATURE_VAR
+  BUILD_HEADER_FREQ
+  WITH_SUBDIRECTORY
+  plugins/experimental/header_freq
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  HOOK_TRACE
+  FEATURE_VAR
+  BUILD_HOOK_TRACE
+  WITH_SUBDIRECTORY
+  plugins/experimental/hook_trace
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  HTTP_STATS
+  FEATURE_VAR
+  BUILD_HTTP_STATS
+  WITH_SUBDIRECTORY
+  plugins/experimental/http_stats
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  ICAP
+  FEATURE_VAR
+  BUILD_ICAP
+  WITH_SUBDIRECTORY
+  plugins/experimental/icap
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  INLINER
+  FEATURE_VAR
+  BUILD_INLINER
+  WITH_SUBDIRECTORY
+  plugins/experimental/inliner
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
   MAXMIND_ACL
   FEATURE_VAR
   BUILD_MAXMIND_ACL
@@ -35,6 +152,69 @@ auto_option(
   plugins/experimental/maxmind_acl
   PACKAGE_DEPENDS
   maxminddb
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  MEMCACHE
+  FEATURE_VAR
+  BUILD_MEMCACHE
+  WITH_SUBDIRECTORY
+  plugins/experimental/memcache
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  MEMORY_PROFILE
+  FEATURE_VAR
+  BUILD_MEMORY_PROFILE
+  WITH_SUBDIRECTORY
+  plugins/experimental/memory_profile
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  MONEY_TRACE
+  FEATURE_VAR
+  BUILD_MONEY_TRACE
+  WITH_SUBDIRECTORY
+  plugins/experimental/money_trace
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  MP4
+  FEATURE_VAR
+  BUILD_MP4
+  WITH_SUBDIRECTORY
+  plugins/experimental/mp4
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  RATE_LIMIT
+  FEATURE_VAR
+  BUILD_RATE_LIMIT
+  WITH_SUBDIRECTORY
+  plugins/experimental/rate_limit
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  REDO_CACHE_LOOKUP
+  FEATURE_VAR
+  BUILD_REDO_CACHE_LOOKUP
+  WITH_SUBDIRECTORY
+  plugins/experimental/redo_cache_lookup
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  SSLHEADERS
+  FEATURE_VAR
+  BUILD_SSLHEADERS
+  WITH_SUBDIRECTORY
+  plugins/experimental/sslheaders
   DEFAULT
   ${_DEFAULT}
 )
@@ -50,6 +230,33 @@ auto_option(
   ${_DEFAULT}
 )
 auto_option(
+  STREAM_EDITOR
+  FEATURE_VAR
+  BUILD_STREAM_EDITOR
+  WITH_SUBDIRECTORY
+  plugins/experimental/stream_editor
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  SYSTEM_STATS
+  FEATURE_VAR
+  BUILD_SYSTEM_STATS
+  WITH_SUBDIRECTORY
+  plugins/experimental/system_stats
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  TLS_BRIDGE
+  FEATURE_VAR
+  BUILD_TLS_BRIDGE
+  WITH_SUBDIRECTORY
+  plugins/experimental/tls_bridge
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
   URI_SIGNING
   FEATURE_VAR
   BUILD_URI_SIGNING
@@ -58,6 +265,15 @@ auto_option(
   PACKAGE_DEPENDS
   cjose
   jansson
+  DEFAULT
+  ${_DEFAULT}
+)
+auto_option(
+  URL_SIG
+  FEATURE_VAR
+  BUILD_URL_SIG
+  WITH_SUBDIRECTORY
+  plugins/experimental/url_sig
   DEFAULT
   ${_DEFAULT}
 )
