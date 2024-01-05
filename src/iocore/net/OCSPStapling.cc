@@ -1263,7 +1263,7 @@ ocsp_update()
 #else
   const SSLCertContextType ctxTypes[] = {SSLCertContextType::RSA, SSLCertContextType::EC};
 #endif
-  for (auto &ctxType : ctxTypes) {
+  for (const auto &ctxType : ctxTypes) {
     const unsigned ctxCount = certLookup ? certLookup->count() : 0;
     for (unsigned i = 0; i < ctxCount; i++) {
       SSLCertContext *cc = certLookup->get(i, ctxType);
