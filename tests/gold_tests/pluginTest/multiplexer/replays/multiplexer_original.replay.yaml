@@ -120,3 +120,39 @@ sessions:
       headers:
         fields:
         - [ X-Response, { value: third, as: equal } ]
+
+  # POST that is chunked. We do not support multiplexing chunked request bodies,
+  # but it should go to the origin fine.
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /path/chunked_post
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ X-Request, fourth ]
+        - [ uuid, CHUNKED_POST ]
+      content:
+        size: 320000
+
+    proxy-request:
+      method: "POST"
+      headers:
+        fields:
+        - [ X-Request, { value: fourth, as: equal } ]
+        - [ X-Multiplexer, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 320000 ]
+        - [ X-Response, fourth ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: fourth, as: equal } ]

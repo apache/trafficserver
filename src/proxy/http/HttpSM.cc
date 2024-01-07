@@ -23,7 +23,6 @@
  */
 
 #include "tsutil/ts_bw_format.h"
-#include "proxy/hdrs/MIME.h"
 #include "proxy/ProxyTransaction.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/ConnectingEntry.h"
@@ -1129,26 +1128,12 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       setup_server_send_request_api();
       break;
     } else {
-      // The caller of the API did not specify a size, but there may be a
-      // Content-Length header in the request. Our plugin transform example
-      // plugin suggests using INT64_MAX, for example, to transform the entire
-      // body from the upstream to the downstream VIO. For these situations,
-      // check for an existing Content-Length header on behalf of the caller.
-      if (nullptr != t_state.hdr_info.server_request.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH)) {
-        int64_t const cl = t_state.hdr_info.server_request.value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-        SMDbg(dbg_ctl_http, "No size passed via the callback. Using the Content-Length header value: %" PRId64, cl);
-        t_state.hdr_info.transform_request_cl = cl;
-        setup_server_send_request_api();
-        break;
-      } else {
-        // No content length from the post.  This is a no go
-        //  since http spec requires content length when
-        //  sending a request message body.  Change the event
-        //  to an error and fall through
-        event = VC_EVENT_ERROR;
-        SMDbg(dbg_ctl_http, "No size passed via the callback and there is no Content-Length header. Aborting the transform.");
-        Log::error("Request transformation failed to set content length");
-      }
+      // No content length from the post.  This is a no go
+      //  since http spec requires content length when
+      //  sending a request message body.  Change the event
+      //  to an error and fall through
+      event = VC_EVENT_ERROR;
+      Log::error("Request transformation failed to set content length");
     }
   // FALLTHROUGH
   default:

@@ -30,13 +30,16 @@
 struct PostState {
   Requests requests;
 
+  /// The Content-Length value of the POST/PUT request.
+  int content_length = -1;
+
   TSIOBuffer origin_buffer;
   TSIOBufferReader clone_reader;
   /// The VIO for the original (non-clone) origin.
   TSVIO output_vio;
 
   ~PostState();
-  PostState(Requests &);
+  PostState(Requests &, int content_length);
 };
 
 int handlePost(TSCont, TSEvent, void *);

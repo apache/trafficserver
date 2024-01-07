@@ -73,6 +73,9 @@ class MultiplexerTestBase:
         self.server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: PUT', "Verify the client's original target received the PUT transaction.")
         self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+        # The chunked POST should go to the origin.
+        self.server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: CHUNKED_POST', "Verify the client's original target received the chunked POST transaction.")
 
         # Under all configurations, the GET request should be multiplexed.
         self.server_origin.Streams.All += Testers.ContainsExpression(
@@ -84,11 +87,17 @@ class MultiplexerTestBase:
             'X-Multiplexer: copy', 'Verify the HTTP server received a "copy" of the request.')
         self.server_http.Streams.All += Testers.ContainsExpression('uuid: GET', "Verify the HTTP server received the GET request.")
         self.server_http.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+        # Chunked POST requests are not supported for multiplexing.
+        self.server_http.Streams.All += Testers.ExcludesExpression(
+            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
 
         self.server_https.Streams.All += Testers.ContainsExpression(
             'X-Multiplexer: copy', 'Verify the HTTPS server received a "copy" of the request.')
         self.server_https.Streams.All += Testers.ContainsExpression(
             'uuid: GET', "Verify the HTTPS server received the GET request.")
+        # Chunked POST requests are not supported for multiplexing.
+        self.server_https.Streams.All += Testers.ExcludesExpression(
+            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
 
         # Verify that the HTTPS server receives a TLS connection.
         self.server_https.Streams.All += Testers.ContainsExpression(

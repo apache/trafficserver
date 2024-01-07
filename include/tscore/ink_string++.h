@@ -32,7 +32,6 @@
 
 #pragma once
 #include <cstdio>
-#include <cstring>
 #include <strings.h>
 
 /***********************************************************************
