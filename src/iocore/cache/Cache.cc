@@ -73,7 +73,7 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-bool cache_config_persist_bad_disks            = false;
+int cache_config_persist_bad_disks             = false;
 
 // Globals
 
@@ -344,10 +344,10 @@ CacheProcessor::start_internal(int flags)
       opts |= O_CREAT;
     }
 
-    // Check if the disk is known to be bad
+    // Check if the disk is known to be bad.
     if (cache_config_persist_bad_disks && !known_bad_disks.empty()) {
       if (known_bad_disks.find(paths[gndisks]) != known_bad_disks.end()) {
-        Note("%s is a known bad disk.  Skipping.", paths[gndisks]);
+        Warning("%s is a known bad disk.  Skipping.", paths[gndisks]);
         Metrics::Gauge::increment(cache_rsb.span_offline);
         continue;
       }
@@ -1954,6 +1954,30 @@ ink_cache_init(ts::ModuleVersion v)
   register_cache_stats(&cache_rsb, "proxy.process.cache");
 
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+
+  REC_EstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
+  Debug("cache_init", "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
+  if (cache_config_persist_bad_disks) {
+    std::filesystem::path localstatedir{Layout::get()->localstatedir};
+    std::filesystem::path bad_disks_path{localstatedir / ts::filename::BAD_DISKS};
+    std::fstream bad_disks_file{bad_disks_path.c_str(), bad_disks_file.in};
+    if (bad_disks_file.good()) {
+      for (std::string line; std::getline(bad_disks_file, line);) {
+        if (bad_disks_file.fail()) {
+          Error("Failed while trying to read known bad disks file: %s", bad_disks_path.c_str());
+          break;
+        }
+        if (!line.empty()) {
+          known_bad_disks.insert(std::move(line));
+        }
+      }
+    }
+    // not having a bad disks file is not an error.
+
+    unsigned long known_bad_count = known_bad_disks.size();
+    Warning("%lu previously known bad disks were recorded in %s.  They will not be added to the cache.", known_bad_count,
+            bad_disks_path.c_str());
+  }
 
   Result result = theCacheStore.read_config();
   if (result.failed()) {
