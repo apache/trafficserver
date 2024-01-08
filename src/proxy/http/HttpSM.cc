@@ -5273,7 +5273,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   }
   if (HttpTransact::is_server_negative_cached(&t_state) == true &&
       t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
-    SMDebug("http_seq", "Not connecting to the server because it is marked down.");
+    SMDbg(dbg_ctl_http_seq, "Not connecting to the server because it is marked down.");
     call_transact_and_set_next_state(HttpTransact::OriginDown);
     return;
   }
