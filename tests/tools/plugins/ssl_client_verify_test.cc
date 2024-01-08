@@ -118,6 +118,7 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
     if (!retval) {
       reenable_event = TS_EVENT_ERROR;
     }
+    sk_X509_pop_free(chain, X509_free);
   } else {
     reenable_event = TS_EVENT_ERROR;
   }
