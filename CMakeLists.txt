@@ -492,6 +492,10 @@ if(ENABLE_AUTEST)
       CACHE STRING "Location for autest output (default
   CMAKE_BINARY_DIR/_sandbox)"
   )
+  set(AUTEST_OPTIONS
+      ""
+      CACHE STRING "Additional options for autest (default \"\")"
+  )
   set(PROXY_VERIFIER_VERSION "v2.10.1")
   set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
   include(proxy-verifier)
