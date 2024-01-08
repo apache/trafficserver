@@ -5108,20 +5108,14 @@ HttpSM::get_outbound_sni() const
 bool
 HttpSM::apply_ip_allow_filter()
 {
-  bool result{true};
   // Method allowed on dest IP address check
   IpAllow::ACL acl = IpAllow::match(this->get_server_remote_addr(), IpAllow::DST_ADDR);
 
   if (ip_allow_is_request_forbidden(acl)) {
     ip_allow_deny_request(acl);
-    result = false;
-  } else if (HttpTransact::is_server_negative_cached(&t_state) == true &&
-             t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
-    call_transact_and_set_next_state(HttpTransact::OriginDown);
-    result = false;
+    return false;
   }
-
-  return result;
+  return true;
 }
 
 bool
@@ -5276,6 +5270,12 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     if (!apply_ip_allow_filter()) {
       return;
     }
+  }
+  if (HttpTransact::is_server_negative_cached(&t_state) == true &&
+      t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
+    SMDebug("http_seq", "Not connecting to the server because it is marked down.");
+    call_transact_and_set_next_state(HttpTransact::OriginDown);
+    return;
   }
 
   // Check for self loop.
