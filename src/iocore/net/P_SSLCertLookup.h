@@ -166,8 +166,8 @@ struct SSLCertLookup : public ConfigInfo {
     return ssl_default.get();
   }
 
-  unsigned count() const;
-  SSLCertContext *get(unsigned i) const;
+  unsigned count(SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
+  SSLCertContext *get(unsigned i, SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
 
   void register_cert_secrets(std::vector<std::string> const &cert_secrets, std::set<std::string> &lookup_names);
   void getPolicies(const std::string &secret_name, std::set<shared_SSLMultiCertConfigParams> &policies) const;

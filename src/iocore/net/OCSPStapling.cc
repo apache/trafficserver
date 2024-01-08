@@ -1256,33 +1256,40 @@ ocsp_update()
   time_t current_time;
 
   SSLCertificateConfig::scoped_config certLookup;
-  const unsigned ctxCount = certLookup ? certLookup->count() : 0;
 
   Debug("ssl_ocsp", "updating OCSP data");
-  for (unsigned i = 0; i < ctxCount; i++) {
-    SSLCertContext *cc = certLookup->get(i);
-    if (cc) {
-      ctx = cc->getCtx();
-      if (ctx) {
-        certinfo *cinf    = nullptr;
-        certinfo_map *map = stapling_get_cert_info(ctx.get());
-        if (map) {
-          // Walk over all certs associated with this CTX
-          for (auto &iter : *map) {
-            cinf = iter.second;
-            ink_mutex_acquire(&cinf->stapling_mutex);
-            current_time = time(nullptr);
-            if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
-              ink_mutex_release(&cinf->stapling_mutex);
-              if (stapling_refresh_response(cinf, &resp)) {
-                Debug("ssl_ocsp", "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                Metrics::Counter::increment(ssl_rsb.ocsp_refreshed_cert);
+#ifndef OPENSSL_IS_BORINGSSL
+  const SSLCertContextType ctxTypes[] = {SSLCertContextType::GENERIC};
+#else
+  const SSLCertContextType ctxTypes[] = {SSLCertContextType::RSA, SSLCertContextType::EC};
+#endif
+  for (const auto &ctxType : ctxTypes) {
+    const unsigned ctxCount = certLookup ? certLookup->count() : 0;
+    for (unsigned i = 0; i < ctxCount; i++) {
+      SSLCertContext *cc = certLookup->get(i, ctxType);
+      if (cc) {
+        ctx = cc->getCtx();
+        if (ctx) {
+          certinfo *cinf    = nullptr;
+          certinfo_map *map = stapling_get_cert_info(ctx.get());
+          if (map) {
+            // Walk over all certs associated with this CTX
+            for (auto &iter : *map) {
+              cinf = iter.second;
+              ink_mutex_acquire(&cinf->stapling_mutex);
+              current_time = time(nullptr);
+              if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+                ink_mutex_release(&cinf->stapling_mutex);
+                if (stapling_refresh_response(cinf, &resp)) {
+                  Debug("ssl_ocsp", "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                  Metrics::Counter::increment(ssl_rsb.ocsp_refreshed_cert);
+                } else {
+                  Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                  Metrics::Counter::increment(ssl_rsb.ocsp_refresh_cert_failure);
+                }
               } else {
-                Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-                Metrics::Counter::increment(ssl_rsb.ocsp_refresh_cert_failure);
+                ink_mutex_release(&cinf->stapling_mutex);
               }
-            } else {
-              ink_mutex_release(&cinf->stapling_mutex);
             }
           }
         }

@@ -2456,12 +2456,12 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       if (sslMultCertSettings->ocsp_response) {
         const char *ocsp_response_name = data.ocsp_list[i].c_str();
         std::string completeOCSPResponsePath(Layout::relative_to(params->ssl_ocsp_response_path_only, ocsp_response_name));
-        if (!ssl_stapling_init_cert(ctx, cert, data.cert_names_list[i].c_str(), completeOCSPResponsePath.c_str())) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", data.cert_names_list[i].c_str());
+        if (!ssl_stapling_init_cert(ctx, cert, cert_names_list[i].c_str(), completeOCSPResponsePath.c_str())) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_names_list[i].c_str());
         }
       } else {
-        if (!ssl_stapling_init_cert(ctx, cert, data.cert_names_list[i].c_str(), nullptr)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", data.cert_names_list[i].c_str());
+        if (!ssl_stapling_init_cert(ctx, cert, cert_names_list[i].c_str(), nullptr)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_names_list[i].c_str());
         }
       }
     }
