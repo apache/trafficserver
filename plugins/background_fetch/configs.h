@@ -29,6 +29,7 @@
 #include <string>
 #include <list>
 #include <memory>
+#include <sys/socket.h>
 
 #include "rules.h"
 
