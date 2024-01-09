@@ -302,7 +302,7 @@ CacheProcessor::start_internal(int flags)
   start_done           = 0;
 
   /* Read the config file and create the data structures corresponding to the file. */
-  gndisks = theCacheStore.n_disks;
+  gndisks = theCacheStore.n_spans;
   gdisks  = static_cast<CacheDisk **>(ats_malloc(gndisks * sizeof(CacheDisk *)));
 
   // Temporaries to carry values between loops
@@ -323,8 +323,8 @@ CacheProcessor::start_internal(int flags)
   /*
    create CacheDisk objects for each span in the configuration file and store in gdisks
    */
-  for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
-    Span *sd = theCacheStore.disk[i];
+  for (unsigned i = 0; i < theCacheStore.n_spans; i++) {
+    Span *sd = theCacheStore.spans[i];
     int opts = DEFAULT_CACHE_OPTIONS;
 
     if (!paths[gndisks]) {
@@ -440,15 +440,15 @@ CacheProcessor::start_internal(int flags)
       Warning("unable to open cache disk(s): Cache Disabled\n");
       return -1; // pointless, AFAICT this is ignored.
     }
-  } else if (this->waitForCache() == 3 && static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_in_config) {
+  } else if (this->waitForCache() == 3 && static_cast<unsigned int>(gndisks) < theCacheStore.n_spans_in_config) {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     if (cb_after_init) {
       cb_after_init();
     }
     Emergency("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
-              theCacheStore.n_disks_in_config);
-  } else if (this->waitForCache() == 2 && static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_in_config) {
-    Warning("Cache initialization incomplete - only %d out of %d disks were valid.", gndisks, theCacheStore.n_disks_in_config);
+              theCacheStore.n_spans_in_config);
+  } else if (this->waitForCache() == 2 && static_cast<unsigned int>(gndisks) < theCacheStore.n_spans_in_config) {
+    Warning("Cache initialization incomplete - only %d out of %d disks were valid.", gndisks, theCacheStore.n_spans_in_config);
   }
 
   // If we got here, we have enough disks to proceed
@@ -500,9 +500,9 @@ CacheProcessor::diskInitialized()
       if (cb_after_init) {
         cb_after_init();
       }
-      Emergency("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+      Emergency("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_spans_in_config);
     } else if (this->waitForCache() == 2) {
-      Warning("Cache initialization incomplete - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+      Warning("Cache initialization incomplete - only %d of %d disks were available.", gndisks, theCacheStore.n_spans_in_config);
     }
   }
 

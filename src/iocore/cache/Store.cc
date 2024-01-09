@@ -21,14 +21,15 @@
   limitations under the License.
  */
 
-#include "tscore/ink_platform.h"
 #include "P_Cache.h"
+
+#include "iocore/cache/Store.h"
+
+#include "tscore/ink_platform.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
-#include "tscore/Tokenizer.h"
 #include "tscore/SimpleTokenizer.h"
-#include "tscore/runroot.h"
 
 #if defined(__linux__)
 #include <linux/major.h>
@@ -78,48 +79,46 @@ span_file_typename(mode_t st_mode)
   }
 }
 
-Store::Store() {}
-
 void
 Store::sort()
 {
-  Span **vec = static_cast<Span **>(alloca(sizeof(Span *) * n_disks));
-  memset(vec, 0, sizeof(Span *) * n_disks);
-  for (unsigned i = 0; i < n_disks; i++) {
-    vec[i]  = disk[i];
-    disk[i] = nullptr;
+  Span **vec = static_cast<Span **>(alloca(sizeof(Span *) * n_spans));
+  memset(vec, 0, sizeof(Span *) * n_spans);
+  for (unsigned i = 0; i < n_spans; i++) {
+    vec[i]   = spans[i];
+    spans[i] = nullptr;
   }
 
   // sort by device
 
   unsigned n = 0;
-  for (unsigned i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_spans; i++) {
     for (Span *sd = vec[i]; sd; sd = vec[i]) {
       vec[i] = vec[i]->link.next;
       for (unsigned d = 0; d < n; d++) {
-        if (sd->disk_id == disk[d]->disk_id) {
-          sd->link.next = disk[d];
-          disk[d]       = sd;
+        if (sd->disk_id == spans[d]->disk_id) {
+          sd->link.next = spans[d];
+          spans[d]      = sd;
           goto Ldone;
         }
       }
-      disk[n++] = sd;
+      spans[n++] = sd;
     Ldone:;
     }
   }
-  n_disks = n;
+  n_spans = n;
 
   // sort by pathname x offset
 
-  for (unsigned i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_spans; i++) {
   Lagain:
     Span *prev = nullptr;
-    for (Span *sd = disk[i]; sd;) {
+    for (Span *sd = spans[i]; sd;) {
       Span *next = sd->link.next;
       if (next &&
           ((strcmp(sd->pathname, next->pathname) < 0) || (!strcmp(sd->pathname, next->pathname) && sd->offset > next->offset))) {
         if (!prev) {
-          disk[i]         = next;
+          spans[i]        = next;
           sd->link.next   = next->link.next;
           next->link.next = sd;
         } else {
@@ -136,8 +135,8 @@ Store::sort()
 
   // merge adjacent spans
 
-  for (unsigned i = 0; i < n_disks; i++) {
-    for (Span *sd = disk[i]; sd;) {
+  for (unsigned i = 0; i < n_spans; i++) {
+    for (Span *sd = spans[i]; sd;) {
       Span *next = sd->link.next;
       if (next && !strcmp(sd->pathname, next->pathname)) {
         if (!sd->file_pathname) {
@@ -197,14 +196,14 @@ Span::volume_number_set(int n)
 void
 Store::delete_all()
 {
-  for (unsigned i = 0; i < n_disks; i++) {
-    if (disk[i]) {
-      delete disk[i];
+  for (unsigned i = 0; i < n_spans; i++) {
+    if (spans[i]) {
+      delete spans[i];
     }
   }
-  n_disks = 0;
-  ats_free(disk);
-  disk = nullptr;
+  n_spans = 0;
+  ats_free(spans);
+  spans = nullptr;
 }
 
 Store::~Store()
@@ -261,7 +260,7 @@ Store::read_config()
 
     // parse
     Dbg(dbg_ctl_cache_init, "Store::read_config: \"%s\"", path);
-    ++n_disks_in_config;
+    ++n_spans_in_config;
 
     int64_t size   = -1;
     int volume_num = -1;
@@ -334,7 +333,7 @@ Store::read_config()
   while (cur) {
     Span *next     = cur->link.next;
     cur->link.next = nullptr;
-    disk[i++]      = cur;
+    spans[i++]     = cur;
     cur            = next;
   }
   sd = nullptr; // these are all used.
@@ -348,8 +347,8 @@ Store::read_config()
 int
 Store::write_config_data(int fd) const
 {
-  for (unsigned i = 0; i < n_disks; i++) {
-    for (Span *sd = disk[i]; sd; sd = sd->link.next) {
+  for (unsigned i = 0; i < n_spans; i++) {
+    for (Span *sd = spans[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
       snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), sd->blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
       if (ink_file_fd_writestring(fd, buf) == -1) {
@@ -486,7 +485,6 @@ Span::init(const char *path, int64_t size)
   }
 
   // A directory span means we will end up with a file, otherwise, we get what we asked for.
-  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? static_cast<mode_t>(S_IFREG) : sbuf.st_mode));
   this->pathname = ats_strdup(path);
 
   Dbg(dbg_ctl_cache_init, "initialized span '%s'", this->pathname.get());
@@ -498,14 +496,4 @@ Span::init(const char *path, int64_t size)
 
 fail:
   return Span::errorstr(serr);
-}
-
-Span *
-Span::dup()
-{
-  Span *ds = new Span(*this);
-  if (this->link.next) {
-    ds->link.next = this->link.next->dup();
-  }
-  return ds;
 }
