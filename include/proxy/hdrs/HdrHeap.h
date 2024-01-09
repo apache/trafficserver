@@ -136,19 +136,32 @@ public:
 
   char *allocate(int nbytes);
   char *expand(char *ptr, int old_size, int new_size);
-  int space_avail();
-
-  uint32_t m_heap_size;
-  char *m_free_start;
-  uint32_t m_free_size;
+  uint32_t
+  space_avail() const
+  {
+    return _avail_size;
+  }
+  uint32_t
+  total_size() const
+  {
+    return _total_size;
+  }
 
   bool contains(const char *str) const;
+
+  static HdrStrHeap *alloc(int heap_size);
+
+private:
+  HdrStrHeap(uint32_t total_size) : _total_size{total_size} {}
+
+  uint32_t const _total_size;
+  uint32_t _avail_size;
 };
 
 inline bool
 HdrStrHeap::contains(const char *str) const
 {
-  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + m_heap_size;
+  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + _total_size;
 }
 
 struct StrHeapDesc {
@@ -289,16 +302,18 @@ public:
       the reference is dropped. This is useful inside a method or block
       to keep the required heap data around until leaving the scope.
   */
-  struct HeapGuard {
+  class HeapGuard
+  {
+  public:
     /// Construct the protection.
     HeapGuard(HdrHeap *heap, const char *str)
     {
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
-        m_ptr = heap->m_read_write_heap.get();
+        _ptr = heap->m_read_write_heap.get();
       } else {
         for (auto &i : heap->m_ronly_heap) {
           if (i.contains(str)) {
-            m_ptr = i.m_ref_count_ptr;
+            _ptr = i.m_ref_count_ptr;
             break;
           }
         }
@@ -308,8 +323,9 @@ public:
     // There's no need to have a destructor here, the default dtor will take care of
     // releasing the (potentially) locked heap.
 
+  private:
     /// The heap we protect (if any)
-    Ptr<RefCountObj> m_ptr;
+    Ptr<RefCountObj> _ptr;
   };
 
   // String Heap access
@@ -497,7 +513,6 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
   m_heap = from->m_heap;
 }
 
-HdrStrHeap *new_HdrStrHeap(int requested_size);
 HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
 
 void hdr_heap_test();

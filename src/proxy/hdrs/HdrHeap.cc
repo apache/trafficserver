@@ -31,6 +31,7 @@
  ****************************************************************************/
 
 #include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
 #include "proxy/hdrs/HdrHeap.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
@@ -124,14 +125,14 @@ new_HdrHeap(int size)
 }
 
 HdrStrHeap *
-new_HdrStrHeap(int requested_size)
+HdrStrHeap::alloc(int heap_size)
 {
   // The callee is asking for a string heap to be created
   //  that can allocate at least size bytes.  As such we,
   //  need to include the size of the string heap header in
   //  our calculations
 
-  int alloc_size = requested_size + sizeof(HdrStrHeap);
+  int alloc_size = heap_size + sizeof(HdrStrHeap);
 
   HdrStrHeap *sh;
   if (alloc_size <= HdrStrHeap::DEFAULT_SIZE) {
@@ -142,18 +143,16 @@ new_HdrStrHeap(int requested_size)
     sh         = static_cast<HdrStrHeap *>(ats_malloc(alloc_size));
   }
 
-  //    Debug("hdrs", "Allocated string heap in size %d", alloc_size);
-
   // Placement new the HdrStrHeap.
-  sh = new (sh) HdrStrHeap();
+  sh = new (sh) HdrStrHeap(alloc_size);
 
-  sh->m_heap_size  = alloc_size;
-  sh->m_free_size  = alloc_size - sizeof(HdrStrHeap);
-  sh->m_free_start = reinterpret_cast<char *>(sh + 1);
+  sh->_avail_size = alloc_size - sizeof(HdrStrHeap);
 
   ink_assert(sh->refcount() == 0);
 
-  ink_assert(sh->m_free_size > 0);
+  ink_assert(int(sh->total_size()) == alloc_size);
+
+  ink_assert(sh->_avail_size > 0);
 
   return sh;
 }
@@ -229,8 +228,8 @@ HdrHeap::deallocate_obj(HdrHeapObjImpl *obj)
 char *
 HdrHeap::allocate_str(int nbytes)
 {
-  int last_size   = 0;
-  char *new_space = nullptr;
+  int last_size = 0;
+  int next_size = 0;
   ink_assert(m_writeable);
 
   // INKqa08287 - We could get infinite build up
@@ -241,39 +240,50 @@ HdrHeap::allocate_str(int nbytes)
   //   but I already no that this code path is
   //   safe for forcing a str coalesce so I'm doing
   //   it here for sanity's sake
-  if (m_lost_string_space > static_cast<int>(MAX_LOST_STR_SPACE)) {
-    goto FAILED;
+  int coalesce = m_lost_string_space > static_cast<int>(MAX_LOST_STR_SPACE) ? 1 : 0;
+
+  for (;;) {
+    if (coalesce) {
+      switch (coalesce) {
+      case 2:
+        Warning("HdrHeap=%p coalescing twice", this);
+        break;
+      case 3:
+        Warning("HdrHeap=%p coalescing three or more times", this);
+        break;
+      default:
+        break;
+      }
+
+      coalesce_str_heaps();
+    }
+    do {
+      // First check to see if we have a read/write
+      //   string heap
+      if (!m_read_write_heap) {
+        if (next_size) {
+          Warning("HdrHeap=%p new read/write string heap twice last_size=%d", this, last_size);
+        }
+        next_size         = (last_size * 2) - int(sizeof(HdrStrHeap));
+        next_size         = next_size > nbytes ? next_size : nbytes;
+        m_read_write_heap = HdrStrHeap::alloc(next_size);
+      }
+      // Try to allocate of our read/write string heap
+      if (char *new_space = m_read_write_heap->allocate(nbytes); new_space) {
+        return new_space;
+      }
+
+      last_size = m_read_write_heap->total_size();
+
+      // Our existing rw str heap doesn't have sufficient
+      //  capacity.  We need to move the current rw heap
+      //  out of the way and create a new one
+    } while (demote_rw_str_heap() == 0);
+
+    // We failed to demote.  We'll have to coalesce the heaps.
+    ++coalesce;
+    next_size = 0;
   }
-
-RETRY:
-  // First check to see if we have a read/write
-  //   string heap
-  if (!m_read_write_heap) {
-    int next_size     = (last_size * 2) - sizeof(HdrStrHeap);
-    next_size         = next_size > nbytes ? next_size : nbytes;
-    m_read_write_heap = new_HdrStrHeap(next_size);
-  }
-  // Try to allocate of our read/write string heap
-  new_space = m_read_write_heap->allocate(nbytes);
-
-  if (new_space) {
-    return new_space;
-  }
-
-  last_size = m_read_write_heap->m_heap_size;
-
-  // Our existing rw str heap doesn't have sufficient
-  //  capacity.  We need to move the current rw heap
-  //  out of the way and create a new one
-  if (demote_rw_str_heap() == 0) {
-    goto RETRY;
-  }
-
-FAILED:
-  // We failed to demote.  We'll have to coalesce
-  //  the heaps
-  coalesce_str_heaps();
-  goto RETRY;
 }
 
 // char* HdrHeap::expand_str(const char* old_str, int old_len, int new_len)
@@ -325,9 +335,9 @@ HdrHeap::demote_rw_str_heap()
       // We've found a slot
       i.m_ref_count_ptr = m_read_write_heap.object();
       i.m_heap_start    = reinterpret_cast<char *>(m_read_write_heap.get());
-      i.m_heap_len      = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
+      i.m_heap_len      = m_read_write_heap->total_size() - m_read_write_heap->space_avail();
 
-      //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
+      //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->total_size());
       m_read_write_heap = nullptr;
       return 0;
     }
@@ -356,7 +366,7 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
 
   new_heap_size += required_space_for_evacuation();
 
-  HdrStrHeap *new_heap = new_HdrStrHeap(new_heap_size);
+  HdrStrHeap *new_heap = HdrStrHeap::alloc(new_heap_size);
   evacuate_from_str_heaps(new_heap);
   m_lost_string_space = 0;
 
@@ -492,7 +502,7 @@ HdrHeap::sanity_check_strs()
   if (m_read_write_heap) {
     heaps[num_heaps].start = (reinterpret_cast<char *>(m_read_write_heap.get())) + sizeof(HdrStrHeap);
 
-    int heap_size = m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
+    int heap_size = m_read_write_heap->total_size() - (sizeof(HdrStrHeap) + m_read_write_heap->space_avail());
 
     heaps[num_heaps].end = heaps[num_heaps].start + heap_size;
     num_heaps++;
@@ -572,7 +582,7 @@ HdrHeap::marshal_length()
   //  heap, we can drop the header on the read/write
   //  string heap
   if (m_read_write_heap) {
-    len += m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
+    len += m_read_write_heap->total_size() - (sizeof(HdrStrHeap) + m_read_write_heap->space_avail());
   }
 
   for (auto &j : m_ronly_heap) {
@@ -707,7 +717,7 @@ HdrHeap::marshal(char *buf, int len)
 
   if (m_read_write_heap) {
     char *copy_start = (reinterpret_cast<char *>(m_read_write_heap.get())) + sizeof(HdrStrHeap);
-    int nto_copy     = m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
+    int nto_copy     = m_read_write_heap->total_size() - (sizeof(HdrStrHeap) + m_read_write_heap->space_avail());
 
     if (nto_copy > len) {
       goto Failed;
@@ -1044,7 +1054,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
   // Find out if we have enough slots
   if (inherit_from->m_read_write_heap) {
     free_slots--;
-    inherit_str_size = inherit_from->m_read_write_heap->m_heap_size;
+    inherit_str_size = inherit_from->m_read_write_heap->total_size();
   }
   for (const auto &index : inherit_from->m_ronly_heap) {
     if (index.m_heap_start != nullptr) {
@@ -1074,7 +1084,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
     // Copy over read/write string heap if it exists
     if (inherit_from->m_read_write_heap) {
       int str_size =
-        inherit_from->m_read_write_heap->m_heap_size - sizeof(HdrStrHeap) - inherit_from->m_read_write_heap->m_free_size;
+        inherit_from->m_read_write_heap->total_size() - sizeof(HdrStrHeap) - inherit_from->m_read_write_heap->space_avail();
       ink_release_assert(attach_str_heap(reinterpret_cast<char *>(inherit_from->m_read_write_heap.get() + 1), str_size,
                                          inherit_from->m_read_write_heap.get(), &first_free));
     }
@@ -1153,7 +1163,7 @@ HdrHeap::total_used_size() const
 void
 HdrStrHeap::free()
 {
-  if (m_heap_size == HdrStrHeap::DEFAULT_SIZE) {
+  if (_total_size == HdrStrHeap::DEFAULT_SIZE) {
     THREAD_FREE(this, strHeapAllocator, this_thread());
   } else {
     ats_free(this);
@@ -1168,12 +1178,9 @@ HdrStrHeap::free()
 char *
 HdrStrHeap::allocate(int nbytes)
 {
-  char *new_space;
-
-  if (m_free_size >= static_cast<unsigned>(nbytes)) {
-    new_space     = m_free_start;
-    m_free_start += nbytes;
-    m_free_size  -= nbytes;
+  if (_avail_size >= static_cast<unsigned>(nbytes)) {
+    char *new_space  = reinterpret_cast<char *>(this) + _total_size - _avail_size;
+    _avail_size     -= nbytes;
     return new_space;
   } else {
     return nullptr;
@@ -1190,12 +1197,11 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
 {
   unsigned int expand_size = new_size - old_size;
 
-  ink_assert(ptr >= reinterpret_cast<char const *>(this + 1));
-  ink_assert(ptr < reinterpret_cast<char const *>(this) + m_heap_size);
+  ink_assert(contains(ptr));
 
-  if (ptr + old_size == m_free_start && expand_size <= m_free_size) {
-    m_free_start += expand_size;
-    m_free_size  -= expand_size;
+  char *free_start = reinterpret_cast<char *>(this) + _total_size - _avail_size;
+  if (ptr + old_size == free_start && expand_size <= _avail_size) {
+    _avail_size -= expand_size;
     return ptr;
   } else {
     return nullptr;
