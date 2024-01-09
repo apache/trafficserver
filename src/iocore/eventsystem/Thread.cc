@@ -27,8 +27,11 @@
 
 **************************************************************************/
 
-#include "P_EventSystem.h"
+#include "iocore/eventsystem/Thread.h"
+#include "iocore/eventsystem/Lock.h"
 #include "tscore/ink_string.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
 
 ///////////////////////////////////////////////
 // Common Interface impl                     //
@@ -39,19 +42,6 @@ thread_local Thread *Thread::this_thread_ptr;
 Thread::Thread()
 {
   mutex = new_ProxyMutex();
-  MUTEX_TAKE_LOCK(mutex, static_cast<EThread *>(this));
-  mutex->nthread_holding += THREAD_MUTEX_THREAD_HOLDING;
-}
-
-Thread::~Thread()
-{
-  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
-  if (this_thread_ptr == this) {
-    this_thread_ptr = nullptr;
-  }
-
-  mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
-  MUTEX_UNTAKE_LOCK(mutex, static_cast<EThread *>(this));
 }
 
 ///////////////////////////////////////////////

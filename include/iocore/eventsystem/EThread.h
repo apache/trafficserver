@@ -549,6 +549,9 @@ public:
   };
 
   Metrics metrics;
+
+private:
+  void cons_common();
 };
 
 // --- Inline implementation
