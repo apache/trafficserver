@@ -7,7 +7,10 @@
 export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib
 
 ${RUNPIPENV} run env autest \
+  --sandbox ${AUTEST_SANDBOX} \
   --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests \
   --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
   --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
-  --build-root ${CMAKE_BINARY_DIR} "$@"
+  --build-root ${CMAKE_BINARY_DIR} \
+  ${AUTEST_OPTIONS} \
+  "$@"
