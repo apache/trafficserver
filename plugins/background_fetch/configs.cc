@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <cstdio>
 #include <memory.h>
+#include <sys/socket.h>
 
 #include "configs.h"
 
