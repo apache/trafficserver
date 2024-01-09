@@ -1,0 +1,13 @@
+``
+proxy.process.cache.stripes 4
+``
+proxy.process.cache.span.online 1
+``
+proxy.process.cache.volume_1.stripes 1
+``
+proxy.process.cache.volume_2.stripes 1
+``
+proxy.process.cache.volume_3.stripes 1
+``
+proxy.process.cache.volume_4.stripes 1
+``
