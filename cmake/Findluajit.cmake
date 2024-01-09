@@ -32,7 +32,7 @@ pkg_check_modules(luajit luajit)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   luajit
-  REQUIRED_VARS luajit_INCLUDE_DIRS luajit_LINK_LIBRARIES luajit_LIBRARIES luajit_LIBRARY_DIRS
+  REQUIRED_VARS luajit_INCLUDE_DIRS luajit_LINK_LIBRARIES luajit_LIBRARIES
   HANDLE_COMPONENTS
 )
 
@@ -43,6 +43,8 @@ endif()
 if(luajit_FOUND AND NOT TARGET luajit::luajit)
   add_library(luajit::luajit INTERFACE IMPORTED)
   target_include_directories(luajit::luajit INTERFACE ${luajit_INCLUDE_DIRS})
-  target_link_directories(luajit::luajit INTERFACE ${luajit_LIBRARY_DIRS})
+  if(luajit_LIBRARY_DIRS)
+    target_link_directories(luajit::luajit INTERFACE ${luajit_LIBRARY_DIRS})
+  endif()
   target_link_libraries(luajit::luajit INTERFACE ${luajit_LIBRARIES})
 endif()
