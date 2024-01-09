@@ -71,14 +71,23 @@ EThread::set_specific()
   Thread::set_specific();
 }
 
+void
+EThread::cons_common()
+{
+  MUTEX_TAKE_LOCK(mutex, this);
+  mutex->nthread_holding += THREAD_MUTEX_THREAD_HOLDING;
+
+  memset(thread_private, 0, PER_THREAD_DATA);
+}
+
 EThread::EThread()
 {
-  memset(thread_private, 0, PER_THREAD_DATA);
+  cons_common();
 }
 
 EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
-  memset(thread_private, 0, PER_THREAD_DATA);
+  cons_common();
 #if HAVE_EVENTFD
   evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evfd < 0) {
@@ -103,17 +112,20 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 {
   ink_assert(att == DEDICATED);
-  memset(thread_private, 0, PER_THREAD_DATA);
+  cons_common();
 }
 
 // Provide a destructor so that SDK functions which create and destroy
 // threads won't have to deal with EThread memory deallocation.
 EThread::~EThread()
 {
-  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
+  ink_release_assert(mutex->thread_holding == this);
   if (this_ethread_ptr == this) {
     this_ethread_ptr = nullptr;
   }
+
+  mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
+  MUTEX_UNTAKE_LOCK(mutex, this);
 }
 
 bool

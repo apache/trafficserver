@@ -161,7 +161,7 @@ public:
 
   Thread(const Thread &)            = delete;
   Thread &operator=(const Thread &) = delete;
-  virtual ~Thread();
+  virtual ~Thread() {}
 
 protected:
   Thread();
