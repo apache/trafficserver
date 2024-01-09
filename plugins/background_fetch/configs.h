@@ -35,7 +35,7 @@
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
 
-extern DbgCtl Bg_dbg_ctl;
+static DbgCtl Bg_dbg_ctl{PLUGIN_NAME};
 
 ///////////////////////////////////////////////////////////////////////////
 // This holds one complete background fetch rule
