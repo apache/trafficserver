@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <string_view>
 #include <cstring>
+#include <sys/socket.h>
 
 #include <swoc/IPEndpoint.h>
 #include <swoc/swoc_meta.h>

@@ -28,6 +28,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <variant>
+#include <sys/socket.h>
 
 #include <swoc/TextView.h>
 #include <swoc/IPRange.h>
