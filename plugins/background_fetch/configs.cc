@@ -30,7 +30,7 @@
 
 #include <swoc/TextView.h>
 #include <swoc/swoc_file.h>
-#include <tscpp/util/ts_bw_format.h>
+#include <tsutil/ts_bw_format.h>
 
 using namespace swoc::literals;
 

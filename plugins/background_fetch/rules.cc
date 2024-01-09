@@ -32,8 +32,8 @@
 #include "configs.h"
 #include "rules.h"
 
-#include "tscpp/util/ts_bw_format.h"
-#include "tscpp/util/ts_ip.h"
+#include "tsutil/ts_bw_format.h"
+#include "tsutil/ts_ip.h"
 
 ///////////////////////////////////////////////////////////////////////////
 // These are little helper functions for the main rules evaluator.
