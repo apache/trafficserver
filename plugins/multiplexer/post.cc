@@ -41,7 +41,8 @@ PostState::~PostState()
   }
 }
 
-PostState::PostState(Requests &r) : origin_buffer(nullptr), clone_reader(nullptr), output_vio(nullptr)
+PostState::PostState(Requests &r, int content_length)
+  : content_length{content_length}, origin_buffer(nullptr), clone_reader(nullptr), output_vio(nullptr)
 {
   assert(!r.empty());
   requests.swap(r);
@@ -72,7 +73,10 @@ postTransform(const TSCont c, PostState &s)
     s.clone_reader = TSIOBufferReaderClone(origin_reader);
     assert(s.clone_reader != nullptr);
 
-    s.output_vio = TSVConnWrite(output_vconn, c, origin_reader, std::numeric_limits<int64_t>::max());
+    // A future patch should support chunked POST bodies. In those cases, we
+    // can use INT64_MAX instead of s.content_length.
+    assert(s.content_length > 0);
+    s.output_vio = TSVConnWrite(output_vconn, c, origin_reader, s.content_length);
     assert(s.output_vio != nullptr);
   }
 
