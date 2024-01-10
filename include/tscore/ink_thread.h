@@ -38,7 +38,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#if defined(POSIX_THREAD)
 #include <pthread.h>
 #include <csignal>
 #include <semaphore.h>
@@ -83,17 +82,11 @@ struct ink_semaphore {
   }
 };
 
-#endif /* #if defined(POSIX_THREAD) */
-
 /*******************************************************************
  *** Condition variables
  ******************************************************************/
 
-#ifdef POSIX_THREAD_10031c
 using ink_timestruc = struct timespec;
-#else
-typedef timestruc_t ink_timestruc;
-#endif
 
 #include <cerrno>
 #include "tscore/ink_mutex.h"
@@ -104,7 +97,6 @@ typedef timestruc_t ink_timestruc;
 //      The POSIX threads interface
 //
 //////////////////////////////////////////////////////////////////////////////
-#if defined(POSIX_THREAD)
 
 // NOTE(cmcfarlen): removed posix thread local key functions, use thread_local
 
@@ -306,5 +298,3 @@ ink_get_thread_name(char *name, size_t len)
   snprintf(name, len, "0x%" PRIx64, (uint64_t)ink_thread_self());
 #endif
 }
-
-#endif /* #if defined(POSIX_THREAD) */

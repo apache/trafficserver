@@ -38,9 +38,6 @@
 #define INT32_MIN (-2147483647 - 1)
 #endif
 
-#define POSIX_THREAD
-#define POSIX_THREAD_10031c
-
 #ifndef ETIME
 #ifdef ETIMEDOUT
 #define ETIME ETIMEDOUT
