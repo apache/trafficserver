@@ -15,7 +15,7 @@
 #
 #######################
 
-function(CHECK_OPENSSL_IS_BORINGSSL OUT_VAR OPENSSL_INCLUDE_DIR)
+function(CHECK_OPENSSL_IS_BORINGSSL OUT_IS_BORING OUT_VERSION OPENSSL_INCLUDE_DIR)
   set(CHECK_PROGRAM
       "
         #include <openssl/base.h>
@@ -31,5 +31,13 @@ function(CHECK_OPENSSL_IS_BORINGSSL OUT_VAR OPENSSL_INCLUDE_DIR)
   )
   set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
   include(CheckCXXSourceCompiles)
-  check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
+  check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_IS_BORING})
+  if(${${OUT_IS_BORING}})
+    file(STRINGS "${OPENSSL_INCLUDE_DIR}/openssl/base.h" version_line REGEX "^#define BORINGSSL_API_VERSION [0-9]+")
+    string(REGEX MATCH "[0-9]+" version ${version_line})
+    set(${OUT_VERSION}
+        ${version}
+        PARENT_SCOPE
+    )
+  endif()
 endfunction()
