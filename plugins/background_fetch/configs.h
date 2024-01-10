@@ -27,13 +27,16 @@
 #include <cstdlib>
 #include <atomic>
 #include <string>
+#include <list>
+#include <memory>
+#include <sys/socket.h>
 
 #include "rules.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
 
-extern DbgCtl Bg_dbg_ctl;
+static DbgCtl Bg_dbg_ctl{PLUGIN_NAME};
 
 ///////////////////////////////////////////////////////////////////////////
 // This holds one complete background fetch rule
@@ -41,11 +44,12 @@ extern DbgCtl Bg_dbg_ctl;
 class BgFetchConfig
 {
 public:
+  using list_type = std::list<BgFetchRule>;
+
   explicit BgFetchConfig(TSCont cont) : _cont(cont) { TSContDataSet(cont, static_cast<void *>(this)); }
 
   ~BgFetchConfig()
   {
-    delete _rules;
     if (_cont) {
       TSContDestroy(_cont);
     }
@@ -53,7 +57,7 @@ public:
 
   bool parseOptions(int argc, const char *argv[]);
 
-  BgFetchRule *
+  list_type const &
   getRules() const
   {
     return _rules;
@@ -83,8 +87,8 @@ public:
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  TSCont _cont        = nullptr;
-  BgFetchRule *_rules = nullptr;
-  bool _allow_304     = false;
+  TSCont _cont = nullptr;
+  list_type _rules;
+  bool _allow_304 = false;
   std::string _log_file;
 };

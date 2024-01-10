@@ -73,6 +73,8 @@ The contents of the config-file could be as below::
    exclude Content-Type text
    exclude X-Foo-Bar text
    exclude Content-Length <1000
+   exclude Client-IP 127.0.0.1
+   include Client-IP 10.0.0.0/16
 
 .. important::
 
