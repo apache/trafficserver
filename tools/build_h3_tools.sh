@@ -28,7 +28,7 @@ cd "${WORKDIR}"
 echo "Building H3 dependencies in ${WORKDIR} ..."
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.2+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.4+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -113,16 +113,16 @@ else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.21.0.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.0.${OS}-${ARCH}.tar.gz
-rm go1.21.0.${OS}-${ARCH}.tar.gz
+wget https://go.dev/dl/go1.21.6.${OS}-${ARCH}.tar.gz
+sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.6.${OS}-${ARCH}.tar.gz
+rm go1.21.6.${OS}-${ARCH}.tar.gz
 sudo chmod -R a+rX ${BASE}
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
   git clone https://boringssl.googlesource.com/boringssl
   cd boringssl
-  git checkout e4f60679caa293c047be69f57fc48b46c7452327
+  git checkout a1843d660b47116207877614af53defa767be46a
   cd ..
 fi
 cd boringssl
@@ -186,7 +186,7 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v0.13.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 autoreconf -if
 ./configure \
@@ -203,7 +203,7 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v0.17.0 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -220,7 +220,7 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.55.1 https://github.com/tatsuhiro-t/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b v1.58.0 https://github.com/tatsuhiro-t/nghttp2.git
 cd nghttp2
 autoreconf -if
 if [ `uname -s` = "Darwin" ] || [ `uname -s` = "FreeBSD" ]
@@ -247,7 +247,7 @@ cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone --depth 1 -b curl-8_2_1 https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --depth 1 -b curl-8_5_0 https://github.com/curl/curl.git
 cd curl
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.
