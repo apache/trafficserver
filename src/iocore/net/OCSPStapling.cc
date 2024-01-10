@@ -53,6 +53,9 @@ extern ClassAllocator<FetchSM> FetchSMAllocator;
 // clang-format off
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
+#ifndef GENERAL_NAME_it
+DECLARE_ASN1_ITEM(GENERAL_NAME)
+#endif
 // RFC 6960
 using TS_OCSP_CERTID = struct ocsp_cert_id {
   X509_ALGOR *hashAlgorithm;
