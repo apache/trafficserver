@@ -322,6 +322,14 @@ if(ENABLE_QUICHE)
   if(NOT OPENSSL_IS_BORINGSSL AND NOT OPENSSL_IS_QUICTLS)
     message(FATAL_ERROR "Use of BoringSSL or OPENSSL/QUICTLS is required if quiche is used.")
   endif()
+
+  if(OPENSSL_IS_QUICTLS)
+    # Until we get quictls support integrated with quiche, we just print this message.
+    # Once the above that is done, then we can just validate the version.
+    message(
+      "WARNING - Using quictls requires using a special version of quiche. Make sure quictls is supported in quiche."
+    )
+  endif()
 endif()
 
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
