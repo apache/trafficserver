@@ -63,7 +63,12 @@ svtoi(TextView src, TextView *out, int base) {
         out->assign(start, parsed.data_end());
       }
       if (neg) {
-        zret = -intmax_t(std::min<uintmax_t>(n, ABS_MIN));
+        uintmax_t temp = std::min<uintmax_t>(n, ABS_MIN);
+        if (temp == ABS_MIN) {
+          zret = std::numeric_limits<intmax_t>::min();
+        } else {
+          zret = -intmax_t(temp);
+        }
       } else {
         zret = std::min(n, ABS_MAX);
       }
