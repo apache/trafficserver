@@ -472,12 +472,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   f.doc_from_ram_cache = false;
 
-  // check ram cache
-  ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int64_t o           = dir_offset(&dir);
-  int ram_hit_state   = stripe->ram_cache->get(read_key, &buf, static_cast<uint64_t>(o));
-  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
-  if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
+  if (check_ram_cache()) {
     goto LramHit;
   }
 
@@ -533,6 +528,16 @@ LmemHit:
   io.aio_result        = io.aiocb.aio_nbytes;
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the volume lock
+}
+
+bool
+CacheVC::check_ram_cache()
+{
+  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
+  int64_t o           = dir_offset(&this->dir);
+  int ram_hit_state   = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
+  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
+  return ram_hit_state >= RAM_HIT_COMPRESS_NONE;
 }
 
 int
