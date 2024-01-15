@@ -277,7 +277,6 @@ public:
   }
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
-  char *get_agg_buffer();
   int get_agg_buf_pos() const;
   int get_agg_todo_size() const;
 
@@ -300,6 +299,20 @@ public:
    */
   bool add_writer(CacheVC *vc);
   bool flush_aggregate_write_buffer();
+
+  /**
+   * Retrieve a document from the aggregate write buffer.
+   *
+   * This is used to speed up reads by copying from the in-memory write buffer
+   * instead of reading from disk. If the document is not in the write buffer,
+   * nothing will be copied.
+   *
+   * @param dir: The directory entry for the desired document.
+   * @param dest: The destination buffer where the document will be copied to.
+   * @param nbytes: The size of the document (number of bytes to copy).
+   * @return Returns true if the document was copied, false otherwise.
+   */
+  bool copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes);
 
 private:
   void _clear_init();
@@ -583,12 +596,6 @@ inline Queue<CacheVC, Continuation::Link_link> &
 Stripe::get_pending_writers()
 {
   return this->_write_buffer.get_pending_writers();
-}
-
-inline char *
-Stripe::get_agg_buffer()
-{
-  return this->_write_buffer.get_buffer();
 }
 
 inline int

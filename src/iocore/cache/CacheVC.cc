@@ -545,12 +545,11 @@ CacheVC::check_aggregation_buffer()
     return false;
   }
 
-  this->buf      = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
-  ink_assert((agg_offset + this->io.aiocb.aio_nbytes) <= (unsigned)this->stripe->get_agg_buf_pos());
+  this->buf = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   char *doc = this->buf->data();
-  char *agg = this->stripe->get_agg_buffer() + agg_offset;
-  memcpy(doc, agg, this->io.aiocb.aio_nbytes);
+  [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
+  // We already confirmed that the copy was valid, so it should not fail.
+  assert(success);
   return true;
 }
 

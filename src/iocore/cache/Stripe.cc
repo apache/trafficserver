@@ -27,6 +27,9 @@
 #include "P_CacheVol.h"
 
 #include "tscore/hugepages.h"
+#include "tscore/ink_assert.h"
+
+#include <cstring>
 
 namespace
 {
@@ -960,5 +963,19 @@ Stripe::flush_aggregate_write_buffer()
   this->_write_buffer.reset_buffer_pos();
   this->header->write_serial++;
 
+  return true;
+}
+
+bool
+Stripe::copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes)
+{
+  if (!dir_agg_buf_valid(this, &dir)) {
+    return false;
+  }
+
+  int agg_offset = this->vol_offset(&dir) - this->header->write_pos;
+  // Assert number of bytes to copy does not overflow the buffer.
+  ink_assert((agg_offset + nbytes) <= (unsigned)this->_write_buffer.get_buffer_pos());
+  memcpy(dest, this->_write_buffer.get_buffer() + agg_offset, nbytes);
   return true;
 }
