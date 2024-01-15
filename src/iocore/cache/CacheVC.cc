@@ -545,8 +545,8 @@ CacheVC::check_aggregation_buffer()
     return false;
   }
 
-  int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
   this->buf      = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
   ink_assert((agg_offset + this->io.aiocb.aio_nbytes) <= (unsigned)this->stripe->get_agg_buf_pos());
   char *doc = this->buf->data();
   char *agg = this->stripe->get_agg_buffer() + agg_offset;
