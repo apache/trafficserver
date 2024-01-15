@@ -472,15 +472,13 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   f.doc_from_ram_cache = false;
 
+  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   if (check_ram_cache()) {
     goto LramHit;
-  }
-
-  // check if it was read in the last open_read call
-  if (*read_key == stripe->first_fragment_key && dir_offset(&dir) == stripe->first_fragment_offset) {
-    buf = stripe->first_fragment_data;
+  } else if (check_last_open_read_call()) {
     goto LmemHit;
   }
+
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(stripe, &dir)) {
     int agg_offset = stripe->vol_offset(&dir) - stripe->header->write_pos;
@@ -533,11 +531,20 @@ LmemHit:
 bool
 CacheVC::check_ram_cache()
 {
-  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   int64_t o           = dir_offset(&this->dir);
   int ram_hit_state   = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
   f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
   return ram_hit_state >= RAM_HIT_COMPRESS_NONE;
+}
+
+bool
+CacheVC::check_last_open_read_call()
+{
+  if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
+    this->buf = this->stripe->first_fragment_data;
+    return true;
+  }
+  return false;
 }
 
 int
