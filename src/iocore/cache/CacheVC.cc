@@ -541,16 +541,17 @@ CacheVC::check_last_open_read_call()
 bool
 CacheVC::check_aggregation_buffer()
 {
-  if (dir_agg_buf_valid(this->stripe, &this->dir)) {
-    int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
-    this->buf      = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    ink_assert((agg_offset + this->io.aiocb.aio_nbytes) <= (unsigned)this->stripe->get_agg_buf_pos());
-    char *doc = this->buf->data();
-    char *agg = this->stripe->get_agg_buffer() + agg_offset;
-    memcpy(doc, agg, this->io.aiocb.aio_nbytes);
-    return true;
+  if (!dir_agg_buf_valid(this->stripe, &this->dir)) {
+    return false;
   }
-  return false;
+
+  int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
+  this->buf      = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_assert((agg_offset + this->io.aiocb.aio_nbytes) <= (unsigned)this->stripe->get_agg_buf_pos());
+  char *doc = this->buf->data();
+  char *agg = this->stripe->get_agg_buffer() + agg_offset;
+  memcpy(doc, agg, this->io.aiocb.aio_nbytes);
+  return true;
 }
 
 int
