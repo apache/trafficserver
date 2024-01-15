@@ -472,21 +472,12 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   f.doc_from_ram_cache = false;
 
-  ink_assert(this->stripe->mutex->thread_holding == this_ethread());
+  ink_assert(stripe->mutex->thread_holding == this_ethread());
   if (check_ram_cache()) {
     goto LramHit;
   } else if (check_last_open_read_call()) {
     goto LmemHit;
-  }
-
-  // see if its in the aggregation buffer
-  if (dir_agg_buf_valid(stripe, &dir)) {
-    int agg_offset = stripe->vol_offset(&dir) - stripe->header->write_pos;
-    buf            = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)stripe->get_agg_buf_pos());
-    char *doc = buf->data();
-    char *agg = stripe->get_agg_buffer() + agg_offset;
-    memcpy(doc, agg, io.aiocb.aio_nbytes);
+  } else if (check_aggregation_buffer()) {
     io.aio_result = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
@@ -542,6 +533,21 @@ CacheVC::check_last_open_read_call()
 {
   if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
     this->buf = this->stripe->first_fragment_data;
+    return true;
+  }
+  return false;
+}
+
+bool
+CacheVC::check_aggregation_buffer()
+{
+  if (dir_agg_buf_valid(this->stripe, &this->dir)) {
+    int agg_offset = this->stripe->vol_offset(&this->dir) - this->stripe->header->write_pos;
+    this->buf      = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+    ink_assert((agg_offset + this->io.aiocb.aio_nbytes) <= (unsigned)this->stripe->get_agg_buf_pos());
+    char *doc = this->buf->data();
+    char *agg = this->stripe->get_agg_buffer() + agg_offset;
+    memcpy(doc, agg, this->io.aiocb.aio_nbytes);
     return true;
   }
   return false;
