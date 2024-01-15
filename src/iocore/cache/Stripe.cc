@@ -974,8 +974,6 @@ Stripe::copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes)
   }
 
   int agg_offset = this->vol_offset(&dir) - this->header->write_pos;
-  // Assert number of bytes to copy does not overflow the buffer.
-  ink_assert((agg_offset + nbytes) <= (unsigned)this->_write_buffer.get_buffer_pos());
-  memcpy(dest, this->_write_buffer.get_buffer() + agg_offset, nbytes);
+  this->_write_buffer.copy_from(dest, agg_offset, nbytes);
   return true;
 }
