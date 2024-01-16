@@ -450,17 +450,19 @@ IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions con
 {
   swoc::LocalBufferWriter<256> w;
   // For privileged calls, ensure we have caller credentials and that the caller is privileged.
+  auto ecode = [](UnauthorizedErrorCode c) -> std::error_code {
+    return std::error_code(static_cast<unsigned>(c), std::generic_category());
+  };
+
   if (has_peereid() && options.auth.restricted) {
     uid_t euid = -1;
     gid_t egid = -1;
     if (get_peereid(peedFd, &euid, &egid) == -1) {
-      errata.assign(std::error_code(unsigned(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR), std::generic_category()));
-      errata.assign(ERRATA_ERROR);
-      errata.note("Error getting peer credentials: {}", swoc::bwf::Errno{});
+      errata.assign(ecode(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR))
+        .note("Error getting peer credentials: {}", swoc::bwf::Errno{});
     } else if (euid != 0 && euid != geteuid()) {
-      errata.assign(std::error_code(unsigned(UnauthorizedErrorCode::PERMISSION_DENIED), std::generic_category()));
-      errata.assign(ERRATA_ERROR);
-      errata.note("Denied privileged API access for uid={} gid={}", euid, egid);
+      errata.assign(ecode(UnauthorizedErrorCode::PERMISSION_DENIED))
+        .note("Denied privileged API access for uid={} gid={}", euid, egid);
     }
   }
 }

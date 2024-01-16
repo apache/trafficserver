@@ -49,6 +49,8 @@ enum Codes : unsigned int {
   GENERIC = 30000
 };
 
+std::error_code make_error_code(rpc::handlers::errors::Codes e);
+
 template <typename... Args>
 static inline swoc::Errata
 make_errata(int code, std::string_view fmt, Args &&...args)
@@ -62,3 +64,9 @@ make_errata(int code, std::string_view text)
   return swoc::Errata(std::error_code(code, std::generic_category()), std::string(text));
 }
 } // namespace rpc::handlers::errors
+namespace std
+{
+template <> struct is_error_code_enum<rpc::handlers::errors::Codes> : true_type {
+};
+
+} // namespace std

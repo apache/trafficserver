@@ -174,29 +174,39 @@ class yamlcpp_json_encoder
 {
   ///
   /// @brief Function to encode an error.
-  /// Error could be from two sources, presence of @c std::error_code means a high level and the @c swoc::Errata a callee . Both
-  /// will be written into the passed @c out YAML::Emitter. This is mainly a convenience class for the other two encode_* functions.
+  /// Error could be from two sources, presence of @c std::error_code means a high level and the @c ts::Errata a callee . Both will
+  /// be written into the passed @c out YAML::Emitter. This is mainly a convenience class for the other two encode_* functions.
   ///
   /// @param error std::error_code High level, main error.
   /// @param errata  the Errata from the callee
   /// @param json   output parameter. YAML::Emitter.
   ///
   static void
-  encode_error(swoc::Errata const &errata, YAML::Emitter &json)
+  encode_error(std::error_code error, swoc::Errata const &errata, YAML::Emitter &json)
   {
     json << YAML::Key << "error";
     json << YAML::BeginMap;
-    json << YAML::Key << "code" << YAML::Value << errata.code().value();
-    json << YAML::Key << "message" << YAML::Value << errata.code().message();
+    json << YAML::Key << "code" << YAML::Value << error.value();
+    json << YAML::Key << "message" << YAML::Value << error.message();
     if (!errata.is_ok()) {
       json << YAML::Key << "data";
       json << YAML::BeginSeq;
       for (auto const &err : errata) {
-        json << YAML::Value << std::string(err.text()); // FIXME!! Shouldn't need a @c std::string
+        json << YAML::BeginMap;
+        json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
+        json << YAML::EndMap;
       }
       json << YAML::EndSeq;
     }
     json << YAML::EndMap;
+  }
+
+  /// Convenience functions to call encode_error.
+  static void
+  encode_error(swoc::Errata const &errata, YAML::Emitter &json)
+  {
+    encode_error({error::RPCErrorCode::ExecutionError}, errata, json);
   }
 
   ///
@@ -213,9 +223,9 @@ class yamlcpp_json_encoder
 
     // Important! As per specs, errors have preference over the result, we ignore result if error was set.
 
-    if (!resp.error.is_ok()) {
+    if (resp.error.ec) {
       // internal library detected error: Decoding, etc.
-      encode_error(resp.error, json);
+      encode_error(resp.error.ec, resp.error.data, json);
     }
     // Registered handler error: They have set the error on the response from the registered handler. This uses ExecutionError as
     // top error.

@@ -75,8 +75,9 @@ set_storage_offline(std::string_view const &id, YAML::Node const &params)
       n["has_online_storage_left"] = ret ? "true" : "false";
       resp.result().push_back(std::move(n));
     } else {
-      resp.errata().assign(std::error_code(unsigned(err::Codes::STORAGE), std::generic_category())).assign(ERRATA_ERROR);
-      resp.errata().note("Passed device:'{}' does not match any defined storage", device);
+      resp.errata()
+        .assign(std::error_code{errors::Codes::STORAGE})
+        .note("Passed device: '{}' does not match any defined storage", device);
     }
   }
   return resp;
@@ -94,8 +95,9 @@ get_storage_status(std::string_view const &id, YAML::Node const &params)
     if (d) {
       resp.result().push_back(*d);
     } else {
-      resp.errata().assign(std::error_code(unsigned(err::Codes::STORAGE), std::generic_category())).assign(ERRATA_ERROR);
-      resp.errata().note("Passed device:'{}' does not match any defined storage", device);
+      resp.errata()
+        .assign(std::error_code{errors::Codes::STORAGE})
+        .note("Passed device: '{}' does not match any defined storage", device);
     }
   }
   return resp;

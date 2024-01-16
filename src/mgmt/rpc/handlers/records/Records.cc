@@ -253,8 +253,7 @@ clear_all_metrics_records(std::string_view const &id, YAML::Node const &params)
   using namespace rpc::handlers::records::utils;
   swoc::Rv<YAML::Node> resp;
   if (RecResetStatRecord(RECT_NULL, true) != REC_ERR_OKAY) {
-    return {swoc::Errata(std::error_code{unsigned(rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR), std::generic_category()},
-                         "Failed to clear stats")};
+    return swoc::Errata{std::error_code{errors::Codes::METRIC}, "Failed to clear stats"};
   }
 
   return resp;

@@ -38,8 +38,14 @@ add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
 target_link_libraries(jsonrpc_server PUBLIC ts::jsonrpc_protocol)
 
 add_library(
-  rpcpublichandlers STATIC handlers/common/RecordsUtils.cc handlers/config/Configuration.cc handlers/records/Records.cc
-                           handlers/storage/Storage.cc handlers/server/Server.cc handlers/plugins/Plugins.cc
+  rpcpublichandlers STATIC
+  handlers/common/ErrorUtils.cc
+  handlers/common/RecordsUtils.cc
+  handlers/config/Configuration.cc
+  handlers/records/Records.cc
+  handlers/storage/Storage.cc
+  handlers/server/Server.cc
+  handlers/plugins/Plugins.cc
 )
 add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 
@@ -51,7 +57,9 @@ target_link_libraries(
 
 if(BUILD_TESTING)
   add_executable(test_jsonrpc jsonrpc/unit_tests/unit_test_main.cc jsonrpc/unit_tests/test_basic_protocol.cc)
-  target_link_libraries(test_jsonrpc ts::tsutil catch2::catch2 ts::jsonrpc_protocol libswoc::libswoc)
+  target_link_libraries(
+    test_jsonrpc ts::tsutil catch2::catch2 ts::rpcpublichandlers ts::jsonrpc_protocol libswoc::libswoc
+  )
   add_test(NAME test_jsonrpc COMMAND test_jsonrpc)
 
   add_executable(

@@ -489,8 +489,7 @@ server_set_status(std::string_view id, YAML::Node const &params)
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
-      resp.errata().assign(std::error_code(unsigned(err::Codes::SERVER), std::generic_category()));
-      resp.errata().note("Invalid input parameters, null");
+      resp.errata().assign(std::error_code{rpc::handlers::errors::Codes::SERVER}).note("Invalid input parameters, null");
     }
 
     // schedule a write to the persistent store.
@@ -498,8 +497,9 @@ server_set_status(std::string_view id, YAML::Node const &params)
     eventProcessor.schedule_imm(new HostStatusSync, ET_TASK);
   } catch (std::exception const &ex) {
     Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
-    resp.errata().assign(std::error_code(unsigned(err::Codes::SERVER), std::generic_category()));
-    resp.errata().note("Error found during host status set: {}", ex.what());
+    resp.errata()
+      .assign(std::error_code{rpc::handlers::errors::Codes::SERVER})
+      .note("Error found during host status set: {}", ex.what());
   }
   return resp;
 }

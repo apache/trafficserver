@@ -93,13 +93,11 @@ server_start_drain(std::string_view const &id, YAML::Node const &params)
     if (!is_server_draining()) {
       set_server_drain(true);
     } else {
-      resp.errata().assign(std::error_code(unsigned(err::Codes::SERVER), std::generic_category())).assign(ERRATA_ERROR);
-      resp.errata().note("Server already draining.");
+      resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server already draining.");
     }
   } catch (std::exception const &ex) {
     Debug("rpc.handler.server", "Got an error DrainInfo decoding: %s", ex.what());
-    resp.errata().assign(std::error_code(unsigned(err::Codes::SERVER), std::generic_category())).assign(ERRATA_ERROR);
-    resp.errata().note("Error found during server drain: {}", ex.what());
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Error found during server drain: {}", ex.what());
   }
   return resp;
 }
@@ -111,8 +109,7 @@ server_stop_drain(std::string_view const &id, [[maybe_unused]] YAML::Node const 
   if (is_server_draining()) {
     set_server_drain(false);
   } else {
-    resp.errata().assign(std::error_code(unsigned(err::Codes::SERVER), std::generic_category())).assign(ERRATA_ERROR);
-    resp.errata().note("Server is not draining.");
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server is not draining.");
   }
 
   return resp;

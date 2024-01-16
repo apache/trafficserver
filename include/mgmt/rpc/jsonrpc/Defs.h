@@ -49,10 +49,14 @@ public:
 struct RPCResponseInfo {
   RPCResponseInfo(std::string const &id_) : id{id_} {} // Convenient
   RPCResponseInfo() = default;
+  struct Error {
+    std::error_code ec; // protocol error track.
+    swoc::Errata data;  // internal error detail.
+  };
 
   std::string id; //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
                   //!< will not pass the validation)
-  swoc::Errata error;            //!< Error code and details.
+  Error error;    //!< Error code and details.
   RPCHandlerResponse callResult; //!< the actual handler's response
 };
 

@@ -28,8 +28,6 @@
 
 namespace
 {
-const int ErratId{1};
-
 // Not using the singleton logic.
 struct JsonRpcUnitTest : rpc::JsonRPCManager {
   JsonRpcUnitTest() : JsonRPCManager() {}
@@ -62,6 +60,7 @@ struct JsonRpcUnitTest : rpc::JsonRPCManager {
 enum class TestErrors { ERR1 = 9999, ERR2 };
 static const std::error_code ERR1{ts::make_errno_code(9999)};
 static const std::error_code ERR2{ts::make_errno_code(10000)};
+static std::string_view err{"Just an error message to add more meaning to the failure"};
 
 inline swoc::Rv<YAML::Node>
 test_callback_ok_or_error(std::string_view const &id, YAML::Node const &params)
@@ -72,7 +71,7 @@ test_callback_ok_or_error(std::string_view const &id, YAML::Node const &params)
   if (YAML::Node n = params["return_error"]) {
     auto yesOrNo = n.as<std::string>();
     if (yesOrNo == "yes") {
-      resp = swoc::Errata(ERR1, "Just an error message to add more meaning to the failure");
+      resp.errata().assign(ERR1).note(err);
     } else {
       resp.result()["ran"] = "ok";
     }
