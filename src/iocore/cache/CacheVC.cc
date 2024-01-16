@@ -473,11 +473,11 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   f.doc_from_ram_cache = false;
 
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  if (check_ram_cache()) {
+  if (load_from_ram_cache()) {
     goto LramHit;
-  } else if (check_last_open_read_call()) {
+  } else if (load_from_last_open_read_call()) {
     goto LmemHit;
-  } else if (check_aggregation_buffer()) {
+  } else if (load_from_aggregation_buffer()) {
     io.aio_result = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
@@ -520,7 +520,7 @@ LmemHit:
 }
 
 bool
-CacheVC::check_ram_cache()
+CacheVC::load_from_ram_cache()
 {
   int64_t o           = dir_offset(&this->dir);
   int ram_hit_state   = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
@@ -529,7 +529,7 @@ CacheVC::check_ram_cache()
 }
 
 bool
-CacheVC::check_last_open_read_call()
+CacheVC::load_from_last_open_read_call()
 {
   if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
     this->buf = this->stripe->first_fragment_data;
@@ -539,7 +539,7 @@ CacheVC::check_last_open_read_call()
 }
 
 bool
-CacheVC::check_aggregation_buffer()
+CacheVC::load_from_aggregation_buffer()
 {
   if (!dir_agg_buf_valid(this->stripe, &this->dir)) {
     return false;
