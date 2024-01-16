@@ -78,7 +78,7 @@ public:
    * @param offset: Byte offset to begin copying at.
    * @param nbytes: Number of bytes to copy.
    */
-  void copy_from(char *dest, int offset, size_t nbytes);
+  void copy_from(char *dest, int offset, size_t nbytes) const;
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char *get_buffer();

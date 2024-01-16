@@ -312,7 +312,7 @@ public:
    * @param nbytes: The size of the document (number of bytes to copy).
    * @return Returns true if the document was copied, false otherwise.
    */
-  bool copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes);
+  bool copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes) const;
 
 private:
   void _clear_init();

@@ -42,7 +42,7 @@ AggregateWriteBuffer::flush(int fd, off_t write_pos) const
 }
 
 void
-AggregateWriteBuffer::copy_from(char *dest, int offset, size_t nbytes)
+AggregateWriteBuffer::copy_from(char *dest, int offset, size_t nbytes) const
 {
   ink_assert((offset + nbytes) <= (unsigned)this->_buffer_pos);
   memcpy(dest, this->_buffer + offset, nbytes);
