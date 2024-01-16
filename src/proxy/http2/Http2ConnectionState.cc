@@ -475,16 +475,16 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       stream->mark_milestone(Http2StreamMilestone::START_TXN);
       stream->new_transaction(frame.is_from_early_data());
       // Send request header to SM
-      stream->send_request(*this);
+      stream->send_headers(*this);
     } else {
       // If this is a trailer, first signal to the SM that the body is done
       if (stream->trailing_header_is_possible()) {
         stream->set_expect_receive_trailer();
         // Propagate the  trailer header
-        stream->send_request(*this);
+        stream->send_headers(*this);
       } else {
         // Propagate the response
-        stream->send_request(*this);
+        stream->send_headers(*this);
       }
     }
     // Give a chance to send response before reading next frame.
@@ -1061,7 +1061,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     // "from_early_data" flag from the associated HEADERS frame.
     stream->new_transaction(frame.is_from_early_data());
     // Send request header to SM
-    stream->send_request(*this);
+    stream->send_headers(*this);
     // Give a chance to send response before reading next frame.
     this->session->interrupt_reading_frames();
   } else {
@@ -2433,7 +2433,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   stream->set_receive_headers(hdr);
   stream->new_transaction();
   stream->receive_end_stream = true; // No more data with the request
-  stream->send_request(*this);
+  stream->send_headers(*this);
 
   return true;
 }

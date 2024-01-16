@@ -82,7 +82,7 @@ public:
   void set_expect_receive_trailer() override;
 
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
-  void send_request(Http2ConnectionState &cstate);
+  void send_headers(Http2ConnectionState &cstate);
   void initiating_close();
   bool is_outbound_connection() const;
   bool is_tunneling() const;

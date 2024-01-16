@@ -260,7 +260,7 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
 }
 
 void
-Http2Stream::send_request(Http2ConnectionState &cstate)
+Http2Stream::send_headers(Http2ConnectionState &cstate)
 {
   if (closed) {
     return;
@@ -270,7 +270,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   // Convert header to HTTP/1.1 format. Trailing headers need no conversion
   // because they, by definition, do not contain pseudo headers.
   if (this->trailing_header_is_possible()) {
-    Http2StreamDebug("trailing header: Skipping send_request initializtion.");
+    Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
     if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
