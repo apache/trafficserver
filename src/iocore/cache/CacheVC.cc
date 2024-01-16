@@ -549,7 +549,7 @@ CacheVC::load_from_aggregation_buffer()
   char *doc = this->buf->data();
   [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
   // We already confirmed that the copy was valid, so it should not fail.
-  assert(success);
+  ink_assert(success);
   return true;
 }
 
