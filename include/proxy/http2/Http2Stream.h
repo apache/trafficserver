@@ -217,6 +217,12 @@ private:
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
+  /** Any headers received while this is true are trailing headers.
+   *
+   * This is set to true when processing DATA frames are done. Therefore any
+   * headers seen after that point are trailing headers. The qualification
+   * "possible" is added because the peer may or may not send trailing headers.
+   */
   bool _trailing_header_is_possible = false;
   bool _expect_send_trailer         = false;
   bool _expect_receive_trailer      = false;
@@ -373,7 +379,7 @@ Http2Stream::reset_send_headers()
   this->_send_header.create(HTTP_TYPE_RESPONSE);
 }
 
-// Check entire DATA payload length if content-length: header is exist
+// Check entire DATA payload length if content-length: header exists
 inline void
 Http2Stream::increment_data_length(uint64_t length)
 {

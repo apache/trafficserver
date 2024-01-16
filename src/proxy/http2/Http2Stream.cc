@@ -29,6 +29,7 @@
 #include "proxy/http/HttpDebugNames.h"
 #include "proxy/http/HttpSM.h"
 #include "tscore/HTTPVersion.h"
+#include "tscore/ink_assert.h"
 
 #include <numeric>
 
@@ -266,32 +267,40 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   }
   REMEMBER(NO_EVENT, this->reentrancy_count);
 
-  // Convert header to HTTP/1.1 format
-  if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
-    Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
+  // Convert header to HTTP/1.1 format. Trailing headers need no conversion
+  // because they, by definition, do not contain pseudo headers.
+  if (this->trailing_header_is_possible()) {
+    Http2StreamDebug("trailing header: Skipping send_request initializtion.");
+  } else {
+    if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
+      Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
+      if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
+        // There's no way to cause Bad Request directly at this time.
+        // Set an invalid method so it causes an error later.
+        _receive_header.method_set("\xffVOID", 1);
+      }
+    }
+
     if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
-      // There's no way to cause Bad Request directly at this time.
-      // Set an invalid method so it causes an error later.
-      _receive_header.method_set("\xffVOID", 1);
+      // Check whether the request uses CONNECT method
+      int method_len;
+      const char *method = _receive_header.method_get(&method_len);
+      if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
+        this->_is_tunneling = true;
+      }
     }
+    ink_release_assert(this->_sm != nullptr);
+    this->_http_sm_id = this->_sm->sm_id;
   }
-
-  if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
-    // Check whether the request uses CONNECT method
-    int method_len;
-    const char *method = _receive_header.method_get(&method_len);
-    if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
-      this->_is_tunneling = true;
-    }
-  }
-
-  ink_release_assert(this->_sm != nullptr);
-  this->_http_sm_id = this->_sm->sm_id;
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
   // Seems like a function like this ought to be in HTTPHdr directly
   int bufindex;
   int dumpoffset = 0;
+  // The name dumpoffset is used here for parity with
+  // HttpSM::write_header_into_buffer, but create an alias for clarity in the
+  // use of this variable below this loop.
+  int &num_header_bytes = dumpoffset;
   int done, tmp;
   do {
     bufindex             = 0;
@@ -309,7 +318,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   } while (!done);
 
-  if (dumpoffset == 0) {
+  if (num_header_bytes == 0) {
     // No data to signal read event
     return;
   }
@@ -317,27 +326,34 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   // Is the _sm ready to process the header?
   if (this->read_vio.nbytes > 0) {
     if (this->receive_end_stream) {
-      // This is dangerous. The _sm has possibly not read
-      // the data yet, so we end up with a mismatch if there
-      // is something async in between.
-      // Better would be to get the actual difference between
-      // the start of the headers and the actual position in
-      // the buffer for the ndone part.
-      // Howerver, during testing we have not seen any issues.
-      this->read_vio.nbytes = this->read_vio.ndone + dumpoffset;
+      // These headers may be standard or trailer headers:
+      //
+      // * If they are standard, then there is no body (note again that the
+      // END_STREAM flag was sent with them), data_length will be 0, and
+      // num_header_bytes will simply be the length of the headers.
+      //
+      // * If they are trailers, then the tunnel behind the SM was set up after
+      // the original headers were sent, and thus nbytes should not include the
+      // size of the original standard headers. Rather, for trailers, nbytes
+      // only needs to include the body length (i.e., DATA frame payload
+      // length), and the length of these current trailer headers calculated in
+      // num_header_bytes.
+      this->read_vio.nbytes = this->data_length + num_header_bytes;
+      Http2StreamDebug("nbytes: %" PRId64 ", ndone: %" PRId64 ", num_header_bytes: %d, data_length: %" PRId64,
+                       this->read_vio.nbytes, this->read_vio.ndone, num_header_bytes, this->data_length);
       if (this->is_outbound_connection()) {
-        // This is a response trailer.
+        // This is a response header.
         // We don't set ndone because the VC_EVENT_EOS will
         // first flush the remaining content to consumers,
         // after which the TUNNEL_EVENT_DONE will be fired
-        // and the trailer handler will be set up.
-        // The trailer handler will read the buffer, and not
+        // and the header handler will be set up.
+        // The header handler will read the buffer, and not
         // get its content from the VIO
         // This can break if the implementation
         // changes.
         this->signal_read_event(VC_EVENT_EOS);
       } else {
-        // Client trailing headers.
+        // Request headers.
         this->read_vio.ndone = this->read_vio.nbytes;
         this->signal_read_event(VC_EVENT_READ_COMPLETE);
       }
