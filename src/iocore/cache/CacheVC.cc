@@ -472,28 +472,12 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   f.doc_from_ram_cache = false;
 
-  // check ram cache
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int64_t o           = dir_offset(&dir);
-  int ram_hit_state   = stripe->ram_cache->get(read_key, &buf, static_cast<uint64_t>(o));
-  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
-  if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
+  if (load_from_ram_cache()) {
     goto LramHit;
-  }
-
-  // check if it was read in the last open_read call
-  if (*read_key == stripe->first_fragment_key && dir_offset(&dir) == stripe->first_fragment_offset) {
-    buf = stripe->first_fragment_data;
+  } else if (load_from_last_open_read_call()) {
     goto LmemHit;
-  }
-  // see if its in the aggregation buffer
-  if (dir_agg_buf_valid(stripe, &dir)) {
-    int agg_offset = stripe->vol_offset(&dir) - stripe->header->write_pos;
-    buf            = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)stripe->get_agg_buf_pos());
-    char *doc = buf->data();
-    char *agg = stripe->get_agg_buffer() + agg_offset;
-    memcpy(doc, agg, io.aiocb.aio_nbytes);
+  } else if (load_from_aggregation_buffer()) {
     io.aio_result = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
@@ -533,6 +517,40 @@ LmemHit:
   io.aio_result        = io.aiocb.aio_nbytes;
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the volume lock
+}
+
+bool
+CacheVC::load_from_ram_cache()
+{
+  int64_t o           = dir_offset(&this->dir);
+  int ram_hit_state   = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
+  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
+  return ram_hit_state >= RAM_HIT_COMPRESS_NONE;
+}
+
+bool
+CacheVC::load_from_last_open_read_call()
+{
+  if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
+    this->buf = this->stripe->first_fragment_data;
+    return true;
+  }
+  return false;
+}
+
+bool
+CacheVC::load_from_aggregation_buffer()
+{
+  if (!dir_agg_buf_valid(this->stripe, &this->dir)) {
+    return false;
+  }
+
+  this->buf = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  char *doc = this->buf->data();
+  [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
+  // We already confirmed that the copy was valid, so it should not fail.
+  ink_assert(success);
+  return true;
 }
 
 int

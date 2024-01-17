@@ -141,6 +141,9 @@ struct CacheVC : public CacheVConnection {
 
   int handleReadDone(int event, Event *e);
   int handleRead(int event, Event *e);
+  bool load_from_ram_cache();
+  bool load_from_last_open_read_call();
+  bool load_from_aggregation_buffer();
   int do_read_call(CacheKey *akey);
   int handleWrite(int event, Event *e);
   int handleWriteLock(int event, Event *e);

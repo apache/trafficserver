@@ -69,6 +69,17 @@ public:
    */
   bool flush(int fd, off_t write_pos) const;
 
+  /**
+   * Copy part of the buffer.
+   *
+   * The range of bytes to copy must fit within the written buffer.
+   *
+   * @param dest: The destination buffer.
+   * @param offset: Byte offset to begin copying at.
+   * @param nbytes: Number of bytes to copy.
+   */
+  void copy_from(char *dest, int offset, size_t nbytes) const;
+
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char *get_buffer();
   int get_buffer_pos() const;

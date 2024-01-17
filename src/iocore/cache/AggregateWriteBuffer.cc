@@ -28,6 +28,8 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 
+#include <cstring>
+
 bool
 AggregateWriteBuffer::flush(int fd, off_t write_pos) const
 {
@@ -37,4 +39,11 @@ AggregateWriteBuffer::flush(int fd, off_t write_pos) const
     return false;
   }
   return true;
+}
+
+void
+AggregateWriteBuffer::copy_from(char *dest, int offset, size_t nbytes) const
+{
+  ink_assert((offset + nbytes) <= (unsigned)this->_buffer_pos);
+  memcpy(dest, this->_buffer + offset, nbytes);
 }

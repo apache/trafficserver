@@ -27,6 +27,9 @@
 #include "P_CacheVol.h"
 
 #include "tscore/hugepages.h"
+#include "tscore/ink_assert.h"
+
+#include <cstring>
 
 namespace
 {
@@ -960,5 +963,17 @@ Stripe::flush_aggregate_write_buffer()
   this->_write_buffer.reset_buffer_pos();
   this->header->write_serial++;
 
+  return true;
+}
+
+bool
+Stripe::copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes) const
+{
+  if (!dir_agg_buf_valid(this, &dir)) {
+    return false;
+  }
+
+  int agg_offset = this->vol_offset(&dir) - this->header->write_pos;
+  this->_write_buffer.copy_from(dest, agg_offset, nbytes);
   return true;
 }
