@@ -303,6 +303,12 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err */, in
 {
   SslHdrInstance *hdr;
 
+  // The first two arguments are the "from" and "to" URL string. We need to
+  // skip them, but we also require that there be an option to masquerade as
+  // argv[0], so we increment the argument indexes by 1 rather than by 2.
+  --argc;
+  ++argv;
+
   hdr = SslHdrParseOptions(argc, (const char **)argv);
   if (hdr) {
     *instance = hdr;
