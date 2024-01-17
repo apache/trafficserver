@@ -37,12 +37,12 @@ writeable by the traffic_server process's user::
 Installation
 ------------
 
-Since Header Frequency plugin is an expiremental plugin, |TS| must be configured
+Since Header Frequency plugin is an expiremental plugin, traffic_server must be configured
 to build experimental plugins in order to use it::
 
     --enable-experimental-plugins
 
 
-Once built, add the following line to :file:`plugin.config` and restart |TS| to use it::
+Once built, add the following line to :file:`plugin.config` and restart traffic_server to use it::
 
     header_freq.so
