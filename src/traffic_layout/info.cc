@@ -159,6 +159,7 @@ produce_layout(bool json)
   print_var("RUNTIMEDIR", RecConfigReadRuntimeDir(), json);
   print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
   print_var("INCLUDEDIR", Layout::get()->includedir, json);
+  print_var("LOCALSTATEDIR", Layout::get()->localstatedir, json);
 
   print_var(ts::filename::RECORDS, RecConfigReadConfigPath(nullptr, ts::filename::RECORDS), json);
   print_var(ts::filename::REMAP, RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
