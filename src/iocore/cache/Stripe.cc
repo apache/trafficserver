@@ -979,7 +979,7 @@ Stripe::shutdown(EThread *shutdown_thread)
   // check if we have data in the agg buffer
   // dont worry about the cachevc s in the agg queue
   // directories have not been inserted for these writes
-  if (this->_write_buffer.get_buffer_pos()) {
+  if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
     this->flush_aggregate_write_buffer();
   }
