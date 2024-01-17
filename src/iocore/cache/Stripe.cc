@@ -984,17 +984,7 @@ Stripe::shutdown(EThread *shutdown_thread)
     this->flush_aggregate_write_buffer();
   }
 
-  char *buf     = nullptr;
-  size_t buflen = dirlen;
-  bool buf_huge = false;
   // We already asserted that dirlen > 0.
-  if (ats_hugepage_enabled()) {
-    buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
-    buf_huge = true;
-  } else {
-    buf = static_cast<char *>(ats_memalign(ats_pagesize(), buflen));
-  }
-
   if (!this->dir_sync_in_progress) {
     this->header->sync_serial++;
   } else {
@@ -1003,18 +993,11 @@ Stripe::shutdown(EThread *shutdown_thread)
   this->footer->sync_serial = this->header->sync_serial;
 
   CHECK_DIR(d);
-  memcpy(buf, this->raw_dir, dirlen);
   size_t B    = this->header->sync_serial & 1;
   off_t start = this->skip + (B ? dirlen : 0);
-  B           = pwrite(this->fd, buf, dirlen, start);
+  B           = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
-
-  if (buf_huge) {
-    ats_free_hugepage(buf, buflen);
-  } else {
-    ats_free(buf);
-  }
 }
 
 bool
