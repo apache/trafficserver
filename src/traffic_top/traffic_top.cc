@@ -414,7 +414,10 @@ main(int argc, const char **argv)
   }
 
   Stats stats(url);
-  stats.getStats();
+  if (!stats.getStats()) {
+    return 2;
+  }
+
   const string &host = stats.getHost();
 
   initscr();
@@ -482,7 +485,9 @@ main(int argc, const char **argv)
     case 'a':
       absolute = stats.toggleAbsolute();
     }
-    stats.getStats();
+    if (!stats.getStats()) {
+      goto quit;
+    }
     clear();
   }
 
