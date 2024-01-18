@@ -50,12 +50,6 @@
 #define REC_INC_CONFIG_VERSION (REC_PEER_SYNC_REQUIRED << 1)
 #define REC_SYNC_REQUIRED      (REC_DISK_SYNC_REQUIRED | REC_PEER_SYNC_REQUIRED)
 
-enum RecEntryT {
-  RECE_NULL,
-  RECE_COMMENT,
-  RECE_RECORD,
-};
-
 struct RecConfigUpdateCbList {
   RecConfigUpdateCbList() {}
   RecConfigUpdateCbList(RecConfigUpdateCb const &update_cb, void *update_cookie)
