@@ -99,10 +99,9 @@ namespace detail
 #define REC_PERSISTENCE_TYPE(P) rec::detail::is_valid_persistence<P>::value
 
 enum RecUpdateT {
-  RECU_NULL,       // default: don't know the behavior
-  RECU_DYNAMIC,    // config can be updated dynamically w/ "traffic_ctl config reload"
-  RECU_RESTART_TS, // config requires TS to be restarted to take effect
-  RECU_RESTART_TM, // deprecated
+  RECU_NULL,      // default: don't know the behavior
+  RECU_DYNAMIC,   // config can be updated dynamically w/ "traffic_ctl config reload"
+  RECU_RESTART_TS // config requires TS to be restarted to take effect
 };
 
 enum RecCheckT {

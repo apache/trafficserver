@@ -56,7 +56,7 @@ static const RecordElement RecordsConfig[] =
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_RESTART_TM, RR_NULL, RECC_STR, ".*", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_RESTART_TS, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   //# Negative core limit means max out limit
   {RECT_CONFIG, "proxy.config.core_limit", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -76,7 +76,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.persist_bad_disks", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[01]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
+  {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TS, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -281,11 +281,11 @@ static const RecordElement RecordsConfig[] =
   //       #
   {RECT_CONFIG, "proxy.config.http.allow_half_open", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.enabled", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.enabled", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.server_ports", RECD_STRING, "8080 8080:ipv6", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.server_ports", RECD_STRING, "8080 8080:ipv6", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.wait_for_cache", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.wait_for_cache", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.insert_request_via_str", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-4]", RECA_NULL}
   ,
@@ -760,7 +760,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.default_inactivity_timeout", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.event_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
