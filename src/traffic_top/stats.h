@@ -278,7 +278,7 @@ public:
     lookup_table.insert(make_pair("client_dyn_ka", LookupItem("Dynamic KA", "ka_total", "ka_count", 3)));
   }
 
-  void
+  bool
   getStats()
   {
     if (_url == "") {
@@ -306,7 +306,7 @@ public:
       // query the rpc node.
       if (auto const &error = fetch_and_fill_stats(request, _stats); !error.empty()) {
         fprintf(stderr, "Error getting stats from the RPC node:\n%s", error.c_str());
-        abort();
+        return false;
       }
       _old_time  = _now;
       _now       = now;
@@ -361,6 +361,7 @@ public:
       }
 #endif
     }
+    return true;
   }
 
   int64_t
