@@ -320,8 +320,8 @@ CacheProcessor::start_internal(int flags)
   memset(fds, 0, sizeof(int) * gndisks);
   int *sector_sizes = static_cast<int *>(alloca(sizeof(int) * gndisks));
   memset(sector_sizes, 0, sizeof(int) * gndisks);
-  Span **sds = static_cast<Span **>(alloca(sizeof(Span *) * gndisks));
-  memset(sds, 0, sizeof(Span *) * gndisks);
+  Span **spans = static_cast<Span **>(alloca(sizeof(Span *) * gndisks));
+  memset(spans, 0, sizeof(Span *) * gndisks);
 
   gndisks = 0;
   ink_aio_set_err_callback(new AIO_failure_handler());
@@ -332,14 +332,14 @@ CacheProcessor::start_internal(int flags)
    create CacheDisk objects for each span in the configuration file and store in gdisks
    */
   for (unsigned i = 0; i < theCacheStore.n_spans; i++) {
-    Span *sd = theCacheStore.spans[i];
-    int opts = DEFAULT_CACHE_OPTIONS;
+    Span *span = theCacheStore.spans[i];
+    int opts   = DEFAULT_CACHE_OPTIONS;
 
     if (!paths[gndisks]) {
       paths[gndisks] = static_cast<char *>(alloca(PATH_NAME_MAX));
     }
-    ink_strlcpy(paths[gndisks], sd->pathname, PATH_NAME_MAX);
-    if (!sd->file_pathname) {
+    ink_strlcpy(paths[gndisks], span->pathname, PATH_NAME_MAX);
+    if (!span->file_pathname) {
       ink_strlcat(paths[gndisks], "/cache.db", PATH_NAME_MAX);
       opts |= O_CREAT;
     }
@@ -369,7 +369,7 @@ CacheProcessor::start_internal(int flags)
 #else
     int fd = open(paths[gndisks], opts, 0644);
 #endif
-    int64_t blocks = sd->blocks;
+    int64_t blocks = span->blocks;
 
     if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
 #ifdef AIO_FAULT_INJECTION
@@ -381,7 +381,7 @@ CacheProcessor::start_internal(int flags)
 
     if (fd >= 0) {
       bool diskok = true;
-      if (!sd->file_pathname) {
+      if (!span->file_pathname) {
         if (!check) {
           if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
             Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", paths[gndisks], blocks);
@@ -400,15 +400,15 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        int sector_size = sd->hw_sector_size;
+        int sector_size = span->hw_sector_size;
 
-        gdisks[gndisks] = new CacheDisk();
+        CacheDisk *cache_disk = new CacheDisk();
         if (check) {
-          gdisks[gndisks]->read_only_p = true;
+          cache_disk->read_only_p = true;
         }
-        gdisks[gndisks]->forced_volume_num = sd->forced_volume_num;
-        if (sd->hash_base_string) {
-          gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
+        cache_disk->forced_volume_num = span->forced_volume_num;
+        if (span->hash_base_string) {
+          cache_disk->hash_base_string = ats_strdup(span->hash_base_string);
         }
 
         if (sector_size < cache_config_force_sector_size) {
@@ -418,13 +418,15 @@ CacheProcessor::start_internal(int flags)
         // It's actually common that the hardware I/O size is larger than the store block size as
         // storage systems increasingly want larger I/Os. For example, on macOS, the filesystem
         // block size is always reported as 1MB.
-        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
+        if (span->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
           Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
         }
+
+        gdisks[gndisks]       = cache_disk;
         sector_sizes[gndisks] = sector_size;
         fds[gndisks]          = fd;
-        sds[gndisks]          = sd;
+        spans[gndisks]        = span;
         fd                    = -1;
         gndisks++;
       }
@@ -470,8 +472,8 @@ CacheProcessor::start_internal(int flags)
 
   // If we got here, we have enough disks to proceed
   for (int j = 0; j < gndisks; j++) {
-    Span *sd = sds[j];
-    ink_release_assert(sds[j] != nullptr); // Defeat clang-analyzer
+    Span *sd = spans[j];
+    ink_release_assert(spans[j] != nullptr); // Defeat clang-analyzer
     off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
     gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
