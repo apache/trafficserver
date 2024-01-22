@@ -683,10 +683,16 @@ inline MemSpan<char> MemArena::localize(char const * s) {
 }
 
 inline MemSpan<char> MemArena::localize_c(MemSpan<char const> s) {
-  auto span = this->alloc(s.size() + 1).rebind<char>();
-  memcpy(span.data(), s.data(), span.size());
-  span[s.size()] = '\0';
-  return { span.data(), span.size() };
+  if (s.size()) {
+    auto span = this->alloc(s.size() + 1).rebind<char>();
+    memcpy(span.data(), s.data(), span.size());
+    span[s.size()] = '\0';
+    return { span.data(), span.size() };
+  } else {
+    auto span = this->alloc(1).rebind<char>();
+    span[0] = '\0';
+    return span;
+  }
 }
 
 inline MemSpan<char> MemArena::localize_c(char const * s) {
