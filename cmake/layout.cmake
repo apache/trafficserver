@@ -62,8 +62,20 @@ set(CMAKE_INSTALL_LOGDIR
     "${CMAKE_INSTALL_LOCALSTATEDIR}/log/trafficserver"
     CACHE STRING "logdir"
 )
+# Since CMAKE_INSTALL_LOGDIR is custom, GNUInstallDirs doesn't know to creat a
+# FULL version of it automatically for us.
+set(CMAKE_INSTALL_FULL_LOGDIR
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LOGDIR}"
+    CACHE STRING "full logdir"
+)
 set(CMAKE_INSTALL_CACHEDIR
     "${CMAKE_INSTALL_LOCALSTATEDIR}/trafficserver"
     CACHE STRING "cachedir"
+)
+# Since CMAKE_INSTALL_CACHEDIR is custom, GNUInstallDirs doesn't know to creat a
+# FULL version of it automatically for us.
+set(CMAKE_INSTALL_FULL_CACHEDIR
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_CACHEDIR}"
+    CACHE STRING "full cachedir"
 )
 include(GNUInstallDirs)
