@@ -8143,7 +8143,6 @@ HttpTransact::build_redirect_response(State *s)
   int old_host_len;
   const char *new_url = nullptr;
   int new_url_len;
-  char *to_free = nullptr;
 
   HTTPStatus status_code = HTTP_STATUS_MOVED_TEMPORARILY;
   char *reason_phrase    = const_cast<char *>(http_hdr_reason_lookup(status_code));
@@ -8158,7 +8157,7 @@ HttpTransact::build_redirect_response(State *s)
   u        = s->hdr_info.client_request.url_get();
   old_host = u->host_get(&old_host_len);
   u->host_set(s->dns_info.lookup_name, strlen(s->dns_info.lookup_name));
-  new_url = to_free = u->string_get(&s->arena, &new_url_len);
+  new_url = u->string_get(&s->arena, &new_url_len);
   if (new_url == nullptr) {
     new_url = "";
   }
