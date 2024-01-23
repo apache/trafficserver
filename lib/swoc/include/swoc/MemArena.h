@@ -691,7 +691,7 @@ inline MemSpan<char> MemArena::localize_c(MemSpan<char const> s) {
   } else {
     auto span = this->alloc(1).rebind<char>();
     span[0] = '\0';
-    return {};
+    return { span.data(), span.size() };
   }
 }
 
