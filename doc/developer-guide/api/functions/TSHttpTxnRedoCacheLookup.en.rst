@@ -24,10 +24,6 @@ TSHttpTxnRedoCacheLookup
 Synopsis
 ========
 
-.. code-block:: cpp
-
-    #include <ts/experimental.h>
-
 .. function:: TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 
 Description

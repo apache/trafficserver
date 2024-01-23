@@ -26,7 +26,6 @@ set(TSAPI_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
     ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
     ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
-    ${PROJECT_SOURCE_DIR}/include/ts/experimental.h
 )
 
 target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSSL::SSL)

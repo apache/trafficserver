@@ -6575,10 +6575,6 @@ tsapi::c::TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
   return TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT;
 }
 
-// The API below require timer values as TSHRTime parameters
-// which are in nanoseconds. Use the TS_HRTIME macros defined
-// in ts/experimental.h until they are promoted to stable
-// api.
 /* Net VConnections */
 void
 tsapi::c::TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)

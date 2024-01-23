@@ -24,7 +24,6 @@
 #include <arpa/inet.h>
 #include "tscpp/api/AsyncHttpFetch.h"
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
 

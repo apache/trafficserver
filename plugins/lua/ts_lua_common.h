@@ -30,7 +30,6 @@ extern "C" {
 } // extern "C"
 
 #include <ts/ts.h>
-#include <ts/experimental.h>
 #include <ts/remap.h>
 #include "ts_lua_coroutine.h"
 
