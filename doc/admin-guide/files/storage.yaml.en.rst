@@ -62,8 +62,7 @@ For :code:`spans` the keys are
 |               |             | directory.                                                  |
 +---------------+-------------+-------------------------------------------------------------+
 | size          | bytes       | Size in bytes. This is optional for devices but required    |
-|               |  _or_       | for directories.                                            |
-|               | percentage  |                                                             |
+|               |             | for directories.                                            |
 +---------------+-------------+-------------------------------------------------------------+
 | hash_seed     | string      | Hashing for object location uses a seed to randomize the    |
 |               |             | hash. By default this is the path for the span.             |
