@@ -20,12 +20,9 @@ add_library(tsapi SHARED InkAPI.cc InkIOCoreAPI.cc)
 add_library(ts::tsapi ALIAS tsapi)
 
 set(TSAPI_PUBLIC_HEADERS
-    ${PROJECT_SOURCE_DIR}/include/ts/ts.h
-    ${PROJECT_SOURCE_DIR}/include/ts/remap.h
-    ${PROJECT_SOURCE_DIR}/include/ts/TsException.h
-    ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
-    ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
-    ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
+    ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_DIR}/include/ts/remap.h
+    ${PROJECT_SOURCE_DIR}/include/ts/TsException.h ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h
+    ${PROJECT_SOURCE_DIR}/include/ts/parentselectdefs.h ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
 )
 
 target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSSL::SSL)
