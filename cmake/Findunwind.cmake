@@ -28,14 +28,17 @@
 #     unwind::unwind
 #
 
+find_library(unwind_LIBRARY NAMES unwind)
 find_library(unwind_ptrace_LIBRARY NAMES unwind-ptrace)
 find_library(unwind_generic_LIBRARY NAMES unwind-generic)
-find_path(unwind_INCLUDE_DIR NAMES libunwind.h)
+find_path(unwind_INCLUDE_DIR NAMES libunwind.h libunwind/libunwind.h)
 
-mark_as_advanced(unwind_FOUND unwind_LIBRARY unwind_INCLUDE_DIR)
+mark_as_advanced(unwind_FOUND unwind_LIBRARY unwind_ptrace_LIBRARY unwind_generic_LIBRARY unwind_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(unwind REQUIRED_VARS unwind_LIBRARY unwind_INCLUDE_DIR)
+find_package_handle_standard_args(
+  unwind REQUIRED_VARS unwind_LIBRARY unwind_ptrace_LIBRARY unwind_generic_LIBRARY unwind_INCLUDE_DIR
+)
 
 if(unwind_FOUND)
   set(unwind_INCLUDE_DIRS ${unwind_INCLUDE_DIR})
@@ -44,5 +47,7 @@ endif()
 if(unwind_FOUND AND NOT TARGET unwind::unwind)
   add_library(unwind::unwind INTERFACE IMPORTED)
   target_include_directories(unwind::unwind INTERFACE ${unwind_INCLUDE_DIRS})
-  target_link_libraries(unwind::unwind INTERFACE "${unwind_ptrace_LIBRARY}" "${unwind_generic_LIBRARY}")
+  target_link_libraries(
+    unwind::unwind INTERFACE "${unwind_ptrace_LIBRARY}" "${unwind_generic_LIBRARY}" "${unwind_LIBRARY}"
+  )
 endif()
