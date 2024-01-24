@@ -22,9 +22,6 @@
 */
 #pragma once
 
-#if HAS_CURL
-#include <curl/curl.h>
-#endif
 #include <map>
 #include <string>
 #include <sys/types.h>
@@ -50,9 +47,6 @@ struct LookupItem {
   int type;
 };
 extern size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
-#if HAS_CURL
-extern char curl_error[CURL_ERROR_SIZE];
-#endif
 extern std::string response;
 
 namespace constant
@@ -83,28 +77,12 @@ class Stats
   template <class Key, class T> using map = std::map<Key, T>;
 
 public:
-  Stats(const string &url) : _url(url)
+  Stats()
   {
-    if (url != "") {
-      if (_url.substr(0, 4) != "http") {
-        // looks like it is a host using it the old way
-        _url = "http://" + _url + "/_stats";
-      }
-
-      // set the host
-      size_t start = _url.find(":");
-      size_t end   = _url.find('/', start + 3);
-      _host        = _url.substr(start + 3, end - start - 3);
-      end          = _host.find(":");
-      if (end != string::npos) {
-        _host = _host.substr(0, end);
-      }
-    } else {
-      char hostname[25];
-      hostname[sizeof(hostname) - 1] = '\0';
-      gethostname(hostname, sizeof(hostname) - 1);
-      _host = hostname;
-    }
+    char hostname[25];
+    hostname[sizeof(hostname) - 1] = '\0';
+    gethostname(hostname, sizeof(hostname) - 1);
+    _host = hostname;
 
     _time_diff = 0;
     _old_time  = 0;
@@ -281,86 +259,36 @@ public:
   bool
   getStats()
   {
-    if (_url == "") {
-      if (_old_stats != nullptr) {
-        delete _old_stats;
-        _old_stats = nullptr;
-      }
-      _old_stats = _stats;
-      _stats     = new map<string, string>;
-
-      gettimeofday(&_time, nullptr);
-      double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
-
-      // We will lookup for all the metrics on one single request.
-      shared::rpc::RecordLookupRequest request;
-
-      for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin(); lookup_it != lookup_table.end(); ++lookup_it) {
-        const LookupItem &item = lookup_it->second;
-
-        if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
-          // Add records names to the rpc request.
-          request.emplace_rec(detail::MetricParam{item.name});
-        }
-      }
-      // query the rpc node.
-      if (auto const &error = fetch_and_fill_stats(request, _stats); !error.empty()) {
-        fprintf(stderr, "Error getting stats from the RPC node:\n%s", error.c_str());
-        return false;
-      }
-      _old_time  = _now;
-      _now       = now;
-      _time_diff = _now - _old_time;
-    } else {
-#if HAS_CURL
-      CURL *curl;
-      CURLcode res;
-
-      curl = curl_easy_init();
-      if (curl) {
-        CURLcode url, function, buffer;
-
-        url      = curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
-        function = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-        buffer   = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
-
-        if ((url | function | buffer) != CURLE_OK) {
-          fprintf(stderr, "error setting curl 1 or more options. url: %d, function: %d, buffer: %d", url, function, buffer);
-          exit(1);
-        }
-
-        // update time
-        gettimeofday(&_time, nullptr);
-        double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
-
-        response.clear();
-        response.reserve(32768); // should hopefully be smaller then 32KB
-        res = curl_easy_perform(curl);
-
-        // only if success update stats and time information
-        if (res == 0) {
-          if (_old_stats != nullptr) {
-            delete _old_stats;
-            _old_stats = nullptr;
-          }
-          _old_stats = _stats;
-          _stats     = new map<string, string>;
-
-          // parse
-          parseResponse(response);
-          _old_time  = _now;
-          _now       = now;
-          _time_diff = _now - _old_time;
-        } else {
-          fprintf(stderr, "Can't fetch url %s\n", _url.c_str());
-          exit(1);
-        }
-
-        /* always cleanup */
-        curl_easy_cleanup(curl);
-      }
-#endif
+    if (_old_stats != nullptr) {
+      delete _old_stats;
+      _old_stats = nullptr;
     }
+    _old_stats = _stats;
+    _stats     = new map<string, string>;
+
+    gettimeofday(&_time, nullptr);
+    double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
+
+    // We will lookup for all the metrics on one single request.
+    shared::rpc::RecordLookupRequest request;
+
+    for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin(); lookup_it != lookup_table.end(); ++lookup_it) {
+      const LookupItem &item = lookup_it->second;
+
+      if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
+        // Add records names to the rpc request.
+        request.emplace_rec(detail::MetricParam{item.name});
+      }
+    }
+    // query the rpc node.
+    if (auto const &error = fetch_and_fill_stats(request, _stats); !error.empty()) {
+      fprintf(stderr, "Error getting stats from the RPC node:\n%s", error.c_str());
+      return false;
+    }
+    _old_time  = _now;
+    _now       = now;
+    _time_diff = _now - _old_time;
+
     return true;
   }
 
@@ -595,7 +523,6 @@ private:
   map<string, string> *_stats;
   map<string, string> *_old_stats;
   map<string, LookupItem> lookup_table;
-  string _url;
   string _host;
   double _old_time;
   double _now;

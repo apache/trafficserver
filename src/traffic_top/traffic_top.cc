@@ -60,9 +60,6 @@
 
 using namespace std;
 
-#if HAS_CURL
-char curl_error[CURL_ERROR_SIZE];
-#endif
 string response;
 
 namespace colorPair
@@ -379,17 +376,11 @@ main_stats_page(Stats &stats)
 int
 main(int argc, const char **argv)
 {
-#if HAS_CURL
-  static const char USAGE[] = "Usage: traffic_top [-s seconds] [URL|hostname|hostname:port]";
-#else
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
-#endif
 
   int sleep_time = 6; // In seconds
   bool absolute  = false;
-  string url;
-
-  auto &version = AppVersionInfo::setup_version("traffic_top");
+  auto &version  = AppVersionInfo::setup_version("traffic_top");
 
   const ArgumentDescription argument_descriptions[] = {
     {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},
@@ -404,16 +395,12 @@ main(int argc, const char **argv)
   Layout::create();
 
   if (n_file_arguments == 1) {
-#if HAS_CURL
-    url = file_arguments[0];
-#else
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
-#endif
   } else if (n_file_arguments > 1) {
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
   }
 
-  Stats stats(url);
+  Stats stats;
   if (!stats.getStats()) {
     return 2;
   }
