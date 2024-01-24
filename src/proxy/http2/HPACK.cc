@@ -382,7 +382,7 @@ HpackIndexingTable::size() const
 void
 HpackIndexingTable::update_maximum_size(uint32_t new_size)
 {
-  _dynamic_table.update_maximum_size(static_cast<uint16_t>(new_size));
+  _dynamic_table.update_maximum_size(new_size);
 }
 
 //

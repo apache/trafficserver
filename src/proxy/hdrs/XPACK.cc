@@ -471,8 +471,8 @@ XpackDynamicTable::_make_space(uint64_t required_size)
   uint32_t freed = 0;
   uint32_t tail  = (this->_entries_tail + 1) % this->_max_entries;
 
-  while (required_size > this->_available + freed) {
-    if (this->is_empty()) {
+  while (required_size > freed) {
+    if (this->_entries_head < tail) {
       break;
     }
     if (this->_entries[tail].ref_count) {
