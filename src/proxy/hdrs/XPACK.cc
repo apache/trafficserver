@@ -335,7 +335,7 @@ XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *v
   // Make enough space to insert a new entry
   uint64_t required_size = static_cast<uint64_t>(name_len) + static_cast<uint64_t>(value_len) + ADDITIONAL_32_BYTES;
   if (required_size > this->_available) {
-    if (!this->_make_space(required_size)) {
+    if (!this->_make_space(required_size - this->_available)) {
       // We can't insert a new entry because some stream(s) refer an entry that need to be evicted or the header is too big to
       // store. This is fine with HPACK, but not with QPACK.
       return {UINT32_C(0), XpackLookupResult::MatchType::NONE};
