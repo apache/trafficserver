@@ -475,16 +475,16 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       stream->mark_milestone(Http2StreamMilestone::START_TXN);
       stream->new_transaction(frame.is_from_early_data());
       // Send request header to SM
-      stream->send_request(*this);
+      stream->send_headers(*this);
     } else {
       // If this is a trailer, first signal to the SM that the body is done
       if (stream->trailing_header_is_possible()) {
         stream->set_expect_receive_trailer();
         // Propagate the  trailer header
-        stream->send_request(*this);
+        stream->send_headers(*this);
       } else {
         // Propagate the response
-        stream->send_request(*this);
+        stream->send_headers(*this);
       }
     }
     // Give a chance to send response before reading next frame.
@@ -1061,7 +1061,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     // "from_early_data" flag from the associated HEADERS frame.
     stream->new_transaction(frame.is_from_early_data());
     // Send request header to SM
-    stream->send_request(*this);
+    stream->send_headers(*this);
     // Give a chance to send response before reading next frame.
     this->session->interrupt_reading_frames();
   } else {
@@ -2132,15 +2132,18 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   stream->update_sent_count(payload_length);
 
   // Are we at the end?
+  // We have no payload to send but might expect data from either trailer or body
+  // TODO(KS): does the expect send trailer and empty payload need a flush, or does it
+  //           warrant a separate flow with NO_ERROR?
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
-  if (!stream->is_write_vio_done() && payload_length == 0) {
+  if ((!stream->is_write_vio_done() || stream->expect_send_trailer()) && payload_length == 0) {
     Http2StreamDebug(this->session, stream->get_id(), "No payload");
     this->session->flush();
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done()) {
+  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(payload_length) && !stream->expect_send_trailer()) {
     Http2StreamDebug(this->session, stream->get_id(), "End of Data Frame");
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
@@ -2430,7 +2433,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   stream->set_receive_headers(hdr);
   stream->new_transaction();
   stream->receive_end_stream = true; // No more data with the request
-  stream->send_request(*this);
+  stream->send_headers(*this);
 
   return true;
 }

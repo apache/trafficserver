@@ -446,6 +446,7 @@ private:
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
   void setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial = nullptr);
+  void setup_tunnel_handler_trailer(HttpTunnelProducer *p);
   HttpTunnelProducer *setup_server_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform();
   HttpTunnelProducer *setup_cache_transfer_to_transform();
