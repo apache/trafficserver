@@ -245,7 +245,7 @@ XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, c
     return {0, XpackLookupResult::MatchType::NONE};
   }
 
-  if (index < this->_entries[this->_entries_tail + 1].index) {
+  if (index < this->_entries[(this->_entries_tail + 1) % this->_max_entries].index) {
     // The index is invalid
     return {0, XpackLookupResult::MatchType::NONE};
   }
