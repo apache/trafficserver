@@ -50,6 +50,16 @@ if(NOT APPLE)
   target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
 endif()
 
+# Older LLVM and GCC compilers with C++17 support require explicit linking to their std::filesystem
+# libraries
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  target_link_libraries(traffic_server PRIVATE stdc++fs)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+  target_link_libraries(traffic_server PRIVATE c++fs)
+endif()
+
 if(TS_USE_QUIC)
   target_link_libraries(traffic_server PRIVATE ts::http3 ts::quic)
 endif()
