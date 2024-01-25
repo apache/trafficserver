@@ -28,8 +28,6 @@
 #include <vector>
 #include <memory>
 
-#include "swoc/MemSpan.h"
-
 /// Match flags for regular expression evaluation.
 enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
@@ -61,6 +59,18 @@ public:
    */
   bool compile(const char *pattern, unsigned flags = 0);
 
+  /** Compile the @a pattern into a regular expression.
+   *
+   * @param pattern Source pattern for regular expression (null terminated).
+   * @param flags Compilation flags.
+   * @param error Pointer to string to receive error message.
+   * @param erroffset Pointer to integer to receive error offset.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   */
+  bool compile(const char *pattern, const char **error, int *erroffset, unsigned flags = 0);
+
   /** Execute the regular expression.
    *
    * @param str String to match against.
@@ -82,21 +92,7 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
-
-  /** Execute the regular expression.
-   *
-   * @param str String to match against.
-   * @param ovector Capture results.
-   * @param ovecsize Number of elements in @a ovector.
-   * @return @c true if the pattern matched, @a false if not.
-   *
-   * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
-   */
-  bool exec(std::string_view str, swoc::MemSpan<int> groups) const;
+  int exec(std::string_view const &str, int *ovector, int ovecsize) const;
 
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();

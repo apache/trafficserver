@@ -92,8 +92,14 @@ Regex::compile(const char *pattern, const unsigned flags)
 {
   const char *error = nullptr;
   int erroffset     = 0;
-  int options       = 0;
-  int study_opts    = 0;
+  return this->compile(pattern, &error, &erroffset, flags);
+}
+
+bool
+Regex::compile(const char *pattern, const char **error, int *erroffset, const unsigned flags)
+{
+  int options    = 0;
+  int study_opts = 0;
 
   if (regex) {
     return false;
@@ -107,7 +113,7 @@ Regex::compile(const char *pattern, const unsigned flags)
     options |= PCRE_ANCHORED;
   }
 
-  regex = pcre_compile(pattern, options, &error, &erroffset, nullptr);
+  regex = pcre_compile(pattern, options, error, erroffset, nullptr);
   if (error) {
     regex = nullptr;
     return false;
@@ -117,7 +123,7 @@ Regex::compile(const char *pattern, const unsigned flags)
   study_opts |= PCRE_STUDY_JIT_COMPILE;
 #endif
 
-  regex_extra = pcre_study(as_pcre(regex), study_opts, &error);
+  regex_extra = pcre_study(as_pcre(regex), study_opts, error);
 
 #ifdef PCRE_CONFIG_JIT
   if (regex_extra) {
@@ -142,24 +148,15 @@ Regex::get_capture_count()
 bool
 Regex::exec(std::string_view const &str) const
 {
-  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
-  return this->exec(str, ovector);
+  int ovector[DEFAULT_GROUP_COUNT * 3];
+  int rval = this->exec(str, ovector, DEFAULT_GROUP_COUNT * 3);
+  return rval > 0;
 }
 
-bool
+int
 Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 {
-  int rv;
-
-  rv = pcre_exec(as_pcre(regex), as_extra(regex_extra), str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
-  return rv > 0;
-}
-
-bool
-Regex::exec(std::string_view str, swoc::MemSpan<int> groups) const
-{
-  return 0 <
-         pcre_exec(as_pcre(regex), as_extra(regex_extra), str.data(), int(str.size()), 0, 0, groups.data(), int(groups.count()));
+  return pcre_exec(as_pcre(regex), as_extra(regex_extra), str.data(), static_cast<int>(str.size()), 0, 0, ovector, ovecsize);
 }
 
 Regex::~Regex()
