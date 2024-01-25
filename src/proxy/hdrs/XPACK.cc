@@ -369,18 +369,22 @@ XpackDynamicTable::insert_entry(const std::string_view name, const std::string_v
 const XpackLookupResult
 XpackDynamicTable::duplicate_entry(uint32_t current_index)
 {
-  const char *name;
-  size_t name_len;
-  const char *value;
-  size_t value_len;
+  const char *name  = nullptr;
+  size_t name_len   = 0;
+  const char *value = nullptr;
+  size_t value_len  = 0;
   char *duped_name;
   char *duped_value;
 
-  this->lookup(current_index, &name, &name_len, &value, &value_len);
+  XpackLookupResult result = this->lookup(current_index, &name, &name_len, &value, &value_len);
+  if (result.match_type != XpackLookupResult::MatchType::EXACT) {
+    return result;
+  }
+
   // We need to dup name and value to avoid memcpy-param-overlap
-  duped_name                     = ats_strndup(name, name_len);
-  duped_value                    = ats_strndup(value, value_len);
-  const XpackLookupResult result = this->insert_entry(duped_name, name_len, duped_value, value_len);
+  duped_name  = ats_strndup(name, name_len);
+  duped_value = ats_strndup(value, value_len);
+  result      = this->insert_entry(duped_name, name_len, duped_value, value_len);
   ats_free(duped_name);
   ats_free(duped_value);
 
