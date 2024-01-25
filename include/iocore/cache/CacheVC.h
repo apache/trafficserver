@@ -273,7 +273,7 @@ struct CacheVC : public CacheVConnection {
   Event *trigger;
   CacheKey *read_key;
   ContinuationHandler save_handler;
-  time_t pin_in_cache;
+  uint32_t pin_in_cache;
   ink_hrtime start_time;
   int op_type; // Index into the metrics array for this operation, rather than a CacheOpType (fewer casts)
   int recursive;
