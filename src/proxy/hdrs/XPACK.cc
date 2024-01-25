@@ -230,7 +230,7 @@ XpackDynamicTable::~XpackDynamicTable()
   }
 }
 
-inline const XpackLookupResult
+const XpackLookupResult
 XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, const char **value, size_t *value_len) const
 {
   XPACKDebug("Lookup entry: abs_index=%u", index);
