@@ -54,7 +54,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent catch2::catch2)
   add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
-  add_executable(test_proxy_hdrs_xpack XPACK.cc HuffmanCodec.cc unit_tests/test_XPACK.cc)
+  add_executable(test_proxy_hdrs_xpack unit_tests/test_XPACK.cc)
   target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::hdrs ts::tscore ts::tsutil libswoc catch2::catch2)
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
 endif()
