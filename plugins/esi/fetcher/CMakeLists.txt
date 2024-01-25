@@ -16,6 +16,6 @@
 #######################
 
 add_library(fetcher STATIC HttpDataFetcherImpl.cc)
-target_link_libraries(fetcher PUBLIC esi-common libswoc)
-target_include_directories(fetcher PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(fetcher PUBLIC esi-common libswoc::libswoc)
+target_include_directories(fetcher PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${libswoc_INCLUDE_DIRS}")
 set_target_properties(fetcher PROPERTIES POSITION_INDEPENDENT_CODE ON)
