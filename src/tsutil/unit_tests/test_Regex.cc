@@ -47,7 +47,7 @@ TEST_CASE("Regex", "[libts][Regex]")
 {
   for (auto &item : test_data) {
     Regex r;
-    r.compile(item.regex.data());
+    REQUIRE(r.compile(item.regex.data()) == true);
 
     for (auto &test : item.tests) {
       REQUIRE(r.exec(test.subject.data()) == test.match);

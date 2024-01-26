@@ -114,7 +114,7 @@ Regex::compile(const char *pattern, const char **error, int *erroffset, const un
   }
 
   regex = pcre_compile(pattern, options, error, erroffset, nullptr);
-  if (error) {
+  if (*error != nullptr) {
     regex = nullptr;
     return false;
   }
