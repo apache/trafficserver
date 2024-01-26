@@ -33,7 +33,8 @@ function main() {
     pip install -q virtualenv
   fi
 
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
+  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
+  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_COMMON_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
   if [ ! -e ${CMAKE_FORMAT_VENV} ]
   then
     virtualenv ${CMAKE_FORMAT_VENV}
@@ -85,5 +86,6 @@ function main() {
 if [[ "$(basename -- "$0")" == 'cmake-format.sh' ]]; then
   main "$@"
 else
-  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-$(git rev-parse --show-toplevel)/.git/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
+  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+  CMAKE_FORMAT_VENV=${CMAKE_FORMAT_VENV:-${GIT_COMMON_DIR}/fmt/cmake_format_${CMAKE_FORMAT_VERSION}_venv}
 fi

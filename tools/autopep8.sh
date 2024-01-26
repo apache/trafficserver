@@ -39,7 +39,8 @@ function main() {
     pip install -q virtualenv
   fi
 
-  AUTOPEP8_VENV=${AUTOPEP8_VENV:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
+  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
+  AUTOPEP8_VENV=${AUTOPEP8_VENV:-${GIT_COMMON_DIR}/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
   if [ ! -e ${AUTOPEP8_VENV} ]
   then
     virtualenv ${AUTOPEP8_VENV}
@@ -101,5 +102,6 @@ function main() {
 if [[ "$(basename -- "$0")" == 'autopep8.sh' ]]; then
   main "$@"
 else
-  AUTOPEP8_VENV=${AUTOPEP8_VENV:-$(git rev-parse --show-toplevel)/.git/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
+  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+  AUTOPEP8_VENV=${AUTOPEP8_VENV:-${GIT_COMMON_DIR}/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
 fi

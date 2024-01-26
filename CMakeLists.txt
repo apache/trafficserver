@@ -649,11 +649,13 @@ if(ENABLE_BENCHMARKS)
   add_subdirectory(tools/benchmark)
 endif()
 
+set(GIT_COMMON_DIR git rev-parse --git-common-dir)
+
 add_custom_target(
   clang-format-install
   COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  BYPRODUCTS ${CMAKE_SOURCE_DIR}/.git/fmt/.clang-format-installed
+  BYPRODUCTS ${GIT_COMMON_DIR}/fmt/.clang-format-installed
   COMMENT "Installing clang-format"
   VERBATIM
 )
