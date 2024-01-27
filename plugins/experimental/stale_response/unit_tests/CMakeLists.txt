@@ -15,28 +15,12 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(block_errors)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(cookie_remap)
-add_subdirectory(custom_redirect)
-add_subdirectory(fq_pacing)
-add_subdirectory(geoip_acl)
-add_subdirectory(header_freq)
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
-add_subdirectory(memcache)
-add_subdirectory(memory_profile)
-add_subdirectory(money_trace)
-add_subdirectory(mp4)
-add_subdirectory(rate_limit)
-add_subdirectory(redo_cache_lookup)
-add_subdirectory(sslheaders)
-add_subdirectory(stale_response)
-add_subdirectory(stream_editor)
-add_subdirectory(system_stats)
-add_subdirectory(tls_bridge)
-add_subdirectory(url_sig)
+add_executable(
+  test_stale_response unit_test_main.cc test_DirectiveParser.cc test_BodyData.cc
+                      ${PROJECT_SOURCE_DIR}/DirectiveParser.cc
+)
+
+target_include_directories(test_stale_response PRIVATE "${PROJECT_SOURCE_DIR}")
+target_link_libraries(test_stale_response PRIVATE ts::tsutil libswoc::libswoc catch2::catch2)
+
+add_test(NAME test_stale_response COMMAND test_stale_response)
