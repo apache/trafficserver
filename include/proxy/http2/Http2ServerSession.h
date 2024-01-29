@@ -52,6 +52,8 @@ public:
   void release(ProxyTransaction *trans) override;
   void free() override;
   ProxyTransaction *new_transaction() override;
+  bool is_protocol_framed() const override;
+  uint64_t get_received_frame_count(uint64_t type) const override;
 
   void add_session() override;
   void remove_session();

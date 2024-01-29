@@ -25,6 +25,7 @@
 
 #include "proxy/ProxySession.h"
 #include "proxy/http3/Http3Transaction.h"
+#include "proxy/http3/Http3FrameCounter.h"
 #include "proxy/http3/QPACK.h"
 
 class HQSession : public ProxySession
@@ -76,16 +77,20 @@ public:
   HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
+  bool is_protocol_framed() const override;
+  uint64_t get_received_frame_count(uint64_t type) const override;
 
   // Implement ProxySession interface
   const char *get_protocol_string() const override;
 
   QPACK *local_qpack();
   QPACK *remote_qpack();
+  Http3FrameCounter *get_received_frame_counter();
 
 private:
   QPACK *_remote_qpack = nullptr; // QPACK for decoding
   QPACK *_local_qpack  = nullptr; // QPACK for encoding
+  Http3FrameCounter _received_frame_counter;
 };
 
 /**

@@ -215,6 +215,18 @@ ProxySession::get_server_session() const
   return nullptr;
 }
 
+bool
+ProxySession::is_protocol_framed() const
+{
+  return false;
+}
+
+uint64_t
+ProxySession::get_received_frame_count(uint64_t type) const
+{
+  return 0;
+}
+
 void
 ProxySession::set_active_timeout(ink_hrtime timeout_in)
 {

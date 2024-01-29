@@ -3036,6 +3036,19 @@ namespace c
   */
   TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
 
+  /* Get Arbitrary Ssn info such as total transaction count etc as defined in TSHttpSsnInfoKey */
+  /**
+     Return the particular ssn info requested.
+
+     @param ssnp the transaction pointer
+     @param key the requested ssn info.
+     @param TSMgmtInt a pointer to a integer where the return value is stored
+
+     @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
+
+  */
+  TSReturnCode TSHttpSsnInfoIntGet(TSHttpSsn ssnp, TSHttpSsnInfoKey key, TSMgmtInt *value, uint64_t sub_key = 0);
+
   /****************************************************************************
    *  TSHttpTxnCacheLookupCountGet
    *  Return: TS_SUCCESS/TS_ERROR

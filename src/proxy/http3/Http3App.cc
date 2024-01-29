@@ -54,6 +54,8 @@ Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &
 
   this->_qc->stream_manager()->set_default_application(this);
 
+  this->_control_stream_dispatcher.add_handler(this->_ssn->get_received_frame_counter());
+
   this->_protocol_enforcer = new Http3ProtocolEnforcer();
   this->_control_stream_dispatcher.add_handler(this->_protocol_enforcer);
 

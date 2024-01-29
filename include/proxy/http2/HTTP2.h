@@ -106,6 +106,17 @@ struct Http2StatsBlock {
   Metrics::Counter::AtomicType *insufficient_avg_window_update;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_in;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_out;
+  Metrics::Counter::AtomicType *data_frames_in;
+  Metrics::Counter::AtomicType *headers_frames_in;
+  Metrics::Counter::AtomicType *priority_frames_in;
+  Metrics::Counter::AtomicType *rst_stream_frames_in;
+  Metrics::Counter::AtomicType *settings_frames_in;
+  Metrics::Counter::AtomicType *push_promise_frames_in;
+  Metrics::Counter::AtomicType *ping_frames_in;
+  Metrics::Counter::AtomicType *goaway_frames_in;
+  Metrics::Counter::AtomicType *window_update_frames_in;
+  Metrics::Counter::AtomicType *continuation_frames_in;
+  Metrics::Counter::AtomicType *unknown_frames_in;
 };
 
 extern Http2StatsBlock http2_rsb;
@@ -165,6 +176,8 @@ enum Http2FrameType {
 
   HTTP2_FRAME_TYPE_MAX,
 };
+
+extern Metrics::Counter::AtomicType *http2_frame_metrics_in[HTTP2_FRAME_TYPE_MAX + 1];
 
 // [RFC 7540] 6.1. Data
 enum Http2FrameFlagsData {

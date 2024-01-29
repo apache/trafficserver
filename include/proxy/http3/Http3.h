@@ -25,6 +25,7 @@
 
 #include "tscore/ink_defs.h"
 #include "tsutil/Metrics.h"
+#include "Http3Types.h"
 
 using ts::Metrics;
 
@@ -44,6 +45,15 @@ struct Http3StatsBlock {
   // Example: Metrics::Counter::AtomicType *current_client_session_count;
   // Once created, e.g.
   // Metrics::Counter::increment(http3_rsb.current_client_session_count);
+  Metrics::Counter::AtomicType *data_frames_in;
+  Metrics::Counter::AtomicType *headers_frames_in;
+  Metrics::Counter::AtomicType *cancel_push_frames_in;
+  Metrics::Counter::AtomicType *settings_frames_in;
+  Metrics::Counter::AtomicType *push_promise_frames_in;
+  Metrics::Counter::AtomicType *goaway_frames_in;
+  Metrics::Counter::AtomicType *max_push_id;
+  Metrics::Counter::AtomicType *unknown_frames_in;
 };
 
 extern Http3StatsBlock http3_rsb; // Container for statistics.
+extern Metrics::Counter::AtomicType *http3_frame_metrics_in[static_cast<int>(Http3FrameType::UNKNOWN) + 1];

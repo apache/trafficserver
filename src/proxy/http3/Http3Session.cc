@@ -25,6 +25,7 @@
 #include "iocore/net/QUICSupport.h"
 
 #include "proxy/http3/Http3.h"
+#include "proxy/http3/Http3Types.h"
 
 //
 // HQSession
@@ -218,6 +219,23 @@ QPACK *
 Http3Session::remote_qpack()
 {
   return this->_remote_qpack;
+}
+
+Http3FrameCounter *
+Http3Session::get_received_frame_counter()
+{
+  return &this->_received_frame_counter;
+}
+
+bool
+Http3Session::is_protocol_framed() const
+{
+  return true;
+}
+uint64_t
+Http3Session::get_received_frame_count(uint64_t type) const
+{
+  return this->_received_frame_counter.get_count(type);
 }
 
 //

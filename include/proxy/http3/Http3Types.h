@@ -50,20 +50,19 @@ enum class Http3SettingsId : uint64_t {
 
 // Update Http3Frame::type(const uint8_t *) too when you modify this list
 enum class Http3FrameType : uint64_t {
-  DATA              = 0x00,
-  HEADERS           = 0x01,
-  PRIORITY          = 0x02,
-  CANCEL_PUSH       = 0x03,
-  SETTINGS          = 0x04,
-  PUSH_PROMISE      = 0x05,
-  X_RESERVED_1      = 0x06,
-  GOAWAY            = 0x07,
-  X_RESERVED_2      = 0x08,
-  X_RESERVED_3      = 0x09,
-  MAX_PUSH_ID       = 0x0D,
-  DUPLICATE_PUSH_ID = 0x0E,
-  X_MAX_DEFINED     = 0x0E,
-  UNKNOWN           = 0xFF,
+  DATA          = 0x00,
+  HEADERS       = 0x01,
+  X_RESERVED_1  = 0x02,
+  CANCEL_PUSH   = 0x03,
+  SETTINGS      = 0x04,
+  PUSH_PROMISE  = 0x05,
+  X_RESERVED_2  = 0x06,
+  GOAWAY        = 0x07,
+  X_RESERVED_3  = 0x08,
+  X_RESERVED_4  = 0x09,
+  MAX_PUSH_ID   = 0x0D,
+  X_MAX_DEFINED = 0x0D,
+  UNKNOWN       = 0x0E,
 };
 
 enum class Http3ErrorClass {
