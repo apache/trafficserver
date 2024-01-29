@@ -1019,7 +1019,7 @@ Stripe::flush_aggregate_write_buffer()
 }
 
 bool
-Stripe::copy_from_aggregate_write_buffer(char *dest, Dir &dir, size_t nbytes) const
+Stripe::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
 {
   if (!dir_agg_buf_valid(this, &dir)) {
     return false;

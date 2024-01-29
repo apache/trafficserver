@@ -297,7 +297,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 }
 
 EvacuationBlock *
-Stripe::force_evacuate_head(Dir *evac_dir, int pinned)
+Stripe::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
