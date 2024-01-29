@@ -462,7 +462,7 @@ Data Structures
       A generic class:`CacheHostRecord` that contains all cache volumes that are not explicitly
       assigned in :file:`hosting.config`.
 
-   .. function:: Stripe * key_to_vol(const char * key, const char * host, int host_len)
+   .. function:: Stripe * key_to_stripe(CryptoHash * key, const char * host, int host_len)
 
       Compute the stripe (:code:`Stripe *`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
       used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe

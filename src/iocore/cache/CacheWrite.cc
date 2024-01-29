@@ -1558,7 +1558,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
   c->vio.op      = VIO::WRITE;
   c->op_type     = static_cast<int>(CacheOpType::Write);
-  c->stripe      = key_to_vol(key, hostname, host_len);
+  c->stripe      = key_to_stripe(key, hostname, host_len);
   Stripe *stripe = c->stripe;
   Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
@@ -1636,7 +1636,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
   c->earliest_key = c->key;
   c->frag_type    = CACHE_FRAG_TYPE_HTTP;
-  c->stripe       = key_to_vol(key, hostname, host_len);
+  c->stripe       = key_to_stripe(key, hostname, host_len);
   Stripe *stripe  = c->stripe;
   c->info         = info;
   if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {

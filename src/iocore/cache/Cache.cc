@@ -1225,7 +1225,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  Stripe *stripe = key_to_vol(key, hostname, host_len);
+  Stripe *stripe = key_to_stripe(key, hostname, host_len);
   CacheVC *c     = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
@@ -1262,7 +1262,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 
   CACHE_TRY_LOCK(lock, cont->mutex, this_ethread());
   ink_assert(lock.is_locked());
-  Stripe *stripe = key_to_vol(key, hostname, host_len);
+  Stripe *stripe = key_to_stripe(key, hostname, host_len);
   // coverity[var_decl]
   Dir result;
   dir_clear(&result); // initialized here, set result empty so we can recognize missed lock
@@ -1808,9 +1808,9 @@ rebuild_host_table(Cache *cache)
   }
 }
 
-// if generic_host_rec.vols == nullptr, what do we do???
+// if generic_host_rec.stripes == nullptr, what do we do???
 Stripe *
-Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
+Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 
