@@ -28,6 +28,8 @@
 #include "P_RamCache.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
 
+#include "iocore/eventsystem/EThread.h"
+
 #include "tscore/CryptoHash.h"
 
 #include <atomic>
@@ -298,7 +300,19 @@ public:
    * @return: Returns true if the operation was successfull, otherwise false.
    */
   bool add_writer(CacheVC *vc);
-  bool flush_aggregate_write_buffer();
+
+  /**
+   * Sync the stripe meta data to memory for shutdown.
+   *
+   * This method MUST NOT be called during regular operation. The stripe
+   * will be locked for this operation, and will not be unlocked afterwards.
+   *
+   * The aggregate write buffer will be flushed before copying the stripe to
+   * disk. Pending writes will be ignored.
+   *
+   * @param shutdown_thread The EThread to lock the stripe on.
+   */
+  void shutdown(EThread *shutdown_thread);
 
   /**
    * Retrieve a document from the aggregate write buffer.
@@ -319,6 +333,7 @@ private:
   void _init_dir();
   void _init_data_internal();
   void _init_data();
+  bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;
 };

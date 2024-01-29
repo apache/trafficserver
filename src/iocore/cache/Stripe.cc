@@ -26,14 +26,21 @@
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Lock.h"
+
+#include "tsutil/DbgCtl.h"
+
 #include "tscore/hugepages.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
 
 #include <cstring>
 
 namespace
 {
 
+DbgCtl dbg_ctl_cache_dir_sync{"dir_sync"};
 DbgCtl dbg_ctl_cache_init{"cache_init"};
 
 // This is the oldest version number that is still usable.
@@ -946,6 +953,51 @@ Stripe::add_writer(CacheVC *vc)
   }
 
   return !agg_error;
+}
+
+void
+Stripe::shutdown(EThread *shutdown_thread)
+{
+  // the process is going down, do a blocking call
+  // dont release the volume's lock, there could
+  // be another aggWrite in progress
+  MUTEX_TAKE_LOCK(this->mutex, shutdown_thread);
+
+  if (DISK_BAD(this->disk)) {
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", this->hash_text.get());
+    return;
+  }
+  size_t dirlen = this->dirlen();
+  ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
+  if (!this->header->dirty && !this->dir_sync_in_progress) {
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", this->hash_text.get());
+    return;
+  }
+  // recompute hit_evacuate_window
+  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+
+  // check if we have data in the agg buffer
+  // dont worry about the cachevc s in the agg queue
+  // directories have not been inserted for these writes
+  if (!this->_write_buffer.is_empty()) {
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
+    this->flush_aggregate_write_buffer();
+  }
+
+  // We already asserted that dirlen > 0.
+  if (!this->dir_sync_in_progress) {
+    this->header->sync_serial++;
+  } else {
+    Dbg(dbg_ctl_cache_dir_sync, "Periodic dir sync in progress -- overwriting");
+  }
+  this->footer->sync_serial = this->header->sync_serial;
+
+  CHECK_DIR(d);
+  size_t B    = this->header->sync_serial & 1;
+  off_t start = this->skip + (B ? dirlen : 0);
+  B           = pwrite(this->fd, this->raw_dir, dirlen, start);
+  ink_assert(B == dirlen);
+  Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
 }
 
 bool

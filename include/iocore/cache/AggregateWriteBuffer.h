@@ -54,6 +54,13 @@ public:
   AggregateWriteBuffer &operator=(AggregateWriteBuffer &&other) = delete;
 
   /**
+   * Check whether the internal buffer is empty.
+   *
+   * @return Returns true if the buffer is empty, otherwise false.
+   */
+  bool is_empty() const;
+
+  /**
    * Flush the internal buffer to disk.
    *
    * This method should be called during shutdown. It must not be called
@@ -142,4 +149,10 @@ inline void
 AggregateWriteBuffer::add_bytes_pending_aggregation(int size)
 {
   this->_bytes_pending_aggregation += size;
+}
+
+inline bool
+AggregateWriteBuffer::is_empty() const
+{
+  return this->_buffer_pos == 0;
 }

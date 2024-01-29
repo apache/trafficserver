@@ -891,7 +891,7 @@ Lagain:
   this->aggregate_pending_writes(tocall);
 
   // if we got nothing...
-  if (!this->_write_buffer.get_buffer_pos()) {
+  if (this->_write_buffer.is_empty()) {
     if (!this->_write_buffer.get_pending_writers().head && !sync.head) { // nothing to get
       return EVENT_CONT;
     }
@@ -932,7 +932,7 @@ Lagain:
   }
 
   // write sync marker
-  if (!this->_write_buffer.get_buffer_pos()) {
+  if (this->_write_buffer.is_empty()) {
     ink_assert(sync.head);
     int l = round_to_approx_size(sizeof(Doc));
     this->_write_buffer.seek(l);

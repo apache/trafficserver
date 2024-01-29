@@ -968,83 +968,11 @@ void
 sync_cache_dir_on_shutdown()
 {
   Dbg(dbg_ctl_cache_dir_sync, "sync started");
-  char *buf     = nullptr;
-  size_t buflen = 0;
-  bool buf_huge = false;
-
   EThread *t = (EThread *)0xdeadbeef;
   for (int i = 0; i < gnstripes; i++) {
-    // the process is going down, do a blocking call
-    // dont release the volume's lock, there could
-    // be another aggWrite in progress
-    MUTEX_TAKE_LOCK(gstripes[i]->mutex, t);
-    Stripe *stripe = gstripes[i];
-
-    if (DISK_BAD(stripe->disk)) {
-      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", stripe->hash_text.get());
-      continue;
-    }
-    size_t dirlen = stripe->dirlen();
-    ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
-    if (!stripe->header->dirty && !stripe->dir_sync_in_progress) {
-      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", stripe->hash_text.get());
-      continue;
-    }
-    // recompute hit_evacuate_window
-    stripe->hit_evacuate_window = (stripe->data_blocks * cache_config_hit_evacuate_percent) / 100;
-
-    // check if we have data in the agg buffer
-    // dont worry about the cachevc s in the agg queue
-    // directories have not been inserted for these writes
-    if (stripe->get_agg_buf_pos()) {
-      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", stripe->hash_text.get());
-      stripe->flush_aggregate_write_buffer();
-    }
-
-    if (buflen < dirlen) {
-      if (buf) {
-        if (buf_huge) {
-          ats_free_hugepage(buf, buflen);
-        } else {
-          ats_free(buf);
-        }
-        buf = nullptr;
-      }
-      buflen = dirlen;
-      if (ats_hugepage_enabled()) {
-        buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
-        buf_huge = true;
-      }
-      if (buf == nullptr) {
-        buf      = static_cast<char *>(ats_memalign(ats_pagesize(), buflen));
-        buf_huge = false;
-      }
-    }
-
-    if (!stripe->dir_sync_in_progress) {
-      stripe->header->sync_serial++;
-    } else {
-      Dbg(dbg_ctl_cache_dir_sync, "Periodic dir sync in progress -- overwriting");
-    }
-    stripe->footer->sync_serial = stripe->header->sync_serial;
-
-    CHECK_DIR(d);
-    memcpy(buf, stripe->raw_dir, dirlen);
-    size_t B    = stripe->header->sync_serial & 1;
-    off_t start = stripe->skip + (B ? dirlen : 0);
-    B           = pwrite(stripe->fd, buf, dirlen, start);
-    ink_assert(B == dirlen);
-    Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", stripe->hash_text.get());
+    gstripes[i]->shutdown(t);
   }
   Dbg(dbg_ctl_cache_dir_sync, "sync done");
-  if (buf) {
-    if (buf_huge) {
-      ats_free_hugepage(buf, buflen);
-    } else {
-      ats_free(buf);
-    }
-    buf = nullptr;
-  }
 }
 
 int
