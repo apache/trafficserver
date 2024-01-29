@@ -222,10 +222,10 @@ dump_summary()
   printf("-----------------\n");
 
   auto completed = Metrics::Counter::lookup("proxy.process.io_uring.completed", nullptr);
-  auto completed = Metrics::Counter::lookup("proxy.process.io_uring.submitted", nullptr);
+  auto submitted = Metrics::Counter::lookup("proxy.process.io_uring.submitted", nullptr);
 
-  printf("submissions: %lu\n", Metrics::Gauge::load(submitted));
-  printf("completions: %lu\n", Metrics::Gauge::load(completed));
+  printf("submissions: %lu\n", Metrics::Counter::load(submitted));
+  printf("completions: %lu\n", Metrics::Counter::load(completed));
 #endif
 
   if (delete_disks) {

@@ -22,6 +22,7 @@
  */
 #define CATCH_CONFIG_MAIN
 #include <atomic>
+#include <fcntl.h>
 #include "catch.hpp"
 
 #include "swoc/swoc_file.h"
@@ -265,9 +266,7 @@ TEST_CASE("net_io", "[io_uring]")
     connected = true;
   });
 
-  auto &m = Metrics::getInstance();
-
-  Metrics::Counter::AtomicType *completed = m.lookup(m.lookup("proxy.process.io_uring.completed"));
+  const auto *completed = Metrics::Gauge::lookup("proxy.process.io_uring.completed", nullptr);
 
   uint64_t completions_before = Metrics::Gauge::load(completed);
   uint64_t needed             = 2;

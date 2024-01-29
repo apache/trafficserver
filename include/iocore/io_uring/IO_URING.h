@@ -53,6 +53,10 @@ public:
   next_sqe(IOUringCompletionHandler *handler)
   {
     io_uring_sqe *result = io_uring_get_sqe(&ring);
+    if (result == nullptr) {
+      submit();
+      result = io_uring_get_sqe(&ring);
+    }
     if (result != nullptr) {
       io_uring_sqe_set_data(result, handler);
     }
