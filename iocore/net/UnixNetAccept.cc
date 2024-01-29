@@ -50,8 +50,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   UnixNetVConnection *vc = nullptr;
   Connection con;
 
-  EThread *t             = e->ethread;
-  int additional_accepts = get_NetHandler(t)->get_additional_accepts();
+  int additional_accepts = NetHandler::get_additional_accepts();
 
   if (!blockable) {
     if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex, e->ethread)) {
@@ -299,7 +298,7 @@ NetAccept::do_blocking_accept(EThread *t)
   con.sock_type = SOCK_STREAM;
 
   int count              = 0;
-  int additional_accepts = get_NetHandler(t)->get_additional_accepts();
+  int additional_accepts = NetHandler::get_additional_accepts();
 
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
@@ -441,9 +440,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   UnixNetVConnection *vc = nullptr;
   int count              = 0;
-  EThread *t             = e->ethread;
-  NetHandler *h          = get_NetHandler(t);
-  int additional_accepts = h->get_additional_accepts();
+  int additional_accepts = NetHandler::get_additional_accepts();
 
   do {
     socklen_t sz = sizeof(con.addr);
