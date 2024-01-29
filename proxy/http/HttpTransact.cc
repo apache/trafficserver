@@ -3692,7 +3692,7 @@ HttpTransact::handle_response_from_parent(State *s)
       s->current.attempts++;
 
       // Are we done with this particular parent?
-      if ((s->current.attempts - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
+      if (s->current.attempts % s->txn_conf->per_parent_connect_attempts != 0) {
         // No we are not done with this parent so retry
         HTTP_INCREMENT_DYN_STAT(http_total_parent_switches_stat);
         s->next_action = how_to_open_connection(s);
