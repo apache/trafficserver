@@ -63,34 +63,36 @@ struct Doc {
   int single_fragment() const;
   char *hdr();
   char *data();
+
+  using self_type = Doc;
 };
 
 inline uint32_t
 Doc::prefix_len() const
 {
-  return sizeof(Doc) + hlen;
+  return sizeof(self_type) + this->hlen;
 }
 
 inline uint32_t
 Doc::data_len() const
 {
-  return len - sizeof(Doc) - hlen;
+  return this->len - sizeof(self_type) - this->hlen;
 }
 
 inline int
 Doc::single_fragment() const
 {
-  return data_len() == total_len;
+  return this->data_len() == this->total_len;
 }
 
 inline char *
 Doc::hdr()
 {
-  return reinterpret_cast<char *>(this) + sizeof(Doc);
+  return reinterpret_cast<char *>(this) + sizeof(self_type);
 }
 
 inline char *
 Doc::data()
 {
-  return this->hdr() + hlen;
+  return this->hdr() + this->hlen;
 }
