@@ -266,12 +266,12 @@ TEST_CASE("net_io", "[io_uring]")
     connected = true;
   });
 
-  const auto *completed = Metrics::Gauge::lookup("proxy.process.io_uring.completed", nullptr);
+  const auto *completed = Metrics::Counter::lookup("proxy.process.io_uring.completed", nullptr);
 
-  uint64_t completions_before = Metrics::Gauge::load(completed);
+  uint64_t completions_before = Metrics::Counter::load(completed);
   uint64_t needed             = 2;
 
-  while ((Metrics::Gauge::load(completed) - completions_before) < needed) {
+  while ((Metrics::Counter::load(completed) - completions_before) < needed) {
     ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 
