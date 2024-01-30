@@ -360,41 +360,41 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
   bool never_index = false;
 
   // Find from tables, and insert / duplicate a entry prior to encode it
-  LookupResult lookup_result_static;
-  LookupResult lookup_result_dynamic;
+  XpackLookupResult lookup_result_static;
+  XpackLookupResult lookup_result_dynamic;
   lookup_result_static = StaticTable::lookup(lowered_name, name_len, value, value_len);
-  if (lookup_result_static.match_type != LookupResult::MatchType::EXACT) {
+  if (lookup_result_static.match_type != XpackLookupResult::MatchType::EXACT) {
     lookup_result_dynamic = this->_dynamic_table.lookup(lowered_name, name_len, value, value_len);
-    if (lookup_result_dynamic.match_type == LookupResult::MatchType::EXACT) {
+    if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
       if (this->_dynamic_table.should_duplicate(lookup_result_dynamic.index)) {
         // Duplicate an entry and use the new entry
         uint16_t current_index = lookup_result_dynamic.index;
         lookup_result_dynamic  = this->_dynamic_table.duplicate_entry(current_index);
-        if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+        if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
           this->_write_duplicate(current_index);
           QPACKDebug("Wrote Duplicate: current_index=%d", current_index);
           this->_dynamic_table.ref_entry(current_index);
         }
       }
-    } else if (lookup_result_static.match_type == LookupResult::MatchType::NAME) {
+    } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
       if (never_index) {
         // Name in static table is always available. Do nothing.
       } else {
         // Insert both the name and the value
         lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
-        if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+        if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
           this->_write_insert_with_name_ref(lookup_result_static.index, false, value, value_len);
           QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d value=%.*s", lookup_result_static.index, false,
                      value_len, value);
         }
       }
-    } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::NAME) {
+    } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
       if (never_index) {
         if (this->_dynamic_table.should_duplicate(lookup_result_dynamic.index)) {
           // Duplicate an entry and use the new entry
           uint16_t current_index = lookup_result_dynamic.index;
           lookup_result_dynamic  = this->_dynamic_table.duplicate_entry(current_index);
-          if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+          if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
             this->_write_duplicate(current_index);
             QPACKDebug("Wrote Duplicate: current_index=%d", current_index);
             this->_dynamic_table.ref_entry(current_index);
@@ -405,7 +405,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
           // Duplicate an entry and use the new entry
           uint16_t current_index = lookup_result_dynamic.index;
           lookup_result_dynamic  = this->_dynamic_table.duplicate_entry(current_index);
-          if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+          if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
             this->_write_duplicate(current_index);
             QPACKDebug("Wrote Duplicate: current_index=%d", current_index);
             this->_dynamic_table.ref_entry(current_index);
@@ -414,7 +414,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
           // Insert both the name and the value
           uint16_t current_index = lookup_result_dynamic.index;
           lookup_result_dynamic  = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
-          if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+          if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
             this->_write_insert_with_name_ref(current_index, true, value, value_len);
             QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d, value=%.*s", current_index, true, value_len, value);
           }
@@ -424,14 +424,14 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
       if (never_index) {
         // Insert only the name
         lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, "", 0);
-        if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+        if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
           this->_write_insert_without_name_ref(lowered_name, name_len, "", 0);
           QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", name_len, lowered_name, 0, "");
         }
       } else {
         // Insert both the name and the value
         lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
-        if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
+        if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
           this->_write_insert_without_name_ref(lowered_name, name_len, value, value_len);
           QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", name_len, lowered_name, value_len, value);
         }
@@ -440,12 +440,12 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
   }
 
   // Encode
-  if (lookup_result_static.match_type == LookupResult::MatchType::EXACT) {
+  if (lookup_result_static.match_type == XpackLookupResult::MatchType::EXACT) {
     this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
     QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_static.index,
                base_index, false);
     referred_index = 0;
-  } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::EXACT) {
+  } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
     if (lookup_result_dynamic.index < this->_largest_known_received_index) {
       this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
       QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_dynamic.index,
@@ -458,14 +458,14 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     }
     this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
     referred_index = lookup_result_dynamic.index;
-  } else if (lookup_result_static.match_type == LookupResult::MatchType::NAME) {
+  } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
     this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value, value_len, never_index,
                                                      compressed_header);
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
       lookup_result_static.index, base_index, false, value_len, value, never_index);
     referred_index = 0;
-  } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::NAME) {
+  } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
     if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
       this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value, value_len, never_index,
                                                        compressed_header);
@@ -676,10 +676,10 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
 
   // Lookup a table
   const char *name  = nullptr;
-  int name_len      = 0;
+  size_t name_len   = 0;
   const char *value = nullptr;
-  int value_len     = 0;
-  QPACK::LookupResult result;
+  size_t value_len  = 0;
+  XpackLookupResult result;
 
   if (buf[0] & 0x40) { // Static table
     result = StaticTable::lookup(index, &name, &name_len, &value, &value_len);
@@ -687,7 +687,7 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
     result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_relative_index(base_index, index), &name, &name_len,
                                          &value, &value_len);
   }
-  if (result.match_type != QPACK::LookupResult::MatchType::EXACT) {
+  if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
 
@@ -695,8 +695,8 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
   this->_attach_header(hdr, name, name_len, value, value_len, false);
   header_len = name_len + value_len;
 
-  QPACKDebug("Decoded Indexed Header Field: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index, result.index, name_len,
-             name, value_len, value);
+  QPACKDebug("Decoded Indexed Header Field: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index, result.index,
+             static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return len;
 }
@@ -723,10 +723,10 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
 
   // Lookup the name
   const char *name  = nullptr;
-  int name_len      = 0;
+  size_t name_len   = 0;
   const char *dummy = nullptr;
-  int dummy_len     = 0;
-  QPACK::LookupResult result;
+  size_t dummy_len  = 0;
+  XpackLookupResult result;
 
   if (buf[0] & 0x10) { // Static table
     result = StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
@@ -734,7 +734,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
     result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_relative_index(base_index, index), &name, &name_len,
                                          &dummy, &dummy_len);
   }
-  if (result.match_type != QPACK::LookupResult::MatchType::EXACT) {
+  if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
 
@@ -752,7 +752,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   header_len = name_len + value_len;
 
   QPACKDebug("Decoded Literal Header Field With Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             result.index, name_len, name, static_cast<int>(value_len), value);
+             result.index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return read_len;
 }
@@ -810,14 +810,14 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
 
   // Lookup a table
   const char *name  = nullptr;
-  int name_len      = 0;
+  size_t name_len   = 0;
   const char *value = nullptr;
-  int value_len     = 0;
-  QPACK::LookupResult result;
+  size_t value_len  = 0;
+  XpackLookupResult result;
 
   result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_postbase_index(base_index, index), &name, &name_len, &value,
                                        &value_len);
-  if (result.match_type != QPACK::LookupResult::MatchType::EXACT) {
+  if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
 
@@ -826,7 +826,7 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
   header_len = name_len + value_len;
 
   QPACKDebug("Decoded Indexed Header Field With Postbase Index: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             result.index, name_len, name, value_len, value);
+             result.index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return len;
 }
@@ -853,14 +853,14 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
 
   // Lookup the name
   const char *name  = nullptr;
-  int name_len      = 0;
+  size_t name_len   = 0;
   const char *dummy = nullptr;
-  int dummy_len     = 0;
-  QPACK::LookupResult result;
+  size_t dummy_len  = 0;
+  XpackLookupResult result;
 
   result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_postbase_index(base_index, index), &name, &name_len, &dummy,
                                        &dummy_len);
-  if (result.match_type != QPACK::LookupResult::MatchType::EXACT) {
+  if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
 
@@ -878,7 +878,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   header_len = name_len + value_len;
 
   QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             static_cast<uint16_t>(index), name_len, name, static_cast<int>(value_len), value);
+             static_cast<uint16_t>(index), static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return read_len;
 }
@@ -1111,25 +1111,32 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
       bool is_static;
       uint16_t index;
       Arena arena;
+      const char *name;
+      size_t name_len;
+      const char *dummy;
+      size_t dummy_len;
       char *value;
-      uint16_t value_len;
+      size_t value_len;
       if (this->_read_insert_with_name_ref(reader, is_static, index, arena, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
-      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%d, value=%.*s", is_static, index, value_len, value);
-      this->_dynamic_table.insert_entry(is_static, index, value, value_len);
+      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%d, value=%.*s", is_static, index, static_cast<int>(value_len),
+                 value);
+      StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
+      this->_dynamic_table.insert_entry(name, name_len, value, value_len);
     } else if (buf & 0x40) { // Insert Without Name Reference
       Arena arena;
       char *name;
-      uint16_t name_len;
+      size_t name_len;
       char *value;
-      uint16_t value_len;
+      size_t value_len;
       if (this->_read_insert_without_name_ref(reader, arena, &name, name_len, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
-      QPACKDebug("Received Insert Without Name Ref: name=%.*s, value=%.*s", name_len, name, value_len, value);
+      QPACKDebug("Received Insert Without Name Ref: name=%.*s, value=%.*s", static_cast<int>(name_len), name,
+                 static_cast<int>(value_len), value);
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
     } else if (buf & 0x20) { // Dynamic Table Size Update
       uint16_t max_size;
@@ -1138,7 +1145,7 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
         return EVENT_DONE;
       }
       QPACKDebug("Received Dynamic Table Size Update: max_size=%d", max_size);
-      this->_dynamic_table.update_size(max_size);
+      this->_dynamic_table.update_maximum_size(max_size);
     } else { // Duplicates
       uint16_t index;
       if (this->_read_duplicate(reader, index) < 0) {
@@ -1178,24 +1185,24 @@ QPACK::estimate_header_block_size(const HTTPHdr &hdr)
   return 128 * 1024 * 1024;
 }
 
-const QPACK::LookupResult
-QPACK::StaticTable::lookup(uint16_t index, const char **name, int *name_len, const char **value, int *value_len)
+const XpackLookupResult
+QPACK::StaticTable::lookup(uint16_t index, const char **name, size_t *name_len, const char **value, size_t *value_len)
 {
   const Header &header = STATIC_HEADER_FIELDS[index];
   *name                = header.name;
   *name_len            = header.name_len;
   *value               = header.value;
   *value_len           = header.value_len;
-  return {index, QPACK::LookupResult::MatchType::EXACT};
+  return {index, XpackLookupResult::MatchType::EXACT};
 }
 
-const QPACK::LookupResult
-QPACK::StaticTable::lookup(const char *name, int name_len, const char *value, int value_len)
+const XpackLookupResult
+QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len)
 {
-  QPACK::LookupResult::MatchType match_type = QPACK::LookupResult::MatchType::NONE;
-  uint16_t i                                = 0;
-  uint16_t candidate_index                  = 0;
-  int n                                     = countof(STATIC_HEADER_FIELDS);
+  XpackLookupResult::MatchType match_type = XpackLookupResult::MatchType::NONE;
+  uint16_t i                              = 0;
+  uint16_t candidate_index                = 0;
+  int n                                   = countof(STATIC_HEADER_FIELDS);
 
   for (; i < n; ++i) {
     const Header &h = STATIC_HEADER_FIELDS[i];
@@ -1204,11 +1211,11 @@ QPACK::StaticTable::lookup(const char *name, int name_len, const char *value, in
         candidate_index = i;
         if (value_len == h.value_len && memcmp(value, h.value, value_len) == 0) {
           // Exact match
-          match_type = QPACK::LookupResult::MatchType::EXACT;
+          match_type = XpackLookupResult::MatchType::EXACT;
           break;
         } else {
           // Name match -- Keep it for no exact matches
-          match_type = QPACK::LookupResult::MatchType::NAME;
+          match_type = XpackLookupResult::MatchType::NAME;
         }
       }
     }
@@ -1247,192 +1254,6 @@ QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *
   MIMEField *new_field = hdr.field_create(name, name_len);
   new_field->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
   hdr.field_attach(new_field);
-}
-
-//
-// DynamicTable
-//
-QPACK::DynamicTable::DynamicTable(uint16_t size) : _available(size), _max_entries(size), _storage(new DynamicTableStorage(size))
-{
-  QPACKDTDebug("Dynamic table size: %u", size);
-  this->_entries      = static_cast<struct DynamicTableEntry *>(ats_malloc(sizeof(struct DynamicTableEntry) * size));
-  this->_entries_head = size - 1;
-  this->_entries_tail = size - 1;
-}
-
-QPACK::DynamicTable::~DynamicTable()
-{
-  if (this->_storage) {
-    delete this->_storage;
-    this->_storage = nullptr;
-  }
-  if (this->_entries) {
-    delete this->_entries;
-    this->_entries = nullptr;
-  }
-}
-
-const QPACK::LookupResult
-QPACK::DynamicTable::lookup(uint16_t index, const char **name, int *name_len, const char **value, int *value_len)
-{
-  // ink_assert(index >= this->_entries[(this->_entries_tail + 1) % this->_max_entries].index);
-  // ink_assert(index <= this->_entries[this->_entries_head].index);
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
-  *name_len    = this->_entries[pos].name_len;
-  *value_len   = this->_entries[pos].value_len;
-  this->_storage->read(this->_entries[pos].offset, name, *name_len, value, *value_len);
-  return {index, QPACK::LookupResult::MatchType::EXACT};
-}
-
-const QPACK::LookupResult
-QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, int value_len)
-{
-  QPACK::LookupResult::MatchType match_type = QPACK::LookupResult::MatchType::NONE;
-  uint16_t i                                = this->_entries_tail + 1;
-  int end                                   = this->_entries_head;
-  uint16_t candidate_index                  = 0;
-  const char *tmp_name                      = nullptr;
-  const char *tmp_value                     = nullptr;
-
-  // DynamicTable is empty
-  if (this->_entries_inserted == 0) {
-    return {candidate_index, match_type};
-  }
-
-  // TODO Use a tree for better performance
-  for (; i <= end; i = (i + 1) % this->_max_entries) {
-    if (name_len != 0 && this->_entries[i].name_len == name_len) {
-      this->_storage->read(this->_entries[i].offset, &tmp_name, this->_entries[i].name_len, &tmp_value,
-                           this->_entries[i].value_len);
-      if (memcmp(name, tmp_name, name_len) == 0) {
-        candidate_index = this->_entries[i].index;
-        if (value_len == this->_entries[i].value_len && memcmp(value, tmp_value, value_len) == 0) {
-          // Exact match
-          match_type = QPACK::LookupResult::MatchType::EXACT;
-          break;
-        } else {
-          // Name match -- Keep it for no exact matches
-          match_type = QPACK::LookupResult::MatchType::NAME;
-        }
-      }
-    }
-  }
-
-  return {candidate_index, match_type};
-}
-
-const QPACK::LookupResult
-QPACK::DynamicTable::insert_entry(bool is_static, uint16_t index, const char *value, uint16_t value_len)
-{
-  const char *name;
-  int name_len;
-  const char *dummy;
-  int dummy_len;
-
-  if (is_static) {
-    StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
-  } else {
-    this->lookup(index, &name, &name_len, &dummy, &dummy_len);
-  }
-  return this->insert_entry(name, name_len, value, value_len);
-}
-
-const QPACK::LookupResult
-QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const char *value, uint16_t value_len)
-{
-  if (this->_max_entries == 0) {
-    return {UINT16_C(0), QPACK::LookupResult::MatchType::NONE};
-  }
-
-  // Check if we can make enough space to insert a new entry
-  uint16_t required_len = name_len + value_len;
-  uint16_t available    = this->_available;
-  uint16_t tail         = (this->_entries_tail + 1) % this->_max_entries;
-  while (available < required_len) {
-    if (this->_entries[tail].ref_count) {
-      break;
-    }
-    available += this->_entries[tail].name_len + this->_entries[tail].value_len;
-    tail       = (tail + 1) % this->_max_entries;
-  }
-  if (available < required_len) {
-    // We can't insert a new entry because some stream(s) refer an entry that need to be evicted
-    return {UINT16_C(0), QPACK::LookupResult::MatchType::NONE};
-  }
-
-  // Evict
-  if (this->_available != available) {
-    QPACKDTDebug("Evict entries: from %u to %u", this->_entries[(this->_entries_tail + 1) % this->_max_entries].index,
-                 this->_entries[tail - 1].index);
-    this->_available    = available;
-    this->_entries_tail = tail - 1;
-    QPACKDTDebug("Available size: %u", this->_available);
-  }
-
-  // Insert
-  this->_entries_head                  = (this->_entries_head + 1) % this->_max_entries;
-  this->_entries[this->_entries_head]  = {++this->_entries_inserted, this->_storage->write(name, name_len, value, value_len),
-                                          name_len, value_len, 0};
-  this->_available                    -= required_len;
-
-  QPACKDTDebug("Insert Entry: entry=%u, index=%u, size=%u", this->_entries_head, this->_entries_inserted, name_len + value_len);
-  QPACKDTDebug("Available size: %u", this->_available);
-  return {this->_entries_inserted, value_len ? LookupResult::MatchType::EXACT : LookupResult::MatchType::NAME};
-}
-
-const QPACK::LookupResult
-QPACK::DynamicTable::duplicate_entry(uint16_t current_index)
-{
-  const char *name;
-  int name_len;
-  const char *value;
-  int value_len;
-  char *duped_name;
-  char *duped_value;
-
-  this->lookup(current_index, &name, &name_len, &value, &value_len);
-  // We need to dup name and value to avoid memcpy-param-overlap
-  duped_name                = ats_strndup(name, name_len);
-  duped_value               = ats_strndup(value, value_len);
-  const LookupResult result = this->insert_entry(duped_name, name_len, duped_value, value_len);
-  ats_free(duped_name);
-  ats_free(duped_value);
-
-  return result;
-}
-
-bool
-QPACK::DynamicTable::should_duplicate(uint16_t index)
-{
-  // TODO: Check whether a specified entry should be duplicated
-  // Just return false for now
-  return false;
-}
-
-void
-QPACK::DynamicTable::update_size(uint16_t max_size)
-{
-  // TODO Implement it
-}
-
-void
-QPACK::DynamicTable::ref_entry(uint16_t index)
-{
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
-  ++this->_entries[pos].ref_count;
-}
-
-void
-QPACK::DynamicTable::unref_entry(uint16_t index)
-{
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
-  --this->_entries[pos].ref_count;
-}
-
-uint16_t
-QPACK::DynamicTable::largest_index() const
-{
-  return this->_entries_inserted;
 }
 
 int
@@ -1646,7 +1467,7 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 
 int
 QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
-                                  uint16_t &value_len)
+                                  size_t &value_len)
 {
   size_t read_len = 0;
   int ret;
@@ -1678,8 +1499,8 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
 }
 
 int
-QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
-                                     uint16_t &value_len)
+QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, size_t &name_len, char **value,
+                                     size_t &value_len)
 {
   size_t read_len = 0;
   int ret;
@@ -1813,50 +1634,4 @@ QPACK::_read_stream_cancellation(IOBufferReader &reader, uint64_t &stream_id)
   reader.consume(read_len);
 
   return 0;
-}
-
-//
-// DynamicTableStorage
-//
-
-QPACK::DynamicTableStorage::DynamicTableStorage(uint16_t size) : _head(size * 2 - 1), _tail(size * 2 - 1)
-{
-  this->_data_size           = size * 2;
-  this->_data                = reinterpret_cast<uint8_t *>(ats_malloc(this->_data_size));
-  this->_overwrite_threshold = size;
-}
-
-QPACK::DynamicTableStorage::~DynamicTableStorage()
-{
-  ats_free(this->_data);
-  this->_data = nullptr;
-}
-
-void
-QPACK::DynamicTableStorage::read(uint16_t offset, const char **name, uint16_t name_len, const char **value,
-                                 uint16_t value_len) const
-{
-  *name  = reinterpret_cast<const char *>(this->_data + offset);
-  *value = reinterpret_cast<const char *>(this->_data + offset + name_len);
-}
-
-uint16_t
-QPACK::DynamicTableStorage::write(const char *name, uint16_t name_len, const char *value, uint16_t value_len)
-{
-  uint16_t offset = (this->_head + 1) % this->_data_size;
-  memcpy(this->_data + offset, name, name_len);
-  memcpy(this->_data + offset + name_len, value, value_len);
-
-  this->_head = (this->_head + (name_len + value_len)) % this->_data_size;
-  if (this->_head > this->_overwrite_threshold) {
-    this->_head = 0;
-  }
-
-  return offset;
-}
-
-void
-QPACK::DynamicTableStorage::erase(uint16_t name_len, uint16_t value_len)
-{
-  this->_tail = (this->_tail + (name_len + value_len)) % this->_data_size;
 }

@@ -125,4 +125,186 @@ TEST_CASE("XPACK_String", "[xpack]")
       REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
     }
   }
+
+  SECTION("Dynamic Table")
+  {
+    constexpr uint16_t MAX_SIZE = 128;
+    XpackDynamicTable dt(MAX_SIZE);
+    XpackLookupResult result;
+    const char *name  = nullptr;
+    size_t name_len   = 0;
+    const char *value = nullptr;
+    size_t value_len  = 0;
+
+    // Check the initial state
+    REQUIRE(dt.size() == 0);
+    REQUIRE(dt.maximum_size() == MAX_SIZE);
+    REQUIRE(dt.is_empty());
+    REQUIRE(dt.count() == 0);
+    result = dt.lookup(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE - 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    // Insert one entry
+    dt.insert_entry("name1", "value1");
+    REQUIRE(dt.size() == strlen("name1") + strlen("value1") + 32);
+    REQUIRE(dt.maximum_size() == MAX_SIZE);
+    REQUIRE(dt.count() == 1);
+    REQUIRE(dt.largest_index() == 0);
+    result = dt.lookup(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name1"));
+    REQUIRE(memcmp(name, "name1", name_len) == 0);
+    REQUIRE(value_len == strlen("value1"));
+    REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup(dt.largest_index() + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    result = dt.lookup(MAX_SIZE - 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    // Insert one more entry
+    dt.insert_entry("name2", "value2");
+    REQUIRE(dt.size() == strlen("name1") + strlen("value1") + 32 + strlen("name2") + strlen("value2") + 32);
+    REQUIRE(dt.maximum_size() == MAX_SIZE);
+    REQUIRE(dt.count() == 2);
+    REQUIRE(dt.largest_index() == 1);
+    result = dt.lookup(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name1"));
+    REQUIRE(memcmp(name, "name1", name_len) == 0);
+    REQUIRE(value_len == strlen("value1"));
+    REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name2"));
+    REQUIRE(memcmp(name, "name2", name_len) == 0);
+    REQUIRE(value_len == strlen("value2"));
+    REQUIRE(memcmp(value, "value2", value_len) == 0);
+    result = dt.lookup(dt.largest_index() + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup_relative(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name2"));
+    REQUIRE(memcmp(name, "name2", name_len) == 0);
+    REQUIRE(value_len == strlen("value2"));
+    REQUIRE(memcmp(value, "value2", value_len) == 0);
+    result = dt.lookup_relative(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name1"));
+    REQUIRE(memcmp(name, "name1", name_len) == 0);
+    REQUIRE(value_len == strlen("value1"));
+    REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup(MAX_SIZE - 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    // Insert one more entry (this should evict the first entry)
+    dt.insert_entry("name3", "value3");
+    REQUIRE(dt.size() == strlen("name2") + strlen("value2") + 32 + strlen("name3") + strlen("value3") + 32);
+    REQUIRE(dt.maximum_size() == MAX_SIZE);
+    REQUIRE(dt.count() == 2);
+    REQUIRE(dt.largest_index() == 2);
+    result = dt.lookup(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name2"));
+    REQUIRE(memcmp(name, "name2", name_len) == 0);
+    REQUIRE(value_len == strlen("value2"));
+    REQUIRE(memcmp(value, "value2", value_len) == 0);
+    result = dt.lookup(2, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name3"));
+    REQUIRE(memcmp(name, "name3", name_len) == 0);
+    REQUIRE(value_len == strlen("value3"));
+    REQUIRE(memcmp(value, "value3", value_len) == 0);
+    result = dt.lookup(dt.largest_index() + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup_relative(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name3"));
+    REQUIRE(memcmp(name, "name3", name_len) == 0);
+    REQUIRE(value_len == strlen("value3"));
+    REQUIRE(memcmp(value, "value3", value_len) == 0);
+    result = dt.lookup_relative(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name2"));
+    REQUIRE(memcmp(name, "name2", name_len) == 0);
+    REQUIRE(value_len == strlen("value2"));
+    REQUIRE(memcmp(value, "value2", value_len) == 0);
+
+    // Insert one more entry (this should evict all existing entries)
+    dt.insert_entry("name4-1234567890123456789012345", "value4-9876543210987654321098765");
+    REQUIRE(dt.size() == strlen("name4-1234567890123456789012345") + strlen("value4-9876543210987654321098765") + 32);
+    REQUIRE(dt.maximum_size() == MAX_SIZE);
+    REQUIRE(dt.count() == 1);
+    REQUIRE(dt.largest_index() == 3);
+    result = dt.lookup(3, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name4-1234567890123456789012345"));
+    REQUIRE(memcmp(name, "name4-1234567890123456789012345", name_len) == 0);
+    REQUIRE(value_len == strlen("value4-9876543210987654321098765"));
+    REQUIRE(memcmp(value, "value4-9876543210987654321098765", value_len) == 0);
+    result = dt.lookup(dt.largest_index() - 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(dt.largest_index(), &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    result = dt.lookup(dt.largest_index() + 1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    // Update the maximum size (this should not evict anything)
+    size_t current_size = dt.size();
+    dt.update_maximum_size(current_size);
+    REQUIRE(dt.size() == current_size);
+    REQUIRE(dt.maximum_size() == current_size);
+    REQUIRE(dt.count() == 1);
+    REQUIRE(dt.largest_index() == 3);
+    result = dt.lookup(3, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(name_len == strlen("name4-1234567890123456789012345"));
+    REQUIRE(memcmp(name, "name4-1234567890123456789012345", name_len) == 0);
+    REQUIRE(value_len == strlen("value4-9876543210987654321098765"));
+    REQUIRE(memcmp(value, "value4-9876543210987654321098765", value_len) == 0);
+
+    // Update the maximum size (this should evict everything)
+    dt.update_maximum_size(0);
+    REQUIRE(dt.size() == 0);
+    REQUIRE(dt.maximum_size() == 0);
+    REQUIRE(dt.is_empty());
+    REQUIRE(dt.count() == 0);
+    result = dt.lookup(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    result = dt.lookup(2, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+
+    // Reset the maximum size
+    dt.update_maximum_size(4096);
+    REQUIRE(dt.size() == 0);
+    REQUIRE(dt.maximum_size() == 4096);
+    REQUIRE(dt.is_empty());
+    REQUIRE(dt.count() == 0);
+
+    // Insert an oversided item
+    dt.insert_entry("name1", "value1");              // This should be evicted
+    dt.insert_entry("", UINT32_MAX, "", UINT32_MAX); // This should not even cause a buffer over run
+    REQUIRE(dt.size() == 0);
+    REQUIRE(dt.maximum_size() == 4096);
+    REQUIRE(dt.is_empty());
+    REQUIRE(dt.count() == 0);
+  }
 }

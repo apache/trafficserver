@@ -196,21 +196,6 @@ constexpr HpackHeaderField STATIC_TABLE[] = {
 constexpr std::string_view HPACK_HDR_FIELD_COOKIE        = STATIC_TABLE[TS_HPACK_STATIC_TABLE_COOKIE].name;
 constexpr std::string_view HPACK_HDR_FIELD_AUTHORIZATION = STATIC_TABLE[TS_HPACK_STATIC_TABLE_AUTHORIZATION].name;
 
-/**
-  Threshold for total HdrHeap size which used by HPAK Dynamic Table.
-  The HdrHeap is filled by MIMEHdrImpl and MIMEFieldBlockImpl like below.
-  This threshold allow to allocate 3 HdrHeap at maximum.
-
-                     +------------------+-----------------------------+
-   HdrHeap 1 (2048): | MIMEHdrImpl(592) | MIMEFieldBlockImpl(528) x 2 |
-                     +------------------+-----------------------------+--...--+
-   HdrHeap 2 (4096): | MIMEFieldBlockImpl(528) x 7                            |
-                     +------------------------------------------------+--...--+--...--+
-   HdrHeap 3 (8192): | MIMEFieldBlockImpl(528) x 15                                   |
-                     +------------------------------------------------+--...--+--...--+
-*/
-static constexpr uint32_t HPACK_HDR_HEAP_THRESHOLD = sizeof(MIMEHdrImpl) + sizeof(MIMEFieldBlockImpl) * (2 + 7 + 15);
-
 //
 // Local functions
 //
@@ -235,24 +220,6 @@ match(const char *s1, int s1_len, const char *s2, int s2_len)
   }
 
   if (memcmp(s1, s2, s1_len) != 0) {
-    return false;
-  }
-
-  return true;
-}
-
-static inline bool
-match_ignore_case(const char *s1, int s1_len, const char *s2, int s2_len)
-{
-  if (s1_len != s2_len) {
-    return false;
-  }
-
-  if (s1 == s2) {
-    return true;
-  }
-
-  if (strncasecmp(s1, s2, s1_len) != 0) {
     return false;
   }
 
@@ -350,8 +317,10 @@ HpackIndexingTable::lookup(const HpackHeaderField &header) const
   }
 
   // dynamic table
-  if (HpackLookupResult dt_result = this->_dynamic_table.lookup(header); dt_result.match_type == HpackMatch::EXACT) {
-    return dt_result;
+  if (XpackLookupResult dt_result = this->_dynamic_table.lookup_relative(header.name, header.value);
+      dt_result.match_type == XpackLookupResult::MatchType::EXACT) {
+    return {static_cast<uint32_t>(TS_HPACK_STATIC_TABLE_ENTRY_NUM + dt_result.index), HpackIndex::DYNAMIC,
+            static_cast<HpackMatch>(dt_result.match_type)};
   }
 
   return result;
@@ -369,13 +338,16 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
     // static table
     field.name_set(STATIC_TABLE[index].name.data(), STATIC_TABLE[index].name.size());
     field.value_set(STATIC_TABLE[index].value.data(), STATIC_TABLE[index].value.size());
-  } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table.length()) {
+  } else if (index < (TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table.count())) {
     // dynamic table
-    const MIMEField *m_field = _dynamic_table.get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
+    size_t name_len, value_len;
+    const char *name;
+    const char *value;
 
-    int name_len, value_len;
-    const char *name  = m_field->name_get(&name_len);
-    const char *value = m_field->value_get(&value_len);
+    auto result = _dynamic_table.lookup_relative(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM, &name, &name_len, &value, &value_len);
+    if (result.match_type != XpackLookupResult::MatchType::EXACT) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
 
     field.name_set(name, name_len);
     field.value_set(value, value_len);
@@ -392,7 +364,7 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
 void
 HpackIndexingTable::add_header_field(const HpackHeaderField &header)
 {
-  _dynamic_table.add_header_field(header);
+  _dynamic_table.insert_entry(header.name, header.value);
 }
 
 uint32_t
@@ -411,183 +383,6 @@ void
 HpackIndexingTable::update_maximum_size(uint32_t new_size)
 {
   _dynamic_table.update_maximum_size(new_size);
-}
-
-//
-// HpackDynamicTable
-//
-HpackDynamicTable::HpackDynamicTable(uint32_t size) : _maximum_size(size)
-{
-  _mhdr = new MIMEHdr();
-  _mhdr->create();
-}
-
-HpackDynamicTable::~HpackDynamicTable()
-{
-  this->_headers.clear();
-
-  this->_mhdr->fields_clear();
-  this->_mhdr->destroy();
-  delete this->_mhdr;
-
-  if (this->_mhdr_old != nullptr) {
-    this->_mhdr_old->fields_clear();
-    this->_mhdr_old->destroy();
-    delete this->_mhdr_old;
-  }
-}
-
-const MIMEField *
-HpackDynamicTable::get_header_field(uint32_t index) const
-{
-  return this->_headers.at(index);
-}
-
-void
-HpackDynamicTable::add_header_field(const HpackHeaderField &header)
-{
-  uint32_t header_size = ADDITIONAL_OCTETS + header.name.size() + header.value.size();
-
-  if (header_size > _maximum_size) {
-    // [RFC 7541] 4.4. Entry Eviction When Adding New Entries
-    // It is not an error to attempt to add an entry that is larger than
-    // the maximum size; an attempt to add an entry larger than the entire
-    // table causes the table to be emptied of all existing entries.
-    this->_headers.clear();
-    this->_mhdr->fields_clear();
-
-    if (this->_mhdr_old) {
-      this->_mhdr_old->fields_clear();
-      this->_mhdr_old->destroy();
-      delete this->_mhdr_old;
-      this->_mhdr_old = nullptr;
-    }
-
-    this->_current_size = 0;
-  } else {
-    this->_current_size += header_size;
-    this->_evict_overflowed_entries();
-
-    MIMEField *new_field = this->_mhdr->field_create(header.name.data(), header.name.size());
-    new_field->value_set(this->_mhdr->m_heap, this->_mhdr->m_mime, header.value.data(), header.value.size());
-    this->_mhdr->field_attach(new_field);
-    this->_headers.push_front(new_field);
-  }
-}
-
-HpackLookupResult
-HpackDynamicTable::lookup(const HpackHeaderField &header) const
-{
-  HpackLookupResult result;
-  const unsigned int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + this->length();
-
-  for (unsigned int index = TS_HPACK_STATIC_TABLE_ENTRY_NUM; index < entry_num; ++index) {
-    const MIMEField *m_field = this->_headers.at(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
-    std::string_view name    = m_field->name_get();
-    std::string_view value   = m_field->value_get();
-
-    // Check whether name (and value) are matched
-    if (match_ignore_case(header.name.data(), header.name.length(), name.data(), name.length())) {
-      if (match(header.value.data(), header.value.length(), value.data(), value.length())) {
-        result.index      = index;
-        result.index_type = HpackIndex::DYNAMIC;
-        result.match_type = HpackMatch::EXACT;
-        break;
-      } else if (!result.index) {
-        result.index      = index;
-        result.index_type = HpackIndex::DYNAMIC;
-        result.match_type = HpackMatch::NAME;
-      }
-    }
-  }
-
-  return result;
-}
-
-uint32_t
-HpackDynamicTable::maximum_size() const
-{
-  return _maximum_size;
-}
-
-uint32_t
-HpackDynamicTable::size() const
-{
-  return _current_size;
-}
-
-//
-// [RFC 7541] 4.3. Entry Eviction when Header Table Size Changes
-//
-// Whenever the maximum size for the header table is reduced, entries
-// are evicted from the end of the header table until the size of the
-// header table is less than or equal to the maximum size.
-//
-void
-HpackDynamicTable::update_maximum_size(uint32_t new_size)
-{
-  this->_maximum_size = new_size;
-  this->_evict_overflowed_entries();
-}
-
-uint32_t
-HpackDynamicTable::length() const
-{
-  return this->_headers.size();
-}
-
-void
-HpackDynamicTable::_evict_overflowed_entries()
-{
-  if (this->_current_size <= this->_maximum_size) {
-    // Do nothing
-    return;
-  }
-
-  while (!this->_headers.empty()) {
-    auto h = this->_headers.back();
-    int name_len, value_len;
-    h->name_get(&name_len);
-    h->value_get(&value_len);
-
-    this->_current_size -= ADDITIONAL_OCTETS + name_len + value_len;
-
-    if (this->_mhdr_old && this->_mhdr_old->fields_count() != 0) {
-      this->_mhdr_old->field_delete(h, false);
-    } else {
-      this->_mhdr->field_delete(h, false);
-    }
-
-    this->_headers.pop_back();
-
-    if (this->_current_size <= this->_maximum_size) {
-      break;
-    }
-  }
-
-  this->_mime_hdr_gc();
-}
-
-/**
-   When HdrHeap size of current MIMEHdr exceeds the threshold, allocate new MIMEHdr and HdrHeap.
-   The old MIMEHdr and HdrHeap will be freed, when all MIMEFiled are deleted by HPACK Entry Eviction.
- */
-void
-HpackDynamicTable::_mime_hdr_gc()
-{
-  if (this->_mhdr_old == nullptr) {
-    if (this->_mhdr->m_heap->total_used_size() >= HPACK_HDR_HEAP_THRESHOLD) {
-      this->_mhdr_old = this->_mhdr;
-      this->_mhdr     = new MIMEHdr();
-      this->_mhdr->create();
-    }
-  } else {
-    if (this->_mhdr_old->fields_count() == 0) {
-      this->_mhdr_old->destroy();
-      delete this->_mhdr_old;
-      this->_mhdr_old = nullptr;
-    }
-  }
 }
 
 //
