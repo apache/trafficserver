@@ -17,6 +17,8 @@
 
 include(add_atsplugin)
 
+# The experimental plugins are handled in cmake/ExperimentalPlugins.cmake.
+
 add_subdirectory(authproxy)
 add_subdirectory(background_fetch)
 add_subdirectory(cache_promote)
@@ -51,10 +53,6 @@ endif()
 
 if(USE_LUAJIT)
   add_subdirectory(lua)
-endif()
-
-if(BUILD_EXPERIMENTAL_PLUGINS)
-  add_subdirectory(experimental)
 endif()
 
 if(HOST_OS STREQUAL "linux")
