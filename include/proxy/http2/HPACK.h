@@ -126,6 +126,9 @@ public:
   uint32_t size() const;
   void update_maximum_size(uint32_t new_size);
 
+  // Temporal buffer for internal use but it has to be public because many functions are not members of this class.
+  Arena arena;
+
 private:
   XpackDynamicTable _dynamic_table;
 };

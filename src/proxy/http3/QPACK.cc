@@ -346,10 +346,9 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
 int
 QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header, uint16_t &referred_index)
 {
-  Arena arena;
   int name_len;
   const char *name   = field.name_get(&name_len);
-  char *lowered_name = arena.str_store(name, name_len);
+  char *lowered_name = this->_arena.str_store(name, name_len);
   for (int i = 0; i < name_len; i++) {
     lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
   }
@@ -485,6 +484,8 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     QPACKDebug("Encoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s, never_index=%d", name_len, lowered_name,
                value_len, value, never_index);
   }
+
+  this->_arena.str_free(lowered_name);
 
   return 0;
 }
@@ -739,10 +740,9 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   }
 
   // Read value
-  Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(this->_arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -753,6 +753,8 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
 
   QPACKDebug("Decoded Literal Header Field With Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              result.index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+
+  this->_arena.str_free(value);
 
   return read_len;
 }
@@ -769,18 +771,17 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   }
 
   // Read name and value
-  Arena arena;
   int64_t ret;
   char *name;
   uint64_t name_len;
-  if ((ret = xpack_decode_string(arena, &name, name_len, buf, buf + buf_len, 3)) < 0) {
+  if ((ret = xpack_decode_string(this->_arena, &name, name_len, buf, buf + buf_len, 3)) < 0) {
     return -1;
   }
   read_len += ret;
 
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(this->_arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -791,6 +792,9 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
 
   QPACKDebug("Decoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s", static_cast<uint16_t>(name_len), name,
              static_cast<uint16_t>(value_len), value);
+
+  this->_arena.str_free(name);
+  this->_arena.str_free(value);
 
   return read_len;
 }
@@ -865,10 +869,9 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   }
 
   // Read value
-  Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(this->_arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -879,6 +882,8 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
 
   QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              static_cast<uint16_t>(index), static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+
+  this->_arena.str_free(value);
 
   return read_len;
 }
@@ -1110,14 +1115,13 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
     if (buf & 0x80) { // Insert With Name Reference
       bool is_static;
       uint16_t index;
-      Arena arena;
       const char *name;
       size_t name_len;
       const char *dummy;
       size_t dummy_len;
       char *value;
       size_t value_len;
-      if (this->_read_insert_with_name_ref(reader, is_static, index, arena, &value, value_len) < 0) {
+      if (this->_read_insert_with_name_ref(reader, is_static, index, this->_arena, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
@@ -1125,19 +1129,20 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
                  value);
       StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      this->_arena.str_free(value);
     } else if (buf & 0x40) { // Insert Without Name Reference
-      Arena arena;
       char *name;
       size_t name_len;
       char *value;
       size_t value_len;
-      if (this->_read_insert_without_name_ref(reader, arena, &name, name_len, &value, value_len) < 0) {
+      if (this->_read_insert_without_name_ref(reader, this->_arena, &name, name_len, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
       QPACKDebug("Received Insert Without Name Ref: name=%.*s, value=%.*s", static_cast<int>(name_len), name,
                  static_cast<int>(value_len), value);
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      this->_arena.str_free(name);
     } else if (buf & 0x20) { // Dynamic Table Size Update
       uint16_t max_size;
       if (this->_read_dynamic_table_size_update(reader, max_size) < 0) {
