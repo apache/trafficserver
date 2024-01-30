@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "iocore/cache/Doc.h"
 #include "P_Cache.h"
 
 namespace

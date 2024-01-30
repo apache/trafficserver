@@ -23,6 +23,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheDir.h"
+#include "iocore/cache/Doc.h"
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"

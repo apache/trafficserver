@@ -24,6 +24,7 @@
 #include "P_Cache.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"
+#include "iocore/cache/Doc.h"
 
 #define UINT_WRAP_LTE(_x, _y) (((_y) - (_x)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_GTE(_x, _y) (((_x) - (_y)) < INT_MAX)  // exploit overflow

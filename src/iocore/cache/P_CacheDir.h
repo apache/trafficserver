@@ -24,6 +24,7 @@
 #pragma once
 
 #include "iocore/cache/CacheDefs.h"
+#include "iocore/cache/Doc.h"
 #include "P_CacheHttp.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/eventsystem/Continuation.h"

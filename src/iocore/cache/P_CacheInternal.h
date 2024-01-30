@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "iocore/cache/Doc.h"
+
 #include "iocore/eventsystem/Continuation.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"

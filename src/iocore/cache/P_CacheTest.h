@@ -24,6 +24,7 @@
 #pragma once
 
 #include "P_Cache.h"
+#include "iocore/cache/Doc.h"
 #include "proxy/RegressionSM.h"
 
 #define MAX_HOSTS_POSSIBLE    256
