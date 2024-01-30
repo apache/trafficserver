@@ -550,7 +550,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 {
   bool pass = true;
   CacheKey key;
-  Stripe *stripe = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
+  Stripe *stripe = theCache->key_to_stripe(&key, "example.com", sizeof("example.com") - 1);
   std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, stripe);

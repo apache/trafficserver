@@ -779,7 +779,7 @@ The basic steps to a cache lookup are:
 #. The cache stripe is determined (based on the cache key).
 
    The :term:`cache key` is used as a hash key in to an array of :cpp:class:`Stripe` instances by
-   :func:`Cache::key_to_vol`. The construction and arrangement of this array is the essence of how
+   :func:`Cache::key_to_stripe`. The construction and arrangement of this array is the essence of how
    volumes are assigned.
 
 #. The cache stripe directory :ref:`is probed <cache-directory-probe>` using the

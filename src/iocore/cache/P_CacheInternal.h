@@ -583,7 +583,7 @@ struct Cache {
 
   int open_done();
 
-  Stripe *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
+  Stripe *key_to_stripe(const CacheKey *key, const char *hostname, int host_len);
 
   Cache() {}
 };
