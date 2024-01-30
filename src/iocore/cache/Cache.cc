@@ -1492,7 +1492,6 @@ cplist_reconfigure()
   int volume_number;
   off_t size_in_blocks;
   ConfigVol *config_vol;
-  int assignedVol = 0; // Number of assigned volumes
 
   gnstripes = 0;
   if (config_volumes.num_volumes == 0) {
@@ -1550,8 +1549,6 @@ cplist_reconfigure()
       // in such a way forced volumes will not impact volume percentage calculations.
       if (-1 == gdisks[i]->forced_volume_num) {
         tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
-      } else {
-        ++assignedVol;
       }
     }
 
@@ -1721,7 +1718,7 @@ cplist_reconfigure()
     }
   }
 
-  Metrics::Gauge::store(cache_rsb.stripes, gnstripes + assignedVol);
+  Metrics::Gauge::store(cache_rsb.stripes, gnstripes);
 
   return 0;
 }
