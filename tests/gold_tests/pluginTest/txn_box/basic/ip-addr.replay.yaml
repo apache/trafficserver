@@ -1,0 +1,68 @@
+meta:
+  version: "1.0"
+
+  # Really just a smoke test, as it's not currently possible to source the requests from
+  # different IP addresses.
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - with: inbound-addr-remote
+        select:
+        - eq: 127.0.0.1
+          do:
+          - txn-conf<proxy.config.http.insert_request_via_str>: 1
+        - in: 127.0.0.0/8
+          do:
+          - txn-conf<proxy.config.http.insert_request_via_str>: 1
+          - ua-req-field<via>: [ ua-req-field<via> , { concat: [ "," , "non-standard loopback" ] } ]
+    - when: proxy-req
+      do:
+      - with: outbound-addr-remote
+        select:
+        - eq: 127.0.0.1
+          do:
+          - proxy-req-field<outbound-addr-remote>: "Smoke-Test-Ok"
+    - when: proxy-req
+      do:
+      - with: outbound-addr-local
+        select:
+        - eq: 127.0.0.1
+          do:
+          - proxy-req-field<outbound-addr-local>: "Smoke-Test-Ok"
+
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4 } ] # plain text sessions
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "via", { value: "traffic_server", as: contains } ]
+        - [ "outbound-addr-local", { value: "Smoke-Test-Ok", as: equal } ]
+        - [ "outbound-addr-remote", { value: "Smoke-Test-Ok", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

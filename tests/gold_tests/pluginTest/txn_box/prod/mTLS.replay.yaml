@@ -1,0 +1,33 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- transactions:
+  - client-request:
+      url: "/alpha"
+    proxy-request:
+      headers:
+        fields:
+        - [ Authorization , { as: equal, value: "alpha" }]
+    server-response:
+      <<: *base-rsp
+
+  - client-request:
+      url: "/bravo"
+    proxy-request:
+      headers:
+        fields:
+        - [ Authorization , { as: absent }]
+    server-response:
+      <<: *base-rsp

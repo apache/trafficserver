@@ -1,0 +1,255 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    remap:
+    - with: pre-remap-path
+      select:
+      - any-of: # Drop the first path element and redirect.
+        - match: "delain"
+        - prefix: "delain/"
+        do:
+        - redirect: "http://bravo.ex/{*}" # test scalar style.
+      - prefix: "redirect/" # get the target from the rest of the path.
+        do:
+        - redirect: [ 302 , "http://{*}" ] # test tuple style.
+      # test proxy-reply equivalence
+      # doc-redirect-reply-form-<
+      - prefix: "reply/"
+        do:
+        - proxy-reply: 302
+        - when: proxy-rsp
+          do:
+          - proxy-rsp-field<Location>: "http://reply.ex/{ua-req-path}"
+      # doc-redirect-reply-form->
+    - redirect: # Otherwise redirect with original path.
+        location: "http://charlie.ex/{pre-remap-path}"
+        status: 302
+        reason: "Because I said so!"
+        body: "The album is now located at <a href=\"{this::location}\">{this::location}</a>. Please update your link."
+    remap-encode:
+      # doc-redirect-url-encode-form-<
+    - redirect:
+        location:
+        - "http://delta.ex/{pre-remap-path}"
+        - concat:
+          - "?"
+          - [ pre-remap-query , { url-encode: } ]
+        status: 302
+        reason: "Because he said so! "
+      # doc-redirect-url-encode-form->
+    remap-decode:
+      # doc-redirect-url-decode-form-<
+    - redirect:
+        location:
+        - "http://delta.ex/{pre-remap-path}"
+        - concat:
+          - "?"
+          - [ pre-remap-query , { url-decode: } ]
+        status: 302
+        reason: "Because he said so! "
+      # doc-redirect-url-decode-form->
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 102 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/delain/"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 103 ]] }}
+    client-request:
+      <<: *base-req
+      url: "/delain/lucidity.html"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/lucidity.html", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 104 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/nightwish", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 105 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/once.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/nightwish/once.html", as: equal } ]
+
+  # Check for no clipping if the key path element isn't first.
+  - all: { headers: { fields: [ [ uuid, 106 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/album/delain/moon-bathers.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/album/delain/moon-bathers.html", as: equal } ]
+
+  # This should match a remap rule without TxnBox therefore shouldn't be redirected.
+  - all: { headers: { fields: [ [ uuid, 107 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/delain/interlude.html"
+      headers:
+        fields:
+        - [ "Host", "unmatched.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Location", { as: absent } ]
+
+  # test tuple value support.
+  - all: { headers: { fields: [ [ uuid, 108 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/redirect/delta.ex/spot.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://delta.ex/spot.html", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, reply ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/reply/doc.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://reply.ex/reply/doc.html", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, encode ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/run/query.html?comets=1P/Halley,21P/Giacobini-Zinner,103P/Hartley&area=solar"
+      headers:
+        fields:
+        - [ "Host", "encode.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://delta.ex/run/query.html?comets%3D1P%2FHalley%2C21P%2FGiacobini-Zinner%2C103P%2FHartley%26area%3Dsolar", as: equal } ]
+  - all: { headers: { fields: [ [ uuid, decode ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/run/query.html?comets%3D1P%2FHalley%2C21P%2FGiacobini-Zinner%2C103P%2FHartley%26area%3Dsolar"
+      headers:
+        fields:
+        - [ "Host", "decode.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://delta.ex/run/query.html?comets=1P/Halley,21P/Giacobini-Zinner,103P/Hartley&area=solar", as: equal } ]

@@ -1,0 +1,44 @@
+meta:
+  version: "1.0"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - proxy-request:
+      version: "1.1"
+      scheme: "https"
+      method: "GET"
+      url: "http://example.one/config/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 1 ]
+    server-response:
+      status: 403
+      reason: Forbidden
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 1 ]
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - proxy-request:
+      version: "1.1"
+      scheme: "https"
+      method: "GET"
+      url: "http://example.one/config/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 2 ]
+    server-response:
+      status: 204
+      reason: No content
+      content:
+        size: 0
+      headers:
+        fields:
+        - [ uuid, 2 ]

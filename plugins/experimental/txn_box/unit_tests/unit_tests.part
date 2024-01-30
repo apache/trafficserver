@@ -1,0 +1,23 @@
+
+Import("*")
+PartName("tests")
+
+DependsOn([
+    Component("txn_box",requires=REQ.DEFAULT(internal=False))
+    ])
+
+env.AppendUnique(
+    CCFLAGS=['-std=c++17'],
+)
+
+files = [
+    "unit_test_main.cc",
+    "test_txn_box.cc",
+    "test_accl_utils.cc",
+]
+env.UnitTest(
+    "tests",
+    files,
+    # data file we need for the test to pass
+    data_src=[Pattern(src_dir="#",includes=['doc/conf.py'])]
+    )

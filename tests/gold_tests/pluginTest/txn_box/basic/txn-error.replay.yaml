@@ -1,0 +1,97 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - note: "ua-req" # make sure we're looking for messages in the right spot.
+      - note: "uuid = {ua-req-field<uuid>}"
+      - with: ua-req-field<bypass>
+        select:
+        - match: "true" # bypass enabled, do nothing.
+          do:
+          - debug: "bypass active"
+        - match: "no fixup" # Let ATS return the raw error response.
+          do:
+          - txn-error: true
+        - otherwise: # Fix up the error response.
+          do:
+          - txn-error: true
+          - when: proxy-rsp
+            do:
+            - proxy-rsp-status: 501
+            - proxy-rsp-reason: "Service not available"
+    - when: pre-remap
+      do:
+      - note: "pre-remap"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, "base-case" ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, alpha.ex ]
+    proxy-request:
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+      status: 501
+
+  # Must be a different session because the internal error forces a connection close.
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, "bypass-case" ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, alpha.ex ]
+        - [ bypass, "true" ]
+    proxy-request:
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+      status: 200
+
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, "no-fixup" ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, alpha.ex ]
+        - [ bypass, "no fixup" ]
+    proxy-request:
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+      status: 500

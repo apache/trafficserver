@@ -1,0 +1,23 @@
+' Copyright 2020 Verizon Media
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml
+
+hide empty members
+
+class Config {
+  MemArena cfg_store
+}
+
+class Directive {
+}
+
+class DirectiveFactory {
+}
+
+Config *-- cfg_store
+
+DirectiveFactory "1" *-- "*" DirectiveInfo
+Directive *-- DirectiveFactory : static
+
+@enduml

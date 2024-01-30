@@ -1,0 +1,241 @@
+'''
+Implement txn_box extensions for Traffic Server.
+'''
+# @file
+#
+# Copyright 2020, Verizon Media
+# SPDX-License-Identifier: Apache-2.0
+#
+
+import os.path
+import types
+from urllib.parse import urlparse
+
+
+def append_if(name, suffix=""):
+    """
+    Append the optional suffix to name if it exists and return the result.
+    """
+    return name if not suffix else f"{name}-{suffix}"
+
+
+def TxnBoxUrlRewrite(tester, rules, ports):
+    if rules:
+        for line in rules:
+            pparams = None
+            target = line[0]
+            if len(line) == 1:
+                replacement = target
+            elif len(line) == 2:
+                if isinstance(line[1], str):
+                    replacement = line[1]
+                else:
+                    replacement = target
+                    pparams = line[1]
+            elif len(line) == 3:
+                replacement = line[1]
+                pparams = line[2]
+            else:
+                raise ValueError("remap entries must be either (from, to) or (from, to, [pparams])")
+
+            # Parse the replacement URL and change just the port.
+            url = urlparse(replacement)
+            port = ports[url.scheme]
+            url = url._replace(netloc='{}:{}'.format(url.hostname, port))
+            line = 'map {} {} '.format(target, url.geturl())
+            if pparams:
+                line += '@plugin=txn_box.so '
+                for pparam in pparams:
+                    line += '@pparam={} '.format(pparam)
+            tester.Disk.remap_config.AddLine(line)
+
+
+def TxnBoxRxUrlRewrite(tester, rules, ports):
+    if rules:
+        for rule in rules:
+            pparams = None
+            target = rule[0]
+            if len(rule) == 2:
+                if isinstance(rule[1], str):
+                    replacement = rule[1]
+                else:
+                    pparams = rule[1]
+            elif len(rule) == 3:
+                replacement = rule[1]
+                pparams = rule[2]
+            else:
+                raise ValueError("remap entries must be either (from, to) or (from, to, [pparams])")
+
+            url = urlparse(replacement)
+            port = ports[url.scheme]
+            url = url._replace(netloc='{}:{}'.format(url.hostname, port))
+            line = 'regex_map {} {} '.format(target, url.geturl())
+            if pparams:
+                line += '@plugin=txn_box.so '
+                for pparam in pparams:
+                    line += '@pparam={} '.format(pparam)
+            tester.Disk.remap_config.AddLine(line)
+
+
+def TxnBoxTest(
+        self,
+        replay_path,
+        config_path=None,
+        config_key="meta.txn_box",
+        remap=None,
+        regex_map=None,
+        command='traffic_server',
+        enable_tls=False,
+        suffix="",
+        verifier_server_args="--verbose info"):
+    """
+    Create a base test object specialized for TxnBox testing.
+
+    Args:
+        replay_path: Replay file for the PV server.
+        config_path: (str) Path to the global configuration file for txn_box.so. If omitted only
+            remap configuration is done. If it's 'Auto' then the replay path is used.
+        config_key: (str) The --key parameter to pass into txn_box.so in the
+            plugin.config file.
+        remap: [(from, to, [pparams])] Allows the specification of a
+            set of remap config lines. If pparams is provided, then
+            @plugin=txn_box.so is set and the set of pparams are placed in.
+            if to is missing, it is set equal to from yielding an identity remap.
+    """
+
+    ts_name = append_if("ts", suffix)
+    ts = self.MakeATSProcess(ts_name, command=command, enable_tls=enable_tls)
+    self.Variables.TXNBOX_TS = ts
+    self.Variables.TXNBOX_REPLAY_PATH = replay_path
+    self.Variables.TXNBOX_DEPENDENCIES = False
+
+    # Put the txn_box.so into the sandbox.
+    # plugin_dir = ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
+    # from os.path import dirname
+    # git_root = dirname(dirname(dirname(ts.TestRoot)))
+    # txn_box_lib = os.path.join(git_root, "lib", "txn_box.so")
+    # ts.Setup.Copy(txn_box_lib, plugin_dir, CopyLogic.SoftFiles)
+    self.PrepareTestPlugin(
+        os.path.join(self.Variables.AtsTestPluginsDir, '../../../../plugins/experimental/txn_box/plugin/txn_box.so'), ts)
+
+    # Configure txn_box in Traffic Server if there's a config. Otherwise assume it's remap only.
+    if config_path == 'Auto':
+        config_path = replay_path
+
+    if config_path:
+        txn_box_command = 'txn_box.so'
+
+        if config_key:
+            txn_box_command += ' --key {}'.format(config_key)
+
+        ts.Setup.Copy(config_path, ts.Variables.CONFIGDIR)
+        txn_box_command += ' {}'.format(os.path.basename(config_path))
+
+        ts.Disk.plugin_config.AddLine(txn_box_command)
+
+    # Configure Traffic Server to use the DNS process.
+    dns_name = append_if("dns", suffix)
+    self.Variables.TXNBOX_DNS = self.MakeDNServer(dns_name, ip='127.0.0.1', default='127.0.0.1')
+
+    server_name = append_if("pv-server", suffix)
+    self.Variables.TXNBOX_SERVER = self.MakeVerifierServerProcess(server_name, replay_path, other_args=verifier_server_args)
+
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self.Variables.TXNBOX_DNS.Variables.Port),
+            'proxy.config.dns.resolv_conf': 'NULL',
+            'proxy.config.ssl.client.verify.server.policy': 'DISABLED'
+            # The following is needed for ATS 9 and later.
+            # 'proxy.config.plugin.dynamic_reload': 0
+        })
+
+    TxnBoxUrlRewrite(
+        ts, remap, {
+            "http": self.Variables.TXNBOX_SERVER.Variables.http_port,
+            "https": self.Variables.TXNBOX_SERVER.Variables.https_port
+        })
+    TxnBoxRxUrlRewrite(
+        ts, regex_map, {
+            "http": self.Variables.TXNBOX_SERVER.Variables.http_port,
+            "https": self.Variables.TXNBOX_SERVER.Variables.https_port
+        })
+
+    if remap == None and regex_map == None:
+        ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(self.Variables.TXNBOX_SERVER.Variables.http_port))
+
+    # Make this accessible to TxnBox via the TS process environment.
+    ts.Env['PV_HTTP_PORT'] = "{}".format(self.Variables.TXNBOX_SERVER.Variables.http_port)
+    ts.Env['PV_HTTPS_PORT'] = "{}".format(self.Variables.TXNBOX_SERVER.Variables.https_port)
+    return ts
+
+
+def TxnBoxRun(self, text, replay_path=None, ssl_cert=None, suffix="", verifier_client_args=""):
+    """
+    Set up a standard test run for TxnBox
+
+    Args:
+        text: (str) Description for test run.
+    Keywords
+        replay_path: (str) Path to the replay file. Defaults to the path used for TxnBoxTest.
+    """
+
+    if replay_path == None:
+        replay_path = self.Variables.TXNBOX_REPLAY_PATH
+
+    run = self.AddTestRun(text)
+    run.Variables.TEST = self
+    ts = run.Variables.TS = self.Variables.TXNBOX_TS
+
+    vc_args = {'other_args': "--verbose diag {}".format(verifier_client_args), 'http_ports': [ts.Variables.port]}
+
+    if ssl_cert != None:
+        vc_args['ssl_cert'] = ssl_cert
+
+    try:
+        vc_args['https_ports'] = [ts.Variables.ssl_port]
+    except:
+        pass  # not an error if it's missing, just don't pass it.
+
+    vc_name = append_if("pv-client", suffix)
+    pv_client = run.AddVerifierClientProcess(vc_name, replay_path, **vc_args)
+    run.Variables.CLIENT = pv_client
+
+    pv_server = self.Variables.TXNBOX_SERVER
+    run.Variables.SERVER = pv_server
+
+    if not self.Variables.TXNBOX_DEPENDENCIES:
+        self.Variables.TXNBOX_DEPENDENCIES = True
+        run.Processes.Default.StartBefore(pv_server)
+        run.Processes.Default.StartBefore(self.Variables.TXNBOX_DNS)
+        run.Processes.Default.StartBefore(ts)
+
+    return run
+
+
+def TxnBoxTestAndRun(
+        self,
+        name,
+        replay_path,
+        config_path=None,
+        config_key="meta.txn_box",
+        remap=None,
+        verifier_client_args="--verbose diag",
+        verifier_server_args="--verbose info",
+        command="traffic_server",
+        enable_tls=False,
+        suffix=""):
+    self.TxnBoxTest(
+        replay_path,
+        config_path,
+        config_key,
+        remap,
+        command=command,
+        enable_tls=enable_tls,
+        suffix=suffix,
+        verifier_server_args=verifier_server_args)
+    return self.TxnBoxRun(name, verifier_client_args=verifier_client_args, suffix=suffix)
+
+
+ExtendTest(TxnBoxTest, name="TxnBoxTest")
+ExtendTest(TxnBoxRun, name="TxnBoxRun")
+ExtendTest(TxnBoxTestAndRun, name="TxnBoxTestAndRun")

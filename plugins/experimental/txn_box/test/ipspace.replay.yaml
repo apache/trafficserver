@@ -1,0 +1,61 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+  - when: post-load
+    do:
+    - ip-space-define:
+        name: "swoc"
+        path: "/home/amc/git/txn_box/test/ipspace.csv"
+        duration: minutes<2>
+        columns:
+        - name: "type"
+          type: "string"
+        - name: "pod"
+          type: "enum"
+        - name: "flags"
+          type: "flags"
+          values:
+          - "secure"
+          - "local"
+          - "edge"
+
+  - when: proxy-rsp
+    do:
+    - proxy-rsp-field<SWOC>: [ "192.168.1.1" , { as-ip-addr: }, { ip-space<swoc>: ip-col<1> }]
+
+  blocks:
+    base_request: &base_request
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+    OK-200: &ok-200
+      status: 200
+      reason: "OK"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1] , [ Host, "example.one" ]] }}
+    client-request:
+      <<: *base_request
+      url: "/"
+    proxy-request:
+      <<: *base_request
+      url: "http://example.one"
+    server-response: &std-response
+      <<: *ok-200
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response: &std-response
+      <<: *ok-200
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]

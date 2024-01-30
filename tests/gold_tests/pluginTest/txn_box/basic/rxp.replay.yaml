@@ -1,0 +1,97 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global: # place holder for now, add real testing later.
+    - when: ua-req
+      do:
+      - ua-req-field<Best-Band>: "Delain"
+
+    # Remap based on API version. Change paths like "app.ex/api/v1/method" to "v1.app.ex/method".
+    remap:
+    - with: ua-req-path
+      select:
+      - prefix: "api/"
+        do:
+        - with: "{*}"
+          select:
+          - rxp: "([^/]+)/(.*)$"
+            do:
+            - ua-req-host: "{1}.{ua-req-host}"
+            - ua-req-path: "{2}"
+
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/api/v1/method"
+      headers:
+        fields:
+        - [ Host, app.ex ]
+    proxy-request:
+      url:
+      - [ path, { value: "/method", as: equal } ]
+      headers:
+        field:
+        - [ host, { value: "v1.app.ex", as: prefix } ]
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/api/v2/method/arg1/arg2"
+      headers:
+        fields:
+        - [ Host, app.ex ]
+    proxy-request:
+      url:
+      - [ path, { value: "/method/arg1/arg2", as: equal } ]
+      headers:
+        field:
+        - [ host, { value: "v2.app.ex", as: prefix } ]
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/api/v2/method?parm1=arg1;parm2=arg2"
+      headers:
+        fields:
+        - [ Host, app.ex ]
+    proxy-request:
+      url:
+      - [ path, { value: "/method", as: equal } ]
+      - [ query, { value: "parm1=arg1;parm2=arg2", as: equal } ]
+      headers:
+        field:
+        - [ host, { value: "v2.app.ex", as: prefix } ]
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

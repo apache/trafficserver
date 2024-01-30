@@ -1,0 +1,101 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    global:
+      when: ua-req
+      do:
+      - with: ua-req-path
+        select:
+        - match: "delain"
+        - match: "nightwish"
+          do:
+          - proxy-reply: [ 401 , "Use another server" ]
+        - match: "lyria"
+          do:
+          - proxy-reply:
+              status: 401
+              reason: "Use another server"
+        - match: "within-temptation"
+          do:
+          - proxy-reply:
+              status: 416
+              reason: "They're not a teapot."
+              body: "Non teapots should use a different URL"
+        - otherwise:
+          do:
+          - proxy-reply: 403
+
+    remap:
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, delain ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, nightwish ]]}}
+    client-request:
+      <<: *base-req
+      url: "/nightwish"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, lyria ]]}}
+    client-request:
+      <<: *base-req
+      url: "/lyria"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, within-tempation ]]}}
+    client-request:
+      <<: *base-req
+      url: "/within-temptation"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 416

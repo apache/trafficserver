@@ -1,0 +1,117 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    global:
+    - when: ua-req
+      do:
+      - with: ua-req-field<referrer>
+        select:
+        - rxp<nc>: "^https?://([^/]+)/"
+          do:
+          - with: "{1}" # host from the referrer URL
+            select:
+            - any-of:
+              - match: "alpha.ex"
+              - match: "bravo.ex"
+              - match: "charlie.ex"
+              - match: "delta.ex"
+              do:
+              - var<cors>: ... # must preserve value for later hook.
+              - debug: "Prepping CORS as {var<cors>}"
+              - when: proxy-rsp
+                do:
+                - debug: "Setting CORS as {var<cors>}"
+                - proxy-rsp-field<CORS>: var<cors>
+          # fall through - none of the valid referrer hosts.
+          - proxy-reply: &fail-action
+              status: 401
+              reason: "Nice try bozo"
+              body: "No API goodness for you, faker!"
+
+      - proxy-reply:
+          <<: *fail-action
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, alpha ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Referrer, "http://alpha.ex/ui/demo" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "CORS", { value: "alpha.ex", as: equal }]
+
+  # no referrer
+  - all: { headers: { fields: [[ uuid, no-referrer ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  # no referrer
+  - all: { headers: { fields: [[ uuid, invalid-host ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Referrer, "http://echo.ex/ui/demo" ]
+    proxy-request:
+        <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, delta ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Referrer, "http://delta.ex/ui/demo" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "CORS", { value: "delta.ex", as: equal }]
+

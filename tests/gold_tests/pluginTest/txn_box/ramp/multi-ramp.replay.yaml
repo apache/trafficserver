@@ -1,0 +1,90 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - ua-req-hdr: &ua-req-hdr
+      headers:
+        fields:
+        - [ Host, base.ex ]
+
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+      <<: *ua-req-hdr
+
+  - upstream-rsp: &upstream-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: tls } , { name: ip, version: 4 } ]
+  transactions:
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/search/channel/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/search/channel/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/channels/nightwish"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/channels/nightwish"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/alias/within-temptation"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/alias/within-temptation"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v2/video/channels/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v2/video/channels/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/audio/channels/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/audio/channels/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/sub/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/sub/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
