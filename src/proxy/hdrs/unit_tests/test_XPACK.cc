@@ -152,7 +152,7 @@ TEST_CASE("XPACK_String", "[xpack]")
     result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
 
-    // Insdert one entry
+    // Insert one entry
     dt.insert_entry("name1", "value1");
     REQUIRE(dt.size() == strlen("name1") + strlen("value1") + 32);
     REQUIRE(dt.maximum_size() == MAX_SIZE);
@@ -174,7 +174,7 @@ TEST_CASE("XPACK_String", "[xpack]")
     result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
 
-    // Insdert one more entry
+    // Insert one more entry
     dt.insert_entry("name2", "value2");
     REQUIRE(dt.size() == strlen("name1") + strlen("value1") + 32 + strlen("name2") + strlen("value2") + 32);
     REQUIRE(dt.maximum_size() == MAX_SIZE);
@@ -213,7 +213,7 @@ TEST_CASE("XPACK_String", "[xpack]")
     result = dt.lookup(MAX_SIZE + 1, &name, &name_len, &value, &value_len);
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
 
-    // Insdert one more entry (this should evict the first entry)
+    // Insert one more entry (this should evict the first entry)
     dt.insert_entry("name3", "value3");
     REQUIRE(dt.size() == strlen("name2") + strlen("value2") + 32 + strlen("name3") + strlen("value3") + 32);
     REQUIRE(dt.maximum_size() == MAX_SIZE);
@@ -248,7 +248,7 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(value_len == strlen("value2"));
     REQUIRE(memcmp(value, "value2", value_len) == 0);
 
-    // Insdert one more entry (this should evict all existing entries)
+    // Insert one more entry (this should evict all existing entries)
     dt.insert_entry("name4-1234567890123456789012345", "value4-9876543210987654321098765");
     REQUIRE(dt.size() == strlen("name4-1234567890123456789012345") + strlen("value4-9876543210987654321098765") + 32);
     REQUIRE(dt.maximum_size() == MAX_SIZE);
