@@ -127,6 +127,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
   char buf[CRYPTO_HEX_SIZE], *p;
   int purl;
   int i, tmp;
+  swoc::MemArena arena;
 
   p    = buffer;
   purl = 1;
@@ -134,19 +135,17 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
   for (i = 0; i < xcount; i++) {
     if (data[i].alternate.valid()) {
       if (purl) {
-        Arena arena;
-        char *url;
-
         purl = 0;
         URL u;
         data[i].alternate.request_url_get(&u);
-        url = u.string_get(&arena);
-        if (url) {
-          snprintf(p, buf_size, "[%s] ", url);
-          tmp       = strlen(p);
+        // Can we use Url::print on a buffer here?
+        auto url = u.print(arena);
+        if (!url.empty()) {
+          tmp       = snprintf(p, buf_size, "[%.*s] ", int(url.size()), url.data());
           p        += tmp;
           buf_size -= tmp;
         }
+        arena.discard(url);
       }
 
       if (temps || !(data[i].alternate.object_key_get().is_zero())) {

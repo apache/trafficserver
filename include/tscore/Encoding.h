@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "tscore/Arena.h"
+#include <swoc/MemArena.h>
 #include "tscore/Diags.h"
 #include "tscore/ink_string.h"
 
@@ -38,8 +38,8 @@
 
 namespace Encoding
 {
-char *escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
+char *escapify_url(swoc::MemArena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
                    const unsigned char *map = nullptr);
-char *pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
+char *pure_escapify_url(swoc::MemArena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
                         const unsigned char *map = nullptr);
 }; // namespace Encoding

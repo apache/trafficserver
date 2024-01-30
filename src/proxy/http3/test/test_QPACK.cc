@@ -223,9 +223,9 @@ output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
     for (auto const &field : *header_set) {
       int name_len  = 0;
       int value_len = 0;
-      Arena arena;
+      swoc::MemArena arena;
       const char *name   = field.name_get(&name_len);
-      char *lowered_name = arena.str_store(name, name_len);
+      char *lowered_name = arena.localize_c(std::string_view{name, static_cast<size_t>(name_len)}).data();
       for (int i = 0; i < name_len; i++) {
         lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
       }

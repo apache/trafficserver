@@ -797,7 +797,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   p += len;
 
-  Arena arena;
+  swoc::MemArena arena;
 
   // Decode header field name
   if (index) {

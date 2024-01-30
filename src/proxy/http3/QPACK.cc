@@ -346,10 +346,10 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
 int
 QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header, uint16_t &referred_index)
 {
-  Arena arena;
+  swoc::MemArena arena;
   int name_len;
   const char *name   = field.name_get(&name_len);
-  char *lowered_name = arena.str_store(name, name_len);
+  char *lowered_name = arena.localize_c(std::string_view{name, static_cast<size_t>(name_len)}).data();
   for (int i = 0; i < name_len; i++) {
     lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
   }
@@ -739,7 +739,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   }
 
   // Read value
-  Arena arena;
+  swoc::MemArena arena;
   char *value;
   uint64_t value_len;
   if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
@@ -769,7 +769,7 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   }
 
   // Read name and value
-  Arena arena;
+  swoc::MemArena arena;
   int64_t ret;
   char *name;
   uint64_t name_len;
@@ -865,7 +865,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   }
 
   // Read value
-  Arena arena;
+  swoc::MemArena arena;
   char *value;
   uint64_t value_len;
   if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
@@ -1110,7 +1110,7 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
     if (buf & 0x80) { // Insert With Name Reference
       bool is_static;
       uint16_t index;
-      Arena arena;
+      swoc::MemArena arena;
       char *value;
       uint16_t value_len;
       if (this->_read_insert_with_name_ref(reader, is_static, index, arena, &value, value_len) < 0) {
@@ -1120,7 +1120,7 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
       QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%d, value=%.*s", is_static, index, value_len, value);
       this->_dynamic_table.insert_entry(is_static, index, value, value_len);
     } else if (buf & 0x40) { // Insert Without Name Reference
-      Arena arena;
+      swoc::MemArena arena;
       char *name;
       uint16_t name_len;
       char *value;
@@ -1645,7 +1645,7 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 }
 
 int
-QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, swoc::MemArena &arena, char **value,
                                   uint16_t &value_len)
 {
   size_t read_len = 0;
@@ -1678,7 +1678,7 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
 }
 
 int
-QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
+QPACK::_read_insert_without_name_ref(IOBufferReader &reader, swoc::MemArena &arena, char **name, uint16_t &name_len, char **value,
                                      uint16_t &value_len)
 {
   size_t read_len = 0;

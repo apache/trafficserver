@@ -24,8 +24,9 @@
 
 #include <ctime>
 
+#include <swoc/MemArena.h>
+
 #include "tscore/ink_platform.h"
-#include "tscore/Arena.h"
 #include <swoc/TextView.h>
 
 class MIMEHdr;

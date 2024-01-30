@@ -24,7 +24,7 @@
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/hdrs/HuffmanCodec.h"
 
-#include "tscore/Arena.h"
+#include <swoc/MemArena.h>
 #include "tscore/ink_memory.h"
 #include "tsutil/LocalBuffer.h"
 
@@ -67,7 +67,8 @@ xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf
 // return content from String Data (Length octets) with huffman decoding if it is encoded
 //
 int64_t
-xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n)
+xpack_decode_string(swoc::MemArena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end,
+                    uint8_t n)
 {
   if (buf_start >= buf_end) {
     return XPACK_ERROR_COMPRESSION_ERROR;
@@ -90,7 +91,7 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
 
   if (isHuffman) {
     // Allocate temporary area twice the size of before decoded data
-    *str = arena.str_alloc(encoded_string_len * 2);
+    *str = arena.alloc(encoded_string_len * 2).rebind<char>().data();
 
     len = huffman_decode(*str, p, encoded_string_len);
     if (len < 0) {
@@ -98,7 +99,7 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
     }
     str_length = len;
   } else {
-    *str = arena.str_alloc(encoded_string_len);
+    *str = arena.alloc(encoded_string_len).rebind<char>().data();
 
     memcpy(*str, reinterpret_cast<const char *>(p), encoded_string_len);
 

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "tscore/Arena.h"
+#include <swoc/MemArena.h>
 #include "proxy/hdrs/HdrToken.h"
 #include "proxy/hdrs/HdrHeap.h"
 #include "tscore/CryptoHash.h"
@@ -210,7 +210,7 @@ int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset
 void url_describe(HdrHeapObjImpl *raw, bool recurse);
 
 int url_length_get(URLImpl *url, unsigned normalization_flags = URLNormalize::NONE);
-char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
+char *url_string_get(URLImpl *url, swoc::MemArena *arena, int *length, HdrHeap *heap);
 void url_clear_string_ref(URLImpl *url);
 char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalization_flags = URLNormalize::NONE);
 void url_called_set(URLImpl *url);
@@ -233,7 +233,7 @@ ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, cons
                            bool verify_host_characters);
 ParseResult url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 
-char *url_unescapify(Arena *arena, const char *str, int length);
+char *url_unescapify(swoc::MemArena *arena, const char *str, int length);
 
 void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state);
 void unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e, int &state);
@@ -270,11 +270,20 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset, unsigned normalization_flags = URLNormalize::NONE) const;
 
+  /** Print the URL.
+   *
+   * @param arena Memory source for print output.
+   * @return A span covering the printed URL.
+   *
+   * @note The returned string is not nul terminated.
+   */
+  swoc::TextView print(swoc::MemArena &arena);
+
   int length_get(unsigned normalization_flags = URLNormalize::NONE) const;
 
   void clear_string_ref();
 
-  char *string_get(Arena *arena, int *length = nullptr) const;
+  char *string_get(swoc::MemArena *arena, int *length = nullptr) const;
   char *string_get_ref(int *length = nullptr, unsigned normalization_flags = URLNormalize::NONE) const;
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
   void hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
@@ -344,7 +353,7 @@ public:
   ParseResult parse_regex(const char *str, int length);
 
 public:
-  static char *unescapify(Arena *arena, const char *str, int length);
+  static char *unescapify(swoc::MemArena *arena, const char *str, int length);
   // No gratuitous copies!
   URL(const URL &u)            = delete;
   URL &operator=(const URL &u) = delete;
@@ -458,7 +467,7 @@ URL::length_get(unsigned normalization_flags) const
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::string_get(Arena *arena_or_null_for_malloc, int *length) const
+URL::string_get(swoc::MemArena *arena_or_null_for_malloc, int *length) const
 {
   ink_assert(valid());
   return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap);
@@ -819,7 +828,7 @@ URL::parse_regex(const char *str, int length)
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::unescapify(Arena *arena, const char *str, int length)
+URL::unescapify(swoc::MemArena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
 }

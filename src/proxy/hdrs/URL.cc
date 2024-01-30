@@ -651,16 +651,24 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalizat
   }
 }
 
-char *
-url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
+swoc::TextView
+URL::print(swoc::MemArena &arena)
 {
-  int len = url_length_get(url);
-  char *buf;
+  int len   = url_length_get(m_url_impl);
+  int index = 0, offset = 0;
+  auto span = arena.alloc(len).rebind<char>();
+  url_print(m_url_impl, span.data(), span.size(), &index, &offset);
+  return span;
+}
+
+char *
+url_string_get(URLImpl *url, swoc::MemArena *arena, int *length, HdrHeap *heap)
+{
+  int len   = url_length_get(url);
+  char *buf = arena ? arena->alloc(len + 1).rebind<char>().data() : static_cast<char *>(ats_malloc(len + 1));
   char *buf2;
   int index  = 0;
   int offset = 0;
-
-  buf = arena ? arena->str_alloc(len) : static_cast<char *>(ats_malloc(len + 1));
 
   url_print(url, buf, len, &index, &offset);
   buf[len] = '\0';
@@ -899,7 +907,7 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
   -------------------------------------------------------------------------*/
 
 char *
-url_to_string(URLImpl *url, Arena *arena, int *length)
+url_to_string(URLImpl *url, swoc::MemArena *arena, int *length)
 {
   int len;
   int idx;
@@ -912,7 +920,7 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
   }
 
   if (arena) {
-    str = arena->str_alloc(len);
+    str = arena->alloc(len).rebind<char>().data();
   } else {
     str = static_cast<char *>(ats_malloc(len + 1));
   }
@@ -1118,7 +1126,7 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
   -------------------------------------------------------------------------*/
 
 char *
-url_unescapify(Arena *arena, const char *str, int length)
+url_unescapify(swoc::MemArena *arena, const char *str, int length)
 {
   char *buffer;
   char *t, *e;
@@ -1128,7 +1136,7 @@ url_unescapify(Arena *arena, const char *str, int length)
     length = static_cast<int>(strlen(str));
   }
 
-  buffer = arena->str_alloc(length);
+  buffer = arena->alloc(length).rebind<char>().data();
   t      = buffer;
   e      = buffer + length;
   s      = 0;

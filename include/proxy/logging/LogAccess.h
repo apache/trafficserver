@@ -349,7 +349,7 @@ public:
 private:
   HttpSM *m_http_sm = nullptr;
 
-  Arena m_arena;
+  swoc::MemArena m_arena;
 
   HTTPHdr *m_client_request  = nullptr;
   HTTPHdr *m_proxy_response  = nullptr;

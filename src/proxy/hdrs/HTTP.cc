@@ -141,7 +141,7 @@ int HTTP_LEN_S_MAXAGE;
 int HTTP_LEN_NEED_REVALIDATE_ONCE;
 int HTTP_LEN_100_CONTINUE;
 
-Arena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena *>(1);
+swoc::MemArena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<swoc::MemArena *>(1);
 
 /***********************************************************************
  *                                                                     *
@@ -1564,21 +1564,6 @@ http_parse_version(const char *start, const char *end)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-static char *
-http_str_store(Arena *arena, const char *str, int length)
-{
-  const char *wks;
-  int idx = hdrtoken_tokenize(str, length, &wks);
-  if (idx < 0) {
-    return arena->str_store(str, length);
-  } else {
-    return const_cast<char *>(wks);
-  }
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 static void
 http_skip_ws(const char *&buf, int &len)
 {
@@ -1658,6 +1643,16 @@ http_parse_qvalue(const char *&buf, int &len)
   return val;
 }
 
+static double
+http_parse_qvalue(swoc::TextView &s)
+{
+  char const *ptr = s.data();
+  int len         = s.size();
+  auto zret       = http_parse_qvalue(ptr, len);
+  s.assign(ptr, len);
+  return zret;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1666,26 +1661,15 @@ http_parse_qvalue(const char *&buf, int &len)
   t-codings = "trailers" | ( transfer-extension [ accept-params ] )
   -------------------------------------------------------------------------*/
 
-HTTPValTE *
-http_parse_te(const char *buf, int len, Arena *arena)
+void
+http_parse_te(swoc::MemArena &arena, HTTPValTE &val, swoc::TextView s)
 {
-  HTTPValTE *val;
-  const char *s;
+  s.ltrim_if(&ParseRules::is_ws);
 
-  http_skip_ws(buf, len);
+  auto key = s.take_prefix_at(';');
 
-  s = buf;
-
-  while (len > 0 && *buf && (*buf != ';')) {
-    buf += 1;
-    len -= 1;
-  }
-
-  val           = static_cast<HTTPValTE *>(arena->alloc(sizeof(HTTPValTE)));
-  val->encoding = http_str_store(arena, s, static_cast<int>(buf - s));
-  val->qvalue   = http_parse_qvalue(buf, len);
-
-  return val;
+  val.encoding = swoc::TextView(arena.localize(key));
+  val.qvalue   = http_parse_qvalue(s);
 }
 
 void
@@ -1836,7 +1820,7 @@ class UrlPrintHack
 };
 
 char *
-HTTPHdr::url_string_get(Arena *arena, int *length)
+HTTPHdr::url_string_get(swoc::MemArena *arena, int *length)
 {
   char *zret = nullptr;
   UrlPrintHack hack(this);
@@ -1845,8 +1829,11 @@ HTTPHdr::url_string_get(Arena *arena, int *length)
     // The use of a magic value for Arena to indicate the internal heap is
     // even uglier but it's less so than duplicating this entire method to
     // change that one thing.
-
-    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length) : m_url_cached.string_get(arena, length);
+    if (arena == USE_HDR_HEAP_MAGIC) {
+      zret = m_url_cached.string_get_ref(length);
+    } else {
+      zret = m_url_cached.string_get(arena);
+    }
   }
   return zret;
 }

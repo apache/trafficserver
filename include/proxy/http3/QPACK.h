@@ -26,11 +26,11 @@
 #include <map>
 
 #include "swoc/IntrusiveDList.h"
+#include "swoc/MemArena.h"
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/eventsystem/Event.h"
 #include "iocore/eventsystem/IOBuffer.h"
-#include "tscore/Arena.h"
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/net/quic/QUICApplication.h"
@@ -270,9 +270,9 @@ private:
   void _update_reference_counts(uint64_t stream_id);
 
   // Encoder Stream
-  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, swoc::MemArena &arena, char **value,
                                  uint16_t &value_len);
-  int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
+  int _read_insert_without_name_ref(IOBufferReader &reader, swoc::MemArena &arena, char **name, uint16_t &name_len, char **value,
                                     uint16_t &value_len);
   int _read_duplicate(IOBufferReader &reader, uint16_t &index);
   int _read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_size);
