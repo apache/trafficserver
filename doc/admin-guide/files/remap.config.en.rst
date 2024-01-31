@@ -459,6 +459,9 @@ Note that these Acl filters will return a 403 response if the resource is restri
 
 The difference between ``@src_ip`` and ``@in_ip`` is that the ``@src_ip`` is the client
 ip and the ``in_ip`` is the ip address the client is connecting to (the incoming address).
+If no IP address is specified for either ``@src_ip`` or ``@in_ip``, the filter will
+implicitly apply to all incoming IP addresses. This can be explicitly stated with
+``@src_ip=all``.
 
 Named Filters
 =============

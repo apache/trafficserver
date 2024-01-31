@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "proxy/http/remap/AclFiltering.h"
 #include "swoc/swoc_file.h"
 
 #include "proxy/http/remap/RemapConfig.h"
@@ -450,6 +451,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     Debug("url_rewrite", "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
   }
 
+  bool ip_is_listed = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
     bool hasarg;
@@ -509,7 +511,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
-      if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
+      std::string_view arg{argptr};
+      if (arg == "all") {
+        ipi->match_all_addresses = true;
+      } else if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -529,6 +534,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ipi) {
         rule->src_ip_cnt++;
         rule->src_ip_valid = 1;
+        ip_is_listed       = true;
       }
     }
 
@@ -568,6 +574,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ipi) {
         rule->in_ip_cnt++;
         rule->in_ip_valid = 1;
+        ip_is_listed      = true;
       }
     }
 
@@ -591,6 +598,15 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     if (ul & REMAP_OPTFLG_INTERNAL) {
       rule->internal = 1;
     }
+  }
+
+  if (!ip_is_listed) {
+    // If no IP addresses are listed, treat that like `@src_ip=all`.
+    ink_release_assert(rule->src_ip_valid == 0 && rule->src_ip_cnt == 0);
+    src_ip_info_t *ipi       = &rule->src_ip_array[rule->src_ip_cnt];
+    ipi->match_all_addresses = true;
+    rule->src_ip_cnt++;
+    rule->src_ip_valid = 1;
   }
 
   if (is_debug_tag_set("url_rewrite")) {

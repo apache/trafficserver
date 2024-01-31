@@ -682,7 +682,7 @@ public:
     bool is_upgrade_request           = false;
     bool is_websocket                 = false;
     bool did_upgrade_succeed          = false;
-    bool client_connection_enabled    = true;
+    bool client_connection_allowed    = true;
     bool acl_filtering_performed      = false;
     bool api_cleanup_cache_read       = false;
     bool api_server_response_no_store = false;
