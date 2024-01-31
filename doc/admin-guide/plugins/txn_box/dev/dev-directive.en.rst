@@ -1,17 +1,17 @@
 .. Copyright 2022, Alan M. Carroll
    SPDX-License-Identifier: Apache-2.0
-.. include:: /common.defs
+
 .. include:: ../txnbox_common.defs
 
 .. highlight:: cpp
-.. default-domain:: cpp
+.. default-domain:: txb
 
 .. _dev-directive:
 
 Directive Development
 *********************
 
-Directives are implemented by a class, which must be a subclass of :txb:`Directive`. Each use of
+Directives are implemented by a class, which must be a subclass of `Directive`. Each use of
 the directive in a configuraiton creates a new instance of the class.
 
 
@@ -42,8 +42,8 @@ The signature is
 The configuration instance :arg:`cfg` is the configuration that is loading.
 
 For each directive class, there is some configuration static data. This is passed via the
-:arg:`rtti` parameter which points at an instance of :txb:`CfgStaticData`. This value will also be
-available to the instance later via :txb:`Directive::_rtti`. This will be set by the configuration
+:arg:`rtti` parameter which points at an instance of `CfgStaticData`. This value will also be
+available to the instance later via `Directive::_rtti`. This will be set by the configuration
 loader, it does not need to be set by the instance loader. In some cases, however, it is needed by
 the instance loader and because the instance has not yet been created it can't be loaded from the
 directive instance.
@@ -65,7 +65,7 @@ Configuration Initializer
 
 A directive can specify a static method to invoke the first time the directive is used in a configuration.
 
-.. function:: swoc::Errata cfg_init(Config& cfg, CfgStaticData const* rtti)
+.. cpp:function:: swoc::Errata cfg_init(Config& cfg, CfgStaticData const* rtti)
 
    :param cfg: Configuration instance.
    :param rtti: Directive static data.

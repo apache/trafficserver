@@ -1,6 +1,7 @@
 .. Copyright 2022, Alan M. Carroll
    SPDX-License-Identifier: Apache-2.0
-.. include:: /common.defs
+
+.. include:: ../../../../common.defs
 
 .. highlight:: yaml
 .. default-domain:: txb

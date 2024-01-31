@@ -1,9 +1,11 @@
 .. Copyright 2022, Alan M. Carroll
    SPDX-License-Identifier: Apache-2.0
 
-.. include:: /common.defs
+.. include:: ../../../../common.defs
+.. include:: ../txnbox_common.defs
 
 .. highlight:: yaml
+.. default-domain:: txb
 
 .. _acceleration:
 
@@ -37,7 +39,7 @@ For the purposes of acceleration comparisons are divided in to three basic types
 Primitives are put in to the trie. Combinations are put in auxillary structures. Any combination comparison
 is ultimately dependent upon primitives. The auxillary structures are designed to allows matches from
 walking the trie to "roll up" in to the containing combinations. The simplest example is a
-:rec:`comparison-any-of` containing a set of exact matches. If any of those are matched in the trie
+:cmp:`any-of` containing a set of exact matches. If any of those are matched in the trie
 the combination can also be marked as matched immediately without further search.
 
 Even in the case where a combination cannot be immediately marked as matched we still want to be

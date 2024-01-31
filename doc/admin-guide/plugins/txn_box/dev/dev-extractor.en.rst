@@ -1,6 +1,6 @@
 .. Copyright 2022, Alan M. Carroll
    SPDX-License-Identifier: Apache-2.0
-.. include:: /common.defs
+.. include:: ../../../../common.defs
 
 .. highlight:: yaml
 .. default-domain:: txb
@@ -19,7 +19,7 @@ instantiating an instance per use. This is because
 *  Extractors are used far more frequently.
 *  Most extractors do not require any local storage or state.
 
-All extractors are implemented by a class. This must be a subclass of :txb:`Extractor`. By
+All extractors are implemented by a class. This must be a subclass of `Extractor`. By
 convention the name of the class should be "Ex\_" followed by the extractor name. For example the
 class :code:`Ex_ua_req_url` is the implementation of the "ua-req-url" extractor.
 
@@ -27,7 +27,7 @@ By convention, a :code:`TextView` named :code:`NAME` is declared to define the n
 extractor. This isn't required, the name is defined by the registration call, but it's convenient.
 
 There are several methods that are needed to be fully functional. Several of them take a
-:txb:`Extractor::Spec` parameter. For any specific use of an extractor there is a single instance of
+`Extractor::Spec` parameter. For any specific use of an extractor there is a single instance of
 this class which is passed to all methods of the extractor. In some sense, this represents the
 per use instance data. This class is a subclass of the BufferWriter specifier to provide additional
 members. These are
@@ -114,7 +114,7 @@ If this suffices, then it does not be to be overridden. There are cases where th
 which is why the methods are separate.
 
 In some cases an extractor needs to store instance related information. This should be allocated
-from configuration memory. The specifier has a member :txb:`Extractor::Spec::_data` which holds a
+from configuration memory. The specifier has a member `Extractor::Spec::_data` which holds a
 :code:`MemSpan<void>`. Because the same specifier instance is passed to :code:`validate` and
 :code:`extract` a configuration allocated span can be stored there for later retrieval. While any
 span can be assigned to a void span, the :code:`MemSpan::rebind<T>` method must be used to retrieve the actual
@@ -126,20 +126,20 @@ String Extractor
 For performance reasons string extractors are required to extract into transient context memory. If the
 output size isn't reasonably bounded at extraction time then it may be necessary to attempt the
 extraction, detect the transient memory length being insufficient, and trying again. To simplify this
-there is a class, :txb:`StringExtractor` to help with the implementation. This requires the extractor
+there is a class, `StringExtractor` to help with the implementation. This requires the extractor
 to implement the :code:`format` method and uses that to implement the :code:`extract` method.
 
 Example
 =======
 
-Consider an extractor for the inbound transaction count. The code is in :git:`plugin/src/Ex_Ssn.cc`.
+Consider an extractor for the inbound transaction count. The code is in `plugin/src/Ex_Ssn.cc`.
 
 The implementation is done in two parts
 
 Specifically for extractor, the |TS| plugin API support must be extended to call
 :code:`TSHttpSsnTransactionCount` to perform the actual extraction. This is straight forward. A
 method is added to the HTTP session support class :code:`ts::HttpSsn` in
-:git:`plugin/include/txn_box/ts_util.h`.
+`plugin/include/txn_box/ts_util.h`.
 
 .. code-block:: cpp
 
@@ -173,8 +173,8 @@ This is a minimal implementation. The method implemtations are straight forward.
 The :code:`validate` method doesn't check for any errors (as there is no argument) and returns an
 active type of "INTEGER" which is the type of value extracted. The :code:`extract` method retrieves
 the inbound session from the context instance and then gets the transaction count from there. The
-method is required to return a :txb:`Feature` instance. This type can be constructed from any of the
-valid feature types. The meta-function :txb:`feature_type_for` is used to retrieve the feature type
+method is required to return a `Feature` instance. This type can be constructed from any of the
+valid feature types. The meta-function `feature_type_for` is used to retrieve the feature type
 used for INTEGER values and the methods constructions casts the transaction count to that type and
 returns it, which in turn constructs a feature with the value and type.
 
@@ -195,12 +195,12 @@ done in a static initializer in the source file.
 
 This declares a file scope instance of the extractor class and a static :code:`bool` variable
 "INITIALIZED". The value is set to the result of a lambda that takes no arguments. The point of this
-is to force the invocation of the lambda which in turns calls :txb:`Extractor::define` to define the
+is to force the invocation of the lambda which in turns calls `Extractor::define` to define the
 "inbound-txn-count" extractor, passing the extractor name and implementation class instance. The
 enclosing anonymous :code:`namespace` helps avoid name collisions by preventing any external
 linkage.
 
-As an example of instance storage, the random extractor (:txb:`Ex_random`) must store two integers
+As an example of instance storage, the random extractor (`Ex_random`) must store two integers
 which are the limits of the generated value. The argument for this is parsed in :code:`validate` and
 stored using the code
 

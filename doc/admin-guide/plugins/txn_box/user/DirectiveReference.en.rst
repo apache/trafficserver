@@ -1,7 +1,7 @@
 .. Copyright 2020, Verizon Media
    SPDX-License-Identifier: Apache-2.0
 
-.. include:: /common.defs
+.. include:: ../../../../common.defs
 .. include:: ../txnbox_common.defs
 
 .. highlight:: yaml
@@ -363,7 +363,7 @@ Transaction
    This could be done using :drtv:`proxy-reply` and :drtv:`when` but is a common enough case to
    warrant a directive.
 
-   .. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/basic/redirect.replay.yaml
+   .. literalinclude:: ../../../../../tests/gold_tests/pluginTest/txn_box/basic/redirect.replay.yaml
       :start-after: doc-redirect-reply-form-<
       :end-before: doc-redirect-reply-form->
 

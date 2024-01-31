@@ -1,5 +1,7 @@
 .. Copyright 2022, Alan M. Carroll
    SPDX-License-Identifier: Apache-2.0
+
+.. include:: ../../../common.defs
 .. include:: txnbox_common.defs
 
 .. highlight:: cpp
@@ -10,7 +12,7 @@
 Directives
 **********
 
-Directives are implemented by subclassing :txb:`Directive`. The general convention is to prefix the
+Directives are implemented by subclassing `Directive`. The general convention is to prefix the
 directive name with "Do\_" to form a class name.
 
 Example
@@ -20,29 +22,29 @@ note
 ++++
 
 Consider a directive to log a "NOTE" in "diag.logs". Fundamentally this can be done by calling
-the |TS| utility method :txb:`ts::Log_Note` and passing a string view. The directive is simply a
+the |TS| utility method `ts::Log_Note` and passing a string view. The directive is simply a
 wrapper around this, to extact the view and then log it.
 
 By convention the class is named ``Do_note`` and the declaration is
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-at: class Do_note
    :end-before: -- doc end Do_note
 
 Each directive has a key that is the name of the directive, it is best to declare this as a
 :code:`std::string`.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-at: class Do_note
    :lines: 4-9
    :emphasize-lines: 2
 
 :code:`inline` enables the member to be initialized in the class declaration. In this case the
-directive is usable on any hook and so all of them are listed. The class :txb:`HookMask` is used to
-hold a bit mask of the valid hooks. The utility function :txb:`MaskFor` can be used to create a bit
+directive is usable on any hook and so all of them are listed. The class `HookMask` is used to
+hold a bit mask of the valid hooks. The utility function `MaskFor` can be used to create a bit
 mask from hook enumeration values.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-at: class Do_note
    :lines: 4-9
    :emphasize-lines: 4-6
@@ -54,11 +56,11 @@ with a table of directive names. If there is a match, the corresponding load fun
 Multiple arguments are passed to the functor.
 
 :code:`Config& cfg`
-   A reference to the configuration object, which contains the configuration loading context. See :txb:`Config`.
+   A reference to the configuration object, which contains the configuration loading context. See `Config`.
 
 :code:`CfgStaticData`
    Every registered directive gets a config level block of information. This is a reference to that
-   for the configuration being loaded. See :txb:`CfgStaticData`.
+   for the configuration being loaded. See `CfgStaticData`.
 
 :code:`YAML::Node const& drtv_node`
    The directive map (YAML node). This is the YAML map that contains the directive key.
@@ -98,22 +100,22 @@ The "do" key contains a list of directives, each of which is an object. The firs
 Loading implementation is straight forward. The value is expected to be a feature expression and all
 that needs done is to store it in the instance for use at run time.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-after: -- doc note::load
    :end-before: -- doc note::load
 
-:txb:`Config::parse_expr` is used to parse the value as a feature expression. If not successful, the
+`Config::parse_expr` is used to parse the value as a feature expression. If not successful, the
 lower level error is augmented with context information about the directive and returned. Otherwise
 the parsed expression is stored in a newly created instance which is then returned.
 
 When used at runtime, the :code:`invoke` method is called.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-after: -- doc note::invoke
    :end-before: -- doc note::invoke
 
 :arg:`ctx` is a per transaction context and serves as the root of accessible data structures. In
-this case the parsed feature expression is passed to :txb:`Context::extract_view` to extract the
+this case the parsed feature expression is passed to `Context::extract_view` to extract the
 expression as a string, which is the logged.
 
 redirect
@@ -129,7 +131,7 @@ A more complex example would be the ``redirect`` directive.
       body: "Redirecting to {this::location} - please update your links."
 
 For loading from configuration, :code:`key-value` is an object, with keys ``location``, ``status``,
-and ``body``, which must be handled by the directive implementation. :txb:`FeatureGroup` is a
+and ``body``, which must be handled by the directive implementation. `FeatureGroup` is a
 support class to support directives with multiple keys. It is not required but does provide much of
 the boiler plate needed in this situation.
 
@@ -137,7 +139,7 @@ Some of the complexity stems from the fact that while the directive must be invo
 early hook, the implementation must do some "fix ups" on a later hook and that information must be
 cached between hooks. A structure is defined to hold this data
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-after: -- doc Do_redirect::CtxInfo
    :end-at: }
 
@@ -150,10 +152,6 @@ used. The context storage reservation can vary between configuration instances (
 directives reserving storage can vary) therefore configuration storage must be obtained to store
 the reservation.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
-   :start-after: Per configuration storage
-   :end-at: };
-
 Note the context data is shared among all instances of this directive. This is acceptable
 because for any specific transaction there can be only one redirection so it being overridden if
 multiple instances are invoked for a transaction is useful.
@@ -162,7 +160,7 @@ Configuration loading tracks how many instances of a directive have been loaded.
 directive is encountered, a functor is invoked. By default this is an empty function but it can
 be replaced per directive. This is used by the "redirect" directive.
 
-.. literalinclude::  ../../../../plugins/experimental/txn_box/src/Machinery.cc
+.. literalinclude::  ../../../../plugins/experimental/txn_box/plugin/src/Machinery.cc
    :start-at: Do_redirect::cfg_init
    :end-before: doc Do_redirect::cfg_init
 

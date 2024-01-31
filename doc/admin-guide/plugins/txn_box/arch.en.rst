@@ -47,7 +47,7 @@ feature types -
 
 Other feature types may be supported in the future.
 
-An extractor must inherit from :txb:`Extractor`.
+An extractor must inherit from `Extractor`.
 
 Comparison
 ==========
@@ -67,7 +67,7 @@ should be added unless there is a reason to not do so.
 
 *  A :code:`static` :code:`const` :code:`std::string` which contains the name of the comparison.
 
-*  A :code:`static` :code:`const` :txb:`FeatureMask` which contains the valid feature types for the comparison.
+*  A :code:`static` :code:`const` `FeatureMask` which contains the valid feature types for the comparison.
 
 *  A :code:`static` :code:`load` method which constructs an instance from YAML configuration.
 
@@ -105,7 +105,7 @@ type, which is consistent with providing only the :code:`swoc::TextView` functio
 overload. That method calls :code:`TextView::ends_with` to do the check.
 
 In order to be available to the configuration, the comparison must be passed, along with its name,
-to the :txb:`Comparison::define` method. There are various initialization mechanism, the one used
+to the `Comparison::define` method. There are various initialization mechanism, the one used
 inside |TxB| looks like this::
 
    namespace {
@@ -115,4 +115,4 @@ inside |TxB| looks like this::
       return true;
    } ();
 
-More detail is available at :txb:`Cmp_Suffix`.
+More detail is available at `Cmp_Suffix`.

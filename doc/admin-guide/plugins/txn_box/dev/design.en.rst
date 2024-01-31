@@ -1,7 +1,8 @@
 .. Copyright 2020, Verizon Media
    SPDX-License-Identifier: Apache-2.0
 
-.. include:: /common.defs
+.. include:: ../../../../common.defs
+.. include:: ../txnbox_common.defs
 
 .. highlight:: yaml
 
@@ -145,9 +146,9 @@ Other feature types are scalars and therefore easily copied. String features (wh
 most common) are copied around as views but this doesn't alleviate the requirement to be careful
 with the backing memory for those views.
 
-The class :txb:`FeatureView` is used to track a full along with the source of the memory for the
-full. This is needed only in the :txb:`Context` object which tracks transaction local data. For
-the :txb:`Config` object is is sufficiently efficient to always copy any non-transient string to
+The class `FeatureView` is used to track a full along with the source of the memory for the
+full. This is needed only in the `Context` object which tracks transaction local data. For
+the `Config` object is is sufficiently efficient to always copy any non-transient string to
 local storage, as this is only once per configuration.
 
 For a :code:`Context` the goal is to avoid copies of transient strings while providing safe access
