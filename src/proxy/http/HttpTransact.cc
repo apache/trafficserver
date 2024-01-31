@@ -1107,7 +1107,7 @@ HttpTransact::EndRemapRequest(State *s)
   /////////////////////////////////////////////////////////////////////////
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
-  if (!s->client_connection_enabled) {
+  if (!s->client_connection_allowed) {
     build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
     s->reverse_proxy = false;
     goto done;
@@ -6489,7 +6489,7 @@ void
 HttpTransact::process_quick_http_filter(State *s, int method)
 {
   // connection already disabled by previous ACL filtering, don't modify it.
-  if (!s->client_connection_enabled) {
+  if (!s->client_connection_allowed) {
     return;
   }
 
@@ -6525,7 +6525,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
         TxnDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
                ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
       }
-      s->client_connection_enabled = false;
+      s->client_connection_allowed = false;
     }
   }
 }
