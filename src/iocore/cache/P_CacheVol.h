@@ -27,7 +27,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 
 #include "iocore/eventsystem/EThread.h"
 

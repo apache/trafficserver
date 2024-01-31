@@ -21,7 +21,11 @@
   limitations under the License.
  */
 
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "P_CacheInternal.h"
+#include "P_CacheDir.h"
+#include "P_CacheDoc.h"
+#include "AggregateWriteBuffer.h"
+#include "iocore/cache/CacheDefs.h"
 
 #include "iocore/aio/AIO_fault_injection.h"
 
@@ -29,6 +33,15 @@
 #include "tscore/ink_platform.h"
 
 #include <cstring>
+
+Doc *
+AggregateWriteBuffer::emplace(int approx_size)
+{
+  Doc *result{new (this->_buffer + this->_buffer_pos) Doc};
+  this->_buffer_pos += approx_size;
+  this->add_bytes_pending_aggregation(-approx_size);
+  return result;
+}
 
 bool
 AggregateWriteBuffer::flush(int fd, off_t write_pos) const

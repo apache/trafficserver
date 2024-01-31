@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "P_CacheDoc.h"
+
 #include "iocore/eventsystem/Continuation.h"
 
 #include "tscore/ink_memory.h"
@@ -59,6 +61,27 @@ public:
    * @return Returns true if the buffer is empty, otherwise false.
    */
   bool is_empty() const;
+
+  /**
+   * Create a new document in the buffer.
+   *
+   * This method may only be called if there is space at the current
+   * buffer position for the document. Use reset_buffer_pos or add_buffer_pos
+   * to set the position in the buffer before calling this method. If this
+   * condition is not met, the new document may overrun the buffer.
+   *
+   * The buffer position will be updated to the end of the document's data
+   * and the document length will be subtracted from the bytes pending
+   * aggregation.
+   *
+   * The new document will be uninitialized.
+   *
+   * @param approx_size The approximate size of all headers and data as
+   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   this much space.
+   * @return Returns a non-owning pointer to the new document.
+   */
+  Doc *emplace(int approx_size);
 
   /**
    * Flush the internal buffer to disk.

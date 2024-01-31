@@ -23,7 +23,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 #include "CacheEvacuateDocVC.h"
 
 // These macros allow two incrementing unsigned values x and y to maintain
@@ -644,7 +644,8 @@ agg_copy(char *p, CacheVC *vc)
   off_t   o      = stripe->header->write_pos + stripe->get_agg_buf_pos();
 
   if (!vc->f.evacuator) {
-    Doc           *doc         = reinterpret_cast<Doc *>(p);
+    uint32_t       len         = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
+    Doc           *doc         = this->_write_buffer.emplace(this->round_to_approx_size(len));
     IOBufferBlock *res_alt_blk = nullptr;
 
     uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
