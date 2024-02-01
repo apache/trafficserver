@@ -24,9 +24,11 @@ target_link_libraries(
   PRIVATE ts::tsutil
 )
 
-add_executable(test_iouring unit_tests/test_diskIO.cc)
-target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil catch2::catch2)
+if(BUILD_TESTING)
+  add_executable(test_iouring unit_tests/test_diskIO.cc)
+  target_link_libraries(test_iouring PRIVATE inkuring libswoc::libswoc tsutil catch2::catch2)
 
-target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
+  target_include_directories(test_iouring PRIVATE ${CATCH_INCLUDE_DIR})
 
-add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
+  add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
+endif()
