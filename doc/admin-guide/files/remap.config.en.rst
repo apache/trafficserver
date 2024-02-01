@@ -435,17 +435,18 @@ You may configure Nexthop or Parent hierarchical caching rules by remap using th
 **@strategy** tag.  See :doc:`../configuration/hierarchical-caching.en` and :doc:`strategies.yaml.en`
 for configuration details and examples.
 
-Acl Filters
+ACL Filters
 ===========
 
-Acl filters can be created to control access of specific remap lines. The markup
+ACL filters can be created to control access of specific remap lines. The markup
 is very similar to that of :file:`ip_allow.yaml`, with slight changes to
 accommodate remap markup.
 
 **Note:** As of ATS v10.x, these filters are applied just as :file:`ip_allow.yaml`,
-this means once a filter matches the request, the action for that rule takes effect.
+meaning once a filter matches the request, the action for that rule takes effect.
 In previous versions, all filters for a remap rule were evaluated, and the ``deny``
-action took priority.
+action took priority. Also, if an ACL filter matches, then :file:`ip_allow.yaml` rules
+will not not apply to the request because the matched rule is the ACL filter.
 
 Examples
 --------
@@ -464,7 +465,7 @@ Examples
 
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip_category=ACME_INTERNAL @method=post @method=get @method=head
 
-Note that these Acl filters will return a 403 response if the resource is restricted.
+Note that these ACL filters will return a 403 response if the resource is restricted.
 
 The difference between ``@src_ip`` and ``@in_ip`` is that the ``@src_ip`` is the client
 ip and the ``in_ip`` is the ip address the client is connecting to (the incoming address).
@@ -489,6 +490,7 @@ is helpful for remapping internal requests without allowing access
 to external users. By default both internal and external requests
 are allowed.
 
+In-line ACL filters take priority over named active ACL filters.
 
 Examples
 --------

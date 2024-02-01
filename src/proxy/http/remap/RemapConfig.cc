@@ -112,24 +112,31 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     Debug("url_rewrite", "[process_filter_opt] Invalid argument(s)");
     return (const char *)"[process_filter_opt] Invalid argument(s)";
   }
-  for (rp = bti->rules_list; rp; rp = rp->next) {
-    if (rp->active_queue_flag) {
-      Debug("url_rewrite", "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
-            rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
-      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
-        ;
-      }
-      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
-        break;
-      }
-    }
-  }
+  // ACLs are processed in this order:
+  // 1. A remap.config ACL line for an individual remap rule.
+  // 2. All named ACLs in remap.config.
+  // 3. Rules as specified in ip_allow.yaml.
   if (!errStr && (bti->remap_optflg & REMAP_OPTFLG_ALL_FILTERS) != 0) {
     Debug("url_rewrite", "[process_filter_opt] Add per remap filter");
     for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
     }
     errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize);
+    for (rp = bti->rules_list; rp; rp = rp->next) {
+      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
+        ;
+      }
+      if (rp->active_queue_flag) {
+        Debug("url_rewrite", "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
+              rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
+        for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
+          ;
+        }
+        if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
+          break;
+        }
+      }
+    }
   }
   // Set the ip allow flag for this rule to the current ip allow flag state
   mp->ip_allow_check_enabled_p = bti->ip_allow_check_enabled_p;

@@ -130,14 +130,34 @@ ip_allow:
   - apply: in
     ip_addrs: 0/0
     action: allow
+    methods:
+      - GET
 '''
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify non-allowed methods are blocked.",
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
-    deactivate_ip_allow=True,
+    deactivate_ip_allow=False,
     acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
+    named_acls=[],
+    expected_responses=[200, 200, 403, 403, 403])
+
+test_ip_allow_optional_methods = Test_remap_acl(
+    "Verify @src_ip=all works.",
+    replay_file='remap_acl_get_post_allowed.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=False,
+    acl_configuration='@action=allow @src_ip=all @method=GET @method=POST',
+    named_acls=[],
+    expected_responses=[200, 200, 403, 403, 403])
+
+test_ip_allow_optional_methods = Test_remap_acl(
+    "Verify no @src_ip implies all IP addresses.",
+    replay_file='remap_acl_get_post_allowed.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=False,
+    acl_configuration='@action=allow @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
 
@@ -145,7 +165,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     "Verify denied methods are blocked.",
     replay_file='remap_acl_get_post_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
-    deactivate_ip_allow=True,
+    deactivate_ip_allow=False,
     acl_configuration='@action=deny @src_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[403, 403, 200, 200, 400])
@@ -154,7 +174,36 @@ test_ip_allow_optional_methods = Test_remap_acl(
     "Verify a default deny filter rule works.",
     replay_file='remap_acl_all_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
-    deactivate_ip_allow=True,
+    deactivate_ip_allow=False,
     acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[403, 403, 403, 403, 403])
+
+test_ip_allow_optional_methods = Test_remap_acl(
+    "Verify defined in-line ACLS are evaluated before named ones.",
+    replay_file='remap_acl_get_post_allowed.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=False,
+    acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
+    named_acls=[('deny', '@action=deny')],
+    expected_responses=[200, 200, 403, 403, 403])
+
+test_ip_allow_optional_methods = Test_remap_acl(
+    "Verify remap.config line overrides ip_allow rule.",
+    replay_file='remap_acl_get_post_allowed.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=False,
+    acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
+    named_acls=[],
+    expected_responses=[200, 200, 403, 403, 403])
+
+test_ip_allow_optional_methods = Test_remap_acl(
+    "Verify we can deactivate the ip_allow filter.",
+    replay_file='remap_acl_all_allowed.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=True,
+    # This won't match, so nothing will match since ip_allow.yaml is off.
+    acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
+    named_acls=[],
+    # Nothing will block the request since ip_allow.yaml is off.
+    expected_responses=[200, 200, 200, 200, 400])

@@ -516,6 +516,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
                 (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
         }
+        // Since we have a matching ACL, no need to process ip_allow.yaml rules.
+        map->ip_allow_check_enabled_p = false;
         break;
       }
     }
