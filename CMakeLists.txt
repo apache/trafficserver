@@ -230,9 +230,7 @@ check_include_file(sys/mman.h HAVE_SYS_MMAN_H)
 check_include_file(sys/mount.h HAVE_SYS_MOUNT_H)
 check_include_file(sys/param.h HAVE_SYS_PARAM_H)
 check_include_file(netdb.h HAVE_NETDB_H)
-check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
-check_include_file(arpa/nameser.h HAVE_ARPA_NAMESER_H)
-check_include_file(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
+check_include_file(endian.h HAVE_ENDIAN_H)
 
 # Find libraries
 if(ENABLE_CRIPTS)

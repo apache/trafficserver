@@ -71,9 +71,7 @@
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
-#ifdef HAVE_ARPA_NAMESER_COMPAT_H
 #include <arpa/nameser_compat.h>
-#endif
 #include <netdb.h>
 #include <resolv.h>
 #include <cstdio>
