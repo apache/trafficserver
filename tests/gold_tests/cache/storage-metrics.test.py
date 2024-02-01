@@ -32,8 +32,7 @@ storage 256M
         "volume": '''
 # empty
 '''
-    },
-    {
+    }, {
         "case": 1,
         "description": "four equally devided volumes",
         "storage": '''
@@ -46,7 +45,19 @@ volume=2 scheme=http size=25%
 volume=3 scheme=http size=25%
 volume=4 scheme=http size=25%
 '''
-    },
+    }, {
+        "case": 2,
+        "description": "exclusive span",
+        "storage": '''
+storage 256M volume=1
+''',
+        "volume": '''
+volume=1 scheme=http size=262144
+''',
+        "hosting": '''
+hostname=* volume=1
+'''
+    }
 ]
 
 
@@ -65,6 +76,8 @@ class StorageMetricsTest:
             ts = Test.MakeATSProcess(f"ts_{i}")
             ts.Disk.storage_config.AddLine(config["storage"])
             ts.Disk.volume_config.AddLine(config["volume"])
+            if "hosting" in config:
+                ts.Disk.hosting_config.AddLine(config["hosting"])
             ts.Disk.records_config.update({
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'cache',
