@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <chrono>
 
-#ifdef HAVE_SYS_SYSINFO_H
+#if __has_include(<sys/sysinfo.h>)
 #include <sys/sysinfo.h>
 #endif
 
@@ -271,7 +271,7 @@ netStatsInfo(TSMutex stat_creation_mutex)
 static void
 getStats(TSMutex stat_creation_mutex)
 {
-#ifdef HAVE_SYS_SYSINFO_H
+#if HAVE_SYSINFO
   struct sysinfo info;
 
   sysinfo(&info);
@@ -289,7 +289,7 @@ getStats(TSMutex stat_creation_mutex)
   statSet(BUFFER_RAM, info.bufferram, stat_creation_mutex);
   statSet(TOTAL_SWAP, info.totalswap, stat_creation_mutex);
   statSet(FREE_SWAP, info.freeswap, stat_creation_mutex);
-#endif // #ifdef HAVE_SYS_SYSINFO_H
+#endif // #ifdef HAVE_SYSINFO
   netStatsInfo(stat_creation_mutex);
 
   return;

@@ -42,23 +42,8 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_SYS_DISK_H 1
-#cmakedefine HAVE_SYS_DISKLABEL_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
-#cmakedefine HAVE_SYS_IOCTL_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
-#cmakedefine HAVE_SYS_SOCKIO_H 1
-#cmakedefine HAVE_SYS_STAT_H 1
-#cmakedefine HAVE_SYS_STATFS_H 1
-#cmakedefine HAVE_SYS_STATVFS_H 1
-#cmakedefine HAVE_SYS_UIO_H 1
-#cmakedefine HAVE_SYS_SYSINFO_H 1
-#cmakedefine HAVE_SYS_SYSMACROS_H 1
-#cmakedefine HAVE_SYS_SYSTEMINFO_H 1
-#cmakedefine HAVE_SYS_SYSCTL_H 1
-#cmakedefine HAVE_SYS_MMAN_H 1
-#cmakedefine HAVE_SYS_MOUNT_H 1
-#cmakedefine HAVE_SYS_PARAM_H 1
 #cmakedefine HAVE_NETDB_H 1
 #cmakedefine HAVE_ENDIAN_H 1
 #cmakedefine HAVE_MALLOC_USABLE_SIZE 1
@@ -87,7 +72,7 @@
 #cmakedefine01 HAVE_STRLCAT
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_STRSIGNAL
-#cmakedefine01 HAVE_PTHREAD_MUTEXATTR_SETTYPE
+#cmakedefine01 HAVE_SYSINFO
 
 #cmakedefine01 HAVE_HWLOC_OBJ_PU
 
