@@ -150,6 +150,16 @@ else()
 endif()
 set(TS_PKGSYSUSER ${WITH_USER})
 
+# Older LLVM and GCC compilers with C++17 support require explicit linking to their std::filesystem
+# libraries
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  link_libraries(stdc++fs)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+  link_libraries(c++fs)
+endif()
+
 # Setup default install directory
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX
