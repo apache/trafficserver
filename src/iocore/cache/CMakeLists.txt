@@ -49,6 +49,16 @@ target_link_libraries(
   PRIVATE ts::proxy fastlz ZLIB::ZLIB
 )
 
+# Older LLVM and GCC compilers with C++17 support require explicit linking to their std::filesystem
+# libraries
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  target_link_libraries(inkcache PRIVATE stdc++fs)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+  target_link_libraries(inkcache PRIVATE c++fs)
+endif()
+
 if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()
