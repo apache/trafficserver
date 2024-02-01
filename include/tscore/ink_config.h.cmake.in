@@ -44,8 +44,6 @@
 #cmakedefine HAVE_LINUX_HDREG_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
-#cmakedefine HAVE_NETDB_H 1
-#cmakedefine HAVE_ENDIAN_H 1
 #cmakedefine HAVE_MALLOC_USABLE_SIZE 1
 #cmakedefine HAVE_MCHECK_PEDANTIC 1
 #cmakedefine HAVE_POSIX_FADVISE 1

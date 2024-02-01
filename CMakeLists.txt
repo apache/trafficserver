@@ -213,9 +213,6 @@ include(CheckSourceCompiles)
 include(CheckStructHasMember)
 
 check_include_file(ifaddrs.h HAVE_IFADDRS_H)
-check_include_file(string.h HAVE_STRING_H)
-check_include_file(netdb.h HAVE_NETDB_H)
-check_include_file(endian.h HAVE_ENDIAN_H)
 
 # Find libraries
 if(ENABLE_CRIPTS)
