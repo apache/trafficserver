@@ -83,7 +83,7 @@ add_custom_command(
 add_custom_target(
   generate_docs
   COMMAND ${RUNPIPENV} run python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${RUNPIPENV} run python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${RUNPIPENV} run python -m sphinx -vvv -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
           ${CMAKE_CURRENT_BINARY_DIR}/docbuild/html
   DEPENDS generate_docs_setup generate_svg_from_uml Pipfile.lock
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
