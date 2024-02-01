@@ -42,8 +42,6 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_MALLOC_H 1
-#cmakedefine HAVE_MCHECK_H 1
 #cmakedefine HAVE_SYS_DISK_H 1
 #cmakedefine HAVE_SYS_DISKLABEL_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
