@@ -90,7 +90,7 @@ class TxbDirective(std.Target):
         title['first'] = False
         title['objtype'] = 'directive'
         self.add_name(title)
-        title.set_class('directive-title')
+        title['classes'].append('directive-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
@@ -98,7 +98,7 @@ class TxbDirective(std.Target):
 
         node.append(title)
         if ('class' in self.options):
-            title.set_class(self.options.get('class'))
+            title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
         anchor = nodes.target('', '', names=[txb_name])
@@ -184,7 +184,7 @@ class TxbExtractor(std.Target):
         title['first'] = False
         title['objtype'] = 'extractor'
         self.add_name(title)
-        title.set_class('directive-title')
+        title['classes'].append('directive-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
@@ -193,7 +193,7 @@ class TxbExtractor(std.Target):
         node.append(title)
 
         if ('class' in self.options):
-            title.set_class(self.options.get('class'))
+            title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
         anchor = nodes.target('', '', names=[txb_name])
@@ -271,7 +271,7 @@ class TxbComparison(std.Target):
         title['first'] = False
         title['objtype'] = 'comparison'
         self.add_name(title)
-        title.set_class('comparison-title')
+        title['classes'].append('comparison-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
@@ -279,7 +279,7 @@ class TxbComparison(std.Target):
 
         node.append(title)
         if ('class' in self.options):
-            title.set_class(self.options.get('class'))
+            title['classes'].append(self.options.get('class'))
 
         fl = nodes.field_list()
         if ('arg' in self.options):
@@ -355,7 +355,7 @@ class TxbModifier(std.Target):
         title['first'] = False
         title['objtype'] = self.obj_type
         self.add_name(title)
-        title.set_class('modifier-title')
+        title['classes'].append('modifier-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
@@ -363,7 +363,7 @@ class TxbModifier(std.Target):
 
         node.append(title)
         if ('class' in self.options):
-            title.set_class(self.options.get('class'))
+            title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
         anchor = nodes.target('', '', names=[txb_name])
