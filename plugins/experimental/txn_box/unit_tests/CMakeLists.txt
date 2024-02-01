@@ -21,10 +21,12 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 add_executable(test_txn_box unit_test_main.cc test_txn_box.cc test_accl_utils.cc)
 
-set_target_properties(test_txn_box PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(test_txn_box PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${YAMLCPP_INCLUDE_DIR})
 
 #target_link_libraries(test_txn_box PUBLIC PkgConfig::libswoc++ PkgConfig::yaml-cpp pcre2-8)
-target_link_libraries(test_txn_box PUBLIC libswoc::libswoc PkgConfig::PCRE2 OpenSSL::SSL catch2::catch2)
+target_link_libraries(
+  test_txn_box PUBLIC libswoc::libswoc PkgConfig::PCRE2 OpenSSL::SSL catch2::catch2 yaml-cpp::yaml-cpp
+)
 # After fighting with CMake over the include paths, it's just not worth it to be correct.
 # target_link_libraries should make this work but it doesn't. I can't figure out why.
 # target_include_directories(test_txn_box PRIVATE ../../plugin/include)

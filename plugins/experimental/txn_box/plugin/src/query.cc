@@ -122,7 +122,7 @@ query_value_update(Context &ctx, TextView qs, TextView name, Feature const &valu
       // Suffix is the part after the value.
       TextView suffix{v.end(), qs.end()};
       if (!nv_is_nil_p) {
-        zret = ctx.render_transient([&, k = k, v = v](BufferWriter &w) {
+        zret = ctx.render_transient([&, k = k](BufferWriter &w) {
           w.write(prefix).write(k);
           if (equal_p || !(value.index() == IndexFor(STRING) && std::get<IndexFor(STRING)>(value).empty())) {
             w.print("={}", value);

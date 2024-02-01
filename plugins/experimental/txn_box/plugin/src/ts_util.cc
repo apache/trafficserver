@@ -446,7 +446,7 @@ ts::HttpRequest::host() const
   }
   if (auto field = this->field(HTTP_FIELD_HOST); field.is_valid()) {
     auto value = field.value();
-    TextView host_token, port_token, rest_token;
+    TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(value, &host_token, &port_token)) {
       return host_token;
     }
@@ -499,7 +499,7 @@ ts::HttpRequest::host_set(swoc::TextView const &host)
   auto field{this->field(HTTP_FIELD_HOST)};
   if (field.is_valid()) {
     auto text = field.value();
-    TextView host_token, port_token, rest_token;
+    TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
       size_t n = host.size() + 1 + port_token.size();
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
@@ -528,7 +528,7 @@ ts::HttpRequest::port_set(in_port_t port)
   auto field{this->field(HTTP_FIELD_HOST)};
   if (field.is_valid()) {
     auto text = field.value();
-    TextView host_token, port_token, rest_token;
+    TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
       size_t n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
