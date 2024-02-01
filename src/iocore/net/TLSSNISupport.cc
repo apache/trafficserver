@@ -167,3 +167,22 @@ TLSSNISupport::_set_sni_server_name(std::string_view name)
     _sni_server_name.reset(n);
   }
 }
+
+// See if any of the client-side actions would trigger for this combination of servername and client IP
+// host_sni_policy is an in/out parameter.  It starts with the global policy from the records.yaml
+// setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
+// contains a host_sni_policy entry
+bool
+TLSSNISupport::would_have_actions_for(const char *servername, IpEndpoint remote, int &enforcement_policy)
+{
+  bool retval = false;
+  SNIConfig::scoped_config params;
+
+  auto const &actions = params->get(servername, this->_get_local_port());
+  if (actions.first) {
+    for (auto &&item : *actions.first) {
+      retval |= item->TestClientSNIAction(servername, remote, enforcement_policy);
+    }
+  }
+  return retval;
+}
