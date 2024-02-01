@@ -59,11 +59,6 @@
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_MOUNT_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
-#cmakedefine HAVE_NETINET_IN_H 1
-#cmakedefine HAVE_NETINET_IN_SYSTM_H 1
-#cmakedefine HAVE_NETINET_TCP_H 1
-#cmakedefine HAVE_NETINET_IP_ICMP_H 1
-#cmakedefine HAVE_NETINET_IP_H 1
 #cmakedefine HAVE_NETDB_H 1
 #cmakedefine HAVE_ARPA_INET_H 1
 #cmakedefine HAVE_ARPA_NAMESER_H 1
@@ -112,7 +107,9 @@
 #cmakedefine HAVE_MD5_INIT 1
 
 #cmakedefine HAVE_STRUCT_TCP_INFO 1
-#cmakedefine HAVE_STRUCT_LINUX_TCP_INFO 1
+#cmakedefine HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS 1
+#cmakedefine HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT 1
+#cmakedefine HAVE_STRUCT_TCP_INFO___TCPI_RETRANS 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_IN_SIN_LEN 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN 1

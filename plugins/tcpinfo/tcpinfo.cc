@@ -29,12 +29,6 @@
 #include <ts/ts.h>
 #include <unistd.h>
 #include <netinet/in.h>
-// This is a bit of a hack, to get the more linux specific tcp_info struct ...
-#if HAVE_STRUCT_LINUX_TCP_INFO
-#include <linux/tcp.h>
-#elif HAVE_NETINET_IN_H
-#include <netinet/tcp.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <getopt.h>
@@ -63,7 +57,7 @@ static const char *tcpi_headers[] = {"timestamp event client server rtt",
                                      "timestamp event client server rtt rttvar last_sent last_recv snd_cwnd "
                                      "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans"
 // Additional information from linux's linux/tcp.h appended here
-#if HAVE_STRUCT_LINUX_TCP_INFO
+#if HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT
                                      " data_segs_in data_segs_out"
 #endif
 };
@@ -146,21 +140,21 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
   TSReturnCode ret;
 
   if (config->log_level == 2) {
-#if !defined(freebsd) || defined(__GLIBC__)
-#if HAVE_STRUCT_LINUX_TCP_INFO
+#if HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT
+    // Linux 4.6+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str,
                                server_str, info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans,
                                info.tcpi_data_segs_in, info.tcpi_data_segs_out);
-#else
+#elif HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
+    // Linux 2.6.12+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans);
-#endif
-#else
-    // E.g. FreeBSD and macOS
+#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
+    // FreeBSD 6.0+
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.__tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.__tcpi_rcv_ssthresh, info.__tcpi_unacked,
