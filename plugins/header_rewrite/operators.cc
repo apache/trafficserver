@@ -691,7 +691,7 @@ OperatorSetBody::initialize(Parser &p)
 void
 OperatorSetBody::initialize_hooks()
 {
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
