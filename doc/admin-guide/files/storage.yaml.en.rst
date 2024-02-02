@@ -78,7 +78,7 @@ For :code:`volumes` the keys are
 +---------------+-------------+-------------------------------------------------------------+
 | size          | bytes       | Target size of the entire volume. This can be an absolute   |
 |               | _or_        | number of bytes or a percentage.                            |
-|               | percentage  |
+|               | percentage  |                                                             |
 +---------------+-------------+-------------------------------------------------------------+
 | scheme        | enumeration | Protocol scheme, defaults to "http". Preserved for future   |
 |               | string      | use.                                                        |
@@ -94,7 +94,7 @@ For :code:`volumes:spans` the keys are
 +---------------+-------------+-------------------------------------------------------------+
 | Key           | Type        | Meaning                                                     |
 +===============+=============+=============================================================+
-| use           | string      | Name of the span to use.                                   |
+| use           | string      | Name of the span to use.                                    |
 +---------------+-------------+-------------------------------------------------------------+
 | size          | bytes       | Amount of the span to use. The total across all uses of     |
 |               | _or_        | this specific span must be less than 100% and less than the |
@@ -271,7 +271,7 @@ Linux Example
    If this is not sufficient then the :arg:`hash_seed` key should be used to create a more permanent
    assignment table. An example would be
 
-   .. code-block:: yaml
+   .. code-block: yaml
 
    cache:
      spans:
@@ -413,13 +413,13 @@ Volume "3" therefore gets all of span "disk".
          path: "/dev/ram.2"
      volumes:
        - id: 1
-           - spans:
-               - use: ram.1
-               - use: ram.2
+         spans:
+           - use: ram.1
+           - use: ram.2
        - id: 2
-           - spans:
-               - use: ram.1
-               - use: ram.2
+         spans:
+           - use: ram.1
+           - use: ram.2
        - id: 3
 
 If one of the ram disk based volumes should be larger, this could be done as follows by making volume "1" roughly twice
@@ -437,15 +437,15 @@ as large as volume "2".
         path: "/dev/ram.2"
       volumes:
       - id: 1
-          - spans:
-              - use: ram.1
-                size: 66%
-              - use: ram.2
-                size: 66%
+        spans:
+          - use: ram.1
+            size: 66%
+          - use: ram.2
+            size: 66%
       - id: 2
-          - spans:
-              - use: ram.1
-              - use: ram.2
+        spans:
+          - use: ram.1
+          - use: ram.2
       - id: 3
 
 Instead, suppose the physical spans ("disk.1" and "disk.2") should be split across volumes. This can be done by adding volumes
@@ -469,13 +469,13 @@ OTOH, the ram spans ("ram.1" and "ram.2") will be divided evenly among volume 1 
           path: "/dev/ram.2"
       volumes:
         - id: 1
-            - spans:
-                - use: ram.1
-                - use: ram.2
+          spans:
+            - use: ram.1
+            - use: ram.2
         - id: 2
-            - spans:
-                - use: ram.1
-                - use: ram.2
+          spans:
+            - use: ram.1
+            - use: ram.2
         - id: 3
         - id: 4
         - id: 5
