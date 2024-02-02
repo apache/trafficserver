@@ -25,7 +25,7 @@ Plugin statistics.
 '''
 
 Test.SkipUnless(Condition.PluginExists("txn_box.so"))
-Test.SkipIf(Condition.true("This needs to be revisit. Metrics seems not to increment properly."))
+Test.SkipIf(Condition.true("This needs to be revisit."))
 
 tr = Test.TxnBoxTestAndRun(
     "Plugin Stats",

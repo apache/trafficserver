@@ -849,6 +849,7 @@ Cmp_Rxp::expr_visitor::operator()(Expr::List &l)
   Cmp_RxpList::expr_visitor ev{_rxp_opt, rxm->_rxp};
   for (Expr &elt : l._exprs) {
     if (!elt.result_type().can_satisfy(STRING)) {
+      delete rxm;
       return Errata(S_ERROR, R"("{}" literal must be a string.)", KEY);
     }
     std::visit(ev, elt._raw);

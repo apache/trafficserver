@@ -287,7 +287,7 @@ Mod_rxp_replace::operator()(Context &ctx, feature_type_for<STRING> src)
 
   piece anchor;          // to avoid checking for nullptr / start of list.
   piece *last = &anchor; // last piece added.
-  int result;
+  [[maybe_unused]] int result;
 
   while (src && (result = _op(ctx, src)) > 0) {
     auto match = ctx.active_group(0);

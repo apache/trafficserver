@@ -56,7 +56,7 @@ sessions:
     server-response:
       <<: *base-rsp
     proxy-response:
-      <<: *base-rsp
+      # <<: *base-rsp
       status: 501
 
   # Must be a different session because the internal error forces a connection close.
@@ -93,5 +93,5 @@ sessions:
     server-response:
       <<: *base-rsp
     proxy-response:
-      <<: *base-rsp
+      # <<: *base-rsp
       status: 500

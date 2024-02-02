@@ -383,13 +383,14 @@ Context::ts_callback(TSCont cont, TSEvent evt, void *)
   }
 
   /// TXN Close is special - do internal cleanup after explicit directives are done.
+  TSEvent saved_status = self->_global_status; // avoid possible use after free.
   if (TS_EVENT_HTTP_TXN_CLOSE == evt) {
     TSContDataSet(cont, nullptr);
     TSContDestroy(cont);
     delete self;
   }
 
-  TSHttpTxnReenable(txn, self->_global_status);
+  TSHttpTxnReenable(txn, saved_status);
   return TS_SUCCESS;
 }
 

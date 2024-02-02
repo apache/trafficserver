@@ -364,7 +364,7 @@ Config::parse_composite_expr(TextView const &text)
   Expr expr;
   auto &cexpr  = expr._raw.emplace<Expr::COMPOSITE>();
   cexpr._specs = std::move(specs);
-  for (auto const &s : specs) {
+  for (auto const &s : cexpr._specs) {
     expr._max_arg_idx = std::max(expr._max_arg_idx, s._idx);
   }
 
