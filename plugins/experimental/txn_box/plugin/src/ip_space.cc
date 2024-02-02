@@ -806,6 +806,7 @@ public:
   Mod_ip_space(Expr &&expr, TextView const &view, Do_ip_space_define *drtv);
 
   static inline constexpr swoc::TextView KEY{"ip-space"};
+  using super_type::operator(); // declare hidden member function
 
   struct CfgActiveInfo {
     Do_ip_space_define *_drtv = nullptr;
@@ -929,7 +930,7 @@ class Ex_ip_col : public Extractor
 
 public:
   static constexpr TextView NAME{"ip-col"};
-
+  using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
 
   Feature extract(Context &ctx, Spec const &spec) override;

@@ -333,7 +333,7 @@ public:
   static constexpr TextView NAME{"text-block"};
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-
+  using super_type::extract; // un-hide the overloaded
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
@@ -415,7 +415,7 @@ class Mod_as_text_block : public Modifier
 
 public:
   static constexpr swoc::TextView KEY{"as-text-block"};
-
+  using super_type::operator(); // un-hide the overloaded
   /** Modify the feature.
    *
    * @param ctx Run time context.

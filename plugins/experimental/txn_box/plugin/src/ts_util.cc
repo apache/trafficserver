@@ -23,7 +23,9 @@
 #include <string>
 #include <map>
 #include <numeric>
+#if __has_include(<alloca.h>)
 #include <alloca.h>
+#endif
 
 #include <openssl/ssl.h>
 

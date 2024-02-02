@@ -178,6 +178,7 @@ public:
   swoc::BufferWriter &format(swoc::BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
+  using Extractor::extract;    // declare hidden member function
   FeatureGroup *_fg = nullptr; ///< FeatureGroup for name lookup.
 };
 
@@ -191,4 +192,7 @@ class StringExtractor : public Extractor
 {
 public:
   Feature extract(Context &ctx, Spec const &spec) override;
+
+protected:
+  using Extractor::extract;
 };

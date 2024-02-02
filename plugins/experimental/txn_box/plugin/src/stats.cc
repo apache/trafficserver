@@ -346,7 +346,7 @@ public:
   static constexpr TextView NAME{"stat"};
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-
+  using Extractor::extract; // un-hide the overloaded
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };

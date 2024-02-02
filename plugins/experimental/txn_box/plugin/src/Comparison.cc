@@ -112,6 +112,7 @@ public:
   static const std::string KEY; ///< Comparison name.
   static const ValueMask TYPES; ///< Supported types.
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   /// Construct an instance from YAML configuration.
@@ -215,6 +216,7 @@ protected:
 
   Cmp_LiteralString(Expr &&expr);
 
+  using Comparison::operator(); // declare hidden member function
   /** Specialized comparison.
    *
    * @param ctx Runtime context.
@@ -283,6 +285,7 @@ protected:
   using self_type  = Cmp_MatchStd;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -306,6 +309,7 @@ protected:
   using self_type  = Cmp_MatchNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -329,6 +333,7 @@ protected:
   using self_type  = Cmp_Suffix;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -352,6 +357,7 @@ protected:
   using self_type  = Cmp_SuffixNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -374,6 +380,7 @@ protected:
   using self_type  = Cmp_Prefix;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -396,6 +403,7 @@ protected:
   using self_type  = Cmp_PrefixNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -418,6 +426,7 @@ protected:
   using self_type  = Cmp_Contains;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -449,6 +458,7 @@ protected:
   using self_type  = Cmp_ContainsNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -485,6 +495,7 @@ protected:
   using self_type  = Cmp_TLD;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -508,6 +519,7 @@ protected:
   using self_type  = Cmp_TLDNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -533,6 +545,7 @@ protected:
   using self_type  = Cmp_Path;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -561,6 +574,7 @@ protected:
   using self_type  = Cmp_PathNC;
   using super_type = Cmp_LiteralString;
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, TextView const &text, TextView active) const override;
 
   friend super_type;
@@ -693,6 +707,7 @@ class Cmp_RxpSingle : public Cmp_Rxp
   using super_type = Cmp_Rxp;
 
 public:
+  using Comparison::operator(); // declare hidden member function
   Cmp_RxpSingle(Expr &&expr, Rxp::Options);
   Cmp_RxpSingle(Rxp &&rxp);
 
@@ -742,6 +757,7 @@ protected:
     std::vector<Item> &_rxp;
   };
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, feature_type_for<STRING> const &active) const override;
 
   std::vector<Item> _rxp;
@@ -889,6 +905,7 @@ public:
   static inline const std::string KEY{"is-true"};                              ///< Comparison name.
   static inline const ValueMask TYPES{MaskFor(NIL, STRING, BOOLEAN, INTEGER)}; ///< Supported types.
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   /// Construct an instance from YAML configuration.
@@ -921,6 +938,7 @@ public:
   static const std::string KEY; ///< Comparison name.
   static const ValueMask TYPES; ///< Supported types.
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   /// Construct an instance from YAML configuration.
@@ -955,7 +973,7 @@ class Cmp_is_null : public Comparison
 public:
   static const std::string KEY; ///< Comparison name.
   static const ValueMask TYPES; ///< Supported types.
-
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, feature_type_for<NIL>) const override;
 
   /// Construct an instance from YAML configuration.
@@ -989,7 +1007,7 @@ class Cmp_is_empty : public Comparison
 public:
   static const std::string KEY; ///< Comparison name.
   static const ValueMask TYPES; ///< Supported types.
-
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, feature_type_for<NIL>) const override;
   bool operator()(Context &ctx, feature_type_for<STRING> const &s) const override;
   bool operator()(Context &ctx, feature_type_for<TUPLE> const &s) const override;
@@ -1083,6 +1101,8 @@ struct Cmp_eq : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "eq";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1101,6 +1121,8 @@ struct Cmp_ne : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "ne";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1119,6 +1141,8 @@ struct Cmp_lt : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "lt";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1137,6 +1161,8 @@ struct Cmp_le : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "le";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1155,6 +1181,8 @@ struct Cmp_gt : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "gt";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1173,6 +1201,8 @@ struct Cmp_ge : public Base_Binary_Cmp {
 public:
   static inline const std::string KEY = "ge";
   using super_type::super_type;
+  using Comparison::operator(); // declare hidden member function
+
   bool
   operator()(Context &ctx, Feature const &f) const override
   {
@@ -1194,7 +1224,7 @@ class Cmp_in : public Comparison
 public:
   static const std::string KEY;  ///< Comparison name.
   static const ActiveType TYPES; ///< Supported types.
-
+  using Comparison::operator();  // declare hidden member function
   bool operator()(Context &ctx, feature_type_for<INTEGER> n) const override;
   bool operator()(Context &ctx, feature_type_for<IP_ADDR> const &addr) const override;
 
@@ -1395,6 +1425,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1434,7 +1465,7 @@ public:
   {
     return KEY;
   }
-
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1475,6 +1506,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1516,6 +1548,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1570,6 +1603,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1624,6 +1658,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);
@@ -1678,6 +1713,7 @@ public:
     return KEY;
   }
 
+  using Comparison::operator(); // declare hidden member function
   bool operator()(Context &ctx, Feature const &feature) const override;
 
   static Rv<Handle> load(Config &cfg, YAML::Node const &cmp_node, TextView const &key, TextView const &arg, YAML::Node value_node);

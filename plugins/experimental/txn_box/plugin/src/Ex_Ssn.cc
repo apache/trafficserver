@@ -51,7 +51,7 @@ class Ex_inbound_txn_count : public Extractor
 public:
   /// Extractor name.
   static constexpr TextView NAME{"inbound-txn-count"};
-
+  using Extractor::extract; // declare hidden member function
   /** Validate argument and indicate extracted type.
    *
    * @return The active type and any errors.
@@ -85,6 +85,7 @@ class Ex_inbound_sni : public Extractor
 {
 public:
   static constexpr TextView NAME{"inbound-sni"};
+  using Extractor::extract; // declare hidden member function
   /// Extract the SNI  name from the inbound session.
   Feature extract(Context &ctx, Spec const &spec) override;
 };
@@ -100,6 +101,7 @@ class Ex_inbound_addr_remote : public Extractor
 {
 public:
   static constexpr TextView NAME{"inbound-addr-remote"};
+  using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
   Feature extract(Context &ctx, Spec const &spec) override;
 };
@@ -125,6 +127,7 @@ class Ex_inbound_addr_local : public Extractor
 {
 public:
   static constexpr TextView NAME{"inbound-addr-local"};
+  using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
   Feature extract(Context &ctx, Spec const &spec) override;
 };
@@ -149,7 +152,7 @@ class Ex_has_inbound_protocol_prefix : public Extractor
 {
 public:
   static constexpr TextView NAME{"has-inbound-protocol-prefix"};
-
+  using Extractor::extract; // declare hidden member function
   /// Check argument and indicate possible feature types.
   Rv<ActiveType> validate(Config &, Spec &, swoc::TextView const &) override;
 
@@ -178,7 +181,7 @@ class Ex_has_outbound_protocol_prefix : public Extractor
 {
 public:
   static constexpr TextView NAME{"has-outbound-protocol-prefix"};
-
+  using Extractor::extract; // declare hidden member function
   /// Check argument and indicate possible feature types.
   Rv<ActiveType> validate(Config &, Spec &, swoc::TextView const &) override;
 
@@ -206,7 +209,7 @@ class Ex_inbound_protocol_stack : public Extractor
 {
 public:
   static constexpr TextView NAME{"inbound-protocol-stack"};
-
+  using Extractor::extract; // declare hidden member function
   /// Check argument and indicate possible feature types.
   Rv<ActiveType> validate(Config &, Spec &, swoc::TextView const &) override;
 
@@ -249,7 +252,7 @@ class Ex_outbound_protocol_stack : public Extractor
 {
 public:
   static constexpr TextView NAME{"outbound-protocol-stack"};
-
+  using Extractor::extract; // declare hidden member function
   /// Check argument and indicate possible feature types.
   Rv<ActiveType> validate(Config &, Spec &, swoc::TextView const &) override;
 
@@ -345,6 +348,7 @@ class Ex_inbound_cert_verify_result : public Extractor
 
 public:
   static constexpr TextView NAME{"inbound-cert-verify-result"};
+  using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
   /// Extract the feature from the @a ctx.
   Feature extract(Context &ctx, Spec const &spec) override;

@@ -49,6 +49,8 @@ public:
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
 
+  using Extractor::extract; // declare hidden member function
+
   /// Extract the feature from the @a ctx.
   Feature extract(Context &ctx, Extractor::Spec const &) override;
 
@@ -87,6 +89,9 @@ public:
   {
     return ActiveType{BOOLEAN};
   }
+
+  using Extractor::extract; // declare hidden member function
+
   /// Extract the feature from the @a ctx.
   Feature extract(Context &ctx, Spec const &spec) override;
 
@@ -113,6 +118,8 @@ class Ex_random : public Extractor
   using super_type = Extractor; ///< Parent type.
 public:
   static constexpr TextView NAME{"random"}; ///< Extractor name.
+
+  using Extractor::extract; // declare hidden member function
 
   /// Verify the arguments are a valid integer range.
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
@@ -244,6 +251,7 @@ class Ex_txn_conf : public Extractor
   using store_type = ts::TxnConfigVar *; ///< Storage type for config var record.
 public:
   static constexpr TextView NAME{"txn-conf"};
+  using Extractor::extract; // declare hidden member function
 
   /** Validate the use of the extractor in a feature string.
    *
@@ -332,6 +340,8 @@ public:
   {
     return cfg.active_type();
   }
+
+  using Extractor::extract; // declare hidden member function
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
@@ -357,6 +367,7 @@ class Ex_unmatched_group : public Extractor
 public:
   static constexpr TextView NAME = UNMATCHED_FEATURE_KEY;
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  using Extractor::extract; // declare hidden member function
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };

@@ -155,7 +155,7 @@ class QueryValueExtractor : public Extractor
 {
 public:
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-
+  using Extractor::extract; // declare hidden member function
   Feature extract(Context &ctx, Spec const &spec) override;
 
 protected:
@@ -201,6 +201,7 @@ class Ex_ua_req_query : public StringExtractor
 public:
   static constexpr TextView NAME{"ua-req-query"};
 
+  using Extractor::extract; // un-hide the overloaded
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
@@ -255,7 +256,7 @@ class Ex_pre_remap_query : public StringExtractor
 {
 public:
   static constexpr TextView NAME{"pre-remap-query"};
-
+  using Extractor::extract; // un-hide the overloaded
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
@@ -306,7 +307,7 @@ class Ex_proxy_req_query : public StringExtractor
 {
 public:
   static constexpr TextView NAME{"proxy-req-query"};
-
+  using Extractor::extract; // un-hide the overloaded
   Feature extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
@@ -368,6 +369,7 @@ public:
   static inline const std::string KEY{"query-sort"};
   bool is_valid_for(ActiveType const &ex_type) const override;
   ActiveType result_type(ActiveType const &) const override;
+  using super_type::operator(); // un-hide overloaded.
   Rv<Feature> operator()(Context &ctx, feature_type_for<STRING> qs) override;
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
@@ -473,6 +475,7 @@ public:
 
   bool is_valid_for(ActiveType const &ex_type) const override;
   ActiveType result_type(ActiveType const &) const override;
+  using super_type::operator(); // un-hide overloaded.
   Rv<Feature> operator()(Context &ctx, feature_type_for<STRING> qs) override;
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
@@ -480,12 +483,14 @@ public:
   class Ex_Name : public Extractor
   {
     virtual swoc::Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &) override;
+    using Extractor::extract; // declare hidden member function
     Feature extract(Context &ctx, Spec const &spec) override;
   };
   /// Local extractor for value in a pair.
   class Ex_Value : public Extractor
   {
     virtual swoc::Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &) override;
+    using Extractor::extract; // declare hidden member function
     Feature extract(Context &ctx, Spec const &spec) override;
   };
 

@@ -369,16 +369,15 @@ Lexicon_Hash(system_clock::duration d)
 }
 } // namespace swoc
 
-UnitParser<system_clock::duration> DurationParser{
-  UnitParser<system_clock::duration>::unit_type{{nanoseconds(1), {"ns", "nanoseconds"}},
-                                                {microseconds(1), {"us", "microseconds"}},
-                                                {milliseconds(1), {"ms", "milliseconds"}},
-                                                {seconds(1), {"s", "sec", "second", "seconds"}},
-                                                {minutes(1), {"m", "min", "minute", "minutes"}},
-                                                {hours(1), {"h", "hour", "hours"}},
-                                                {days(1), {"d", "day", "days"}},
-                                                {days(7), {"w", "week", "weeks"}}}
-};
+UnitParser<system_clock::duration> DurationParser{UnitParser<system_clock::duration>::unit_type{
+  UnitParser<system_clock::duration>::unit_type::with_multi{{nanoseconds(1), {"ns", "nanoseconds"}},
+                                                            {microseconds(1), {"us", "microseconds"}},
+                                                            {milliseconds(1), {"ms", "milliseconds"}},
+                                                            {seconds(1), {"s", "sec", "second", "seconds"}},
+                                                            {minutes(1), {"m", "min", "minute", "minutes"}},
+                                                            {hours(1), {"h", "hour", "hours"}},
+                                                            {days(1), {"d", "day", "days"}},
+                                                            {days(7), {"w", "week", "weeks"}}}}};
 
 // Generate a list, ordered largest to smallest, of the duration name units.
 // The lambda constructs such a vector, which is then used to move construct @c DurationOrder.

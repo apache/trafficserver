@@ -96,7 +96,7 @@ class Ex_tcp_info : public Extractor
   using super_type = Extractor;   ///< Parent type.
 public:
   static constexpr TextView NAME{"inbound-tcp-info"};
-
+  using Extractor::extract; // declare hidden member function
   /// Usage validation.
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
 

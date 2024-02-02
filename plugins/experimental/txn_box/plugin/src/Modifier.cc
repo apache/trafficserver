@@ -98,7 +98,7 @@ class Mod_hash : public Modifier
 
 public:
   static const std::string KEY; ///< Identifier name.
-
+  using Modifier::operator();   // declare hidden member function
   /** Modify the feature.
    *
    * @param ctx Run time context.
@@ -188,6 +188,7 @@ class Mod_rxp_replace : public Modifier
 
 public:
   static inline const std::string KEY{"rxp-replace"}; ///< Identifier name.
+  using Modifier::operator();                         // declare hidden member function
 
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
@@ -337,7 +338,7 @@ class Mod_filter : public FilterMod
 
 public:
   static inline const std::string KEY = "filter"; ///< Identifier name.
-
+  using super_type::operator();                   // declare hidden member function
   /** Modify the feature.
    *
    * @param ctx Run time context.
@@ -558,7 +559,7 @@ class Mod_else : public Modifier
 
 public:
   static constexpr TextView KEY{"else"}; ///< Identifier name.
-
+  using super_type::operator();          // declare hidden member function
   /** Modify the feature.
    *
    * @param ctx Run time context.
@@ -630,7 +631,7 @@ class Mod_join : public Modifier
 
 public:
   static constexpr TextView KEY{"join"}; ///< Identifier name.
-
+  using super_type::operator();          // declare hidden member function
   /** Modify the feature.
    *
    * @param ctx Run time context.
@@ -714,6 +715,7 @@ class Mod_concat : public Modifier
 
 public:
   static constexpr TextView KEY{"concat"}; ///< Identifier name.
+  using super_type::operator();            // declare hidden member function
 
   /** Modify the feature.
    *
@@ -858,6 +860,7 @@ class Mod_as_bool : public Modifier
 
 public:
   inline static const std::string KEY = "as-bool"; ///< Identifier name.
+  using super_type::operator();                    // declare hidden member function
 
   /** Modify the feature.
    *
@@ -934,6 +937,7 @@ class Mod_as_integer : public Modifier
 
 public:
   static constexpr TextView KEY{"as-integer"}; ///< Identifier name.
+  using super_type::operator();                // declare hidden member function
 
   /** Modify the feature.
    *
@@ -1018,7 +1022,7 @@ class Mod_as_ip_addr : public Modifier
 
 public:
   static const std::string KEY; ///< Identifier name.
-
+  using super_type::operator(); // declare hidden member function
   /** Modify the feature.
    *
    * @param ctx Run time context.
@@ -1113,6 +1117,7 @@ class Mod_As_Duration : public Modifier
 
 public:
   static const std::string KEY; ///< Identifier name.
+  using super_type::operator(); // declare hidden member function
 
   /** Modify the feature.
    *
@@ -1211,6 +1216,8 @@ class Mod_url_encode : public Modifier
 
 public:
   inline static const std::string KEY = "url-encode";
+  using super_type::operator(); // declare hidden member function
+
   /** Check if @a ftype is a valid type to be modified.
    *
    * @param ftype Type of feature to modify.
@@ -1279,6 +1286,7 @@ class Mod_url_decode : public Modifier
 
 public:
   inline static const std::string KEY = "url-decode";
+  using super_type::operator(); // declare hidden member function
 
   /** Check if @a ftype is a valid type to be modified.
    *
