@@ -38,26 +38,29 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
 )
-add_library(
-  tsutil
-  Assert.cc
-  Metrics.cc
-  DbgCtl.cc
-  SourceLocation.cc
-  ts_diags.cc
-  ts_ip.cc
-  YamlCfg.cc
-  ts_unit_parser.cc
-  Regex.cc
+set(TSUTIL_SOURCE_FILES
+    Assert.cc
+    Metrics.cc
+    DbgCtl.cc
+    SourceLocation.cc
+    ts_diags.cc
+    ts_ip.cc
+    YamlCfg.cc
+    ts_unit_parser.cc
+    Regex.cc
 )
+add_library(tsutil ${TSUTIL_SOURCE_FILES})
 add_library(ts::tsutil ALIAS tsutil)
 set_target_properties(tsutil PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSUTIL_PUBLIC_HEADERS}")
 target_link_libraries(tsutil PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE)
+add_library(tsutil_link_dummy SHARED ${TSUTIL_SOURCE_FILES})
+add_library(ts::tsutil_link_dummy ALIAS tsutil_link_dummy)
+set_target_properties(tsutil_link_dummy PROPERTIES PUBLIC_HEADER "${TSUTIL_PUBLIC_HEADERS}")
+target_link_libraries(tsutil_link_dummy PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE)
 
 install(
-  TARGETS tsutil
+  TARGETS tsutil_link_dummy
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil
 )
 
