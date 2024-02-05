@@ -19,7 +19,14 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 function(add_atsplugin name)
   add_library(${name} MODULE ${ARGN})
-  target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
+  if(LINK_PLUGINS)
+    target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
+  else()
+    target_include_directories(
+      ${name} PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
+                      "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
+    )
+  endif()
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
   install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
