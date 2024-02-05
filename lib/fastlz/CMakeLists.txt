@@ -17,4 +17,3 @@
 
 add_library(fastlz STATIC)
 target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
