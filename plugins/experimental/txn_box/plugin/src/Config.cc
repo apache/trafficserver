@@ -362,9 +362,10 @@ Config::parse_composite_expr(TextView const &text)
   }
   // Multiple specifiers, check for overall properties.
   Expr expr;
-  auto &cexpr  = expr._raw.emplace<Expr::COMPOSITE>();
-  cexpr._specs = std::move(specs);
-  for (auto const &s : cexpr._specs) {
+  auto &cexpr = expr._raw.emplace<Expr::COMPOSITE>();
+  cexpr._specs.swap(specs);
+
+  for (auto const &s : specs) {
     expr._max_arg_idx = std::max(expr._max_arg_idx, s._idx);
   }
 

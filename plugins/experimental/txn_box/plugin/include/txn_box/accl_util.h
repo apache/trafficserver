@@ -26,6 +26,7 @@
 #include <utility>
 #include <stack>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <type_traits>
 #include <cassert>
@@ -407,10 +408,13 @@ public:
   // Think, inherit from View instead??
   using const_pointer = typename View::const_pointer;
   using pointer       = typename View::pointer;
+  using value_type    = typename View::value_type;
+
   // Define our own iterator which show a reverse view of the original.
   struct iterator {
+    using reference = value_type &;
     explicit iterator(typename View::reverse_iterator iter) : _iter(iter) {}
-    const typename View::value_type &
+    const value_type &
     operator*() const
     {
       return *_iter;
@@ -500,7 +504,17 @@ public:
 private:
   View _view;
 };
+namespace std
+{
 
+template <> struct iterator_traits<reversed_view<swoc::TextView>::iterator> {
+  using value_type        = typename swoc::TextView::value_type;
+  using pointer_type      = const value_type *;
+  using reference_type    = const value_type &;
+  using difference_type   = ssize_t;
+  using iterator_category = bidirectional_iterator_tag;
+};
+} // namespace std
 template <typename View>
 std::ostream &
 operator<<(std::ostream &os, reversed_view<View> const &v)

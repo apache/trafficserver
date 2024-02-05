@@ -369,15 +369,16 @@ Lexicon_Hash(system_clock::duration d)
 }
 } // namespace swoc
 
-UnitParser<system_clock::duration> DurationParser{UnitParser<system_clock::duration>::unit_type{
-  UnitParser<system_clock::duration>::unit_type::with_multi{{nanoseconds(1), {"ns", "nanoseconds"}},
-                                                            {microseconds(1), {"us", "microseconds"}},
-                                                            {milliseconds(1), {"ms", "milliseconds"}},
-                                                            {seconds(1), {"s", "sec", "second", "seconds"}},
-                                                            {minutes(1), {"m", "min", "minute", "minutes"}},
-                                                            {hours(1), {"h", "hour", "hours"}},
-                                                            {days(1), {"d", "day", "days"}},
-                                                            {days(7), {"w", "week", "weeks"}}}}};
+UnitParser<system_clock::duration> DurationParser{
+  UnitParser<system_clock::duration>::unit_type{UnitParser<system_clock::duration>::unit_type::with_multi{
+    {duration_cast<std::chrono::system_clock::duration>(nanoseconds(1)), {"ns", "nanoseconds"}},
+    {duration_cast<std::chrono::system_clock::duration>(microseconds(1)), {"us", "microseconds"}},
+    {duration_cast<std::chrono::system_clock::duration>(milliseconds(1)), {"ms", "milliseconds"}},
+    {duration_cast<std::chrono::system_clock::duration>(seconds(1)), {"s", "sec", "second", "seconds"}},
+    {duration_cast<std::chrono::system_clock::duration>(minutes(1)), {"m", "min", "minute", "minutes"}},
+    {duration_cast<std::chrono::system_clock::duration>(hours(1)), {"h", "hour", "hours"}},
+    {duration_cast<std::chrono::system_clock::duration>(days(1)), {"d", "day", "days"}},
+    {duration_cast<std::chrono::system_clock::duration>(days(7)), {"w", "week", "weeks"}}}}};
 
 // Generate a list, ordered largest to smallest, of the duration name units.
 // The lambda constructs such a vector, which is then used to move construct @c DurationOrder.

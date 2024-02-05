@@ -70,7 +70,7 @@ public:
 
       union_type() { span = decltype(span){}; }                // default constructor.
       union_type(union_type const &that) { span = that.span; } // provide copy constructor for Spec constructors.
-      union_type &operator=(union_type const &that) = default; // required.
+      union_type &operator=(union_type const &that) = default;
     } _data;
   };
 
