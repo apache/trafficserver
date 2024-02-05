@@ -7,5 +7,5 @@ Name: trafficserver
 Description: Apache Traffic Server
 Version: @TS_VERSION_STRING@
 Requires:
-Libs: -L${libdir} -ltsapi
+Libs:
 Cflags: -I${includedir}/ts
