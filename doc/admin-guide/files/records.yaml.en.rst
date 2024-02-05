@@ -2090,6 +2090,24 @@ Security
    this value via a :ref:`host_sni_policy<override-host-sni-policy>` attribute.
 
 
+IP Allow
+========
+
+.. ts:cv:: CONFIG proxy.config.cache.ip_allow.filename STRING ip_allow.yaml
+   :reloadable:
+
+   Set the file path for the IP allow configuration file. For details of the use
+   of this file, see :file:`ip_allow.yaml`. If this is a relative path, |TS|
+   loads it relative to the ``SYSCONFDIR`` directory.
+
+.. ts:cv:: CONFIG proxy.config.cache.ip_categories.filename STRING NULL
+   :reloadable:
+
+   Set the file path for the IP allow categories definition file. For details of
+   the use of this file, see :file:`ip_allow.yaml`. If this is a relative path,
+   |TS| loads it relative to the ``SYSCONFDIR`` directory.
+
+
 Cache Control
 =============
 

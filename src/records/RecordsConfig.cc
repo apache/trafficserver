@@ -795,6 +795,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.ip_allow.filename", RECD_STRING, ts::filename::IP_ALLOW, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cache.ip_categories.filename", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.cache.hosting_filename", RECD_STRING, ts::filename::HOSTING, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.volume_filename", RECD_STRING, ts::filename::VOLUME, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

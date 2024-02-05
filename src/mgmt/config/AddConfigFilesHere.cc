@@ -70,6 +70,7 @@ initializeRegistry()
   registerFile(ts::filename::RECORDS, ts::filename::RECORDS, NOT_REQUIRED);
   registerFile("proxy.config.cache.control.filename", ts::filename::CACHE, NOT_REQUIRED);
   registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW, NOT_REQUIRED);
+  registerFile("proxy.config.cache.ip_categories.filename", ts::filename::IP_CATEGORIES, NOT_REQUIRED);
   registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT, NOT_REQUIRED);
   registerFile("proxy.config.url_remap.filename", ts::filename::REMAP, NOT_REQUIRED);
   registerFile("", ts::filename::VOLUME, NOT_REQUIRED);

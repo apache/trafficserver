@@ -32,7 +32,6 @@
 
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
@@ -89,6 +88,7 @@ public:
   using self_type     = IpAllow; ///< Self reference type.
   using scoped_config = ConfigProcessor::scoped_config<self_type, self_type>;
   using IpMap         = swoc::IPSpace<Record const *>;
+  using IpCategories  = std::unordered_map<std::string, swoc::IPSpace<bool>>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
   enum match_key_t { SRC_ADDR, DST_ADDR };
@@ -102,8 +102,38 @@ public:
   static constexpr swoc::TextView OPT_METHOD{"method"};
   static constexpr swoc::TextView OPT_METHOD_ALL{"all"};
 
+  /*
+   * A YAML configuration file looks something like this:
+   *
+   * ip_categories:
+   *   - name: ACME_INTERNAL
+   *     ip_addrs:
+   *       - 10.0.0.0/8
+   *       - 172.16.0.0/20
+   *       - 192.168.1.0/24
+   *
+   * ip_allow:
+   *   - apply: in
+   *     ip_categories: ACME_INTERNAL
+   *     action: allow
+   *     methods:
+   *     - GET
+   *     - HEAD
+   *     - POST
+   *   - apply: in
+   *     ip_addrs: 127.0.0.1
+   *     action: allow
+   *     methods: ALL
+   *
+   */
   static const inline std::string YAML_TAG_ROOT{"ip_allow"};
+
+  static const inline std::string YAML_TAG_CATEGORY_ROOT{"ip_categories"};
+  static const inline std::string YAML_TAG_CATEGORY_NAME{"name"};
+  static const inline std::string YAML_TAG_CATEGORY_IP_ADDRS{"ip_addrs"};
+
   static const inline std::string YAML_TAG_IP_ADDRS{"ip_addrs"};
+  static const inline std::string YAML_TAG_IP_CATEGORIES{"ip_categories"};
   static const inline std::string YAML_TAG_APPLY{"apply"};
   static const inline std::string YAML_VALUE_APPLY_IN{"in"};
   static const inline std::string YAML_VALUE_APPLY_OUT{"out"};
@@ -163,7 +193,7 @@ public:
     IpAllow *_config{nullptr}; ///< The backing configuration.
   };
 
-  explicit IpAllow(const char *config_var);
+  explicit IpAllow(const char *ip_allow_config_var, const char *categories_config_var);
 
   void Print() const;
 
@@ -201,6 +231,25 @@ public:
 
   const swoc::file::path &get_config_file() const;
 
+  /**
+   * Check if an IP category contains a specific IP address.
+   *
+   * @param category The IP category to check.
+   * @param addr The IP address to check against the category.
+   * @return True if the category contains the address, false otherwise.
+   */
+  static bool ip_category_contains_addr(std::string const &category, swoc::IPAddr const &addr);
+
+  /** Indicate whether ip_allow.yaml has no rules associated with it.
+   *
+   * If there are no rules, then all traffic will be blocked. This is used
+   * during ATS configuration to verify that the user has provided a usable
+   * ip_allow.yaml file.
+   *
+   * @return True if there are no rules in ip_allow.yaml, false otherwise.
+   */
+  static bool has_no_rules();
+
 private:
   static size_t configid;               ///< Configuration ID for update management.
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
@@ -209,17 +258,26 @@ private:
   void DebugMap(IpMap const &map) const;
 
   swoc::Errata BuildTable();
-  swoc::Errata YAMLBuildTable(const std::string &);
+  swoc::Errata YAMLBuildTable(const std::string &content);
   swoc::Errata YAMLLoadEntry(const YAML::Node &);
   swoc::Errata YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, Record const *mark);
+  swoc::Errata YAMLLoadIPCategory(const YAML::Node &, IpMap *map, Record const *mark);
   swoc::Errata YAMLLoadMethod(const YAML::Node &node, Record &rec);
 
-  /// Copy @a src to the local arena and review a view of the copy.
+  swoc::Errata BuildCategories();
+  swoc::Errata YAMLBuildCategories(const std::string &content);
+  swoc::Errata YAMLLoadCategoryRoot(const YAML::Node &);
+  swoc::Errata YAMLLoadCategoryDefinition(const YAML::Node &);
+  swoc::Errata YAMLLoadCategoryIpRange(const YAML::Node &, swoc::IPSpace<bool> &space);
+
+  /// Copy @a src to the local arena and return a view of the copy.
   swoc::TextView localize(swoc::TextView src);
 
-  swoc::file::path config_file; ///< Path to configuration file.
+  swoc::file::path ip_allow_config_file;      ///< Path to ip_allow configuration file.
+  swoc::file::path ip_categories_config_file; ///< Path to ip_allow configuration file.
   IpMap _src_map;
   IpMap _dst_map;
+  IpCategories ip_category_map; ///< Map of IP categories to IP spaces.
   /// Storage for records.
   swoc::MemArena _arena;
 
@@ -364,5 +422,12 @@ IpAllow::makeAllowAllACL() -> ACL
 inline const swoc::file::path &
 IpAllow::get_config_file() const
 {
-  return config_file;
+  return ip_allow_config_file;
+}
+
+inline bool
+IpAllow::has_no_rules()
+{
+  auto const *self = IpAllow::acquire();
+  return self->_src_map.count() == 0 && self->_dst_map.count() == 0;
 }

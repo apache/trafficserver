@@ -24,15 +24,16 @@
   limitations under the License.
  */
 
-#include <sstream>
-
 #include "proxy/IPAllow.h"
+#include "records/RecCore.h"
+#include "swoc/Errata.h"
+#include "swoc/TextView.h"
 #include "tscore/Filenames.h"
+#include "tscore/ink_memory.h"
 #include "tsutil/ts_errata.h"
 
 #include "swoc/Vectray.h"
 #include "swoc/BufferWriter.h"
-#include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_ip.h"
 
@@ -91,12 +92,14 @@ IpAllow::startup()
 
   ipAllowUpdate = new ConfigUpdateHandler<IpAllow>();
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
+  ipAllowUpdate->attach("proxy.config.cache.ip_categories.filename");
 
   reconfigure();
 
   ConfigInfo *config = configProcessor.get(configid);
   if (config == nullptr) {
-    configid = configProcessor.set(configid, new self_type("proxy.config.cache.ip_allow.filename"));
+    configid = configProcessor.set(
+      configid, new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename"));
     Warning("%s not loaded; All IP Addresses will be blocked.", ts::filename::IP_ALLOW);
   }
 }
@@ -108,17 +111,24 @@ IpAllow::reconfigure()
 
   Note("%s loading ...", ts::filename::IP_ALLOW);
 
-  new_table   = new self_type("proxy.config.cache.ip_allow.filename");
-  auto errata = new_table->BuildTable();
-  if (!errata.is_ok()) {
+  new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
+  // IP rules need categories, so load them first (if they exist).
+  if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
+    std::string text;
+    swoc::bwprint(text, "{} failed to load\n{}", new_table->ip_categories_config_file, errata);
+    Error("%s", text.c_str());
+    delete new_table;
+    return;
+  }
+  if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
     std::string text;
     swoc::bwprint(text, "{} failed to load\n{}", ts::filename::IP_ALLOW, errata);
     Error("%s", text.c_str());
     delete new_table;
-  } else {
-    configid = configProcessor.set(configid, new_table);
-    Note("%s finished loading", ts::filename::IP_ALLOW);
+    return;
   }
+  configid = configProcessor.set(configid, new_table);
+  Note("%s finished loading", ts::filename::IP_ALLOW);
 }
 
 IpAllow *
@@ -137,6 +147,20 @@ void
 IpAllow::release()
 {
   configProcessor.release(configid, this);
+}
+
+bool
+IpAllow::ip_category_contains_addr(std::string const &category, swoc::IPAddr const &addr)
+{
+  self_type *self = acquire();
+  auto const spot = self->ip_category_map.find(category);
+  if (spot == self->ip_category_map.end()) {
+    return false;
+  }
+  auto const &space = spot->second;
+  bool const found  = space.find(addr) != space.end();
+  self->release();
+  return found;
 }
 
 IpAllow::ACL
@@ -170,7 +194,14 @@ IpAllow::match(swoc::IPAddr const &addr, match_key_t key)
 //   End API functions
 //
 
-IpAllow::IpAllow(const char *config_var) : config_file(ats_scoped_str(RecConfigReadConfigPath(config_var)).get()) {}
+IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_config_var)
+  : ip_allow_config_file(ats_scoped_str(RecConfigReadConfigPath(ip_allow_config_var)).get())
+{
+  std::string const path = RecConfigReadConfigPath(ip_categories_config_var);
+  if (!path.empty()) {
+    ip_categories_config_file = ats_scoped_str(path).get();
+  }
+}
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IpAllow::IpMap const &map)
@@ -232,7 +263,7 @@ IpAllow::BuildTable()
   ink_assert(_src_map.count() == 0 && _dst_map.count() == 0);
 
   std::error_code ec;
-  std::string content{swoc::file::load(config_file, ec)};
+  std::string content{swoc::file::load(ip_allow_config_file, ec)};
   swoc::Errata errata;
   if (ec.value() == 0) {
     try {
@@ -314,12 +345,28 @@ IpAllow::YAMLLoadIPAddrRange(const YAML::Node &node, IpMap *map, IpAllow::Record
     return swoc::Errata(ERRATA_ERROR, "{} Expected IP address range at {}, found non-literal.", this, node.Mark());
   }
 
-  swoc::TextView debug(node.Scalar());
-  (void)debug;
-  if (swoc::IPRange r; r.load(node.Scalar())) {
+  swoc::TextView ip_range(node.Scalar());
+  if (swoc::IPRange r; r.load(ip_range)) {
     map->fill(r, record);
   } else {
     return swoc::Errata(ERRATA_ERROR, "{} {} - '{}' is not a valid range.", this, node.Mark(), node.Scalar());
+  }
+  return {};
+}
+
+swoc::Errata
+IpAllow::YAMLLoadIPCategory(const YAML::Node &node, IpMap *map, IpAllow::Record const *record)
+{
+  if (!node.IsScalar()) {
+    return swoc::Errata(ERRATA_ERROR, "{} Expected IP address category at {}, found non-literal.", this, node.Mark());
+  }
+  std::string const &category(node.Scalar());
+  if (auto spot = ip_category_map.find(category); spot != ip_category_map.end()) {
+    for (auto const &range : spot->second) {
+      map->fill(range.range_view(), record);
+    }
+  } else {
+    return swoc::Errata(ERRATA_ERROR, "{} {} - '{}' is not category with a defined range.", this, node.Mark(), category);
   }
   return {};
 }
@@ -374,6 +421,10 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
     return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, required '{}' key not found.", this, entry.Mark(), YAML_TAG_ACTION);
   }
 
+  if (entry[YAML_TAG_IP_ADDRS] && entry[YAML_TAG_IP_CATEGORIES]) {
+    return swoc::Errata(ERRATA_ERROR, "{} {} - '{}' and '{}' cannot both be used in the same rule.", this, entry.Mark(),
+                        YAML_TAG_IP_ADDRS, YAML_TAG_IP_CATEGORIES);
+  }
   if (YAML::Node addr_node = entry[YAML_TAG_IP_ADDRS]; addr_node) {
     bool marked_p = false;
     if (addr_node.IsSequence()) {
@@ -396,8 +447,31 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
     if (!marked_p) {
       return swoc::Errata(ERRATA_ERROR, "No valid addresses for rule at {}", node.Mark());
     }
+  } else if (YAML::Node category_node = entry[YAML_TAG_IP_CATEGORIES]; category_node) {
+    bool marked_p = false;
+    if (category_node.IsSequence()) {
+      for (auto const &n : category_node) {
+        if (auto errata = this->YAMLLoadIPCategory(n, map, record); errata.is_ok()) {
+          marked_p = true;
+        } else {
+          errata.note(R"(In record at {})", entry.Mark());
+          return errata;
+        }
+      }
+    } else {
+      if (auto errata = this->YAMLLoadIPCategory(category_node, map, record); errata.is_ok()) {
+        marked_p = true;
+      } else {
+        errata.note(R"(In record at {})", entry.Mark());
+        return errata;
+      }
+    }
+    if (!marked_p) {
+      return swoc::Errata(ERRATA_ERROR, "No valid IP category for rule at {}", node.Mark());
+    }
   } else {
-    return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, required '{}' key not found.", this, entry.Mark(), YAML_TAG_IP_ADDRS);
+    return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, required '{}' or '{}' key not found.", this, entry.Mark(),
+                        YAML_TAG_IP_ADDRS, YAML_TAG_IP_CATEGORIES);
   }
 
   if (auto methodNode = entry[YAML_TAG_METHODS]) {
@@ -426,19 +500,149 @@ IpAllow::YAMLBuildTable(std::string const &content)
     return swoc::Errata("{} - top level object was not a map. All IP Addresses will be blocked", this);
   }
 
-  YAML::Node data{root[YAML_TAG_ROOT.data()]};
-  if (!data) {
+  // IP categories are optional. Load them if specified. Note that the rules,
+  // if they use categories, depend upon the categories being defined. So the
+  // categories have to be processed first before the rules are.
+  YAML::Node categories{root[YAML_TAG_CATEGORY_ROOT.data()]};
+  if (auto errata = this->YAMLLoadCategoryRoot(categories); !errata.is_ok()) {
+    return errata;
+  }
+
+  // Now load the IPAllow rules.
+  YAML::Node rules{root[YAML_TAG_ROOT.data()]};
+  if (!rules) {
     return swoc::Errata("{} - root tag '{}' not found. All IP Addresses will be blocked", this, YAML_TAG_ROOT);
-  } else if (data.IsSequence()) {
-    for (auto const &entry : data) {
+  } else if (rules.IsSequence()) {
+    for (auto const &entry : rules) {
       if (auto errata = this->YAMLLoadEntry(entry); !errata.is_ok()) {
         return errata;
       }
     }
-  } else if (data.IsMap()) {
-    return this->YAMLLoadEntry(data); // singleton, just load it.
+  } else if (rules.IsMap()) {
+    return this->YAMLLoadEntry(rules); // singleton, just load it.
   } else {
     return swoc::Errata("{} - root tag '{}' is not an map or sequence. All IP Addresses will be blocked", this, YAML_TAG_ROOT);
   }
+  return {};
+}
+
+swoc::Errata
+IpAllow::BuildCategories()
+{
+  std::error_code ec;
+  if (ip_categories_config_file.empty()) {
+    return {};
+  }
+
+  Note("%s loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  std::string content{swoc::file::load(ip_categories_config_file, ec)};
+  swoc::Errata errata;
+  if (ec.value() == 0) {
+    try {
+      errata = this->YAMLBuildCategories(content);
+    } catch (std::exception &ex) {
+      return swoc::Errata(ec, ERRATA_ERROR, "{} - Invalid IP Categories {} content: {}", this, ip_categories_config_file,
+                          ex.what());
+    }
+    if (!errata.is_ok()) {
+      errata.note("While parsing ip categories file: {}", ip_categories_config_file);
+      return errata;
+    }
+  } else {
+    return swoc::Errata(ERRATA_ERROR, "{} Failed to load {}", this, ec);
+  }
+  Note("%s done loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  return {};
+}
+
+swoc::Errata
+IpAllow::YAMLBuildCategories(std::string const &content)
+{
+  YAML::Node root{YAML::Load(content)};
+  YAML::Node categories{root[YAML_TAG_CATEGORY_ROOT.data()]};
+  if (auto errata = this->YAMLLoadCategoryRoot(categories); !errata.is_ok()) {
+    return errata;
+  }
+  return {};
+}
+
+swoc::Errata
+IpAllow::YAMLLoadCategoryRoot(const YAML::Node &categories)
+{
+  if (categories) {
+    if (!categories.IsSequence()) {
+      return swoc::Errata("{} - '{}' tag must be a sequence of maps. All IP Addresses will be blocked", this,
+                          YAML_TAG_CATEGORY_ROOT);
+    }
+    for (auto const &category : categories) {
+      if (!category.IsMap()) {
+        return swoc::Errata("{} - '{}' tag must be a sequence of maps. All IP Addresses will be blocked", this,
+                            YAML_TAG_CATEGORY_ROOT);
+      }
+      if (auto errata = this->YAMLLoadCategoryDefinition(category); !errata.is_ok()) {
+        return errata;
+      }
+    }
+  }
+  return {};
+}
+
+swoc::Errata
+IpAllow::YAMLLoadCategoryDefinition(const YAML::Node &entry)
+{
+  /* Parse this into ip_category_map:
+   *
+   *   - name: <category name>
+   *     ip_addrs:
+   *       - <ip range>
+   *       - <ip range>
+   *       - <ip range>
+   */
+  if (!entry.IsMap()) {
+    return swoc::Errata(ERRATA_ERROR, "{} {} - Category definition must be a map.", this, entry.Mark());
+  }
+
+  if (auto name_node = entry[YAML_TAG_CATEGORY_NAME]; name_node) {
+    if (!name_node.IsScalar()) {
+      return swoc::Errata(ERRATA_ERROR, "{} {} - Category name must be a string.", this, name_node.Mark());
+    }
+    std::string const &name(name_node.Scalar());
+    if (auto ip_addrs_node = entry[YAML_TAG_CATEGORY_IP_ADDRS]; ip_addrs_node) {
+      if (ip_addrs_node.IsSequence()) {
+        for (auto const &ip_addr_node : ip_addrs_node) {
+          if (auto errata = this->YAMLLoadCategoryIpRange(ip_addr_node, ip_category_map[name]); !errata.is_ok()) {
+            errata.note(R"(In category definition at {})", entry.Mark());
+            return errata;
+          }
+        }
+      } else {
+        if (auto errata = this->YAMLLoadCategoryIpRange(ip_addrs_node, ip_category_map[name]); !errata.is_ok()) {
+          errata.note(R"(In category definition at {})", entry.Mark());
+          return errata;
+        }
+      }
+    } else { // No ip_addrs.
+      return swoc::Errata(ERRATA_ERROR, "{} {} - IP Addresses must be specified.", this, entry.Mark());
+    }
+  } else { // No name
+    return swoc::Errata(ERRATA_ERROR, "{} {} - Category name must be specified.", this, entry.Mark());
+  }
+  return {};
+}
+
+swoc::Errata
+IpAllow::YAMLLoadCategoryIpRange(const YAML::Node &node, swoc::IPSpace<bool> &space)
+{
+  if (!node.IsScalar()) {
+    return swoc::Errata(ERRATA_ERROR, "{} Expected IP address range for category at {}, found non-literal.", this, node.Mark());
+  }
+
+  swoc::TextView ip_range(node.Scalar());
+  if (swoc::IPRange r; r.load(ip_range)) {
+    space.fill(r, true);
+  } else {
+    return swoc::Errata(ERRATA_ERROR, "{} {} - '{}' is not a valid range.", this, node.Mark(), node.Scalar());
+  }
+
   return {};
 }
