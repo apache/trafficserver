@@ -34,7 +34,7 @@ tr = Test.TxnBoxTestAndRun(
     remap=[('http://one.ex', 'http://three.ex', ('--key=meta.txn_box.remap', 'ramp.replay.yaml'))],
     verifier_client_args="--verbose diag --repeat {}".format(RepeatCount))
 
-with open("{tr.TestDirectory}/multi_ramp_common.pymulti_ramp_common.py") as f:
+with open(f"{tr.TestDirectory}/multi_ramp_common.py") as f:
     code = compile(f.read(), "multi_ramp_common.py", 'exec')
     exec(code)
 
