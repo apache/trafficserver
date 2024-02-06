@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -82,6 +83,7 @@ inline BodyData::BodyData()
 inline bool
 BodyData::addChunk(const char *start, int64_t size)
 {
+  assert(start != nullptr && size >= 0);
   chunk_list.emplace_back(size, std::vector<char>(start, start + size));
   total_size += size;
   return true;
@@ -91,6 +93,7 @@ BodyData::addChunk(const char *start, int64_t size)
 inline bool
 BodyData::getChunk(uint32_t chunk_index, const char **start, int64_t *size) const
 {
+  assert(start != nullptr && size != nullptr);
   bool bGood = false;
   if (chunk_index < chunk_list.size()) {
     bGood  = true;

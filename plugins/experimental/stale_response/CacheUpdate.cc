@@ -271,12 +271,7 @@ intercept_check_request(StateInfo *state)
   TSHttpTxn txnp       = state->txnp;
   uint32_t oldKey      = state->req_info->key_hash;
 
-#if (TS_VERSION_NUMBER >= 7000000)
-  if (!TSHttpTxnIsInternal(txnp))
-#else
-  if (TSHttpIsInternalRequest(txnp) != TS_SUCCESS)
-#endif
-  {
+  if (!TSHttpTxnIsInternal(txnp)) {
     TSDebug(PLUGIN_TAG, "[%s] Skipping external request", __FUNCTION__);
     return pBodyFound;
   }
