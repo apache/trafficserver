@@ -35,7 +35,7 @@ public:
   x_pthread_mutexattr_t()
   {
     pthread_mutexattr_init(&attr);
-#if DEBUG && HAVE_PTHREAD_MUTEXATTR_SETTYPE
+#if DEBUG
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
 #endif
   }
