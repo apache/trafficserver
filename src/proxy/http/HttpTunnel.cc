@@ -176,10 +176,16 @@ ChunkedHandler::read_size()
           break;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
-        if (ParseRules::is_lf(*tmp)) {
+        if (ParseRules::is_cr(*tmp)) {
+          // Skip it
+        } else if (ParseRules::is_lf(*tmp) &&
+                   bytes_used <= 2) { // bytes_used should be 2 if it's CRLF, but permit a single LF as well
           running_sum = 0;
           num_digits  = 0;
           state       = CHUNK_READ_SIZE;
+        } else { // Unexpected character
+          state = CHUNK_READ_ERROR;
+          done  = true;
         }
       }
       tmp++;
