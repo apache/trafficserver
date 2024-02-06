@@ -547,7 +547,9 @@ update_dns_info(ResolveInfo *dns, HttpTransact::CurrentInfo *from)
 {
   dns->looking_up  = from->request_to;
   dns->lookup_name = from->server->name;
-  dns->resolved_p  = false;
+  if (dns->os_addr_style != ResolveInfo::OS_Addr::USE_API) {
+    dns->resolved_p = false;
+  }
 }
 
 inline static HTTPHdr *
