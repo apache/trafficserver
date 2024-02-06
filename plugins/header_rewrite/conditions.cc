@@ -34,17 +34,6 @@
 #include "conditions.h"
 #include "lulu.h"
 
-// This is a bit of a hack, to get the more linux specific tcp_info struct ...
-#if HAVE_STRUCT_LINUX_TCP_INFO
-#ifndef _LINUX_TCP_H
-#define _LINUX_TCP_H
-#endif
-#elif HAVE_NETINET_IN_H
-#ifndef _NETINET_TCP_H
-#define _NETINET_TCP_H
-#endif
-#endif
-
 // ConditionStatus
 void
 ConditionStatus::initialize(Parser &p)
@@ -1324,10 +1313,12 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   if (tsSsn == TS_SUCCESS) {
     if (tcp_info_len > 0) {
       char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
-#if !defined(freebsd) || defined(__GLIBC__)
+#if defined(HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS)
+      // Linux 2.6.12+
       snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
                info.tcpi_snd_cwnd, info.tcpi_retrans);
-#else
+#elif defined(HAVE_STRUCT_TCP_INFO___TCPI_RETRANS)
+      // FreeBSD 6.0+
       snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
                info.tcpi_snd_cwnd, info.__tcpi_retrans);
 #endif

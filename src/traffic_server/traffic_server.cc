@@ -62,7 +62,7 @@ extern "C" int plock(int);
 #include <sys/filio.h>
 #endif
 
-#if HAVE_MCHECK_H
+#if __has_include(<mcheck.h>)
 #include <mcheck.h>
 #endif
 

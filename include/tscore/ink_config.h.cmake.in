@@ -42,34 +42,8 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_MALLOC_H 1
-#cmakedefine HAVE_MCHECK_H 1
-#cmakedefine HAVE_SYS_DISK_H 1
-#cmakedefine HAVE_SYS_DISKLABEL_H 1
 #cmakedefine HAVE_SYS_CAPABILITY_H 1
-#cmakedefine HAVE_SYS_IOCTL_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
-#cmakedefine HAVE_SYS_SOCKIO_H 1
-#cmakedefine HAVE_SYS_STAT_H 1
-#cmakedefine HAVE_SYS_STATFS_H 1
-#cmakedefine HAVE_SYS_STATVFS_H 1
-#cmakedefine HAVE_SYS_UIO_H 1
-#cmakedefine HAVE_SYS_SYSINFO_H 1
-#cmakedefine HAVE_SYS_SYSMACROS_H 1
-#cmakedefine HAVE_SYS_SYSTEMINFO_H 1
-#cmakedefine HAVE_SYS_SYSCTL_H 1
-#cmakedefine HAVE_SYS_MMAN_H 1
-#cmakedefine HAVE_SYS_MOUNT_H 1
-#cmakedefine HAVE_SYS_PARAM_H 1
-#cmakedefine HAVE_NETINET_IN_H 1
-#cmakedefine HAVE_NETINET_IN_SYSTM_H 1
-#cmakedefine HAVE_NETINET_TCP_H 1
-#cmakedefine HAVE_NETINET_IP_ICMP_H 1
-#cmakedefine HAVE_NETINET_IP_H 1
-#cmakedefine HAVE_NETDB_H 1
-#cmakedefine HAVE_ARPA_INET_H 1
-#cmakedefine HAVE_ARPA_NAMESER_H 1
-#cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
 #cmakedefine HAVE_MALLOC_USABLE_SIZE 1
 #cmakedefine HAVE_MCHECK_PEDANTIC 1
 #cmakedefine HAVE_POSIX_FADVISE 1
@@ -96,7 +70,7 @@
 #cmakedefine01 HAVE_STRLCAT
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_STRSIGNAL
-#cmakedefine01 HAVE_PTHREAD_MUTEXATTR_SETTYPE
+#cmakedefine01 HAVE_SYSINFO
 
 #cmakedefine01 HAVE_HWLOC_OBJ_PU
 
@@ -114,7 +88,9 @@
 #cmakedefine HAVE_MD5_INIT 1
 
 #cmakedefine HAVE_STRUCT_TCP_INFO 1
-#cmakedefine HAVE_STRUCT_LINUX_TCP_INFO 1
+#cmakedefine HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS 1
+#cmakedefine HAVE_STRUCT_TCP_INFO_TCPI_DATA_SEGS_OUT 1
+#cmakedefine HAVE_STRUCT_TCP_INFO___TCPI_RETRANS 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_IN_SIN_LEN 1
 #cmakedefine HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN 1

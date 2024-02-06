@@ -24,11 +24,11 @@
 #include "tscore/ink_config.h"
 #include <grp.h>
 
-#if HAVE_SYS_CAPABILITY_H
+#if __has_include(<sys/capability.h>)
 #include <sys/capability.h>
 #endif
 
-#if HAVE_SYS_PRCTL_H
+#if __has_include(<sys/prctl.h>)
 #include <sys/prctl.h>
 #endif
 

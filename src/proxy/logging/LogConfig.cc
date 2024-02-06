@@ -25,10 +25,6 @@
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
 
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
 #include <memory>
 
 #include "tscore/ink_platform.h"

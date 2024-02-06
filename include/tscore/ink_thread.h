@@ -42,11 +42,11 @@
 #include <csignal>
 #include <semaphore.h>
 
-#if HAVE_PTHREAD_NP_H
+#if __has_include(<pthread_np.h>)
 #include <pthread_np.h>
 #endif
 
-#if HAVE_SYS_PRCTL_H && defined(PR_SET_NAME)
+#if __has_include(<sys/prctl.h>) && defined(PR_SET_NAME)
 #include <sys/prctl.h>
 #endif
 

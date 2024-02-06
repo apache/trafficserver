@@ -63,38 +63,28 @@ struct ifafilt;
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #include <ctype.h>  // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
+
 #include <sys/types.h>
-#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
+
 #include <unistd.h>
-#ifdef HAVE_NETINET_IN_H
+
 #include <netinet/in.h>
-#endif
-#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
-#endif
-#ifdef HAVE_NETINET_TCP_H
+// This is a bit of a hack, to get the more linux specific tcp_info struct ...
+#if __has_include(<linux/tcp.h>)
+#include <linux/tcp.h>
+#else
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
-#endif
-#ifdef HAVE_NETINET_IP_ICMP_H
 #include <netinet/ip_icmp.h>
-#endif
-#ifdef HAVE_NETDB_H
+
 #include <netdb.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
+
 #include <arpa/inet.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_COMPAT_H
 #include <arpa/nameser_compat.h>
-#endif
 
 #include <signal.h> // NOLINT(modernize-deprecated-headers)
 
@@ -111,36 +101,27 @@ struct ifafilt;
 
 #include "tscore/ink_endian.h"
 
-#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
-#endif
-#ifdef HAVE_SYS_SOCKIO_H
-#include <sys/sockio.h>
-#endif
 
 #if defined(__linux__)
 using in_addr_t = unsigned int;
 #endif
 
-#ifdef HAVE_SYS_SYSINFO_H
+#if __has_include(<sys/sysinfo.h>)
 #include <sys/sysinfo.h>
 #endif
 
-#if defined(darwin) || defined(freebsd)
-#ifdef HAVE_SYS_SYSCTL_H
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#if __has_include(<sys/sysctl.h>)
 #include <sys/sysctl.h>
 #endif
-#endif
-
-#ifdef HAVE_SYS_SYSTEMINFO_H
-#include <sys/systeminfo.h>
 #endif
 
 #include <dlfcn.h>
 
 #include <float.h> // NOLINT(modernize-deprecated-headers)
 
-#ifdef HAVE_SYS_SYSMACROS_H
+#if __has_include(<sys/sysmacros.h>)
 #include <sys/sysmacros.h>
 #endif
 

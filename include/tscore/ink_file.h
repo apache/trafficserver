@@ -38,11 +38,11 @@
 #include <dirent.h>
 #include <stdint.h>
 
-#if HAVE_SYS_STATFS_H
+#if __has_include(<sys/statfs.h>)
 #include <sys/statfs.h>
 #endif
 
-#if HAVE_SYS_STATVFS_H
+#if __has_include(<sys/statvfs.h>)
 #include <sys/statvfs.h>
 #endif
 

@@ -167,12 +167,10 @@ ConnBase::TcpInfo::log()
 
   if (_ready) {
     // A lot of this is taken verbatim from header_rewrite, may want to rewrite this with sstreams
-#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
-#if !defined(freebsd) || defined(__GLIBC__)
+#if HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
     _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.tcpi_retrans);
-#else
+#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
     _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.__tcpi_retrans);
-#endif
 #endif
   }
 
