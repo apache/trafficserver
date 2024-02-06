@@ -41,5 +41,3 @@ endif()
 
 add_library(catch2::catch2 INTERFACE IMPORTED GLOBAL)
 target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/catch2")
-
-install(TARGETS fastlz)
