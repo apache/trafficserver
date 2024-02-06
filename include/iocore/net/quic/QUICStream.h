@@ -88,6 +88,7 @@ class QUICStreamStateListener
 {
 public:
   virtual void on_stream_state_close(const QUICStream *stream) = 0;
+  virtual ~QUICStreamStateListener()                           = default; // Some compilers may warn about this.
 };
 
 #define QUICStreamDebug(fmt, ...)                                                                        \
