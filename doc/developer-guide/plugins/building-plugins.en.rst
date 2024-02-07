@@ -57,9 +57,10 @@ After the plugin target is created, a verify test target can be created.  This
 will add a cmake test declaration and at test time, will run traffic_server in
 its verify plugin mode.  There are two verify functions provided,
 :func:`verify_remap_plugin` and :func:`verify_global_plugin`.  Use the relevant
-function for your plugin type.  The test will fail if either your plugin does
-not define the required init function (:func:`TSRemapInit` or :func:`TSPluginInit`),
-or if your plugin calls any undefined symbols.
+function for your plugin type (or call both if your plugin is both types).  The
+test will fail if either your plugin does not define the required init function
+(:func:`TSRemapInit` or :func:`TSPluginInit`), or if your plugin calls any
+undefined symbols.
 
 If traffic server is installed in a standard location, or from a package, you
 might not need the -D options below, but run these commands to build and test
