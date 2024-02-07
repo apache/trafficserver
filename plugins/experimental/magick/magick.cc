@@ -16,6 +16,7 @@
   limitations under the License.
  */
 
+#include "ts/apidefs.h"
 #include <algorithm>
 #include <chrono>
 #include <condition_variable>
@@ -411,6 +412,9 @@ QueryParameterToCharVector(CharVector &v)
     std::size_t s         = 0;
     const TSReturnCode rc = TSStringPercentDecode(v.data(), v.size(), v.data(), v.size(), &s);
     assert(TS_SUCCESS == rc);
+    if (rc != TS_SUCCESS) {
+      return false;
+    }
     v.resize(s);
   }
 
@@ -418,6 +422,9 @@ QueryParameterToCharVector(CharVector &v)
     std::size_t s         = 0;
     const TSReturnCode rc = TSBase64Decode(v.data(), v.size(), reinterpret_cast<unsigned char *>(v.data()), v.size(), &s);
     assert(TS_SUCCESS == rc);
+    if (rc != TS_SUCCESS) {
+      return false;
+    }
     v.resize(s);
   }
 
