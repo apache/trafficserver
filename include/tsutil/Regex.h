@@ -28,11 +28,34 @@
 #include <vector>
 #include <memory>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#if __has_include(<pcre2/pcre2.h>)
+#include <pcre2/pcre2.h>
+#else
+#include <pcre2.h>
+#endif
+
 /// Match flags for regular expression evaluation.
 enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
   RE_UNANCHORED       = 0x0002, ///< Unanchored (DFA defaults to anchored).
   RE_ANCHORED         = 0x0004, ///< Anchored (Regex defaults to unanchored).
+};
+
+//----------------------------------------------------------------------------
+class RegexMatches
+{
+public:
+  RegexMatches(uint32_t size = 20);
+  ~RegexMatches();
+
+  pcre2_match_data *get_match_data();
+  void set_subject(std::string_view subject);
+  std::string_view operator[](size_t index) const;
+
+private:
+  pcre2_match_data *_match_data = nullptr;
+  std::string_view _subject;
 };
 
 /** Wrapper for PCRE evaluation.
@@ -57,7 +80,7 @@ public:
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
    */
-  bool compile(const char *pattern, unsigned flags = 0);
+  bool compile(std::string_view, uint32_t flags = 0);
 
   /** Compile the @a pattern into a regular expression.
    *
@@ -69,7 +92,7 @@ public:
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
    */
-  bool compile(const char *pattern, const char **error, int *erroffset, unsigned flags = 0);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
 
   /** Execute the regular expression.
    *
@@ -78,7 +101,7 @@ public:
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
-  bool exec(std::string_view const &str) const;
+  bool exec(const std::string_view &subject) const;
 
   /** Execute the regular expression.
    *
@@ -92,7 +115,7 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(std::string_view const &str, int *ovector, int ovecsize) const;
+  int exec(const std::string_view &subject, RegexMatches &matches) const;
 
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();
@@ -102,8 +125,7 @@ private:
   // enough to use as pointers. For some reason the header defines in name only a struct and
   // then aliases it to the standard name, rather than simply declare the latter in name only.
   // The goal is completely wrap PCRE and not include that header in client code.
-  void *regex       = nullptr; ///< Compiled expression.
-  void *regex_extra = nullptr; ///< Extra information about the expression.
+  pcre2_code *_code = nullptr;
 };
 
 /** Deterministic Finite state Automata container.
