@@ -18,3 +18,5 @@
 add_atsplugin(cache_promote cache_promote.cc configs.cc policy.cc lru_policy.cc policy_manager.cc)
 
 target_link_libraries(cache_promote PRIVATE OpenSSL::Crypto libswoc::libswoc)
+
+verify_remap_plugin(cache_promote)
