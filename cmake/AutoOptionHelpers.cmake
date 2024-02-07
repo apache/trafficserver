@@ -37,7 +37,7 @@ function(_REGISTER_AUTO_OPTION _NAME _FEATURE_VAR _DESCRIPTION _DEFAULT)
   )
 endfunction()
 
-macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
+macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR _COMPONENT)
   if(${${_OPTION_VAR}} STREQUAL AUTO)
     set(STRICTNESS)
   else()
@@ -45,10 +45,18 @@ macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
   endif()
 
   foreach(PACKAGE_NAME ${_PACKAGE_DEPENDS})
-    find_package(${PACKAGE_NAME} ${STRICTNESS})
-    if(NOT ${PACKAGE_NAME}_FOUND)
-      set(${_FEATURE_VAR} FALSE)
-      break()
+    if(NOT ${_COMPONENT} STREQUAL OFF)
+      find_package(${PACKAGE_NAME} ${STRICTNESS} COMPONENTS ${_COMPONENT})
+      if(NOT ${PACKAGE_NAME}_${COMPONENT}_FOUND)
+        set(${_FEATURE_VAR} FALSE)
+        break()
+      endif()
+    else()
+      find_package(${PACKAGE_NAME} ${STRICTNESS})
+      if(NOT ${PACKAGE_NAME}_FOUND)
+        set(${_FEATURE_VAR} FALSE)
+        break()
+      endif()
     endif()
   endforeach()
 endmacro()
@@ -68,6 +76,7 @@ endmacro()
 #   [DEFAULT <default>]
 #   [FEATURE_VAR <feature_var>]
 #   [WITH_SUBDIRECTORY <name>]
+#   [COMPONENT <component>]
 #   [PACKAGE_DEPENDS <package_one> <package_two> ...]
 #   [HEADER_DEPENDS <header_one> <header_two> ...]
 # )
@@ -102,13 +111,16 @@ endmacro()
 # WITH_SUBDIRECTORY is an optional subdirectory that should be added if the
 # feature is enabled.
 #
+# COMPONENT check for a component of the package. Currently this only works if
+# specifying a single package in PACKAGE_DEPENDS
+#
 # PACKAGE_DEPENDS is a list of packages that are required for the feature.
 #
 # HEADER_DEPENDS is a list of headers that are required for the feature.
 #
 macro(auto_option _FEATURE_NAME)
   cmake_parse_arguments(
-    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR;WITH_SUBDIRECTORY" "PACKAGE_DEPENDS;HEADER_DEPENDS" ${ARGN}
+    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR;WITH_SUBDIRECTORY;COMPONENT" "PACKAGE_DEPENDS;HEADER_DEPENDS" ${ARGN}
   )
 
   set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
@@ -128,11 +140,17 @@ macro(auto_option _FEATURE_NAME)
     message(FATAL_ERROR "Invalid auto_option default ${ARG_DEFAULT}")
   endif()
 
+  if(ARG_COMPONENT)
+    set(COMPONENT ${ARG_COMPONENT})
+  else()
+    set(COMPONENT OFF)
+  endif()
+
   _register_auto_option(${OPTION_VAR} ${FEATURE_VAR} "${ARG_DESCRIPTION}" "${DEFAULT}")
 
   if(${${OPTION_VAR}} MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
     set(${FEATURE_VAR} TRUE)
-    _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
+    _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR} ${COMPONENT})
     _check_header_depends(${OPTION_VAR} "${ARG_HEADER_DEPENDS}" ${FEATURE_VAR})
   else()
     set(${FEATURE_VAR} FALSE)
