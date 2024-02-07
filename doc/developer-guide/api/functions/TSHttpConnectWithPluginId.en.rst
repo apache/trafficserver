@@ -98,7 +98,7 @@ The H2 implementation uses this to correlate client sessions
 with H2 streams. Each client connection is assigned a distinct
 numeric identifier. This is passed as the :arg:`id` to
 :c:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected
-to be the NPN string for the client session protocol, e.g.
+to be the ALPN (or NPN) string for the client session protocol, e.g.
 "h2". Log post processing can then count the number of connections for the
 various supported protocols and the number of H2 virtual streams for each
 real client connection to Traffic Server.

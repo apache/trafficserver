@@ -42,7 +42,9 @@ protocols:
 
 Each proxy port can be configured in :ts:cv:`proxy.config.http.server_ports`
 to support a subset of these session protocols. For TLS enabled connections this
-configuration controls which protocols are offered by NPN. Protocol sniffing is
+configuration controls which protocols are offered by ALPN and NPN. Protocol sniffing is
 use for non-TLS proxy ports to determine which protocol is being used by the
 client. If the detected protocol is not supported for that proxy port the
 connection is dropped.
+
+Support for NPN is deprecated, and it will be removed on a future release.
