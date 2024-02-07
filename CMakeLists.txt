@@ -113,6 +113,7 @@ auto_option(
   MagickCore
 )
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
+auto_option(IMAGEMAGIK PACKAGE_DEPENDS ImageMagick)
 
 # This creates the magic import target if necessary (older cmake)
 include(magick_target)
