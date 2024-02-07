@@ -17,6 +17,8 @@
 
 find_package(ImageMagick COMPONENTS Magick++)
 
-add_atsplugin(webp_transform ImageTransform.cc)
-target_link_libraries(webp_transform PRIVATE ImageMagick::Magick++ tscppapi)
-target_include_directories(webp_transform PRIVATE ${ImageMagick_INCLUDE_DIRS})
+if(ImageMagick_Magick++_INCLUDE_DIRS)
+  add_atsplugin(webp_transform ImageTransform.cc)
+  target_link_libraries(webp_transform PRIVATE ImageMagick::Magick++ tscppapi)
+  target_include_directories(webp_transform PRIVATE ${ImageMagick_Magick++_INCLUDE_DIRS})
+endif()
