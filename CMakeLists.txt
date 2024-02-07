@@ -106,6 +106,9 @@ auto_option(LUAJIT PACKAGE_DEPENDS luajit)
 auto_option(MAGICK COMPONENT Magick++ PACKAGE_DEPENDS ImageMagick)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
+# This creates the magic import target if necessary (older cmake)
+include(magick_target)
+
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
 option(ENABLE_FIPS "Enable fips compliance (default OFF)")
