@@ -2,23 +2,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Autoreconf",
-            "type": "shell",
-            "command": "autoreconf -if",
-            "problemMatcher": []
-        },
-        {
             "label": "Configure",
             "type": "shell",
-            "command": "mkdir ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}; cd ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}; ${workspaceFolder}/configure --prefix=${workspaceFolder}/target --enable-ccache --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror ${env:ATS_VSCODE_CONFIGURE}",
+            "command": "cmake --preset ${env:ATS_VSCODE_PRESET}",
             "dependsOrder": "sequence",
-            "dependsOn": ["Autoreconf"],
             "problemMatcher": []
         },
         {
             "label": "Build",
             "type": "shell",
-            "command": "make -j 16 -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
+            "command": "cmake --build --preset ${env:ATS_VSCODE_PRESET}",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -30,7 +23,7 @@
         {
             "label": "Install",
             "type": "shell",
-            "command": "make -j 16 install -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
+            "command": "cmake --install ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -38,7 +31,7 @@
         {
             "label": "Test",
             "type": "shell",
-            "command": "make -j 8 test -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
+            "command": "cmake --build --preset ${env:ATS_VSCODE_PRESET} --target test",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -50,7 +43,7 @@
         {
             "label": "Full Build",
             "dependsOrder": "sequence",
-            "dependsOn": ["Configure", "Build", "Install"],
+            "dependsOn": ["Configure", "Build", "Test", "Install"],
             "problemMatcher": [
                 "$gcc"
             ]

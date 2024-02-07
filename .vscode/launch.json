@@ -5,7 +5,7 @@
             "name": "(gdb) traffic_server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}/src/traffic_server/.libs/traffic_server",
+            "program": "${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}/src/traffic_server/traffic_server",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
