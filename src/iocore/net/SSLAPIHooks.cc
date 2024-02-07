@@ -22,11 +22,12 @@
  */
 
 #include "iocore/net/SSLAPIHooks.h"
+#include <memory>
 
-SSLAPIHooks *g_ssl_hooks = nullptr;
+std::unique_ptr<SSLAPIHooks> g_ssl_hooks;
 
 void
 init_global_ssl_hooks()
 {
-  g_ssl_hooks = new SSLAPIHooks;
+  g_ssl_hooks = std::make_unique<SSLAPIHooks>();
 }

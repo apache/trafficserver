@@ -27,6 +27,8 @@
 
 #include "ts/apidefs.h"
 
+#include <memory>
+
 class TSSslHookInternalID
 {
 public:
@@ -57,4 +59,4 @@ class SSLAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TSSslHookInterna
 // there is no corresponding deinit; we leak the resource on shutdown
 void init_global_ssl_hooks();
 
-extern SSLAPIHooks *g_ssl_hooks;
+extern std::unique_ptr<SSLAPIHooks> g_ssl_hooks;
