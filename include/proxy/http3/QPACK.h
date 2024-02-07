@@ -282,4 +282,7 @@ private:
   MIOBuffer *_decoder_stream_sending_instructions;
   IOBufferReader *_encoder_stream_sending_instructions_reader;
   IOBufferReader *_decoder_stream_sending_instructions_reader;
+
+  // Temporal buffer
+  Arena _arena;
 };

@@ -592,8 +592,6 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   p += len;
 
-  Arena arena;
-
   // Decode header field name
   if (index) {
     if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
@@ -603,7 +601,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     char *name_str        = nullptr;
     uint64_t name_str_len = 0;
 
-    len = xpack_decode_string(arena, &name_str, name_str_len, p, buf_end);
+    len = xpack_decode_string(indexing_table.arena, &name_str, name_str_len, p, buf_end);
     if (len == XPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
@@ -619,19 +617,21 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
     p += len;
     header.name_set(name_str, name_str_len);
+    indexing_table.arena.str_free(name_str);
   }
 
   // Decode header field value
   char *value_str        = nullptr;
   uint64_t value_str_len = 0;
 
-  len = xpack_decode_string(arena, &value_str, value_str_len, p, buf_end);
+  len = xpack_decode_string(indexing_table.arena, &value_str, value_str_len, p, buf_end);
   if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
   p += len;
   header.value_set(value_str, value_str_len);
+  indexing_table.arena.str_free(value_str);
 
   // Incremental Indexing adds header to header table as new entry
   if (isIncremental) {
