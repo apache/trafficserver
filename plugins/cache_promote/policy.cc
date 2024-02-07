@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include "swoc/bwf_base.h"
 #include "swoc/BufferWriter.h"
 #include "tscore/Random.h"
 #include "policy.h"
