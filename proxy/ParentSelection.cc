@@ -775,7 +775,7 @@ ParentRecord::Init(matcher_line *line_info)
             modulePrefix, line_num);
     delete unavailable_server_retry_responses;
     unavailable_server_retry_responses = nullptr;
-  } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+  } else if (unavailable_server_retry_responses == nullptr && parent_retry) {
     // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
     Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
@@ -787,7 +787,7 @@ ParentRecord::Init(matcher_line *line_info)
             line_num);
     delete simple_server_retry_responses;
     simple_server_retry_responses = nullptr;
-  } else if (simple_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_SIMPLE)) {
+  } else if (simple_server_retry_responses == nullptr && parent_retry) {
     // initialize simple server respones codes to the default value if simple_retry is enabled.
     Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
     simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
