@@ -453,6 +453,7 @@ XpackDynamicTable::is_empty() const
 uint32_t
 XpackDynamicTable::largest_index() const
 {
+  // This function can return a meaningful value only if there is at least one entry on the table.
   ink_assert(!this->is_empty());
   return this->_entries_inserted - 1;
 }

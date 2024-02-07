@@ -267,7 +267,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   }
   uint16_t largest_reference = tmp;
 
-  if (this->_dynamic_table.largest_index() < largest_reference) {
+  if (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference) {
     // Blocked
     if (this->_add_to_blocked_list(
           new DecodeRequest(largest_reference, thread, cont, stream_id, header_block, header_block_len, hdr))) {
