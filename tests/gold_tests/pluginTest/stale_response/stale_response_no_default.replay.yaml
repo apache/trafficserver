@@ -1,0 +1,175 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This replay file tests the stale response plugin when no
+# --stale-while-revalidate-default and no --stale-if-error-default are
+# specified.
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /pictures/stale.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, first-request ]
+
+    # Note: only a 1 second max-age.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, 100 ]
+        - [ Connection, keep-alive ]
+        - [ Cache-Control, max-age=1 ]
+        - [ X-Response, first-response ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Control, { value: max-age=1, as: equal } ]
+        - [ X-Response, { value: first-response, as: equal } ]
+
+  - client-request:
+
+      # Now age it out.
+      delay: 2s
+
+      method: GET
+      url: /pictures/stale.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, second-request ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, 100 ]
+        - [ Connection, keep-alive ]
+        # Note the stale-while-revalidate for the third response (not this).
+        # Also, verify that we can use comma separated directives.
+        - [ Cache-Control, "max-age=1, stale-while-revalidate=30" ]
+        - [ X-Response, second-response ]
+
+    # We better have gone back to the origin and gotten second-response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: second-response, as: equal } ]
+
+  - client-request:
+
+      # Now age it out, but expect stale-while-revalidate to override.
+      delay: 2s
+
+      method: GET
+      url: /pictures/stale.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, third-request ]
+
+    # We don't expect the request to go to the origin.
+    server-response:
+      status: 404
+      reason: Not Found
+      headers:
+        fields:
+        - [ X-Response, third-response ]
+
+    # Expect the stale second response because of stale-while-revalidate.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: second-response, as: equal } ]
+
+  # Test stale-if-error.
+  - client-request:
+
+      method: GET
+      url: /pictures/error.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, fourth-request ]
+
+    # Populate a cached response for error.jpeg with stale-if-error.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, 100 ]
+        - [ Connection, keep-alive ]
+        - [ Cache-Control, max-age=1 stale-if-error=30 ]
+        - [ X-Response, fourth-response ]
+
+    # We better have gone back to the origin and gotten second-response.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: fourth-response, as: equal } ]
+
+  # Now, age out the error.jpeg but reply with a 500. Expect the stale cached response.
+  - client-request:
+
+      delay: 2s
+
+      method: GET
+      url: /pictures/error.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, fifth-request ]
+
+    # Populate a cached response for error.jpeg with stale-if-error.
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [ X-Response, fifth-response ]
+
+    # Expect the stale response due to stale-if-error.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: fourth-response, as: equal } ]

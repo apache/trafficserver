@@ -189,6 +189,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Slice <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
+   Stale Response <stale_response.en>
    STEK Share <stek_share.en>
    System Statistics <system_stats.en>
    Wasm <wasm.en>
@@ -270,6 +271,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`SSL Headers <sslheaders.en>`
    Populate request headers with SSL session information.
+
+:doc:`Stale Response <stale_response.en>`
+    Implements handling of the ``stale-while-revalidate`` and ``stale-if-error``
+    ``Cache-Control`` directive extensions.
 
 :doc:`STEK Share <stek_share.en>`
     Coordinates STEK (Session Ticket Encryption Key) between ATS instances running in a group.
