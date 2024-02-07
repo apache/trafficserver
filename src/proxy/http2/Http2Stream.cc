@@ -803,15 +803,10 @@ Http2Stream::update_write_request(bool call_update)
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
       // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-      if (field) {
-        int len;
-        const char *value = field->value_get(&len);
-        if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
-          SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
-          if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
-          }
+      if (!this->_send_header.is_keep_alive_set()) {
+        SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
+        if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+          connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
         }
       }
 
