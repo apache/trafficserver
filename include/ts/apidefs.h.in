@@ -43,6 +43,7 @@
  */
 
 #include <cstdint>
+#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -1533,6 +1534,29 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
     TS_TXN_TYPE_EXPLICIT_TUNNEL,
     TS_TXN_TYPE_TR_PASS_TUNNEL,
   } TSTxnType;
+
+  /// Exposed for custom parent selection behavior.
+  ///
+  /// This can used in association with TS_EVENT_HTTP_OS_DNS.
+  /// Plugins may set this to indicate how to retry.
+  /// If handled false:
+  ///   then no plugin set it and Core will proceed to do its own thing.
+  /// If handled true:
+  ///   core will not do any parent processing, markdown, or anything else,
+  ///   but will use the values in this for whether to use the existing
+  ///   response or make another request
+  struct TSResponseAction {
+    char const *hostname; ///< host for next request (must be null terminated?)
+    size_t hostname_len;  ///< host len for next request (not including null)
+    in_port_t port;       ///< port for next request
+    bool fail;
+    bool is_retry;
+    bool nextHopExists;
+    bool responseIsRetryable;
+    bool goDirect;
+    bool parentIsProxy;
+    bool no_cache;
+  };
 
 } // end namespace c
 } // end namespace tsapi
