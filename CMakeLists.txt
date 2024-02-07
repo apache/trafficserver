@@ -246,6 +246,7 @@ if(LibLZMA_FOUND)
 endif()
 
 find_package(PCRE REQUIRED)
+find_package(PCRE2 COMPONENTS 8BIT)
 
 include(CheckOpenSSLIsBoringSSL)
 include(CheckOpenSSLIsQuictls)
