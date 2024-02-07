@@ -366,6 +366,7 @@ SSLConfigParams::initialize()
   if (clientALPNProtocols) {
     this->alpn_protocols_array_size = MAX_ALPN_STRING;
     convert_alpn_to_wire_format(clientALPNProtocols, this->alpn_protocols_array, this->alpn_protocols_array_size);
+    ats_free(clientALPNProtocols);
   }
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
