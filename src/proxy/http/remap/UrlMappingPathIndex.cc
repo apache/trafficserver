@@ -23,6 +23,13 @@
 
 #include "proxy/http/remap/UrlMappingPathIndex.h"
 
+namespace
+{
+DbgCtl dbg_ctl_UrlMappingPathIndex_Insert{"UrlMappingPathIndex::Insert"};
+DbgCtl dbg_ctl_UrlMappingPathIndex_Search{"UrlMappingPathIndex::Search"};
+
+} // end anonymous namespace
+
 UrlMappingPathIndex::~UrlMappingPathIndex()
 {
   for (auto &m_trie : m_tries) {
@@ -45,7 +52,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
   if (!trie) {
     trie = new UrlMappingTrie();
     m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(scheme_idx, port), trie));
-    Debug("UrlMappingPathIndex::Insert", "Created new trie for scheme index, port combo <%d, %d>", scheme_idx, port);
+    Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "Created new trie for scheme index, port combo <%d, %d>", scheme_idx, port);
   }
 
   from_path = mapping->fromURL.path_get(&from_path_len);
@@ -53,7 +60,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
     Error("Couldn't insert into trie!");
     return false;
   }
-  Debug("UrlMappingPathIndex::Insert", "Inserted new element!");
+  Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "Inserted new element!");
   return true;
 }
 
@@ -69,13 +76,13 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
 
   if (!trie) {
-    Debug("UrlMappingPathIndex::Search", "No mappings exist for scheme index, port combo <%d, %d>", scheme_idx, request_port);
+    Dbg(dbg_ctl_UrlMappingPathIndex_Search, "No mappings exist for scheme index, port combo <%d, %d>", scheme_idx, request_port);
     goto lFail;
   }
 
   path = request_url->path_get(&path_len);
   if (!(retval = trie->Search(path, path_len))) {
-    Debug("UrlMappingPathIndex::Search", "Couldn't find entry for url with path [%.*s]", path_len, path);
+    Dbg(dbg_ctl_UrlMappingPathIndex_Search, "Couldn't find entry for url with path [%.*s]", path_len, path);
     goto lFail;
   }
   return retval;

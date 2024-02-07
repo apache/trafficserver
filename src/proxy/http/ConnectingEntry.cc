@@ -22,8 +22,16 @@
 
  */
 
+#include "tsutil/DbgCtl.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"
+
+namespace
+{
+
+DbgCtl dbg_ctl_http_connect{"http_connect"};
+
+} // end anonymous namespace
 
 ConnectingEntry::~ConnectingEntry()
 {
@@ -36,7 +44,7 @@ ConnectingEntry::~ConnectingEntry()
 int
 ConnectingEntry::state_http_server_open(int event, void *data)
 {
-  Debug("http_connect", "entered inside ConnectingEntry::state_http_server_open");
+  Dbg(dbg_ctl_http_connect, "entered inside ConnectingEntry::state_http_server_open");
 
   switch (event) {
   case NET_EVENT_OPEN: {
@@ -44,7 +52,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(netvc);
     ink_release_assert(_pending_action == nullptr || _pending_action->continuation == vc->get_action()->continuation);
     _pending_action = nullptr;
-    Debug("http_connect", "ConnectingEntrysetting handler for connection handshake");
+    Dbg(dbg_ctl_http_connect, "ConnectingEntrysetting handler for connection handshake");
     // Just want to get a write-ready event so we know that the connection handshake is complete.
     // The buffer we create will be handed over to the eventually created server session
     _netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -68,7 +76,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
-    Debug("http_connect", "Kick off %zd state machines waiting for origin", connect_sms.size());
+    Dbg(dbg_ctl_http_connect, "Kick off %zd state machines waiting for origin", connect_sms.size());
     this->remove_entry();
     netvc->do_io_write(nullptr, 0, nullptr);
     if (!connect_sms.empty()) {
@@ -83,7 +91,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
       if (new_session->is_multiplexing()) {
         // Hand off to all queued up ConnectSM's.
         while (!connect_sms.empty()) {
-          Debug("http_connect", "ConnectingEntry Pass along CONNECT_EVENT_TXN %d", count++);
+          Dbg(dbg_ctl_http_connect, "ConnectingEntry Pass along CONNECT_EVENT_TXN %d", count++);
           auto entry = connect_sms.begin();
 
           SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
@@ -92,7 +100,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
         }
       } else {
         // Hand off to one and tell all of the others to connect directly
-        Debug("http_connect", "ConnectingEntry send CONNECT_EVENT_TXN to first %d", count++);
+        Dbg(dbg_ctl_http_connect, "ConnectingEntry send CONNECT_EVENT_TXN to first %d", count++);
         {
           SCOPED_MUTEX_LOCK(lock, (*prime_iter)->mutex, this_ethread());
           (*prime_iter)->handleEvent(CONNECT_EVENT_TXN, new_session);
@@ -100,7 +108,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
         }
         while (!connect_sms.empty()) {
           auto entry = connect_sms.begin();
-          Debug("http_connect", "ConnectingEntry Pass along CONNECT_EVENT_DIRECT %d", count++);
+          Dbg(dbg_ctl_http_connect, "ConnectingEntry Pass along CONNECT_EVENT_DIRECT %d", count++);
           SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
           (*entry)->handleEvent(CONNECT_EVENT_DIRECT, nullptr);
           connect_sms.erase(entry);
@@ -118,7 +126,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED: {
-    Debug("http_connect", "Stop %zd state machines waiting for failed origin", connect_sms.size());
+    Dbg(dbg_ctl_http_connect, "Stop %zd state machines waiting for failed origin", connect_sms.size());
     this->remove_entry();
     int vc_provided_cert = 0;
     int lerrno           = EIO;

@@ -36,6 +36,12 @@
 #include "proxy/http/HttpDebugNames.h"
 #include <iterator>
 
+namespace
+{
+DbgCtl dbg_ctl_http_ss{"http_ss"};
+
+} // end anonymous namespace
+
 // Initialize a thread to handle HTTP session management
 void
 initialize_thread_for_http_sessions(EThread *thread)
@@ -92,7 +98,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
       int len              = 0;
       const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
       retval               = strncasecmp(session_sni, req_host, len) == 0;
-      Debug("http_ss", "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
+      Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
     }
   }
   return retval;
@@ -108,8 +114,8 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_sni       = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
-    Debug("http_ss", "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
-          session_sni);
+    Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
+        session_sni);
     if (!session_sni || proposed_sni.length() == 0) {
       retval = session_sni == nullptr && proposed_sni.length() == 0;
     } else {
@@ -129,8 +135,8 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_cert       = netvc->options.ssl_client_cert_name;
     std::string_view proposed_cert = sm->get_outbound_cert();
-    Debug("http_ss", "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
-          session_cert);
+    Dbg(dbg_ctl_http_ss, "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
+        session_cert);
     if (!session_cert || proposed_cert.length() == 0) {
       retval = session_cert == nullptr && proposed_cert.length() == 0;
     } else {
@@ -148,7 +154,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
   to_return        = nullptr;
 
   if ((TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY & match_style) && !(TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style)) {
-    Debug("http_ss", "Search for host name only not IP.  Pool size %zu", m_fqdn_pool.count());
+    Dbg(dbg_ctl_http_ss, "Search for host name only not IP.  Pool size %zu", m_fqdn_pool.count());
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
     in_port_t port = ats_ip_port_cast(addr);
@@ -156,7 +162,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     auto iter      = std::make_reverse_iterator(range.end());
     auto const end = std::make_reverse_iterator(range.begin());
     while (iter != end) {
-      Debug("http_ss", "Compare port 0x%x against 0x%x", port, ats_ip_port_cast(iter->get_remote_addr()));
+      Dbg(dbg_ctl_http_ss, "Compare port 0x%x against 0x%x", port, ats_ip_port_cast(iter->get_remote_addr()));
       if (port == ats_ip_port_cast(iter->get_remote_addr()) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, iter->get_netvc())) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, iter->get_netvc())) &&
@@ -172,7 +178,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
         this->removeSession(to_return);
       }
     } else if (iter != end) {
-      Debug("http_ss", "Failed find entry due to name mismatch %s", sm->t_state.current.server->name);
+      Dbg(dbg_ctl_http_ss, "Failed find entry due to name mismatch %s", sm->t_state.current.server->name);
     }
   } else if (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style) { // matching is not disabled.
     auto range = m_ip_pool.equal_range(addr);
@@ -227,10 +233,10 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   // put it in the pools.
   this->addSession(ss);
 
-  Debug("http_ss",
-        "[%" PRId64 "] [release session] "
-        "session placed into shared pool",
-        ss->connection_id());
+  Dbg(dbg_ctl_http_ss,
+      "[%" PRId64 "] [release session] "
+      "session placed into shared pool",
+      ss->connection_id());
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -270,14 +276,14 @@ ServerSessionPool::eventHandler(int event, void *data)
       // origin, then reset the timeouts on our end and do not close the connection
       if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == PoolableSession::KA_POOLED &&
           s->conn_track_group) {
-        Debug("http_ss", "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->_min_keep_alive_conns);
+        Dbg(dbg_ctl_http_ss, "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->_min_keep_alive_conns);
         bool connection_count_below_min = s->conn_track_group->_count <= s->conn_track_group->_min_keep_alive_conns;
 
         if (connection_count_below_min) {
-          Debug("http_ss",
-                "[%" PRId64 "] [session_bucket] session received io notice [%s], "
-                "resetting timeout to maintain minimum number of connections",
-                s->connection_id(), HttpDebugNames::get_event_name(event));
+          Dbg(dbg_ctl_http_ss,
+              "[%" PRId64 "] [session_bucket] session received io notice [%s], "
+              "resetting timeout to maintain minimum number of connections",
+              s->connection_id(), HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
           found = true;
           break;
@@ -286,8 +292,8 @@ ServerSessionPool::eventHandler(int event, void *data)
 
       // We've found our server session. Remove it from
       //   our lists and close it down
-      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->connection_id(), s,
-            HttpDebugNames::get_event_name(event));
+      Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->connection_id(), s,
+          HttpDebugNames::get_event_name(event));
       ink_assert(s->state == PoolableSession::KA_POOLED);
       // Out of the pool! Now!
       this->removeSession(s);
@@ -362,17 +368,17 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
          ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
          ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
-      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
+      Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
       to_return->state = PoolableSession::SSN_IN_USE;
       sm->create_server_txn(to_return);
       return HSM_DONE;
     }
     // Release this session back to the main session pool and
     //   then continue looking for one from the shared pool
-    Debug("http_ss",
-          "[%" PRId64 "] [acquire session] "
-          "session not a match, returning to shared pool",
-          to_return->connection_id());
+    Dbg(dbg_ctl_http_ss,
+        "[%" PRId64 "] [acquire session] "
+        "session not a match, returning to shared pool",
+        to_return->connection_id());
     to_return->release(nullptr);
     to_return = nullptr;
   }
@@ -444,11 +450,11 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
       if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
         retval   = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         acquired = (HSM_DONE == retval);
-        Debug("http_ss", "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
+        Dbg(dbg_ctl_http_ss, "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
       } else {
         retval   = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         acquired = (HSM_DONE == retval);
-        Debug("http_ss", "[acquire session] global pool search %s", to_return ? "successful" : "failed");
+        Dbg(dbg_ctl_http_ss, "[acquire session] global pool search %s", to_return ? "successful" : "failed");
         // At this point to_return has been removed from the pool. Do we need to move it
         // to the same thread?
         if (to_return) {
@@ -486,12 +492,12 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 
     if (to_return) {
       if (sm->create_server_txn(to_return)) {
-        Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+        Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
         to_return->state = PoolableSession::SSN_IN_USE;
         retval           = HSM_DONE;
       } else {
-        Debug("http_ss", "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
-              to_return->connection_id());
+        Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
+            to_return->connection_id());
         // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
         if (!to_return->is_multiplexing()) {
           to_return->do_io_close();
@@ -530,8 +536,8 @@ HttpSessionManager::release_session(PoolableSession *to_release)
       to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
       return release_session(to_release);
     } else {
-      Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention",
-            to_release->connection_id());
+      Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [release session] could not release session due to lock contention",
+          to_release->connection_id());
       released_p = false;
     }
   }
@@ -549,16 +555,16 @@ ServerSessionPool::removeSession(PoolableSession *to_remove)
   EThread *ethread = this_ethread();
   SCOPED_MUTEX_LOCK(lock, mutex, ethread);
   char peer_ip[INET6_ADDRPORTSTRLEN];
-  if (is_debug_tag_set("http_ss")) {
+  if (dbg_ctl_http_ss.on()) {
     ats_ip_nptop(to_remove->get_remote_addr(), peer_ip, sizeof(peer_ip));
-    Debug("http_ss", "Remove session %p %s m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, peer_ip, m_fqdn_pool.count(),
-          m_ip_pool.count());
+    Dbg(dbg_ctl_http_ss, "Remove session %p %s m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, peer_ip, m_fqdn_pool.count(),
+        m_ip_pool.count());
   }
   m_fqdn_pool.erase(to_remove);
   m_ip_pool.erase(to_remove);
-  if (is_debug_tag_set("http_ss")) {
-    Debug("http_ss", "After Remove session %p m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, m_fqdn_pool.count(),
-          m_ip_pool.count());
+  if (dbg_ctl_http_ss.on()) {
+    Dbg(dbg_ctl_http_ss, "After Remove session %p m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, m_fqdn_pool.count(),
+        m_ip_pool.count());
   }
 }
 
@@ -571,9 +577,9 @@ ServerSessionPool::addSession(PoolableSession *ss)
   m_ip_pool.insert(ss);
   m_fqdn_pool.insert(ss);
 
-  if (is_debug_tag_set("http_ss")) {
+  if (dbg_ctl_http_ss.on()) {
     char peer_ip[INET6_ADDRPORTSTRLEN];
     ats_ip_nptop(ss->get_remote_addr(), peer_ip, sizeof(peer_ip));
-    Debug("http_ss", "[%" PRId64 "] [add session] session placed into shared pool under ip %s", ss->connection_id(), peer_ip);
+    Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [add session] session placed into shared pool under ip %s", ss->connection_id(), peer_ip);
   }
 }

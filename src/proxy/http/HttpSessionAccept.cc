@@ -26,6 +26,12 @@
 #include "proxy/http/Http1ClientSession.h"
 #include "iocore/utils/Machine.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http_seq{"http_seq"};
+
+} // end anonymous namespace
+
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
@@ -44,9 +50,9 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
     netvc->attributes = transport_type;
   }
 
-  if (is_debug_tag_set("http_seq")) {
-    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc,
-          ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+  if (dbg_ctl_http_seq.on()) {
+    Dbg(dbg_ctl_http_seq, "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc,
+        ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
   Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());

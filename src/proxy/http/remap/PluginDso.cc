@@ -34,7 +34,7 @@
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
-#define PluginDebug Debug
+#define PluginDbg   Dbg
 #define PluginError Error
 #endif
 
@@ -58,8 +58,8 @@ concat_error(std::string &error, const std::string &msg)
 PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
   : _configPath(configPath), _effectivePath(effectivePath), _runtimePath(runtimePath)
 {
-  PluginDebug(_tag, "PluginDso (%p) created _configPath: [%s] _effectivePath: [%s] _runtimePath: [%s]", this, _configPath.c_str(),
-              _effectivePath.c_str(), _runtimePath.c_str());
+  PluginDbg(_dbg_ctl(), "PluginDso (%p) created _configPath: [%s] _effectivePath: [%s] _runtimePath: [%s]", this,
+            _configPath.c_str(), _effectivePath.c_str(), _runtimePath.c_str());
 }
 
 PluginDso::~PluginDso()
@@ -80,14 +80,14 @@ PluginDso::load(std::string &error)
     return false;
   }
 
-  PluginDebug(_tag, "plugin '%s' started loading DSO", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "plugin '%s' started loading DSO", _configPath.c_str());
 
   /* Find plugin DSO looking through the search dirs */
   if (_effectivePath.empty()) {
     concat_error(error, "empty effective path");
     result = false;
   } else {
-    PluginDebug(_tag, "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
+    PluginDbg(_dbg_ctl(), "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
 
     /* Copy the installed plugin DSO to a runtime directory if dynamic reload enabled */
     std::error_code ec;
@@ -96,12 +96,12 @@ PluginDso::load(std::string &error)
       concat_error(error, ec.message());
       result = false;
     } else {
-      PluginDebug(_tag, "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
+      PluginDbg(_dbg_ctl(), "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
 
       /* Save the time for later checking if DSO got modified in consecutive DSO reloads */
       std::error_code ec;
       _mtime = fs::last_write_time(_effectivePath, ec);
-      PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
+      PluginDbg(_dbg_ctl(), "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
 
       /* Now attempt to load the plugin DSO */
 #if defined(darwin)
@@ -125,7 +125,7 @@ PluginDso::load(std::string &error)
       clean(error);
     }
   }
-  PluginDebug(_tag, "plugin '%s' finished loading DSO", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "plugin '%s' finished loading DSO", _configPath.c_str());
 
   return result;
 }
@@ -267,15 +267,15 @@ void
 PluginDso::acquire()
 {
   this->refcount_inc();
-  PluginDebug(_tag, "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
+  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
 }
 
 void
 PluginDso::release()
 {
-  PluginDebug(_tag, "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
+  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
   if (0 == this->refcount_dec()) {
-    PluginDebug(_tag, "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
+    PluginDbg(_dbg_ctl(), "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
     _plugins->remove(this);
   }
 }
@@ -284,14 +284,14 @@ void
 PluginDso::incInstanceCount()
 {
   _instanceCount.refcount_inc();
-  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
 }
 
 void
 PluginDso::decInstanceCount()
 {
   _instanceCount.refcount_dec();
-  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
 }
 
 int
@@ -352,8 +352,8 @@ PluginDso::LoadedPlugins::indicatePreReload(const char *factoryId)
 {
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
 
-  PluginDebug(_tag, "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", factoryId, _list.count(),
-              _list.count() != 1 ? "s" : "");
+  PluginDbg(_dbg_ctl(), "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+            _list.count() != 1 ? "s" : "");
 
   _list.apply([](PluginDso &plugin) -> void { plugin.indicatePreReload(); });
 }
@@ -364,8 +364,8 @@ PluginDso::LoadedPlugins::indicatePostReload(bool reloadSuccessful, const std::u
 {
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
 
-  PluginDebug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", factoryId, _list.count(),
-              _list.count() != 1 ? "s" : "");
+  PluginDbg(_dbg_ctl(), "indicated config is done reloading by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+            _list.count() != 1 ? "s" : "");
 
   for (auto &plugin : _list) {
     TSRemapReloadStatus status = TSREMAP_CONFIG_RELOAD_FAILURE;

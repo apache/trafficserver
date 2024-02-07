@@ -89,8 +89,8 @@ public:
 using GetPluginDebugObjectFunction = void *();
 extern "C" GetPluginDebugObjectFunction getPluginDebugObjectTest;
 
-#define PluginDebug(category, fmt, ...) \
-  PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", category, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define PluginDbg(dbg_ctl, fmt, ...) \
+  PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", (dbg_ctl).tag(), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define PluginError(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 void PrintToStdErr(const char *fmt, ...);
 

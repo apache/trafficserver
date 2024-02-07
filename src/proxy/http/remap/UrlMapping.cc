@@ -27,6 +27,12 @@
 #include "records/RecCore.h"
 #include "tscore/ink_cap.h"
 
+namespace
+{
+DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+
+} // end anonymous namespace
+
 /**
  *
  **/
@@ -43,7 +49,7 @@ url_mapping::add_plugin_instance(RemapPluginInst *i)
 RemapPluginInst *
 url_mapping::get_plugin_instance(std::size_t index) const
 {
-  Debug("url_rewrite", "get_plugin says we have %zu plugins and asking for plugin %zu", _plugin_inst_list.size(), index);
+  Dbg(dbg_ctl_url_rewrite, "get_plugin says we have %zu plugins and asking for plugin %zu", _plugin_inst_list.size(), index);
   if (index < _plugin_inst_list.size()) {
     return _plugin_inst_list[index];
   }
