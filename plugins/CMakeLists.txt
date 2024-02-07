@@ -45,6 +45,8 @@ add_subdirectory(tcpinfo)
 add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
 
+# add_subdirectory(webp_transform)
+
 if(NOT OPENSSL_IS_BORINGSSL)
   add_subdirectory(ja3_fingerprint)
 endif()

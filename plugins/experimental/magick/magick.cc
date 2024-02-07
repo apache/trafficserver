@@ -491,8 +491,8 @@ struct ImageTransform : TransformationPlugin {
       wand.readBlob(this->blob_);
       wand.write("mpr:b");
 
-      const bool result = MagickCommandGenesis(image.info, ConvertImageCommand, this->argumentMap_.size(),
-                                               this->argumentMap_.data(), nullptr, exception.info) == MagickTrue;
+      MagickCommandGenesis(image.info, ConvertImageCommand, this->argumentMap_.size(), this->argumentMap_.data(), nullptr,
+                           exception.info);
 
       wand.clear();
       wand.read("mpr:a");
