@@ -25,6 +25,18 @@ function(add_atsplugin name)
   install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
 endfunction()
 
+function(verify_remap_plugin target)
+  add_test(NAME verify_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                         "verify_remap_plugin $<TARGET_FILE:${target}>"
+  )
+endfunction()
+
+function(verify_global_plugin target)
+  add_test(NAME verify_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                         "verify_global_plugin $<TARGET_FILE:${target}>"
+  )
+endfunction()
+
 if(APPLE)
   set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
 endif()
