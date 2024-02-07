@@ -225,7 +225,7 @@ XpackDynamicTable::XpackDynamicTable(uint32_t size) : _maximum_size(size), _avai
 XpackDynamicTable::~XpackDynamicTable()
 {
   if (this->_entries) {
-    delete this->_entries;
+    ats_free(this->_entries);
     this->_entries = nullptr;
   }
 }
