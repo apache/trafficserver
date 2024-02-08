@@ -61,6 +61,6 @@ if(HOST_OS STREQUAL "linux")
   add_subdirectory(healthchecks)
 endif()
 
-if(USE_IMAGEMAGIK)
+if(USE_MAGICK)
   add_subdirectory(webp_transform)
 endif()
