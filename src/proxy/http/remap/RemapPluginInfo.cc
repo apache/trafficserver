@@ -38,6 +38,8 @@
 #define PluginError Error
 #endif
 
+using namespace tsapi::c;
+
 /**
  * @brief helper function that returns the function address from the plugin DSO
  *

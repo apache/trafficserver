@@ -51,7 +51,7 @@ public:
   /// Remove all hooks.
   void clear();
   /// Add the hook @a cont to the end of the hooks for @a id.
-  void append(ID id, INKContInternal *cont);
+  void append(ID id, tsapi::c::INKContInternal *cont);
   /// Get the list of hooks for @a id.
   APIHook *get(ID id) const;
   /// @return @c true if @a id is a valid id, @c false otherwise.
@@ -108,7 +108,7 @@ FeatureAPIHooks<ID, N>::clear()
 
 template <typename ID, int N>
 void
-FeatureAPIHooks<ID, N>::append(ID id, INKContInternal *cont)
+FeatureAPIHooks<ID, N>::append(ID id, tsapi::c::INKContInternal *cont)
 {
   if (is_valid(id)) {
     m_hooks_p = true;

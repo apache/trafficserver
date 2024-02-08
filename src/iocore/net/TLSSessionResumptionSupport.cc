@@ -37,6 +37,8 @@
 #include "api/InkAPIInternal.h"
 #include "tscore/ink_config.h"
 
+using namespace tsapi::c;
+
 // Remove this when drop OpenSSL 1.0.2 support
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256

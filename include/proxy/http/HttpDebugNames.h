@@ -32,11 +32,11 @@ public:
   static const char *get_action_name(HttpTransact::StateMachineAction_t e);
   static const char *get_method_name(const char *method);
   static const char *get_cache_action_name(HttpTransact::CacheAction_t t);
-  static const char *get_api_hook_name(TSHttpHookID t);
+  static const char *get_api_hook_name(tsapi::c::TSHttpHookID t);
   static const char *get_server_state_name(HttpTransact::ServerState_t state);
 };
 
 swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, HttpTransact::ServerState_t state);
 swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, HttpTransact::CacheAction_t state);
 swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, HttpTransact::StateMachineAction_t state);
-swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, TSHttpHookID id);
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, tsapi::c::TSHttpHookID id);

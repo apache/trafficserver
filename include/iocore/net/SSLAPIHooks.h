@@ -30,7 +30,7 @@
 class TSSslHookInternalID
 {
 public:
-  explicit constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
+  explicit constexpr TSSslHookInternalID(tsapi::c::TSHttpHookID id) : _id(id - tsapi::c::TS_SSL_FIRST_HOOK) {}
 
   constexpr
   operator int() const
@@ -38,7 +38,7 @@ public:
     return _id;
   }
 
-  static const int NUM = TS_SSL_LAST_HOOK - TS_SSL_FIRST_HOOK + 1;
+  static const int NUM = tsapi::c::TS_SSL_LAST_HOOK - tsapi::c::TS_SSL_FIRST_HOOK + 1;
 
   constexpr bool
   is_in_bounds() const

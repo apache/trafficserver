@@ -27,6 +27,7 @@
 
 using namespace atscppapi;
 using std::string;
+using namespace tsapi::c;
 
 /**
  * @private

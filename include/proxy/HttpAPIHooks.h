@@ -27,7 +27,7 @@
 
 #include "ts/apidefs.h"
 
-class HttpAPIHooks : public FeatureAPIHooks<TSHttpHookID, TS_HTTP_LAST_HOOK>
+class HttpAPIHooks : public FeatureAPIHooks<tsapi::c::TSHttpHookID, tsapi::c::TS_HTTP_LAST_HOOK>
 {
 };
 

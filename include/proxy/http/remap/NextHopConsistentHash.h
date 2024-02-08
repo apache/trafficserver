@@ -53,7 +53,7 @@ public:
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n);
   ~NextHopConsistentHash();
 
-  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
+  void findNextHop(tsapi::c::TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
   std::shared_ptr<HostRecord> chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring, ParentResult &result,
                                           HttpRequestData &request_info, bool *wrapped, uint64_t sm_id);
 };

@@ -47,7 +47,7 @@ hash_combine(uint64_t &seed, uint64_t hash)
   seed ^= hash + 0x9E3779B97F4A7C15 + (seed << 6) + (seed >> 2);
 }
 
-struct SSLSessionID : public TSSslSessionID {
+struct SSLSessionID : public tsapi::c::TSSslSessionID {
   SSLSessionID(const unsigned char *s, size_t l)
   {
     len = l;

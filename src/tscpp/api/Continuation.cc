@@ -22,6 +22,8 @@
 
 #include "tscpp/api/Continuation.h"
 
+using namespace tsapi::c;
+
 namespace atscppapi
 {
 int

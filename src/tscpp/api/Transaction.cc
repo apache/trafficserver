@@ -36,6 +36,7 @@
 using std::map;
 using std::string;
 using namespace atscppapi;
+using namespace tsapi::c;
 
 /**
  * @private

@@ -26,6 +26,8 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_uuid.h"
 
+using namespace tsapi::c;
+
 void
 ATSUuid::initialize(TSUuidVersion v)
 {

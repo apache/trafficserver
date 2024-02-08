@@ -48,6 +48,8 @@
 #include "proxy/IPAllow.h"
 #include "iocore/utils/Machine.h"
 
+using namespace tsapi::c;
+
 DbgCtl HttpTransact::State::_dbg_ctl{"http"};
 
 namespace

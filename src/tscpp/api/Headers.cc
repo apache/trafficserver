@@ -36,6 +36,8 @@ using atscppapi::HeaderFieldName;
 using atscppapi::header_field_iterator;
 using atscppapi::header_field_value_iterator;
 
+using namespace tsapi::c;
+
 using std::string;
 
 namespace atscppapi

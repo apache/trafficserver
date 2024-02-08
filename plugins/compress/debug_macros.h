@@ -31,6 +31,7 @@ namespace compress_ns
 {
 extern DbgCtl dbg_ctl;
 }
+using namespace compress_ns;
 
 #define debug(fmt, args...)                                                                          \
   do {                                                                                               \

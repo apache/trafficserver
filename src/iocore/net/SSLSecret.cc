@@ -27,6 +27,8 @@
 
 #include <utility>
 
+using namespace tsapi::c;
+
 namespace
 {
 

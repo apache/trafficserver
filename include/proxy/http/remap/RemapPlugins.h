@@ -56,7 +56,7 @@ struct RemapPlugins : public Continuation {
   }
 
   bool run_single_remap();
-  TSRemapStatus run_plugin(RemapPluginInst *plugin);
+  tsapi::c::TSRemapStatus run_plugin(RemapPluginInst *plugin);
 
   Action action;
 

@@ -129,7 +129,7 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->_handle_if_ssl(new_vc);
 
-  do_api_callout(TS_HTTP_SSN_START_HOOK);
+  do_api_callout(tsapi::c::TS_HTTP_SSN_START_HOOK);
 
   this->add_session();
 }

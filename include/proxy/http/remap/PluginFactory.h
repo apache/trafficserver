@@ -52,8 +52,8 @@ public:
   void done();
 
   /* Used by the traffic server core while processing requests */
-  TSRemapStatus doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri);
-  void osResponse(TSHttpTxn rh, int os_response_type);
+  tsapi::c::TSRemapStatus doRemap(tsapi::c::TSHttpTxn rh, tsapi::c::TSRemapRequestInfo *rri);
+  void osResponse(tsapi::c::TSHttpTxn rh, int os_response_type);
 
   /* List used by the plugin factory */
   using self_type  = RemapPluginInst; ///< Self reference type.

@@ -36,6 +36,7 @@
 #include "logging_internal.h"
 
 using namespace atscppapi;
+using namespace tsapi::c;
 
 namespace
 {

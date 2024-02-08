@@ -53,7 +53,8 @@ public:
   }
 
   void
-  init(Continuation *cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char *headers, int length, sockaddr const *addr)
+  init(Continuation *cont, tsapi::c::TSFetchWakeUpOptions options, tsapi::c::TSFetchEvent events, const char *headers, int length,
+       sockaddr const *addr)
   {
     Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
     init_comm();
@@ -89,8 +90,8 @@ public:
   void get_info_from_buffer(IOBufferReader *reader);
   char *resp_get(int *length);
 
-  TSMBuffer resp_hdr_bufp();
-  TSMLoc resp_hdr_mloc();
+  tsapi::c::TSMBuffer resp_hdr_bufp();
+  tsapi::c::TSMLoc resp_hdr_mloc();
 
   //
   // Extended APIs for FetchSM
@@ -159,13 +160,13 @@ private:
   HTTPParser http_parser;
   HTTPHdr client_response_hdr;
   ChunkedHandler chunked_handler;
-  TSFetchEvent callback_events;
-  TSFetchWakeUpOptions callback_options = NO_CALLBACK;
-  bool req_finished                     = false;
-  bool header_done                      = false;
-  bool is_method_head                   = false;
-  bool is_internal_request              = true;
-  bool destroyed                        = false;
+  tsapi::c::TSFetchEvent callback_events;
+  tsapi::c::TSFetchWakeUpOptions callback_options = tsapi::c::NO_CALLBACK;
+  bool req_finished                               = false;
+  bool header_done                                = false;
+  bool is_method_head                             = false;
+  bool is_internal_request                        = true;
+  bool destroyed                                  = false;
   IpEndpoint _addr;
   int resp_is_chunked            = -1;
   int resp_received_close        = -1;

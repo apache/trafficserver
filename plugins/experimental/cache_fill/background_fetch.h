@@ -48,7 +48,6 @@ namespace cache_fill_ns
 extern DbgCtl dbg_ctl;
 }
 using namespace cache_fill_ns;
-
 class BgFetchState
 {
 public:

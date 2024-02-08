@@ -142,7 +142,7 @@ protected:
 private:
   TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
   size_t doProduce(std::string_view);
-  static int resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
+  static int resumeCallback(tsapi::c::TSCont cont, tsapi::c::TSEvent event, void *edata); /** Resume callback*/
 };
 
 } // namespace atscppapi

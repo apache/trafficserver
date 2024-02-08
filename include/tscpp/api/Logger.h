@@ -108,11 +108,11 @@ namespace c
  * will also output a DEBUG message visible via traffic_server -T "tag.*", or by enabling the
  * tag in records.yaml.
  */
-#define TS_ERROR(tag, fmt, ...)                                                               \
-  do {                                                                                        \
-    DbgCtl dc{tag};                                                                           \
-    Dbg(dc, "[ERROR] " fmt, ##__VA_ARGS__);                                                   \
-    TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+#define TS_ERROR(tag, fmt, ...)                                                                         \
+  do {                                                                                                  \
+    DbgCtl dc{tag};                                                                                     \
+    Dbg(dc, "[ERROR] " fmt, ##__VA_ARGS__);                                                             \
+    tsapi::c::TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 namespace atscppapi

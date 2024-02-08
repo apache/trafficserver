@@ -34,6 +34,7 @@
 #include "iocore/net/PollCont.h"
 
 using namespace std::literals;
+using namespace tsapi::c;
 
 std::atomic<uint32_t> NetHandler::additional_accepts{0};
 std::atomic<uint32_t> NetHandler::per_client_max_connections_in{0};

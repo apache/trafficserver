@@ -92,6 +92,8 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
+using namespace tsapi::c;
+
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
 SessionProtocolSet HTTP2_PROTOCOL_SET;

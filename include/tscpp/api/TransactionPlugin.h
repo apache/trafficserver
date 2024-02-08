@@ -120,7 +120,7 @@ protected:
    */
   std::shared_ptr<Mutex> getMutex();
 
-  std::shared_ptr<Mutex> getMutex(TSHttpTxn);
+  std::shared_ptr<Mutex> getMutex(tsapi::c::TSHttpTxn);
 
 private:
   TransactionPluginState *state_; /**< The internal state for a TransactionPlugin */

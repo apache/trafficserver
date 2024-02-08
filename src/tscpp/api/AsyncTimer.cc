@@ -24,6 +24,7 @@
 #include "logging_internal.h"
 
 using namespace atscppapi;
+using namespace tsapi::c;
 
 struct atscppapi::AsyncTimerState {
   TSCont cont_ = nullptr;

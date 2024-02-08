@@ -32,9 +32,9 @@ namespace atscppapi
 class Continuation
 {
 public:
-  using Mutex = TSMutex;
+  using Mutex = tsapi::c::TSMutex;
 
-  using Action = TSAction;
+  using Action = tsapi::c::TSAction;
 
   // Create continuation, mutexp may be nullptr.
   //
@@ -47,7 +47,7 @@ public:
   //
   Continuation() {}
 
-  TSCont
+  tsapi::c::TSCont
   asTSCont() const
   {
     return _cont;
@@ -109,7 +109,7 @@ public:
   }
 
   int
-  call(TSEvent event, void *edata = nullptr)
+  call(tsapi::c::TSEvent event, void *edata = nullptr)
   {
     return TSContCall(_cont, event, edata);
   }
@@ -117,7 +117,7 @@ public:
   // Timeout of zero means no timeout.
   //
   Action
-  schedule(TSHRTime timeout = 0, TSThreadPool tp = TS_THREAD_POOL_NET)
+  schedule(tsapi::c::TSHRTime timeout = 0, tsapi::c::TSThreadPool tp = tsapi::c::TS_THREAD_POOL_NET)
   {
     return TSContScheduleOnPool(_cont, timeout, tp);
   }
@@ -125,13 +125,13 @@ public:
   // Timeout of zero means no timeout.
   //
   Action
-  httpSchedule(TSHttpTxn httpTransactionp, TSHRTime timeout = 0)
+  httpSchedule(tsapi::c::TSHttpTxn httpTransactionp, tsapi::c::TSHRTime timeout = 0)
   {
     return TSHttpSchedule(_cont, httpTransactionp, timeout);
   }
 
   Action
-  scheduleEvery(TSHRTime interval /* milliseconds */, TSThreadPool tp = TS_THREAD_POOL_NET)
+  scheduleEvery(tsapi::c::TSHRTime interval /* milliseconds */, tsapi::c::TSThreadPool tp = tsapi::c::TS_THREAD_POOL_NET)
   {
     return TSContScheduleEveryOnPool(_cont, interval, tp);
   }
@@ -139,13 +139,13 @@ public:
 protected:
   // Distinct continuation behavior is achieved by overriding this function in a derived continuation type.
   //
-  virtual int _run(TSEvent event, void *edata) = 0;
+  virtual int _run(tsapi::c::TSEvent event, void *edata) = 0;
 
   // This is the event function for all continuations in C++ plugins.
   //
-  static int _generalEventFunc(TSCont cont, TSEvent event, void *edata);
+  static int _generalEventFunc(tsapi::c::TSCont cont, tsapi::c::TSEvent event, void *edata);
 
-  TSCont _cont = nullptr;
+  tsapi::c::TSCont _cont = nullptr;
 };
 
 } // end namespace atscppapi

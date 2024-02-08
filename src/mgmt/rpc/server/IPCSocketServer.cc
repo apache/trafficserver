@@ -44,6 +44,8 @@
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "mgmt/rpc/server/IPCSocketServer.h"
 
+using namespace tsapi::c;
+
 namespace
 {
 constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};

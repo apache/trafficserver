@@ -31,3 +31,4 @@ constexpr char debug_tag[] = "traffic_dump";
 
 extern DbgCtl dbg_ctl;
 } // namespace traffic_dump
+using namespace traffic_dump;

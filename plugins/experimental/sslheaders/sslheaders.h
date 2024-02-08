@@ -33,6 +33,7 @@ namespace sslheaders_ns
 {
 extern DbgCtl dbg_ctl;
 }
+using namespace sslheaders_ns;
 
 #define SslHdrDebug(fmt, ...) Dbg(sslheaders_ns::dbg_ctl, "%s: " fmt, __func__, ##__VA_ARGS__)
 #define SslHdrError(fmt, ...)  \

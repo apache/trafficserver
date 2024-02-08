@@ -24,6 +24,8 @@
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
 
+using namespace tsapi::c;
+
 namespace
 {
 DbgCtl dbg_ctl_parent_select{"parent_select"};

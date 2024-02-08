@@ -36,6 +36,8 @@
 #include "tscore/InkErrno.h"
 #include "tscore/ink_time.h"
 
+using namespace tsapi::c;
+
 /**
   Find the pointer and length of an etag, after stripping off any leading
   "W/" prefix, and surrounding double quotes.

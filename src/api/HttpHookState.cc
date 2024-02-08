@@ -23,6 +23,8 @@
 
 #include "api/InkAPIInternal.h"
 
+using namespace tsapi::c;
+
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
 {
