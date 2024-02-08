@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(tcpinfo tcpinfo.cc)
+verify_global_plugin(tcpinfo)

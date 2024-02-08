@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(generator generator.cc)
+verify_global_plugin(generator)

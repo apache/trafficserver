@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(custom_redirect custom_redirect.cc)
+verify_global_plugin(custom_redirect)

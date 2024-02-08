@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(hook-trace hook-trace.cc)
+verify_global_plugin(hook-trace)

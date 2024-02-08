@@ -18,3 +18,4 @@
 add_atsplugin(remap_stats remap_stats.cc)
 
 target_link_libraries(remap_stats PRIVATE ts::tscore)
+verify_global_plugin(remap_stats)

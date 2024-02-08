@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(healthchecks healthchecks.cc)
+verify_global_plugin(healthchecks)

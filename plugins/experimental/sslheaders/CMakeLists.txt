@@ -26,3 +26,4 @@ endif()
 
 add_atsplugin(sslheaders sslheaders.cc)
 target_link_libraries(sslheaders PRIVATE sslhdr OpenSSL::SSL)
+verify_global_plugin(sslheaders)

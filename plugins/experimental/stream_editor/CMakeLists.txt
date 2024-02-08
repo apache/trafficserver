@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(stream_editor stream_editor.cc)
+verify_global_plugin(stream_editor)

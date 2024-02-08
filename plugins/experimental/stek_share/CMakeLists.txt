@@ -21,6 +21,8 @@ if(nuraft_FOUND)
   target_link_libraries(stek_share PRIVATE nuraft::nuraft OpenSSL::SSL yaml-cpp::yaml-cpp)
 else()
   message(STATUS "skipping stek_share plugin (missing nuraft)")
+
+  verify_global_plugin(stek_share)
 endif()
 
 # This was added by add_atsplugin, but one of the modules above must be overriding it.

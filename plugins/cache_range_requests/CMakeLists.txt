@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(cache_range_requests cache_range_requests.cc)
+verify_global_plugin(cache_range_requests)

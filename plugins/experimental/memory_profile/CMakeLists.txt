@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(memory_profile memory_profile.cc)
+verify_global_plugin(memory_profile)

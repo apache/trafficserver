@@ -18,3 +18,4 @@
 add_atsplugin(regex_revalidate regex_revalidate.cc)
 
 target_link_libraries(regex_revalidate PRIVATE PCRE::PCRE)
+verify_global_plugin(regex_revalidate)

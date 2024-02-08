@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(icap_plugin icap_plugin.cc)
+verify_global_plugin(icap_plugin)

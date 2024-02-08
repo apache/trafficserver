@@ -18,3 +18,4 @@
 add_atsplugin(ja3_fingerprint ja3_fingerprint.cc)
 
 target_link_libraries(ja3_fingerprint PRIVATE OpenSSL::SSL)
+verify_global_plugin(ja3_fingerprint)

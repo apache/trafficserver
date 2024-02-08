@@ -24,3 +24,5 @@ target_include_directories(
   memcache PRIVATE $<TARGET_PROPERTY:ts::inkevent,INCLUDE_DIRECTORIES>
                    $<TARGET_PROPERTY:ts::inknet,INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:PCRE::PCRE,INCLUDE_DIRECTORIES>
 )
+# This fails on OSX for this symbol: VConnection::set_continuation(VIO *, Continuation *)
+#verify_global_plugin(memcache)

@@ -1178,14 +1178,14 @@ static const struct CMD {
    "FORMAT: verify_global_plugin [global_plugin_so_file]\n"
    "\n"
    "Load a global plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",                              cmd_verify_global_plugin, false},
+   "minimal plugin API requirements. \n",                              cmd_verify_global_plugin, true },
   {"verify_remap_plugin",  "Verify a remap plugin's shared object file",
    "VERIFY_REMAP_PLUGIN\n"
    "\n"
    "FORMAT: verify_remap_plugin [remap_plugin_so_file]\n"
    "\n"
    "Load a remap plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",                              cmd_verify_remap_plugin,  false},
+   "minimal plugin API requirements. \n",                              cmd_verify_remap_plugin,  true },
   {"help",                 "Obtain a short description of a command (e.g. 'help clear')",
    "HELP\n"
    "\n"

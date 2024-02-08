@@ -18,3 +18,4 @@
 add_atsplugin(server_push_preload server_push_preload.cc)
 
 target_link_libraries(server_push_preload PRIVATE ts::tscppapi)
+verify_global_plugin(server_push_preload)
