@@ -17,4 +17,5 @@
 
 add_atsplugin(webp_transform ImageTransform.cc)
 target_link_libraries(webp_transform PRIVATE ImageMagick::Magick++ tscppapi)
-target_include_directories(webp_transform PRIVATE ${ImageMagick_Magick++_INCLUDE_DIRS})
+
+verify_global_plugin(webp_transform)
