@@ -53,6 +53,26 @@ macro(_CHECK_PACKAGE_DEPENDS _OPTION_VAR _PACKAGE_DEPENDS _FEATURE_VAR)
   endforeach()
 endmacro()
 
+macro(_CHECK_PACKAGE_DEPENDS_COMPONENTS _OPTION_VAR PACKAGE_NAME _FEATURE_VAR)
+  if(${${_OPTION_VAR}} STREQUAL AUTO)
+    set(STRICTNESS)
+  else()
+    set(STRICTNESS REQUIRED)
+  endif()
+
+  foreach(C ${ARGN})
+    list(APPEND FCOMPONENTS ${C})
+  endforeach()
+
+  find_package(${PACKAGE_NAME} COMPONENTS ${FCOMPONENTS} ${STRICTNESS})
+  foreach(COMPONENT ${FCOMPONENTS})
+    if(NOT ${PACKAGE_NAME}_${COMPONENT}_FOUND)
+      set(${_FEATURE_VAR} FALSE)
+      break()
+    endif()
+  endforeach()
+endmacro()
+
 macro(_CHECK_HEADER_DEPENDS _OPTION_VAR _HEADER_DEPENDS _FEATURE_VAR)
   foreach(HEADER_NAME ${_HEADER_DEPENDS})
     check_include_file(${HEADER_NAME} HEADER_FOUND)
@@ -68,6 +88,7 @@ endmacro()
 #   [DEFAULT <default>]
 #   [FEATURE_VAR <feature_var>]
 #   [WITH_SUBDIRECTORY <name>]
+#   [COMPONENT <component>]
 #   [PACKAGE_DEPENDS <package_one> <package_two> ...]
 #   [HEADER_DEPENDS <header_one> <header_two> ...]
 # )
@@ -102,13 +123,16 @@ endmacro()
 # WITH_SUBDIRECTORY is an optional subdirectory that should be added if the
 # feature is enabled.
 #
+# COMPONENT check for a component of the package. Currently this only works if
+# specifying a single package in PACKAGE_DEPENDS
+#
 # PACKAGE_DEPENDS is a list of packages that are required for the feature.
 #
 # HEADER_DEPENDS is a list of headers that are required for the feature.
 #
 macro(auto_option _FEATURE_NAME)
   cmake_parse_arguments(
-    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR;WITH_SUBDIRECTORY" "PACKAGE_DEPENDS;HEADER_DEPENDS" ${ARGN}
+    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR;WITH_SUBDIRECTORY" "PACKAGE_DEPENDS;HEADER_DEPENDS;COMPONENTS" ${ARGN}
   )
 
   set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
@@ -132,7 +156,11 @@ macro(auto_option _FEATURE_NAME)
 
   if(${${OPTION_VAR}} MATCHES "(ON)|(AUTO)|(TRUE)|(1)")
     set(${FEATURE_VAR} TRUE)
-    _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
+    if(ARG_COMPONENTS)
+      _check_package_depends_components(${OPTION_VAR} ${ARG_PACKAGE_DEPENDS} ${FEATURE_VAR} ${ARG_COMPONENTS})
+    else()
+      _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
+    endif()
     _check_header_depends(${OPTION_VAR} "${ARG_HEADER_DEPENDS}" ${FEATURE_VAR})
   else()
     set(${FEATURE_VAR} FALSE)

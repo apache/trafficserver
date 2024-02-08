@@ -103,7 +103,19 @@ auto_option(
   "sys/prctl.h"
 )
 auto_option(LUAJIT PACKAGE_DEPENDS luajit)
+auto_option(
+  MAGICK
+  PACKAGE_DEPENDS
+  ImageMagick
+  COMPONENTS
+  Magick++
+  MagickWand
+  MagickCore
+)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
+
+# This creates the magic import target if necessary (older cmake)
+include(magick_target)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
