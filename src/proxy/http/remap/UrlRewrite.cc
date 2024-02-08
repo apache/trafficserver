@@ -434,47 +434,49 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         method_matches = true;
       }
 
+      bool ip_matches = true;
       // Is there a @src_ip specified? If so, check it.
-      bool ip_matches = false;
       if (rp->src_ip_valid) {
-        ip_matches = false;
-        for (int j = 0; j < rp->src_ip_cnt && !ip_matches; j++) {
+        bool src_ip_matches = false;
+        for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
           bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
           if (rp->src_ip_array[j].invert) {
             if (!in_range) {
-              ip_matches = true;
+              src_ip_matches = true;
             }
           } else {
             if (in_range) {
-              ip_matches = true;
+              src_ip_matches = true;
             }
           }
         }
+        Debug("url_rewrite", "Checked the specified src_ip, result: %s", src_ip_matches ? "true" : "false");
+        ip_matches &= src_ip_matches;
       }
 
       // Is there a @src_ip_category specified? If so, check it.
       if (ip_matches && rp->src_ip_category_valid) {
-        Debug("url_rewrite", "src_ip match was true and we have specified an src_ip_category field");
-        ip_matches = false;
-        for (int j = 0; j < rp->src_ip_category_cnt && !ip_matches; j++) {
+        bool category_ip_matches = false;
+        for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
           bool in_category = rp->src_ip_category_array[j].contains(s->client_info.src_addr);
           if (rp->src_ip_category_array[j].invert) {
             if (!in_category) {
-              ip_matches = true;
+              category_ip_matches = true;
             }
           } else {
             if (in_category) {
-              ip_matches = true;
+              category_ip_matches = true;
             }
           }
         }
+        Debug("url_rewrite", "Checked the specified src_ip_category, result: %s", category_ip_matches ? "true" : "false");
+        ip_matches &= category_ip_matches;
       }
 
       // Is there an @in_ip specified? If so, check it.
       if (ip_matches && rp->in_ip_valid) {
-        Debug("url_rewrite", "src_ip or src_ip_category match was true, checking the specified in_ip range.");
-        ip_matches = false;
-        for (int j = 0; j < rp->in_ip_cnt && !ip_matches; j++) {
+        bool in_ip_matches = false;
+        for (int j = 0; j < rp->in_ip_cnt && !in_ip_matches; j++) {
           IpEndpoint incoming_addr;
           incoming_addr.assign(s->state_machine->get_ua_txn()->get_netvc()->get_local_addr());
           if (is_debug_tag_set("url_rewrite")) {
@@ -487,14 +489,16 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
           bool in_range = rp->in_ip_array[j].contains(incoming_addr);
           if (rp->in_ip_array[j].invert) {
             if (!in_range) {
-              ip_matches = true;
+              in_ip_matches = true;
             }
           } else {
             if (in_range) {
-              ip_matches = true;
+              in_ip_matches = true;
             }
           }
         }
+        Debug("url_rewrite", "Checked the specified in_ip, result: %s", in_ip_matches ? "true" : "false");
+        ip_matches &= in_ip_matches;
       }
 
       if (rp->internal) {
