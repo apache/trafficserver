@@ -24,7 +24,6 @@
 #include "tscore/ink_inet.h"
 #include "tsutil/ts_bw_format.h"
 
-#include "ts/parentselectdefs.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>

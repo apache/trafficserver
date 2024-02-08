@@ -26,7 +26,7 @@
 
 #include <utility>
 
-#include "ts/parentselectdefs.h"
+#include "ts/apidefs.h"
 #include "proxy/ParentSelection.h"
 #include "proxy/http/HttpTransact.h"
 

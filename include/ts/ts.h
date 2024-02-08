@@ -37,7 +37,6 @@
 
 #include "tsutil/DbgCtl.h"
 #include "ts/apidefs.h"
-#include "ts/parentselectdefs.h"
 
 class DiagsConfigState;
 
