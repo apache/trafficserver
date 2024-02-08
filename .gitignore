@@ -61,11 +61,9 @@ src/traffic_cache_tool/traffic_cache_tool
 src/traffic_cop/traffic_cop
 src/traffic_crashlog/traffic_crashlog
 src/traffic_ctl/traffic_ctl
-src/traffic_ctl_jsonrpc/traffic_ctl
 src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
-src/traffic_manager/traffic_manager
 src/traffic_quic/traffic_quic
 src/traffic_server/traffic_server
 src/traffic_top/traffic_top

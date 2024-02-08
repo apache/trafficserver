@@ -744,7 +744,6 @@ enum TSRecordUpdateType {
   TS_RECORDUPDATE_NULL,
   TS_RECORDUPDATE_DYNAMIC,
   TS_RECORDUPDATE_RESTART_TS,
-  TS_RECORDUPDATE_RESTART_TM,
 };
 
 /* The values of this enum must match enum RecCheckT in I_RecDefs.h */

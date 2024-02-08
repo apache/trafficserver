@@ -45,9 +45,6 @@ Enumeration Members
 
    The value is updated if the :program:`traffic_server` process is restarted.
 
-.. c:member:: TSRecordUpdateType TS_RECORDUPDATE_RESTART_TM
-
-   Deprecated.
 
 Description
 ===========
