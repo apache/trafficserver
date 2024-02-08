@@ -1480,10 +1480,7 @@ HttpTransact::handleIfRedirect(State *s)
 
   answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, s->state_machine->m_remap);
   if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
-    int remap_redirect_len;
-
-    s->remap_redirect = redirect_url.string_get(&s->arena, &remap_redirect_len);
-    redirect_url.destroy();
+    s->remap_redirect = redirect_url.string_get_ref(nullptr);
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version == HTTP_1_1) {
         build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT, "Redirect", "redirect#moved_temporarily");
@@ -1493,8 +1490,8 @@ HttpTransact::handleIfRedirect(State *s)
     } else {
       build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently");
     }
-    s->arena.str_free(s->remap_redirect);
     s->remap_redirect = nullptr;
+    redirect_url.destroy();
     return true;
   }
 
