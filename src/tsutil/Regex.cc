@@ -120,6 +120,13 @@ RegexMatches::~RegexMatches()
 }
 
 //----------------------------------------------------------------------------
+size_t *
+RegexMatches::get_ovector_pointer()
+{
+  return pcre2_get_ovector_pointer(_match_data);
+}
+
+//----------------------------------------------------------------------------
 pcre2_match_data *
 RegexMatches::get_match_data()
 {
@@ -205,25 +212,27 @@ Regex::exec(const std::string_view &subject) const
   if (!_code) {
     return false;
   }
-  int rc = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, nullptr, nullptr);
-  return rc >= 0;
+  RegexMatches matches;
+
+  int count = this->exec(subject, matches);
+  return count > 0;
 }
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(const std::string_view &subject, RegexMatches &matcher) const
+Regex::exec(const std::string_view &subject, RegexMatches &matches) const
 {
   if (!_code) {
     return 0;
   }
-  int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matcher.get_match_data(),
+  int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
                           global_context.get_match_context());
   if (count < 0) {
     return count;
   }
 
   if (count > 0) {
-    matcher.set_subject(subject);
+    matches.set_subject(subject);
   }
 
   return count;

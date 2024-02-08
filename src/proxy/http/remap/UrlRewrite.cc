@@ -857,7 +857,7 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
 
 // does not null terminate return string
 int
-UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
+UrlRewrite::_expandSubstitutions(size_t *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                                  int dest_buf_size)
 {
   int cur_buf_size = 0;
@@ -959,9 +959,8 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       continue;
     }
 
-    int matches_info[MAX_REGEX_SUBS * 3];
-    int match_result =
-      list_iter->regular_expression.exec(std::string_view(request_host, request_host_len), matches_info, countof(matches_info));
+    RegexMatches matches;
+    int match_result = list_iter->regular_expression.exec(std::string_view(request_host, request_host_len), matches);
 
     if (match_result > 0) {
       Debug("url_rewrite_regex",
@@ -975,8 +974,9 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       int buf_len;
 
       // Expand substitutions in the host field from the stored template
-      buf_len           = _expandSubstitutions(matches_info, list_iter, request_host, buf, sizeof(buf));
-      URL *expanded_url = mapping_container.createNewToURL();
+      size_t *matches_info = matches.get_ovector_pointer();
+      buf_len              = _expandSubstitutions(matches_info, list_iter, request_host, buf, sizeof(buf));
+      URL *expanded_url    = mapping_container.createNewToURL();
       expanded_url->copy(&((list_iter->url_map)->toURL));
       expanded_url->host_set(buf, buf_len);
 

@@ -52,6 +52,7 @@ public:
   pcre2_match_data *get_match_data();
   void set_subject(std::string_view subject);
   std::string_view operator[](size_t index) const;
+  size_t *get_ovector_pointer();
 
 private:
   pcre2_match_data *_match_data = nullptr;

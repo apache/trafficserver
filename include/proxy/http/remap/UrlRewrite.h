@@ -232,7 +232,7 @@ private:
                             int request_host_len);
   bool _regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, const char *request_host,
                            int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container);
-  int _expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
+  int _expandSubstitutions(size_t *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                            int dest_buf_size);
   void _destroyTable(std::unique_ptr<URLTable> &h_table);
   void _destroyList(RegexMappingList &regexes);
