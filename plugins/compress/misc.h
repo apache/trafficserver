@@ -34,8 +34,6 @@
 
 #include "configuration.h"
 
-using namespace Gzip;
-
 // zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
 static const int ZLIB_MEMLEVEL       = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
 static const int WINDOW_BITS_DEFLATE = -15;
@@ -74,7 +72,7 @@ using b_stream = struct {
 
 using Data = struct {
   TSHttpTxn txn;
-  HostConfiguration *hc;
+  Gzip::HostConfiguration *hc;
   TSVIO downstream_vio;
   TSIOBuffer downstream_buffer;
   TSIOBufferReader downstream_reader;

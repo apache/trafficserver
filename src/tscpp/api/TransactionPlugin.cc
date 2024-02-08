@@ -31,6 +31,7 @@
 
 using namespace atscppapi;
 using atscppapi::TransactionPlugin;
+using namespace tsapi::c;
 
 /**
  * @private

@@ -40,7 +40,7 @@ constexpr bool NON_RESTRICTED_API{false};
 ///
 class Context
 {
-  using checker_cb = std::function<void(TSRPCHandlerOptions const &, ts::Errata &)>;
+  using checker_cb = std::function<void(tsapi::c::TSRPCHandlerOptions const &, ts::Errata &)>;
   /// @brief Internal class to hold the permission checker part.
   struct Auth {
     /// Checks for permissions. This function checks for every registered permission checker.
@@ -48,7 +48,7 @@ class Context
     /// @param options Registered handler options.
     /// @return ts::Errata The errata will be filled by each of the registered checkers, if there was any issue validating the
     ///                    call, then the errata reflects that.
-    ts::Errata is_blocked(TSRPCHandlerOptions const &options) const;
+    ts::Errata is_blocked(tsapi::c::TSRPCHandlerOptions const &options) const;
 
     /// Add permission checkers.
     template <typename F>

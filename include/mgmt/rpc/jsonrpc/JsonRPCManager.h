@@ -83,7 +83,8 @@ public:
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
   template <typename Func>
-  bool add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
+  bool add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info,
+                          tsapi::c::TSRPCHandlerOptions const &opt);
 
   ///
   /// @brief Add new registered method handler(from a plugin scope) to the JSON RPC engine.
@@ -107,7 +108,7 @@ public:
   ///
   template <typename Func>
   bool add_method_handler_from_plugin(const std::string &name, Func &&call, const RPCRegistryInfo *info,
-                                      TSRPCHandlerOptions const &opt);
+                                      tsapi::c::TSRPCHandlerOptions const &opt);
 
   ///
   /// @brief Add new registered notification handler to the JSON RPC engine.
@@ -120,7 +121,8 @@ public:
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
   template <typename Func>
-  bool add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
+  bool add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info,
+                                tsapi::c::TSRPCHandlerOptions const &opt);
 
   ///
   /// @brief This function handles the incoming jsonrpc request and dispatch the associated registered handler.
@@ -202,7 +204,8 @@ private:
     /// Add a method handler to the internal container
     /// @return True if was successfully added, False otherwise.
     template <typename FunctionWrapperType, typename Handler>
-    bool add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
+    bool add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info,
+                     tsapi::c::TSRPCHandlerOptions const &opt);
 
     /// Find and call the request's callback. If any error occurs, the return type will have the specific error.
     /// For notifications the @c RPCResponseInfo will not be set as part of the response. @c response_type
@@ -242,7 +245,7 @@ private:
     /// simplify the logic to insert and fetch callable objects from our container.
     struct InternalHandler {
       InternalHandler() = default;
-      InternalHandler(const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt) : _regInfo(info), _options(opt) {}
+      InternalHandler(const RPCRegistryInfo *info, tsapi::c::TSRPCHandlerOptions const &opt) : _regInfo(info), _options(opt) {}
       /// Sets the handler.
       template <class T, class F> void set_callback(F &&t);
       explicit operator bool() const;
@@ -260,7 +263,7 @@ private:
       }
 
       /// Returns the configured options associated with this particular handler.
-      TSRPCHandlerOptions const &
+      tsapi::c::TSRPCHandlerOptions const &
       get_options() const
       {
         return _options;
@@ -275,7 +278,7 @@ private:
       const RPCRegistryInfo *_regInfo =
         nullptr; ///< Can hold internal information about the handler, this could be null as it is optional.
                  ///< This pointer can eventually holds important information about the call.
-      TSRPCHandlerOptions _options;
+      tsapi::c::TSRPCHandlerOptions _options;
     };
     // We will keep all the handlers wrapped inside the InternalHandler class, this will help us
     // to have a single container for all the types(method, notification & plugin method(cond var)).
@@ -290,14 +293,14 @@ private:
 template <typename Handler>
 bool
 JsonRPCManager::add_method_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info,
-                                   TSRPCHandlerOptions const &opt)
+                                   tsapi::c::TSRPCHandlerOptions const &opt)
 {
   return _dispatcher.add_handler<Dispatcher::Method, Handler>(name, std::forward<Handler>(call), info, opt);
 }
 template <typename Handler>
 bool
 JsonRPCManager::add_method_handler_from_plugin(const std::string &name, Handler &&call, const RPCRegistryInfo *info,
-                                               TSRPCHandlerOptions const &opt)
+                                               tsapi::c::TSRPCHandlerOptions const &opt)
 {
   return _dispatcher.add_handler<Dispatcher::PluginMethod, Handler>(name, std::forward<Handler>(call), info, opt);
 }
@@ -305,7 +308,7 @@ JsonRPCManager::add_method_handler_from_plugin(const std::string &name, Handler 
 template <typename Handler>
 bool
 JsonRPCManager::add_notification_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info,
-                                         TSRPCHandlerOptions const &opt)
+                                         tsapi::c::TSRPCHandlerOptions const &opt)
 {
   return _dispatcher.add_handler<Dispatcher::Notification, Handler>(name, std::forward<Handler>(call), info, opt);
 }
@@ -331,7 +334,7 @@ bool inline JsonRPCManager::Dispatcher::InternalHandler::operator!() const
 template <typename FunctionWrapperType, typename Handler>
 bool
 JsonRPCManager::Dispatcher::add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info,
-                                        TSRPCHandlerOptions const &opt)
+                                        tsapi::c::TSRPCHandlerOptions const &opt)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   InternalHandler call{info, opt};

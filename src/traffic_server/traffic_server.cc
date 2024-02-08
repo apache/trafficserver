@@ -127,6 +127,8 @@ extern "C" int plock(int);
 #include <gperftools/heap-profiler.h>
 #endif
 
+using namespace tsapi::c;
+
 //
 // Global Data
 //
@@ -137,8 +139,16 @@ static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 
 static const long MAX_LOGIN = ink_login_name_max();
 
+namespace tsapi
+{
+namespace c
+{
+  extern void load_config_file_callback(const char *parent_file, const char *remap_file);
+}
+} // namespace tsapi
+
 static void init_ssl_ctx_callback(void *ctx, bool server);
-extern void load_config_file_callback(const char *parent_file, const char *remap_file);
+
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
 

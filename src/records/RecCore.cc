@@ -40,6 +40,7 @@
 #include "tsutil/Metrics.h"
 
 using ts::Metrics;
+using namespace tsapi::c;
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.

@@ -92,7 +92,7 @@ struct ClientRequest : JSONRPCRequest {
 
 private:
   struct IdGenerator {
-    IdGenerator() { _uuid.initialize(TS_UUID_V4); }
+    IdGenerator() { _uuid.initialize(tsapi::c::TS_UUID_V4); }
     const char *
     getString()
     {

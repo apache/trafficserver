@@ -29,6 +29,8 @@
 #include <swoc/swoc_meta.h>
 #include "mgmt/rpc/jsonrpc/json/YAMLCodec.h"
 
+using namespace tsapi::c;
+
 namespace
 {
 // RPC service info constants.

@@ -35,6 +35,7 @@ namespace multiplexer_ns
 {
 extern DbgCtl dbg_ctl;
 }
+using namespace multiplexer_ns;
 
 namespace ats
 {

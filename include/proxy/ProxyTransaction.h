@@ -114,7 +114,7 @@ public:
 
   bool debug() const;
 
-  APIHook *hook_get(TSHttpHookID id) const;
+  APIHook *hook_get(tsapi::c::TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
   bool has_hooks() const;
 
@@ -188,7 +188,7 @@ ProxyTransaction::debug() const
 }
 
 inline APIHook *
-ProxyTransaction::hook_get(TSHttpHookID id) const
+ProxyTransaction::hook_get(tsapi::c::TSHttpHookID id) const
 {
   return _proxy_ssn ? _proxy_ssn->hook_get(id) : nullptr;
 }

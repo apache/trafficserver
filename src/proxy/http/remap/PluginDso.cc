@@ -38,6 +38,8 @@
 #define PluginError Error
 #endif
 
+using namespace tsapi::c;
+
 namespace
 {
 

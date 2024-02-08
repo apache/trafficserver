@@ -3099,4 +3099,6 @@ malloc(size_t count = 1)
 
 } // end namespace tsapi
 
+#ifndef ATS_BUILD
 using namespace tsapi::c;
+#endif

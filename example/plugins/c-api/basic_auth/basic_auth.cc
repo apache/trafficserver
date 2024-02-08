@@ -191,7 +191,7 @@ done:
 }
 
 static int
-auth_plugin(TSCont contp, TSEvent event, void *edata)
+auth_plugin(TSCont contp, tsapi::c::TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 

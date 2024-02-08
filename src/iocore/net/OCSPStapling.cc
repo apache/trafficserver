@@ -36,6 +36,8 @@
 #include "SSLStats.h"
 #include "proxy/FetchSM.h"
 
+using namespace tsapi::c;
+
 // Macros for ASN1 and the code in TS_OCSP_* functions were borrowed from OpenSSL 3.1.0 (a92271e03a8d0dee507b6f1e7f49512568b2c7ad),
 // and were modified to make them compilable with BoringSSL and C++ compiler.
 

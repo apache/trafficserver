@@ -30,6 +30,8 @@
 #include "tscpp/api/noncopyable.h"
 #include "tscpp/api/Continuation.h"
 
+using namespace tsapi::c;
+
 #ifndef INT64_MAX
 #define INT64_MAX (9223372036854775807LL)
 #endif

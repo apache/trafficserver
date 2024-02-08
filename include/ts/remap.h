@@ -87,8 +87,6 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
-using namespace ::tsapi::c;
-
 /* ----------------------------------------------------------------------------------
    These are the entry points a plugin can implement. Note that TSRemapInit() and
    TSRemapDoRemap() are both required.  (These functions are called from TS using dlsym(),
@@ -101,7 +99,7 @@ using namespace ::tsapi::c;
    Return: TS_SUCCESS
            TS_ERROR - error, errbuf can include error message from plugin
 */
-extern "C" TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
+extern "C" tsapi::c::TSReturnCode TSRemapInit(tsapi::c::TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
 /* This gets called every time before remap.config is reloaded. This is complementary
    to TSRemapInit() which gets called when the plugin is first loaded.
@@ -123,7 +121,7 @@ extern "C" void TSRemapPreConfigReload(void);
                           TS_ERROR - (re)load failed.
    Return: none
 */
-extern "C" void TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus);
+extern "C" void TSRemapPostConfigReload(tsapi::c::TSRemapReloadStatus reloadStatus);
 
 /* Remap new request
    Mandatory interface function.
@@ -133,7 +131,7 @@ extern "C" void TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus);
            TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
            TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
 */
-extern "C" TSRemapStatus TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
+extern "C" tsapi::c::TSRemapStatus TSRemapDoRemap(void *ih, tsapi::c::TSHttpTxn rh, tsapi::c::TSRemapRequestInfo *rri);
 
 /* Plugin shutdown, called when plugin is unloaded.
    Optional function. */
@@ -145,7 +143,7 @@ extern "C" void TSRemapDone(void);
    Return: TS_SUCCESS
            TS_ERROR - instance creation error
 */
-extern "C" TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
+extern "C" tsapi::c::TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
 extern "C" void TSRemapDeleteInstance(void *);
 
 /* Check response code from Origin Server
@@ -153,4 +151,8 @@ extern "C" void TSRemapDeleteInstance(void *);
    Remap API plugin can use InkAPI function calls inside TSRemapDoRemap()
    Return: none
 */
-extern "C" void TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type);
+extern "C" void TSRemapOSResponse(void *ih, tsapi::c::TSHttpTxn rh, int os_response_type);
+
+#ifndef ATS_BUILD
+using namespace tsapi::c;
+#endif

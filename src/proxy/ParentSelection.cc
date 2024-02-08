@@ -31,6 +31,8 @@
 #include "iocore/utils/Machine.h"
 #include "tscore/Tokenizer.h"
 
+using namespace tsapi::c;
+
 #define MAX_SIMPLE_RETRIES             5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 

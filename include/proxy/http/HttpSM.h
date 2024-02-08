@@ -170,7 +170,7 @@ public:
   ~PostDataBuffers();
 };
 
-class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
+class HttpSM : public Continuation, public PluginUserArgs<tsapi::c::TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
 
@@ -253,8 +253,8 @@ public:
   void dump_state_hdr(HTTPHdr *h, const char *s);
 
   // Functions for manipulating api hooks
-  void txn_hook_add(TSHttpHookID id, INKContInternal *cont);
-  APIHook *txn_hook_get(TSHttpHookID id);
+  void txn_hook_add(tsapi::c::TSHttpHookID id, tsapi::c::INKContInternal *cont);
+  APIHook *txn_hook_get(tsapi::c::TSHttpHookID id);
 
   bool is_private() const;
   bool is_redirect_required();
@@ -545,8 +545,8 @@ private:
 
   HTTPParser http_parser;
 
-  TSHttpHookID cur_hook_id = TS_HTTP_LAST_HOOK;
-  APIHook const *cur_hook  = nullptr;
+  tsapi::c::TSHttpHookID cur_hook_id = tsapi::c::TS_HTTP_LAST_HOOK;
+  APIHook const *cur_hook            = nullptr;
   HttpHookState hook_state;
 
   // Continuation time keeper
@@ -596,7 +596,7 @@ private:
 
   void kill_this();
   void update_stats();
-  void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);
+  void transform_cleanup(tsapi::c::TSHttpHookID hook, HttpTransformInfo *info);
   bool is_transparent_passthrough_allowed();
   void plugin_agents_cleanup();
 
@@ -711,14 +711,14 @@ HttpSM::find_server_buffer_size()
 }
 
 inline void
-HttpSM::txn_hook_add(TSHttpHookID id, INKContInternal *cont)
+HttpSM::txn_hook_add(tsapi::c::TSHttpHookID id, tsapi::c::INKContInternal *cont)
 {
   api_hooks.append(id, cont);
   hooks_set = true;
 }
 
 inline APIHook *
-HttpSM::txn_hook_get(TSHttpHookID id)
+HttpSM::txn_hook_get(tsapi::c::TSHttpHookID id)
 {
   return api_hooks.get(id);
 }

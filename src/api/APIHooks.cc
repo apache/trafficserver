@@ -29,6 +29,8 @@
 #include "iocore/eventsystem/ProxyAllocator.h"
 #include "iocore/eventsystem/Thread.h"
 
+using namespace tsapi::c;
+
 static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
 
 APIHook *

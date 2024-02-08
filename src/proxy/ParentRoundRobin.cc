@@ -23,6 +23,8 @@
 #include "proxy/HostStatus.h"
 #include "proxy/ParentRoundRobin.h"
 
+using namespace tsapi::c;
+
 namespace
 {
 DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};

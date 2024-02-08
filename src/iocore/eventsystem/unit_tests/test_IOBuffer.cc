@@ -31,6 +31,8 @@
 
 #include "iocore/utils/diags.i"
 
+using namespace tsapi::c;
+
 #define TEST_THREADS 1
 
 TEST_CASE("MIOBuffer", "[iocore]")

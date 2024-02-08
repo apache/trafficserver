@@ -37,6 +37,8 @@
 
 #include <algorithm> /* std::swap */
 
+using namespace tsapi::c;
+
 RemapPluginInst::RemapPluginInst(RemapPluginInfo &plugin) : _plugin(plugin)
 {
   _plugin.acquire();

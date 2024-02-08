@@ -40,7 +40,7 @@ public:
   bool parseString(const char *str);
 
   // Initialize a UUID using appropriate logic for the version specified. This can be done multiple times.
-  void initialize(TSUuidVersion v);
+  void initialize(tsapi::c::TSUuidVersion v);
 
   // These return the internal string representation of the UUID, do not mess with this string. There is
   // no transfer of ownership here. You will have to make a copy to take ownership!
@@ -56,7 +56,7 @@ public:
     return getString();
   }
 
-  TSUuidVersion
+  tsapi::c::TSUuidVersion
   version() const
   {
     return _version;
@@ -65,7 +65,7 @@ public:
   bool
   valid() const
   {
-    return (TS_UUID_UNDEFINED != _version);
+    return (tsapi::c::TS_UUID_UNDEFINED != _version);
   }
 
   // Getter's for the various UUID components.
@@ -122,18 +122,18 @@ private:
   } _uuid;
 
   // This is the typically used visible portion of the UUID
-  TSUuidVersion _version = TS_UUID_UNDEFINED;
-  char _string[TS_UUID_STRING_LEN + 1];
+  tsapi::c::TSUuidVersion _version = tsapi::c::TS_UUID_UNDEFINED;
+  char _string[tsapi::c::TS_UUID_STRING_LEN + 1];
 
   bool
   _toString(char *buf)
   {
     int len =
-      snprintf(buf, TS_UUID_STRING_LEN + 1, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
+      snprintf(buf, tsapi::c::TS_UUID_STRING_LEN + 1, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
                _uuid._rfc4122.timeLow, _uuid._rfc4122.timeMid, _uuid._rfc4122.timeHighAndVersion,
                _uuid._rfc4122.clockSeqAndReserved, _uuid._rfc4122.clockSeqLow, _uuid._rfc4122.node[0], _uuid._rfc4122.node[1],
                _uuid._rfc4122.node[2], _uuid._rfc4122.node[3], _uuid._rfc4122.node[4], _uuid._rfc4122.node[5]);
 
-    return (len == TS_UUID_STRING_LEN);
+    return (len == tsapi::c::TS_UUID_STRING_LEN);
   }
 };

@@ -134,7 +134,7 @@ private:
   void bind(std::error_code &ec);
   void listen(std::error_code &ec);
   void close();
-  void late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, ts::Errata &errata) const;
+  void late_check_peer_credentials(int peedFd, tsapi::c::TSRPCHandlerOptions const &options, ts::Errata &errata) const;
 
   std::atomic_bool _running;
 

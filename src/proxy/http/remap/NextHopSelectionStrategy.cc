@@ -29,6 +29,8 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 
+using namespace tsapi::c;
+
 DbgCtl NH_DBG_CTL{"next_hop"};
 
 // ring mode strings

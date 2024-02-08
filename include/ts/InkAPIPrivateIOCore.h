@@ -199,4 +199,6 @@ namespace c
 } // end namespace c
 } // end namespace tsapi
 
-using namespace ::tsapi::c;
+#ifndef ATS_BUILD
+using namespace tsapi::c;
+#endif

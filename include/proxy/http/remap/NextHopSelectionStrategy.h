@@ -53,9 +53,9 @@ namespace Yaml
 enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 
 struct NHHealthStatus {
-  virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
-  virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
-                           const time_t now = 0)                                                           = 0;
+  virtual bool isNextHopAvailable(tsapi::c::TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
+  virtual void markNextHop(tsapi::c::TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+                           const time_t now = 0)                                                                     = 0;
   virtual ~NHHealthStatus() {}
 };
 
@@ -182,8 +182,8 @@ class NextHopHealthStatus : public NHHealthStatus
 {
 public:
   void insert(std::vector<std::shared_ptr<HostRecord>> &hosts);
-  bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
-  void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+  bool isNextHopAvailable(tsapi::c::TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
+  void markNextHop(tsapi::c::TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0) override;
   NextHopHealthStatus(){};
 
@@ -197,16 +197,16 @@ public:
   NextHopSelectionStrategy() = delete;
   NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type, ts::Yaml::Map &n);
   virtual ~NextHopSelectionStrategy(){};
-  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
-  void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+  virtual void findNextHop(tsapi::c::TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
+  void markNextHop(tsapi::c::TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0);
-  bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
+  bool nextHopExists(tsapi::c::TSHttpTxn txnp, void *ih = nullptr);
 
-  void setHostHeader(TSHttpTxn txnp, const char *hostname);
+  void setHostHeader(tsapi::c::TSHttpTxn txnp, const char *hostname);
 
   virtual ParentRetry_t responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code);
 
-  void retryComplete(TSHttpTxn txn, const char *hostname, const int port);
+  void retryComplete(tsapi::c::TSHttpTxn txn, const char *hostname, const int port);
 
   std::string strategy_name;
   bool go_direct           = true;

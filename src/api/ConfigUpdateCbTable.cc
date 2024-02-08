@@ -23,6 +23,8 @@
 
 #include "api/InkAPIInternal.h"
 
+using namespace tsapi::c;
+
 ConfigUpdateCbTable::ConfigUpdateCbTable() {}
 
 ConfigUpdateCbTable::~ConfigUpdateCbTable() {}

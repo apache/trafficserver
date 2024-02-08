@@ -73,7 +73,7 @@ struct ProxyError {
 };
 
 /// Abstract class for HttpSM to interface with any session
-class ProxySession : public VConnection, public PluginUserArgs<TS_USER_ARGS_SSN>
+class ProxySession : public VConnection, public PluginUserArgs<tsapi::c::TS_USER_ARGS_SSN>
 {
 public:
   ProxySession();
@@ -103,7 +103,7 @@ public:
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
 
-  virtual void hook_add(TSHttpHookID id, INKContInternal *cont);
+  virtual void hook_add(tsapi::c::TSHttpHookID id, tsapi::c::INKContInternal *cont);
 
   virtual bool is_chunked_encoding_supported() const;
   virtual void set_half_close_flag(bool flag);
@@ -130,7 +130,7 @@ public:
 
   // Non-Virtual Methods
   NetVConnection *get_netvc() const;
-  int do_api_callout(TSHttpHookID id);
+  int do_api_callout(tsapi::c::TSHttpHookID id);
 
   void set_debug(bool flag);
   bool debug() const;
@@ -142,12 +142,12 @@ public:
   bool is_peer_closed() const;
 
   int64_t connection_id() const;
-  TSHttpHookID get_hookid() const;
+  tsapi::c::TSHttpHookID get_hookid() const;
   bool has_hooks() const;
 
   virtual bool support_sni() const;
 
-  APIHook *hook_get(TSHttpHookID id) const;
+  APIHook *hook_get(tsapi::c::TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
 
   // Returns null pointer if session does not use a TLS connection.
@@ -259,20 +259,20 @@ ProxySession::is_peer_closed() const
   return get_netvc() == nullptr;
 }
 
-inline TSHttpHookID
+inline tsapi::c::TSHttpHookID
 ProxySession::get_hookid() const
 {
   return hook_state.id();
 }
 
 inline void
-ProxySession::hook_add(TSHttpHookID id, INKContInternal *cont)
+ProxySession::hook_add(tsapi::c::TSHttpHookID id, tsapi::c::INKContInternal *cont)
 {
   this->api_hooks.append(id, cont);
 }
 
 inline APIHook *
-ProxySession::hook_get(TSHttpHookID id) const
+ProxySession::hook_get(tsapi::c::TSHttpHookID id) const
 {
   return this->api_hooks.get(id);
 }

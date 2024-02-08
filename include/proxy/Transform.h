@@ -43,9 +43,9 @@ public:
 
 public:
   VConnection *open(Continuation *cont, APIHook *hooks);
-  INKVConnInternal *null_transform(ProxyMutex *mutex);
-  INKVConnInternal *range_transform(ProxyMutex *mutex, RangeRecord *ranges, int, HTTPHdr *, const char *content_type,
-                                    int content_type_len, int64_t content_length);
+  tsapi::c::INKVConnInternal *null_transform(ProxyMutex *mutex);
+  tsapi::c::INKVConnInternal *range_transform(ProxyMutex *mutex, RangeRecord *ranges, int, HTTPHdr *, const char *content_type,
+                                              int content_type_len, int64_t content_length);
 };
 
 #if TS_HAS_TESTS

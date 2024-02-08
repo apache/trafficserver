@@ -31,7 +31,7 @@
 class APIHook
 {
 public:
-  INKContInternal *m_cont;
+  tsapi::c::INKContInternal *m_cont;
   int invoke(int event, void *edata) const;
   APIHook *next() const;
   APIHook *prev() const;

@@ -25,6 +25,7 @@
 
 using namespace atscppapi;
 using std::string;
+using namespace tsapi::c;
 
 namespace atscppapi
 {

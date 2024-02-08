@@ -22,6 +22,7 @@ function(add_atsplugin name)
   target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
+  remove_definitions(-DATS_BUILD) # remove the ATS_BUILD define for plugins to build without issue
   install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
 endfunction()
 

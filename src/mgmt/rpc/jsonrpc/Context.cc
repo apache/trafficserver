@@ -23,7 +23,7 @@ namespace rpc
 {
 // --- Call Context impl
 ts::Errata
-Context::Auth::is_blocked(TSRPCHandlerOptions const &options) const
+Context::Auth::is_blocked(tsapi::c::TSRPCHandlerOptions const &options) const
 {
   ts::Errata out;
   // check every registered callback and see if they have something to say. Then report back to the manager

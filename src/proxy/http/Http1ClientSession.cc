@@ -41,6 +41,8 @@
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSEarlyDataSupport.h"
 
+using namespace tsapi::c;
+
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
 #define STATE_ENTER(state_name, event, vio)                                                             \

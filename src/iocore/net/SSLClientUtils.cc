@@ -37,6 +37,8 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
+using namespace tsapi::c;
+
 SSLOriginSessionCache *origin_sess_cache;
 
 int

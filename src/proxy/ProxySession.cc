@@ -26,6 +26,8 @@
 #include "proxy/ProxySession.h"
 #include "iocore/net/TLSBasicSupport.h"
 
+using namespace tsapi::c;
+
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 
 ProxySession::ProxySession() : VConnection(nullptr) {}

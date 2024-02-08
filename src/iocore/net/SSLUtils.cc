@@ -78,6 +78,7 @@
 #endif
 
 using namespace std::literals;
+using namespace tsapi::c;
 
 // ssl_multicert.config field names:
 static constexpr std::string_view SSL_IP_TAG("dest_ip"sv);

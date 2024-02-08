@@ -63,6 +63,8 @@
 #include <algorithm>
 #include <atomic>
 
+using namespace tsapi::c;
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K

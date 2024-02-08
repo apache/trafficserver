@@ -199,13 +199,13 @@ private:
   Aggregate m_agg_op;
   int64_t m_agg_cnt;
   int64_t m_agg_val;
-  TSMilestonesType m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
-  TSMilestonesType m_milestone2; ///< Second milestone for MSDMS
+  tsapi::c::TSMilestonesType m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
+  tsapi::c::TSMilestonesType m_milestone2; ///< Second milestone for MSDMS
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
   SetFunc m_set_func;
-  TSMilestonesType milestone_from_m_name();
-  int milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  tsapi::c::TSMilestonesType milestone_from_m_name();
+  int milestones_from_m_name(tsapi::c::TSMilestonesType *m1, tsapi::c::TSMilestonesType *m2);
 
 public:
   LINK(LogField, link);

@@ -62,7 +62,7 @@ public:
    * @return Result of the remap - will dictate further processing by the system.
    */
   virtual Result
-  remapTransaction(Transaction &transaction, TSRemapRequestInfo *rri)
+  remapTransaction(Transaction &transaction, tsapi::c::TSRemapRequestInfo *rri)
   {
     Url map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
     bool redirect              = false;

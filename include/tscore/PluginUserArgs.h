@@ -28,7 +28,7 @@
 #include "tscore/ink_assert.h"
 #include "tscore/PluginUserArgs.h"
 
-static constexpr std::array<size_t, TS_USER_ARGS_COUNT> MAX_USER_ARGS = {
+static constexpr std::array<size_t, tsapi::c::TS_USER_ARGS_COUNT> MAX_USER_ARGS = {
   {
    16, /* max number of user arguments for TXN */
     8, /* max number of user arguments for SSN */
@@ -54,7 +54,7 @@ static constexpr std::array<size_t, TS_USER_ARGS_COUNT> MAX_USER_ARGS = {
  * That is, for a transaction, expect internally a value of 3 instead of 1003.
  */
 static constexpr size_t
-get_user_arg_offset(TSUserArgType type)
+get_user_arg_offset(tsapi::c::TSUserArgType type)
 {
   // TS_USER_ARGS_TXN indices begin at 1000, TS_USER_ARGS_SSN begin at 2000,
   // etc.
@@ -66,7 +66,7 @@ get_user_arg_offset(TSUserArgType type)
  * intention behind this.
  */
 static constexpr inline bool
-SanityCheckUserIndex(TSUserArgType type, int idx)
+SanityCheckUserIndex(tsapi::c::TSUserArgType type, int idx)
 {
   int const block_start = get_user_arg_offset(type);
   return idx >= block_start && idx < block_start + 1000;
@@ -84,7 +84,7 @@ public:
   virtual void set_user_arg(size_t ix, void *arg) = 0;
 };
 
-template <TSUserArgType I> class PluginUserArgs : public virtual PluginUserArgsMixin
+template <tsapi::c::TSUserArgType I> class PluginUserArgs : public virtual PluginUserArgsMixin
 {
 public:
   void *

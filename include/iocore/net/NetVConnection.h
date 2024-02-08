@@ -62,7 +62,7 @@ typedef enum {
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
+class NetVConnection : public VConnection, public PluginUserArgs<tsapi::c::TS_USER_ARGS_VCONN>
 {
 public:
   /**

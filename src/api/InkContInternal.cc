@@ -40,6 +40,8 @@
 #include "iocore/eventsystem/ProxyAllocator.h"
 #include "iocore/eventsystem/VConnection.h"
 
+using namespace tsapi::c;
+
 ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 
 INKContInternal::INKContInternal()

@@ -41,3 +41,7 @@
       return TS_ERROR;                                                                                                           \
     }                                                                                                                            \
   } while (0)
+
+#ifndef ATS_BUILD
+using namespace tsapi::c;
+#endif
