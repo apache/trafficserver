@@ -27,6 +27,7 @@
 #include "ts/ts.h"
 
 #define PLUGIN_NAME "otel_tracer"
+DbgCtl dbg_ctl{PLUGIN_NAME};
 
 constexpr std::string_view ua_key     = {"User-Agent"};
 constexpr std::string_view host_key   = {"Host"};

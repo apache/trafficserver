@@ -44,8 +44,10 @@ add_subdirectory(url_sig)
 if(USE_MAGICK)
   add_subdirectory(magick)
 endif()
+#add_subdirectory(wasm)
+
+# These are included via cmake/ExperimentalPlugins.cmake
 #add_subdirectory(maxmind_acl)
-#add_subdirectory(otel_tracer)
 #add_subdirectory(stek_share)
 #add_subdirectory(uri_signing)
-#add_subdirectory(wasm)
+#add_subdirectory(otel_tracer)
