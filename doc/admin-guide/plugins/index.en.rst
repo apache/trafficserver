@@ -188,7 +188,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
    SSL Headers <sslheaders.en>
-   SSL Session Reuse <ssl_session_reuse.en>
    Stale Response <stale_response.en>
    STEK Share <stek_share.en>
    System Statistics <system_stats.en>
@@ -265,9 +264,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Slice full file or range based requests into deterministic chunks, allowing large files to be
    spread across multiple cache stripes. Allows arbitrary range requests to be satisfied by stitching
    these chunks together.
-
-:doc:`SSL Session Reuse <ssl_session_reuse.en>`
-   Coordinates Session ID and ticket based TLS session resumption between a group of ATS machines.
 
 :doc:`SSL Headers <sslheaders.en>`
    Populate request headers with SSL session information.

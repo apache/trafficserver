@@ -25,8 +25,6 @@ STEK Share Plugin
 *****************
 
 This plugin coordinates STEK (Session Ticket Encryption Key) between ATS instances running in a group.
-As the ID based session resumption rate continue to decrease, this new plugin will replace the
-:ref:`admin-plugins-ssl_session_reuse` plugin.
 
 
 How It Works
