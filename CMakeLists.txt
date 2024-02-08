@@ -103,7 +103,7 @@ auto_option(
   "sys/prctl.h"
 )
 auto_option(LUAJIT PACKAGE_DEPENDS luajit)
-auto_option(MAGICK COMPONENT Magick++ PACKAGE_DEPENDS ImageMagick)
+auto_option(MAGICK PACKAGE_DEPENDS ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 # This creates the magic import target if necessary (older cmake)
