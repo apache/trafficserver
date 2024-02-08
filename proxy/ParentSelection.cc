@@ -860,6 +860,7 @@ ParentRecord::~ParentRecord()
   ats_free(secondary_parents);
   delete selection_strategy;
   delete unavailable_server_retry_responses;
+  delete simple_server_retry_responses;
 }
 
 void
