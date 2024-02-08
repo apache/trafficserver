@@ -406,6 +406,9 @@ public:
   /// @endcond
 
 protected:
+  // Used for derived classes where we don't want to throw exceptions.
+  FixedBufferWriter(char *buffer, size_t capacity, bool noexcept_flag) noexcept;
+
   char *const _buffer;   ///< Output buffer.
   size_t _capacity;      ///< Size of output buffer.
   size_t _attempted = 0; ///< Number of characters written, including those discarded due error condition.
@@ -440,7 +443,7 @@ template <size_t N> class LocalBufferWriter : public FixedBufferWriter {
 
 public:
   /// Construct an empty writer.
-  LocalBufferWriter();
+  LocalBufferWriter() noexcept;
 
   LocalBufferWriter(const LocalBufferWriter &that) = delete;
 
@@ -496,6 +499,9 @@ inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _bu
   if (_capacity != 0 && buffer == nullptr) {
     throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
   };
+}
+
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity, bool /* noexcept_flag */) noexcept : _buffer(buffer), _capacity(capacity) {
 }
 
 inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const &span)
@@ -646,7 +652,7 @@ inline FixedBufferWriter::operator swoc::TextView() const {
 }
 
 // --- LocalBufferWriter ---
-template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
+template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() noexcept : super_type(_arr, N, true) {}
 
 }} // namespace swoc::SWOC_VERSION_NS
 
