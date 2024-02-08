@@ -261,7 +261,7 @@ DFA::build(std::string_view const &pattern, unsigned flags)
     flags |= RE_ANCHORED;
   }
 
-  if (!rxp.compile(string.c_str(), flags)) {
+  if (!rxp.compile(pattern, flags)) {
     return false;
   }
   _patterns.emplace_back(std::move(rxp), std::move(string));

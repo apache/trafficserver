@@ -37,9 +37,9 @@
 
 /// Match flags for regular expression evaluation.
 enum REFlags {
-  RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
-  RE_UNANCHORED       = 0x0002, ///< Unanchored (DFA defaults to anchored).
-  RE_ANCHORED         = 0x0004, ///< Anchored (Regex defaults to unanchored).
+  RE_CASE_INSENSITIVE = PCRE2_CASELESS,  ///< Ignore case (default: case sensitive).
+  RE_UNANCHORED       = PCRE2_MULTILINE, ///< Unanchored (DFA defaults to anchored).
+  RE_ANCHORED         = PCRE2_ANCHORED,  ///< Anchored (Regex defaults to unanchored).
 };
 
 //----------------------------------------------------------------------------
