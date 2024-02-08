@@ -16,6 +16,6 @@
 #######################
 
 add_atsplugin(magick magick.cc)
-target_link_libraries(magick PRIVATE ImageMagick::Magick++)
+target_link_libraries(magick PRIVATE ImageMagick::Magick++ ts::tscppapi)
 
 verify_global_plugin(magick)
