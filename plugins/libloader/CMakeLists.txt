@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(libloader libloader.cc)
+verify_global_plugin(libloader)

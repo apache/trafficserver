@@ -27,3 +27,4 @@ add_atsplugin(
 )
 
 target_compile_options(inliner PRIVATE -DPLUGIN_TAG=\"inliner\")
+verify_global_plugin(inliner)

@@ -104,7 +104,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
-        "ENABLE_CCACHE": "ON",
+        "ENABLE_CCACHE": "OFF",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
         "ENABLE_EXAMPLE": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats"

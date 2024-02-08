@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(fq_pacing fq_pacing.cc)
+verify_global_plugin(fq_pacing)

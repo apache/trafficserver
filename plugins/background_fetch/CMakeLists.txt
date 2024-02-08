@@ -17,3 +17,4 @@
 
 add_atsplugin(background_fetch background_fetch.cc configs.cc headers.cc rules.cc)
 target_link_libraries(background_fetch PRIVATE libswoc::libswoc ts::tsutil)
+verify_global_plugin(background_fetch)

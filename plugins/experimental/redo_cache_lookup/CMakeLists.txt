@@ -18,3 +18,4 @@
 add_atsplugin(redo_cache_lookup redo_cache_lookup.cc)
 
 target_link_libraries(redo_cache_lookup PRIVATE ts::tscppapi)
+verify_global_plugin(redo_cache_lookup)

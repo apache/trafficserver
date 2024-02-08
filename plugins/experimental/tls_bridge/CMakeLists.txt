@@ -18,3 +18,4 @@
 add_atsplugin(tls_bridge tls_bridge.cc)
 
 target_link_libraries(tls_bridge PRIVATE libswoc::libswoc)
+verify_global_plugin(tls_bridge)

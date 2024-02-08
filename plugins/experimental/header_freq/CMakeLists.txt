@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(header_freq header_freq.cc)
+verify_global_plugin(header_freq)

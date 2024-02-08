@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(system_stats system_stats.cc)
+verify_global_plugin(system_stats)

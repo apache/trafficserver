@@ -50,3 +50,4 @@ add_atsplugin(
 )
 
 target_link_libraries(tslua PRIVATE luajit::luajit OpenSSL::Crypto)
+verify_global_plugin(tslua)

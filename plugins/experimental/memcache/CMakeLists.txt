@@ -24,3 +24,4 @@ target_include_directories(
   memcache PRIVATE $<TARGET_PROPERTY:ts::inkevent,INCLUDE_DIRECTORIES>
                    $<TARGET_PROPERTY:ts::inknet,INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:PCRE::PCRE,INCLUDE_DIRECTORIES>
 )
+verify_global_plugin(memcache)
