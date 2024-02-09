@@ -414,6 +414,10 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
                       "header blocks too large");
   }
 
+  if (stream->trailing_header_is_possible()) {
+    // Don't leak the header_blocks from the initial, non-trailing headers.
+    ats_free(stream->header_blocks);
+  }
   stream->header_blocks = static_cast<uint8_t *>(ats_malloc(header_block_fragment_length));
   frame.reader()->memcpy(stream->header_blocks, header_block_fragment_length, header_block_fragment_offset);
 
