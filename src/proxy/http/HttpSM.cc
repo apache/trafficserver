@@ -2829,6 +2829,7 @@ HttpSM::tunnel_handler_trailer(int event, void *data)
   }
   // Signal the _ua.get_txn() to get ready for a trailer
   _ua.get_txn()->set_expect_send_trailer();
+  tunnel.deallocate_buffers();
   tunnel.reset();
   HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_trailer_server,
                                               HT_HTTP_SERVER, "http server trailer");
