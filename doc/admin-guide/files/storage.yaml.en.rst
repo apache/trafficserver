@@ -43,7 +43,7 @@ The format of the :file:`storage.yaml` file is a series of lines of the form
        - id:        # identifier [1-255]
          size:      # optional, size in percentage
          scheme:    # optional, default to "http"
-         ram-cache: # optional, default to "true"
+         ram_cache: # optional, default to "true"
          spans:     # optional
            - use:   # Span identifier
              size:  # size allocated to this volume
@@ -83,7 +83,7 @@ For :code:`volumes` the keys are
 | scheme        | enumeration | Protocol scheme, defaults to "http". Preserved for future   |
 |               | string      | use.                                                        |
 +---------------+-------------+-------------------------------------------------------------+
-| ram-cache     | boolean     | Control of ram caching for this volume. Default is ``true`` |
+| ram_cache     | boolean     | Control of ram caching for this volume. Default is ``true`` |
 +---------------+-------------+-------------------------------------------------------------+
 | spans         | list        | Spans that provide storage for this volume. Defaults to     |
 |               |             | all spans.                                                  |
@@ -277,10 +277,10 @@ Linux Example
      spans:
        - id: "span.0"
          path: "/dev/sde"
-         hash-seed: "cache.disk.0"
+         hash_seed: "cache.disk.0"
        - id: "span.1"
          path: "/dev/sdg"
-         hash-seed: "cache.disk.1"
+         hash_seed: "cache.disk.1"
 
 The following example will use an entire raw disk in the Linux operating
 system
@@ -376,7 +376,7 @@ ramdisks so that the ram cache has been disabled.
          size: 20%
        - id: 5
          size: 20%
-         ram-cache: false
+         ram_cache: false
 
 This can be simplified by depending on the default allocation which splits unallocated span storage across volumes.
 
@@ -392,7 +392,7 @@ This can be simplified by depending on the default allocation which splits unall
        - id: 3
        - id: 4
        - id: 5
-         ram-cache: false
+         ram_cache: false
 
 For a host with a physical disk and two ram disks, where the ram disks should be split between two volumes, with a third
 volume that uses the physical disk.
