@@ -41,8 +41,6 @@
 #cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_IFADDRS_H 1
 #cmakedefine HAVE_LINUX_HDREG_H 1
-#cmakedefine HAVE_SYS_CAPABILITY_H 1
-#cmakedefine HAVE_SYS_PRCTL_H 1
 #cmakedefine HAVE_MALLOC_USABLE_SIZE 1
 #cmakedefine HAVE_MCHECK_PEDANTIC 1
 #cmakedefine HAVE_POSIX_FADVISE 1
@@ -70,6 +68,7 @@
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_STRSIGNAL
 #cmakedefine01 HAVE_SYSINFO
+#cmakedefine01 HAVE_PRCTL
 
 #cmakedefine01 HAVE_HWLOC_OBJ_PU
 

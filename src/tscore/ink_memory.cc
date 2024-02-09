@@ -33,7 +33,7 @@
 #include <mimalloc-override.h>
 #endif
 
-#if !defined(kfreebsd) && defined(freebsd)
+#if __has_include(<malloc_np.h>)
 #include <malloc_np.h> // for malloc_usable_size
 #endif
 

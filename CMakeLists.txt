@@ -246,12 +246,6 @@ if(brotli_FOUND)
   set(HAVE_BROTLI_ENCODE_H TRUE)
 endif()
 
-if(TS_USE_POSIX_CAP)
-  # These headers must have been found for capabilites to be enabled.
-  set(HAVE_SYS_CAPABILITY_H TRUE)
-  set(HAVE_SYS_PRCTL_H TRUE)
-endif()
-
 find_package(LibLZMA)
 if(LibLZMA_FOUND)
   set(HAVE_LZMA_H TRUE)
@@ -393,6 +387,7 @@ check_symbol_exists(strlcat string.h HAVE_STRLCAT)
 check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
 check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
 check_symbol_exists(sysinfo sys/sysinfo.h HAVE_SYSINFO)
+check_symbol_exists(prctl "sys/prctl.h" HAVE_PRCTL)
 if(TS_USE_HWLOC)
   check_source_compiles(
     C "#include <hwloc.h>

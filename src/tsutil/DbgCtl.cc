@@ -346,7 +346,7 @@ struct DiagThreadname {
     pthread_getname_np(pthread_self(), name, sizeof(name));
 #elif defined(HAVE_PTHREAD_GET_NAME_NP)
     pthread_get_name_np(pthread_self(), name, sizeof(name));
-#elif defined(HAVE_SYS_PRCTL_H) && defined(PR_GET_NAME)
+#elif defined(HAVE_PRCTL) && defined(PR_GET_NAME)
     prctl(PR_GET_NAME, name, 0, 0, 0);
 #else
     snprintf(name, sizeof(name), "0x%" PRIx64, (uint64_t)pthread_self());
