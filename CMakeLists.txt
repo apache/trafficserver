@@ -571,6 +571,16 @@ endif()
 
 set(rel_cachedir var/trafficserver)
 
+if(EXISTS "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
+  message(STATUS "Autoconf build detected in source tree. Removing autoconf headers.")
+endif()
+
+# In-tree autoconf configuration causes duplicate definitions of some symbols
+# in generated headers. If the files don't exist, no error is emitted.
+file(REMOVE "${PROJECT_SOURCE_DIR}/include/tscore/ink_config.h")
+file(REMOVE "${PROJECT_SOURCE_DIR}/include/ts/apidefs.h")
+file(REMOVE "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
+
 configure_file(configs/storage.config.default.in configs/storage.config.default)
 configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
