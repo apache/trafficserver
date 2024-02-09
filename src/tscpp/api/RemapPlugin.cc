@@ -26,7 +26,6 @@
 #include "ts/remap.h"
 
 using namespace atscppapi;
-using namespace tsapi::c;
 
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)

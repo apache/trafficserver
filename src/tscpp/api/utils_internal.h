@@ -47,16 +47,16 @@ namespace utils
   class internal
   {
   public:
-    static tsapi::c::TSHttpHookID convertInternalHookToTsHook(Plugin::HookType);
-    static tsapi::c::TSHttpHookID convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type);
-    static void invokePluginForEvent(TransactionPlugin *, tsapi::c::TSHttpTxn, tsapi::c::TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, tsapi::c::TSHttpTxn, tsapi::c::TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, tsapi::c::TSHttpAltInfo, tsapi::c::TSEvent);
-    static HttpVersion getHttpVersion(tsapi::c::TSMBuffer hdr_buf, tsapi::c::TSMLoc hdr_loc);
+    static TSHttpHookID convertInternalHookToTsHook(Plugin::HookType);
+    static TSHttpHookID convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type);
+    static void invokePluginForEvent(TransactionPlugin *, TSHttpTxn, TSEvent);
+    static void invokePluginForEvent(GlobalPlugin *, TSHttpTxn, TSEvent);
+    static void invokePluginForEvent(GlobalPlugin *, TSHttpAltInfo, TSEvent);
+    static HttpVersion getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc);
     static void initTransactionManagement();
-    static std::string consumeFromTSIOBufferReader(tsapi::c::TSIOBufferReader);
-    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &, tsapi::c::TSHttpTxn);
-    static Transaction &getTransaction(tsapi::c::TSHttpTxn);
+    static std::string consumeFromTSIOBufferReader(TSIOBufferReader);
+    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &, TSHttpTxn);
+    static Transaction &getTransaction(TSHttpTxn);
 
     static AsyncHttpFetchState *
     getAsyncHttpFetchState(AsyncHttpFetch &async_http_fetch)
@@ -65,7 +65,7 @@ namespace utils
     }
 
     static void
-    setTransactionEvent(Transaction &transaction, tsapi::c::TSEvent event)
+    setTransactionEvent(Transaction &transaction, TSEvent event)
     {
       transaction.setEvent(event);
     }
@@ -77,7 +77,7 @@ namespace utils
     }
 
     static void
-    initResponse(Response &response, tsapi::c::TSMBuffer hdr_buf, tsapi::c::TSMLoc hdr_loc)
+    initResponse(Response &response, TSMBuffer hdr_buf, TSMLoc hdr_loc)
     {
       response.init(hdr_buf, hdr_loc);
     }
@@ -89,7 +89,7 @@ namespace utils
     }
 
     static void
-    dispatchInterceptEvent(InterceptPlugin *plugin, tsapi::c::TSEvent event, void *edata)
+    dispatchInterceptEvent(InterceptPlugin *plugin, TSEvent event, void *edata)
     {
       plugin->handleEvent(static_cast<int>(event), edata);
     }

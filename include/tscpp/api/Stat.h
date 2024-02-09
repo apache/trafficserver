@@ -101,7 +101,7 @@ public:
   void set(int64_t value);
 
 private:
-  int stat_id_ = tsapi::c::TS_ERROR; /**< The internal stat ID */
+  int stat_id_ = TS_ERROR; /**< The internal stat ID */
 };
 
 } // namespace atscppapi

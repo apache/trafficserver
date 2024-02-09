@@ -47,8 +47,6 @@
 
 #include <vector>
 
-using namespace tsapi::c;
-
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 extern std::function<PoolableSession *()> create_h1_server_session;

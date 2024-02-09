@@ -98,7 +98,7 @@ struct HostStatuses {
 
 // host status POD
 struct HostStatRec {
-  tsapi::c::TSHostStatus status;
+  TSHostStatus status;
   unsigned int reasons;
   // time the host was marked down for a given reason.
   time_t active_marked_down;
@@ -214,7 +214,7 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const std::string_view name, const tsapi::c::TSHostStatus status, const unsigned int down_time,
+  void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
                      const unsigned int reason);
   void loadFromPersistentStore();
   void loadRecord(std::string_view name, HostStatRec &h);

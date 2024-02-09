@@ -168,8 +168,8 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
 
     if (!m_conn_info.tcp_reused) {
       // Copy along the TLS handshake timings
-      milestones[tsapi::c::TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
-      milestones[tsapi::c::TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
     }
   }
 

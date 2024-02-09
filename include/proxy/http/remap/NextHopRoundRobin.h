@@ -38,5 +38,5 @@ public:
   {
   }
   ~NextHopRoundRobin();
-  void findNextHop(tsapi::c::TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
+  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
 };

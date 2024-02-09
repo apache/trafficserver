@@ -92,7 +92,7 @@ public:
   MIOBuffer *m_write_buf     = nullptr;
 };
 
-class NullTransform : public tsapi::c::INKVConnInternal
+class NullTransform : public INKVConnInternal
 {
 public:
   NullTransform(ProxyMutex *mutex);
@@ -106,7 +106,7 @@ public:
   VIO *m_output_vio;
 };
 
-class RangeTransform : public tsapi::c::INKVConnInternal
+class RangeTransform : public INKVConnInternal
 {
 public:
   RangeTransform(ProxyMutex *mutex, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char *content_type,

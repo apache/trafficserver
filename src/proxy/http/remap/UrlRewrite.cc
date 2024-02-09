@@ -30,8 +30,6 @@
 #include "tscore/Filenames.h"
 #include "proxy/http/HttpSM.h"
 
-using namespace tsapi::c;
-
 #define modulePrefix "[ReverseProxy]"
 
 /**

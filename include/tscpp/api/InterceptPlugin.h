@@ -74,7 +74,7 @@ public:
    * The returned TSSslConnection would be nullptr if the connection is not a TLS connection
    * or Intercept plugin is not ready.
    */
-  tsapi::c::TSSslConnection getSslConnection();
+  TSSslConnection getSslConnection();
 
   ~InterceptPlugin() override;
 

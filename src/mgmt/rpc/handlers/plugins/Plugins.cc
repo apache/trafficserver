@@ -23,8 +23,6 @@
 
 #include "api/LifecycleAPIHooks.h"
 
-using namespace tsapi::c;
-
 namespace
 {
 const std::string PLUGIN_TAG_KEY{"tag"};

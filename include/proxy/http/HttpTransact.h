@@ -662,7 +662,7 @@ public:
 
   using ResponseAction = struct _ResponseAction {
     bool handled = false;
-    tsapi::c::TSResponseAction action;
+    TSResponseAction action;
 
     _ResponseAction() {}
   };

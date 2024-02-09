@@ -47,7 +47,7 @@ APIHook::prev() const
 int
 APIHook::invoke(int event, void *edata) const
 {
-  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == tsapi::c::TS_EVENT_HTTP_TXN_CLOSE) {
+  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
     if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }
@@ -64,7 +64,7 @@ APIHook::invoke(int event, void *edata) const
 int
 APIHook::blocking_invoke(int event, void *edata) const
 {
-  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == tsapi::c::TS_EVENT_HTTP_TXN_CLOSE) {
+  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
     if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }

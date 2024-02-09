@@ -149,7 +149,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  cfg = tsapi::malloc<fq_pacing_cfg_t>();
+  cfg = malloc<fq_pacing_cfg_t>();
   memset(cfg, 0, sizeof(*cfg));
   cfg->pacing_rate = pacing_rate;
   *ih              = cfg;
@@ -223,7 +223,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // reused for another delivery service w/o pacing
   TSCont cont = TSContCreate(reset_pacing_cont, nullptr);
 
-  auto txn_data       = tsapi::malloc<fq_pacing_cont_t>();
+  auto txn_data       = malloc<fq_pacing_cont_t>();
   txn_data->client_fd = client_fd;
   TSContDataSet(cont, txn_data);
 

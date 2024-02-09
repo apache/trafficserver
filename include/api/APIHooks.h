@@ -33,7 +33,7 @@
 class APIHooks
 {
 public:
-  void append(tsapi::c::INKContInternal *cont);
+  void append(INKContInternal *cont);
   /// Get the first hook.
   APIHook *head() const;
   /// Remove all hooks.

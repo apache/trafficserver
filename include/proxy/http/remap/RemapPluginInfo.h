@@ -53,21 +53,21 @@ class RemapPluginInfo : public PluginDso
 {
 public:
   /// Initialization function, called on library load.
-  using Init_F = tsapi::c::TSReturnCode(tsapi::c::TSRemapInterface *api_info, char *errbuf, int errbuf_size);
+  using Init_F = TSReturnCode(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
   /// Reload function, called to inform the plugin that configuration is going to be reloaded.
   using PreReload_F = void();
   /// Reload function, called to inform the plugin that configuration is done reloading.
-  using PostReload_F = void(tsapi::c::TSRemapReloadStatus);
+  using PostReload_F = void(TSRemapReloadStatus);
   /// Called when remapping for a transaction has finished.
   using Done_F = void();
   /// Create an rule instance.
-  using New_Instance_F = tsapi::c::TSReturnCode(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
+  using New_Instance_F = TSReturnCode(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
   /// Delete a rule instance.
   using Delete_Instance_F = void(void *ih);
   /// Perform remap.
-  using Do_Remap_F = tsapi::c::TSRemapStatus(void *ih, tsapi::c::TSHttpTxn rh, tsapi::c::TSRemapRequestInfo *rri);
+  using Do_Remap_F = TSRemapStatus(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
   /// I have no idea what this is for.
-  using OS_Response_F = void(void *ih, tsapi::c::TSHttpTxn rh, int os_response_type);
+  using OS_Response_F = void(void *ih, TSHttpTxn rh, int os_response_type);
 
   void *dl_handle                       = nullptr; /* "handle" for the dynamic library */
   Init_F *init_cb                       = nullptr;
@@ -94,12 +94,12 @@ public:
   void doneInstance(void *ih);
 
   /* Used by the other parts of the traffic server core while handling requests */
-  tsapi::c::TSRemapStatus doRemap(void *ih, tsapi::c::TSHttpTxn rh, tsapi::c::TSRemapRequestInfo *rri);
-  void osResponse(void *ih, tsapi::c::TSHttpTxn rh, int os_response_type);
+  TSRemapStatus doRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
+  void osResponse(void *ih, TSHttpTxn rh, int os_response_type);
 
   /* Used by traffic server core to indicate configuration reload */
   void indicatePreReload() override;
-  void indicatePostReload(tsapi::c::TSRemapReloadStatus reloadStatus) override;
+  void indicatePostReload(TSRemapReloadStatus reloadStatus) override;
 
 protected:
   /* Utility to be used only with unit testing */

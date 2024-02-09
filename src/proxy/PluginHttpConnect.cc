@@ -24,8 +24,6 @@
 #include "proxy/PluginHttpConnect.h"
 #include "proxy/http/HttpSessionAccept.h"
 
-using namespace tsapi::c;
-
 extern HttpSessionAccept *plugin_http_accept;
 
 PluginVC *

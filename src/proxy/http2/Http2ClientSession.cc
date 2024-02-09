@@ -28,8 +28,6 @@
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSEarlyDataSupport.h"
 
-using namespace tsapi::c;
-
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
 static int

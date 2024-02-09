@@ -67,8 +67,8 @@ public:
   std::string_view selected_comm_name() const noexcept;
 
   /// @brief Thread function that runs the transport.
-  void start_thread(std::function<tsapi::c::TSThread()> const &cb_init        = std::function<tsapi::c::TSThread()>(),
-                    std::function<void(tsapi::c::TSThread)> const &cb_destroy = std::function<void(tsapi::c::TSThread)>());
+  void start_thread(std::function<TSThread()> const &cb_init        = std::function<TSThread()>(),
+                    std::function<void(TSThread)> const &cb_destroy = std::function<void(TSThread)>());
 
   /// @brief Function to stop the transport and join the thread to finish.
   void stop_thread();
@@ -77,10 +77,10 @@ private:
   /// @brief Actual thread routine. This will start the socket.
   static void *run_thread(void *);
 
-  std::function<tsapi::c::TSThread()> _init;
-  std::function<void(tsapi::c::TSThread)> _destroy;
+  std::function<TSThread()> _init;
+  std::function<void(TSThread)> _destroy;
   ink_thread _this_thread{ink_thread_null()};
-  tsapi::c::TSThread _rpcThread{nullptr};
+  TSThread _rpcThread{nullptr};
 
   std::thread running_thread;
   std::unique_ptr<comm::BaseCommInterface> _socketImpl;

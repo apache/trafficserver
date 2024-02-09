@@ -39,8 +39,6 @@
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/Log.h"
 
-using namespace tsapi::c;
-
 // clang-format off
 //
 static const char *container_names[] = {
@@ -400,8 +398,8 @@ LogField::LogField(const LogField &rhs)
     m_agg_op(rhs.m_agg_op),
     m_agg_cnt(0),
     m_agg_val(0),
-    m_milestone1(tsapi::c::TS_MILESTONE_LAST_ENTRY),
-    m_milestone2(tsapi::c::TS_MILESTONE_LAST_ENTRY),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
     m_time_field(rhs.m_time_field),
     m_alias_map(rhs.m_alias_map),
     m_set_func(rhs.m_set_func)

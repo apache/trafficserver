@@ -117,38 +117,33 @@
 #endif
 #endif
 
-namespace tsapi
-{
-namespace c
-{
-
-  /* Version info
-   *
-   * Version numbers need to be preprocessor symbols for conditional compilation.
-   */
-  /* clang-format off */
+/* Version info
+ *
+ * Version numbers need to be preprocessor symbols for conditional compilation.
+ */
+/* clang-format off */
 char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
 #define TS_VERSION_NUMBER @TS_VERSION_NUMBER@
 #define TS_VERSION_MAJOR @TS_VERSION_MAJOR@
 #define TS_VERSION_MINOR @TS_VERSION_MINOR@
 #define TS_VERSION_MICRO @TS_VERSION_MICRO@
-  /* clang-format on */
+/* clang-format on */
 
-  constexpr long
-  TS_HTTP_VERSION(int a, int b)
-  {
-    return ((long(a) & 0xFFFF) << 16) | (b & 0xFFFF);
-  }
-  constexpr int
-  TS_HTTP_MINOR(long v)
-  {
-    return int(v & 0xFFFF);
-  }
-  constexpr int
-  TS_HTTP_MAJOR(long v)
-  {
-    return int((v >> 16) & 0xFFFF);
-  }
+constexpr long
+TS_HTTP_VERSION(int a, int b)
+{
+  return ((long(a) & 0xFFFF) << 16) | (b & 0xFFFF);
+}
+constexpr int
+TS_HTTP_MINOR(long v)
+{
+  return int(v & 0xFFFF);
+}
+constexpr int
+TS_HTTP_MAJOR(long v)
+{
+  return int((v >> 16) & 0xFFFF);
+}
 
 #ifndef TS_RES_MEM_PATH
 #define __TS_RES_PATH(x) #x
@@ -157,322 +152,322 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
 #define TS_RES_MEM_PATH  TS_RES_PATH("memory/")
 #endif
 
-  /**
-      The following struct is used by TSPluginRegister(). It stores
-      registration information about the plugin.
+/**
+    The following struct is used by TSPluginRegister(). It stores
+    registration information about the plugin.
 
-   */
-  struct TSPluginRegistrationInfo {
-    const char *plugin_name;
-    const char *vendor_name;
-    const char *support_email;
-  };
+ */
+struct TSPluginRegistrationInfo {
+  const char *plugin_name;
+  const char *vendor_name;
+  const char *support_email;
+};
 
-  struct TSPluginMsg {
-    const char *tag;  ///< Message tag (null terminated).
-    void const *data; ///< Message data (payload)
-    size_t data_size; ///< Amount of message data.
-  };
+struct TSPluginMsg {
+  const char *tag;  ///< Message tag (null terminated).
+  void const *data; ///< Message data (payload)
+  size_t data_size; ///< Amount of message data.
+};
 
-  /**
-      This set of enums are possible values returned by
-      TSHttpHdrParseReq() and TSHttpHdrParseResp().
+/**
+    This set of enums are possible values returned by
+    TSHttpHdrParseReq() and TSHttpHdrParseResp().
 
-   */
-  enum TSParseResult {
-    TS_PARSE_ERROR = -1,
-    TS_PARSE_DONE  = 0,
-    TS_PARSE_CONT  = 1,
-  };
+ */
+enum TSParseResult {
+  TS_PARSE_ERROR = -1,
+  TS_PARSE_DONE  = 0,
+  TS_PARSE_CONT  = 1,
+};
 
-  /**
-      This set of enums represents the possible HTTP types that
-      can be assigned to an HTTP header. When a header is created
-      with TSHttpHdrCreate(), it is automatically assigned a type of
-      TS_HTTP_TYPE_UNKNOWN. You can modify the HTTP type ONCE after it
-      the header is created, using TSHttpHdrTypeSet(). After setting the
-      HTTP type once, you cannot set it again. Use TSHttpHdrTypeGet()
-      to obtain the TSHttpType of an HTTP header.
+/**
+    This set of enums represents the possible HTTP types that
+    can be assigned to an HTTP header. When a header is created
+    with TSHttpHdrCreate(), it is automatically assigned a type of
+    TS_HTTP_TYPE_UNKNOWN. You can modify the HTTP type ONCE after it
+    the header is created, using TSHttpHdrTypeSet(). After setting the
+    HTTP type once, you cannot set it again. Use TSHttpHdrTypeGet()
+    to obtain the TSHttpType of an HTTP header.
 
-   */
-  enum TSHttpType {
-    TS_HTTP_TYPE_UNKNOWN,
-    TS_HTTP_TYPE_REQUEST,
-    TS_HTTP_TYPE_RESPONSE,
-  };
+ */
+enum TSHttpType {
+  TS_HTTP_TYPE_UNKNOWN,
+  TS_HTTP_TYPE_REQUEST,
+  TS_HTTP_TYPE_RESPONSE,
+};
 
-  /**
-      This set of enums represents possible return values from
-      TSHttpHdrStatusGet(), which retrieves the status code from an
-      HTTP response header (TSHttpHdrStatusGet() retrieves status codes
-      only from headers of type TS_HTTP_TYPE_RESPONSE). You can also set
-      the TSHttpStatus of a response header using TSHttpHdrStatusSet().
+/**
+    This set of enums represents possible return values from
+    TSHttpHdrStatusGet(), which retrieves the status code from an
+    HTTP response header (TSHttpHdrStatusGet() retrieves status codes
+    only from headers of type TS_HTTP_TYPE_RESPONSE). You can also set
+    the TSHttpStatus of a response header using TSHttpHdrStatusSet().
 
-   */
-  enum TSHttpStatus {
-    TS_HTTP_STATUS_NONE                            = 0,
-    TS_HTTP_STATUS_CONTINUE                        = 100,
-    TS_HTTP_STATUS_SWITCHING_PROTOCOL              = 101,
-    TS_HTTP_STATUS_EARLY_HINTS                     = 103,
-    TS_HTTP_STATUS_OK                              = 200,
-    TS_HTTP_STATUS_CREATED                         = 201,
-    TS_HTTP_STATUS_ACCEPTED                        = 202,
-    TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION   = 203,
-    TS_HTTP_STATUS_NO_CONTENT                      = 204,
-    TS_HTTP_STATUS_RESET_CONTENT                   = 205,
-    TS_HTTP_STATUS_PARTIAL_CONTENT                 = 206,
-    TS_HTTP_STATUS_MULTI_STATUS                    = 207,
-    TS_HTTP_STATUS_ALREADY_REPORTED                = 208,
-    TS_HTTP_STATUS_IM_USED                         = 211,
-    TS_HTTP_STATUS_MULTIPLE_CHOICES                = 300,
-    TS_HTTP_STATUS_MOVED_PERMANENTLY               = 301,
-    TS_HTTP_STATUS_MOVED_TEMPORARILY               = 302,
-    TS_HTTP_STATUS_SEE_OTHER                       = 303,
-    TS_HTTP_STATUS_NOT_MODIFIED                    = 304,
-    TS_HTTP_STATUS_USE_PROXY                       = 305,
-    TS_HTTP_STATUS_TEMPORARY_REDIRECT              = 307,
-    TS_HTTP_STATUS_PERMANENT_REDIRECT              = 308,
-    TS_HTTP_STATUS_BAD_REQUEST                     = 400,
-    TS_HTTP_STATUS_UNAUTHORIZED                    = 401,
-    TS_HTTP_STATUS_PAYMENT_REQUIRED                = 402,
-    TS_HTTP_STATUS_FORBIDDEN                       = 403,
-    TS_HTTP_STATUS_NOT_FOUND                       = 404,
-    TS_HTTP_STATUS_METHOD_NOT_ALLOWED              = 405,
-    TS_HTTP_STATUS_NOT_ACCEPTABLE                  = 406,
-    TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED   = 407,
-    TS_HTTP_STATUS_REQUEST_TIMEOUT                 = 408,
-    TS_HTTP_STATUS_CONFLICT                        = 409,
-    TS_HTTP_STATUS_GONE                            = 410,
-    TS_HTTP_STATUS_LENGTH_REQUIRED                 = 411,
-    TS_HTTP_STATUS_PRECONDITION_FAILED             = 412,
-    TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE        = 413,
-    TS_HTTP_STATUS_REQUEST_URI_TOO_LONG            = 414,
-    TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE          = 415,
-    TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE = 416,
-    TS_HTTP_STATUS_EXPECTATION_FAILED              = 417,
-    TS_HTTP_STATUS_UNPROCESSABLE_ENTITY            = 422,
-    TS_HTTP_STATUS_LOCKED                          = 423,
-    TS_HTTP_STATUS_FAILED_DEPENDENCY               = 424,
-    TS_HTTP_STATUS_UPGRADE_REQUIRED                = 426,
-    TS_HTTP_STATUS_PRECONDITION_REQUIRED           = 428,
-    TS_HTTP_STATUS_TOO_MANY_REQUESTS               = 429,
-    TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
-    TS_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS   = 451,
-    TS_HTTP_STATUS_INTERNAL_SERVER_ERROR           = 500,
-    TS_HTTP_STATUS_NOT_IMPLEMENTED                 = 501,
-    TS_HTTP_STATUS_BAD_GATEWAY                     = 502,
-    TS_HTTP_STATUS_SERVICE_UNAVAILABLE             = 503,
-    TS_HTTP_STATUS_GATEWAY_TIMEOUT                 = 504,
-    TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED           = 505,
-    TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES         = 506,
-    TS_HTTP_STATUS_INSUFFICIENT_STORAGE            = 507,
-    TS_HTTP_STATUS_LOOP_DETECTED                   = 508,
-    TS_HTTP_STATUS_NOT_EXTENDED                    = 510,
-    TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511,
-  };
+ */
+enum TSHttpStatus {
+  TS_HTTP_STATUS_NONE                            = 0,
+  TS_HTTP_STATUS_CONTINUE                        = 100,
+  TS_HTTP_STATUS_SWITCHING_PROTOCOL              = 101,
+  TS_HTTP_STATUS_EARLY_HINTS                     = 103,
+  TS_HTTP_STATUS_OK                              = 200,
+  TS_HTTP_STATUS_CREATED                         = 201,
+  TS_HTTP_STATUS_ACCEPTED                        = 202,
+  TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION   = 203,
+  TS_HTTP_STATUS_NO_CONTENT                      = 204,
+  TS_HTTP_STATUS_RESET_CONTENT                   = 205,
+  TS_HTTP_STATUS_PARTIAL_CONTENT                 = 206,
+  TS_HTTP_STATUS_MULTI_STATUS                    = 207,
+  TS_HTTP_STATUS_ALREADY_REPORTED                = 208,
+  TS_HTTP_STATUS_IM_USED                         = 211,
+  TS_HTTP_STATUS_MULTIPLE_CHOICES                = 300,
+  TS_HTTP_STATUS_MOVED_PERMANENTLY               = 301,
+  TS_HTTP_STATUS_MOVED_TEMPORARILY               = 302,
+  TS_HTTP_STATUS_SEE_OTHER                       = 303,
+  TS_HTTP_STATUS_NOT_MODIFIED                    = 304,
+  TS_HTTP_STATUS_USE_PROXY                       = 305,
+  TS_HTTP_STATUS_TEMPORARY_REDIRECT              = 307,
+  TS_HTTP_STATUS_PERMANENT_REDIRECT              = 308,
+  TS_HTTP_STATUS_BAD_REQUEST                     = 400,
+  TS_HTTP_STATUS_UNAUTHORIZED                    = 401,
+  TS_HTTP_STATUS_PAYMENT_REQUIRED                = 402,
+  TS_HTTP_STATUS_FORBIDDEN                       = 403,
+  TS_HTTP_STATUS_NOT_FOUND                       = 404,
+  TS_HTTP_STATUS_METHOD_NOT_ALLOWED              = 405,
+  TS_HTTP_STATUS_NOT_ACCEPTABLE                  = 406,
+  TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED   = 407,
+  TS_HTTP_STATUS_REQUEST_TIMEOUT                 = 408,
+  TS_HTTP_STATUS_CONFLICT                        = 409,
+  TS_HTTP_STATUS_GONE                            = 410,
+  TS_HTTP_STATUS_LENGTH_REQUIRED                 = 411,
+  TS_HTTP_STATUS_PRECONDITION_FAILED             = 412,
+  TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE        = 413,
+  TS_HTTP_STATUS_REQUEST_URI_TOO_LONG            = 414,
+  TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE          = 415,
+  TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE = 416,
+  TS_HTTP_STATUS_EXPECTATION_FAILED              = 417,
+  TS_HTTP_STATUS_UNPROCESSABLE_ENTITY            = 422,
+  TS_HTTP_STATUS_LOCKED                          = 423,
+  TS_HTTP_STATUS_FAILED_DEPENDENCY               = 424,
+  TS_HTTP_STATUS_UPGRADE_REQUIRED                = 426,
+  TS_HTTP_STATUS_PRECONDITION_REQUIRED           = 428,
+  TS_HTTP_STATUS_TOO_MANY_REQUESTS               = 429,
+  TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+  TS_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS   = 451,
+  TS_HTTP_STATUS_INTERNAL_SERVER_ERROR           = 500,
+  TS_HTTP_STATUS_NOT_IMPLEMENTED                 = 501,
+  TS_HTTP_STATUS_BAD_GATEWAY                     = 502,
+  TS_HTTP_STATUS_SERVICE_UNAVAILABLE             = 503,
+  TS_HTTP_STATUS_GATEWAY_TIMEOUT                 = 504,
+  TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED           = 505,
+  TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES         = 506,
+  TS_HTTP_STATUS_INSUFFICIENT_STORAGE            = 507,
+  TS_HTTP_STATUS_LOOP_DETECTED                   = 508,
+  TS_HTTP_STATUS_NOT_EXTENDED                    = 510,
+  TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511,
+};
 
-  /**
-      TSEvents are sent to continuations when they are called back.
-      The TSEvent provides the continuation's handler function with
-      information about the callback. Based on the event it receives,
-      the handler function can decide what to do.
-   */
-  enum TSEvent {
-    TS_EVENT_NONE      = 0,
-    TS_EVENT_IMMEDIATE = 1,
-    TS_EVENT_TIMEOUT   = 2,
-    TS_EVENT_ERROR     = 3,
-    TS_EVENT_CONTINUE  = 4,
+/**
+    TSEvents are sent to continuations when they are called back.
+    The TSEvent provides the continuation's handler function with
+    information about the callback. Based on the event it receives,
+    the handler function can decide what to do.
+ */
+enum TSEvent {
+  TS_EVENT_NONE      = 0,
+  TS_EVENT_IMMEDIATE = 1,
+  TS_EVENT_TIMEOUT   = 2,
+  TS_EVENT_ERROR     = 3,
+  TS_EVENT_CONTINUE  = 4,
 
-    TS_EVENT_VCONN_READ_READY         = 100,
-    TS_EVENT_VCONN_WRITE_READY        = 101,
-    TS_EVENT_VCONN_READ_COMPLETE      = 102,
-    TS_EVENT_VCONN_WRITE_COMPLETE     = 103,
-    TS_EVENT_VCONN_EOS                = 104,
-    TS_EVENT_VCONN_INACTIVITY_TIMEOUT = 105,
-    TS_EVENT_VCONN_ACTIVE_TIMEOUT     = 106,
-    TS_EVENT_VCONN_START              = 107,
-    TS_EVENT_VCONN_CLOSE              = 108,
-    TS_EVENT_VCONN_OUTBOUND_START     = 109,
-    TS_EVENT_VCONN_OUTBOUND_CLOSE     = 110,
-    TS_EVENT_VCONN_PRE_ACCEPT         = TS_EVENT_VCONN_START, // Deprecated but still compatible
+  TS_EVENT_VCONN_READ_READY         = 100,
+  TS_EVENT_VCONN_WRITE_READY        = 101,
+  TS_EVENT_VCONN_READ_COMPLETE      = 102,
+  TS_EVENT_VCONN_WRITE_COMPLETE     = 103,
+  TS_EVENT_VCONN_EOS                = 104,
+  TS_EVENT_VCONN_INACTIVITY_TIMEOUT = 105,
+  TS_EVENT_VCONN_ACTIVE_TIMEOUT     = 106,
+  TS_EVENT_VCONN_START              = 107,
+  TS_EVENT_VCONN_CLOSE              = 108,
+  TS_EVENT_VCONN_OUTBOUND_START     = 109,
+  TS_EVENT_VCONN_OUTBOUND_CLOSE     = 110,
+  TS_EVENT_VCONN_PRE_ACCEPT         = TS_EVENT_VCONN_START, // Deprecated but still compatible
 
-    TS_EVENT_NET_CONNECT        = 200,
-    TS_EVENT_NET_CONNECT_FAILED = 201,
-    TS_EVENT_NET_ACCEPT         = 202,
-    TS_EVENT_NET_ACCEPT_FAILED  = 204,
+  TS_EVENT_NET_CONNECT        = 200,
+  TS_EVENT_NET_CONNECT_FAILED = 201,
+  TS_EVENT_NET_ACCEPT         = 202,
+  TS_EVENT_NET_ACCEPT_FAILED  = 204,
 
-    TS_EVENT_HOST_LOOKUP = 500,
+  TS_EVENT_HOST_LOOKUP = 500,
 
-    TS_EVENT_CACHE_OPEN_READ              = 1102,
-    TS_EVENT_CACHE_OPEN_READ_FAILED       = 1103,
-    TS_EVENT_CACHE_OPEN_WRITE             = 1108,
-    TS_EVENT_CACHE_OPEN_WRITE_FAILED      = 1109,
-    TS_EVENT_CACHE_REMOVE                 = 1112,
-    TS_EVENT_CACHE_REMOVE_FAILED          = 1113,
-    TS_EVENT_CACHE_SCAN                   = 1120,
-    TS_EVENT_CACHE_SCAN_FAILED            = 1121,
-    TS_EVENT_CACHE_SCAN_OBJECT            = 1122,
-    TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED = 1123,
-    TS_EVENT_CACHE_SCAN_OPERATION_FAILED  = 1124,
-    TS_EVENT_CACHE_SCAN_DONE              = 1125,
-    TS_EVENT_CACHE_LOOKUP                 = 1126,
-    TS_EVENT_CACHE_READ                   = 1127,
-    TS_EVENT_CACHE_DELETE                 = 1128,
-    TS_EVENT_CACHE_WRITE                  = 1129,
-    TS_EVENT_CACHE_WRITE_HEADER           = 1130,
-    TS_EVENT_CACHE_CLOSE                  = 1131,
-    TS_EVENT_CACHE_LOOKUP_READY           = 1132,
-    TS_EVENT_CACHE_LOOKUP_COMPLETE        = 1133,
-    TS_EVENT_CACHE_READ_READY             = 1134,
-    TS_EVENT_CACHE_READ_COMPLETE          = 1135,
+  TS_EVENT_CACHE_OPEN_READ              = 1102,
+  TS_EVENT_CACHE_OPEN_READ_FAILED       = 1103,
+  TS_EVENT_CACHE_OPEN_WRITE             = 1108,
+  TS_EVENT_CACHE_OPEN_WRITE_FAILED      = 1109,
+  TS_EVENT_CACHE_REMOVE                 = 1112,
+  TS_EVENT_CACHE_REMOVE_FAILED          = 1113,
+  TS_EVENT_CACHE_SCAN                   = 1120,
+  TS_EVENT_CACHE_SCAN_FAILED            = 1121,
+  TS_EVENT_CACHE_SCAN_OBJECT            = 1122,
+  TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED = 1123,
+  TS_EVENT_CACHE_SCAN_OPERATION_FAILED  = 1124,
+  TS_EVENT_CACHE_SCAN_DONE              = 1125,
+  TS_EVENT_CACHE_LOOKUP                 = 1126,
+  TS_EVENT_CACHE_READ                   = 1127,
+  TS_EVENT_CACHE_DELETE                 = 1128,
+  TS_EVENT_CACHE_WRITE                  = 1129,
+  TS_EVENT_CACHE_WRITE_HEADER           = 1130,
+  TS_EVENT_CACHE_CLOSE                  = 1131,
+  TS_EVENT_CACHE_LOOKUP_READY           = 1132,
+  TS_EVENT_CACHE_LOOKUP_COMPLETE        = 1133,
+  TS_EVENT_CACHE_READ_READY             = 1134,
+  TS_EVENT_CACHE_READ_COMPLETE          = 1135,
 
-    TS_EVENT_INTERNAL_1200 = 1200,
+  TS_EVENT_INTERNAL_1200 = 1200,
 
-    TS_EVENT_SSL_SESSION_GET    = 2000,
-    TS_EVENT_SSL_SESSION_NEW    = 2001,
-    TS_EVENT_SSL_SESSION_REMOVE = 2002,
+  TS_EVENT_SSL_SESSION_GET    = 2000,
+  TS_EVENT_SSL_SESSION_NEW    = 2001,
+  TS_EVENT_SSL_SESSION_REMOVE = 2002,
 
-    TS_EVENT_AIO_DONE = 3900,
+  TS_EVENT_AIO_DONE = 3900,
 
-    TS_EVENT_HTTP_CONTINUE                     = 60000,
-    TS_EVENT_HTTP_ERROR                        = 60001,
-    TS_EVENT_HTTP_READ_REQUEST_HDR             = 60002,
-    TS_EVENT_HTTP_OS_DNS                       = 60003,
-    TS_EVENT_HTTP_SEND_REQUEST_HDR             = 60004,
-    TS_EVENT_HTTP_READ_CACHE_HDR               = 60005,
-    TS_EVENT_HTTP_READ_RESPONSE_HDR            = 60006,
-    TS_EVENT_HTTP_SEND_RESPONSE_HDR            = 60007,
-    TS_EVENT_HTTP_REQUEST_TRANSFORM            = 60008,
-    TS_EVENT_HTTP_RESPONSE_TRANSFORM           = 60009,
-    TS_EVENT_HTTP_SELECT_ALT                   = 60010,
-    TS_EVENT_HTTP_TXN_START                    = 60011,
-    TS_EVENT_HTTP_TXN_CLOSE                    = 60012,
-    TS_EVENT_HTTP_SSN_START                    = 60013,
-    TS_EVENT_HTTP_SSN_CLOSE                    = 60014,
-    TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE        = 60015,
-    TS_EVENT_HTTP_PRE_REMAP                    = 60016,
-    TS_EVENT_HTTP_POST_REMAP                   = 60017,
-    TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE = 60018,
-    TS_EVENT_HTTP_RESPONSE_CLIENT              = 60019,
-    TS_EVENT_HTTP_REQUEST_CLIENT               = 60020,
-    TS_EVENT_HTTP_TUNNEL_START                 = 60021,
+  TS_EVENT_HTTP_CONTINUE                     = 60000,
+  TS_EVENT_HTTP_ERROR                        = 60001,
+  TS_EVENT_HTTP_READ_REQUEST_HDR             = 60002,
+  TS_EVENT_HTTP_OS_DNS                       = 60003,
+  TS_EVENT_HTTP_SEND_REQUEST_HDR             = 60004,
+  TS_EVENT_HTTP_READ_CACHE_HDR               = 60005,
+  TS_EVENT_HTTP_READ_RESPONSE_HDR            = 60006,
+  TS_EVENT_HTTP_SEND_RESPONSE_HDR            = 60007,
+  TS_EVENT_HTTP_REQUEST_TRANSFORM            = 60008,
+  TS_EVENT_HTTP_RESPONSE_TRANSFORM           = 60009,
+  TS_EVENT_HTTP_SELECT_ALT                   = 60010,
+  TS_EVENT_HTTP_TXN_START                    = 60011,
+  TS_EVENT_HTTP_TXN_CLOSE                    = 60012,
+  TS_EVENT_HTTP_SSN_START                    = 60013,
+  TS_EVENT_HTTP_SSN_CLOSE                    = 60014,
+  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE        = 60015,
+  TS_EVENT_HTTP_PRE_REMAP                    = 60016,
+  TS_EVENT_HTTP_POST_REMAP                   = 60017,
+  TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE = 60018,
+  TS_EVENT_HTTP_RESPONSE_CLIENT              = 60019,
+  TS_EVENT_HTTP_REQUEST_CLIENT               = 60020,
+  TS_EVENT_HTTP_TUNNEL_START                 = 60021,
 
-    TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
-    TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
-    TS_EVENT_LIFECYCLE_CACHE_READY                = 60102,
-    TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60103,
-    TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60104,
-    TS_EVENT_LIFECYCLE_MSG                        = 60105,
-    TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60106,
-    TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
+  TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
+  TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
+  TS_EVENT_LIFECYCLE_CACHE_READY                = 60102,
+  TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60103,
+  TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60104,
+  TS_EVENT_LIFECYCLE_MSG                        = 60105,
+  TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60106,
+  TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
 
-    TS_EVENT_INTERNAL_60200    = 60200,
-    TS_EVENT_INTERNAL_60201    = 60201,
-    TS_EVENT_INTERNAL_60202    = 60202,
-    TS_EVENT_SSL_CERT          = 60203,
-    TS_EVENT_SSL_SERVERNAME    = 60204,
-    TS_EVENT_SSL_VERIFY_SERVER = 60205,
-    TS_EVENT_SSL_VERIFY_CLIENT = 60206,
-    TS_EVENT_SSL_CLIENT_HELLO  = 60207,
-    TS_EVENT_SSL_SECRET        = 60208,
+  TS_EVENT_INTERNAL_60200    = 60200,
+  TS_EVENT_INTERNAL_60201    = 60201,
+  TS_EVENT_INTERNAL_60202    = 60202,
+  TS_EVENT_SSL_CERT          = 60203,
+  TS_EVENT_SSL_SERVERNAME    = 60204,
+  TS_EVENT_SSL_VERIFY_SERVER = 60205,
+  TS_EVENT_SSL_VERIFY_CLIENT = 60206,
+  TS_EVENT_SSL_CLIENT_HELLO  = 60207,
+  TS_EVENT_SSL_SECRET        = 60208,
 
-    TS_EVENT_MGMT_UPDATE = 60300,
-  };
-  TSEvent const TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP = TS_EVENT_HTTP_PRE_REMAP; /* backwards compat */
+  TS_EVENT_MGMT_UPDATE = 60300,
+};
+TSEvent const TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP = TS_EVENT_HTTP_PRE_REMAP; /* backwards compat */
 
-  /**
-      This set of enums represents the possible hooks where you can
-      set up continuation callbacks. The functions used to register a
-      continuation for a particular hook are:
+/**
+    This set of enums represents the possible hooks where you can
+    set up continuation callbacks. The functions used to register a
+    continuation for a particular hook are:
 
-      TSHttpHookAdd: adds a global hook. You can globally add
-      any hook except for
-       - TS_HTTP_REQUEST_TRANSFORM_HOOK
-       - TS_HTTP_RESPONSE_TRANSFORM_HOOK
-       - TS_HTTP_RESPONSE_CLIENT_HOOK
-       - TS_HTTP_REQUEST_CLIENT_HOOK
+    TSHttpHookAdd: adds a global hook. You can globally add
+    any hook except for
+     - TS_HTTP_REQUEST_TRANSFORM_HOOK
+     - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+     - TS_HTTP_RESPONSE_CLIENT_HOOK
+     - TS_HTTP_REQUEST_CLIENT_HOOK
 
-      The following hooks can ONLY be added globally:
-       - TS_HTTP_SELECT_ALT_HOOK
-       - TS_HTTP_SSN_START_HOOK
+    The following hooks can ONLY be added globally:
+     - TS_HTTP_SELECT_ALT_HOOK
+     - TS_HTTP_SSN_START_HOOK
 
-      TSHttpSsnHookAdd: adds a transaction hook to each transaction
-      within a session. You can only use transaction hooks with this call:
-       - TS_HTTP_READ_REQUEST_HDR_HOOK
-       - TS_HTTP_OS_DNS_HOOK
-       - TS_HTTP_SEND_REQUEST_HDR_HOOK
-       - TS_HTTP_READ_CACHE_HDR_HOOK
-       - TS_HTTP_READ_RESPONSE_HDR_HOOK
-       - TS_HTTP_SEND_RESPONSE_HDR_HOOK
-       - TS_HTTP_REQUEST_TRANSFORM_HOOK
-       - TS_HTTP_RESPONSE_TRANSFORM_HOOK
-       - TS_HTTP_RESPONSE_CLIENT_HOOK
-       - TS_HTTP_REQUEST_CLIENT_HOOK
-       - TS_HTTP_TXN_START_HOOK
-       - TS_HTTP_TXN_CLOSE_HOOK
-       - TS_HTTP_SSN_CLOSE_HOOK
+    TSHttpSsnHookAdd: adds a transaction hook to each transaction
+    within a session. You can only use transaction hooks with this call:
+     - TS_HTTP_READ_REQUEST_HDR_HOOK
+     - TS_HTTP_OS_DNS_HOOK
+     - TS_HTTP_SEND_REQUEST_HDR_HOOK
+     - TS_HTTP_READ_CACHE_HDR_HOOK
+     - TS_HTTP_READ_RESPONSE_HDR_HOOK
+     - TS_HTTP_SEND_RESPONSE_HDR_HOOK
+     - TS_HTTP_REQUEST_TRANSFORM_HOOK
+     - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+     - TS_HTTP_RESPONSE_CLIENT_HOOK
+     - TS_HTTP_REQUEST_CLIENT_HOOK
+     - TS_HTTP_TXN_START_HOOK
+     - TS_HTTP_TXN_CLOSE_HOOK
+     - TS_HTTP_SSN_CLOSE_HOOK
 
-      TSHttpTxnHookAdd: adds a callback at a specific point within
-      an HTTP transaction. The following hooks can be used with this
-      function:
-       - TS_HTTP_READ_REQUEST_HDR_HOOK
-       - TS_HTTP_OS_DNS_HOOK
-       - TS_HTTP_SEND_REQUEST_HDR_HOOK
-       - TS_HTTP_READ_CACHE_HDR_HOOK
-       - TS_HTTP_READ_RESPONSE_HDR_HOOK
-       - TS_HTTP_SEND_RESPONSE_HDR_HOOK
-       - TS_HTTP_REQUEST_TRANSFORM_HOOK
-       - TS_HTTP_RESPONSE_TRANSFORM_HOOK
-       - TS_HTTP_TXN_CLOSE_HOOK
+    TSHttpTxnHookAdd: adds a callback at a specific point within
+    an HTTP transaction. The following hooks can be used with this
+    function:
+     - TS_HTTP_READ_REQUEST_HDR_HOOK
+     - TS_HTTP_OS_DNS_HOOK
+     - TS_HTTP_SEND_REQUEST_HDR_HOOK
+     - TS_HTTP_READ_CACHE_HDR_HOOK
+     - TS_HTTP_READ_RESPONSE_HDR_HOOK
+     - TS_HTTP_SEND_RESPONSE_HDR_HOOK
+     - TS_HTTP_REQUEST_TRANSFORM_HOOK
+     - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+     - TS_HTTP_TXN_CLOSE_HOOK
 
-      The two transform hooks can ONLY be added as transaction hooks.
+    The two transform hooks can ONLY be added as transaction hooks.
 
-      TS_VCONN_START_HOOK - called just after the connection is created,
-      before other activity such as I/O or TLS handshakes  No handshake
-      data has been read or sent (from the proxy) at this point
+    TS_VCONN_START_HOOK - called just after the connection is created,
+    before other activity such as I/O or TLS handshakes  No handshake
+    data has been read or sent (from the proxy) at this point
 
-      TS_HTTP_LAST_HOOK _must_ be the last element. Only right place
-      to insert a new element is just before TS_HTTP_LAST_HOOK.
+    TS_HTTP_LAST_HOOK _must_ be the last element. Only right place
+    to insert a new element is just before TS_HTTP_LAST_HOOK.
 
 
-      @note The TS_HTTP hooks below have to be in the same order as their
-      corresponding TS_EVENT counterparts.  We use this in calculating the
-      corresponding event from a hook ID by summing
-      TS_EVENT_HTTP_READ_REQUEST_HDR with the hook ID (see the invoke call in
-      HttpSM::state_api_callout). For example, the following expression must be
-      true:
+    @note The TS_HTTP hooks below have to be in the same order as their
+    corresponding TS_EVENT counterparts.  We use this in calculating the
+    corresponding event from a hook ID by summing
+    TS_EVENT_HTTP_READ_REQUEST_HDR with the hook ID (see the invoke call in
+    HttpSM::state_api_callout). For example, the following expression must be
+    true:
 
-      TS_EVENT_HTTP_TXN_CLOSE == TS_EVENT_HTTP_READ_REQUEST_HDR + TS_HTTP_TXN_CLOSE_HOOK
+    TS_EVENT_HTTP_TXN_CLOSE == TS_EVENT_HTTP_READ_REQUEST_HDR + TS_HTTP_TXN_CLOSE_HOOK
 
-   */
-  enum TSHttpHookID {
+ */
+enum TSHttpHookID {
 /*
    The following macro helps maintain the relationship between the TS_HTTP
    hooks and their TS_EVENT_HTTP counterparts as described in the above
    doxygen comment.
  */
 #define DERIVE_HOOK_VALUE_FROM_EVENT(COMMON) TS_HTTP_##COMMON##_HOOK = TS_EVENT_HTTP_##COMMON - TS_EVENT_HTTP_READ_REQUEST_HDR
-    DERIVE_HOOK_VALUE_FROM_EVENT(READ_REQUEST_HDR),             // TS_HTTP_READ_REQUEST_HDR_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(OS_DNS),                       // TS_HTTP_OS_DNS_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(SEND_REQUEST_HDR),             // TS_HTTP_SEND_REQUEST_HDR_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(READ_CACHE_HDR),               // TS_HTTP_READ_CACHE_HDR_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(READ_RESPONSE_HDR),            // TS_HTTP_READ_RESPONSE_HDR_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(SEND_RESPONSE_HDR),            // TS_HTTP_SEND_RESPONSE_HDR_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_TRANSFORM),            // TS_HTTP_REQUEST_TRANSFORM_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_TRANSFORM),           // TS_HTTP_RESPONSE_TRANSFORM_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(SELECT_ALT),                   // TS_HTTP_SELECT_ALT_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(TXN_START),                    // TS_HTTP_TXN_START_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(TXN_CLOSE),                    // TS_HTTP_TXN_CLOSE_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(SSN_START),                    // TS_HTTP_SSN_START_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(SSN_CLOSE),                    // TS_HTTP_SSN_CLOSE_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(CACHE_LOOKUP_COMPLETE),        // TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(PRE_REMAP),                    // TS_HTTP_PRE_REMAP_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(POST_REMAP),                   // TS_HTTP_POST_REMAP_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_BUFFER_READ_COMPLETE), // TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_CLIENT),              // TS_HTTP_RESPONSE_CLIENT_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_CLIENT),               // TS_HTTP_REQUEST_CLIENT_HOOK
-    DERIVE_HOOK_VALUE_FROM_EVENT(TUNNEL_START),                 // TS_HTTP_TUNNEL_START_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(READ_REQUEST_HDR),             // TS_HTTP_READ_REQUEST_HDR_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(OS_DNS),                       // TS_HTTP_OS_DNS_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(SEND_REQUEST_HDR),             // TS_HTTP_SEND_REQUEST_HDR_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(READ_CACHE_HDR),               // TS_HTTP_READ_CACHE_HDR_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(READ_RESPONSE_HDR),            // TS_HTTP_READ_RESPONSE_HDR_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(SEND_RESPONSE_HDR),            // TS_HTTP_SEND_RESPONSE_HDR_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_TRANSFORM),            // TS_HTTP_REQUEST_TRANSFORM_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_TRANSFORM),           // TS_HTTP_RESPONSE_TRANSFORM_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(SELECT_ALT),                   // TS_HTTP_SELECT_ALT_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(TXN_START),                    // TS_HTTP_TXN_START_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(TXN_CLOSE),                    // TS_HTTP_TXN_CLOSE_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(SSN_START),                    // TS_HTTP_SSN_START_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(SSN_CLOSE),                    // TS_HTTP_SSN_CLOSE_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(CACHE_LOOKUP_COMPLETE),        // TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(PRE_REMAP),                    // TS_HTTP_PRE_REMAP_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(POST_REMAP),                   // TS_HTTP_POST_REMAP_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_BUFFER_READ_COMPLETE), // TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(RESPONSE_CLIENT),              // TS_HTTP_RESPONSE_CLIENT_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(REQUEST_CLIENT),               // TS_HTTP_REQUEST_CLIENT_HOOK
+  DERIVE_HOOK_VALUE_FROM_EVENT(TUNNEL_START),                 // TS_HTTP_TUNNEL_START_HOOK
 
 // NOTE:
 // If adding any TS_HTTP hooks, be sure to understand the note above in the
@@ -480,1086 +475,1083 @@ char const TS_VERSION_STRING[] = "@TS_VERSION_STRING@";
 // their corresponding TS_EVENT values.
 #undef DERIVE_HOOK_VALUE_FROM_EVENT
 
-    // Putting the SSL hooks in the same enum space
-    // So both sets of hooks can be set by the same Hook function
-    TS_SSL_FIRST_HOOK,
-    TS_VCONN_START_HOOK      = TS_SSL_FIRST_HOOK,
-    TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
-    TS_VCONN_CLOSE_HOOK,
-    TS_SSL_CLIENT_HELLO_HOOK,
-    TS_SSL_SNI_HOOK,
-    TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
-    TS_SSL_SERVERNAME_HOOK,
-    TS_SSL_SERVER_VERIFY_HOOK,
-    TS_SSL_VERIFY_SERVER_HOOK = TS_SSL_SERVER_VERIFY_HOOK,
-    TS_SSL_VERIFY_CLIENT_HOOK,
-    TS_SSL_SESSION_HOOK,
-    TS_VCONN_OUTBOUND_START_HOOK,
-    TS_VCONN_OUTBOUND_CLOSE_HOOK,
-    TS_SSL_LAST_HOOK = TS_VCONN_OUTBOUND_CLOSE_HOOK,
-    TS_HTTP_LAST_HOOK,
-  };
+  // Putting the SSL hooks in the same enum space
+  // So both sets of hooks can be set by the same Hook function
+  TS_SSL_FIRST_HOOK,
+  TS_VCONN_START_HOOK      = TS_SSL_FIRST_HOOK,
+  TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
+  TS_VCONN_CLOSE_HOOK,
+  TS_SSL_CLIENT_HELLO_HOOK,
+  TS_SSL_SNI_HOOK,
+  TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
+  TS_SSL_SERVERNAME_HOOK,
+  TS_SSL_SERVER_VERIFY_HOOK,
+  TS_SSL_VERIFY_SERVER_HOOK = TS_SSL_SERVER_VERIFY_HOOK,
+  TS_SSL_VERIFY_CLIENT_HOOK,
+  TS_SSL_SESSION_HOOK,
+  TS_VCONN_OUTBOUND_START_HOOK,
+  TS_VCONN_OUTBOUND_CLOSE_HOOK,
+  TS_SSL_LAST_HOOK = TS_VCONN_OUTBOUND_CLOSE_HOOK,
+  TS_HTTP_LAST_HOOK,
+};
 
-  /** Plugin lifecycle hooks.
+/** Plugin lifecycle hooks.
 
-      These are called during lifecycle events of a plugin. They
-      should be set in the plugin initialization function. The
-      continuation is invoked with an event ID specified for each hook
-      and @c nullptr for the event data.
+    These are called during lifecycle events of a plugin. They
+    should be set in the plugin initialization function. The
+    continuation is invoked with an event ID specified for each hook
+    and @c nullptr for the event data.
 
-      TS_LIFECYCLE_PORTS_INITIALIZED_HOOK
+    TS_LIFECYCLE_PORTS_INITIALIZED_HOOK
 
-        called once, after the HTTP proxy port data structures have
-        been initialized. In particular, SSL related calls that depend
-        on accept endpoints may be invoked. After this hook is
-        finished, the proxy port sockets are opened and connections
-        are accepted.
+      called once, after the HTTP proxy port data structures have
+      been initialized. In particular, SSL related calls that depend
+      on accept endpoints may be invoked. After this hook is
+      finished, the proxy port sockets are opened and connections
+      are accepted.
 
-        Event: TS_EVENT_LIFECYCLE_PORTS_INITIALIZED
+      Event: TS_EVENT_LIFECYCLE_PORTS_INITIALIZED
 
-      TS_LIFECYCLE_PORTS_READY_HOOK
+    TS_LIFECYCLE_PORTS_READY_HOOK
 
-        called once, after the sockets have been opened and the accept
-        threads have been started. That is, the ports are ready to
-        accept connections. This is *not* guaranteed to be called
-        before the first connection is accepted.
+      called once, after the sockets have been opened and the accept
+      threads have been started. That is, the ports are ready to
+      accept connections. This is *not* guaranteed to be called
+      before the first connection is accepted.
 
-        Event: TS_EVENT_LIFECYCLE_PORTS_READY
+      Event: TS_EVENT_LIFECYCLE_PORTS_READY
 
-      TS_LIFECYCLE_CACHE_READY_HOOK
+    TS_LIFECYCLE_CACHE_READY_HOOK
 
-        called once, after the cache has finished its
-        initialization. It is either online or has failed when this
-        hook is called.
+      called once, after the cache has finished its
+      initialization. It is either online or has failed when this
+      hook is called.
 
-        Event: TS_EVENT_LIFECYCLE_CACHE_READY
+      Event: TS_EVENT_LIFECYCLE_CACHE_READY
 
-      TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK
+    TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK
 
-        called every time after a server SSL_CTX has finished the initialization.
-        It exposes the initialized SSL_CTX pointer.
+      called every time after a server SSL_CTX has finished the initialization.
+      It exposes the initialized SSL_CTX pointer.
 
-        Event: TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED
+      Event: TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED
 
-      TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK
+    TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK
 
-        called once, after the client SSL_CTX has finished the initialization.
-        It exposes the initialized SSL_CTX pointer.
+      called once, after the client SSL_CTX has finished the initialization.
+      It exposes the initialized SSL_CTX pointer.
 
-        Event: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
+      Event: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
 
-      TS_LIFECYCLE_MSG_HOOK
+    TS_LIFECYCLE_MSG_HOOK
 
-        Called in response to an external agent. The data is a pointer to  an instance of TSPluginMsg.
+      Called in response to an external agent. The data is a pointer to  an instance of TSPluginMsg.
 
-        Event: TS_EVENT_LIFECYCLE_MSG
+      Event: TS_EVENT_LIFECYCLE_MSG
 
-      TS_LIFECYCLE_TASK_THREADS_READY_HOOK
+    TS_LIFECYCLE_TASK_THREADS_READY_HOOK
 
-        called once, after the task threads have been started.
+      called once, after the task threads have been started.
 
-        Event: TS_EVENT_LIFECYCLE_TASK_THREADS_READY
+      Event: TS_EVENT_LIFECYCLE_TASK_THREADS_READY
 
-      TS_LIFECYCLE_SHUTDOWN_HOOK
+    TS_LIFECYCLE_SHUTDOWN_HOOK
 
-        called once, after receiving a shutdown signal, such as SIGTERM.
+      called once, after receiving a shutdown signal, such as SIGTERM.
 
-        Event: TS_EVENT_LIFECYCLE_SHUTDOWN
+      Event: TS_EVENT_LIFECYCLE_SHUTDOWN
 
-      Ordering guarantees:
+    Ordering guarantees:
 
-      - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
+    - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
 
-      NOTE! ONLY the orderings EXPLICITLY mentioned above are guaranteed.
+    NOTE! ONLY the orderings EXPLICITLY mentioned above are guaranteed.
 
-   */
-  enum TSLifecycleHookID {
-    TS_LIFECYCLE_PORTS_INITIALIZED_HOOK,
-    TS_LIFECYCLE_PORTS_READY_HOOK,
-    TS_LIFECYCLE_CACHE_READY_HOOK,
-    TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
-    TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
-    TS_LIFECYCLE_MSG_HOOK,
-    TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
-    TS_LIFECYCLE_SHUTDOWN_HOOK,
-    TS_LIFECYCLE_SSL_SECRET_HOOK,
-    TS_LIFECYCLE_LAST_HOOK,
-  };
+ */
+enum TSLifecycleHookID {
+  TS_LIFECYCLE_PORTS_INITIALIZED_HOOK,
+  TS_LIFECYCLE_PORTS_READY_HOOK,
+  TS_LIFECYCLE_CACHE_READY_HOOK,
+  TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
+  TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
+  TS_LIFECYCLE_MSG_HOOK,
+  TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
+  TS_LIFECYCLE_SHUTDOWN_HOOK,
+  TS_LIFECYCLE_SSL_SECRET_HOOK,
+  TS_LIFECYCLE_LAST_HOOK,
+};
 
-  enum TSServerState {
-    TS_SRVSTATE_STATE_UNDEFINED = 0,
-    TS_SRVSTATE_ACTIVE_TIMEOUT,
-    TS_SRVSTATE_BAD_INCOMING_RESPONSE,
-    TS_SRVSTATE_CONNECTION_ALIVE,
-    TS_SRVSTATE_CONNECTION_CLOSED,
-    TS_SRVSTATE_CONNECTION_ERROR,
-    TS_SRVSTATE_INACTIVE_TIMEOUT,
-    TS_SRVSTATE_OPEN_RAW_ERROR,
-    TS_SRVSTATE_PARSE_ERROR,
-    TS_SRVSTATE_TRANSACTION_COMPLETE,
-    TS_SRVSTATE_PARENT_RETRY,
-    TS_SRVSTATE_OUTBOUND_CONGESTION,
-  };
+enum TSServerState {
+  TS_SRVSTATE_STATE_UNDEFINED = 0,
+  TS_SRVSTATE_ACTIVE_TIMEOUT,
+  TS_SRVSTATE_BAD_INCOMING_RESPONSE,
+  TS_SRVSTATE_CONNECTION_ALIVE,
+  TS_SRVSTATE_CONNECTION_CLOSED,
+  TS_SRVSTATE_CONNECTION_ERROR,
+  TS_SRVSTATE_INACTIVE_TIMEOUT,
+  TS_SRVSTATE_OPEN_RAW_ERROR,
+  TS_SRVSTATE_PARSE_ERROR,
+  TS_SRVSTATE_TRANSACTION_COMPLETE,
+  TS_SRVSTATE_PARENT_RETRY,
+  TS_SRVSTATE_OUTBOUND_CONGESTION,
+};
 
-  enum TSLookingUpType {
-    TS_LOOKUP_UNDEFINED_LOOKUP,
-    TS_LOOKUP_PARENT_PROXY,
-    TS_LOOKUP_ORIGIN_SERVER,
-    TS_LOOKUP_INCOMING_ROUTER,
-    TS_LOOKUP_HOST_NONE,
-  };
+enum TSLookingUpType {
+  TS_LOOKUP_UNDEFINED_LOOKUP,
+  TS_LOOKUP_PARENT_PROXY,
+  TS_LOOKUP_ORIGIN_SERVER,
+  TS_LOOKUP_INCOMING_ROUTER,
+  TS_LOOKUP_HOST_NONE,
+};
 
-  enum TSCacheLookupResult {
-    TS_CACHE_LOOKUP_MISS,
-    TS_CACHE_LOOKUP_HIT_STALE,
-    TS_CACHE_LOOKUP_HIT_FRESH,
-    TS_CACHE_LOOKUP_SKIPPED,
-  };
+enum TSCacheLookupResult {
+  TS_CACHE_LOOKUP_MISS,
+  TS_CACHE_LOOKUP_HIT_STALE,
+  TS_CACHE_LOOKUP_HIT_FRESH,
+  TS_CACHE_LOOKUP_SKIPPED,
+};
 
-  enum TSCacheDataType {
-    TS_CACHE_DATA_TYPE_NONE,
-    TS_CACHE_DATA_TYPE_HTTP,
-    TS_CACHE_DATA_TYPE_OTHER,
-  };
+enum TSCacheDataType {
+  TS_CACHE_DATA_TYPE_NONE,
+  TS_CACHE_DATA_TYPE_HTTP,
+  TS_CACHE_DATA_TYPE_OTHER,
+};
 
-  enum TSCacheError {
-    TS_CACHE_ERROR_NO_DOC    = -20400,
-    TS_CACHE_ERROR_DOC_BUSY  = -20401,
-    TS_CACHE_ERROR_NOT_READY = -20407,
-  };
+enum TSCacheError {
+  TS_CACHE_ERROR_NO_DOC    = -20400,
+  TS_CACHE_ERROR_DOC_BUSY  = -20401,
+  TS_CACHE_ERROR_NOT_READY = -20407,
+};
 
-  enum TSCacheScanResult {
-    TS_CACHE_SCAN_RESULT_DONE     = 0,
-    TS_CACHE_SCAN_RESULT_CONTINUE = 1,
-    TS_CACHE_SCAN_RESULT_DELETE   = 10,
-    TS_CACHE_SCAN_RESULT_DELETE_ALL_ALTERNATES,
-    TS_CACHE_SCAN_RESULT_UPDATE,
-    TS_CACHE_SCAN_RESULT_RETRY,
-  };
+enum TSCacheScanResult {
+  TS_CACHE_SCAN_RESULT_DONE     = 0,
+  TS_CACHE_SCAN_RESULT_CONTINUE = 1,
+  TS_CACHE_SCAN_RESULT_DELETE   = 10,
+  TS_CACHE_SCAN_RESULT_DELETE_ALL_ALTERNATES,
+  TS_CACHE_SCAN_RESULT_UPDATE,
+  TS_CACHE_SCAN_RESULT_RETRY,
+};
 
-  enum TSHttpTxnInfoKey {
-    TS_TXN_INFO_NONE = -1,
-    TS_TXN_INFO_CACHE_HIT_RAM,
-    TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM,
-    TS_TXN_INFO_CACHE_HIT_RWW, // READ_WHILE_WRITE
-    TS_TXN_INFO_CACHE_OPEN_READ_TRIES,
-    TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES,
-    TS_TXN_INFO_CACHE_VOLUME,
-    TS_TXN_INFO_LAST_ENTRY,
-  };
+enum TSHttpTxnInfoKey {
+  TS_TXN_INFO_NONE = -1,
+  TS_TXN_INFO_CACHE_HIT_RAM,
+  TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM,
+  TS_TXN_INFO_CACHE_HIT_RWW, // READ_WHILE_WRITE
+  TS_TXN_INFO_CACHE_OPEN_READ_TRIES,
+  TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES,
+  TS_TXN_INFO_CACHE_VOLUME,
+  TS_TXN_INFO_LAST_ENTRY,
+};
 
-  enum TSHttpSsnInfoKey {
-    TS_SSN_INFO_NONE = -1,
-    TS_SSN_INFO_TRANSACTION_COUNT,
-    TS_SSN_INFO_RECEIVED_FRAME_COUNT,
-  };
+enum TSHttpSsnInfoKey {
+  TS_SSN_INFO_NONE = -1,
+  TS_SSN_INFO_TRANSACTION_COUNT,
+  TS_SSN_INFO_RECEIVED_FRAME_COUNT,
+};
 
 #define TS_SSN_INFO_RECEIVED_FRAME_COUNT_H2_UNKNOWN 999
 #define TS_SSN_INFO_RECEIVED_FRAME_COUNT_H3_UNKNOWN 0x21
 
-  enum TSVConnCloseFlags {
-    TS_VC_CLOSE_ABORT  = -1,
-    TS_VC_CLOSE_NORMAL = 1,
-  };
+enum TSVConnCloseFlags {
+  TS_VC_CLOSE_ABORT  = -1,
+  TS_VC_CLOSE_NORMAL = 1,
+};
 
-  enum TSIOBufferSizeIndex {
-    TS_IOBUFFER_SIZE_INDEX_128  = 0,
-    TS_IOBUFFER_SIZE_INDEX_256  = 1,
-    TS_IOBUFFER_SIZE_INDEX_512  = 2,
-    TS_IOBUFFER_SIZE_INDEX_1K   = 3,
-    TS_IOBUFFER_SIZE_INDEX_2K   = 4,
-    TS_IOBUFFER_SIZE_INDEX_4K   = 5,
-    TS_IOBUFFER_SIZE_INDEX_8K   = 6,
-    TS_IOBUFFER_SIZE_INDEX_16K  = 7,
-    TS_IOBUFFER_SIZE_INDEX_32K  = 8,
-    TS_IOBUFFER_SIZE_INDEX_64K  = 9,
-    TS_IOBUFFER_SIZE_INDEX_128K = 10,
-    TS_IOBUFFER_SIZE_INDEX_256K = 11,
-    TS_IOBUFFER_SIZE_INDEX_512K = 12,
-    TS_IOBUFFER_SIZE_INDEX_1M   = 13,
-    TS_IOBUFFER_SIZE_INDEX_2M   = 14,
-  };
+enum TSIOBufferSizeIndex {
+  TS_IOBUFFER_SIZE_INDEX_128  = 0,
+  TS_IOBUFFER_SIZE_INDEX_256  = 1,
+  TS_IOBUFFER_SIZE_INDEX_512  = 2,
+  TS_IOBUFFER_SIZE_INDEX_1K   = 3,
+  TS_IOBUFFER_SIZE_INDEX_2K   = 4,
+  TS_IOBUFFER_SIZE_INDEX_4K   = 5,
+  TS_IOBUFFER_SIZE_INDEX_8K   = 6,
+  TS_IOBUFFER_SIZE_INDEX_16K  = 7,
+  TS_IOBUFFER_SIZE_INDEX_32K  = 8,
+  TS_IOBUFFER_SIZE_INDEX_64K  = 9,
+  TS_IOBUFFER_SIZE_INDEX_128K = 10,
+  TS_IOBUFFER_SIZE_INDEX_256K = 11,
+  TS_IOBUFFER_SIZE_INDEX_512K = 12,
+  TS_IOBUFFER_SIZE_INDEX_1M   = 13,
+  TS_IOBUFFER_SIZE_INDEX_2M   = 14,
+};
 
-  enum TSIOBufferWaterMark {
-    TS_IOBUFFER_WATER_MARK_UNDEFINED         = -1,
-    TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT = 0,     // mirror of DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK
-    TS_IOBUFFER_WATER_MARK_HTTP_DEFAULT      = 32768, // mirror of default_buffer_water_mark
-  };
+enum TSIOBufferWaterMark {
+  TS_IOBUFFER_WATER_MARK_UNDEFINED         = -1,
+  TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT = 0,     // mirror of DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK
+  TS_IOBUFFER_WATER_MARK_HTTP_DEFAULT      = 32768, // mirror of default_buffer_water_mark
+};
 
-  enum TSReturnCode {
-    TS_ERROR   = -1,
-    TS_SUCCESS = 0,
-  };
+enum TSReturnCode {
+  TS_ERROR   = -1,
+  TS_SUCCESS = 0,
+};
 
-  enum TSFetchWakeUpOptions {
-    NO_CALLBACK = 0,
-    AFTER_HEADER,
-    AFTER_BODY,
-  };
+enum TSFetchWakeUpOptions {
+  NO_CALLBACK = 0,
+  AFTER_HEADER,
+  AFTER_BODY,
+};
 
-  /// Values for per server outbound connection tracking group definition.
-  /// See proxy.config.http.per_server.match
-  enum TSOutboundConnectionMatchType {
-    TS_SERVER_OUTBOUND_MATCH_IP,
-    TS_SERVER_OUTBOUND_MATCH_PORT,
-    TS_SERVER_OUTBOUND_MATCH_HOST,
-    TS_SERVER_OUTBOUND_MATCH_BOTH,
-  };
+/// Values for per server outbound connection tracking group definition.
+/// See proxy.config.http.per_server.match
+enum TSOutboundConnectionMatchType {
+  TS_SERVER_OUTBOUND_MATCH_IP,
+  TS_SERVER_OUTBOUND_MATCH_PORT,
+  TS_SERVER_OUTBOUND_MATCH_HOST,
+  TS_SERVER_OUTBOUND_MATCH_BOTH,
+};
 
-  /* librecords types */
+/* librecords types */
 
-  /* The values of this enum must match enum RecT in I_RecDefs.h */
-  enum TSRecordType {
-    TS_RECORDTYPE_NULL    = 0x00,
-    TS_RECORDTYPE_CONFIG  = 0x01,
-    TS_RECORDTYPE_PROCESS = 0x02,
-    TS_RECORDTYPE_NODE    = 0x04,
-    TS_RECORDTYPE_PLUGIN  = 0x20,
-    TS_RECORDTYPE_ALL     = 0x3F,
-  };
+/* The values of this enum must match enum RecT in I_RecDefs.h */
+enum TSRecordType {
+  TS_RECORDTYPE_NULL    = 0x00,
+  TS_RECORDTYPE_CONFIG  = 0x01,
+  TS_RECORDTYPE_PROCESS = 0x02,
+  TS_RECORDTYPE_NODE    = 0x04,
+  TS_RECORDTYPE_PLUGIN  = 0x20,
+  TS_RECORDTYPE_ALL     = 0x3F,
+};
 
-  /* The values of this enum must match enum RecDataT in I_RecDefs.h */
-  enum TSRecordDataType {
-    TS_RECORDDATATYPE_NULL = 0,
-    TS_RECORDDATATYPE_INT,
-    TS_RECORDDATATYPE_FLOAT,
-    TS_RECORDDATATYPE_STRING,
-    TS_RECORDDATATYPE_COUNTER,
-    TS_RECORDDATATYPE_STAT_CONST,
-    TS_RECORDDATATYPE_STAT_FX,
-    TS_RECORDDATATYPE_MAX,
-  };
+/* The values of this enum must match enum RecDataT in I_RecDefs.h */
+enum TSRecordDataType {
+  TS_RECORDDATATYPE_NULL = 0,
+  TS_RECORDDATATYPE_INT,
+  TS_RECORDDATATYPE_FLOAT,
+  TS_RECORDDATATYPE_STRING,
+  TS_RECORDDATATYPE_COUNTER,
+  TS_RECORDDATATYPE_STAT_CONST,
+  TS_RECORDDATATYPE_STAT_FX,
+  TS_RECORDDATATYPE_MAX,
+};
 
-  union TSRecordData {
-    int64_t rec_int;
-    float rec_float;
-    char *rec_string;
-    int64_t rec_counter;
-  };
+union TSRecordData {
+  int64_t rec_int;
+  float rec_float;
+  char *rec_string;
+  int64_t rec_counter;
+};
 
-  /* The values of this enum must match enum RecPersistT in I_RecDefs.h */
-  enum TSRecordPersistType {
-    TS_RECORDP_NULL,
-    TS_RECORDP_PERSISTENT,
-    TS_RECORDP_NON_PERSISTENT,
-  };
+/* The values of this enum must match enum RecPersistT in I_RecDefs.h */
+enum TSRecordPersistType {
+  TS_RECORDP_NULL,
+  TS_RECORDP_PERSISTENT,
+  TS_RECORDP_NON_PERSISTENT,
+};
 
-  /* The values of this enum must match enum RecUpdateT in I_RecDefs.h */
-  enum TSRecordUpdateType {
-    TS_RECORDUPDATE_NULL,
-    TS_RECORDUPDATE_DYNAMIC,
-    TS_RECORDUPDATE_RESTART_TS,
-    TS_RECORDUPDATE_RESTART_TM,
-  };
+/* The values of this enum must match enum RecUpdateT in I_RecDefs.h */
+enum TSRecordUpdateType {
+  TS_RECORDUPDATE_NULL,
+  TS_RECORDUPDATE_DYNAMIC,
+  TS_RECORDUPDATE_RESTART_TS,
+  TS_RECORDUPDATE_RESTART_TM,
+};
 
-  /* The values of this enum must match enum RecCheckT in I_RecDefs.h */
-  enum TSRecordCheckType {
-    TS_RECORDCHECK_NULL,
-    TS_RECORDCHECK_STR,
-    TS_RECORDCHECK_INT,
-    TS_RECORDCHECK_IP,
-  };
+/* The values of this enum must match enum RecCheckT in I_RecDefs.h */
+enum TSRecordCheckType {
+  TS_RECORDCHECK_NULL,
+  TS_RECORDCHECK_STR,
+  TS_RECORDCHECK_INT,
+  TS_RECORDCHECK_IP,
+};
 
-  /* The values of this enum must match enum RecAccessT in I_RecDefs.h */
-  enum TSRecordAccessType {
-    TS_RECORDACCESS_NULL,
-    TS_RECORDACCESS_NO_ACCESS,
-    TS_RECORDACCESS_READ_ONLY,
-  };
+/* The values of this enum must match enum RecAccessT in I_RecDefs.h */
+enum TSRecordAccessType {
+  TS_RECORDACCESS_NULL,
+  TS_RECORDACCESS_NO_ACCESS,
+  TS_RECORDACCESS_READ_ONLY,
+};
 
-  enum TSOverridableConfigKey {
-    TS_CONFIG_NULL = -1,
-    TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR,
-    TS_CONFIG_HTTP_CHUNKING_ENABLED,
-    TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
-    TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME,
-    TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE,
-    TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN,
-    TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT,
-    TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT,
-    TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH,
-    TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT,
-    TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT,
-    TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT,
-    TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT,
-    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM,
-    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER,
-    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT,
-    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE,
-    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP,
-    TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP,
-    TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED,
-    TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR,
-    TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS,
-    TS_CONFIG_HTTP_CACHE_HTTP,
-    TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE,
-    TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE,
-    TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE,
-    TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE,
-    TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES,
-    TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION,
-    TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC,
-    TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS,
-    TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR,
-    TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR,
-    TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME,
-    TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME,
-    TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME,
-    TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME,
-    TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE,
-    TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN,
-    TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT,
-    TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN,
-    TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT,
-    TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT,
-    TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES,
-    TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,
-    TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES,
-    TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT,
-    TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME,
-    TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
-    TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT,
-    TS_CONFIG_HTTP_RESPONSE_SERVER_STR,
-    TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR,
-    TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD,
-    TS_CONFIG_NET_SOCK_PACKET_MARK_OUT,
-    TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
-    TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE,
-    TS_CONFIG_HTTP_CHUNKING_SIZE,
-    TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED,
-    TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK,
-    TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK,
-    TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP,
-    TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE,
-    TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK,
-    TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE,
-    TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
-    TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
-    TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
-    TS_CONFIG_SSL_HSTS_MAX_AGE,
-    TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
-    TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
-    TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES,
-    TS_CONFIG_HTTP_CACHE_RANGE_WRITE,
-    TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED,
-    TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER,
-    TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE,
-    TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD,
-    TS_CONFIG_HTTP_CACHE_GENERATION,
-    TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE,
-    TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION,
-    TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS,
-    TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES,
-    TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT,
-    TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY,
-    TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT,
-    TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT,
-    TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT,
-    TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT,
-    TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS,
-    TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN,
-    TS_CONFIG_SRV_ENABLED,
-    TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
-    TS_CONFIG_SSL_CERT_FILENAME,
-    TS_CONFIG_SSL_CLIENT_CERT_FILENAME = TS_CONFIG_SSL_CERT_FILENAME,
-    TS_CONFIG_SSL_CERT_FILEPATH,
-    TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB,
-    TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH,
-    TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH,
-    TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH,
-    TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH,
-    TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD,
-    TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME,
-    TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS,
-    TS_CONFIG_HTTP_NORMALIZE_AE,
-    TS_CONFIG_HTTP_INSERT_FORWARDED,
-    TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT,
-    TS_CONFIG_HTTP_ALLOW_MULTI_RANGE,
-    TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED,
-    TS_CONFIG_HTTP_ALLOW_HALF_OPEN,
-    TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS,
-    TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX,
-    TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH,
-    TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY,
-    TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES,
-    TS_CONFIG_SSL_CLIENT_SNI_POLICY,
-    TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,
-    TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
-    TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS,
-    TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE,
-    TS_CONFIG_HTTP_CONNECT_DOWN_POLICY,
-    TS_CONFIG_HTTP_MAX_PROXY_CYCLES,
-    TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX,
-    TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK,
-    TS_CONFIG_NET_SOCK_NOTSENT_LOWAT,
-    TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE,
-    TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS,
-    TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS,
-    TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT,
-    TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT,
-    TS_CONFIG_HTTP_CACHE_IGNORE_QUERY,
-    TS_CONFIG_LAST_ENTRY,
-  };
+enum TSOverridableConfigKey {
+  TS_CONFIG_NULL = -1,
+  TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR,
+  TS_CONFIG_HTTP_CHUNKING_ENABLED,
+  TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
+  TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME,
+  TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE,
+  TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN,
+  TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT,
+  TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT,
+  TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH,
+  TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT,
+  TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT,
+  TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT,
+  TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT,
+  TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM,
+  TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER,
+  TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT,
+  TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE,
+  TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP,
+  TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP,
+  TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED,
+  TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR,
+  TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS,
+  TS_CONFIG_HTTP_CACHE_HTTP,
+  TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE,
+  TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE,
+  TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE,
+  TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE,
+  TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES,
+  TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION,
+  TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC,
+  TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS,
+  TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR,
+  TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR,
+  TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME,
+  TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME,
+  TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME,
+  TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME,
+  TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE,
+  TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN,
+  TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT,
+  TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN,
+  TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT,
+  TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT,
+  TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES,
+  TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,
+  TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES,
+  TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT,
+  TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME,
+  TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
+  TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT,
+  TS_CONFIG_HTTP_RESPONSE_SERVER_STR,
+  TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR,
+  TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD,
+  TS_CONFIG_NET_SOCK_PACKET_MARK_OUT,
+  TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
+  TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE,
+  TS_CONFIG_HTTP_CHUNKING_SIZE,
+  TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED,
+  TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK,
+  TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK,
+  TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP,
+  TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE,
+  TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK,
+  TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE,
+  TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
+  TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
+  TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
+  TS_CONFIG_SSL_HSTS_MAX_AGE,
+  TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
+  TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
+  TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES,
+  TS_CONFIG_HTTP_CACHE_RANGE_WRITE,
+  TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED,
+  TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER,
+  TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE,
+  TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD,
+  TS_CONFIG_HTTP_CACHE_GENERATION,
+  TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE,
+  TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION,
+  TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS,
+  TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES,
+  TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT,
+  TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY,
+  TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT,
+  TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT,
+  TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT,
+  TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT,
+  TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS,
+  TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN,
+  TS_CONFIG_SRV_ENABLED,
+  TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
+  TS_CONFIG_SSL_CERT_FILENAME,
+  TS_CONFIG_SSL_CLIENT_CERT_FILENAME = TS_CONFIG_SSL_CERT_FILENAME,
+  TS_CONFIG_SSL_CERT_FILEPATH,
+  TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB,
+  TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH,
+  TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH,
+  TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH,
+  TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH,
+  TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD,
+  TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME,
+  TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS,
+  TS_CONFIG_HTTP_NORMALIZE_AE,
+  TS_CONFIG_HTTP_INSERT_FORWARDED,
+  TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT,
+  TS_CONFIG_HTTP_ALLOW_MULTI_RANGE,
+  TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED,
+  TS_CONFIG_HTTP_ALLOW_HALF_OPEN,
+  TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS,
+  TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX,
+  TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH,
+  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY,
+  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES,
+  TS_CONFIG_SSL_CLIENT_SNI_POLICY,
+  TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,
+  TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
+  TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS,
+  TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE,
+  TS_CONFIG_HTTP_CONNECT_DOWN_POLICY,
+  TS_CONFIG_HTTP_MAX_PROXY_CYCLES,
+  TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX,
+  TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK,
+  TS_CONFIG_NET_SOCK_NOTSENT_LOWAT,
+  TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE,
+  TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS,
+  TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS,
+  TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT,
+  TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT,
+  TS_CONFIG_HTTP_CACHE_IGNORE_QUERY,
+  TS_CONFIG_LAST_ENTRY,
+};
 
-  /* The TASK pool of threads is the primary method of off-loading continuations from the
-     net-threads. Configure this with proxy.config.task_threads in records.yaml. */
-  enum TSThreadPool {
-    TS_THREAD_POOL_NET,
-    TS_THREAD_POOL_TASK,
-    /* unlikely you should use these */
-    TS_THREAD_POOL_DNS,
-    TS_THREAD_POOL_UDP,
-  };
+/* The TASK pool of threads is the primary method of off-loading continuations from the
+   net-threads. Configure this with proxy.config.task_threads in records.yaml. */
+enum TSThreadPool {
+  TS_THREAD_POOL_NET,
+  TS_THREAD_POOL_TASK,
+  /* unlikely you should use these */
+  TS_THREAD_POOL_DNS,
+  TS_THREAD_POOL_UDP,
+};
 
-  /* TSHRTime stuff, this is a candidate for deprecation in v10.0.0 */
-  using TSHRTime = int64_t;
+/* TSHRTime stuff, this is a candidate for deprecation in v10.0.0 */
+using TSHRTime = int64_t;
 
-  TSHRTime const TS_HRTIME_NSECOND = 1;
-  TSHRTime const TS_HRTIME_USECOND = 1000 * TS_HRTIME_NSECOND;
-  TSHRTime const TS_HRTIME_MSECOND = 1000 * TS_HRTIME_USECOND;
-  TSHRTime const TS_HRTIME_SECOND  = 1000 * TS_HRTIME_MSECOND;
+TSHRTime const TS_HRTIME_NSECOND = 1;
+TSHRTime const TS_HRTIME_USECOND = 1000 * TS_HRTIME_NSECOND;
+TSHRTime const TS_HRTIME_MSECOND = 1000 * TS_HRTIME_USECOND;
+TSHRTime const TS_HRTIME_SECOND  = 1000 * TS_HRTIME_MSECOND;
 
-  constexpr TSHRTime
-  TS_HRTIME_SECONDS(TSHRTime x)
-  {
-    return x * TS_HRTIME_SECOND;
-  }
-  constexpr TSHRTime
-  TS_HRTIME_MSECONDS(TSHRTime x)
-  {
-    return x * TS_HRTIME_MSECOND;
-  }
-  constexpr TSHRTime
-  TS_HRTIME_USECONDS(TSHRTime x)
-  {
-    return x * TS_HRTIME_USECOND;
-  }
-  constexpr TSHRTime
-  TS_HRTIME_NSECONDS(TSHRTime x)
-  {
-    return x * TS_HRTIME_NSECOND;
-  }
+constexpr TSHRTime
+TS_HRTIME_SECONDS(TSHRTime x)
+{
+  return x * TS_HRTIME_SECOND;
+}
+constexpr TSHRTime
+TS_HRTIME_MSECONDS(TSHRTime x)
+{
+  return x * TS_HRTIME_MSECOND;
+}
+constexpr TSHRTime
+TS_HRTIME_USECONDS(TSHRTime x)
+{
+  return x * TS_HRTIME_USECOND;
+}
+constexpr TSHRTime
+TS_HRTIME_NSECONDS(TSHRTime x)
+{
+  return x * TS_HRTIME_NSECOND;
+}
 
-  /* The TSMilestonesType is an enum defining all the various milestones ("timers") that
-     we track for a request. */
-  enum TSMilestonesType {
-    TS_MILESTONE_NULL = -1,
-    TS_MILESTONE_UA_BEGIN,
-    TS_MILESTONE_UA_FIRST_READ,
-    TS_MILESTONE_UA_READ_HEADER_DONE,
-    TS_MILESTONE_UA_BEGIN_WRITE,
-    TS_MILESTONE_UA_CLOSE,
-    TS_MILESTONE_SERVER_FIRST_CONNECT,
-    TS_MILESTONE_SERVER_CONNECT,
-    TS_MILESTONE_SERVER_CONNECT_END,
-    TS_MILESTONE_SERVER_BEGIN_WRITE,
-    TS_MILESTONE_SERVER_FIRST_READ,
-    TS_MILESTONE_SERVER_READ_HEADER_DONE,
-    TS_MILESTONE_SERVER_CLOSE,
-    TS_MILESTONE_CACHE_OPEN_READ_BEGIN,
-    TS_MILESTONE_CACHE_OPEN_READ_END,
-    TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,
-    TS_MILESTONE_CACHE_OPEN_WRITE_END,
-    TS_MILESTONE_DNS_LOOKUP_BEGIN,
-    TS_MILESTONE_DNS_LOOKUP_END,
-    TS_MILESTONE_SM_START,
-    TS_MILESTONE_SM_FINISH,
-    TS_MILESTONE_PLUGIN_ACTIVE,
-    TS_MILESTONE_PLUGIN_TOTAL,
-    TS_MILESTONE_TLS_HANDSHAKE_START,
-    TS_MILESTONE_TLS_HANDSHAKE_END,
-    TS_MILESTONE_LAST_ENTRY,
-  };
+/* The TSMilestonesType is an enum defining all the various milestones ("timers") that
+   we track for a request. */
+enum TSMilestonesType {
+  TS_MILESTONE_NULL = -1,
+  TS_MILESTONE_UA_BEGIN,
+  TS_MILESTONE_UA_FIRST_READ,
+  TS_MILESTONE_UA_READ_HEADER_DONE,
+  TS_MILESTONE_UA_BEGIN_WRITE,
+  TS_MILESTONE_UA_CLOSE,
+  TS_MILESTONE_SERVER_FIRST_CONNECT,
+  TS_MILESTONE_SERVER_CONNECT,
+  TS_MILESTONE_SERVER_CONNECT_END,
+  TS_MILESTONE_SERVER_BEGIN_WRITE,
+  TS_MILESTONE_SERVER_FIRST_READ,
+  TS_MILESTONE_SERVER_READ_HEADER_DONE,
+  TS_MILESTONE_SERVER_CLOSE,
+  TS_MILESTONE_CACHE_OPEN_READ_BEGIN,
+  TS_MILESTONE_CACHE_OPEN_READ_END,
+  TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,
+  TS_MILESTONE_CACHE_OPEN_WRITE_END,
+  TS_MILESTONE_DNS_LOOKUP_BEGIN,
+  TS_MILESTONE_DNS_LOOKUP_END,
+  TS_MILESTONE_SM_START,
+  TS_MILESTONE_SM_FINISH,
+  TS_MILESTONE_PLUGIN_ACTIVE,
+  TS_MILESTONE_PLUGIN_TOTAL,
+  TS_MILESTONE_TLS_HANDSHAKE_START,
+  TS_MILESTONE_TLS_HANDSHAKE_END,
+  TS_MILESTONE_LAST_ENTRY,
+};
 
-  /* These type aliases are used with the corresponding TSMgmt*Get functions
-     for storing the values retrieved by those functions. For example,
-     TSMgmtCounterGet() retrieves an TSMgmtCounter. */
-  using TSMgmtInt     = int64_t;
-  using TSMgmtCounter = int64_t;
-  using TSMgmtFloat   = float;
-  using TSMgmtString  = char *;
+/* These type aliases are used with the corresponding TSMgmt*Get functions
+   for storing the values retrieved by those functions. For example,
+   TSMgmtCounterGet() retrieves an TSMgmtCounter. */
+using TSMgmtInt     = int64_t;
+using TSMgmtCounter = int64_t;
+using TSMgmtFloat   = float;
+using TSMgmtString  = char *;
 
-  /// The source of a management value.
-  enum TSMgmtSource {
-    TS_MGMT_SOURCE_NULL,     ///< No source / value not found.
-    TS_MGMT_SOURCE_DEFAULT,  ///< Built in core default.
-    TS_MGMT_SOURCE_PLUGIN,   ///< Plugin supplied default.
-    TS_MGMT_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
-    TS_MGMT_SOURCE_ENV,      ///< Process environment variable.
-  };
+/// The source of a management value.
+enum TSMgmtSource {
+  TS_MGMT_SOURCE_NULL,     ///< No source / value not found.
+  TS_MGMT_SOURCE_DEFAULT,  ///< Built in core default.
+  TS_MGMT_SOURCE_PLUGIN,   ///< Plugin supplied default.
+  TS_MGMT_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
+  TS_MGMT_SOURCE_ENV,      ///< Process environment variable.
+};
 
-  /// The User Arg type, used for Txn/Ssn/VConn user argument slots
-  enum TSUserArgType {
-    TS_USER_ARGS_TXN,   ///< Transaction based.
-    TS_USER_ARGS_SSN,   ///< Session based
-    TS_USER_ARGS_VCONN, ///< VConnection based
-    TS_USER_ARGS_GLB,   ///< Global based
-    TS_USER_ARGS_COUNT, ///< Fake enum, # of valid entries.
-  };
+/// The User Arg type, used for Txn/Ssn/VConn user argument slots
+enum TSUserArgType {
+  TS_USER_ARGS_TXN,   ///< Transaction based.
+  TS_USER_ARGS_SSN,   ///< Session based
+  TS_USER_ARGS_VCONN, ///< VConnection based
+  TS_USER_ARGS_GLB,   ///< Global based
+  TS_USER_ARGS_COUNT, ///< Fake enum, # of valid entries.
+};
 
-  /** An enumeration of HTTP version types for the priority functions that behave
-   * differently across HTTP protocols. */
-  enum TSHttpPriorityType {
-    HTTP_PRIORITY_TYPE_HTTP_UNSPECIFIED = 1,
-    HTTP_PRIORITY_TYPE_HTTP_2,
-    HTTP_PRIORITY_TYPE_HTTP_3,
-  };
+/** An enumeration of HTTP version types for the priority functions that behave
+ * differently across HTTP protocols. */
+enum TSHttpPriorityType {
+  HTTP_PRIORITY_TYPE_HTTP_UNSPECIFIED = 1,
+  HTTP_PRIORITY_TYPE_HTTP_2,
+  HTTP_PRIORITY_TYPE_HTTP_3,
+};
 
-  /** The abstract type of the various HTTP priority implementations. */
-  struct TSHttpPriority {
-    /** The reference to the concrete HTTP priority implementation. This will be
-     * a value from TSHttpPriorityType. */
-    uint8_t priority_type;
-    /** The space allocated for the concrete priority implementation.
-     *
-     * Note that this has to take padding into account. There is a static_assert
-     * in InkAPI.cc to verify that TSHttpPriority is at least as large as
-     * TSHttp2Priority. As other structures are added that are represented by
-     * TSHttpPriority add more static_asserts to verify that TSHttpPriority is as
-     * large as it needs to be.
-     */
-    uint8_t data[7];
-  };
-
-  /** A structure for HTTP/2 priority.
+/** The abstract type of the various HTTP priority implementations. */
+struct TSHttpPriority {
+  /** The reference to the concrete HTTP priority implementation. This will be
+   * a value from TSHttpPriorityType. */
+  uint8_t priority_type;
+  /** The space allocated for the concrete priority implementation.
    *
-   * For an explanation of these terms with respect to HTTP/2, see RFC 7540,
-   * section 5.3.
+   * Note that this has to take padding into account. There is a static_assert
+   * in InkAPI.cc to verify that TSHttpPriority is at least as large as
+   * TSHttp2Priority. As other structures are added that are represented by
+   * TSHttpPriority add more static_asserts to verify that TSHttpPriority is as
+   * large as it needs to be.
    */
-  struct TSHttp2Priority {
-    uint8_t priority_type; /** HTTP_PROTOCOL_TYPE_HTTP_2 */
-    uint8_t weight;
-    /** The stream dependency. Per spec, see RFC 7540 section 6.2, this is 31
-     * bits. We use a signed 32 bit structure to store either a valid dependency
-     * or -1 if the stream has no dependency. */
-    int32_t stream_dependency;
-  };
+  uint8_t data[7];
+};
 
-  using TSFile = struct tsapi_file *;
+/** A structure for HTTP/2 priority.
+ *
+ * For an explanation of these terms with respect to HTTP/2, see RFC 7540,
+ * section 5.3.
+ */
+struct TSHttp2Priority {
+  uint8_t priority_type; /** HTTP_PROTOCOL_TYPE_HTTP_2 */
+  uint8_t weight;
+  /** The stream dependency. Per spec, see RFC 7540 section 6.2, this is 31
+   * bits. We use a signed 32 bit structure to store either a valid dependency
+   * or -1 if the stream has no dependency. */
+  int32_t stream_dependency;
+};
 
-  using TSMLoc          = struct tsapi_mloc *;
-  using TSMBuffer       = struct tsapi_mbuffer *;
-  using TSHttpSsn       = struct tsapi_httpssn *;
-  using TSHttpTxn       = struct tsapi_httptxn *;
-  using TSSslConnection = struct tsapi_ssl_obj *;
-  using TSSslSession    = struct tsapi_ssl_session *;
-  using TSHttpAltInfo   = struct tsapi_httpaltinfo *;
-  using TSMimeParser    = struct tsapi_mimeparser *;
-  using TSHttpParser    = struct tsapi_httpparser *;
-  using TSCacheKey      = struct tsapi_cachekey *;
-  using TSCacheHttpInfo = struct tsapi_cachehttpinfo *;
-  using TSCacheTxn      = struct tsapi_cachetxn *;
-  using TSSslVerifyCTX  = struct tsapi_x509_store_ctx *;
+using TSFile = struct tsapi_file *;
 
-  using TSPortDescriptor   = struct tsapi_port *;
-  using TSVIO              = struct tsapi_vio *;
-  using TSThread           = struct tsapi_thread *;
-  using TSEventThread      = struct tsapi_event_thread *;
-  using TSSslX509          = struct tsapi_x509 *;
-  using TSMutex            = struct tsapi_mutex *;
-  using TSConfig           = struct tsapi_config *;
-  using TSCont             = struct tsapi_cont *;
-  using TSVConn            = struct tsapi_cont *; /* a VConn is really a specialized TSCont */
-  using TSSslContext       = struct tsapi_ssl_context *;
-  using TSAction           = struct tsapi_action *;
-  using TSIOBuffer         = struct tsapi_iobuffer *;
-  using TSIOBufferData     = struct tsapi_iobufferdata *;
-  using TSIOBufferBlock    = struct tsapi_bufferblock *;
-  using TSIOBufferReader   = struct tsapi_bufferreader *;
-  using TSHostLookupResult = struct tsapi_hostlookupresult *;
-  using TSAIOCallback      = struct tsapi_aiocallback *;
-  using TSAcceptor         = struct tsapi_net_accept *;
-  using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
+using TSMLoc          = struct tsapi_mloc *;
+using TSMBuffer       = struct tsapi_mbuffer *;
+using TSHttpSsn       = struct tsapi_httpssn *;
+using TSHttpTxn       = struct tsapi_httptxn *;
+using TSSslConnection = struct tsapi_ssl_obj *;
+using TSSslSession    = struct tsapi_ssl_session *;
+using TSHttpAltInfo   = struct tsapi_httpaltinfo *;
+using TSMimeParser    = struct tsapi_mimeparser *;
+using TSHttpParser    = struct tsapi_httpparser *;
+using TSCacheKey      = struct tsapi_cachekey *;
+using TSCacheHttpInfo = struct tsapi_cachehttpinfo *;
+using TSCacheTxn      = struct tsapi_cachetxn *;
+using TSSslVerifyCTX  = struct tsapi_x509_store_ctx *;
 
-  using TSFetchSM = struct tsapi_fetchsm *;
+using TSPortDescriptor   = struct tsapi_port *;
+using TSVIO              = struct tsapi_vio *;
+using TSThread           = struct tsapi_thread *;
+using TSEventThread      = struct tsapi_event_thread *;
+using TSSslX509          = struct tsapi_x509 *;
+using TSMutex            = struct tsapi_mutex *;
+using TSConfig           = struct tsapi_config *;
+using TSCont             = struct tsapi_cont *;
+using TSVConn            = struct tsapi_cont *; /* a VConn is really a specialized TSCont */
+using TSSslContext       = struct tsapi_ssl_context *;
+using TSAction           = struct tsapi_action *;
+using TSIOBuffer         = struct tsapi_iobuffer *;
+using TSIOBufferData     = struct tsapi_iobufferdata *;
+using TSIOBufferBlock    = struct tsapi_bufferblock *;
+using TSIOBufferReader   = struct tsapi_bufferreader *;
+using TSHostLookupResult = struct tsapi_hostlookupresult *;
+using TSAIOCallback      = struct tsapi_aiocallback *;
+using TSAcceptor         = struct tsapi_net_accept *;
+using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
 
-  using TSThreadFunc        = void *(*)(void *data);
-  using TSEventFunc         = int (*)(TSCont contp, TSEvent event, void *edata);
-  using TSConfigDestroyFunc = void (*)(void *data);
+using TSFetchSM = struct tsapi_fetchsm *;
 
-  struct TSFetchEvent {
-    int success_event_id;
-    int failure_event_id;
-    int timeout_event_id;
-  };
+using TSThreadFunc        = void *(*)(void *data);
+using TSEventFunc         = int (*)(TSCont contp, TSEvent event, void *edata);
+using TSConfigDestroyFunc = void (*)(void *data);
 
-  struct TSFetchUrlParams {
-    const char *request;
-    int request_len;
-    int port;
-    struct sockaddr_storage ip;
-    TSCont contp;
-    TSFetchEvent events;
-    TSFetchWakeUpOptions options;
-    struct TSFetchUrlParams *next;
-  };
-  using TSFetchUrlParams_t = TSFetchUrlParams;
+struct TSFetchEvent {
+  int success_event_id;
+  int failure_event_id;
+  int timeout_event_id;
+};
 
-  // Extended FetchSM APIs
-  enum TSFetchEventExt {
-    TS_FETCH_EVENT_EXT_HEAD_READY = -1,
-    TS_FETCH_EVENT_EXT_HEAD_DONE  = -2,
-    TS_FETCH_EVENT_EXT_BODY_READY = -3,
-    TS_FETCH_EVENT_EXT_BODY_DONE  = -4,
-  };
+struct TSFetchUrlParams {
+  const char *request;
+  int request_len;
+  int port;
+  struct sockaddr_storage ip;
+  TSCont contp;
+  TSFetchEvent events;
+  TSFetchWakeUpOptions options;
+  struct TSFetchUrlParams *next;
+};
+using TSFetchUrlParams_t = TSFetchUrlParams;
 
-  enum TSFetchFlags {
-    TS_FETCH_FLAGS_NONE                 = 0,      // do nothing
-    TS_FETCH_FLAGS_STREAM               = 1 << 1, // enable stream IO
-    TS_FETCH_FLAGS_DECHUNK              = 1 << 2, // dechunk body content
-    TS_FETCH_FLAGS_NEWLOCK              = 1 << 3, // allocate new lock for fetch sm
-    TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4, // Allow this fetch to be created as a non-internal request.
-    TS_FETCH_FLAGS_SKIP_REMAP           = 1 << 5, // Skip remapping and allow requesting arbitary URL
-  };
+// Extended FetchSM APIs
+enum TSFetchEventExt {
+  TS_FETCH_EVENT_EXT_HEAD_READY = -1,
+  TS_FETCH_EVENT_EXT_HEAD_DONE  = -2,
+  TS_FETCH_EVENT_EXT_BODY_READY = -3,
+  TS_FETCH_EVENT_EXT_BODY_DONE  = -4,
+};
 
-  // This is a duplicate of the SSL_MAX_SSL_SESSION_ID_LENGTH constant
-  // Redefining here so we don't include the openssl/ssl.h file here
-  const int TS_SSL_MAX_SSL_SESSION_ID_LENGTH = 32;
+enum TSFetchFlags {
+  TS_FETCH_FLAGS_NONE                 = 0,      // do nothing
+  TS_FETCH_FLAGS_STREAM               = 1 << 1, // enable stream IO
+  TS_FETCH_FLAGS_DECHUNK              = 1 << 2, // dechunk body content
+  TS_FETCH_FLAGS_NEWLOCK              = 1 << 3, // allocate new lock for fetch sm
+  TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4, // Allow this fetch to be created as a non-internal request.
+  TS_FETCH_FLAGS_SKIP_REMAP           = 1 << 5, // Skip remapping and allow requesting arbitary URL
+};
 
-  // This mirrors the internal data structure SSLSessionID
-  struct TSSslSessionID {
-    size_t len;
-    char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
-  };
+// This is a duplicate of the SSL_MAX_SSL_SESSION_ID_LENGTH constant
+// Redefining here so we don't include the openssl/ssl.h file here
+const int TS_SSL_MAX_SSL_SESSION_ID_LENGTH = 32;
 
-  struct TSSecretID {
-    const char *cert_name;
-    size_t cert_name_len;
-    const char *key_name;
-    size_t key_name_len;
-  };
+// This mirrors the internal data structure SSLSessionID
+struct TSSslSessionID {
+  size_t len;
+  char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
+};
 
-  enum TSConnectType {
-    TS_CONNECT_UNDEFINED,
-    TS_CONNECT_PLUGIN,
-    TS_CONNECT_LAST_ENTRY,
-  };
+struct TSSecretID {
+  const char *cert_name;
+  size_t cert_name_len;
+  const char *key_name;
+  size_t key_name_len;
+};
 
-  struct TSHttpConnectOptions {
-    TSConnectType connect_type;
-    struct sockaddr const *addr;
-    const char *tag;
-    int64_t id;
-    TSIOBufferSizeIndex buffer_index;
-    TSIOBufferWaterMark buffer_water_mark;
-  };
+enum TSConnectType {
+  TS_CONNECT_UNDEFINED,
+  TS_CONNECT_PLUGIN,
+  TS_CONNECT_LAST_ENTRY,
+};
 
-  /* --------------------------------------------------------------------------
-     URL schemes */
-  extern const char *TS_URL_SCHEME_FILE;
-  extern const char *TS_URL_SCHEME_FTP;
-  extern const char *TS_URL_SCHEME_GOPHER;
-  extern const char *TS_URL_SCHEME_HTTP;
-  extern const char *TS_URL_SCHEME_HTTPS;
-  extern const char *TS_URL_SCHEME_MAILTO;
-  extern const char *TS_URL_SCHEME_NEWS;
-  extern const char *TS_URL_SCHEME_NNTP;
-  extern const char *TS_URL_SCHEME_PROSPERO;
-  extern const char *TS_URL_SCHEME_TELNET;
-  extern const char *TS_URL_SCHEME_TUNNEL;
-  extern const char *TS_URL_SCHEME_WAIS;
-  extern const char *TS_URL_SCHEME_PNM;
-  extern const char *TS_URL_SCHEME_RTSP;
-  extern const char *TS_URL_SCHEME_RTSPU;
-  extern const char *TS_URL_SCHEME_MMS;
-  extern const char *TS_URL_SCHEME_MMSU;
-  extern const char *TS_URL_SCHEME_MMST;
-  extern const char *TS_URL_SCHEME_WS;
-  extern const char *TS_URL_SCHEME_WSS;
+struct TSHttpConnectOptions {
+  TSConnectType connect_type;
+  struct sockaddr const *addr;
+  const char *tag;
+  int64_t id;
+  TSIOBufferSizeIndex buffer_index;
+  TSIOBufferWaterMark buffer_water_mark;
+};
 
-  /* --------------------------------------------------------------------------
-     URL scheme string lengths */
-  extern int TS_URL_LEN_FILE;
-  extern int TS_URL_LEN_FTP;
-  extern int TS_URL_LEN_GOPHER;
-  extern int TS_URL_LEN_HTTP;
-  extern int TS_URL_LEN_HTTPS;
-  extern int TS_URL_LEN_MAILTO;
-  extern int TS_URL_LEN_NEWS;
-  extern int TS_URL_LEN_NNTP;
-  extern int TS_URL_LEN_PROSPERO;
-  extern int TS_URL_LEN_TELNET;
-  extern int TS_URL_LEN_WAIS;
-  extern int TS_URL_LEN_WS;
-  extern int TS_URL_LEN_WSS;
+/* --------------------------------------------------------------------------
+   URL schemes */
+extern const char *TS_URL_SCHEME_FILE;
+extern const char *TS_URL_SCHEME_FTP;
+extern const char *TS_URL_SCHEME_GOPHER;
+extern const char *TS_URL_SCHEME_HTTP;
+extern const char *TS_URL_SCHEME_HTTPS;
+extern const char *TS_URL_SCHEME_MAILTO;
+extern const char *TS_URL_SCHEME_NEWS;
+extern const char *TS_URL_SCHEME_NNTP;
+extern const char *TS_URL_SCHEME_PROSPERO;
+extern const char *TS_URL_SCHEME_TELNET;
+extern const char *TS_URL_SCHEME_TUNNEL;
+extern const char *TS_URL_SCHEME_WAIS;
+extern const char *TS_URL_SCHEME_PNM;
+extern const char *TS_URL_SCHEME_RTSP;
+extern const char *TS_URL_SCHEME_RTSPU;
+extern const char *TS_URL_SCHEME_MMS;
+extern const char *TS_URL_SCHEME_MMSU;
+extern const char *TS_URL_SCHEME_MMST;
+extern const char *TS_URL_SCHEME_WS;
+extern const char *TS_URL_SCHEME_WSS;
 
-  /* --------------------------------------------------------------------------
-     MIME fields */
-  extern const char *TS_MIME_FIELD_ACCEPT;
-  extern const char *TS_MIME_FIELD_ACCEPT_CHARSET;
-  extern const char *TS_MIME_FIELD_ACCEPT_ENCODING;
-  extern const char *TS_MIME_FIELD_ACCEPT_LANGUAGE;
-  extern const char *TS_MIME_FIELD_ACCEPT_RANGES;
-  extern const char *TS_MIME_FIELD_AGE;
-  extern const char *TS_MIME_FIELD_ALLOW;
-  extern const char *TS_MIME_FIELD_APPROVED;
-  extern const char *TS_MIME_FIELD_AUTHORIZATION;
-  extern const char *TS_MIME_FIELD_BYTES;
-  extern const char *TS_MIME_FIELD_CACHE_CONTROL;
-  extern const char *TS_MIME_FIELD_CLIENT_IP;
-  extern const char *TS_MIME_FIELD_CONNECTION;
-  extern const char *TS_MIME_FIELD_CONTENT_BASE;
-  extern const char *TS_MIME_FIELD_CONTENT_ENCODING;
-  extern const char *TS_MIME_FIELD_CONTENT_LANGUAGE;
-  extern const char *TS_MIME_FIELD_CONTENT_LENGTH;
-  extern const char *TS_MIME_FIELD_CONTENT_LOCATION;
-  extern const char *TS_MIME_FIELD_CONTENT_MD5;
-  extern const char *TS_MIME_FIELD_CONTENT_RANGE;
-  extern const char *TS_MIME_FIELD_CONTENT_TYPE;
-  extern const char *TS_MIME_FIELD_CONTROL;
-  extern const char *TS_MIME_FIELD_COOKIE;
-  extern const char *TS_MIME_FIELD_DATE;
-  extern const char *TS_MIME_FIELD_DISTRIBUTION;
-  extern const char *TS_MIME_FIELD_ETAG;
-  extern const char *TS_MIME_FIELD_EXPECT;
-  extern const char *TS_MIME_FIELD_EXPIRES;
-  extern const char *TS_MIME_FIELD_FOLLOWUP_TO;
-  extern const char *TS_MIME_FIELD_FROM;
-  extern const char *TS_MIME_FIELD_HOST;
-  extern const char *TS_MIME_FIELD_IF_MATCH;
-  extern const char *TS_MIME_FIELD_IF_MODIFIED_SINCE;
-  extern const char *TS_MIME_FIELD_IF_NONE_MATCH;
-  extern const char *TS_MIME_FIELD_IF_RANGE;
-  extern const char *TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
-  extern const char *TS_MIME_FIELD_KEEP_ALIVE;
-  extern const char *TS_MIME_FIELD_KEYWORDS;
-  extern const char *TS_MIME_FIELD_LAST_MODIFIED;
-  extern const char *TS_MIME_FIELD_LINES;
-  extern const char *TS_MIME_FIELD_LOCATION;
-  extern const char *TS_MIME_FIELD_MAX_FORWARDS;
-  extern const char *TS_MIME_FIELD_MESSAGE_ID;
-  extern const char *TS_MIME_FIELD_NEWSGROUPS;
-  extern const char *TS_MIME_FIELD_ORGANIZATION;
-  extern const char *TS_MIME_FIELD_PATH;
-  extern const char *TS_MIME_FIELD_PRAGMA;
-  extern const char *TS_MIME_FIELD_PROXY_AUTHENTICATE;
-  extern const char *TS_MIME_FIELD_PROXY_AUTHORIZATION;
-  extern const char *TS_MIME_FIELD_PROXY_CONNECTION;
-  extern const char *TS_MIME_FIELD_PUBLIC;
-  extern const char *TS_MIME_FIELD_RANGE;
-  extern const char *TS_MIME_FIELD_REFERENCES;
-  extern const char *TS_MIME_FIELD_REFERER;
-  extern const char *TS_MIME_FIELD_REPLY_TO;
-  extern const char *TS_MIME_FIELD_RETRY_AFTER;
-  extern const char *TS_MIME_FIELD_SENDER;
-  extern const char *TS_MIME_FIELD_SERVER;
-  extern const char *TS_MIME_FIELD_SET_COOKIE;
-  extern const char *TS_MIME_FIELD_STRICT_TRANSPORT_SECURITY;
-  extern const char *TS_MIME_FIELD_SUBJECT;
-  extern const char *TS_MIME_FIELD_SUMMARY;
-  extern const char *TS_MIME_FIELD_TE;
-  extern const char *TS_MIME_FIELD_TRANSFER_ENCODING;
-  extern const char *TS_MIME_FIELD_UPGRADE;
-  extern const char *TS_MIME_FIELD_USER_AGENT;
-  extern const char *TS_MIME_FIELD_VARY;
-  extern const char *TS_MIME_FIELD_VIA;
-  extern const char *TS_MIME_FIELD_WARNING;
-  extern const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
-  extern const char *TS_MIME_FIELD_XREF;
-  extern const char *TS_MIME_FIELD_X_FORWARDED_FOR;
-  extern const char *TS_MIME_FIELD_FORWARDED;
+/* --------------------------------------------------------------------------
+   URL scheme string lengths */
+extern int TS_URL_LEN_FILE;
+extern int TS_URL_LEN_FTP;
+extern int TS_URL_LEN_GOPHER;
+extern int TS_URL_LEN_HTTP;
+extern int TS_URL_LEN_HTTPS;
+extern int TS_URL_LEN_MAILTO;
+extern int TS_URL_LEN_NEWS;
+extern int TS_URL_LEN_NNTP;
+extern int TS_URL_LEN_PROSPERO;
+extern int TS_URL_LEN_TELNET;
+extern int TS_URL_LEN_WAIS;
+extern int TS_URL_LEN_WS;
+extern int TS_URL_LEN_WSS;
 
-  /* --------------------------------------------------------------------------
-     MIME fields string lengths */
-  extern int TS_MIME_LEN_ACCEPT;
-  extern int TS_MIME_LEN_ACCEPT_CHARSET;
-  extern int TS_MIME_LEN_ACCEPT_ENCODING;
-  extern int TS_MIME_LEN_ACCEPT_LANGUAGE;
-  extern int TS_MIME_LEN_ACCEPT_RANGES;
-  extern int TS_MIME_LEN_AGE;
-  extern int TS_MIME_LEN_ALLOW;
-  extern int TS_MIME_LEN_APPROVED;
-  extern int TS_MIME_LEN_AUTHORIZATION;
-  extern int TS_MIME_LEN_BYTES;
-  extern int TS_MIME_LEN_CACHE_CONTROL;
-  extern int TS_MIME_LEN_CLIENT_IP;
-  extern int TS_MIME_LEN_CONNECTION;
-  extern int TS_MIME_LEN_CONTENT_BASE;
-  extern int TS_MIME_LEN_CONTENT_ENCODING;
-  extern int TS_MIME_LEN_CONTENT_LANGUAGE;
-  extern int TS_MIME_LEN_CONTENT_LENGTH;
-  extern int TS_MIME_LEN_CONTENT_LOCATION;
-  extern int TS_MIME_LEN_CONTENT_MD5;
-  extern int TS_MIME_LEN_CONTENT_RANGE;
-  extern int TS_MIME_LEN_CONTENT_TYPE;
-  extern int TS_MIME_LEN_CONTROL;
-  extern int TS_MIME_LEN_COOKIE;
-  extern int TS_MIME_LEN_DATE;
-  extern int TS_MIME_LEN_DISTRIBUTION;
-  extern int TS_MIME_LEN_ETAG;
-  extern int TS_MIME_LEN_EXPECT;
-  extern int TS_MIME_LEN_EXPIRES;
-  extern int TS_MIME_LEN_FOLLOWUP_TO;
-  extern int TS_MIME_LEN_FROM;
-  extern int TS_MIME_LEN_HOST;
-  extern int TS_MIME_LEN_IF_MATCH;
-  extern int TS_MIME_LEN_IF_MODIFIED_SINCE;
-  extern int TS_MIME_LEN_IF_NONE_MATCH;
-  extern int TS_MIME_LEN_IF_RANGE;
-  extern int TS_MIME_LEN_IF_UNMODIFIED_SINCE;
-  extern int TS_MIME_LEN_KEEP_ALIVE;
-  extern int TS_MIME_LEN_KEYWORDS;
-  extern int TS_MIME_LEN_LAST_MODIFIED;
-  extern int TS_MIME_LEN_LINES;
-  extern int TS_MIME_LEN_LOCATION;
-  extern int TS_MIME_LEN_MAX_FORWARDS;
-  extern int TS_MIME_LEN_MESSAGE_ID;
-  extern int TS_MIME_LEN_NEWSGROUPS;
-  extern int TS_MIME_LEN_ORGANIZATION;
-  extern int TS_MIME_LEN_PATH;
-  extern int TS_MIME_LEN_PRAGMA;
-  extern int TS_MIME_LEN_PROXY_AUTHENTICATE;
-  extern int TS_MIME_LEN_PROXY_AUTHORIZATION;
-  extern int TS_MIME_LEN_PROXY_CONNECTION;
-  extern int TS_MIME_LEN_PUBLIC;
-  extern int TS_MIME_LEN_RANGE;
-  extern int TS_MIME_LEN_REFERENCES;
-  extern int TS_MIME_LEN_REFERER;
-  extern int TS_MIME_LEN_REPLY_TO;
-  extern int TS_MIME_LEN_RETRY_AFTER;
-  extern int TS_MIME_LEN_SENDER;
-  extern int TS_MIME_LEN_SERVER;
-  extern int TS_MIME_LEN_SET_COOKIE;
-  extern int TS_MIME_LEN_STRICT_TRANSPORT_SECURITY;
-  extern int TS_MIME_LEN_SUBJECT;
-  extern int TS_MIME_LEN_SUMMARY;
-  extern int TS_MIME_LEN_TE;
-  extern int TS_MIME_LEN_TRANSFER_ENCODING;
-  extern int TS_MIME_LEN_UPGRADE;
-  extern int TS_MIME_LEN_USER_AGENT;
-  extern int TS_MIME_LEN_VARY;
-  extern int TS_MIME_LEN_VIA;
-  extern int TS_MIME_LEN_WARNING;
-  extern int TS_MIME_LEN_WWW_AUTHENTICATE;
-  extern int TS_MIME_LEN_XREF;
-  extern int TS_MIME_LEN_X_FORWARDED_FOR;
-  extern int TS_MIME_LEN_FORWARDED;
+/* --------------------------------------------------------------------------
+   MIME fields */
+extern const char *TS_MIME_FIELD_ACCEPT;
+extern const char *TS_MIME_FIELD_ACCEPT_CHARSET;
+extern const char *TS_MIME_FIELD_ACCEPT_ENCODING;
+extern const char *TS_MIME_FIELD_ACCEPT_LANGUAGE;
+extern const char *TS_MIME_FIELD_ACCEPT_RANGES;
+extern const char *TS_MIME_FIELD_AGE;
+extern const char *TS_MIME_FIELD_ALLOW;
+extern const char *TS_MIME_FIELD_APPROVED;
+extern const char *TS_MIME_FIELD_AUTHORIZATION;
+extern const char *TS_MIME_FIELD_BYTES;
+extern const char *TS_MIME_FIELD_CACHE_CONTROL;
+extern const char *TS_MIME_FIELD_CLIENT_IP;
+extern const char *TS_MIME_FIELD_CONNECTION;
+extern const char *TS_MIME_FIELD_CONTENT_BASE;
+extern const char *TS_MIME_FIELD_CONTENT_ENCODING;
+extern const char *TS_MIME_FIELD_CONTENT_LANGUAGE;
+extern const char *TS_MIME_FIELD_CONTENT_LENGTH;
+extern const char *TS_MIME_FIELD_CONTENT_LOCATION;
+extern const char *TS_MIME_FIELD_CONTENT_MD5;
+extern const char *TS_MIME_FIELD_CONTENT_RANGE;
+extern const char *TS_MIME_FIELD_CONTENT_TYPE;
+extern const char *TS_MIME_FIELD_CONTROL;
+extern const char *TS_MIME_FIELD_COOKIE;
+extern const char *TS_MIME_FIELD_DATE;
+extern const char *TS_MIME_FIELD_DISTRIBUTION;
+extern const char *TS_MIME_FIELD_ETAG;
+extern const char *TS_MIME_FIELD_EXPECT;
+extern const char *TS_MIME_FIELD_EXPIRES;
+extern const char *TS_MIME_FIELD_FOLLOWUP_TO;
+extern const char *TS_MIME_FIELD_FROM;
+extern const char *TS_MIME_FIELD_HOST;
+extern const char *TS_MIME_FIELD_IF_MATCH;
+extern const char *TS_MIME_FIELD_IF_MODIFIED_SINCE;
+extern const char *TS_MIME_FIELD_IF_NONE_MATCH;
+extern const char *TS_MIME_FIELD_IF_RANGE;
+extern const char *TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
+extern const char *TS_MIME_FIELD_KEEP_ALIVE;
+extern const char *TS_MIME_FIELD_KEYWORDS;
+extern const char *TS_MIME_FIELD_LAST_MODIFIED;
+extern const char *TS_MIME_FIELD_LINES;
+extern const char *TS_MIME_FIELD_LOCATION;
+extern const char *TS_MIME_FIELD_MAX_FORWARDS;
+extern const char *TS_MIME_FIELD_MESSAGE_ID;
+extern const char *TS_MIME_FIELD_NEWSGROUPS;
+extern const char *TS_MIME_FIELD_ORGANIZATION;
+extern const char *TS_MIME_FIELD_PATH;
+extern const char *TS_MIME_FIELD_PRAGMA;
+extern const char *TS_MIME_FIELD_PROXY_AUTHENTICATE;
+extern const char *TS_MIME_FIELD_PROXY_AUTHORIZATION;
+extern const char *TS_MIME_FIELD_PROXY_CONNECTION;
+extern const char *TS_MIME_FIELD_PUBLIC;
+extern const char *TS_MIME_FIELD_RANGE;
+extern const char *TS_MIME_FIELD_REFERENCES;
+extern const char *TS_MIME_FIELD_REFERER;
+extern const char *TS_MIME_FIELD_REPLY_TO;
+extern const char *TS_MIME_FIELD_RETRY_AFTER;
+extern const char *TS_MIME_FIELD_SENDER;
+extern const char *TS_MIME_FIELD_SERVER;
+extern const char *TS_MIME_FIELD_SET_COOKIE;
+extern const char *TS_MIME_FIELD_STRICT_TRANSPORT_SECURITY;
+extern const char *TS_MIME_FIELD_SUBJECT;
+extern const char *TS_MIME_FIELD_SUMMARY;
+extern const char *TS_MIME_FIELD_TE;
+extern const char *TS_MIME_FIELD_TRANSFER_ENCODING;
+extern const char *TS_MIME_FIELD_UPGRADE;
+extern const char *TS_MIME_FIELD_USER_AGENT;
+extern const char *TS_MIME_FIELD_VARY;
+extern const char *TS_MIME_FIELD_VIA;
+extern const char *TS_MIME_FIELD_WARNING;
+extern const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
+extern const char *TS_MIME_FIELD_XREF;
+extern const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+extern const char *TS_MIME_FIELD_FORWARDED;
 
-  /* --------------------------------------------------------------------------
-     HTTP values */
-  extern const char *TS_HTTP_VALUE_BYTES;
-  extern const char *TS_HTTP_VALUE_CHUNKED;
-  extern const char *TS_HTTP_VALUE_CLOSE;
-  extern const char *TS_HTTP_VALUE_COMPRESS;
-  extern const char *TS_HTTP_VALUE_DEFLATE;
-  extern const char *TS_HTTP_VALUE_GZIP;
-  extern const char *TS_HTTP_VALUE_BROTLI;
-  extern const char *TS_HTTP_VALUE_IDENTITY;
-  extern const char *TS_HTTP_VALUE_KEEP_ALIVE;
-  extern const char *TS_HTTP_VALUE_MAX_AGE;
-  extern const char *TS_HTTP_VALUE_MAX_STALE;
-  extern const char *TS_HTTP_VALUE_MIN_FRESH;
-  extern const char *TS_HTTP_VALUE_MUST_REVALIDATE;
-  extern const char *TS_HTTP_VALUE_NONE;
-  extern const char *TS_HTTP_VALUE_NO_CACHE;
-  extern const char *TS_HTTP_VALUE_NO_STORE;
-  extern const char *TS_HTTP_VALUE_NO_TRANSFORM;
-  extern const char *TS_HTTP_VALUE_ONLY_IF_CACHED;
-  extern const char *TS_HTTP_VALUE_PRIVATE;
-  extern const char *TS_HTTP_VALUE_PROXY_REVALIDATE;
-  extern const char *TS_HTTP_VALUE_PUBLIC;
+/* --------------------------------------------------------------------------
+   MIME fields string lengths */
+extern int TS_MIME_LEN_ACCEPT;
+extern int TS_MIME_LEN_ACCEPT_CHARSET;
+extern int TS_MIME_LEN_ACCEPT_ENCODING;
+extern int TS_MIME_LEN_ACCEPT_LANGUAGE;
+extern int TS_MIME_LEN_ACCEPT_RANGES;
+extern int TS_MIME_LEN_AGE;
+extern int TS_MIME_LEN_ALLOW;
+extern int TS_MIME_LEN_APPROVED;
+extern int TS_MIME_LEN_AUTHORIZATION;
+extern int TS_MIME_LEN_BYTES;
+extern int TS_MIME_LEN_CACHE_CONTROL;
+extern int TS_MIME_LEN_CLIENT_IP;
+extern int TS_MIME_LEN_CONNECTION;
+extern int TS_MIME_LEN_CONTENT_BASE;
+extern int TS_MIME_LEN_CONTENT_ENCODING;
+extern int TS_MIME_LEN_CONTENT_LANGUAGE;
+extern int TS_MIME_LEN_CONTENT_LENGTH;
+extern int TS_MIME_LEN_CONTENT_LOCATION;
+extern int TS_MIME_LEN_CONTENT_MD5;
+extern int TS_MIME_LEN_CONTENT_RANGE;
+extern int TS_MIME_LEN_CONTENT_TYPE;
+extern int TS_MIME_LEN_CONTROL;
+extern int TS_MIME_LEN_COOKIE;
+extern int TS_MIME_LEN_DATE;
+extern int TS_MIME_LEN_DISTRIBUTION;
+extern int TS_MIME_LEN_ETAG;
+extern int TS_MIME_LEN_EXPECT;
+extern int TS_MIME_LEN_EXPIRES;
+extern int TS_MIME_LEN_FOLLOWUP_TO;
+extern int TS_MIME_LEN_FROM;
+extern int TS_MIME_LEN_HOST;
+extern int TS_MIME_LEN_IF_MATCH;
+extern int TS_MIME_LEN_IF_MODIFIED_SINCE;
+extern int TS_MIME_LEN_IF_NONE_MATCH;
+extern int TS_MIME_LEN_IF_RANGE;
+extern int TS_MIME_LEN_IF_UNMODIFIED_SINCE;
+extern int TS_MIME_LEN_KEEP_ALIVE;
+extern int TS_MIME_LEN_KEYWORDS;
+extern int TS_MIME_LEN_LAST_MODIFIED;
+extern int TS_MIME_LEN_LINES;
+extern int TS_MIME_LEN_LOCATION;
+extern int TS_MIME_LEN_MAX_FORWARDS;
+extern int TS_MIME_LEN_MESSAGE_ID;
+extern int TS_MIME_LEN_NEWSGROUPS;
+extern int TS_MIME_LEN_ORGANIZATION;
+extern int TS_MIME_LEN_PATH;
+extern int TS_MIME_LEN_PRAGMA;
+extern int TS_MIME_LEN_PROXY_AUTHENTICATE;
+extern int TS_MIME_LEN_PROXY_AUTHORIZATION;
+extern int TS_MIME_LEN_PROXY_CONNECTION;
+extern int TS_MIME_LEN_PUBLIC;
+extern int TS_MIME_LEN_RANGE;
+extern int TS_MIME_LEN_REFERENCES;
+extern int TS_MIME_LEN_REFERER;
+extern int TS_MIME_LEN_REPLY_TO;
+extern int TS_MIME_LEN_RETRY_AFTER;
+extern int TS_MIME_LEN_SENDER;
+extern int TS_MIME_LEN_SERVER;
+extern int TS_MIME_LEN_SET_COOKIE;
+extern int TS_MIME_LEN_STRICT_TRANSPORT_SECURITY;
+extern int TS_MIME_LEN_SUBJECT;
+extern int TS_MIME_LEN_SUMMARY;
+extern int TS_MIME_LEN_TE;
+extern int TS_MIME_LEN_TRANSFER_ENCODING;
+extern int TS_MIME_LEN_UPGRADE;
+extern int TS_MIME_LEN_USER_AGENT;
+extern int TS_MIME_LEN_VARY;
+extern int TS_MIME_LEN_VIA;
+extern int TS_MIME_LEN_WARNING;
+extern int TS_MIME_LEN_WWW_AUTHENTICATE;
+extern int TS_MIME_LEN_XREF;
+extern int TS_MIME_LEN_X_FORWARDED_FOR;
+extern int TS_MIME_LEN_FORWARDED;
 
-  /* --------------------------------------------------------------------------
-     HTTP values string lengths */
-  extern int TS_HTTP_LEN_BYTES;
-  extern int TS_HTTP_LEN_CHUNKED;
-  extern int TS_HTTP_LEN_CLOSE;
-  extern int TS_HTTP_LEN_COMPRESS;
-  extern int TS_HTTP_LEN_DEFLATE;
-  extern int TS_HTTP_LEN_GZIP;
-  extern int TS_HTTP_LEN_BROTLI;
-  extern int TS_HTTP_LEN_IDENTITY;
-  extern int TS_HTTP_LEN_KEEP_ALIVE;
-  extern int TS_HTTP_LEN_MAX_AGE;
-  extern int TS_HTTP_LEN_MAX_STALE;
-  extern int TS_HTTP_LEN_MIN_FRESH;
-  extern int TS_HTTP_LEN_MUST_REVALIDATE;
-  extern int TS_HTTP_LEN_NONE;
-  extern int TS_HTTP_LEN_NO_CACHE;
-  extern int TS_HTTP_LEN_NO_STORE;
-  extern int TS_HTTP_LEN_NO_TRANSFORM;
-  extern int TS_HTTP_LEN_ONLY_IF_CACHED;
-  extern int TS_HTTP_LEN_PRIVATE;
-  extern int TS_HTTP_LEN_PROXY_REVALIDATE;
-  extern int TS_HTTP_LEN_PUBLIC;
+/* --------------------------------------------------------------------------
+   HTTP values */
+extern const char *TS_HTTP_VALUE_BYTES;
+extern const char *TS_HTTP_VALUE_CHUNKED;
+extern const char *TS_HTTP_VALUE_CLOSE;
+extern const char *TS_HTTP_VALUE_COMPRESS;
+extern const char *TS_HTTP_VALUE_DEFLATE;
+extern const char *TS_HTTP_VALUE_GZIP;
+extern const char *TS_HTTP_VALUE_BROTLI;
+extern const char *TS_HTTP_VALUE_IDENTITY;
+extern const char *TS_HTTP_VALUE_KEEP_ALIVE;
+extern const char *TS_HTTP_VALUE_MAX_AGE;
+extern const char *TS_HTTP_VALUE_MAX_STALE;
+extern const char *TS_HTTP_VALUE_MIN_FRESH;
+extern const char *TS_HTTP_VALUE_MUST_REVALIDATE;
+extern const char *TS_HTTP_VALUE_NONE;
+extern const char *TS_HTTP_VALUE_NO_CACHE;
+extern const char *TS_HTTP_VALUE_NO_STORE;
+extern const char *TS_HTTP_VALUE_NO_TRANSFORM;
+extern const char *TS_HTTP_VALUE_ONLY_IF_CACHED;
+extern const char *TS_HTTP_VALUE_PRIVATE;
+extern const char *TS_HTTP_VALUE_PROXY_REVALIDATE;
+extern const char *TS_HTTP_VALUE_PUBLIC;
 
-  /* --------------------------------------------------------------------------
-     HTTP methods */
-  extern const char *TS_HTTP_METHOD_CONNECT;
-  extern const char *TS_HTTP_METHOD_DELETE;
-  extern const char *TS_HTTP_METHOD_GET;
-  extern const char *TS_HTTP_METHOD_HEAD;
-  extern const char *TS_HTTP_METHOD_OPTIONS;
-  extern const char *TS_HTTP_METHOD_POST;
-  extern const char *TS_HTTP_METHOD_PURGE;
-  extern const char *TS_HTTP_METHOD_PUT;
-  extern const char *TS_HTTP_METHOD_TRACE;
-  extern const char *TS_HTTP_METHOD_PUSH;
+/* --------------------------------------------------------------------------
+   HTTP values string lengths */
+extern int TS_HTTP_LEN_BYTES;
+extern int TS_HTTP_LEN_CHUNKED;
+extern int TS_HTTP_LEN_CLOSE;
+extern int TS_HTTP_LEN_COMPRESS;
+extern int TS_HTTP_LEN_DEFLATE;
+extern int TS_HTTP_LEN_GZIP;
+extern int TS_HTTP_LEN_BROTLI;
+extern int TS_HTTP_LEN_IDENTITY;
+extern int TS_HTTP_LEN_KEEP_ALIVE;
+extern int TS_HTTP_LEN_MAX_AGE;
+extern int TS_HTTP_LEN_MAX_STALE;
+extern int TS_HTTP_LEN_MIN_FRESH;
+extern int TS_HTTP_LEN_MUST_REVALIDATE;
+extern int TS_HTTP_LEN_NONE;
+extern int TS_HTTP_LEN_NO_CACHE;
+extern int TS_HTTP_LEN_NO_STORE;
+extern int TS_HTTP_LEN_NO_TRANSFORM;
+extern int TS_HTTP_LEN_ONLY_IF_CACHED;
+extern int TS_HTTP_LEN_PRIVATE;
+extern int TS_HTTP_LEN_PROXY_REVALIDATE;
+extern int TS_HTTP_LEN_PUBLIC;
 
-  /* --------------------------------------------------------------------------
-     HTTP methods string lengths */
-  extern int TS_HTTP_LEN_CONNECT;
-  extern int TS_HTTP_LEN_DELETE;
-  extern int TS_HTTP_LEN_GET;
-  extern int TS_HTTP_LEN_HEAD;
-  extern int TS_HTTP_LEN_OPTIONS;
-  extern int TS_HTTP_LEN_POST;
-  extern int TS_HTTP_LEN_PURGE;
-  extern int TS_HTTP_LEN_PUT;
-  extern int TS_HTTP_LEN_TRACE;
-  extern int TS_HTTP_LEN_PUSH;
+/* --------------------------------------------------------------------------
+   HTTP methods */
+extern const char *TS_HTTP_METHOD_CONNECT;
+extern const char *TS_HTTP_METHOD_DELETE;
+extern const char *TS_HTTP_METHOD_GET;
+extern const char *TS_HTTP_METHOD_HEAD;
+extern const char *TS_HTTP_METHOD_OPTIONS;
+extern const char *TS_HTTP_METHOD_POST;
+extern const char *TS_HTTP_METHOD_PURGE;
+extern const char *TS_HTTP_METHOD_PUT;
+extern const char *TS_HTTP_METHOD_TRACE;
+extern const char *TS_HTTP_METHOD_PUSH;
 
-  /* --------------------------------------------------------------------------
-     TLS Next Protocol well-known protocol names. */
+/* --------------------------------------------------------------------------
+   HTTP methods string lengths */
+extern int TS_HTTP_LEN_CONNECT;
+extern int TS_HTTP_LEN_DELETE;
+extern int TS_HTTP_LEN_GET;
+extern int TS_HTTP_LEN_HEAD;
+extern int TS_HTTP_LEN_OPTIONS;
+extern int TS_HTTP_LEN_POST;
+extern int TS_HTTP_LEN_PURGE;
+extern int TS_HTTP_LEN_PUT;
+extern int TS_HTTP_LEN_TRACE;
+extern int TS_HTTP_LEN_PUSH;
 
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_3;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_3_D29;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC;
-  extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
+/* --------------------------------------------------------------------------
+   TLS Next Protocol well-known protocol names. */
 
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_3;
-  extern int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_3;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_3_D29;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC;
+extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
 
-  extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
-  extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_3;
+extern int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC;
 
-  extern const char *const TS_PROTO_TAG_HTTP_1_0;
-  extern const char *const TS_PROTO_TAG_HTTP_1_1;
-  extern const char *const TS_PROTO_TAG_HTTP_2_0;
-  extern const char *const TS_PROTO_TAG_HTTP_3;
-  extern const char *const TS_PROTO_TAG_HTTP_QUIC;
-  extern const char *const TS_PROTO_TAG_TLS_1_3;
-  extern const char *const TS_PROTO_TAG_TLS_1_2;
-  extern const char *const TS_PROTO_TAG_TLS_1_1;
-  extern const char *const TS_PROTO_TAG_TLS_1_0;
-  extern const char *const TS_PROTO_TAG_TCP;
-  extern const char *const TS_PROTO_TAG_UDP;
-  extern const char *const TS_PROTO_TAG_IPV4;
-  extern const char *const TS_PROTO_TAG_IPV6;
+extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
+extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
 
-  /* --------------------------------------------------------------------------
-     MLoc Constants */
-  /**
-      Use TS_NULL_MLOC as the parent in calls that require a parent
-      when an TSMLoc does not have a parent TSMLoc. For example if
-      the TSMLoc is obtained by a call to TSHttpTxnClientReqGet(),
+extern const char *const TS_PROTO_TAG_HTTP_1_0;
+extern const char *const TS_PROTO_TAG_HTTP_1_1;
+extern const char *const TS_PROTO_TAG_HTTP_2_0;
+extern const char *const TS_PROTO_TAG_HTTP_3;
+extern const char *const TS_PROTO_TAG_HTTP_QUIC;
+extern const char *const TS_PROTO_TAG_TLS_1_3;
+extern const char *const TS_PROTO_TAG_TLS_1_2;
+extern const char *const TS_PROTO_TAG_TLS_1_1;
+extern const char *const TS_PROTO_TAG_TLS_1_0;
+extern const char *const TS_PROTO_TAG_TCP;
+extern const char *const TS_PROTO_TAG_UDP;
+extern const char *const TS_PROTO_TAG_IPV4;
+extern const char *const TS_PROTO_TAG_IPV6;
 
-   */
-  TSMLoc const TS_NULL_MLOC = nullptr;
+/* --------------------------------------------------------------------------
+   MLoc Constants */
+/**
+    Use TS_NULL_MLOC as the parent in calls that require a parent
+    when an TSMLoc does not have a parent TSMLoc. For example if
+    the TSMLoc is obtained by a call to TSHttpTxnClientReqGet(),
 
-  /* --------------------------------------------------------------------------
-     HostStatus types */
+ */
+TSMLoc const TS_NULL_MLOC = nullptr;
 
-  enum TSHostStatus {
-    TS_HOST_STATUS_INIT,
-    TS_HOST_STATUS_DOWN,
-    TS_HOST_STATUS_UP,
-  };
+/* --------------------------------------------------------------------------
+   HostStatus types */
 
-  /* MUST match proxy/HostStatus.h Reason.
-   * If a value is added here, it MUST be added there with the same value.
-   */
-  enum TSHostStatusReason {
-    TS_HOST_STATUS_ACTIVE      = 0x1,
-    TS_HOST_STATUS_LOCAL       = 0x2,
-    TS_HOST_STATUS_MANUAL      = 0x4,
-    TS_HOST_STATUS_SELF_DETECT = 0x8,
-    TS_HOST_STATUS_ALL         = 0xf,
-  };
+enum TSHostStatus {
+  TS_HOST_STATUS_INIT,
+  TS_HOST_STATUS_DOWN,
+  TS_HOST_STATUS_UP,
+};
 
-  /* --------------------------------------------------------------------------
-     Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
-  enum TSUuidVersion {
-    TS_UUID_UNDEFINED = 0,
-    TS_UUID_V1        = 1,
-    TS_UUID_V2,
-    TS_UUID_V3,
-    TS_UUID_V4, /* At this point, this is the only implemented version (or variant) */
-    TS_UUID_V5,
-  };
+/* MUST match proxy/HostStatus.h Reason.
+ * If a value is added here, it MUST be added there with the same value.
+ */
+enum TSHostStatusReason {
+  TS_HOST_STATUS_ACTIVE      = 0x1,
+  TS_HOST_STATUS_LOCAL       = 0x2,
+  TS_HOST_STATUS_MANUAL      = 0x4,
+  TS_HOST_STATUS_SELF_DETECT = 0x8,
+  TS_HOST_STATUS_ALL         = 0xf,
+};
 
-  const int TS_UUID_STRING_LEN   = 36;
-  const int TS_CRUUID_STRING_LEN = TS_UUID_STRING_LEN + 19 + 1; /* UUID-len + len(uint64_t) + '-' */
-  using TSUuid                   = struct tsapi_uuid *;
+/* --------------------------------------------------------------------------
+   Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
+enum TSUuidVersion {
+  TS_UUID_UNDEFINED = 0,
+  TS_UUID_V1        = 1,
+  TS_UUID_V2,
+  TS_UUID_V3,
+  TS_UUID_V4, /* At this point, this is the only implemented version (or variant) */
+  TS_UUID_V5,
+};
 
-  /* Various HTTP "control" modes */
-  enum TSHttpCntlType {
-    TS_HTTP_CNTL_LOGGING_MODE,
-    TS_HTTP_CNTL_INTERCEPT_RETRY_MODE,
-    TS_HTTP_CNTL_RESPONSE_CACHEABLE,
-    TS_HTTP_CNTL_REQUEST_CACHEABLE,
-    TS_HTTP_CNTL_SERVER_NO_STORE,
-    TS_HTTP_CNTL_TXN_DEBUG,
-    TS_HTTP_CNTL_SKIP_REMAPPING,
-  };
+const int TS_UUID_STRING_LEN   = 36;
+const int TS_CRUUID_STRING_LEN = TS_UUID_STRING_LEN + 19 + 1; /* UUID-len + len(uint64_t) + '-' */
+using TSUuid                   = struct tsapi_uuid *;
 
-  // JSONRPC 2.0 related interface.
-  using TSRPCProviderHandle = struct tsapi_rpcproviderhandle *;
-  using TSYaml              = struct tsapi_yaml *;
+/* Various HTTP "control" modes */
+enum TSHttpCntlType {
+  TS_HTTP_CNTL_LOGGING_MODE,
+  TS_HTTP_CNTL_INTERCEPT_RETRY_MODE,
+  TS_HTTP_CNTL_RESPONSE_CACHEABLE,
+  TS_HTTP_CNTL_REQUEST_CACHEABLE,
+  TS_HTTP_CNTL_SERVER_NO_STORE,
+  TS_HTTP_CNTL_TXN_DEBUG,
+  TS_HTTP_CNTL_SKIP_REMAPPING,
+};
 
-  ///
-  /// @brief JSON-RPC Handler options
-  ///
-  /// This class holds information about how a handler will be managed and delivered when called. The JSON-RPC manager would use
-  /// this object to perform certain validation.
-  ///
-  struct TSRPCHandlerOptions {
-    struct Auth {
-      int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
-    } auth{1};
-  };
+// JSONRPC 2.0 related interface.
+using TSRPCProviderHandle = struct tsapi_rpcproviderhandle *;
+using TSYaml              = struct tsapi_yaml *;
 
-  /// Configuration field info related to a parsed YAML node.
-  ///
-  /// This contains information about the parsed record field. This will be passed back to the @a TSYAMLRecNodeHandler
-  /// when you call @a TSRecYAMLConfigParse. This class holds the record name as well as the YAML node in case the caller
-  /// wants to use this information to manipulate the record.
-  struct TSYAMLRecCfgFieldData {
-    const char *field_name;  ///< YAML field name. null terminated
-    const char *record_name; ///< record name. null terminated
-    TSYaml value_node;       ///< YAML::Node pointer.
-  };
+///
+/// @brief JSON-RPC Handler options
+///
+/// This class holds information about how a handler will be managed and delivered when called. The JSON-RPC manager would use
+/// this object to perform certain validation.
+///
+struct TSRPCHandlerOptions {
+  struct Auth {
+    int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
+  } auth{1};
+};
 
-  typedef enum {
-    TS_TXN_TYPE_UNKNOWN,
-    TS_TXN_TYPE_HTTP,
-    TS_TXN_TYPE_EXPLICIT_TUNNEL,
-    TS_TXN_TYPE_TR_PASS_TUNNEL,
-  } TSTxnType;
+/// Configuration field info related to a parsed YAML node.
+///
+/// This contains information about the parsed record field. This will be passed back to the @a TSYAMLRecNodeHandler
+/// when you call @a TSRecYAMLConfigParse. This class holds the record name as well as the YAML node in case the caller
+/// wants to use this information to manipulate the record.
+struct TSYAMLRecCfgFieldData {
+  const char *field_name;  ///< YAML field name. null terminated
+  const char *record_name; ///< record name. null terminated
+  TSYaml value_node;       ///< YAML::Node pointer.
+};
 
-  /// Exposed for custom parent selection behavior.
-  ///
-  /// This can used in association with TS_EVENT_HTTP_OS_DNS.
-  /// Plugins may set this to indicate how to retry.
-  /// If handled false:
-  ///   then no plugin set it and Core will proceed to do its own thing.
-  /// If handled true:
-  ///   core will not do any parent processing, markdown, or anything else,
-  ///   but will use the values in this for whether to use the existing
-  ///   response or make another request
-  struct TSResponseAction {
-    char const *hostname; ///< host for next request (must be null terminated?)
-    size_t hostname_len;  ///< host len for next request (not including null)
-    in_port_t port;       ///< port for next request
-    bool fail;
-    bool is_retry;
-    bool nextHopExists;
-    bool responseIsRetryable;
-    bool goDirect;
-    bool parentIsProxy;
-    bool no_cache;
-  };
+typedef enum {
+  TS_TXN_TYPE_UNKNOWN,
+  TS_TXN_TYPE_HTTP,
+  TS_TXN_TYPE_EXPLICIT_TUNNEL,
+  TS_TXN_TYPE_TR_PASS_TUNNEL,
+} TSTxnType;
 
-} // end namespace c
-} // end namespace tsapi
+/// Exposed for custom parent selection behavior.
+///
+/// This can used in association with TS_EVENT_HTTP_OS_DNS.
+/// Plugins may set this to indicate how to retry.
+/// If handled false:
+///   then no plugin set it and Core will proceed to do its own thing.
+/// If handled true:
+///   core will not do any parent processing, markdown, or anything else,
+///   but will use the values in this for whether to use the existing
+///   response or make another request
+struct TSResponseAction {
+  char const *hostname; ///< host for next request (must be null terminated?)
+  size_t hostname_len;  ///< host len for next request (not including null)
+  in_port_t port;       ///< port for next request
+  bool fail;
+  bool is_retry;
+  bool nextHopExists;
+  bool responseIsRetryable;
+  bool goDirect;
+  bool parentIsProxy;
+  bool no_cache;
+};
 
 /* --------------------------------------------------------------------------
    Init */
@@ -1588,5 +1580,5 @@ static const int NO_FD = -1; ///< No or invalid file descriptor.
 }
 
 #ifndef ATS_BUILD
-using namespace tsapi::c;
+
 #endif

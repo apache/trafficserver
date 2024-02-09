@@ -101,4 +101,4 @@ private:
 };
 
 // For compatibility with HttpSM.h and HttpTransact.h
-using TransactionMilestones = Milestones<tsapi::c::TSMilestonesType, tsapi::c::TS_MILESTONE_LAST_ENTRY>;
+using TransactionMilestones = Milestones<TSMilestonesType, TS_MILESTONE_LAST_ENTRY>;

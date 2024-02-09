@@ -28,8 +28,6 @@
 #include "proxy/PluginVC.h"
 #include "proxy/PluginHttpConnect.h"
 
-using namespace tsapi::c;
-
 #define DEBUG_TAG             "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 

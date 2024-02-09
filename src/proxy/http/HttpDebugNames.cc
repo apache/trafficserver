@@ -30,8 +30,6 @@
 #include <ts/apidefs.h>
 #include "iocore/eventsystem/Event.h"
 
-using namespace tsapi::c;
-
 //----------------------------------------------------------------------------
 const char *
 HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)

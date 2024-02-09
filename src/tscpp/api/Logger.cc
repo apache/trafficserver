@@ -38,7 +38,6 @@ using std::string;
 DbgCtl atscppapi::dbg_ctl{"atscppapi"};
 
 using atscppapi::Logger;
-using namespace tsapi::c;
 
 /**
  * @private

@@ -86,7 +86,7 @@ typedef struct {
 ts_lua_plugin_stats *
 create_plugin_stats(ts_lua_main_ctx *const main_ctx_array, char const *const *stat_strs)
 {
-  auto *const stats = tsapi::malloc<ts_lua_plugin_stats>();
+  auto *const stats = malloc<ts_lua_plugin_stats>();
   memset(stats, 0, sizeof(ts_lua_plugin_stats));
 
   stats->main_ctx_array = main_ctx_array;
@@ -147,7 +147,7 @@ create_lua_vms()
     }
   }
 
-  ctx_array = tsapi::malloc<ts_lua_main_ctx>(ts_lua_max_state_count);
+  ctx_array = malloc<ts_lua_main_ctx>(ts_lua_max_state_count);
   memset(ctx_array, 0, sizeof(ts_lua_main_ctx) * ts_lua_max_state_count);
 
   int const ret = ts_lua_create_vm(ctx_array, ts_lua_max_state_count);
@@ -437,9 +437,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   if (!conf) {
     Dbg(dbg_ctl, "[%s] creating new conf instance", __FUNCTION__);
 
-    conf = tsapi::malloc<ts_lua_instance_conf>();
+    conf = malloc<ts_lua_instance_conf>();
     if (!conf) {
-      strncpy(errbuf, "[TSRemapNewInstance] tsapi::malloc failed!!", errbuf_size - 1);
+      strncpy(errbuf, "[TSRemapNewInstance] malloc failed!!", errbuf_size - 1);
       errbuf[errbuf_size - 1] = '\0';
       return TS_ERROR;
     }
@@ -920,9 +920,9 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  auto *conf = tsapi::malloc<ts_lua_instance_conf>();
+  auto *conf = malloc<ts_lua_instance_conf>();
   if (!conf) {
-    TSError("[ts_lua][%s] tsapi::malloc failed !!", __FUNCTION__);
+    TSError("[ts_lua][%s] malloc failed !!", __FUNCTION__);
     return;
   }
   memset(conf, 0, sizeof(ts_lua_instance_conf));

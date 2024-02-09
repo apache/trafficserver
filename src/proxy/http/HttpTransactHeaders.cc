@@ -40,7 +40,6 @@
 #include "iocore/utils/Machine.h"
 
 using namespace std::literals;
-using namespace tsapi::c;
 
 bool
 HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)

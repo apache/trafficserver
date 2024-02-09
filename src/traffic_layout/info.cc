@@ -52,8 +52,6 @@
 #include <brotli/encode.h>
 #endif
 
-using namespace tsapi::c;
-
 // Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)

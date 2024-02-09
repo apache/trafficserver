@@ -746,7 +746,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
   /* Handle TryLock result */
   if (TSMutexLockTry(TSContMutexGet(contp)) != TS_SUCCESS) {
     TSCont c = TSContCreate(trylock_handler, nullptr);
-    auto d   = tsapi::malloc<TryLockData>();
+    auto d   = malloc<TryLockData>();
 
     d->contp = contp;
     d->event = event;

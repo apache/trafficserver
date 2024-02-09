@@ -65,8 +65,6 @@
 #include "proxy/hdrs/HdrUtils.h"
 #include "proxy/logging/Log.h"
 
-using namespace tsapi::c;
-
 TransformProcessor transformProcessor;
 
 /*-------------------------------------------------------------------------

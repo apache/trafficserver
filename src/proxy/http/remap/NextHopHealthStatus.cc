@@ -24,8 +24,6 @@
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 #include "proxy/http/HttpSM.h"
 
-using namespace tsapi::c;
-
 /**
  * initialize the host_map
  */

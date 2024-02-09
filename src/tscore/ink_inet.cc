@@ -38,7 +38,6 @@
 IpAddr const IpAddr::INVALID;
 
 using namespace std::literals;
-using namespace tsapi::c;
 
 const std::string_view IP_PROTO_TAG_IPV4("ipv4"sv);
 const std::string_view IP_PROTO_TAG_IPV6("ipv6"sv);

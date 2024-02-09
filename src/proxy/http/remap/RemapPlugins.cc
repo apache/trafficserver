@@ -24,8 +24,6 @@
 
 #include "proxy/http/remap/RemapPlugins.h"
 
-using namespace tsapi::c;
-
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 
 TSRemapStatus

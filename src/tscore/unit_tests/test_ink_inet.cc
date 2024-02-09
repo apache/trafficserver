@@ -33,7 +33,6 @@
 #include "tscore/ink_inet.h"
 
 using namespace std::literals;
-using namespace tsapi::c;
 
 TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
 {
