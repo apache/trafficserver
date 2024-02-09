@@ -372,6 +372,9 @@ main_stats_page(Stats &stats)
   makeTable(62, 17, server2, stats);
 }
 
+enum class HostStatus { UP, DOWN };
+char reconnecting_animation[4] = {'|', '/', '-', '\\'};
+
 //----------------------------------------------------------------------------
 int
 main(int argc, const char **argv)
@@ -400,9 +403,10 @@ main(int argc, const char **argv)
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
   }
 
+  HostStatus host_status{HostStatus::DOWN};
   Stats stats;
-  if (!stats.getStats()) {
-    return 2;
+  if (stats.getStats()) {
+    host_status = HostStatus::UP;
   }
 
   const string &host = stats.getHost();
@@ -428,6 +432,7 @@ main(int argc, const char **argv)
   Page page       = MAIN_PAGE;
   string page_alt = "(r)esponse";
 
+  int animation_index{0};
   while (true) {
     attron(COLOR_PAIR(colorPair::border));
     attron(A_BOLD);
@@ -440,7 +445,16 @@ main(int argc, const char **argv)
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
     stats.getStat("version", version);
 
-    mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", host.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');
+    std::string hh;
+    if (host_status == HostStatus::DOWN) {
+      hh.append("connecting ");
+      hh.append(1, reconnecting_animation[animation_index % 4]);
+      ++animation_index;
+    } else {
+      hh = host;
+    }
+
+    mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", hh.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');
     attroff(COLOR_PAIR(colorPair::border));
     attroff(A_BOLD);
 
@@ -472,9 +486,7 @@ main(int argc, const char **argv)
     case 'a':
       absolute = stats.toggleAbsolute();
     }
-    if (!stats.getStats()) {
-      goto quit;
-    }
+    host_status = !stats.getStats() ? HostStatus::DOWN : HostStatus::UP;
     clear();
   }
 
