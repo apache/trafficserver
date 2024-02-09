@@ -38,7 +38,7 @@ function main() {
       exit 2
     fi
   fi
-  DIR=${@:-.}
+  DIR=${@:-$(dirname ${GIT_COMMON_DIR})}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
   VERSION="clang-format version 17.0.1 (https://github.com/llvm/llvm-project.git e19b7dc36bc047b9eb72078d034596be766da350)"
 
@@ -100,7 +100,7 @@ EOF
   start_time_file=$(mktemp -t clang-format-start-time.XXXXXXXXXX)
   touch ${start_time_file}
 
-  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in)
+  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in | grep -vE 'lib/(catch2|fastlz|swoc|yamlcpp)')
   for file in ${target_files}; do
     # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
     # so they do not need to be re-formatted by clang-format. Doing so
