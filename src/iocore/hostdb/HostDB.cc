@@ -41,7 +41,6 @@ using swoc::TextView;
 using std::chrono::duration_cast;
 using swoc::round_down;
 using swoc::round_up;
-using namespace tsapi::c;
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;

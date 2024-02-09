@@ -23,8 +23,6 @@
 #include "tscore/PluginUserArgs.h"
 #include "catch.hpp"
 
-using namespace tsapi::c;
-
 TEST_CASE("get_user_arg_offset", "[libts][PluginUserArgs]")
 {
   CHECK(get_user_arg_offset(TS_USER_ARGS_TXN) == 1000);

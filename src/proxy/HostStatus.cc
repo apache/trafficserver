@@ -28,8 +28,6 @@
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "shared/rpc/RPCRequests.h"
 
-using namespace tsapi::c;
-
 namespace
 {
 const std::string STATUS_LIST_KEY{"statusList"};

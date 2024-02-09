@@ -286,14 +286,14 @@ public:
   //
   // milestones access
   //
-  int marshal_milestone(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_sec(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_squid(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_netscape(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_date(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_time(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_ms(tsapi::c::TSMilestonesType ms, char *buf);
-  int marshal_milestone_diff(tsapi::c::TSMilestonesType ms1, tsapi::c::TSMilestonesType ms2, char *buf);
+  int marshal_milestone(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
+  int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
+  int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines

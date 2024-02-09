@@ -107,7 +107,7 @@ DbgCtl::_override_global_on()
 }
 
 void
-tsapi::c::TSError(const char *fmt, ...)
+TSError(const char *fmt, ...)
 {
   char buf[LINE_SIZE];
   va_list ap;

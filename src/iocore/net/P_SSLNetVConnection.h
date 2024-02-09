@@ -196,7 +196,7 @@ public:
   using super::reenable;
 
   /// Reenable the VC after a pre-accept or SNI hook is called.
-  virtual void reenable(NetHandler *nh, int event = tsapi::c::TS_EVENT_CONTINUE);
+  virtual void reenable(NetHandler *nh, int event = TS_EVENT_CONTINUE);
 
   int64_t read_raw_data();
 
@@ -228,18 +228,18 @@ public:
   }
 
   // Returns true if all the hooks reenabled
-  bool callHooks(tsapi::c::TSEvent eventId);
+  bool callHooks(TSEvent eventId);
 
   // Returns true if we have already called at
   // least some of the hooks
   bool
-  calledHooks(tsapi::c::TSEvent eventId) const
+  calledHooks(TSEvent eventId) const
   {
     bool retval = false;
     switch (this->sslHandshakeHookState) {
     case HANDSHAKE_HOOKS_PRE:
     case HANDSHAKE_HOOKS_PRE_INVOKE:
-      if (eventId == tsapi::c::TS_EVENT_VCONN_START) {
+      if (eventId == TS_EVENT_VCONN_START) {
         if (curHook) {
           retval = true;
         }
@@ -247,18 +247,18 @@ public:
       break;
     case HANDSHAKE_HOOKS_CLIENT_HELLO:
     case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
-      if (eventId == tsapi::c::TS_EVENT_VCONN_START) {
+      if (eventId == TS_EVENT_VCONN_START) {
         retval = true;
-      } else if (eventId == tsapi::c::TS_EVENT_SSL_CLIENT_HELLO) {
+      } else if (eventId == TS_EVENT_SSL_CLIENT_HELLO) {
         if (curHook) {
           retval = true;
         }
       }
       break;
     case HANDSHAKE_HOOKS_SNI:
-      if (eventId == tsapi::c::TS_EVENT_VCONN_START || eventId == tsapi::c::TS_EVENT_SSL_CLIENT_HELLO) {
+      if (eventId == TS_EVENT_VCONN_START || eventId == TS_EVENT_SSL_CLIENT_HELLO) {
         retval = true;
-      } else if (eventId == tsapi::c::TS_EVENT_SSL_SERVERNAME) {
+      } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
         if (curHook) {
           retval = true;
         }
@@ -266,10 +266,9 @@ public:
       break;
     case HANDSHAKE_HOOKS_CERT:
     case HANDSHAKE_HOOKS_CERT_INVOKE:
-      if (eventId == tsapi::c::TS_EVENT_VCONN_START || eventId == tsapi::c::TS_EVENT_SSL_CLIENT_HELLO ||
-          eventId == tsapi::c::TS_EVENT_SSL_SERVERNAME) {
+      if (eventId == TS_EVENT_VCONN_START || eventId == TS_EVENT_SSL_CLIENT_HELLO || eventId == TS_EVENT_SSL_SERVERNAME) {
         retval = true;
-      } else if (eventId == tsapi::c::TS_EVENT_SSL_CERT) {
+      } else if (eventId == TS_EVENT_SSL_CERT) {
         if (curHook) {
           retval = true;
         }
@@ -277,14 +276,14 @@ public:
       break;
     case HANDSHAKE_HOOKS_CLIENT_CERT:
     case HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
-      if (eventId == tsapi::c::TS_EVENT_SSL_VERIFY_CLIENT || eventId == tsapi::c::TS_EVENT_VCONN_START) {
+      if (eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_START) {
         retval = true;
       }
       break;
 
     case HANDSHAKE_HOOKS_OUTBOUND_PRE:
     case HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE:
-      if (eventId == tsapi::c::TS_EVENT_VCONN_OUTBOUND_START) {
+      if (eventId == TS_EVENT_VCONN_OUTBOUND_START) {
         if (curHook) {
           retval = true;
         }
@@ -292,7 +291,7 @@ public:
       break;
 
     case HANDSHAKE_HOOKS_VERIFY_SERVER:
-      retval = (eventId == tsapi::c::TS_EVENT_SSL_VERIFY_SERVER);
+      retval = (eventId == TS_EVENT_SSL_VERIFY_SERVER);
       break;
 
     case HANDSHAKE_HOOKS_DONE:

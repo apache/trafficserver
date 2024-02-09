@@ -33,8 +33,6 @@
 #include "P_QUICNetVConnection.h"
 #endif
 
-using namespace tsapi::c;
-
 int
 ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
 {

@@ -87,7 +87,7 @@ public:
   /**
    * Set the @a event for the currently active hook.
    */
-  void setEvent(tsapi::c::TSEvent event);
+  void setEvent(TSEvent event);
 
   /**
    * Context Values are a way to share data between plugins, the key is always a string
@@ -366,13 +366,13 @@ public:
    */
   void redirectTo(std::string const &url);
 
-  bool configIntSet(tsapi::c::TSOverridableConfigKey conf, int value);
-  bool configIntGet(tsapi::c::TSOverridableConfigKey conf, int *value);
-  bool configFloatSet(tsapi::c::TSOverridableConfigKey conf, float value);
-  bool configFloatGet(tsapi::c::TSOverridableConfigKey conf, float *value);
-  bool configStringSet(tsapi::c::TSOverridableConfigKey conf, std::string const &value);
-  bool configStringGet(tsapi::c::TSOverridableConfigKey conf, std::string &value);
-  bool configFind(std::string const &name, tsapi::c::TSOverridableConfigKey *conf, tsapi::c::TSRecordDataType *type);
+  bool configIntSet(TSOverridableConfigKey conf, int value);
+  bool configIntGet(TSOverridableConfigKey conf, int *value);
+  bool configFloatSet(TSOverridableConfigKey conf, float value);
+  bool configFloatGet(TSOverridableConfigKey conf, float *value);
+  bool configStringSet(TSOverridableConfigKey conf, std::string const &value);
+  bool configStringGet(TSOverridableConfigKey conf, std::string &value);
+  bool configFind(std::string const &name, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
 private:
   TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction

@@ -31,7 +31,6 @@
  */
 using HostAddrMap = std::unordered_map<std::string_view, std::tuple<std::vector<IpAddr>, std::vector<IpAddr>>>;
 using AddrHostMap = std::unordered_map<IpAddr, std::string_view, IpAddr::Hasher>;
-using namespace tsapi::c;
 
 namespace
 {

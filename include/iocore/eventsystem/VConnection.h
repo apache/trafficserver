@@ -377,7 +377,7 @@ public:
   int lerrno;
 };
 
-struct DummyVConnection : public VConnection, public PluginUserArgs<tsapi::c::TS_USER_ARGS_VCONN> {
+struct DummyVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN> {
   VIO *
   do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */,
               bool /* owner ATS_UNUSED */) override

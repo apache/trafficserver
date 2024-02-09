@@ -25,7 +25,7 @@
 
 #include "ts/apidefs.h"
 
-class LifecycleAPIHooks : public FeatureAPIHooks<tsapi::c::TSLifecycleHookID, tsapi::c::TS_LIFECYCLE_LAST_HOOK>
+class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE_LAST_HOOK>
 {
 };
 

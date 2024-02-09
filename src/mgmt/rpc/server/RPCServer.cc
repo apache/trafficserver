@@ -20,8 +20,6 @@
 #include "mgmt/rpc/server/RPCServer.h"
 #include "mgmt/rpc/server/IPCSocketServer.h"
 
-using namespace tsapi::c;
-
 rpc::RPCServer *jsonrpcServer = nullptr;
 
 namespace rpc

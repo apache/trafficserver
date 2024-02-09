@@ -25,8 +25,6 @@
 
 #include "iocore/net/ConnectionTracker.h"
 
-using namespace tsapi::c;
-
 const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>>
   ts::Overridable_Txn_Vars({
     {"proxy.config.srv_enabled",                                       {TS_CONFIG_SRV_ENABLED, TS_RECORDDATATYPE_INT}                           },

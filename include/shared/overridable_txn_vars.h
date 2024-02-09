@@ -31,7 +31,6 @@
 namespace ts
 {
 /// Map of configuration variable name to enum and type for all transaction overridable variables.
-extern const std::unordered_map<std::string_view,
-                                std::tuple<const tsapi::c::TSOverridableConfigKey, const tsapi::c::TSRecordDataType>>
+extern const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>>
   Overridable_Txn_Vars;
 } // namespace ts

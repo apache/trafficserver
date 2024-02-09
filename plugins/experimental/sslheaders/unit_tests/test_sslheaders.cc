@@ -41,7 +41,7 @@ DbgCtl::print(const char *tag, char const * /* file */, char const * /* function
 }
 
 void
-tsapi::c::TSError(const char *fmt, ...)
+TSError(const char *fmt, ...)
 {
   va_list args;
 

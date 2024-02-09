@@ -27,8 +27,6 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/remap/NextHopRoundRobin.h"
 
-using namespace tsapi::c;
-
 NextHopRoundRobin::~NextHopRoundRobin()
 {
   NH_Dbg(NH_DBG_CTL, "destructor called for strategy named: %s", strategy_name.c_str());

@@ -63,10 +63,10 @@ public:
 
   /// Definition of an upstream server group equivalence class.
   enum MatchType {
-    MATCH_IP   = tsapi::c::TS_SERVER_OUTBOUND_MATCH_IP,   ///< Match by IP address.
-    MATCH_PORT = tsapi::c::TS_SERVER_OUTBOUND_MATCH_PORT, ///< Match by IP address and port.
-    MATCH_HOST = tsapi::c::TS_SERVER_OUTBOUND_MATCH_HOST, ///< Match by hostname (FQDN).
-    MATCH_BOTH = tsapi::c::TS_SERVER_OUTBOUND_MATCH_BOTH, ///< Hostname, IP Address and port.
+    MATCH_IP   = TS_SERVER_OUTBOUND_MATCH_IP,   ///< Match by IP address.
+    MATCH_PORT = TS_SERVER_OUTBOUND_MATCH_PORT, ///< Match by IP address and port.
+    MATCH_HOST = TS_SERVER_OUTBOUND_MATCH_HOST, ///< Match by hostname (FQDN).
+    MATCH_BOTH = TS_SERVER_OUTBOUND_MATCH_BOTH, ///< Hostname, IP Address and port.
   };
 
   /// String equivalents for @c MatchType.

@@ -60,7 +60,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   ip_text_buffer ip_strbuf;
   char localhost[1024];
 
-  uuid.initialize(tsapi::c::TS_UUID_V4);
+  uuid.initialize(TS_UUID_V4);
   ink_release_assert(nullptr != uuid.getString()); // The Process UUID must be available on startup
 
   if (!ats_is_ip(addr)) {

@@ -23,69 +23,60 @@
 
 #pragma once
 
-namespace tsapi
-{
-namespace c
-{
-
 #define TSREMAP_VMAJOR  3 /* major version number */
 #define TSREMAP_VMINOR  0 /* minor version number */
 #define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16) | TSREMAP_VMINOR)
 
-  struct TSRemapInterface {
-    unsigned long size;            /* in: sizeof(struct _tsremap_api_info) */
-    unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
-    TSRemapPluginInfo plugin_info; /* in: Pointer to the internal RemapPluginInst */
-  };
+struct TSRemapInterface {
+  unsigned long size;            /* in: sizeof(struct _tsremap_api_info) */
+  unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
+  TSRemapPluginInfo plugin_info; /* in: Pointer to the internal RemapPluginInst */
+};
 
-  struct TSRemapRequestInfo {
-    /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
+struct TSRemapRequestInfo {
+  /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
 
-    /* these URL mloc's are read only, use normal ts/ts.h APIs for accessing  */
-    TSMLoc mapFromUrl;
-    TSMLoc mapToUrl;
+  /* these URL mloc's are read only, use normal ts/ts.h APIs for accessing  */
+  TSMLoc mapFromUrl;
+  TSMLoc mapToUrl;
 
-    /* the request URL mloc and buffer pointers are read-write. You can read and modify the
-     requestUrl using normal ts/ts.h APIs, which is how you change the destination URL. */
-    TSMLoc requestUrl;
+  /* the request URL mloc and buffer pointers are read-write. You can read and modify the
+   requestUrl using normal ts/ts.h APIs, which is how you change the destination URL. */
+  TSMLoc requestUrl;
 
-    /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
-    TSMBuffer requestBufp;
-    TSMLoc requestHdrp;
+  /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
+  TSMBuffer requestBufp;
+  TSMLoc requestHdrp;
 
-    /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
-    int redirect;
-  };
+  /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
+  int redirect;
+};
 
-  /* This is the type returned by the TSRemapDoRemap() callback */
-  enum TSRemapStatus {
-    TSREMAP_NO_REMAP       = 0, /* No remapping was done, continue with next in chain */
-    TSREMAP_DID_REMAP      = 1, /* Remapping was done, continue with next in chain */
-    TSREMAP_NO_REMAP_STOP  = 2, /* No remapping was done, and stop plugin chain evaluation */
-    TSREMAP_DID_REMAP_STOP = 3, /* Remapping was done, but stop plugin chain evaluation */
+/* This is the type returned by the TSRemapDoRemap() callback */
+enum TSRemapStatus {
+  TSREMAP_NO_REMAP       = 0, /* No remapping was done, continue with next in chain */
+  TSREMAP_DID_REMAP      = 1, /* Remapping was done, continue with next in chain */
+  TSREMAP_NO_REMAP_STOP  = 2, /* No remapping was done, and stop plugin chain evaluation */
+  TSREMAP_DID_REMAP_STOP = 3, /* Remapping was done, but stop plugin chain evaluation */
 
-    /* In the future, the following error codes can also be used:
-       -400 to -499
-       -500 to -599
-       ....
-       This would allow a plugin to generate an error page. Right now,
-       setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
-    TSREMAP_ERROR = -1, /* Some error, that should generate an error page */
-  };
+  /* In the future, the following error codes can also be used:
+     -400 to -499
+     -500 to -599
+     ....
+     This would allow a plugin to generate an error page. Right now,
+     setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
+  TSREMAP_ERROR = -1, /* Some error, that should generate an error page */
+};
 
-  /* Status code passed to the plugin by TSRemapPostConfigReload() signaling
-   * (1) if the configuration reload was successful and
-   * (2) if (1) is successful show if the plugin was part of the new configuration */
-  enum TSRemapReloadStatus {
-    TSREMAP_CONFIG_RELOAD_FAILURE = 0, /* notify the plugin that configuration parsing failed */
-    TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED =
-      1, /* configuration parsing succeeded and plugin was used by the new configuration */
-    TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED =
-      2, /* configuration parsing succeeded but plugin was NOT used by the new configuration */
-  };
-
-} // end namespace c
-} // end namespace tsapi
+/* Status code passed to the plugin by TSRemapPostConfigReload() signaling
+ * (1) if the configuration reload was successful and
+ * (2) if (1) is successful show if the plugin was part of the new configuration */
+enum TSRemapReloadStatus {
+  TSREMAP_CONFIG_RELOAD_FAILURE             = 0, /* notify the plugin that configuration parsing failed */
+  TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED = 1, /* configuration parsing succeeded and plugin was used by the new configuration */
+  TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED =
+    2, /* configuration parsing succeeded but plugin was NOT used by the new configuration */
+};
 
 /* ----------------------------------------------------------------------------------
    These are the entry points a plugin can implement. Note that TSRemapInit() and
@@ -99,7 +90,7 @@ namespace c
    Return: TS_SUCCESS
            TS_ERROR - error, errbuf can include error message from plugin
 */
-extern "C" tsapi::c::TSReturnCode TSRemapInit(tsapi::c::TSRemapInterface *api_info, char *errbuf, int errbuf_size);
+extern "C" TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
 /* This gets called every time before remap.config is reloaded. This is complementary
    to TSRemapInit() which gets called when the plugin is first loaded.
@@ -121,7 +112,7 @@ extern "C" void TSRemapPreConfigReload(void);
                           TS_ERROR - (re)load failed.
    Return: none
 */
-extern "C" void TSRemapPostConfigReload(tsapi::c::TSRemapReloadStatus reloadStatus);
+extern "C" void TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus);
 
 /* Remap new request
    Mandatory interface function.
@@ -131,7 +122,7 @@ extern "C" void TSRemapPostConfigReload(tsapi::c::TSRemapReloadStatus reloadStat
            TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
            TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
 */
-extern "C" tsapi::c::TSRemapStatus TSRemapDoRemap(void *ih, tsapi::c::TSHttpTxn rh, tsapi::c::TSRemapRequestInfo *rri);
+extern "C" TSRemapStatus TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
 
 /* Plugin shutdown, called when plugin is unloaded.
    Optional function. */
@@ -143,7 +134,7 @@ extern "C" void TSRemapDone(void);
    Return: TS_SUCCESS
            TS_ERROR - instance creation error
 */
-extern "C" tsapi::c::TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
+extern "C" TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
 extern "C" void TSRemapDeleteInstance(void *);
 
 /* Check response code from Origin Server
@@ -151,8 +142,4 @@ extern "C" void TSRemapDeleteInstance(void *);
    Remap API plugin can use InkAPI function calls inside TSRemapDoRemap()
    Return: none
 */
-extern "C" void TSRemapOSResponse(void *ih, tsapi::c::TSHttpTxn rh, int os_response_type);
-
-#ifndef ATS_BUILD
-using namespace tsapi::c;
-#endif
+extern "C" void TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type);

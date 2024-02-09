@@ -49,7 +49,6 @@
 #include <cstring>
 
 using namespace std::literals;
-using namespace tsapi::c;
 
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>

@@ -81,21 +81,14 @@
     (log).logError("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
-namespace tsapi
-{
-namespace c
-{
-  /**
-   * We forward declare this because if we didn't we end up writing our
-   * own version to do the vsnprintf just to call TSError and have it do
-   * an unnecessary vsnprintf.
-   *
-   * @private
-   */
-  void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
-
-} // end namespace c
-} // end namespace tsapi
+/**
+ * We forward declare this because if we didn't we end up writing our
+ * own version to do the vsnprintf just to call TSError and have it do
+ * an unnecessary vsnprintf.
+ *
+ * @private
+ */
+void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
 
 // This is weird, but see the following:
 //   http://stackoverflow.com/questions/5641427/how-to-make-preprocessor-generate-a-string-for-line-keyword
@@ -108,11 +101,11 @@ namespace c
  * will also output a DEBUG message visible via traffic_server -T "tag.*", or by enabling the
  * tag in records.yaml.
  */
-#define TS_ERROR(tag, fmt, ...)                                                                         \
-  do {                                                                                                  \
-    DbgCtl dc{tag};                                                                                     \
-    Dbg(dc, "[ERROR] " fmt, ##__VA_ARGS__);                                                             \
-    tsapi::c::TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+#define TS_ERROR(tag, fmt, ...)                                                               \
+  do {                                                                                        \
+    DbgCtl dc{tag};                                                                           \
+    Dbg(dc, "[ERROR] " fmt, ##__VA_ARGS__);                                                   \
+    TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 namespace atscppapi

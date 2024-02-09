@@ -25,4 +25,4 @@
 
 #include "proxy/PluginVC.h"
 
-PluginVC *PluginHttpConnectInternal(tsapi::c::TSHttpConnectOptions *options);
+PluginVC *PluginHttpConnectInternal(TSHttpConnectOptions *options);

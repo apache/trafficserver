@@ -122,7 +122,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   int keynum;
   bool eat_comment = false;
 
-  cfg = tsapi::malloc<config>();
+  cfg = malloc<config>();
   memset(cfg, 0, sizeof(struct config));
 
   while (fgets(line, sizeof(line), file) != nullptr) {

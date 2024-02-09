@@ -94,7 +94,7 @@ public:
 
 struct INKConfigImpl : public ConfigInfo {
   void *mdata;
-  tsapi::c::TSConfigDestroyFunc m_destroy_func;
+  TSConfigDestroyFunc m_destroy_func;
 
   ~INKConfigImpl() override { m_destroy_func(mdata); }
 };
@@ -109,7 +109,7 @@ struct HttpAltInfo {
 class ConfigUpdateCallback : public Continuation
 {
 public:
-  explicit ConfigUpdateCallback(tsapi::c::INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
+  explicit ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
   {
     SET_HANDLER(&ConfigUpdateCallback::event_handler);
   }
@@ -122,11 +122,11 @@ public:
       if (!trylock.is_locked()) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_TASK);
       } else {
-        m_cont->handleEvent(tsapi::c::TS_EVENT_MGMT_UPDATE, nullptr);
+        m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, nullptr);
         delete this;
       }
     } else {
-      m_cont->handleEvent(tsapi::c::TS_EVENT_MGMT_UPDATE, nullptr);
+      m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, nullptr);
       delete this;
     }
 
@@ -134,7 +134,7 @@ public:
   }
 
 private:
-  tsapi::c::INKContInternal *m_cont;
+  INKContInternal *m_cont;
 };
 
 class ConfigUpdateCbTable
@@ -143,12 +143,12 @@ public:
   ConfigUpdateCbTable();
   ~ConfigUpdateCbTable();
 
-  void insert(tsapi::c::INKContInternal *contp, const char *name, const char *file_name = nullptr);
+  void insert(INKContInternal *contp, const char *name, const char *file_name = nullptr);
   void invoke();
-  void invoke(tsapi::c::INKContInternal *contp);
+  void invoke(INKContInternal *contp);
 
 private:
-  std::unordered_map<std::string, std::tuple<tsapi::c::INKContInternal *, swoc::file::path, swoc::file::file_time_type>> cb_table;
+  std::unordered_map<std::string, std::tuple<INKContInternal *, swoc::file::path, swoc::file::file_time_type>> cb_table;
 };
 
 #include "proxy/HttpAPIHooks.h"
@@ -165,15 +165,14 @@ public:
   /// Initialize the hook state to track up to 3 sources of hooks.
   /// The argument order to this method is used to break priority ties (callbacks from earlier args are invoked earlier)
   /// The order in terms of @a ScopeTag is GLOBAL, SESSION, TRANSACTION.
-  void init(tsapi::c::TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn = nullptr,
-            HttpAPIHooks const *txn = nullptr);
+  void init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn = nullptr, HttpAPIHooks const *txn = nullptr);
 
   /// Select a hook for invocation and advance the state to the next valid hook
   /// @return nullptr if no current hook.
   APIHook const *getNext();
 
   /// Get the hook ID
-  tsapi::c::TSHttpHookID id() const;
+  TSHttpHookID id() const;
 
 protected:
   /// Track the state of one scope of hooks.
@@ -183,7 +182,7 @@ protected:
     APIHooks const *_hooks = nullptr; ///< Reference to the real hook list
 
     /// Initialize the scope.
-    void init(HttpAPIHooks const *scope, tsapi::c::TSHttpHookID id);
+    void init(HttpAPIHooks const *scope, TSHttpHookID id);
     /// Clear the scope.
     void clear();
     /// Return the current candidate.
@@ -193,13 +192,13 @@ protected:
   };
 
 private:
-  tsapi::c::TSHttpHookID _id = tsapi::c::TS_HTTP_LAST_HOOK; ///< Hook ID.
-  Scope _global;                                            ///< Chain from global hooks.
-  Scope _ssn;                                               ///< Chain from session hooks.
-  Scope _txn;                                               ///< Chain from transaction hooks.
+  TSHttpHookID _id = TS_HTTP_LAST_HOOK; ///< Hook ID.
+  Scope _global;                        ///< Chain from global hooks.
+  Scope _ssn;                           ///< Chain from session hooks.
+  Scope _txn;                           ///< Chain from transaction hooks.
 };
 
-inline tsapi::c::TSHttpHookID
+inline TSHttpHookID
 HttpHookState::id() const
 {
   return _id;

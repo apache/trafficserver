@@ -185,7 +185,7 @@ ts_lua_new_state()
 ts_lua_ctx_stats *
 ts_lua_create_ctx_stats()
 {
-  auto stats = tsapi::malloc<ts_lua_ctx_stats>();
+  auto stats = malloc<ts_lua_ctx_stats>();
   memset(stats, 0, sizeof(*stats));
 
   stats->mutexp = TSMutexCreate();
@@ -619,7 +619,7 @@ ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
   ts_lua_coroutine *crt;
   ts_lua_http_ctx *actx;
 
-  actx = tsapi::malloc<ts_lua_http_ctx>();
+  actx = malloc<ts_lua_http_ctx>();
   memset(actx, 0, sizeof(*actx));
 
   // create lua_thread
@@ -698,7 +698,7 @@ ts_lua_create_vconn_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
 {
   ts_lua_vconn_ctx *vconn_ctx;
 
-  vconn_ctx = tsapi::malloc<ts_lua_vconn_ctx>();
+  vconn_ctx = malloc<ts_lua_vconn_ctx>();
   memset(vconn_ctx, 0, sizeof(*vconn_ctx));
 
   lua_State *L = main_ctx->lua;
@@ -792,7 +792,7 @@ ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
 
   L = main_ctx->lua;
 
-  http_ctx = tsapi::malloc<ts_lua_http_ctx>();
+  http_ctx = malloc<ts_lua_http_ctx>();
   memset(http_ctx, 0, sizeof(*http_ctx));
 
   // create coroutine for http_ctx
@@ -920,7 +920,7 @@ ts_lua_create_http_intercept_ctx(lua_State *L, ts_lua_http_ctx *http_ctx, int n)
 
   hci = &http_ctx->cinfo;
 
-  ictx = tsapi::malloc<ts_lua_http_intercept_ctx>();
+  ictx = malloc<ts_lua_http_intercept_ctx>();
   memset(ictx, 0, sizeof(*ictx));
 
   ictx->hctx = http_ctx;
@@ -1000,7 +1000,7 @@ ts_lua_create_http_transform_ctx(ts_lua_http_ctx *http_ctx, TSVConn connp)
   hci = &http_ctx->cinfo;
   L   = hci->routine.lua;
 
-  transform_ctx = tsapi::malloc<ts_lua_http_transform_ctx>();
+  transform_ctx = malloc<ts_lua_http_transform_ctx>();
   memset(transform_ctx, 0, sizeof(*transform_ctx));
 
   transform_ctx->hctx = http_ctx;

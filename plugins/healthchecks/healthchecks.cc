@@ -145,7 +145,7 @@ setup_watchers(int fd)
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
       Dbg(dbg_ctl, "Setting up a watcher for directory %s", dname);
-      dir = tsapi::malloc<HCDirEntry>();
+      dir = malloc<HCDirEntry>();
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_PATH_LEN - 1);
       dir->wd = inotify_add_watch(fd, dname, IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB);
@@ -225,7 +225,7 @@ hc_thread(void *data ATS_UNUSED)
           finfo = finfo->_next;
         }
         if (finfo) {
-          auto *new_data = tsapi::malloc<HCFileData>();
+          auto *new_data = malloc<HCFileData>();
           HCFileData *old_data;
 
           if (event->mask & (IN_CLOSE_WRITE | IN_ATTRIB)) {
@@ -274,7 +274,7 @@ gen_header(char *status_str, char *mime, int *header_len)
     status_reason  = TSHttpHdrReasonLookup(status);
     len           += strlen(status_reason);
     len           += strlen(mime);
-    buf            = tsapi::malloc<char>(len);
+    buf            = malloc<char>(len);
     *header_len    = snprintf(buf, len, HEADER_TEMPLATE, status, status_reason, mime);
   } else {
     *header_len = 0;
@@ -312,7 +312,7 @@ parse_configs(const char *fname)
     char *str, *save;
     char *ok = nullptr, *miss = nullptr, *mime = nullptr;
 
-    finfo = tsapi::malloc<HCFileInfo>();
+    finfo = malloc<HCFileInfo>();
     memset(static_cast<void *>(finfo), 0, sizeof(HCFileInfo));
 
     if (fgets(buf, sizeof(buf) - 1, fd)) {
@@ -358,7 +358,7 @@ parse_configs(const char *fname)
         Dbg(dbg_ctl, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
         finfo->ok   = gen_header(ok, mime, &finfo->o_len);
         finfo->miss = gen_header(miss, mime, &finfo->m_len);
-        finfo->data = tsapi::malloc<HCFileData>();
+        finfo->data = malloc<HCFileData>();
         memset(finfo->data, 0, sizeof(HCFileData));
         reload_status_file(finfo, finfo->data);
 
@@ -525,7 +525,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
 
     /* This is us -- register our intercept */
     icontp   = TSContCreate(hc_intercept, TSMutexCreate());
-    my_state = tsapi::malloc<HCState>();
+    my_state = malloc<HCState>();
     memset(my_state, 0, sizeof(*my_state));
     my_state->info = info;
     my_state->data = info->data;

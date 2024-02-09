@@ -28,8 +28,6 @@
 #include "tsutil/YamlCfg.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
 
-using namespace tsapi::c;
-
 // hash_key strings.
 constexpr std::string_view hash_key_url           = "url";
 constexpr std::string_view hash_key_hostname      = "hostname";

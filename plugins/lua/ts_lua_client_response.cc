@@ -493,12 +493,12 @@ ts_lua_client_response_set_error_resp(lua_State *L)
   }
 
   if (body_len && body) {
-    resp_buf = tsapi::malloc<char>(body_len);
+    resp_buf = malloc<char>(body_len);
     memcpy(resp_buf, body, body_len);
     resp_len = body_len;
 
   } else {
-    resp_buf = tsapi::malloc<char>(reason_len);
+    resp_buf = malloc<char>(reason_len);
     memcpy(resp_buf, reason, reason_len);
     resp_len = reason_len;
   }

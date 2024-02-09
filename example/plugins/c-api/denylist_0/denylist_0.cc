@@ -115,7 +115,7 @@ handle_response(TSHttpTxn txnp)
     goto done;
   }
 
-  buf = tsapi::malloc<char>(4096);
+  buf = malloc<char>(4096);
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
   snprintf(buf, 4096, "You are forbidden from accessing \"%s\"\n", url_str);

@@ -31,7 +31,7 @@ const char PLUGIN_NAME[]     = "TEST_header_rewrite";
 const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 
 void
-tsapi::c::TSError(const char *fmt, ...)
+TSError(const char *fmt, ...)
 {
   va_list args;
 

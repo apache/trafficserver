@@ -32,8 +32,6 @@
 #include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
 
-using namespace tsapi::c;
-
 char INVALID_STR[] = "!INVALID_STR!";
 
 #define HIDDEN_CONTENT_TYPE     "@Content-Type"
@@ -2613,8 +2611,7 @@ int
 LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    marshal_int(buf,
-                m_http_sm->milestones.difference_msec(tsapi::c::TS_MILESTONE_SERVER_CONNECT, tsapi::c::TS_MILESTONE_SERVER_CLOSE));
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
   }
   return INK_MIN_ALIGN;
 }
@@ -2623,8 +2620,8 @@ int
 LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    marshal_int(buf, static_cast<int64_t>(m_http_sm->milestones.difference_sec(tsapi::c::TS_MILESTONE_SERVER_CONNECT,
-                                                                               tsapi::c::TS_MILESTONE_SERVER_CLOSE)));
+    marshal_int(buf,
+                static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE)));
   }
   return INK_MIN_ALIGN;
 }

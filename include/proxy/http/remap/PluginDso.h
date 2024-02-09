@@ -90,10 +90,10 @@ public:
   using PluginList = swoc::IntrusiveDList<PluginDso::Linkage>;
 
   /* Methods to be called when processing a list of plugins, to be overloaded by the remap or the global plugins correspondingly */
-  virtual void indicatePreReload()                                            = 0;
-  virtual void indicatePostReload(tsapi::c::TSRemapReloadStatus reloadStatus) = 0;
-  virtual bool init(std::string &error)                                       = 0;
-  virtual void done()                                                         = 0;
+  virtual void indicatePreReload()                                  = 0;
+  virtual void indicatePostReload(TSRemapReloadStatus reloadStatus) = 0;
+  virtual bool init(std::string &error)                             = 0;
+  virtual void done()                                               = 0;
 
   void acquire() override;
   void release() override;
