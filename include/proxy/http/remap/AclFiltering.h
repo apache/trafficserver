@@ -40,22 +40,27 @@ static int const ACL_FILTER_MAX_IN_IP  = 8;
 static int const ACL_FILTER_MAX_ARGV   = 512;
 
 struct src_ip_info_t {
-  IpAddr start; ///< Minimum value in range.
-  IpAddr end;   ///< Maximum value in range.
-  bool invert;  ///< Should we "invert" the meaning of this IP range ("not in range")
+  IpAddr start;             ///< Minimum value in range.
+  IpAddr end;               ///< Maximum value in range.
+  bool invert;              ///< Should we "invert" the meaning of this IP range ("not in range")
+  bool match_all_addresses; ///< This rule should match all IP addresses.
 
   void
   reset()
   {
     start.invalidate();
     end.invalidate();
-    invert = false;
+    invert              = false;
+    match_all_addresses = false;
   }
 
   /// @return @c true if @a ip is inside @a this range.
   bool
   contains(IpEndpoint const &ip) const
   {
+    if (match_all_addresses) {
+      return true;
+    }
     IpAddr addr{ip};
     return addr.cmp(start) >= 0 && addr.cmp(end) <= 0;
   }
@@ -95,11 +100,11 @@ public:
   acl_filter_rule *next = nullptr;
   char *filter_name     = nullptr; // optional filter name
   unsigned int allow_flag : 1,     // action allow deny
-    src_ip_valid          : 1,     // src_ip range valid
-    src_ip_category_valid : 1,     // src_ip range valid
-    in_ip_valid           : 1,
-    active_queue_flag     : 1, // filter is in active state (used by .useflt directive)
-    internal              : 1; // filter internal HTTP requests
+    src_ip_valid          : 1,     // src_ip (client's src IP) range is specified and valid
+    src_ip_category_valid : 1,     // src_ip_category (client's src IP category) is specified and valid
+    in_ip_valid           : 1,     // in_ip (client's dest IP) range is specified and valid
+    active_queue_flag     : 1,     // filter is in active state (used by .useflt directive)
+    internal              : 1;     // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
   int argc = 0;                    // argument counter (only for filter defs)

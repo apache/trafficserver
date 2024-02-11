@@ -14,8 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# The replay file executes various HTTP requests to verify that GET
-# is denied while all other requests are allowed.
+# This expects a remap.config to allow all requests.
 
 meta:
   version: "1.0"
@@ -49,11 +48,9 @@ sessions:
 
     <<: *standard_response
 
-    # Even GET is now blocked via remap ACL.
     proxy-response:
-      status: 403
+      status: 200
 
-  # POST accepted
   - client-request:
       method: "POST"
       version: "1.1"
@@ -69,7 +66,42 @@ sessions:
     proxy-response:
       status: 200
 
-  # PUSH accepted
+  - client-request:
+      method: "PUT"
+      version: "1.1"
+      url: /test/ip_allow/test_put
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, put ]
+        - [ X-Request, put ]
+        - [ Content-Length, 113 ]
+      content:
+        encoding: plain
+        data: "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public,max-age=2\n\nCACHED"
+
+    # Not received.
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /test/ip_allow/test_delete
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, delete ]
+        - [ X-Request, delete ]
+        - [ Content-Length, 0 ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
+
   - client-request:
       method: "PUSH"
       version: "1.1"
@@ -86,6 +118,5 @@ sessions:
 
     <<: *standard_response
 
-    # Verify that ATS rejected the PUSH.
     proxy-response:
       status: 400

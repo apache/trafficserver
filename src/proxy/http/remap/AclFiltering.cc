@@ -55,6 +55,7 @@ acl_filter_rule::reset()
   for (i = (src_ip_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
     src_ip_array[i].reset();
   }
+  src_ip_category_valid = 0;
   for (i = (src_ip_category_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
     src_ip_category_array[i].reset();
   }
@@ -66,7 +67,7 @@ acl_filter_rule::reset()
   internal    = 0;
 }
 
-acl_filter_rule::acl_filter_rule() : allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0)
+acl_filter_rule::acl_filter_rule() : allow_flag(1), src_ip_valid(0), src_ip_category_valid(0), active_queue_flag(0), internal(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
@@ -108,9 +109,11 @@ acl_filter_rule::print()
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, in_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
+  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, src_ip_category_valid=%s, in_ip_valid=%s, internal=%s, "
+         "active_queue_flag=%d\n",
          filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", src_ip_valid ? "true" : "false",
-         in_ip_valid ? "true" : "false", internal ? "true" : "false", static_cast<int>(active_queue_flag));
+         src_ip_category_valid ? "true" : "false", in_ip_valid ? "true" : "false", internal ? "true" : "false",
+         static_cast<int>(active_queue_flag));
   printf("standard methods=");
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
     if (standard_method_lookup[i]) {
@@ -126,18 +129,20 @@ acl_filter_rule::print()
   printf("src_ip_cnt=%d\n", src_ip_cnt);
   for (i = 0; i < src_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s, ", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
+    printf("%s - %s/invert=%s, ", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)),
+           src_ip_array[i].invert ? "true" : "false");
   }
   printf("\n");
   printf("src_ip_category_cnt=%d\n", src_ip_category_cnt);
   for (i = 0; i < src_ip_category_cnt; i++) {
-    printf("%s, ", src_ip_category_array[i].category.c_str());
+    printf("%s/invert=%s, ", src_ip_category_array[i].category.c_str(), src_ip_category_array[i].invert ? "true" : "false");
   }
   printf("\n");
   printf("in_ip_cnt=%d\n", in_ip_cnt);
   for (i = 0; i < in_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s, ", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)));
+    printf("%s - %s/invert=%s, ", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)),
+           in_ip_array[i].invert ? "true" : "false");
   }
   printf("\n");
   for (i = 0; i < argc; i++) {

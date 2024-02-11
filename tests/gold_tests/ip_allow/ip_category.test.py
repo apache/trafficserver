@@ -316,11 +316,11 @@ test_ip_allow_optional_methods = Test_ip_category(
     acl_configuration='',
     expected_responses=None)
 
-# Deny GET as well via remap.config ACL.
+# Deny GET via remap.config ACL.
 test_ip_allow_optional_methods = Test_ip_category(
-    "IP Category: INTERNAL",
+    "IP Category: EXTERNAL",
     replay_file='replays/https_categories_external_remap.replay.yaml',
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_external,
     acl_configuration='@action=deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET',
-    expected_responses=[403, 403, 403])
+    expected_responses=[403, 200, 200])

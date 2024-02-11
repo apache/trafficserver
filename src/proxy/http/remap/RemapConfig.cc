@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "proxy/http/remap/AclFiltering.h"
 #include "swoc/swoc_file.h"
 
 #include "proxy/http/remap/RemapConfig.h"
@@ -111,24 +112,31 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     Debug("url_rewrite", "[process_filter_opt] Invalid argument(s)");
     return (const char *)"[process_filter_opt] Invalid argument(s)";
   }
-  for (rp = bti->rules_list; rp; rp = rp->next) {
-    if (rp->active_queue_flag) {
-      Debug("url_rewrite", "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
-            rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
-      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
-        ;
-      }
-      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
-        break;
-      }
-    }
-  }
+  // ACLs are processed in this order:
+  // 1. A remap.config ACL line for an individual remap rule.
+  // 2. All named ACLs in remap.config.
+  // 3. Rules as specified in ip_allow.yaml.
   if (!errStr && (bti->remap_optflg & REMAP_OPTFLG_ALL_FILTERS) != 0) {
     Debug("url_rewrite", "[process_filter_opt] Add per remap filter");
     for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
     }
     errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize);
+    for (rp = bti->rules_list; rp; rp = rp->next) {
+      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
+        ;
+      }
+      if (rp->active_queue_flag) {
+        Debug("url_rewrite", "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
+              rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
+        for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
+          ;
+        }
+        if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
+          break;
+        }
+      }
+    }
   }
   // Set the ip allow flag for this rule to the current ip allow flag state
   mp->ip_allow_check_enabled_p = bti->ip_allow_check_enabled_p;
@@ -449,6 +457,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     Debug("url_rewrite", "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
   }
 
+  bool ip_is_listed = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
     bool hasarg;
@@ -508,7 +517,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
-      if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
+      std::string_view arg{argptr};
+      if (arg == "all") {
+        ipi->match_all_addresses = true;
+      } else if (ats_ip_range_parse(arg, ipi->start, ipi->end) != 0) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -528,6 +540,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ipi) {
         rule->src_ip_cnt++;
         rule->src_ip_valid = 1;
+        ip_is_listed       = true;
       }
     }
 
@@ -543,6 +556,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         return (const char *)errStrBuf;
       }
       src_ip_category_info_t *ipi = &rule->src_ip_category_array[rule->src_ip_category_cnt];
+      ipi->category.assign(argptr);
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
@@ -556,10 +570,11 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ipi) {
         rule->src_ip_category_cnt++;
         rule->src_ip_category_valid = 1;
+        ip_is_listed                = true;
       }
     }
 
-    if (ul & REMAP_OPTFLG_IN_IP) { /* "dest_ip=" option */
+    if (ul & REMAP_OPTFLG_IN_IP) { /* "in_ip=" option */
       if (rule->in_ip_cnt >= ACL_FILTER_MAX_IN_IP) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"in_ip=\" filters");
         snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"in_ip=\" filters!", ACL_FILTER_MAX_IN_IP);
@@ -575,7 +590,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         ipi->invert = true;
       }
       // important! use copy of argument
-      if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
+      std::string_view arg{argptr};
+      if (arg == "all") {
+        ipi->match_all_addresses = true;
+      } else if (ats_ip_range_parse(arg, ipi->start, ipi->end) != 0) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -595,6 +613,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ipi) {
         rule->in_ip_cnt++;
         rule->in_ip_valid = 1;
+        ip_is_listed      = true;
       }
     }
 
@@ -618,6 +637,15 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     if (ul & REMAP_OPTFLG_INTERNAL) {
       rule->internal = 1;
     }
+  }
+
+  if (!ip_is_listed) {
+    // If no IP addresses are listed, treat that like `@src_ip=all`.
+    ink_release_assert(rule->src_ip_valid == 0 && rule->src_ip_cnt == 0);
+    src_ip_info_t *ipi       = &rule->src_ip_array[rule->src_ip_cnt];
+    ipi->match_all_addresses = true;
+    rule->src_ip_cnt++;
+    rule->src_ip_valid = 1;
   }
 
   if (is_debug_tag_set("url_rewrite")) {
@@ -675,7 +703,7 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           *argptr = &argv[i][8];
         }
         ret_flags |= (REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_INVERT);
-      } else if (!strncasecmp(argv[i], "src_ip_category=~", 8)) {
+      } else if (!strncasecmp(argv[i], "src_ip_category=~", 17)) {
         if ((findmode & REMAP_OPTFLG_SRC_IP_CATEGORY) != 0) {
           idx = i;
         }
@@ -691,6 +719,14 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           *argptr = &argv[i][7];
         }
         ret_flags |= REMAP_OPTFLG_SRC_IP;
+      } else if (!strncasecmp(argv[i], "src_ip_category=", 16)) {
+        if ((findmode & REMAP_OPTFLG_SRC_IP_CATEGORY) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][16];
+        }
+        ret_flags |= REMAP_OPTFLG_SRC_IP_CATEGORY;
       } else if (!strncasecmp(argv[i], "in_ip=~", 7)) {
         if ((findmode & REMAP_OPTFLG_IN_IP) != 0) {
           idx = i;
