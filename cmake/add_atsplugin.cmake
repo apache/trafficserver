@@ -19,7 +19,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 function(add_atsplugin name)
   add_library(${name} MODULE ${ARGN})
-  if(LINK_PLUGINS)
+  if(LINK_PLUGINS AND BUILD_SHARED_LIBS)
     target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
   else()
     target_include_directories(
