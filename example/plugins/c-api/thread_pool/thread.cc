@@ -51,7 +51,7 @@ add_to_queue(Queue *q, void *data)
   if (data != nullptr) {
     TSMutexLock(q->mutex);
     /* Init the new cell */
-    auto new_cell      = malloc<Cell>();
+    auto new_cell      = TSRalloc<Cell>();
     new_cell->magic    = MAGIC_ALIVE;
     new_cell->ptr_data = data;
     new_cell->ptr_next = q->tail;
@@ -120,7 +120,7 @@ get_nbelem_queue(Queue *q)
 Job *
 job_create(TSCont contp, ExecFunc func, void *data)
 {
-  auto new_job   = malloc<Job>();
+  auto new_job   = TSRalloc<Job>();
   new_job->magic = MAGIC_ALIVE;
   new_job->cont  = contp;
   new_job->func  = func;
