@@ -69,6 +69,8 @@ auto_option(
   plugins/experimental/otel_tracer
   PACKAGE_DEPENDS
   opentelemetry
+  Protobuf
+  curl
   DEFAULT
   ${_DEFAULT}
 )

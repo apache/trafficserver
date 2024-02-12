@@ -61,7 +61,7 @@ constexpr const char *attrHttpScheme     = {"http.scheme"};
 template <typename T> class HttpTextMapCarrier : public context::propagation::TextMapCarrier
 {
 public:
-  HttpTextMapCarrier<T>(T &headers) : headers_(headers) {}
+  HttpTextMapCarrier(T &headers) : headers_(headers) {}
   HttpTextMapCarrier() = default;
   virtual nostd::string_view
   Get(nostd::string_view key) const noexcept override
