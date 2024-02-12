@@ -59,17 +59,6 @@ def get_dependencies(program):
 
         progbase = os.path.basename(program)
 
-        # Why does Libtool call ld with -lcrypto -lresolv -lssl?
-        if progbase == 'traffic_manager':
-            if any(
-                map(
-                    os.path.basename(dependency).startswith, [
-                        'libcrypto.so.',
-                        'libresolv.so.',
-                        'libssl.so.',
-                    ])):
-                continue
-
         # clang+asan pulls in dependencies for these specific tools:
         if any(
             map(
