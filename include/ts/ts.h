@@ -3084,7 +3084,7 @@ TSAction TSNetConnectTransparent(
 );
 
 /**
-  Allocates contiguous, aligned, raw (no construction) memory for a given number number of instancdes of type T.
+  Allocates contiguous, aligned, raw (no construction) memory for a given number number of instances of type T.
 
   @return Pointer to raw (in spite of pointer type) memory for first instance.
 */
