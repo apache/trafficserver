@@ -107,9 +107,6 @@ is turned off.
 string representation. This can be useful in debugging (cpp:func:`Dbg`),
 logging and other types notifications.
 
-(Note that cpp:type:`DbgCtl`, cpp:func:`Dbg`, cpp:func:`SpecificDbg` and cpp:func:`DbgPrint`
-are not in the ``tsapi::c`` namespace.)
-
 (For an example of how to write a plugin with debug tracing, that can be
 compiled with both |TS| Version 10 and older versions of ATS, see ``redirect_1``.)
 

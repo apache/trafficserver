@@ -122,7 +122,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   int keynum;
   bool eat_comment = false;
 
-  cfg = malloc<config>();
+  cfg = TSRalloc<config>();
   memset(cfg, 0, sizeof(struct config));
 
   while (fgets(line, sizeof(line), file) != nullptr) {
