@@ -745,6 +745,13 @@ install(
 )
 install(SCRIPT cmake/post_install.cmake)
 
+# Generate pkg-config and cmake config files
+configure_file(ts.pc.in ts.pc @ONLY)
+configure_file(Findtsapi.cmake.in Findtsapi.cmake @ONLY)
+
+install(FILES "${PROJECT_BINARY_DIR}/ts.pc" DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(FILES "${PROJECT_BINARY_DIR}/Findtsapi.cmake" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake)
+
 # Display build summary
 include(CMakePrintHelpers)
 message(STATUS "Build Summary:")

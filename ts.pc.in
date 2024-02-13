@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_FULL_LIBEXECDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+
+Name: trafficserver
+Description: Apache Traffic Server
+Version: @TS_VERSION_STRING@
+Requires:
+Libs:
+Cflags: -I${includedir}/ts
