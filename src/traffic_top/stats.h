@@ -353,7 +353,7 @@ public:
         if (key == "total_time") {
           old = old / 10000000;
         }
-        value = (value - old) / _time_diff;
+        value = _time_diff ? (value - old) / _time_diff : 0;
       }
     } else if (type == 3 || type == 4) {
       double numerator   = 0;
