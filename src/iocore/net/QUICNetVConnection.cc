@@ -171,6 +171,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     _unschedule_packet_write_ready();
+    this->_propagate_event(event);
     this->closed = 1;
     break;
   default:
@@ -207,6 +208,7 @@ QUICNetVConnection::state_established(int event, Event *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     _unschedule_packet_write_ready();
+    this->_propagate_event(event);
     this->closed = 1;
     break;
   default:
@@ -254,6 +256,18 @@ QUICNetVConnection::_start_application()
   }
 }
 
+void
+QUICNetVConnection::_propagate_event(int event)
+{
+  if (this->read.vio.cont && this->read.vio.mutex == this->read.vio.cont->mutex) {
+    this->read.vio.cont->handleEvent(event, &this->read.vio);
+  } else if (this->write.vio.cont && this->write.vio.mutex == this->write.vio.cont->mutex) {
+    this->write.vio.cont->handleEvent(event, &this->write.vio);
+  } else {
+    // Proxy Session does not exist
+  }
+}
+
 bool
 QUICNetVConnection::shouldDestroy()
 {
@@ -263,15 +277,17 @@ QUICNetVConnection::shouldDestroy()
 VIO *
 QUICNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  ink_assert(false);
-  return nullptr;
+  auto vio           = super::do_io_read(c, nbytes, buf);
+  this->read.enabled = 1;
+  return vio;
 }
 
 VIO *
 QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  ink_assert(false);
-  return nullptr;
+  auto vio            = super::do_io_write(c, nbytes, buf);
+  this->write.enabled = 1;
+  return vio;
 }
 
 int
