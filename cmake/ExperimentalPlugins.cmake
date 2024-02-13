@@ -61,5 +61,18 @@ auto_option(
   DEFAULT
   ${_DEFAULT}
 )
+auto_option(
+  OTEL_TRACER
+  FEATURE_VAR
+  BUILD_OTEL_TRACER
+  WITH_SUBDIRECTORY
+  plugins/experimental/otel_tracer
+  PACKAGE_DEPENDS
+  opentelemetry
+  Protobuf
+  curl
+  DEFAULT
+  ${_DEFAULT}
+)
 
 unset(_DEFAULT)
