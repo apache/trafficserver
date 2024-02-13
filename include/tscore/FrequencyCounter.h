@@ -1,6 +1,6 @@
 /** @file
 
-  Http2FrequencyCounter
+  FrequencyCounter
 
   @section license License
 
@@ -26,12 +26,12 @@
 #include <cstdint>
 #include "iocore/eventsystem/EventSystem.h"
 
-class Http2FrequencyCounter
+class FrequencyCounter
 {
 public:
   void increment(uint16_t amount = 1);
   uint32_t get_count();
-  virtual ~Http2FrequencyCounter() {}
+  virtual ~FrequencyCounter() {}
 
 protected:
   uint16_t _count[2]      = {0};

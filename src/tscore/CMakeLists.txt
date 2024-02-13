@@ -42,6 +42,7 @@ add_library(
   Errata.cc
   EventNotify.cc
   Extendible.cc
+  FrequencyCounter.cc
   Hash.cc
   HashFNV.cc
   HashSip.cc
@@ -147,6 +148,7 @@ if(BUILD_TESTING)
     unit_tests/test_Errata.cc
     unit_tests/test_Extendible.cc
     unit_tests/test_Encoding.cc
+    unit_tests/test_FrequencyCounter.cc
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc

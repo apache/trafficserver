@@ -1,6 +1,6 @@
 /** @file
 
-    Unit tests for Http2FrequencyCounter
+    Unit tests for FrequencyCounter
 
     @section license License
 
@@ -20,12 +20,11 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "proxy/http2/Http2FrequencyCounter.h"
+#include "tscore/FrequencyCounter.h"
 
-class TestHttp2FrequencyCounter : public Http2FrequencyCounter
+class TestFrequencyCounter : public FrequencyCounter
 {
 public:
   void
@@ -47,9 +46,9 @@ private:
   ink_hrtime _now = 0;
 };
 
-TEST_CASE("Http2FrequencyCounter_basic", "[http2][Http2FrequencyCounter]")
+TEST_CASE("FrequencyCounter_basic", "[FrequencyCounter]")
 {
-  TestHttp2FrequencyCounter counter;
+  TestFrequencyCounter counter;
 
   SECTION("basic")
   {
