@@ -183,7 +183,7 @@ if(BUILD_TESTING)
             catch2::catch2
   )
   if(TS_USE_HWLOC)
-    target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
+    target_link_libraries(test_tscore PRIVATE hwloc::hwloc inkevent)
   endif()
 
   add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
