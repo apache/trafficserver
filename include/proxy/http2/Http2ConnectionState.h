@@ -32,7 +32,7 @@
 #include "proxy/http2/HPACK.h"
 #include "proxy/http2/Http2Stream.h"
 #include "proxy/http2/Http2DependencyTree.h"
-#include "proxy/http2/Http2FrequencyCounter.h"
+#include "tscore/FrequencyCounter.h"
 
 class Http2CommonSession;
 class Http2Frame;
@@ -325,11 +325,11 @@ private:
   std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index             = 0;
 
-  Http2FrequencyCounter _received_settings_counter;
-  Http2FrequencyCounter _received_settings_frame_counter;
-  Http2FrequencyCounter _received_ping_frame_counter;
-  Http2FrequencyCounter _received_priority_frame_counter;
-  Http2FrequencyCounter _received_rst_stream_frame_counter;
+  FrequencyCounter _received_settings_counter;
+  FrequencyCounter _received_settings_frame_counter;
+  FrequencyCounter _received_ping_frame_counter;
+  FrequencyCounter _received_priority_frame_counter;
+  FrequencyCounter _received_rst_stream_frame_counter;
 
   /** Records the various settings for each SETTINGS frame that we've sent.
    *
