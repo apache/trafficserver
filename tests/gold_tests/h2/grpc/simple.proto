@@ -25,8 +25,10 @@ syntax = "proto3";
 
 package simple;
 
-service Simple {
-    rpc SimpleMethod(SimpleRequest) returns (SimpleResponse) {}
+service Talker {
+    rpc MakeRequest(SimpleRequest) returns (SimpleResponse) {}
+    rpc MakeAnotherRequest(SimpleRequest) returns (SimpleResponse) {}
+    rpc MakeStreamedRequest(stream SimpleRequest) returns (stream SimpleResponse) {}
 }
 
 message SimpleRequest {

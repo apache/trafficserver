@@ -155,8 +155,9 @@ public:
   Http2ErrorCode get_shutdown_reason() const;
 
   // HTTP/2 frame sender
-  void schedule_stream(Http2Stream *stream);
+  void schedule_stream_to_send_priority_frames(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
+  void schedule_stream_to_send_data_frames(Http2Stream *stream);
   void send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
@@ -387,7 +388,8 @@ private:
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id = 0;
-  bool _scheduled                   = false;
+  bool _priority_scheduled          = false;
+  bool _data_scheduled              = false;
   bool fini_received                = false;
   bool in_destroy                   = false;
   int recursion                     = 0;
