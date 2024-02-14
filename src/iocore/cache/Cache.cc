@@ -655,8 +655,7 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnstripes=%d", (unsigned int)caches_ready,
-        gnstripes.load());
+    Dbg(dbg_ctl_cache_init, "caches_ready=0x%0X, gnstripes=%d", (unsigned int)caches_ready, gnstripes.load());
 
     if (gnstripes) {
       // new ram_caches, with algorithm from the config
@@ -703,6 +702,8 @@ CacheProcessor::cacheInitialized()
       uint64_t total_ram_cache_bytes = 0;
 
       for (int i = 0; i < gnstripes; i++) {
+        Dbg(dbg_ctl_cache_init, "stripe %d", i);
+
         Stripe *stripe          = gstripes[i];
         int64_t ram_cache_bytes = 0;
 
@@ -714,7 +715,7 @@ CacheProcessor::cacheInitialized()
             ink_assert(stripe->cache != nullptr);
 
             double factor = static_cast<double>(static_cast<int64_t>(stripe->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
-            Dbg(dbg_ctl_cache_init, "factor = %f", factor);
+            Dbg(dbg_ctl_cache_init, "  factor = %f", factor);
 
             ram_cache_bytes = static_cast<int64_t>(http_ram_cache_size * factor);
           }
@@ -723,7 +724,7 @@ CacheProcessor::cacheInitialized()
           total_ram_cache_bytes += ram_cache_bytes;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, ram_cache_bytes);
 
-          Dbg(dbg_ctl_cache_init, "stripe [%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i, ram_cache_bytes,
+          Dbg(dbg_ctl_cache_init, "  ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", ram_cache_bytes,
               ram_cache_bytes / (1024 * 1024));
         }
 
@@ -732,7 +733,7 @@ CacheProcessor::cacheInitialized()
         Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
         Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
 
-        Dbg(dbg_ctl_cache_init, "total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
+        Dbg(dbg_ctl_cache_init, "  total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
             total_cache_bytes / (1024 * 1024));
 
         uint64_t vol_total_direntries  = stripe->buckets * stripe->segments * DIR_DEPTH;
