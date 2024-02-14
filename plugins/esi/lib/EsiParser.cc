@@ -43,8 +43,6 @@ const string EsiParser::SRC_ATTR_STR("src");
 const string EsiParser::TEST_ATTR_STR("test");
 const string EsiParser::HANDLER_ATTR_STR("handler");
 
-const unsigned int EsiParser::MAX_DOC_SIZE = 1024 * 1024;
-
 const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
   EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2),
   EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
@@ -62,11 +60,11 @@ const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
 
 const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT, "<!--esi", 7, "-->", 3);
 
-EsiParser::EsiParser() : _parse_start_pos(-1)
+EsiParser::EsiParser(unsigned max_doc_size) : _max_doc_size(max_doc_size), _parse_start_pos(-1)
 {
   // do this so that object doesn't move around in memory;
   // (because we return pointers into this object)
-  _data.reserve(MAX_DOC_SIZE);
+  _data.reserve(_max_doc_size);
 }
 
 bool
@@ -80,9 +78,9 @@ EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_s
     if (data_len == -1) {
       data_len = strlen(data_ptr);
     }
-    if ((data.size() + data_len) > MAX_DOC_SIZE) {
+    if ((data.size() + data_len) > _max_doc_size) {
       TSError("[%s] Cannot allow attempted doc of size %d; Max allowed size is %d", __FUNCTION__, int(data.size() + data_len),
-              MAX_DOC_SIZE);
+              _max_doc_size);
       retval = false;
     } else {
       data.append(data_ptr, data_len);

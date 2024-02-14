@@ -44,7 +44,8 @@ public:
     PROCESS_FAILURE,
   };
 
-  EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr);
+  EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr,
+               unsigned max_doc_size);
 
   /** Initializes the processor with the context of the request to be processed */
   bool start();
