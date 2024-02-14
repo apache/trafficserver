@@ -181,9 +181,10 @@ if(BUILD_TESTING)
             OpenSSL::Crypto
             OpenSSL::SSL
             catch2::catch2
+            inkevent
   )
   if(TS_USE_HWLOC)
-    target_link_libraries(test_tscore PRIVATE hwloc::hwloc inkevent)
+    target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
   endif()
 
   add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
