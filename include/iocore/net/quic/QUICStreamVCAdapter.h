@@ -61,6 +61,7 @@ protected:
 
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
+  Event *_eos_event   = nullptr;
 };
 
 class QUICStreamVCAdapter::IOInfo

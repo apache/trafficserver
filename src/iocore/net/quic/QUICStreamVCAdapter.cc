@@ -40,6 +40,11 @@ QUICStreamVCAdapter::~QUICStreamVCAdapter()
     this->_write_event->cancel();
     this->_write_event = nullptr;
   }
+
+  if (this->_eos_event) {
+    this->_eos_event->cancel();
+    this->_eos_event = nullptr;
+  }
 }
 
 int64_t
@@ -146,7 +151,9 @@ QUICStreamVCAdapter::encourge_read()
     }
 
     int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+    if (!(this->_read_event && this->_read_event->callback_event == event)) {
+      this->_read_event = this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+    }
   }
 }
 
@@ -164,7 +171,9 @@ QUICStreamVCAdapter::encourge_write()
     }
 
     int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
-    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
+    if (!(this->_write_event && this->_write_event->callback_event == event)) {
+      this->_write_event = this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
+    }
   }
 }
 
@@ -184,7 +193,9 @@ QUICStreamVCAdapter::notify_eos()
     if (lock.is_locked()) {
       this->_read_vio.cont->handleEvent(event, &this->_read_vio);
     } else {
-      this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+      if (!(this->_eos_event && this->_eos_event->callback_event == event)) {
+        this->_eos_event = this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+      }
     }
   }
 }
