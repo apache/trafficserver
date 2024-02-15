@@ -259,12 +259,14 @@ QUICNetVConnection::_start_application()
 void
 QUICNetVConnection::_propagate_event(int event)
 {
+  QUICConVDebug("Propagating: %d", event);
   if (this->read.vio.cont && this->read.vio.mutex == this->read.vio.cont->mutex) {
     this->read.vio.cont->handleEvent(event, &this->read.vio);
   } else if (this->write.vio.cont && this->write.vio.mutex == this->write.vio.cont->mutex) {
     this->write.vio.cont->handleEvent(event, &this->write.vio);
   } else {
     // Proxy Session does not exist
+    QUICConVDebug("Session does not exist");
   }
 }
 
