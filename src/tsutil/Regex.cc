@@ -47,13 +47,13 @@ my_free(void *ptr, void * /*caller*/)
 class RegexContext
 {
 public:
-  RegexContext()
+  static RegexContext *
+  get_instance()
   {
-    _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
-    _compile_context = pcre2_compile_context_create(_general_context);
-    _match_context   = pcre2_match_context_create(_general_context);
-    _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
-    pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+    if (!_regex_context) {
+      _regex_context = new RegexContext();
+    }
+    return _regex_context;
   }
   ~RegexContext()
   {
@@ -87,28 +87,36 @@ public:
   }
 
 private:
+  RegexContext()
+  {
+    _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
+    _compile_context = pcre2_compile_context_create(_general_context);
+    _match_context   = pcre2_match_context_create(_general_context);
+    _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
+    pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+  }
   pcre2_general_context *_general_context = nullptr;
   pcre2_compile_context *_compile_context = nullptr;
   pcre2_match_context *_match_context     = nullptr;
   pcre2_jit_stack *_jit_stack             = nullptr;
+  thread_local static RegexContext *_regex_context;
 };
+
+thread_local RegexContext *RegexContext::_regex_context = nullptr;
 
 //----------------------------------------------------------------------------
 namespace
 {
-thread_local RegexContext global_context;
-// pcre2_match_data* cast_match_data(void *match_data) {
-//   return reinterpret_cast<pcre2_match_data*>(match_data);
-// }
-// pcre2_code* cast_code(void *code) {
-//   return reinterpret_cast<pcre2_code*>(code);
-// }
-}; // namespace
+struct RegexContextCleanup {
+  ~RegexContextCleanup() { delete RegexContext::get_instance(); }
+};
+thread_local RegexContextCleanup cleanup;
+} // namespace
 
 //----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
-  _match_data = pcre2_match_data_create(size, global_context.get_general_context());
+  _match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
 }
 
 //----------------------------------------------------------------------------
@@ -188,7 +196,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
   PCRE2_SIZE error_offset;
   int error_code;
   _code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                        global_context.get_compile_context());
+                        RegexContext::get_instance()->get_compile_context());
   if (!_code) {
     erroroffset = error_offset;
 
@@ -226,7 +234,7 @@ Regex::exec(const std::string_view &subject, RegexMatches &matches) const
     return 0;
   }
   int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
-                          global_context.get_match_context());
+                          RegexContext::get_instance()->get_match_context());
   if (count < 0) {
     return count;
   }

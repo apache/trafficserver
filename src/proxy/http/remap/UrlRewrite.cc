@@ -908,6 +908,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
                                 int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container)
 {
   bool retval = false;
+  RegexMatches matches;
 
   if (rank_ceiling == -1) { // we will now look at all regex mappings
     rank_ceiling = INT_MAX;
@@ -959,7 +960,6 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       continue;
     }
 
-    RegexMatches matches;
     int match_result = list_iter->regular_expression.exec(std::string_view(request_host, request_host_len), matches);
 
     if (match_result > 0) {
