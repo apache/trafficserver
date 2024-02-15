@@ -55,6 +55,12 @@ QUICStream::is_bidirectional() const
   return ((this->_id & 0x03) < 0x02);
 }
 
+bool
+QUICStream::has_no_more_data() const
+{
+  return this->_has_no_more_data;
+}
+
 void
 QUICStream::set_io_adapter(QUICStreamAdapter *adapter)
 {
@@ -98,6 +104,7 @@ QUICStream::receive_data(quiche_conn *quiche_con)
     this->_adapter->write(this->_received_bytes, buf, read_len, fin);
     this->_received_bytes += read_len;
   }
+  this->_has_no_more_data = quiche_conn_stream_finished(quiche_con, this->_id);
 
   this->_adapter->encourge_read();
 }
