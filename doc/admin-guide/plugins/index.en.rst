@@ -157,11 +157,8 @@ Experimental plugins
 Plugins that are considered experimental are located in the
 `plugins/experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_
 directory of the |TS| source tree. Experimental plugins can be compiled by passing the
-`--enable-experimental-plugins` option to `configure`::
+``-DBUILD_EXPERIMENTAL_PLUGINS=ON``` variable to ``cmake`` when building.
 
-    $ autoconf -i
-    $ ./configure --enable-experimental-plugins
-    $ make
 
 .. toctree::
    :hidden:

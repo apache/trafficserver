@@ -46,9 +46,8 @@ Installation
 ============
 
 To make this plugin available, you must enable experimental plugins when
-building |TS|::
-
-    ./configure --enable-experimental-plugins
+building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
+when building.
 
 Configuration
 =============
