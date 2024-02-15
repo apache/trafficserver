@@ -61,6 +61,9 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil
 )
 
+include(ClangTidy)
+clang_tidy_check(tsutil)
+
 if(BUILD_TESTING)
   add_executable(
     test_tsutil

@@ -98,6 +98,9 @@ add_library(
 )
 add_library(ts::tscore ALIAS tscore)
 
+include(ClangTidy)
+clang_tidy_check(tscore)
+
 # Some plugins link against ts::tscore and therefore need it to be compiled as
 # position independent.
 set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
