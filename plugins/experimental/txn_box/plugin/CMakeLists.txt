@@ -14,10 +14,6 @@
 #  the License.
 #
 #######################
-cmake_minimum_required(VERSION 3.11)
-
-project(txn_box)
-set(CMAKE_CXX_STANDARD 17)
 
 pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
@@ -47,16 +43,7 @@ add_atsplugin(
   src/stats.cc
   src/text_block.cc
 )
-# set_property(TARGET plugin PROPERTY PREFIX "")
-# set_property(TARGET plugin PROPERTY OUTPUT_NAME "txn_box")
 
-target_link_libraries(txn_box PRIVATE libswoc::libswoc PkgConfig::PCRE2 OpenSSL::SSL ts::tsapi yaml-cpp::yaml-cpp
-)#ts::tsapi needed?
-#pcre2-8
-target_include_directories(txn_box PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${YAMLCPP_INCLUDE_DIR})
-# target_include_directories(txn_box PRIVATE ${PLUGIN_SOURCE_DIR}/include ${trafficserver_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR}, libswoc)
-if(CMAKE_COMPILER_IS_GNUCXX)
-  target_compile_options(txn_box PRIVATE -Wall -Wextra -Werror -Wnon-virtual-dtor)
-endif()
+target_link_libraries(txn_box PRIVATE libswoc::libswoc PkgConfig::PCRE2 OpenSSL::SSL yaml-cpp::yaml-cpp)
 
-# install(TARGETS txn_box LIBRARY DESTINATION ${INSTALL_DIR}/lib)
+target_include_directories(txn_box PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
