@@ -51,3 +51,13 @@ add_custom_target(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
+
+add_custom_target(
+  autest_no_install
+  COMMAND ${RUNPIPENV} install
+  COMMAND ${RUNPIPENV} run env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests
+          --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root
+          ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${AUTEST_OPTIONS}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
