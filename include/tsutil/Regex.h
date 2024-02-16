@@ -102,7 +102,7 @@ public:
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
-  bool exec(const std::string_view &subject) const;
+  bool exec(std::string_view subject) const;
 
   /** Execute the regular expression.
    *
@@ -116,7 +116,7 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(const std::string_view &subject, RegexMatches &matches) const;
+  int exec(std::string_view subject, RegexMatches &matches) const;
 
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();
@@ -141,7 +141,7 @@ public:
   ~DFA();
 
   /// @return The number of patterns successfully compiled.
-  int compile(std::string_view const &pattern, unsigned flags = 0);
+  int compile(std::string_view pattern, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
   int compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
@@ -152,7 +152,7 @@ public:
    * @param str String to match.
    * @return Index of the matched pattern, -1 if no match.
    */
-  int match(std::string_view const &str) const;
+  int match(std::string_view str) const;
 
 private:
   struct Pattern {
@@ -167,7 +167,7 @@ private:
    * @param flags Regular expression compilation flags.
    * @return @c true if @a pattern was successfully compiled, @c false if not.
    */
-  bool build(std::string_view const &pattern, unsigned flags = 0);
+  bool build(std::string_view pattern, unsigned flags = 0);
 
   std::vector<Pattern> _patterns;
 };

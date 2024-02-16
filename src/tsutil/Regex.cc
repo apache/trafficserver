@@ -215,7 +215,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
 //----------------------------------------------------------------------------
 bool
-Regex::exec(const std::string_view &subject) const
+Regex::exec(std::string_view subject) const
 {
   if (!_code) {
     return false;
@@ -228,7 +228,7 @@ Regex::exec(const std::string_view &subject) const
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(const std::string_view &subject, RegexMatches &matches) const
+Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
   if (!_code) {
     return 0;
@@ -260,7 +260,7 @@ Regex::get_capture_count()
 DFA::~DFA() {}
 
 bool
-DFA::build(std::string_view const &pattern, unsigned flags)
+DFA::build(const std::string_view pattern, unsigned flags)
 {
   Regex rxp;
   std::string string{pattern};
@@ -277,7 +277,7 @@ DFA::build(std::string_view const &pattern, unsigned flags)
 }
 
 int
-DFA::compile(std::string_view const &pattern, unsigned flags)
+DFA::compile(std::string_view pattern, unsigned flags)
 {
   assert(_patterns.empty());
   this->build(pattern, flags);
@@ -305,7 +305,7 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
 }
 
 int
-DFA::match(std::string_view const &str) const
+DFA::match(std::string_view str) const
 {
   for (auto spot = _patterns.begin(), limit = _patterns.end(); spot != limit; ++spot) {
     if (spot->_re.exec(str)) {
