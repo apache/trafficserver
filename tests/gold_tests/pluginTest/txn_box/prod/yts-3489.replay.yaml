@@ -1,0 +1,322 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    remap:
+    - with: pre-remap-path
+      select:
+      - any-of: # Drop the first path element and redirect.
+        - match: "delain"
+        - prefix: "delain/"
+        do:
+        - redirect: "http://bravo.ex/{*}"
+    # This is the obsolete and ugly way to deal with the query string - don't use in production.
+    # Use original path, and preserve the query string if present.
+    - var<query>: "?{pre-remap-query}"
+    - with: pre-remap-query
+      select:
+      - is-empty: # If there wasn't a query string, get rid of the lone "?"
+        do:
+        - var<query>: ""
+      continue:
+    - redirect:
+        location: "http://charlie.ex/{pre-remap-path}{var<query>}"
+        status: 302
+        reason: "Because I said so!"
+        body: "The album is now located at <a href=\"{this::location}\">{this::location}</a>. Please update your link."
+
+    # Alternate way of handling the query string.
+    remap-alt:
+    - with: pre-remap-query
+      select:
+      - is-empty: # Don't use the "?" if no query string.
+        do:
+        - redirect:
+            location: "http://delta.ex/{pre-remap-path}"
+            status: 302
+    - redirect:
+        location: "http://delta.ex/{pre-remap-path}?{pre-remap-query}"
+        status: 302
+
+    # Handle query string using join
+    # This uses the join modifier instead of the conditional with directive.
+    # The tricky bit is join will skip NULL but not empty strings so the query needs to be filtered
+    # out if it's empty before doing the join.
+    remap-join:
+    - redirect:
+        location:
+          - [ "http://echo.ex/{pre-remap-path}" , pre-remap-query ] # list of URL+path, query
+          - filter: [ { is-empty: , drop: } , { pass: } ] # drop query if it's empty.
+          - join: "?" # add "?" and query if query is still there (i.e. is not empty).
+        status: 302
+
+    # Handle query string using concat
+    # Use concat to conditionally add the separator if the query is not empty.
+    remap-concat:
+    - redirect:
+        location:
+        - "http://foxtrot.ex/{pre-remap-path}"
+        - { concat: [ "?", pre-remap-query ] }
+        status: 302
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 102 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/delain/"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 103 ]] }}
+    client-request:
+      <<: *base-req
+      url: "/delain/lucidity.html"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 301
+      headers:
+        fields:
+        - [ "Location", { value: "http://bravo.ex/lucidity.html", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 104 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/nightwish", as: equal } ]
+
+  - all: { headers: { fields: [ [ uuid, 105 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/once.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/nightwish/once.html", as: equal } ]
+
+  # Verify no clipping if target path element isn't first.
+  - all: { headers: { fields: [ [ uuid, 106 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/album/delain/moon-bathers.html"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/album/delain/moon-bathers.html", as: equal } ]
+
+  # This shouldn't match the remap rule and therefore shouldn't be redirected.
+  - all: { headers: { fields: [ [ uuid, 107 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/delain/interlude.html"
+      headers:
+        fields:
+        - [ "Host", "unmatched.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Location", { as: absent } ]
+
+  # Is the query string preserved?
+  - all: { headers: { fields: [ [ uuid, 108 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html?track=3"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://charlie.ex/nightwish/ocean-born.html?track=3", as: equal } ]
+
+  # Does the alternate style work without a query string?
+  - all: { headers: { fields: [ [ uuid, 109 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html"
+      headers:
+        fields:
+        - [ "Host", "alt.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://delta.ex/nightwish/ocean-born.html", as: equal } ]
+
+  # Is the query string preserved in the alternate style?
+  - all: { headers: { fields: [ [ uuid, 110 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html?track=3"
+      headers:
+        fields:
+        - [ "Host", "alt.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://delta.ex/nightwish/ocean-born.html?track=3", as: equal } ]
+
+  # Does the alternate style work without a query string?
+  - all: { headers: { fields: [ [ uuid, 111 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html"
+      headers:
+        fields:
+        - [ "Host", "join.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://echo.ex/nightwish/ocean-born.html", as: equal } ]
+
+  # Is the query string preserved in the alternate style?
+  - all: { headers: { fields: [ [ uuid, 112 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html?track=3"
+      headers:
+        fields:
+        - [ "Host", "join.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://echo.ex/nightwish/ocean-born.html?track=3", as: equal } ]
+
+  # Does the alternate style work without a query string?
+  - all: { headers: { fields: [ [ uuid, 113 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html"
+      headers:
+        fields:
+        - [ "Host", "concat.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://foxtrot.ex/nightwish/ocean-born.html", as: equal } ]
+
+  # Is the query string preserved in the alternate style?
+  - all: { headers: { fields: [ [ uuid, 114 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/nightwish/ocean-born.html?track=3"
+      headers:
+        fields:
+        - [ "Host", "concat.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "http://foxtrot.ex/nightwish/ocean-born.html?track=3", as: equal } ]

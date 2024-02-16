@@ -1,0 +1,412 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    remap:
+      one:
+      - ua-req-field<Q>: ua-req-query-value<delain>
+      two:
+      - ua-req-query-value<Delain>: "best"
+      three:
+      - ua-req-query-value<Delain>: NULL
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  # No query -> no field.
+  - all: { headers: { fields: [[ uuid, no-query ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Single matching
+  - all: { headers: { fields: [[ uuid, match-one ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?delain=best"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Single not matching
+  - all: { headers: { fields: [[ uuid, no-match-one ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?nightwish=best"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # First
+  - all: { headers: { fields: [[ uuid, match2-first ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?delain=best&nightwish=great"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Last
+  - all: { headers: { fields: [[ uuid, match2-last ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?nightwish=great&delain=best"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # First (many)
+  - all: { headers: { fields: [[ uuid, match-many-first ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?delain=best&nightwish=great&xandria=fine&leah=cool"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Last (many)
+  - all: { headers: { fields: [[ uuid, match-many-last ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?nightwish=great&xandria=fine&leah=cool&delain=best"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Middle (many)
+  - all: { headers: { fields: [[ uuid, match-many-middle ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?nightwish=great&xandria=fine&delain=best&leah=cool"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Middle (many) (case)
+  - all: { headers: { fields: [[ uuid, match-many-middle-case ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one.html?nightwish=great&xandria=fine&DeLaIn=best&leah=cool"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Q, { value: best, as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  ## Test directive.
+  # No query
+  - all: { headers: { fields: [[ uuid, not-present ]]}}
+    client-request:
+      <<: *base-req
+      url: "/two.html"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "Delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update single value.
+  - all: { headers: { fields: [[ uuid, update-one ]]}}
+    client-request:
+      <<: *base-req
+      url: "/two.html?delain=ok"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Remove single value.
+  - all: { headers: { fields: [[ uuid, delete-one ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?delain=ok"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update first of two
+  - all: { headers: { fields: [[ uuid, update-first-of-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?delain=ok&nightwish=good"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "delain=best&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete first of two
+  - all: { headers: { fields: [[ uuid, delete-first-of-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?delain=ok&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update last of two
+  - all: { headers: { fields: [[ uuid, update-last-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?nightwish=good&delain=ok"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "nightwish=good&delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete last of two
+  - all: { headers: { fields: [[ uuid, delete-last-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?nightwish=good&delain=ok"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update last of four
+  - all: { headers: { fields: [[ uuid, update-last-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&leah=cool&nightwish=good&delain=ok"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good&delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete last of four
+  - all: { headers: { fields: [[ uuid, delete-last-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&leah=cool&nightwish=good&delain=ok"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update first of four
+  - all: { headers: { fields: [[ uuid, update-first-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?Delain=ok&xandria=nice&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "Delain=best&xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete first of four
+  - all: { headers: { fields: [[ uuid, delete-first-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?delain=ok&xandria=nice&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Update middle of four
+  - all: { headers: { fields: [[ uuid, update-middle-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&delain=ok&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&delain=best&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete middle of four
+  - all: { headers: { fields: [[ uuid, delete-middle-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&delain=ok&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+

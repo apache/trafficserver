@@ -1,0 +1,5 @@
+- with: ua-req-field<Best-Band>
+  select:
+  - is-empty:
+  - do: # otherwise
+    - ua-req-field<Best-Band>: "Delain"

@@ -1,0 +1,100 @@
+meta:
+  version: "1.0"
+
+config:
+  ts:
+    remap:
+    - target: https://example.one
+      result: http://localhost:9090
+    - target: https://example.two
+      result: http://localhost:9090
+  txn_box:
+  - when: proxy-rsp
+    do:
+    - with: inbound-sni
+      select:
+      - match: "example.two"
+        do:
+        - proxy-rsp-field<Access-Control-Allow-Origin>: "*"
+  blocks:
+    base_request: &base_request
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+
+sessions:
+- protocol: [ ipv4, tcp, tls ]
+  tls:
+    client-sni: "example.one"
+  transactions:
+  - client-request:
+      <<: *base_request
+      url: "https://example.one"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 1 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.one"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 1 ]
+    server-response: &std-response
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 1 ]
+    proxy-response: &std-response
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 1 ]
+
+- protocol: [ ipv4, tcp, tls ]
+  tls:
+    client-sni: "example.two"
+  transactions:
+  - client-request:
+      <<: *base_request
+      url: "https://example.two"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 2 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.two"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 2 ]
+    server-response:
+      <<: *std-response
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 2 ]
+    proxy-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ Access-Control-Allow-Origin, "*" ]
+        - [ uuid, 2 ]
+

@@ -1,0 +1,43 @@
+meta:
+  version: "1.0"
+
+# Testing txn_open hook.
+  txn_box:
+    global:
+    - when: proxy-req
+      do:
+      - proxy-req-field<Test>: "NATO = {txn-conf<proxy.config.http.transaction_no_activity_timeout_out>}"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Test, { value: "NATO = 120", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:

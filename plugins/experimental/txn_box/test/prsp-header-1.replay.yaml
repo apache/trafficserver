@@ -1,0 +1,74 @@
+# For a specific remap rule, set a header on the proxy response.
+# Content-Security-Policy: frame-ancestors https://*.yahoo.com
+
+meta:
+  version: "1.0"
+
+  txn_box:
+  - when: prsp
+    do:
+      prsp-field<Content-Security-Policy>: "frame-ancestors https://*.yahoo.com"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields:  [[ uuid, 1 ]]}}
+    client-request:
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+      url: "/config/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+      url: "/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        size: 100
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 100 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Security-Policy, "frame-ancestors https://*.yahoo.com" ]
+
+  - all: { headers: { fields:  [[ uuid, 2 ]]}}
+    client-request:
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+      url: "/config/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.two ]
+    proxy-request:
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+      url: "/settings.yaml"
+      headers:
+        fields:
+        - [ Host, example.three ]
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        size: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 200 ]
+    proxy-response:
+      status: 200

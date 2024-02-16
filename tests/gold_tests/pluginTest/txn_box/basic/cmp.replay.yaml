@@ -1,0 +1,182 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - path: "delain/albums"
+          do:
+          - proxy-req-field<cmp-path>: "true"
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - any-of:
+          - match: "nightwish/albums"
+          - match: "nightwish/albums/"
+          - match: "lyria/albums"
+          - match: "lyria/albums/"
+          - match: "delain/albums"
+          - match: "delain/albums/"
+          do:
+          - proxy-req-field<match-path>: "true"
+
+    - when: proxy-req
+      do:
+      - with: ua-req-field<channel>
+        select:
+        - rxp: "^v1/video/channels/(.*)/subchannel/(.*)"
+          do:
+          - proxy-req-field<rxp-sub>: "v1/video/channels/{1}/subchannel/{2}"
+          - proxy-req-field<rxp-0>: "{0}"
+
+    - when: proxy-req
+      do:
+      - with: ua-req-field<channel>
+        select:
+        - any-of:
+          - match: "v1/video/channels"
+          - match: "v1/video/channels/"
+          - rxp: "^v1/video/channels/(.*)/subchannel/(.*)"
+          do:
+          - proxy-req-field<cmp-any>: "true"
+
+    - when: proxy-req
+      do:
+      - with: ua-req-field<channel>
+        select:
+        - any-of:
+          - path: "v1/video/channels/"
+          - all-of:
+            - prefix: "v1/video/channels/"
+            - contains: "/subchannel/"
+          do:
+          - proxy-req-field<cmp-split>: "true"
+
+    - when: proxy-req
+      do:
+      - with: ua-req-field<channel>
+        select:
+        - prefix: "v1/video/channels"
+          do:
+          - with: "{*}"
+            select:
+            - any-of:
+              - is-empty:
+              - match: "/"
+              - contains: "/subchannel/"
+              do:
+              - proxy-req-field<cmp-mix>: "true"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ] # plain text sessions
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "channel", "v1/video/channels/delain/subchannel/streaming"]
+    proxy-request:
+      headers:
+        fields:
+        - [ cmp-path, { value: "true", as: equal } ]
+        - [ "match-path", { value: "true", as: equal } ]
+        - [ "rxp-sub", { value: "v1/video/channels/delain/subchannel/streaming", as: equal } ]
+        - [ "rxp-0", { value: "v1/video/channels/delain/subchannel/streaming", as: equal } ]
+        - [ "cmp-any", { value: "true", as: equal } ]
+        - [ "cmp-mix", { value: "true", as: equal } ]
+        - [ "cmp-split", { value: "true", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "channel", "v1/video/channels"]
+    proxy-request:
+      headers:
+        fields:
+        - [ cmp-path, { value: "true", as: equal } ]
+        - [ "match-path", { value: "true", as: equal } ]
+        - [ "cmp-any", { value: "true", as: equal } ]
+        - [ "cmp-mix", { value: "true", as: equal } ]
+        - [ "cmp-split", { value: "true", as: equal} ]
+        - [ "rxp-sub", { as: absent } ]
+        - [ "rxp-0", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums/lucidity.html"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "channel", "v1/video/channels/"]
+    proxy-request:
+      headers:
+        fields:
+        - [ cmp-path, { as: absent } ]
+        - [ "match-path", { as: absent } ]
+        - [ "cmp-any", { value: "true", as: equal } ]
+        - [ "cmp-mix", { value: "true", as: equal } ]
+        - [ "cmp-split", { value: "true", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums?name=lucidity.html"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "channel", "v1/video/channels/delain/studio/"]
+    proxy-request:
+      headers:
+        fields:
+        - [ "cmp-path", { value: "true", as: equal } ]
+        - [ "match-path", { value: "true", as: equal } ]
+        - [ "cmp-any", { as: absent } ]
+        - [ "cmp-mix", { as: absent } ]
+        - [ "cmp-split", { as: absent } ]
+        - [ "rxp-sub", { as: absent } ]
+        - [ "rxp-0", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

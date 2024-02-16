@@ -193,6 +193,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    System Statistics <system_stats.en>
    Wasm <wasm.en>
    Prefetch <prefetch.en>
+   Transaction Box(TxnBox) <txn_box/index.en>
 
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.

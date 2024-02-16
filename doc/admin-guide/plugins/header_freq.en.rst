@@ -1,3 +1,4 @@
+.. include:: ../../common.defs
 .. _header_freq-plugin:
 
 Header Frequency Plugin

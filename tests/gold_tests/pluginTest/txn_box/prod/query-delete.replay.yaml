@@ -1,0 +1,208 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    alpha:
+     - when: ua-req
+       do:
+       - with: ua-req-query
+         select:
+         - rxp<nc>: "^emailaddress=[^&;]*[;&]?(.*)$" # first value.
+           do:
+           - ua-req-query: "{1}"
+         - rxp<nc>: "(.*?)[&;]emailaddress=[^&;]*(.*)$" # not first value
+           do:
+           - ua-req-query: "{1}{2}"
+         continue:
+       # needs to be separate because this can occur additionally.
+       - with: ua-req-query
+         select:
+         - rxp<nc>: "^(.*)%26emailAddress%3D.*?(%26.*)?$"
+           do:
+           - ua-req-query: "{1}{2}"
+    bravo:
+    - when: ua-req
+      do:
+      - ua-req-query:
+        - ua-req-query
+        - query-filter:
+          - match<nc>: "emailaddress"
+            drop:
+          - match<nc>: "f"
+            replace:
+              value:
+              - value
+              - rxp-replace:
+                - "%26emailAddress%3D(.*?)%26"
+                - "%26"
+          - pass:
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions: &txn-set
+
+  # No query
+  - all: { headers: { fields: [[ uuid, no-query ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # No match on query.
+  - all: { headers: { fields: [[ uuid, not-present ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?Delain=best"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "Delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Remove single value.
+  - all: { headers: { fields: [[ uuid, delete-one ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?emailAddress=solidwallofcode@verizonmedia.com"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete first of two
+  - all: { headers: { fields: [[ uuid, delete-first-of-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?emailaddress=me@nowhere.com&delain=best"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete last of two
+  - all: { headers: { fields: [[ uuid, delete-last-two ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?emailaddress=me@nowhere.com&delain=best"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "delain=best", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete last of four
+  - all: { headers: { fields: [[ uuid, delete-last-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&leah=cool&nightwish=good&EmailAddress=alpha@bravo.com"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete first of four
+  - all: { headers: { fields: [[ uuid, delete-first-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?EmailAddress=alpha@bravo.com&xandria=nice&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Delete middle of four
+  - all: { headers: { fields: [[ uuid, delete-middle-four ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&EmailAddress=alpha@bravo.com&leah=cool&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Check for delete including URI encoded value.
+  - all: { headers: { fields: [[ uuid, uri-cleanup ]]}}
+    client-request:
+      <<: *base-req
+      url: "/page.html?xandria=nice&EmailAddress=alpha@bravo.com&leah=cool&f=https%3A%2F%2Fxyz.vabc.com%2Fsignup%2Fverify-email%3Fcode%3D622551*%26emailAddress%3Dsomebody%25yahoo.com%26*session%3D7f5580c3-031f-4c99-8f87-39eeb22b217d%26anonymousId%3Dc5eaa1ce-cb62-4cfc-a332-5f68f11c5082&nightwish=good"
+      headers:
+        fields:
+        - [ Host, three.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ query, { value: "xandria=nice&leah=cool&f=https%3A%2F%2Fxyz.vabc.com%2Fsignup%2Fverify-email%3Fcode%3D622551*%26*session%3D7f5580c3-031f-4c99-8f87-39eeb22b217d%26anonymousId%3Dc5eaa1ce-cb62-4cfc-a332-5f68f11c5082&nightwish=good", as: "equal" } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+

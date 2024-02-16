@@ -1,0 +1,639 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - with: ua-req-path
+        select:
+        - match: [ "1", "2" ]
+          do:
+          - var<Best-Band>: "Delain"
+          - ua-req-field<potzrebie>: "true"
+        - match: "4"
+          do:
+          - ua-req-field<Delain>: "four"
+        - match: "txn-conf-1"
+          do:
+          - ua-req-field<upstream>: "Max {txn-conf<proxy.config.http.per_server.connection.max>}"
+          - ua-req-field<basic>: "Fill {txn-conf<proxy.config.http.background_fill_completed_threshold>}"
+        - match: "txn-conf-2"
+          do:
+          - txn-conf<proxy.config.http.per_server.connection.max>: 400
+          - ua-req-field<upstream>: "Max {txn-conf<proxy.config.http.per_server.connection.max>}"
+          - ua-req-field<basic>: "Fill {txn-conf<proxy.config.http.background_fill_completed_threshold>}"
+        - match: "stuff"
+          do:
+          - ua-req-field<test-query>: "query '{ua-req-query}'"
+          - ua-req-query: [ ua-req-query, { else: "parmA=dave;parmB=bob" }]
+        - match: "path"
+          do:
+          - ua-req-url: "{ua-req-url}/more"
+          - when: proxy-rsp
+            do:
+            - proxy-rsp-field<pre-remap>: "{pre-remap-scheme}://{pre-remap-host}/{pre-remap-path}"
+        - prefix: "14/"
+          do:
+          - with: "{ua-req-path}?{ua-req-query}"
+            do:
+            - debug: "Checking {...}" # force use of remnant to verify active feature isn't corrupted.
+            select:
+            - rxp: "apis.one.ex/ws/v3/mailboxes/@[.]id==(.+)/messages/@[.]id==(.+)/content/parts/@[.]id==(.+)/thumbnail(\\d+)"
+              do:
+              - debug: "Found {0}"
+              - ua-req-field<match>: "Found {2}, {4}, {1}, {3}"
+
+        - prefix: "15/"
+          do:
+          - with: unmatched
+            select:
+            - rxp: "^apis.one.ex/ws/v3/mailboxes/@[.]id==(.+)/messages/@[.]id==(.+)/content/parts/@[.]id==(.+)/thumbnail(\\d+)$"
+              do:
+              - ua-req-field<match>: "Found {2}, {4}, {1}, {3}"
+
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - match: "path/req"
+          do:
+          - proxy-req-url: "http://{proxy-req-host}/req/path"
+          - proxy-req-field<test>: "http://{proxy-req-host}/req/path"
+          - when: proxy-rsp
+            do:
+            - proxy-rsp-field<pre-remap>: "{pre-remap-scheme}://{pre-remap-host}/{pre-remap-path}"
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-field<vinhoo-yaith>
+        do:
+        select:
+        - contains: "C_WOEID=23424977"
+          do:
+          - proxy-req-path: "vinhoo-yaith/working"
+          - debug: "Set proxy path to {proxy-req-path}"
+
+    # Regular expression testing - verify anchors behave as expected.
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - rxp: "^delain/?"
+          do:
+          - proxy-req-field<Start-Anchored>: "found"
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - rxp: "(ain)/(mus)"
+          do:
+          - proxy-req-field<Un-Anchored>: "found"
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - rxp: "^delain(/)music$"
+          do:
+          - proxy-req-field<Both-Anchored>: "found"
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - rxp: "/music$"
+          do:
+          - proxy-req-field<End-Anchored>: "found"
+
+    - when: upstream-rsp
+      do:
+      -  with: [ upstream-rsp-field<UUID> ,  { as-integer: } ]
+         select:
+         - in: [ 16, 18 ]
+           do:
+             with: upstream-rsp-field<Very>
+             select:
+             - contains: "Accept"
+             - is-empty:
+               do:
+               - upstream-rsp-field<Very>: "Accept"
+             - do:
+               - upstream-rsp-field<Very>: "{...},Accept"
+         - in: [ 19 , 20 ]
+           do:
+           - with: upstream-rsp-field<Very>
+             select:
+             - contains: "Accept"
+             - any-of:
+               - is-null:
+               - match: ""
+               do:
+               - upstream-rsp-field<Very>: "accepT"
+             - otherwise:
+               do:
+               - upstream-rsp-field<Very>: "{...},accept"
+
+    - when: proxy-rsp
+      do:
+        with: ua-req-path
+        select:
+        - match: "2"
+          do:
+          - proxy-rsp-field<Best-Band>: var<Best-Band>
+        - match: "uuid"
+          do:
+          - proxy-rsp-field<ts-uuid>: ts-uuid
+
+    remap-1:
+    - with: ua-req-path
+      select:
+      - match: "3"
+        do:
+        - ua-req-field<Host-Check>: ua-req-host
+      - prefix: "21"
+        do:
+        - ua-req-field<z-from>: "From: '{remap-target-url}'"
+        - when: proxy-req
+          do:
+          - proxy-req-field<z-pristine>: "Pre: '{pre-remap-url}'"
+      - rxp: "^rxp/([^-]+)-key(?:/(.*))?"
+        do:
+        - ua-req-field<rxp-tag>: "Tag is '{1}' with trailer '{2}'"
+
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, ts-uuid]]}}
+    client-request:
+      <<: *base-req
+      url: "/uuid"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "ts-uuid", { as: present } ]
+
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ potzrebie, { value: "true", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { as: absent } ]
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/2"
+      headers:
+        fields:
+        - [ Host,one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ potzrebie, { value: "true", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { value: "Delain", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/3"
+      headers:
+        fields:
+        - [ Host, remap.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host-Check, { value: "remapped.ex", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/4"
+      headers:
+        fields:
+        - [ Host, remap.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Delain, { value: "four", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        size: 130
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 130 ]
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      <<: *base-req
+      url: /rxp/a
+      headers:
+        fields:
+        - [ Host, remap.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ rxp-tag, { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 6 ]]}}
+    client-request:
+      <<: *base-req
+      url: /rxp/a-key
+      headers:
+        fields:
+        - [ Host, remap.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ rxp-tag, { value: "Tag is 'a' with trailer ''", as: equal} ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 7 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/txn-conf-1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ upstream, { value: "Max 500", as: equal} ]
+        - [ basic, { value: "Fill 0.40", as: equal} ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 8 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/txn-conf-2"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ upstream, { value: "Max 400", as: equal} ]
+        - [ basic, { value: "Fill 0.40", as: equal} ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 9 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/stuff?parmA=bob;parmB=dave"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url: "/stuff?parmA=bob;parmB=dave"
+      headers:
+        fields:
+        - [ test-query, { value: "query 'parmA=bob;parmB=dave'", as: equal} ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 10]]}}
+    client-request:
+      <<: *base-req
+      url: "/stuff"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url: "/stuff?parmA=dave;parmB=bob"
+      headers:
+        fields:
+        - [ test-query, { value: "query 'parmA=dave;parmB=bob'", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 11]]}}
+    client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url: "/path/more"
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "pre-remap", { value: "http://one.ex/path/more", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 12]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/req"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url: "/req/path"
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "pre-remap", { value: "http://one.ex/path/req", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 13]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/music"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ Start-Anchored, { value: "found", as: equal } ]
+        - [ Un-Anchored, { value: "found", as: equal } ]
+        - [ End-Anchored, { value: "found", as: equal } ]
+        - [ Both-Anchored, { value: "found", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 14]]}}
+    client-request:
+      <<: *base-req
+      url: "/14/apis.one.ex/ws/v3/mailboxes/@.id==9560/messages/@.id==9560/content/parts/@.id==9560/thumbnail9560"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "match", { value: "Found 9560, 9560, 9560, 9560", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 15]]}}
+    client-request:
+      <<: *base-req
+      url: "/15/apis.one.ex/ws/v3/mailboxes/@.id==9560/messages/@.id==9560/content/parts/@.id==9560/thumbnail9560"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "match", { value: "Found 9560, 9560, 9560, 9560", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 16]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/Path/patH"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+      headers:
+        fields:
+        - [ "very", "Stuff" ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "very", { value: "Stuff,Accept", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 17]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/Path/patH"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "very", { value: "Accept", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 18]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/Path/patH"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+      headers:
+        fields:
+        - [ "very", "" ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "very", { value: "Accept", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 19]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/Path/patH"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "very", { value: "accepT", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 20]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/Path/patH"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+      headers:
+        fields:
+        - [ "very", "" ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "very", { value: "accepT", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 21]]}}
+    client-request:
+      <<: *base-req
+      url: "/21"
+      headers:
+        fields:
+        - [ Host, remap.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "z-from", { value: "From: 'http://remap.ex/'", as: equal } ]
+        - [ "z-pristine", { value: "Pre: 'http://remap.ex/21'", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, vinhoo-1]]}}
+    client-request:
+      <<: *base-req
+      url: "/original/path"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "vinhoo-yaith", "C_WOEID=23424977" ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/vinhoo-yaith/working" , as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, vinhoo-3]]}}
+    client-request:
+      <<: *base-req
+      url: "/original/path"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/original/path" , as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, vinhoo-3]]}}
+    client-request:
+      <<: *base-req
+      url: "/original/path"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "vinhoo-yaith", "C_WOEID=9994977" ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/original/path" , as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200

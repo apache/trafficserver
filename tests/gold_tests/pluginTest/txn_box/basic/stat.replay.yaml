@@ -1,0 +1,101 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: post-load
+      do:
+      - stat-define:
+          name: "stat-1"
+      - stat-define:
+          name: "stat-2"
+          value: 100
+          prefix: "plugin.test"
+
+    - when: ua-req
+      do:
+      - with: [ ua-req-field<UUID> , { as-integer: } ]
+        select:
+        - eq: 101
+          do:
+          - stat-update<stat-1>:
+        - eq: 103
+          do:
+          - stat-update<stat-1>: 2
+        - eq: 102
+          do:
+            stat-update<stat-2>: 2
+        - eq: 104
+          do:
+            stat-update<stat-2>: -1
+        - eq: 105
+          do:
+          - stat-update<stat-2>: 4
+
+  blocks:
+
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+  - base-txn: &base-txn
+      proxy-request:
+        <<: *base-req
+      server-response:
+        <<: *base-rsp
+      proxy-response:
+        status: 200
+
+sessions:
+
+# Plain text
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/one"
+    <<: *base-txn
+
+  - all: { headers: { fields: [ [ uuid, 102 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/two"
+    <<: *base-txn
+
+  - all: { headers: { fields: [ [ uuid, 103 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/two"
+    <<: *base-txn
+
+  - all: { headers: { fields: [ [ uuid, 104 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/two"
+    <<: *base-txn
+
+  - all: { headers: { fields: [ [ uuid, 105 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/two"
+    <<: *base-txn
+
+  - all: { headers: { fields: [ [ uuid, 106 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/two"
+    <<: *base-txn

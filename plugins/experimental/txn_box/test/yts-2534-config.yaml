@@ -1,0 +1,4 @@
+txn_box:
+  when: creq
+  do:
+    set-creq-field-default: [ "Accept-Encoding", "identity" ]

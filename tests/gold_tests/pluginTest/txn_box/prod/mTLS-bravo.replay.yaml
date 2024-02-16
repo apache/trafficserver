@@ -1,0 +1,39 @@
+meta:
+  version: "1.0"
+
+sessions:
+- protocol:
+  - name: tls
+    sni: "bravo"
+
+  transactions:
+  - client-request:
+      method: "GET"
+      url: "/bravo"
+      headers:
+        fields:
+        - [ Host, "base.ex" ]
+        - [ UUID , "bravo clean" ]
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      url: "/bravo"
+      headers:
+        fields:
+        - [ Host, "base.ex" ]
+        - [ UUID , "bravo auth" ]
+        - [ Authorization , "alpha" ]
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "PROPFIND"
+      url: "/bravo"
+      headers:
+        fields:
+        - [ Host, "base.ex" ]
+        - [ UUID , "bravo propfind" ]
+    proxy-response:
+      status: 418

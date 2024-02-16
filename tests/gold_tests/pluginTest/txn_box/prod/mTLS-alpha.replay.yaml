@@ -1,0 +1,29 @@
+meta:
+  version: "1.0"
+
+sessions:
+- protocol:
+  - name: tls
+    sni: "alpha"
+
+  transactions:
+  - client-request:
+      method: "GET"
+      url: "/alpha"
+      headers:
+        fields:
+        - [ Host, "base.ex" ]
+        - [ UUID , "alpha clean" ]
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      url: "/alpha"
+      headers:
+        fields:
+        - [ Host, "base.ex" ]
+        - [ UUID , "alpha auth" ]
+        - [ Authorization , "invalid" ]
+    proxy-response:
+      status: 200

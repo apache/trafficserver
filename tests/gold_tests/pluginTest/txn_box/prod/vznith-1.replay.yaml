@@ -1,0 +1,227 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    remap:
+    # doc-start
+    - var<path>: "boot" # base file name stem.
+    - with: ua-req-query # Check for ma=0
+      select:
+      - contains: "ma=0"
+        do:
+        - var<path>: "{var<path>}_noma"
+      continue:
+    - with: ua-req-query # Check for mc=1
+      select:
+      - contains: "mc=1"
+        do:
+        - var<path>: "{var<path>}_mac"
+      continue:
+    # Correct file name is assembled, update the path.
+    - ua-req-path: "edge/file/{var<path>}.ipxe.img"
+    - ua-req-query: NULL # Do not pass the query parameters upstream.
+    # doc-end
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  # Base case - no path modification.
+  - all: { headers: { fields: [[ uuid, base ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/boot.ipxe.img"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable "ma"
+  - all: { headers: { fields: [[ uuid, ma=0 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?ma=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # "ma" with wrong value.
+  - all: { headers: { fields: [[ uuid, ma=1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file?ma=1"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # "mc" with wrong value
+  - all: { headers: { fields: [[ uuid, mc=0 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file?mc=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable "mc"
+  - all: { headers: { fields: [[ uuid, mc=1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?mc=1"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_mac.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable both
+  - all: { headers: { fields: [[ uuid, both-1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?mc=1;ma=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma_mac.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable both
+  - all: { headers: { fields: [[ uuid, both-2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?ma=0;mc=1"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma_mac.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable both with extra parameters.
+  - all: { headers: { fields: [[ uuid, both-extra-1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?ma=0;best-band=delain;mc=1;parm=arg"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma_mac.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable both with extra parameters.
+  - all: { headers: { fields: [[ uuid, both-extra-2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/boot.ipxe.img?best-band=delain;mc=1;parm=arg;ma=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma_mac.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable ma but not mc
+  - all: { headers: { fields: [[ uuid, ma-only ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/?best-band=delain;mc=0;parm=arg;ma=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Enable "ma", longer URL.
+  - all: { headers: { fields: [[ uuid, ma-full-url ]]}}
+    client-request:
+      <<: *base-req
+      url: "/edge/file/boot.ipxe.img?ma=0"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      url:
+      - [ path, { value: "/edge/file/boot_noma.ipxe.img", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+

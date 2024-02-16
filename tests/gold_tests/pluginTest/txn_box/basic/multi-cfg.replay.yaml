@@ -1,0 +1,120 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, 0 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "NightWish", as: equal } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 10 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 11 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "Ship-Name", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 20 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, both.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 21 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, both.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:

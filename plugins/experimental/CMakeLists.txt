@@ -40,6 +40,7 @@ add_subdirectory(stream_editor)
 add_subdirectory(system_stats)
 add_subdirectory(tls_bridge)
 add_subdirectory(url_sig)
+add_subdirectory(txn_box)
 
 if(USE_MAGICK)
   add_subdirectory(magick)

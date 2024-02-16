@@ -1,0 +1,78 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    remap:
+    - var<target>: ua-req-field<ycal-host>
+    - with: pre-remap-host
+      continue:
+      select:
+      - any-of:
+        - contains: "notepad.yahoo.com"
+        - contains: "notepad.mail.yahoo.com"
+        do:
+         - var<target>: "calendar.yahoo.com"
+         - ua-req-query:
+           - ua-req-query
+           - concat: [ "&" , "view=notepad" ]
+    - ua-req-host: var<target>
+    - with: var<target>
+      select:
+      - any-of:
+        - prefix: "calendar.yahoo.com"
+        - prefix: "mail.yahoo-inc.com"
+        do:
+        - ua-req-scheme: "https"
+        - remap-redirect:
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, base-case ]]}}
+    client-request:
+      <<: *base-req
+      url: "/me"
+      headers:
+        fields:
+        - [ Host, "nowhere.com" ]
+        - [ ycal-host, "calendar.yahoo.com" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ "Location", { value: "https://calendar.yahoo.com", as: prefix } ]
+
+  - all: { headers: { fields: [[ uuid, notepad ]]}}
+    client-request:
+      <<: *base-req
+      url: "/me"
+      headers:
+        fields:
+        - [ Host, "notepad.mail.yahoo.com" ]
+        - [ ycal-host, "bop.yahoo.com" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [ Location, { value: "view=notepad", as: "contains" } ]
+
