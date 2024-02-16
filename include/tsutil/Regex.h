@@ -42,7 +42,7 @@ enum REFlags {
   RE_ANCHORED         = PCRE2_ANCHORED,  ///< Anchored (Regex defaults to unanchored).
 };
 
-//----------------------------------------------------------------------------
+/// @brief Wrapper for PCRE2 match data.
 class RegexMatches
 {
 public:
@@ -59,9 +59,7 @@ private:
   std::string_view _subject;
 };
 
-/** Wrapper for PCRE evaluation.
- *
- */
+/// @brief Wrapper for PCRE2 regular expression.
 class Regex
 {
 public:
@@ -81,14 +79,14 @@ public:
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
    */
-  bool compile(std::string_view, uint32_t flags = 0);
+  bool compile(std::string_view pattern, uint32_t flags = 0);
 
   /** Compile the @a pattern into a regular expression.
    *
    * @param pattern Source pattern for regular expression (null terminated).
-   * @param flags Compilation flags.
-   * @param error Pointer to string to receive error message.
+   * @param error String to receive error message.
    * @param erroffset Pointer to integer to receive error offset.
+   * @param flags Compilation flags.
    * @return @a true if compiled successfully, @a false otherwise.
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
@@ -97,7 +95,7 @@ public:
 
   /** Execute the regular expression.
    *
-   * @param str String to match against.
+   * @param subject String to match against.
    * @return @c true if the pattern matched, @a false if not.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
@@ -106,10 +104,9 @@ public:
 
   /** Execute the regular expression.
    *
-   * @param str String to match against.
-   * @param ovector Capture results.
-   * @param ovecsize Number of elements in @a ovector.
-   * @return @c true if the pattern matched, @a false if not.
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    *
@@ -118,7 +115,7 @@ public:
    */
   int exec(std::string_view subject, RegexMatches &matches) const;
 
-  /// @return The number of groups captured in the last call to @c exec.
+  /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();
 
 private:
