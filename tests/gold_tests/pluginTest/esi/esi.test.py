@@ -247,6 +247,19 @@ echo date('l jS \of F Y h:i:s A');
         unzipped_disk_file = tr.Disk.File(empty_body_file)
         unzipped_disk_file.Size = 0
 
+    def run_case_max_doc_size_too_small(self):
+        tr = Test.AddTestRun("Max doc size too smal")
+        tr.Processes.Default.Command = \
+            ('curl http://127.0.0.1:{0}/esi.php -H"Host: www.example.com" '
+             '-H"Accept: */*" --verbose'.format(
+                 self._ts.Variables.port))
+        tr.Processes.Default.ReturnCode = 0
+        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100",
+            "max doc size test should have doc size error log")
+        tr.StillRunningAfter = self._server
+        tr.StillRunningAfter = self._ts
+
     def run_cases_expecting_no_gzip(self):
         # Test 1: Run an ESI test where the client does not accept gzip.
         tr = Test.AddTestRun("First request for esi.php: gzip not accepted.")
@@ -302,3 +315,13 @@ first_byte_flush_test.run_cases_expecting_gzip()
 # --disable-gzip-output is set.
 gzip_disabled_test = EsiTest(plugin_config='esi.so --disable-gzip-output')
 gzip_disabled_test.run_cases_expecting_no_gzip()
+
+# Run the tests with too small max doc size.
+max_doc_100_test = EsiTest(plugin_config='esi.so --max-doc-size 100')
+max_doc_100_test.run_case_max_doc_size_too_small()
+
+# Run the tests with no default, but sufficient, max doc size.
+max_doc_2K_test = EsiTest(plugin_config='esi.so --max-doc-size 2K')
+max_doc_2K_test.run_cases_expecting_gzip()
+max_doc_20M_test = EsiTest(plugin_config='esi.so --max-doc-size 20M')
+max_doc_20M_test.run_cases_expecting_gzip()
