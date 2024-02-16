@@ -257,8 +257,10 @@ Regex::get_capture_count()
   return captures;
 }
 
+//----------------------------------------------------------------------------
 DFA::~DFA() {}
 
+//----------------------------------------------------------------------------
 bool
 DFA::build(const std::string_view pattern, unsigned flags)
 {
@@ -276,6 +278,7 @@ DFA::build(const std::string_view pattern, unsigned flags)
   return true;
 }
 
+//----------------------------------------------------------------------------
 int
 DFA::compile(std::string_view pattern, unsigned flags)
 {
@@ -284,6 +287,7 @@ DFA::compile(std::string_view pattern, unsigned flags)
   return _patterns.size();
 }
 
+//----------------------------------------------------------------------------
 int
 DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
 {
@@ -294,6 +298,7 @@ DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
   return _patterns.size();
 }
 
+//----------------------------------------------------------------------------
 int
 DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
@@ -304,6 +309,7 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
   return _patterns.size();
 }
 
+//----------------------------------------------------------------------------
 int
 DFA::match(std::string_view str) const
 {

@@ -35,7 +35,7 @@
 #include <pcre2.h>
 #endif
 
-/// Match flags for regular expression evaluation.
+/// @brief Match flags for regular expression evaluation.
 enum REFlags {
   RE_CASE_INSENSITIVE = PCRE2_CASELESS,  ///< Ignore case (default: case sensitive).
   RE_UNANCHORED       = PCRE2_MULTILINE, ///< Unanchored (DFA defaults to anchored).
@@ -45,14 +45,30 @@ enum REFlags {
 /// @brief Wrapper for PCRE2 match data.
 class RegexMatches
 {
+  friend class Regex;
+
 public:
-  RegexMatches(uint32_t size = 20);
+  /** Construct a new RegexMatches object.
+   *
+   * @param size The number of matches to allocate space for.
+   */
+  RegexMatches(uint32_t size = 10);
   ~RegexMatches();
 
+  /** Get the match at the given index.
+   *
+   * @return The match at the given index.
+   */
+  std::string_view operator[](size_t index) const;
+  /** Get the ovector pointer for the capture groups.  Don't use this unless you know what you are doing.
+   *
+   * @return ovector pointer.
+   */
+  size_t *get_ovector_pointer();
+
+protected:
   pcre2_match_data *get_match_data();
   void set_subject(std::string_view subject);
-  std::string_view operator[](size_t index) const;
-  size_t *get_ovector_pointer();
 
 private:
   pcre2_match_data *_match_data = nullptr;
@@ -63,9 +79,6 @@ private:
 class Regex
 {
 public:
-  /// Default number of capture groups.
-  static constexpr size_t DEFAULT_GROUP_COUNT = 10;
-
   Regex()              = default;
   Regex(Regex const &) = delete; // No copying.
   Regex(Regex &&that) noexcept;
