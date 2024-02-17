@@ -345,6 +345,19 @@ HQTransaction::_close_write_complete_event(Event *e)
   }
 }
 
+void
+HQTransaction::_signal_event(int event)
+{
+  if (this->_write_vio.cont) {
+    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+    this->_write_vio.cont->handleEvent(event);
+  }
+  if (this->_read_vio.cont && this->_read_vio.cont != this->_write_vio.cont) {
+    SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+    this->_read_vio.cont->handleEvent(event);
+  }
+}
+
 /**
  * @brief Signal event to this->_read_vio.cont
  */
@@ -490,6 +503,7 @@ Http3Transaction::state_stream_open(int event, Event *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_signal_event(event);
     break;
   }
   default:

@@ -37,8 +37,6 @@ public:
   virtual ~HQSession();
 
   // Implement VConnection interface
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
@@ -63,6 +61,8 @@ private:
   Queue<HQTransaction> _transaction_list;
 
   char _protocol_string[16];
+
+  int main_event_handler(int, void *);
 };
 
 class Http3Session : public HQSession
