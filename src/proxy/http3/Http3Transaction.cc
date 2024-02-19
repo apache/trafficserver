@@ -617,8 +617,8 @@ Http3Transaction::_process_write_vio()
 bool
 Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
 {
-  // Has body if Content-Length != 0
-  if (content_length != 0) {
+  // Has body if Content-Length != 0 (content_length can be -1 if it's undefined)
+  if (content_length > 0) {
     return true;
   }
 
@@ -628,10 +628,9 @@ Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) 
   }
 
   // No body if stream is already closed and DATA frame is not received yet
-  // TODO stream state
-  // if () {
-  //   return false;
-  // }
+  if (this->_info.adapter.stream().has_no_more_data()) {
+    return false;
+  }
 
   // No body if trailing header is received and DATA frame is not received yet
   // TODO trailing header
