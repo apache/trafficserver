@@ -35,7 +35,6 @@
 #include "proxy/http3/Http3Types.h"
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3FrameCollector.h"
-#include "proxy/http3/Http3FrameGenerator.h"
 #include "proxy/http3/Http3FrameHandler.h"
 #include "proxy/http3/QPACK.h"
 
@@ -93,19 +92,4 @@ private:
   std::map<QUICStreamId, Http3StreamType> _local_uni_stream_map;
 
   bool _is_control_stream_initialized = false;
-};
-
-class Http3SettingsFramer : public Http3FrameGenerator
-{
-public:
-  Http3SettingsFramer(NetVConnectionContext_t context) : _context(context){};
-
-  // Http3FrameGenerator
-  Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
-
-private:
-  NetVConnectionContext_t _context;
-  bool _is_done = false; ///< Be careful when setting FIN flag on CONTROL stream. Maybe never?
-  bool _is_sent = false; ///< Send SETTINGS frame only once
 };
