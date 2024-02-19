@@ -35,6 +35,7 @@ add_library(
   Http3HeaderVIOAdaptor.cc
   Http3ProtocolEnforcer.cc
   Http3SettingsHandler.cc
+  Http3SettingsFramer.cc
   Http3StreamDataVIOAdaptor.cc
   QPACK.cc
 )
