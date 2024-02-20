@@ -31,6 +31,7 @@ add_atsplugin(
   slice.cc
   transfer.cc
   util.cc
+  cache.cc
 )
 
 target_link_libraries(slice PRIVATE PCRE::PCRE)

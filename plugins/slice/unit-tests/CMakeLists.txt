@@ -29,3 +29,8 @@ add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc)
 target_compile_definitions(test_config PRIVATE UNITTEST)
 target_link_libraries(test_config PRIVATE PCRE::PCRE catch2::catch2 ts::tsutil)
 add_test(NAME test_config COMMAND test_config)
+
+add_executable(test_cache test_cache.cc ${PROJECT_SOURCE_DIR}/cache.cc)
+target_compile_definitions(test_cache PRIVATE UNITTEST)
+target_link_libraries(test_cache PRIVATE catch2::catch2 ts::tsutil)
+add_test(NAME test_cache COMMAND test_cache)
