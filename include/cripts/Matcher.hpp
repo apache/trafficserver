@@ -17,17 +17,16 @@
 */
 #pragma once
 
+#include "cripts/Headers.hpp"
+#include "cripts/Lulu.hpp"
+#include "swoc/IPRange.h"
 // Setup for PCRE2
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 #include <vector>
 #include <tuple>
 
-#include "swoc/swoc_ip.h"
-
-#include "ts/apidefs.h"
 #include "ts/ts.h"
-#include "ts/remap.h"
 
 namespace Matcher
 {
