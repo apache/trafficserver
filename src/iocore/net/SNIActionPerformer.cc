@@ -134,6 +134,15 @@ HTTP2MaxRstStreamFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
   return SSL_TLSEXT_ERR_OK;
 }
 
+int
+HTTP2MaxContinuationFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+{
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    snis->hints_from_sni.http2_max_continuation_frames_per_minute = value;
+  }
+  return SSL_TLSEXT_ERR_OK;
+}
+
 TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
                                      const std::vector<int> &alpn)
   : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)

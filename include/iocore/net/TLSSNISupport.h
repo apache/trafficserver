@@ -65,6 +65,7 @@ public:
     std::optional<uint32_t> http2_max_ping_frames_per_minute;
     std::optional<uint32_t> http2_max_priority_frames_per_minute;
     std::optional<uint32_t> http2_max_rst_stream_frames_per_minute;
+    std::optional<uint32_t> http2_max_continuation_frames_per_minute;
     std::optional<std::string_view> outbound_sni_policy;
   } hints_from_sni;
 

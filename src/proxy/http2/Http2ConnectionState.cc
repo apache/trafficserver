@@ -1013,6 +1013,18 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     }
   }
 
+  // Update CONTINUATION frame count per minute.
+  this->increment_received_continuation_frame_count();
+  // Close this connection if its CONTINUATION frame count exceeds a limit.
+  if (configured_max_continuation_frames_per_minute != 0 &&
+      this->get_received_continuation_frame_count() > configured_max_continuation_frames_per_minute) {
+    Metrics::Counter::increment(http2_rsb.max_continuation_frames_per_minute_exceeded);
+    Http2StreamDebug(this->session, stream_id, "Observed too frequent CONTINUATION frames: %u frames within a last minute",
+                     this->get_received_continuation_frame_count());
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                      "reset too frequent CONTINUATION frames");
+  }
+
   uint32_t header_blocks_offset  = stream->header_blocks_length;
   stream->header_blocks_length  += payload_length;
 
@@ -1254,10 +1266,11 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
   acknowledged_local_settings.set(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                                   configured_settings.get(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE));
 
-  configured_max_settings_frames_per_minute   = Http2::max_settings_frames_per_minute;
-  configured_max_ping_frames_per_minute       = Http2::max_ping_frames_per_minute;
-  configured_max_priority_frames_per_minute   = Http2::max_priority_frames_per_minute;
-  configured_max_rst_stream_frames_per_minute = Http2::max_rst_stream_frames_per_minute;
+  configured_max_settings_frames_per_minute     = Http2::max_settings_frames_per_minute;
+  configured_max_ping_frames_per_minute         = Http2::max_ping_frames_per_minute;
+  configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
+  configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
+  configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
   if (auto snis = session->get_netvc()->get_service<TLSSNISupport>(); snis) {
     if (snis->hints_from_sni.http2_max_settings_frames_per_minute.has_value()) {
       configured_max_settings_frames_per_minute = snis->hints_from_sni.http2_max_settings_frames_per_minute.value();
@@ -1270,6 +1283,9 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
     }
     if (snis->hints_from_sni.http2_max_rst_stream_frames_per_minute.has_value()) {
       configured_max_rst_stream_frames_per_minute = snis->hints_from_sni.http2_max_rst_stream_frames_per_minute.value();
+    }
+    if (snis->hints_from_sni.http2_max_continuation_frames_per_minute.has_value()) {
+      configured_max_continuation_frames_per_minute = snis->hints_from_sni.http2_max_continuation_frames_per_minute.value();
     }
   }
 
@@ -2668,6 +2684,18 @@ uint32_t
 Http2ConnectionState::get_received_rst_stream_frame_count()
 {
   return this->_received_rst_stream_frame_counter.get_count();
+}
+
+void
+Http2ConnectionState::increment_received_continuation_frame_count()
+{
+  this->_received_continuation_frame_counter.increment();
+}
+
+uint32_t
+Http2ConnectionState::get_received_continuation_frame_count()
+{
+  return this->_received_continuation_frame_counter.get_count();
 }
 
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.
