@@ -51,7 +51,8 @@ public:
   QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_table_size, uint16_t max_blocking_streams);
   virtual ~QPACK();
 
-  void on_new_stream(QUICStream &stream) override;
+  void on_stream_open(QUICStream &stream) override;
+  void on_stream_close(QUICStream &stream) override;
 
   int event_handler(int event, Event *data);
 

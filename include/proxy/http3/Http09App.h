@@ -44,7 +44,8 @@ public:
   Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   ~Http09App();
 
-  void on_new_stream(QUICStream &stream) override;
+  void on_stream_open(QUICStream &stream) override;
+  void on_stream_close(QUICStream &stream) override;
 
   int main_event_handler(int event, Event *data);
 

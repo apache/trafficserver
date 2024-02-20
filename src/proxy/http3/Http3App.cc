@@ -97,7 +97,7 @@ Http3App::start()
 }
 
 void
-Http3App::on_new_stream(QUICStream &stream)
+Http3App::on_stream_open(QUICStream &stream)
 {
   auto ret   = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
@@ -119,6 +119,12 @@ Http3App::on_new_stream(QUICStream &stream)
   }
 
   stream.set_io_adapter(&info.adapter);
+}
+
+void
+Http3App::on_stream_close(QUICStream &stream)
+{
+  this->_streams.erase(stream.id());
 }
 
 int
@@ -423,5 +429,4 @@ Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
   }
   // FIXME There may be data to read
   this->_qc->stream_manager()->delete_stream(stream_id);
-  this->_streams.erase(stream_id);
 }

@@ -41,7 +41,8 @@ public:
   QUICApplication(QUICConnection *qc);
   virtual ~QUICApplication();
 
-  virtual void on_new_stream(QUICStream &stream) = 0;
+  virtual void on_stream_open(QUICStream &stream)  = 0;
+  virtual void on_stream_close(QUICStream &stream) = 0;
 
 protected:
   QUICConnection *_qc = nullptr;
