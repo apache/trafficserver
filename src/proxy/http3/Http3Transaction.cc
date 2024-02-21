@@ -182,7 +182,6 @@ HQTransaction::reenable(VIO *vio)
   if (vio->op == VIO::READ) {
     int64_t len = this->_process_read_vio();
     this->_info.read_vio->reenable();
-    this->_info.reenable_read();
 
     if (len > 0) {
       this->_signal_read_event();
