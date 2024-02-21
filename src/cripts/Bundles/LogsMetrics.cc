@@ -24,7 +24,7 @@ namespace Bundle
 {
 
 // Bundle::LogsMetrics
-namespace Bundle
+namespace
 {
   enum {
     PROPSTAT_CACHE_MISS = 0,  // TS_CACHE_LOOKUP_MISS == 0
@@ -73,7 +73,7 @@ namespace Bundle
     // clang-format on
   };
 
-} // namespace Bundle
+} // namespace
 
 // The .propstats(str) is particularly complicated, since it has to create all the metrics
 LogsMetrics::self_type &
