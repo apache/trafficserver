@@ -263,9 +263,16 @@ HTTP/2
 .. ts:stat:: global proxy.process.http2.max_rst_stream_frames_per_minute_exceeded integer
    :type: counter
 
-   Represents the total number of closed HTTP/2 connections for exceeding the
-   maximum allowed number of rst_stream frames per minute limit which is configured by
+   Represents the total number of HTTP/2 connections closed for exceeding the
+   maximum allowed number of ``RST_STREAM`` frames per minute limit which is configured by
    :ts:cv:`proxy.config.http2.max_rst_stream_frames_per_minute`.
+
+.. ts:stat:: global proxy.process.http2.max_continuation_frames_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of HTTP/2 connections closed for exceeding the
+   maximum allowed number of ``CONTINUATION`` frames per minute limit which is
+   configured by :ts:cv:`proxy.config.http2.max_continuation_frames_per_minute`.
 
 .. ts:stat:: global proxy.process.http2.insufficient_avg_window_update integer
    :type: counter

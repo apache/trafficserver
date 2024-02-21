@@ -151,6 +151,10 @@ SNIConfigParams::load_sni_config()
       ai->actions.push_back(
         std::make_unique<HTTP2MaxRstStreamFramesPerMinute>(item.http2_max_rst_stream_frames_per_minute.value()));
     }
+    if (item.http2_max_continuation_frames_per_minute.has_value()) {
+      ai->actions.push_back(
+        std::make_unique<HTTP2MaxContinuationFramesPerMinute>(item.http2_max_continuation_frames_per_minute.value()));
+    }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 

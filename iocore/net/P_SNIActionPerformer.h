@@ -186,6 +186,23 @@ private:
   int value = -1;
 };
 
+class HTTP2MaxContinuationFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxContinuationFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxContinuationFramesPerMinute() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+    snis->hints_from_sni.http2_max_continuation_frames_per_minute = value;
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
 class TunnelDestination : public ActionItem
 {
 public:
