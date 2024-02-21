@@ -4284,7 +4284,7 @@ HTTP/2 Configuration
    This limit only will be enforced if :ts:cv:`proxy.config.http2.stream_priority_enabled`
    is set to 1.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_rst_stream_frames_per_minute INT 14
+.. ts:cv:: CONFIG proxy.config.http2.max_rst_stream_frames_per_minute INT 200
    :reloadable:
 
    Specifies how many RST_STREAM frames |TS| receives for a minute at maximum.
