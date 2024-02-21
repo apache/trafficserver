@@ -52,7 +52,7 @@ public:
    *
    * @param size The number of matches to allocate space for.
    */
-  RegexMatches(uint32_t size = 10);
+  RegexMatches(uint32_t size = DEFAULT_MATCHES);
   ~RegexMatches();
 
   /** Get the match at the given index.
@@ -65,14 +65,21 @@ public:
    * @return ovector pointer.
    */
   size_t *get_ovector_pointer();
+  int32_t size() const;
 
 protected:
   pcre2_match_data *get_match_data();
   void set_subject(std::string_view subject);
+  void set_size(int32_t size);
 
 private:
+  constexpr static uint32_t DEFAULT_MATCHES = 10;
+  static void *malloc(size_t size, void *caller);
   pcre2_match_data *_match_data = nullptr;
   std::string_view _subject;
+  char _buffer[24 + 96 + 16 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 16 bytes per match.
+  size_t _buffer_bytes_used = 0;
+  int32_t _size             = 0;
 };
 
 /// @brief Wrapper for PCRE2 regular expression.
@@ -151,18 +158,18 @@ public:
   ~DFA();
 
   /// @return The number of patterns successfully compiled.
-  int compile(std::string_view pattern, unsigned flags = 0);
+  int32_t compile(std::string_view pattern, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int compile(const char **patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(const char **patterns, int npatterns, unsigned flags = 0);
 
   /** Match @a str against the internal patterns.
    *
    * @param str String to match.
    * @return Index of the matched pattern, -1 if no match.
    */
-  int match(std::string_view str) const;
+  int32_t match(std::string_view str) const;
 
 private:
   struct Pattern {

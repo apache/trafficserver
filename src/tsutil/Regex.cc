@@ -116,7 +116,28 @@ thread_local RegexContextCleanup cleanup;
 //----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
-  _match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
+  pcre2_general_context *ctx = pcre2_general_context_create(
+    &RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
+
+  _match_data = pcre2_match_data_create(size, ctx);
+}
+
+//----------------------------------------------------------------------------
+void *
+RegexMatches::malloc(size_t size, void *caller)
+{
+  auto *matches = static_cast<RegexMatches *>(caller);
+
+  // allocate from the buffer if possible
+  if (size <= sizeof(matches->_buffer) - matches->_buffer_bytes_used) {
+    void *ptr                    = matches->_buffer + matches->_buffer_bytes_used;
+    matches->_buffer_bytes_used += size;
+    return ptr;
+  }
+
+  // otherwise use system malloc if the buffer is too small
+  void *ptr = ::malloc(size);
+  return ptr;
 }
 
 //----------------------------------------------------------------------------
@@ -135,10 +156,24 @@ RegexMatches::get_ovector_pointer()
 }
 
 //----------------------------------------------------------------------------
+int32_t
+RegexMatches::size() const
+{
+  return _size;
+}
+
+//----------------------------------------------------------------------------
 pcre2_match_data *
 RegexMatches::get_match_data()
 {
   return _match_data;
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatches::set_size(int32_t size)
+{
+  _size = size;
 }
 
 //----------------------------------------------------------------------------
@@ -235,6 +270,9 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
   }
   int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
                           RegexContext::get_instance()->get_match_context());
+
+  matches.set_size(count);
+
   if (count < 0) {
     return count;
   }
@@ -247,7 +285,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 }
 
 //----------------------------------------------------------------------------
-int
+int32_t
 Regex::get_capture_count()
 {
   int captures = -1;
@@ -279,7 +317,7 @@ DFA::build(const std::string_view pattern, unsigned flags)
 }
 
 //----------------------------------------------------------------------------
-int
+int32_t
 DFA::compile(std::string_view pattern, unsigned flags)
 {
   assert(_patterns.empty());
@@ -288,7 +326,7 @@ DFA::compile(std::string_view pattern, unsigned flags)
 }
 
 //----------------------------------------------------------------------------
-int
+int32_t
 DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
 {
   _patterns.reserve(npatterns); // try to pre-allocate.
@@ -299,7 +337,7 @@ DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
 }
 
 //----------------------------------------------------------------------------
-int
+int32_t
 DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
   _patterns.reserve(npatterns); // try to pre-allocate.
@@ -310,7 +348,7 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
 }
 
 //----------------------------------------------------------------------------
-int
+int32_t
 DFA::match(std::string_view str) const
 {
   for (auto spot = _patterns.begin(), limit = _patterns.end(); spot != limit; ++spot) {
