@@ -548,11 +548,16 @@ public:
   }
 
   void
-  on_new_stream(QUICStream &stream) override
+  on_stream_open(QUICStream &stream) override
   {
     auto ite                   = this->_streams.emplace(stream.id(), stream);
     QUICStreamAdapter &adapter = ite.first->second;
     stream.set_io_adapter(&adapter);
+  }
+
+  void
+  on_stream_close(QUICStream &stream) override
+  {
   }
 
   void

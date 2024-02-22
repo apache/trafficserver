@@ -155,7 +155,7 @@ QPACK::~QPACK()
 }
 
 void
-QPACK::on_new_stream(QUICStream &stream)
+QPACK::on_stream_open(QUICStream &stream)
 {
   auto *info = new QUICStreamVCAdapter::IOInfo(stream);
 
@@ -178,6 +178,11 @@ QPACK::on_new_stream(QUICStream &stream)
   }
 
   stream.set_io_adapter(&info->adapter);
+}
+
+void
+QPACK::on_stream_close(QUICStream &stream)
+{
 }
 
 int
