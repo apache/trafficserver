@@ -278,3 +278,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Wasm <wasm.en>`
    Allows WebAssembly/Wasm (proxy-wasm) module to be used as ATS Plugin.
+
+:doc:`Transaction Box(TxnBox) <txn_box/index.en>`
+   Transaction Box, or TxnBox, is an Apache Traffic Server plugin to manipulate transactions.

@@ -36,7 +36,7 @@ responses. For more details, see `RFC 5861
 directives.
 
 Building and Installation
-*************************
+=========================
 
 The Stale Response plugin is an experimental plugin. To build it, pass
 ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command when building |TS|.
@@ -44,7 +44,7 @@ By default, that will build the ``stale_response.so`` plugin and install it in
 the ``libexec/trafficserver`` directory.
 
 Configuration
-*************
+=============
 
 The Stale Response plugin supports being used as either a global plugin or as a
 remap plugin. To configure |TS| to use the Stale Response plugin, simply add it
@@ -77,7 +77,7 @@ The plugin by default will only perform one asynchronous request at a time for
 a given URL. This can be changed with the ``--force-parallel-async`` option.
 
 Logging
-*******
+=======
 
 The plugin can log information about its behavior with respect to the
 ``stale-while-revalidate`` and ``stale-if-error`` directives.
@@ -93,7 +93,7 @@ The plugin can log information about its behavior with respect to the
 
 
 Statistics
-**********
+==========
 
   * ``stale_response.swr.hit`` The number of times stale data was served for stale-while-relavidate.
   * ``stale_response.swr.locked_miss`` The number of times stale data could not be served with stale-while-relavidate because of a lock.
@@ -102,7 +102,7 @@ Statistics
 
 
 Example
-*******
+=======
 
 To configure the plugin as a global plugin with a default
 ``stale-while-revalidate`` and a default ``stale-if-error`` of 30 seconds, add
