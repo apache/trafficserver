@@ -24,20 +24,36 @@
 # "cacheVariables": {
 #   "ENABLE_CLANG_TIDY": true,
 #   "CLANG_TIDY_PATH": "/opt/homebrew/opt/llvm/bin/"
-#   "CLANG_TIDY_OPTS": "--warnings-as-errors=*"
+#   "CLANG_TIDY_OPTS": "--fix;--warnings-as-errors=*"
 # }
 # ```
 
 if(ENABLE_CLANG_TIDY)
+  # Find clang-tidy program
   find_program(
     CLANG_TIDY_EXE
     NAMES "clang-tidy"
     HINTS ${CLANG_TIDY_PATH}
   )
+
+  # Add options if there
+  #
+  # CAVEAT: the option should not end with semi-colon. You'll see below error.
+  # ```
+  # error: unable to handle compilation, expected exactly one compiler job in '' [clang-diagnostic-error]
+  # ```
+  if(NOT "${CLANG_TIDY_OPTS}" STREQUAL "")
+    string(REGEX REPLACE ";$" "$" CLANG_TIDY_OPTS_TRIMMED ${CLANG_TIDY_OPTS})
+    string(APPEND CLANG_TIDY_EXE ";${CLANG_TIDY_OPTS_TRIMMED}")
+  endif()
+
+  message(STATUS "Enable clang-tidy - ${CLANG_TIDY_EXE}")
 endif()
 
 function(clang_tidy_check target)
-  if(ENABLE_CLANG_TIDY)
-    set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE};${CLANG_TIDY_OPTS};")
+  if(NOT ENABLE_CLANG_TIDY)
+    return()
   endif()
+
+  set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
 endfunction()

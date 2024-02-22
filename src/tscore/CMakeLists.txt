@@ -98,8 +98,6 @@ add_library(
 )
 add_library(ts::tscore ALIAS tscore)
 
-clang_tidy_check(tscore)
-
 # Some plugins link against ts::tscore and therefore need it to be compiled as
 # position independent.
 set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
@@ -191,3 +189,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
 endif()
+
+clang_tidy_check(tscore)

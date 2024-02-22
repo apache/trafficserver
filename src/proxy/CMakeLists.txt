@@ -59,3 +59,5 @@ add_subdirectory(logging)
 if(TS_USE_QUIC)
   add_subdirectory(http3)
 endif()
+
+clang_tidy_check(proxy)

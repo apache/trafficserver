@@ -60,3 +60,5 @@ if(BUILD_TESTING)
   target_link_libraries(test_HPACK PRIVATE tscore hdrs inkevent)
   add_test(NAME test_HPACK COMMAND test_HPACK -i ${CMAKE_CURRENT_SOURCE_DIR}/hpack-tests -o ./results)
 endif()
+
+clang_tidy_check(http2)

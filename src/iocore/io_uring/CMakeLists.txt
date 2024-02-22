@@ -32,3 +32,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)
 endif()
+
+clang_tidy_check(inkuring)

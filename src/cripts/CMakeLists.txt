@@ -79,3 +79,5 @@ add_custom_target(
   DEPENDS ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py
   VERBATIM
 )
+
+clang_tidy_check(cripts)

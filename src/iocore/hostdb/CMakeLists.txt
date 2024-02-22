@@ -19,3 +19,5 @@ add_library(inkhostdb STATIC HostDB.cc Inline.cc RefCountCache.cc HostFile.cc Ho
 add_library(ts::inkhostdb ALIAS inkhostdb)
 
 target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
+
+clang_tidy_check(inkhostdb)

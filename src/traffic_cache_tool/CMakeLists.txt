@@ -19,3 +19,5 @@ add_executable(traffic_cache_tool CacheDefs.cc CacheTool.cc CacheScan.cc)
 
 target_link_libraries(traffic_cache_tool PRIVATE ts::tscore libswoc::libswoc ts::tsutil)
 install(TARGETS traffic_cache_tool)
+
+clang_tidy_check(traffic_cache_tool)

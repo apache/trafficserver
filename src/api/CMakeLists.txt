@@ -60,3 +60,5 @@ install(
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
 endif()
+
+clang_tidy_check(tsapi)

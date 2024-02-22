@@ -30,3 +30,5 @@ target_link_libraries(
          #ts::inknet cyclic dependency
          ts::proxy ts::tsutil ts::tscore
 )
+
+clang_tidy_check(inkdns)
