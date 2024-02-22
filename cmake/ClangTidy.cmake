@@ -28,14 +28,17 @@
 # }
 # ```
 
+if(ENABLE_CLANG_TIDY)
+  find_program(
+    CLANG_TIDY_EXE
+    NAMES "clang-tidy"
+    HINTS ${CLANG_TIDY_PATH}
+  )
+endif()
+
+
 function(clang_tidy_check target)
   if(ENABLE_CLANG_TIDY)
-    find_program(
-      CLANG_TIDY_EXE
-      NAMES "clang-tidy"
-      HINTS ${CLANG_TIDY_PATH}
-    )
-
     set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE};${CLANG_TIDY_OPTS};")
   endif()
 endfunction()
