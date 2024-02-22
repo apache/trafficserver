@@ -31,14 +31,24 @@ QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : VConnection(new_P
 
 QUICStreamVCAdapter::~QUICStreamVCAdapter()
 {
-  if (this->_read_event) {
-    this->_read_event->cancel();
-    this->_read_event = nullptr;
+  if (this->_read_ready_event) {
+    this->_read_ready_event->cancel();
+    this->_read_ready_event = nullptr;
   }
 
-  if (this->_write_event) {
-    this->_write_event->cancel();
-    this->_write_event = nullptr;
+  if (this->_read_complete_event) {
+    this->_read_complete_event->cancel();
+    this->_read_complete_event = nullptr;
+  }
+
+  if (this->_write_ready_event) {
+    this->_write_ready_event->cancel();
+    this->_write_ready_event = nullptr;
+  }
+
+  if (this->_write_complete_event) {
+    this->_write_complete_event->cancel();
+    this->_write_complete_event = nullptr;
   }
 
   if (this->_eos_event) {
@@ -150,9 +160,14 @@ QUICStreamVCAdapter::encourge_read()
       return;
     }
 
-    int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
-    if (!(this->_read_event && this->_read_event->callback_event == event)) {
-      this->_read_event = this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+    if (this->_read_vio.nbytes == INT64_MAX) {
+      if (!this->_read_ready_event) {
+        this->_read_ready_event = this_ethread()->schedule_imm(this->_read_vio.cont, VC_EVENT_READ_READY, &this->_read_vio);
+      }
+    } else {
+      if (!this->_read_complete_event) {
+        this->_read_complete_event = this_ethread()->schedule_imm(this->_read_vio.cont, VC_EVENT_READ_COMPLETE, &this->_read_vio);
+      }
     }
   }
 }
@@ -170,9 +185,15 @@ QUICStreamVCAdapter::encourge_write()
       return;
     }
 
-    int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
-    if (!(this->_write_event && this->_write_event->callback_event == event)) {
-      this->_write_event = this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
+    if (this->_write_vio.ntodo()) {
+      if (!this->_write_ready_event) {
+        this->_write_ready_event = this_ethread()->schedule_imm(this->_write_vio.cont, VC_EVENT_WRITE_READY, &this->_write_vio);
+      }
+    } else {
+      if (!this->_write_complete_event) {
+        this->_write_complete_event =
+          this_ethread()->schedule_imm(this->_write_vio.cont, VC_EVENT_WRITE_COMPLETE, &this->_write_vio);
+      }
     }
   }
 }
@@ -193,11 +214,46 @@ QUICStreamVCAdapter::notify_eos()
     if (lock.is_locked()) {
       this->_read_vio.cont->handleEvent(event, &this->_read_vio);
     } else {
-      if (!(this->_eos_event && this->_eos_event->callback_event == event)) {
+      if (!this->_eos_event) {
         this->_eos_event = this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
       }
     }
   }
+}
+
+void
+QUICStreamVCAdapter::clear_read_ready_event(Event *e)
+{
+  ink_assert(e == this->_read_ready_event);
+  this->_read_ready_event = nullptr;
+}
+
+void
+QUICStreamVCAdapter::clear_read_complete_event(Event *e)
+{
+  ink_assert(e == this->_read_complete_event);
+  this->_read_complete_event = nullptr;
+}
+
+void
+QUICStreamVCAdapter::clear_write_ready_event(Event *e)
+{
+  ink_assert(e == this->_write_ready_event);
+  this->_write_ready_event = nullptr;
+}
+
+void
+QUICStreamVCAdapter::clear_write_complete_event(Event *e)
+{
+  ink_assert(e == this->_write_complete_event);
+  this->_write_complete_event = nullptr;
+}
+
+void
+QUICStreamVCAdapter::clear_eos_event(Event *e)
+{
+  ink_assert(e == this->_eos_event);
+  this->_eos_event = nullptr;
 }
 
 // this->_read_vio.nbytes should be INT64_MAX until receive FIN flag

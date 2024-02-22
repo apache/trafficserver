@@ -96,7 +96,7 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
   this->stream_list.push(stream);
 
   QUICApplication *application = this->_app_map->get(stream_id);
-  application->on_new_stream(*stream);
+  application->on_stream_open(*stream);
   return nullptr;
 }
 
@@ -116,7 +116,12 @@ QUICConnectionErrorUPtr
 QUICStreamManager::delete_stream(QUICStreamId &stream_id)
 {
   QUICStream *stream = static_cast<QUICStream *>(this->find_stream(stream_id));
+
+  QUICApplication *application = this->_app_map->get(stream_id);
+  application->on_stream_close(*stream);
+
   stream_list.remove(stream);
+
   delete stream;
 
   return nullptr;

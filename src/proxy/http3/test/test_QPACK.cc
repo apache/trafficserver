@@ -295,8 +295,8 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
   TestQUICStream *decoder_stream = new TestQUICStream(10);
-  qpack->on_new_stream(*encoder_stream);
-  qpack->on_new_stream(*decoder_stream);
+  qpack->on_stream_open(*encoder_stream);
+  qpack->on_stream_open(*decoder_stream);
   qpack->set_encoder_stream(encoder_stream->id());
   qpack->set_decoder_stream(decoder_stream->id());
 
@@ -355,7 +355,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   QUICApplicationDriver driver;
   QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
-  qpack->on_new_stream(*encoder_stream);
+  qpack->on_stream_open(*encoder_stream);
 
   int offset     = 0;
   uint8_t *block = nullptr;

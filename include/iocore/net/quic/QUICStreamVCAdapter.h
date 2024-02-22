@@ -50,6 +50,12 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
+  void clear_read_ready_event(Event *e);
+  void clear_read_complete_event(Event *e);
+  void clear_write_ready_event(Event *e);
+  void clear_write_complete_event(Event *e);
+  void clear_eos_event(Event *e);
+
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
 
@@ -59,9 +65,11 @@ protected:
   VIO _read_vio;
   VIO _write_vio;
 
-  Event *_read_event  = nullptr;
-  Event *_write_event = nullptr;
-  Event *_eos_event   = nullptr;
+  Event *_read_ready_event     = nullptr;
+  Event *_read_complete_event  = nullptr;
+  Event *_write_ready_event    = nullptr;
+  Event *_write_complete_event = nullptr;
+  Event *_eos_event            = nullptr;
 };
 
 class QUICStreamVCAdapter::IOInfo

@@ -50,7 +50,8 @@ public:
   Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   virtual ~Http3App();
 
-  void on_new_stream(QUICStream &stream) override;
+  void on_stream_open(QUICStream &stream) override;
+  void on_stream_close(QUICStream &stream) override;
 
   virtual void start();
   virtual int main_event_handler(int event, Event *data);

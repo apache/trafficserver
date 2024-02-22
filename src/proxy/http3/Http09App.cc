@@ -57,7 +57,7 @@ Http09App::~Http09App()
 }
 
 void
-Http09App::on_new_stream(QUICStream &stream)
+Http09App::on_stream_open(QUICStream &stream)
 {
   auto ret   = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
@@ -79,6 +79,11 @@ Http09App::on_new_stream(QUICStream &stream)
   }
 
   stream.set_io_adapter(&info.adapter);
+}
+
+void
+Http09App::on_stream_close(QUICStream &stream)
+{
 }
 
 int

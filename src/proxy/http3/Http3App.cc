@@ -97,7 +97,7 @@ Http3App::start()
 }
 
 void
-Http3App::on_new_stream(QUICStream &stream)
+Http3App::on_stream_open(QUICStream &stream)
 {
   auto ret   = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
@@ -121,6 +121,12 @@ Http3App::on_new_stream(QUICStream &stream)
   stream.set_io_adapter(&info.adapter);
 }
 
+void
+Http3App::on_stream_close(QUICStream &stream)
+{
+  this->_streams.erase(stream.id());
+}
+
 int
 Http3App::main_event_handler(int event, Event *data)
 {
@@ -138,7 +144,16 @@ Http3App::main_event_handler(int event, Event *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    adapter->clear_read_ready_event(data);
+    if (is_bidirectional) {
+      this->_handle_bidi_stream_on_read_ready(event, vio);
+    } else {
+      this->_handle_uni_stream_on_read_ready(event, vio);
+    }
+    break;
   case VC_EVENT_READ_COMPLETE:
+    adapter->clear_read_complete_event(data);
+    // Calling read_ready handlers because there's no need to do different things
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_read_ready(event, vio);
     } else {
@@ -146,6 +161,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_WRITE_READY:
+    adapter->clear_write_ready_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_write_ready(event, vio);
     } else {
@@ -153,6 +169,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_WRITE_COMPLETE:
+    adapter->clear_write_complete_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_write_complete(event, vio);
     } else {
@@ -160,6 +177,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_EOS:
+    adapter->clear_eos_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_eos(event, vio);
     } else {
@@ -423,5 +441,4 @@ Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
   }
   // FIXME There may be data to read
   this->_qc->stream_manager()->delete_stream(stream_id);
-  this->_streams.erase(stream_id);
 }
