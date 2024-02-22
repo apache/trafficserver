@@ -36,7 +36,6 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-
 function(clang_tidy_check target)
   if(ENABLE_CLANG_TIDY)
     set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE};${CLANG_TIDY_OPTS};")
