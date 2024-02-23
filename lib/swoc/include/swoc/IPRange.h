@@ -1985,7 +1985,13 @@ IPRangeView::clear() -> self_type & {
 
 inline bool
 IPRangeView::empty() const {
-  return AF_INET6 == _family ? _raw._6->empty() : AF_INET == _family ? _raw._4->empty() : true;
+  if (AF_INET6 == _family) {
+    return _raw._6->empty();
+  } else if (AF_INET == _family) {
+    return _raw._4->empty();
+  } else {
+    return true;
+  }
 }
 
 inline bool
