@@ -546,6 +546,9 @@ update_dns_info(ResolveInfo *dns, HttpTransact::CurrentInfo *from)
 {
   dns->looking_up  = from->request_to;
   dns->lookup_name = from->server->name;
+  if (dns->os_addr_style != ResolveInfo::OS_Addr::USE_API) {
+    dns->resolved_p = false;
+  }
 }
 
 inline static HTTPHdr *
@@ -5716,6 +5719,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   /////////////////////////////////////////////
   s->dns_info.looking_up  = ResolveInfo::ORIGIN_SERVER;
   s->dns_info.lookup_name = s->server_info.name;
+  s->dns_info.resolved_p  = false;
 }
 
 void

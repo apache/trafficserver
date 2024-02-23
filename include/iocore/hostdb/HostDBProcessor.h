@@ -863,7 +863,8 @@ ResolveInfo::set_active(std::nullptr_t)
 inline bool
 ResolveInfo::set_upstream_address(sockaddr const *sa)
 {
-  return resolved_p = addr.assign(sa).isValid();
+  resolved_p = addr.assign(sa).isValid();
+  return resolved_p;
 }
 
 inline void
