@@ -907,10 +907,11 @@ Mod_ip_space::operator()(Context &ctx, feature_type_for<IP_ADDR> addr)
   }
   Feature value{FeatureView::Literal("")};
   if (active._space) {
-    auto [range, payload] = *active._space->space.find(addr);
-    active._row           = range.empty() ? nullptr : &payload;
-    active._addr          = addr;
-    active._drtv          = drtv;
+    auto iter               = active._space->space.find(addr);
+    auto &&[range, payload] = *iter;
+    active._row             = range.empty() ? nullptr : &payload;
+    active._addr            = addr;
+    active._drtv            = drtv;
 
     // Current active data.
     auto *store = Txb_IP_Space::ctx_active_info(ctx);
