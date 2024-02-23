@@ -24,7 +24,7 @@
 #pragma once
 
 #include <cstdint>
-#include "iocore/eventsystem/EventSystem.h"
+#include <tscore/ink_hrtime.h>
 
 class FrequencyCounter
 {
