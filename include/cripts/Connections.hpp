@@ -22,15 +22,9 @@ namespace Cript
 class Context;
 }
 
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-
 #include "ts/apidefs.h"
 #include "ts/ts.h"
-#include "ts/remap.h"
 
-#include "swoc/swoc_ip.h"
 
 #include "cripts/Matcher.hpp"
 
