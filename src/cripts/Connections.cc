@@ -18,6 +18,7 @@
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
+#include <arpa/inet.h>
 
 constexpr unsigned NORMALIZED_TIME_QUANTUM = 3600; // 1 hour
 
