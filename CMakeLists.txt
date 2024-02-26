@@ -522,6 +522,7 @@ endif(HOST_OS STREQUAL "linux")
 
 if(HOST_OS STREQUAL "darwin")
   set(CMAKE_MACOSX_RPATH 1)
+  link_libraries("-ld_classic")
 endif(HOST_OS STREQUAL "darwin")
 
 if(HOST_OS STREQUAL "freebsd")
