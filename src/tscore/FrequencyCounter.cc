@@ -1,6 +1,6 @@
 /** @file
 
-  Http2FrequencyCounter
+  FrequencyCounter
 
   @section license License
 
@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "proxy/http2/Http2FrequencyCounter.h"
+#include "tscore/FrequencyCounter.h"
 
 void
-Http2FrequencyCounter::increment(uint16_t amount)
+FrequencyCounter::increment(uint16_t amount)
 {
   ink_hrtime hrtime_sec = this->_ink_get_hrtime();
   uint8_t counter_index = ((hrtime_sec % 60) >= 30);
@@ -49,13 +49,13 @@ Http2FrequencyCounter::increment(uint16_t amount)
 }
 
 uint32_t
-Http2FrequencyCounter::get_count()
+FrequencyCounter::get_count()
 {
   return this->_count[0] + this->_count[1];
 }
 
 ink_hrtime
-Http2FrequencyCounter::_ink_get_hrtime()
+FrequencyCounter::_ink_get_hrtime()
 {
   return ink_hrtime_to_sec(ink_get_hrtime());
 }

@@ -90,20 +90,6 @@ HQSession::get_transaction(QUICStreamId id)
   return nullptr;
 }
 
-VIO *
-HQSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-VIO *
-HQSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  ink_assert(false);
-  return nullptr;
-}
-
 void
 HQSession::do_io_close(int lerrno)
 {
@@ -131,14 +117,15 @@ HQSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferRead
   this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
   this->_handle_if_ssl(new_vc);
 
-  return;
+  do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
 
 void
 HQSession::start()
 {
-  ink_assert(false);
-  return;
+  SET_HANDLER(&HQSession::main_event_handler);
+  this->do_io_read(this, 0, nullptr);
+  this->do_io_write(this, 0, nullptr);
 }
 
 void
@@ -163,6 +150,25 @@ HQSession::release(ProxyTransaction *trans)
 int
 HQSession::get_transact_count() const
 {
+  return 0;
+}
+
+int
+HQSession::main_event_handler(int event, void *edata)
+{
+  switch (event) {
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
+    this->do_io_close();
+    for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
+      SCOPED_MUTEX_LOCK(lock, t->mutex, this_ethread());
+      t->handleEvent(event);
+    }
+    break;
+  }
+
   return 0;
 }
 

@@ -1,0 +1,514 @@
+# Text block testing.
+
+meta:
+  version: "1.0"
+# -- doc-secure-text-->
+  secure_text: &secure-text "# Yoyodyne uses SmackerTwo for responsible disclosure.\n\
+                             # To report abusive behavior please visit http://yoyodyne.ex\n\
+                             Contact: mailto:security@yoyodyne.ex\n\
+                            "
+# -- doc-secure-text--<
+
+  txn-box:
+    global:
+    - when: post-load
+      do:
+      - debug: "Creating text blocks"
+      - text-block-define:
+          name: "SWOC"
+          path: "static_file.txt"
+          duration: "12 hours"
+
+      - text-block-define:
+          name: "alternate"
+          path: "static_file.txt"
+          duration: [ minutes<1> , seconds<20> ]
+
+      - text-block-define:
+          name: "missing"
+          path: "missing.txt"
+          text: "Concert missing."
+          duration: "2 minutes 30 seconds"
+
+# -- doc-jwt-->
+      - text-block-define:
+          name: "default-jwt"
+          path: "/var/www/jwt/default-token.jwt"
+          text: "N/A"
+          duration: "12h"
+# -- doc-jwt--<
+
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - match: "concert.txt"
+          do:
+          - proxy-req-field<Author-i-tay>:
+            - proxy-req-field<Author-i-tay>
+            - else: text-block<SWOC>
+
+        - match: "alternate.txt"
+          do:
+          - proxy-req-field<Author-i-tay>: text-block<alternate>
+
+        - match: "missing.txt"
+          do:
+          - proxy-req-field<Author-i-tay>: text-block<missing>
+
+    - when: proxy-rsp
+      do:
+      - with: ua-req-path
+        select:
+        - match: "block-dump"
+          do:
+          - proxy-rsp-field<Block>: [ ua-req-field<block> , { as-text-block: "\"{ua-req-field<block>}\" is not a valid block name." }]
+
+  # -- doc-1-->
+    - when: upstream-rsp
+      do:
+      - with: [ upstream-rsp-status , proxy-req-path ]
+        select:
+        - as-tuple:
+          - eq: 404
+          - match: "security.txt"
+          do:
+          - debug: "Resetting upstream response"
+          - upstream-rsp-status: [ 200 , "OK" ]
+          - upstream-rsp-body: *secure-text
+          - upstream-rsp-field<Cache-Control>: "max-age=3600"
+  # -- doc-1--<
+
+# -- doc-proxy-rsp-->
+    - when: proxy-rsp
+      do:
+      # If this is checking it could be because there was an early failure. In that case the proxy
+      # request may never have been created and proxy-req-path will be NULL. This syntax tries
+      # proxy-req-path and if it is NULL, tries ua-req-path instead which will always be something.
+      - debug: "id {ua-req-field<UUID>} proxy-rsp-status {proxy-rsp-status} proxy-req-path {proxy-req-path}"
+      - with: [ proxy-rsp-status , [ proxy-req-path , { else: ua-req-path } ] ]
+        select:
+        - as-tuple:
+          - eq: 404
+          - match: "security.txt"
+          do:
+          - debug: "Resetting proxy response"
+          - proxy-rsp-status: [ 200 , "OK" ]
+          - proxy-rsp-body: [ *secure-text , "text/plain" ]
+# -- doc-proxy-rsp--<
+
+     # This is for testing empty (zero content length) responses from the upstream.
+    - when: upstream-rsp
+      do:
+      - with: [ upstream-rsp-status , [ proxy-req-path , { else: ua-req-path } ] ]
+        select:
+        - as-tuple:
+          - eq: 404
+          - all-of:
+            - prefix: "security-"
+            - suffix: ".txt"
+          do:
+          - debug: "Resetting upstream response for {ua-req-field<UUID>}"
+          - upstream-rsp-status: [ 200 , "OK" ]
+          - upstream-rsp-body: *secure-text
+
+    remap:
+    - when: proxy-rsp
+      do:
+      - proxy-rsp-field<SWOC>: [ proxy-rsp-field<SWOC>, { else: text-block<SWOC> }]
+
+  # -- doc-jwt-apply-->
+    - when: proxy-rsp
+      do:
+      - with: proxy-req-field<Author-i-tay>
+        select:
+        - is-empty:
+          do:
+          - proxy-rsp-field<Author-i-tay>: text-block<default-jwt>
+# -- doc-jwt-apply--<
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 56 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4 } ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 110 ]
+        - [ SWOC, "upstream" ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ SWOC, { value: "upstream", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      version: "1.1"
+      method: "GET"
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 120 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ SWOC, { value: "Delain Concert.", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/security.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      version: "1.1"
+      method: "GET"
+      url: "/security.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    server-response:
+      status: 404
+      reason: Not Found
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 130 ]
+    proxy-response:
+      status: 200
+
+- protocol: [ { name: ip, version : 4 } ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/concert.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      version: "1.1"
+      method: "GET"
+      url: "/concert.txt"
+      headers:
+        fields:
+        - [ Author-i-tay, { value: "Delain Concert.", as: equal } ]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 140 ]
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/concert.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ Author-i-tay, "Nightwish Concert." ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Author-i-tay, { value: "Nightwish Concert.", as: equal } ]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 50 ]
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 6 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/alternate.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ Author-i-tay, "Nightwish Concert." ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Author-i-tay, { value: "Delain Concert.", as: equal } ]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 50 ]
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 7 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/alternate.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Author-i-tay, { value: "Delain Concert.", as: equal } ]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 50 ]
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 8 ]]}}
+    client-request:
+      version: "1.1"
+      method: "GET"
+      url: "/missing.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Author-i-tay, { value: "Concert missing.", as: equal } ]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, text/html ]
+        - [ Content-Length, 50 ]
+    proxy-response:
+      status: 200
+
+  # Verify a remap miss generates a 404
+  - all: { headers: { fields: [[ uuid, 9 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain.txt"
+      headers:
+        fields:
+        - [ Host, unmapped.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 404
+
+  # Verify a remap miss for the magic file is still a 200.
+  - all: { headers: { fields: [[ uuid, 10 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/security.txt"
+      headers:
+        fields:
+        - [ Host, unmapped.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  # Verify non-exact path is still a 404
+  - all: { headers: { fields: [[ uuid, 11 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/dave/security.txt"
+      headers:
+        fields:
+        - [ Host, unmapped.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 404
+
+  # Verify caching
+  - all: { headers: { fields: [[ uuid, cached-security ]]}}
+    client-request:
+      <<: *base-req
+      url: "/security.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      status: 404
+      reason: "Missing"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 90 ]
+        - [ Cache-Status, live ] # Should not arrive because not in cached version.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Cache-Status, { as: absent }]
+        - [ uuid, { as: equal, value: "3" }] # cached in transaction 3
+
+  # Verify correctness for empty upstream response - base case
+  - all: { headers: { fields: [[ uuid, base-case ]]}}
+    client-request:
+      <<: *base-req
+      url: "/security-2.txt"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      status: 404
+      reason: "Missing"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200
+
+  # basic modifier check.
+  - all: { headers: { fields: [[ uuid, block-dump-1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/block-dump"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ "Block", "SWOC" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Block", { as: equal , value: "Delain Concert." } ]
+
+  # Missing file check - is the @c text field used?
+  - all: { headers: { fields: [[ uuid, block-dump-2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/block-dump"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ "Block", "missing" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Block", { as: equal , value: "Concert missing." } ]
+
+  # Invalid name check.
+  - all: { headers: { fields: [[ uuid, block-dump-3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/block-dump"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ "Block", "none" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Block", { as: equal , value: "\"none\" is not a valid block name." } ]
+
+  # Verify correctness for empty upstream response - empty case
+  # Disabled for now because of ATS core problem. Issue #8081.
+#  - all: { headers: { fields: [[ uuid, empty-response ]]}}
+#    client-request:
+#      <<: *base-req
+#      url: "/security-3.txt"
+#      headers:
+#        fields:
+#        - [ Host, base.ex ]
+#    proxy-request:
+#      <<: *base-req
+#    server-response:
+#      status: 404
+#      reason: "Missing"
+#      headers:
+#        fields:
+#        - [ Content-Type, html/plaintext ]
+#        - [ Content-Length, 0 ]
+#    proxy-response:
+#      status: 200

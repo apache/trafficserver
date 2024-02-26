@@ -1,0 +1,170 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: proxy-req
+      do:
+      - with: proxy-req-path
+        select:
+        - prefix: "alpha/"
+          do:
+          - with: proxy-req-field<Best-Band>
+            select:
+            - none-of:
+              - is-empty:
+              do:
+              - proxy-req-field<Best-Band>: "Delain"
+          - proxy-req-field<with>: "passed"
+
+        - prefix: "bravo/"
+          do:
+          - with: proxy-req-field<Best-Band>
+            select:
+            - is-empty:
+            - do:
+              - proxy-req-field<Best-Band>: "Delain"
+          - proxy-req-field<with>: "passed" # should never be invoked
+
+        - prefix: "charlie/"
+          do:
+          - with: proxy-req-field<Best-Band>
+            select:
+            - is-empty:
+            - otherwise:
+              do:
+              - proxy-req-field<Best-Band>: "Delain"
+          - proxy-req-field<with>: "passed" # should never be invoked
+
+        - prefix: "delta/"
+          do:
+          - with: proxy-req-field<Best-Band>
+            continue:
+            select:
+            - is-empty:
+            - otherwise:
+              do:
+              - proxy-req-field<Best-Band>: "Delain"
+          - proxy-req-field<with>: "passed"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  # Alpha cases use "none-of" so if the field isn't present, no with case should match and it should
+  # pass and set "with" to "passed" if it doesn't update "Best-Band".
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "with", { value: "passed", as: equal } ] # Didn't update Best-Band, fall as: through} .
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ Best-Band, "Journey" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "with", { as: absent } ] # updated Best-Band, shouldn't do as: this} .
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  # Bravo case has an empty list for the empty field, so the with should never pass and
+  # "with" should always be absent.
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/bravo/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "with", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/bravo/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ Best-Band, "Journey" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "with", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  # Delta cases have "continue:" so "with" shoud be "passed" in all cases.
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delta/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "with", { value: "passed", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 6 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delta/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ Best-Band, "Journey" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "with", { value: "passed", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+

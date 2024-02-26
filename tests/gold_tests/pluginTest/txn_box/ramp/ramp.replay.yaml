@@ -1,0 +1,37 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    remap:
+      with: random<0,999>
+      select:
+      - lt: 300
+        do:
+          ua-req-host: "ex.two"
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+      url: "/1"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base_request
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base_request
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200

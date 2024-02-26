@@ -1,0 +1,52 @@
+meta:
+  version: "1.0"
+
+# Testing txn_open hook.
+  txn_box:
+    global:
+    - when: txn-open
+      do:
+      - debug: [ "txn_box" , "Checking '{ua-req-scheme}' for '{ua-req-host}'" ]
+      - with: ua-req-path
+        select:
+        - is-empty:
+          do:
+          - txn-conf<proxy.config.http.transaction_no_activity_timeout_out>: 937
+
+    - when: proxy-req
+      do:
+      - debug: [ "txn_box" , "UA {ua-req-method}: '{ua-req-scheme}' for '{ua-req-host}'" ]
+      - debug: [ "txn_box" , "PROXY {proxy-req-method}: '{proxy-req-scheme}' for '{proxy-req-host}'" ]
+      - proxy-req-field<Test>: "NATO = {txn-conf<proxy.config.http.transaction_no_activity_timeout_out>}"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Test, { value: "NATO = 937", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:

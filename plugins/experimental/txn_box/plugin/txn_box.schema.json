@@ -1,0 +1,169 @@
+{
+  "$schema": "https://github.com/solidwallofcode/schema/txn_box.schema.json",
+  "title": "Transaction Box Configuratoin",
+  "description": "Schema for Transaction Box configuration.",
+  "type": "object",
+  "properties": {
+    "txn_box": {
+      "$ref": "#/definitions/txn_box/directive_group"
+    },
+    "version": {
+      "type": "string",
+      "description": "Configuration format version."
+    }
+  },
+  "required": [ "txn_box" ],
+  "definitions": {
+    "txn_box": {
+      "directive_group": {
+        "description": "One or more directives.",
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/directive_list" },
+          { "$ref": "#/definitions/txn_box/directive" }
+        ]
+      },
+      "directive_list": {
+        "description": "List of directives.",
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#/definitions/txn_box/directive" }
+      },
+      "directive": {
+        "description": "Directive.",
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/selection" },
+          { "$ref": "#/definitions/txn_box/op" }
+        ]
+      },
+      "op": {
+        "Description": "An operation to perform.",
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/do-set-preq-host" },
+          { "$ref": "#/definitions/txn_box/do-set-proxy-req-field" }
+        ]
+      },
+      "do-set-preq-host": {
+        "description": "Set the host for the proxy request.",
+        "type": "object",
+        "properties": {
+          "set-preq-host": {
+            "description": "Value for host in the proxy URL",
+            "type": "string"
+          }
+        },
+        "required": [ "set-preq-host" ]
+      },
+      "do-set-proxy-req-field": {
+        "description": "Set a field in the proxy request.",
+        "type": "object",
+        "properties": {
+          "set-proxy-req-field": {
+            "description": "A list of the field name and value.",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              { "type": "string", "description": "Field name" },
+              { "type": "string", "description": "Field value" }
+            ]
+          }
+        },
+        "required": [ "set-proxy-req-field" ]
+      },
+      "selection": {
+        "description": "Select directives using an extracted feature.",
+        "type": "object",
+        "properties": {
+          "with": { "$ref": "#/definitions/txn_box/extractor" },
+          "select": { "$ref": "#/definitions/txn_box/select_switch" }
+        },
+        "required": [ "with", "select" ]
+      },
+      "extractor": {
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/extraction_string" },
+          { "$ref": "#/definitions/txn_box/extraction_with_modifiers" }
+          ]
+      },
+      "extraction_string": {
+        "description": "Format string for Feature extraction.",
+        "type": "string"
+      },
+      "extraction_with_modifiers": {
+        "description": "Extraction with modifiers.",
+        "type": "array",
+        "minItems": 2,
+        "items": [ { "$ref": "#/definitions/txn_box/extraction_string" } ],
+        "additionalItems": { "$ref": "#/definitions/txn_box/extraction_modifier" }
+      },
+      "extraction_modifier": {
+        "description": "Feature extraction modifier",
+        "anyOf": [
+          {
+            "$ref": "#/definitions/txn_box/extraction_modifier_hash"
+          }
+        ]
+      },
+      "extraction_modifier_hash": {
+        "description": "Hashing Modifier for feature extraction.",
+        "type": "object",
+        "properties": {
+          "hash": {
+            "description": "# of buckets for the hash value.",
+            "type": "number"
+          }
+        },
+        "required": [ "hash" ]
+      },
+      "select_switch": {
+        "description": "The specific case or cases for a selection.",
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/select_case" },
+          { "$ref": "#/definitions/txn_box/select_case_list" }
+        ]
+      },
+      "select_case_list": {
+        "description": "List of selection cases",
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#/definitions/txn_box/select_case" }
+      },
+      "select_case": {
+        "description": "A specific selection case / comparison operator.",
+        "anyOf": [
+          { "$ref": "#/definitions/txn_box/select_match" },
+          { "$ref": "#/definitions/txn_box/select_suffix" }
+        ]
+      },
+      "select_match": {
+        "description": "A specific selection to match.",
+        "type": "object",
+        "properties": {
+          "match": { "$ref": "#/definitions/txn_box/string_group" },
+          "do": { "$ref": "#/definitions/txn_box/directive_group" }
+        },
+        "required": [ "match", "do" ]
+      },
+      "select_suffix": {
+        "description": "A specific suffix to match.",
+        "type": "object",
+        "properties": {
+          "suffix": { "$ref": "#/definitions/txn_box/string_group" },
+          "do": { "$ref": "#/definitions/txn_box/directive_group" }
+        },
+        "required": [ "suffix", "do" ]
+      },
+      "string_group": {
+        "description": "List of or a single string",
+        "anyOf": [
+          { "type": "string" },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -29,6 +29,8 @@
 #include <cstring>
 #include <string>
 #include <list>
+#include <new>
+#include <limits>
 #include <arpa/inet.h>
 #include <getopt.h>
 
@@ -51,10 +53,11 @@ using namespace EsiLib;
 using namespace Stats;
 
 struct OptionInfo {
-  bool packed_node_support;
-  bool private_response;
-  bool disable_gzip_output;
-  bool first_byte_flush;
+  bool packed_node_support{false};
+  bool private_response{false};
+  bool disable_gzip_output{false};
+  bool first_byte_flush{false};
+  unsigned max_doc_size{1024 * 1024};
 };
 
 static HandlerManager *gHandlerManager = nullptr;
@@ -100,7 +103,7 @@ struct ContData {
   EsiGunzip *esi_gunzip;
   TSCont contp;
   TSHttpTxn txnp;
-  const struct OptionInfo *option_info = nullptr;
+  const OptionInfo *const option_info;
   char *request_url;
   sockaddr const *client_addr;
   DataType input_type;
@@ -116,7 +119,7 @@ struct ContData {
   bool os_response_cacheable;
   list<string> post_headers;
 
-  ContData(TSCont contptr, TSHttpTxn tx)
+  ContData(TSCont contptr, TSHttpTxn tx, const OptionInfo *opt_info)
     : curr_state(READING_ESI_DOC),
       input_vio(nullptr),
       output_vio(nullptr),
@@ -129,6 +132,7 @@ struct ContData {
       esi_gunzip(nullptr),
       contp(contptr),
       txnp(tx),
+      option_info(opt_info),
       request_url(nullptr),
       input_type(DATA_TYPE_RAW_ESI),
       packed_node_list(""),
@@ -238,7 +242,7 @@ ContData::init()
       esi_vars = new Variables(contp, gAllowlistCookies);
     }
 
-    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager);
+    esi_proc = new EsiProcessor(contp, *data_fetcher, *esi_vars, *gHandlerManager, option_info->max_doc_size);
 
     esi_gzip   = new EsiGzip();
     esi_gunzip = new EsiGunzip();
@@ -999,7 +1003,7 @@ struct RespHdrModData {
   bool cache_txn;
   bool gzip_encoding;
   bool head_only;
-  const struct OptionInfo *option_info;
+  const OptionInfo *option_info;
 };
 
 static void
@@ -1407,7 +1411,7 @@ addSendResponseHeaderHook(TSHttpTxn txnp, const ContData *src_cont_data)
 
 static bool
 addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool intercept_header, const bool head_only,
-             const struct OptionInfo *pOptionInfo)
+             const OptionInfo *pOptionInfo)
 {
   TSCont contp        = nullptr;
   ContData *cont_data = nullptr;
@@ -1418,10 +1422,9 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
     goto lFail;
   }
 
-  cont_data = new ContData(contp, txnp);
+  cont_data = new ContData(contp, txnp, pOptionInfo);
   TSContDataSet(contp, cont_data);
 
-  cont_data->option_info      = pOptionInfo;
   cont_data->cache_txn        = !processing_os_response;
   cont_data->intercept_header = intercept_header;
   cont_data->head_only        = head_only;
@@ -1474,7 +1477,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
   bool intercept_header          = false;
   bool head_only                 = false;
   bool intercept_req             = isInterceptRequest(txnp);
-  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSContDataGet(contp));
+  struct OptionInfo *pOptionInfo = static_cast<OptionInfo *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -1548,7 +1551,7 @@ loadHandlerConf(const char *file_name, Utils::KeyValueMap &handler_conf)
 }
 
 static int
-esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
+esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
 {
   static TSStatSystem *statSystem = nullptr;
 
@@ -1561,7 +1564,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     gHandlerManager = new HandlerManager();
   }
 
-  memset(pOptionInfo, 0, sizeof(struct OptionInfo));
+  new (pOptionInfo) OptionInfo;
 
   if (argc > 1) {
     int c;
@@ -1571,11 +1574,12 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
       {const_cast<char *>("disable-gzip-output"), no_argument,       nullptr, 'z'},
       {const_cast<char *>("first-byte-flush"),    no_argument,       nullptr, 'b'},
       {const_cast<char *>("handler-filename"),    required_argument, nullptr, 'f'},
+      {const_cast<char *>("max-doc-size"),        required_argument, nullptr, 'd'},
       {nullptr,                                   0,                 nullptr, 0  },
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
@@ -1595,18 +1599,40 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
         gHandlerManager->loadObjects(handler_conf);
         break;
       }
-      default:
+      case 'd': {
+        unsigned max, coeff{1};
+        char multiplier, crap;
+        auto num_assigned = std::sscanf(optarg, "%u%c%c", &max, &multiplier, &crap);
+        if (2 == num_assigned) {
+          if ('K' == multiplier) {
+            coeff        = 1024;
+            num_assigned = 1;
+          } else if ('M' == multiplier) {
+            coeff        = 1024 * 1024;
+            num_assigned = 1;
+          }
+        }
+        if (num_assigned != 1) {
+          TSEmergency("[esi][%s] value for maximum document size (%s) has bad format", __FUNCTION__, optarg);
+        }
+        if ((coeff != 1) && (max > (std::numeric_limits<unsigned>::max() / coeff))) {
+          TSEmergency("[esi][%s] specified maximum document size (%u%c) too large", __FUNCTION__, max, multiplier);
+        }
+        pOptionInfo->max_doc_size = max * coeff;
         break;
+      }
+      default:
+        TSEmergency("[esi][%s] bad option", __FUNCTION__);
+        return -1;
       }
     }
   }
 
   Dbg(dbg_ctl_local,
       "[%s] Plugin started, "
-      "packed-node-support: %d, private-response: %d, "
-      "disable-gzip-output: %d, first-byte-flush: %d ",
+      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u ",
       __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-      pOptionInfo->first_byte_flush);
+      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size);
 
   return 0;
 }
@@ -1624,9 +1650,9 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSmalloc(sizeof(struct OptionInfo)));
+  auto pOptionInfo = TSRalloc<OptionInfo>();
   if (pOptionInfo == nullptr) {
-    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(struct OptionInfo)));
+    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(OptionInfo)));
     return;
   }
   if (esiPluginInit(argc, argv, pOptionInfo) != 0) {
@@ -1690,10 +1716,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
   new_argv[index] = nullptr;
 
-  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSmalloc(sizeof(struct OptionInfo)));
+  OptionInfo *pOptionInfo = TSRalloc<OptionInfo>();
   if (pOptionInfo == nullptr) {
-    snprintf(errbuf, errbuf_size, "malloc %d bytes fail", static_cast<int>(sizeof(struct OptionInfo)));
-    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(struct OptionInfo)));
+    snprintf(errbuf, errbuf_size, "malloc %d bytes fail", static_cast<int>(sizeof(OptionInfo)));
+    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(OptionInfo)));
     return TS_ERROR;
   }
   if (esiPluginInit(index, new_argv, pOptionInfo) != 0) {

@@ -3083,9 +3083,15 @@ TSAction TSNetConnectTransparent(
   struct sockaddr const *to    /**< Address to which to connect. */
 );
 
+/**
+  Allocates contiguous, aligned, raw (no construction) memory for a given number number of instances of type T.
+
+  @return Pointer to raw (in spite of pointer type) memory for first instance.
+*/
 template <typename T>
 T *
-malloc(size_t count = 1)
+TSRalloc(size_t count = 1 /**< Number of instances of T to allocate storage for. */
+)
 {
   return static_cast<std::remove_cv_t<T> *>(TSmalloc(count * sizeof(T)));
 }

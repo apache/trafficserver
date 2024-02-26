@@ -30,7 +30,7 @@
 class EsiParser
 {
 public:
-  EsiParser();
+  EsiParser(unsigned max_doc_size);
 
   /** clears state */
   void clear();
@@ -90,6 +90,8 @@ private:
       : type(t), tag_suffix(s), tag_suffix_len(s_len), closing_tag(ct), closing_tag_len(ct_len){};
   };
 
+  const unsigned _max_doc_size;
+
   std::string _data;
   int _parse_start_pos;
   size_t _orig_output_list_size = 0;
@@ -103,8 +105,6 @@ private:
   static const std::string SRC_ATTR_STR;
   static const std::string TEST_ATTR_STR;
   static const std::string HANDLER_ATTR_STR;
-
-  static const unsigned int MAX_DOC_SIZE;
 
   enum MATCH_TYPE {
     NO_MATCH,

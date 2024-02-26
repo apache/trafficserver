@@ -75,7 +75,7 @@ TSPluginInit(int argc, const char *argv[])
     const char *lib = argv[i];
     void *handle    = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
     if (handle) {
-      auto l    = malloc<link_handle>();
+      auto l    = TSRalloc<link_handle>();
       l->handle = handle;
       l->next   = libs;
       libs      = l;

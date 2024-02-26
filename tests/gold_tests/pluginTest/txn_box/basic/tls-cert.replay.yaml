@@ -1,0 +1,117 @@
+# Testing dynamic SNI - set outbound SNI based on the request for specific inbound requests.
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: post-remap
+      do:
+      - with: ua-req-path
+        select:
+        - match: "no-cert"
+          do:
+          - txn-conf<proxy.config.ssl.client.cert.filename>: ""
+        - match: "null-cert"
+          do:
+          - txn-conf<proxy.config.ssl.client.cert.filename>: "NULL"
+    - when: proxy-req
+      do:
+      - proxy-req-field<ts-cert-subject>: inbound-cert-local-issuer-field<CN>
+    - when: proxy-rsp
+      do:
+      - proxy-rsp-field<target-cert-subject>: outbound-cert-remote-subject-field<CN>
+      - proxy-rsp-field<local-cert-issuer>: "Organization='{outbound-cert-local-issuer-field<O>}' Country='{outbound-cert-local-issuer-field<C>}'"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} , { name: "tls", sni: "alpha.ex" } ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ "Host", "alpha.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "ts-cert-subject", { value: "random.server.com", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "target-cert-subject", { value: "server_cn", as: equal } ]
+
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  # Verify the outbound client cert is there with the expected values.
+  - all: { headers: { fields: [[ uuid, outbound-TLS ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ "Host", "alpha.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "target-cert-subject", { value: "server_cn", as: equal } ]
+        - [ "local-cert-issuer", { value: "Organization='TxnBox' Country='S3'", as: equal } ]
+
+  # Test that an string for the outbound client cert disables the cert.
+  - all: { headers: { fields: [[ uuid, outbound-no-client-cert ]]}}
+    client-request:
+      <<: *base-req
+      url: "/no-cert"
+      headers:
+        fields:
+        - [ "Host", "charlie.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "local-cert-issuer", { value: "Organization='' Country=''", as: equal } ]
+
+  # Test the string "NULL" for the outbound client cert disables the cert.
+  - all: { headers: { fields: [[ uuid, outbound-nulll-client-cert ]]}}
+    client-request:
+      <<: *base-req
+      url: "/null-cert"
+      headers:
+        fields:
+        - [ "Host", "charlie.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "local-cert-issuer", { value: "Organization='' Country=''", as: equal } ]

@@ -1,0 +1,39 @@
+#######################
+#
+#  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+#  agreements.  See the NOTICE file distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with the License.  You may obtain
+#  a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software distributed under the License
+#  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing permissions and limitations under
+#  the License.
+#
+#######################
+import os
+Import('*')
+PartName("trafficserver")
+PartVersion(env.get("PKG_VERSION"))
+
+# if we have a --with-trafficserver use that as value we pass
+# else use the system which is the default of the compiler
+pkg_prefix = env.get("PKG_PREFIX")
+if pkg_prefix:
+    ipath = os.path.join(env.subst(pkg_prefix),"include")
+    env.Append(CPPPATH=[ipath])
+    env.ExportCPPPATH([ipath])
+    pc_file = env.Substfile('trafficserver.pc', 'pkgconfig/trafficserver.pc.in', SUBST_DICT = { "pkg_prefix": pkg_prefix , "pkg_version": "$PART_VERSION" } )
+    env.InstallPkgConfig(pc_file)
+
+
+cfg = env.Configure()
+cfg.Finish()
+
+# Based on current design we don't link with anything from trafficserver directly
+# Hope to have this fixed someday.
+
+

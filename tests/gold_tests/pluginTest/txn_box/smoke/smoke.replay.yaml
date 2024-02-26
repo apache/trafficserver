@@ -1,0 +1,101 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - with: ua-req-path
+        select:
+        - match: [ "1", "2" ]
+          do:
+          - debug: "Fill is {txn-conf<proxy.config.http.background_fill_completed_threshold>}"
+          - var<Best-Band>: "Delain"
+
+    - when: proxy-rsp
+      do:
+        with: ua-req-path
+        select:
+        - match: "2"
+          do:
+          - proxy-rsp-field<Best-Band>: var<Best-Band>
+
+    remap-1:
+    - ua-req-host: "ex.three"
+    - var<Host> : ua-req-field<Host>
+    - ua-req-field<Host-Check>: var<Host>
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, example.one ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { as: absent } ]
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, example.one ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { value: "Delain", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/3"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host-Check, { value: "ex.three", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 130 ]
+    proxy-response:
+      status: 200

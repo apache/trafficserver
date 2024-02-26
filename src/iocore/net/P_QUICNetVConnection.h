@@ -204,6 +204,8 @@ private:
   void _handle_write_ready();
   void _handle_interval();
 
+  void _propagate_event(int event);
+
   void _switch_to_established_state();
 
   bool _handshake_completed = false;

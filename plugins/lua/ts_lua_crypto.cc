@@ -323,7 +323,7 @@ ts_lua_hmac_md5(lua_State *L)
     src = (u_char *)luaL_checklstring(L, 2, &slen);
   }
 
-  key_bin = malloc<unsigned char>((klen / 2) + 1);
+  key_bin = TSRalloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
     Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
@@ -378,7 +378,7 @@ ts_lua_hmac_sha1(lua_State *L)
     src = (u_char *)luaL_checklstring(L, 2, &slen);
   }
 
-  key_bin = malloc<unsigned char>((klen / 2) + 1);
+  key_bin = TSRalloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
     Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
@@ -433,7 +433,7 @@ ts_lua_hmac_sha256(lua_State *L)
     src = (u_char *)luaL_checklstring(L, 2, &slen);
   }
 
-  key_bin = malloc<unsigned char>((klen / 2) + 1);
+  key_bin = TSRalloc<unsigned char>((klen / 2) + 1);
   if (key_bin == nullptr) {
     Dbg(dbg_ctl, "unable to allocate buffer for hex to binary conversion");
     return luaL_error(L, "unable to allocate buffer for hex to binary conversion");

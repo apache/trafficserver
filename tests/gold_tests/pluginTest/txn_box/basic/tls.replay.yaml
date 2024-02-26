@@ -1,0 +1,103 @@
+# Testing dynamic SNI - set outbound SNI based on the request for specific inbound requests.
+meta:
+  version: "1.0"
+
+  txn_box:
+    remap:
+    - with: pre-remap-path
+      select:
+      - any-of:
+        - prefix: "v1/video/search/"
+        - prefix: "v1/video/alias/"
+        - prefix: "v1/video/channels/"
+        - prefix: "v1/video/sub/"
+        do:
+        - txn-conf<proxy.config.ssl.client.sni_policy>: "@{remap-target-host}"
+        - ua-req-host: "stage.video.ex"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ] # plain text sessions
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [ [ uuid, 102 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/v1/video/channels/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+- protocol: [ { name: "ip", version : 4} , { name: "tls" }] # TLS sessions
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]] }}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [ [ uuid, 2 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/v1/video/channels/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200

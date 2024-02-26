@@ -1,0 +1,38 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+
+    remap:
+      alpha:
+      - ua-req-port: pre-remap-port
+
+      bravo:
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - client-request:
+      <<: *base_request
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 'alpha' ]
+    proxy-request:
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 'alpha' ]
+    proxy-response:

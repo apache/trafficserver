@@ -1,0 +1,63 @@
+#######################
+#
+#  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+#  agreements.  See the NOTICE file distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with the License.  You may obtain
+#  a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software distributed under the License
+#  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing permissions and limitations under
+#  the License.
+#
+#######################
+#!python3
+from parts import *
+
+#enable smart linking
+SetOptionDefault("LINKFLAGS", ['-Wl,--copy-dt-needed-entries', '-Wl,--as-needed'])
+SetOptionDefault("CPPFLAGS", ['-std=c++17', '-Wnon-virtual-dtor'])
+SetOptionDefault("INSTALL_ROOT", "#")
+
+# control shim for trafficserver
+AddOption("--with-trafficserver",
+          dest='with_trafficserver',
+          nargs=1,
+          type='string',
+          action='store',
+          metavar='DIR',
+          default=None,
+          help='Optional path to custom build of trafficserver')
+
+AddOption("--with-ssl",
+          dest='with_ssl',
+          nargs=1,
+          type='string',
+          action='store',
+          metavar='DIR',
+          default=None,
+          help='Optional path to custom build of OpenSSL'
+         )
+
+
+# the depends
+Part("code/libswoc.part"
+     ,vcs_type=VcsGit(server="github.com", repository="SolidWallOfCode/libswoc", tag="1.5.8")
+     )
+Part("#lib/libyaml-cpp.part", vcs_type=VcsGit(server="github.com", repository="jbeder/yaml-cpp.git", protocol="https", tag="0.8.0"))
+#Part("#lib/libyaml-cpp.part")
+
+# this is just a shim part. it passes info based on stuff being installed on the box
+# it should have a better check for the real version of trafficserver being used
+ts_path = GetOption("with_trafficserver")
+Part("#lib/trafficserver.part", PKG_PREFIX=ts_path, PKG_VERSION="10.0.0")
+
+path = GetOption("with_ssl")
+Part("#lib/openssl.part", CUSTOM_PATH=path)
+
+# The main build.
+Part("plugin/txn_box.part", package_group='txn_box')
+#Part("test/unit_tests/unit_tests.part")

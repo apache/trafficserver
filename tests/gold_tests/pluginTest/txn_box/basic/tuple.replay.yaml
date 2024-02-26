@@ -1,0 +1,79 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: proxy-req
+      do:
+        with: proxy-req-path
+        select:
+        - match: "1"
+          do:
+          - proxy-req-field<alpha>: "smoke"
+          - proxy-req-field<bravo>: [ "path" , { concat: [ "/" , "stuff" ]}]
+          - proxy-req-field<charlie>: [ "path/" , { concat: [ "/" , "stuff" ]}]
+        - match: "2"
+          do:
+          - var<delay>: "15 minutes"
+          - proxy-req-field<alpha>: hours<1>
+          - proxy-req-field<bravo>: [ hours<1>, minutes<30> ]
+          - proxy-req-field<charlie>: minutes<90>
+          - var<delta>: [ [ minutes<90>, var<delay> ] , { as-duration: } ]
+          - debug: "Delta is '{var<delta>}'"
+          - proxy-req-field<delta>: var<delta>
+          - proxy-req-field<echo>: [ [ hours<1>, minutes<30> ] , { as-duration: } ]
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ] # plain text sessions
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ alpha, { value: "smoke", as: equal } ]
+        - [ bravo, { value: "path/stuff", as: equal } ]
+        - [ charlie, { value: "path/stuff", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ alpha, { value: "1 h", as: equal } ]
+        - [ bravo, { value: [ "1 h", "30 m" ], as: equal } ]
+        - [ charlie, { value: "1 h 30 m", as: equal } ]
+        - [ delta, { value: "1 h 45 m", as: equal } ]
+        - [ echo, { value: "1 h 30 m", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

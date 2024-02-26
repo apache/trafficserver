@@ -257,7 +257,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   char *id                             = argv[0]; /* The ID is default to the "from" URL, so save it */
-  auto purge                           = malloc<PurgeInstance>();
+  auto purge                           = TSRalloc<PurgeInstance>();
   static const struct option longopt[] = {
     {(char *)"id",         required_argument, nullptr, 'i' },
     {(char *)"secret",     required_argument, nullptr, 's' },

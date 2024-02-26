@@ -47,6 +47,7 @@ from manpages import man_pages
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('ext'))
+sys.path.insert(0, os.path.abspath('ext/extras'))  # Non core extensions
 sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -68,8 +69,13 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
     'sphinxcontrib.jquery',
+    'sphinx.ext.extlinks',
     'traffic-server',
+    # extras
+    'txnbox'
 ]
+
+doxylink = {"txb": ('doxygen/txn_box.tag', 'src/')}
 
 # Contains values that are dependent on configure.ac.
 LOCAL_CONFIG = os.path.join(os.environ['PWD'], "ext", "local-config.py")

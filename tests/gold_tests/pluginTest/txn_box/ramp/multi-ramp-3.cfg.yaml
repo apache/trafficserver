@@ -1,0 +1,17 @@
+- with: [ random, pre-remap-path ]
+  select:
+  - any-of:
+    - as-tuple:
+      - lt: 30
+      - prefix: "v1/video/search/"
+    - as-tuple:
+      - lt: 30
+      - prefix: "v1/video/alias/"
+    - as-tuple:
+      - lt: 10
+      - prefix: "v1/video/channels/"
+    - as-tuple:
+      - lt: 100
+      - prefix: "v1/video/sub/"
+    do:
+    - ua-req-host: "stage.video.ex"

@@ -45,8 +45,6 @@ add_subdirectory(tcpinfo)
 add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
 
-# add_subdirectory(webp_transform)
-
 if(NOT OPENSSL_IS_BORINGSSL)
   add_subdirectory(ja3_fingerprint)
 endif()
@@ -61,4 +59,8 @@ endif()
 
 if(HOST_OS STREQUAL "linux")
   add_subdirectory(healthchecks)
+endif()
+
+if(USE_MAGICK)
+  add_subdirectory(webp_transform)
 endif()

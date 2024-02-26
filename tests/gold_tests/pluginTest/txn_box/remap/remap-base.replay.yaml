@@ -1,0 +1,242 @@
+meta:
+  version: "1.0"
+
+  # ATS annoyingly "fixes" the proxy request as it goes out.
+  # 1. The URL is stripped of any scheme / host / port.
+  # 2. Unless pristine host header is enabled, the location in the URL is moved to the "Host" field.
+  #    If pristine is set, then the port is not added (because that comes from the URL).
+  # Therefore have to do some silly things to actually check on the results.
+
+  txn_box:
+    remap-1:
+    - with: ua-req-field<uuid>
+      select:
+      - prefix: "switch"
+        do:
+        - ua-req-url-host:  "tls.remapped.ex"
+        - ua-req-url-port: [ env<PV_HTTPS_PORT> , { as-integer: 61010 } ]
+        - ua-req-scheme: "https"
+
+    remap-2:
+    - ua-req-url-host:  "alpha.remapped.ex"
+    - ua-req-host: "bravo.remapped.ex"
+    - var<remap>: ua-req-url # save this to reset the URL after remap
+    - when: proxy-req
+      do:
+      - proxy-req-url: var<remap>
+
+    remap-3:
+    - txn-conf<proxy.config.url_remap.pristine_host_hdr>: 1
+    - ua-req-host: "bravo.remapped.ex"
+    - ua-req-url-host:  "alpha.remapped.ex"
+    - ua-req-field<url>: ua-req-url # For verification.
+    - debug: "Remap 3 - url is {ua-req-url}, host is {ua-req-field<Host>}"
+
+    remap-4:
+    - ua-req-host: "charlie.remapped.ex"
+    - ua-req-field<url>: ua-req-url # For verification.
+    - debug: "Remap 4 - url is {ua-req-url}"
+
+    remap-5:
+    - when: proxy-req
+      do:
+      - proxy-req-field<remapped>: "true"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  #
+  - client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, 1.remap.ex ]
+        - [ uuid, "no-switch" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, 1.remapped.ex ]
+        - [ uuid, "no-switch" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "/path/stuff.html"
+      headers:
+        fields:
+        - [ Host, 1.remap.ex ]
+        - [ uuid, "switch-to-https" ]
+    proxy-request:
+      url: [ [ path, { value: "/stuff.html" , as: equal } ] ]
+      headers:
+        fields:
+        - [ Host, tls.remapped.ex ]
+        - [ uuid, "switch-to-https" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, 1.remap.ex ]
+        - [ uuid, "switch-2" ]
+    proxy-request:
+      url: [ [ path, { value: "/" , as: equal } ] ]
+      headers:
+        fields:
+        - [ Host, tls.remapped.ex ]
+        - [ uuid, "switch-2" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, 2.remap.ex ]
+        - [ uuid, "2-1" ]
+    proxy-request:
+      url:
+      - [ host, { value: "bravo.remapped.ex", as: equal } ]
+      headers:
+        fields:
+        - [ Host, { value: "bravo.remapped.ex:", as: prefix } ]
+        - [ uuid, "2-1" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "http://2.remap.ex/path"
+      headers:
+        fields:
+        - [ Host, 2.remap.ex ]
+        - [ uuid, "2-2" ]
+    proxy-request:
+      url:
+      - [ host, { value: "bravo.remapped.ex" , as: equal  } ]
+      headers:
+        fields:
+        - [ Host, { value: "bravo.remapped.ex:", as: prefix } ]
+        - [ uuid, "2-2" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, 3.remap.ex ]
+        - [ uuid, "3-1" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "bravo.remapped.ex", as: equal } ]
+        - [ URL, { value: "alpha.remapped.ex", as: contains }]
+        - [ uuid, "3-1" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "http://3.remap.ex/path"
+      headers:
+        fields:
+        - [ Host, 3.remap.ex ]
+        - [ uuid, "3-2" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "bravo.remapped.ex", as: equal } ]
+        - [ URL, { value: "alpha.remapped.ex", as: contains }]
+        - [ uuid, "3-2" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "/path"
+      headers:
+        fields:
+        - [ Host, 4.remap.ex ]
+        - [ uuid, "4-1" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "charlie.remapped.ex:" , as: prefix } ]
+        - [ URL, { value: "charlie.remapped.ex", as: contains }]
+        - [ uuid, "4-1" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "http://4.remap.ex/path"
+      headers:
+        fields:
+        - [ Host, 4.remap.ex ]
+        - [ uuid, "4-2" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, { value: "charlie.remapped.ex:" , as: prefix } ]
+        - [ URL, { value: "charlie.remapped.ex", as: contains }]
+        - [ uuid, "4-2" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - client-request:
+      <<: *base-req
+      url: "http://5.remap.ex/path"
+      headers:
+        fields:
+        - [ Host, 5.remap.ex ]
+        - [ uuid, "5-0" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ uuid, "5-0" ]
+        - [ remapped, { value: "true" , as: equal }]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

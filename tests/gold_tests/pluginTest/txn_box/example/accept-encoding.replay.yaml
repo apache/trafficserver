@@ -1,0 +1,62 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    # doc.start
+    - when: proxy-req
+      do:
+      - proxy-req-field<Accept-Encoding>: [ proxy-req-field<Accept-Encoding> , { else: "identity" } ]
+    # doc.end
+  blocks:
+
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+
+  - rsp: &rsp
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Accept-Encoding, { value: "identity", as: equal } ]
+    server-response:
+      <<: *rsp
+    proxy-response:
+      <<: *rsp
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ Accept-Encoding, "gzip" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Accept-Encoding, { value: "gzip", as: equal } ]
+    server-response:
+      <<: *rsp
+    proxy-response:
+      <<: *rsp
+

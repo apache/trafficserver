@@ -39,6 +39,7 @@
 #include "proxy/http3/Http3Transaction.h"
 #include "proxy/http3/Http3ProtocolEnforcer.h"
 #include "proxy/http3/Http3SettingsHandler.h"
+#include "proxy/http3/Http3SettingsFramer.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
@@ -96,7 +97,7 @@ Http3App::start()
 }
 
 void
-Http3App::on_new_stream(QUICStream &stream)
+Http3App::on_stream_open(QUICStream &stream)
 {
   auto ret   = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
@@ -120,6 +121,12 @@ Http3App::on_new_stream(QUICStream &stream)
   stream.set_io_adapter(&info.adapter);
 }
 
+void
+Http3App::on_stream_close(QUICStream &stream)
+{
+  this->_streams.erase(stream.id());
+}
+
 int
 Http3App::main_event_handler(int event, Event *data)
 {
@@ -137,7 +144,16 @@ Http3App::main_event_handler(int event, Event *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    adapter->clear_read_ready_event(data);
+    if (is_bidirectional) {
+      this->_handle_bidi_stream_on_read_ready(event, vio);
+    } else {
+      this->_handle_uni_stream_on_read_ready(event, vio);
+    }
+    break;
   case VC_EVENT_READ_COMPLETE:
+    adapter->clear_read_complete_event(data);
+    // Calling read_ready handlers because there's no need to do different things
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_read_ready(event, vio);
     } else {
@@ -145,6 +161,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_WRITE_READY:
+    adapter->clear_write_ready_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_write_ready(event, vio);
     } else {
@@ -152,6 +169,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_WRITE_COMPLETE:
+    adapter->clear_write_complete_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_write_complete(event, vio);
     } else {
@@ -159,6 +177,7 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_EOS:
+    adapter->clear_eos_event(data);
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_eos(event, vio);
     } else {
@@ -422,50 +441,4 @@ Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
   }
   // FIXME There may be data to read
   this->_qc->stream_manager()->delete_stream(stream_id);
-  this->_streams.erase(stream_id);
-}
-
-//
-// SETTINGS frame framer
-//
-Http3FrameUPtr
-Http3SettingsFramer::generate_frame()
-{
-  if (this->_is_sent) {
-    return Http3FrameFactory::create_null_frame();
-  }
-
-  this->_is_sent = true;
-
-  ts::Http3Config::scoped_config params;
-
-  Http3SettingsFrame *frame = http3SettingsFrameAllocator.alloc();
-  new (frame) Http3SettingsFrame();
-
-  if (params->header_table_size() != HTTP3_DEFAULT_HEADER_TABLE_SIZE) {
-    frame->set(Http3SettingsId::HEADER_TABLE_SIZE, params->header_table_size());
-  }
-
-  if (params->max_field_section_size() != HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE) {
-    frame->set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, params->max_field_section_size());
-  }
-
-  if (params->qpack_blocked_streams() != HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS) {
-    frame->set(Http3SettingsId::QPACK_BLOCKED_STREAMS, params->qpack_blocked_streams());
-  }
-
-  // Server side only
-  if (this->_context == NET_VCONNECTION_IN) {
-    if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
-      frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
-    }
-  }
-
-  return Http3SettingsFrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
-}
-
-bool
-Http3SettingsFramer::is_done() const
-{
-  return this->_is_done;
 }

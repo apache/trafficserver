@@ -1,0 +1,110 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    global:
+    - when: ua-req
+      do:
+      - with: ua-req-field<origin>
+        select:
+        - any-of:
+          - match: "https://alpha.ex"
+          - match: "https://bravo.ex"
+          - match: "https://charlie.ex"
+          - match: "https://delta.ex"
+          do:
+          - var<cors>: ... # must preserve value for later hook.
+          - debug: "Prepping CORS as {var<cors>}"
+          - when: proxy-rsp
+            do:
+            - debug: "Setting CORS as {var<cors>}"
+            - proxy-rsp-field<CORS>: var<cors>
+          # fall through - none of the valid referrer hosts.
+      - proxy-reply:
+          status: 401
+          reason: "Nice try bozo"
+          body: "No API goodness for you, faker!"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, alpha ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Origin, "https://alpha.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "CORS", { value: "https://alpha.ex", as: equal }]
+
+  # no origin
+  - all: { headers: { fields: [[ uuid, no-origin ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  # no origin
+  - all: { headers: { fields: [[ uuid, invalid-host ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Origin, "https://echo.ex" ]
+    proxy-request:
+        <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, delta ]]}}
+    client-request:
+      <<: *base-req
+      url: "/"
+      headers:
+        fields:
+        - [ Host, api.ex ]
+        - [ Origin, "https://delta.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "CORS", { value: "https://delta.ex", as: equal }]
+

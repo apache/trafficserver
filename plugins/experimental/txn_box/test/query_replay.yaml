@@ -1,0 +1,202 @@
+meta:
+  version: "1.0"
+
+config:
+  ts:
+    remap:
+    - target: http://example.one
+      result: http://example.one
+      plugin:
+        name: "txn_box.so"
+        args:
+        - query_replay.yaml
+        - config.ts.txn_box
+
+    - target: http://example.two
+      result: http://example.two
+      plugin:
+        name: "txn_box.so"
+        args:
+        - query_replay.yaml
+        - config.ts.txn_box_remove_query
+        -
+    - target: http://example.three
+      result: http://example.three
+
+    txn_box:
+      with: creq-field.uuid
+      select:
+      - match: "2"
+        do:
+        - remap-query: ""
+        - txn-conf.proxy.config.http.global_user_agent_header: "YahooCacheSystem"
+
+    txn_box_remove_query:
+    - remap-query: ""
+    - creq-field-default.X-CDN: "YCS-Tumblr"
+    - txn-conf.proxy.config.http.global_user_agent_header: "YahooCacheSystem"
+    - txn-conf.proxy.config.http.cache.required_headers: 1
+    - txn-conf.proxy.config.url_remap.pristine_host_hdr: disable
+    - txn-conf.proxy.config.http.negative_caching_enabled: enable
+    - cache-key: "/{creq-host}/{creq-path}"
+
+  blocks:
+    base_request: &base_request
+      version: "1.1"
+      scheme: "http"
+      method: "GET"
+
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+  - client-request:
+      <<: *base_request
+      url: "http://example.one/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 1 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.one/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 1 ]
+    server-response: &std-response
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 1 ]
+    proxy-response: &std-response
+      status: 200
+      reason: OK
+      content:
+        size: 234
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 1 ]
+
+  - client-request:
+      <<: *base_request
+      url: "http://example.one/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 2 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.one/"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 2 ]
+    server-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 2 ]
+    proxy-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 2 ]
+        -
+  - client-request:
+      <<: *base_request
+      url: "http://example.two/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.two ]
+        - [ uuid, 3 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.two/"
+      headers:
+        fields:
+        - [ Host, example.two ]
+        - [ uuid, 3 ]
+    server-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 3 ]
+    proxy-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 3 ]
+
+  - client-request:
+      <<: *base_request
+      url: "http://example.two/"
+      headers:
+        fields:
+        - [ Host, example.two ]
+        - [ uuid, 4 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.two/"
+      headers:
+        fields:
+        - [ Host, example.two ]
+        - [ uuid, 4 ]
+    server-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 4 ]
+    proxy-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 4 ]
+        -
+  - client-request:
+      <<: *base_request
+      url: "http://example.three/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.three ]
+        - [ uuid, 5 ]
+    proxy-request:
+      <<: *base_request
+      url: "http://example.three/?alpha=itchi&bravo=ni&charlie&delta=san"
+      headers:
+        fields:
+        - [ Host, example.three ]
+        - [ uuid, 5 ]
+    server-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 5 ]
+    proxy-response:
+      <<: *std-response
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 5 ]

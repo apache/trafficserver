@@ -43,7 +43,7 @@ TEST_CASE("esi processor test")
   Variables esi_vars(&dummy, allowlistCookies);
   HandlerManager handler_mgr;
   TestHttpDataFetcher data_fetcher;
-  EsiProcessor esi_proc(&dummy, data_fetcher, esi_vars, handler_mgr);
+  EsiProcessor esi_proc(&dummy, data_fetcher, esi_vars, handler_mgr, 1024 * 1024);
 
   SECTION("call sequence")
   {
@@ -847,7 +847,7 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 1")
   {
-    EsiParser parser;
+    EsiParser parser{1024 * 1024};
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"
@@ -896,7 +896,7 @@ TEST_CASE("esi processor test")
   {
     string input_data("<esi:comment text=\"bleh\"/>");
 
-    EsiParser parser;
+    EsiParser parser{1024 * 1024};
     DocNodeList node_list;
     string input_data2("<esi:try>"
                        "<esi:attempt>"
@@ -951,7 +951,7 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 3")
   {
-    EsiParser parser;
+    EsiParser parser{1024 * 1024};
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"
@@ -970,7 +970,7 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 4")
   {
-    EsiParser parser;
+    EsiParser parser{1024 * 1024};
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"

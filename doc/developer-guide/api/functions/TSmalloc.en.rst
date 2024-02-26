@@ -32,7 +32,7 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: void * TSmalloc(size_t size)
-.. cpp:function:: template <typename T> T * malloc(size_t count = 1)
+.. cpp:function:: template <typename T> T * TSRalloc(size_t count = 1)
 .. function:: void * TSrealloc(void * ptr , size_t size)
 .. function:: char * TSstrdup(const char * str)
 .. function:: char * TSstrndup(const char * str, size_t size)
@@ -59,11 +59,11 @@ heap. Traffic Server uses :func:`TSmalloc` internally for memory allocations.
 Always use :func:`TSfree` to release memory allocated by :func:`TSmalloc`; do not use
 :code:`free`.
 
-**malloc()**, which is in the :code:`tsapi` namespace, returns a pointer, of type :code:`T *`,
+**TSRalloc()** returns a pointer, of type :code:`T *`,
 to allocated memory with enough bytes to hold an array of :code:`count` (default value
-of :code;`1`) instances of :code:`T`.  No constructor of :code:`T` is called for the
-array elements.  This function in turn calls :func:`TSmalloc`, so the memory it allocates
-should be released by calling :func:`TSfree`.
+of :code;`1`) instances of :code:`T`.  The memory is "raw", no constructor of :code:`T`
+is called for the array elements.  This function in turn calls :func:`TSmalloc`, so the
+memory it allocates should be released by calling :func:`TSfree`.
 
 :func:`TSstrdup` returns a pointer to a new string that is a duplicate of the
 string pointed to by str. The memory for the new string is allocated using

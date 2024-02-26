@@ -345,6 +345,19 @@ HQTransaction::_close_write_complete_event(Event *e)
   }
 }
 
+void
+HQTransaction::_signal_event(int event)
+{
+  if (this->_write_vio.cont) {
+    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+    this->_write_vio.cont->handleEvent(event);
+  }
+  if (this->_read_vio.cont && this->_read_vio.cont != this->_write_vio.cont) {
+    SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+    this->_read_vio.cont->handleEvent(event);
+  }
+}
+
 /**
  * @brief Signal event to this->_read_vio.cont
  */
@@ -490,6 +503,7 @@ Http3Transaction::state_stream_open(int event, Event *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_signal_event(event);
     break;
   }
   default:
@@ -603,8 +617,8 @@ Http3Transaction::_process_write_vio()
 bool
 Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
 {
-  // Has body if Content-Length != 0
-  if (content_length != 0) {
+  // Has body if Content-Length != 0 (content_length can be -1 if it's undefined)
+  if (content_length > 0) {
     return true;
   }
 
@@ -614,10 +628,9 @@ Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) 
   }
 
   // No body if stream is already closed and DATA frame is not received yet
-  // TODO stream state
-  // if () {
-  //   return false;
-  // }
+  if (this->_info.adapter.stream().has_no_more_data()) {
+    return false;
+  }
 
   // No body if trailing header is received and DATA frame is not received yet
   // TODO trailing header

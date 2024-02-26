@@ -333,7 +333,7 @@ TSPluginInit(int argc, const char *argv[])
 
     url_redirect = TSstrdup(argv[2]);
     int uri_len  = strlen(prefix) + strlen(url_redirect) + 1;
-    uri_redirect = malloc<char>(uri_len);
+    uri_redirect = TSRalloc<char>(uri_len);
     TSstrlcpy(uri_redirect, prefix, uri_len);
     TSstrlcat(uri_redirect, url_redirect, uri_len);
 

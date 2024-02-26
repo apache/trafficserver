@@ -19,18 +19,11 @@
 
 .. _developer-plugins-getting-started-naming:
 
-Naming/namespace Conventions
-****************************
+Naming Conventions
+******************
 
 The Traffic Server API adheres to the following naming conventions:
 
--  Unless otherwise noted, all C++ declarations provided by the API are in
-   the ``tsapi::c`` namspace.  However, there are ``using namespace tsapi::c``
-   directives in the appropriate API header files, so explicit use of this
-   namespace is generally unnecessary. (The ``c`` sub-namespace is used because
-   the design of the API reflects the fact that it was originally a straight
-   C API.  As new declarations, designed to use C++ features, are added to the
-   API, they will be placed directly in the ``tsapi`` namespace.)
 -  The ``TS`` prefix is used for all function and variable names defined
    in the Traffic Server API. **Examples**:
    ``TS_EVENT_NONE``,\ ``TSMutex``, and ``TSContCreate``

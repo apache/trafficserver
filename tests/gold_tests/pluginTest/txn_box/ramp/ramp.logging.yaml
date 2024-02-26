@@ -1,0 +1,9 @@
+logging:
+  formats:
+  - name: ramp
+    format: '%<cqu>'
+
+  logs:
+  - filename: ramp
+    format: ramp
+    mode: ascii

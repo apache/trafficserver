@@ -1,0 +1,228 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    alpha:
+    - when: proxy-req
+      do:
+      # doc-concat-empty-<
+      - proxy-req-field<bands>:
+        - proxy-req-field<bands>
+        - concat: [ ",", "Delain" ]
+      # doc-concat-empty->
+    - when: proxy-req
+      do:
+      # doc-url-encode-<
+      - with: proxy-req-field<comets>
+        select:
+        - is-null: # field not present.
+        - do:
+          # encode it.
+          - proxy-req-field<comets>: [ proxy-req-field<comets>, { url-encode: } ]
+      # doc-url-encode->
+    - when: proxy-req
+      do:
+      # doc-url-decode-<
+      - with: proxy-req-field<comets-encoded>
+        select:
+        - is-null: # field not present.
+        - do:
+          # decode it.
+          - proxy-req-field<comets-decoded>: [ proxy-req-field<comets-encoded>, { url-decode: } ]
+      # doc-url-decode->
+
+    bravo:
+    - ua-req-field<Bands>:
+      - ua-req-field<Bands>
+      - rxp-replace:
+        - "Nightwish"
+        - "Delain"
+
+    charlie:
+    - ua-req-field<Bands>:
+      - ua-req-field<Bands>
+      - rxp-replace:
+        - "([[:alnum:]]+),([[:alnum:]]+)"
+        - "{2};{1}"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  ## Checks for the concat modifier.
+  # Separator is dropped if the initial value is empty
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "alpha.ex" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Delain", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  # Separator is added if the field is not empty.
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "alpha.ex" ]
+        - [ bands, "Nightwish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Nightwish,Delain", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  # Separator is not doubled
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "alpha.ex" ]
+        - [ bands, "Nightwish," ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Nightwish,Delain", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  # Check against existing separator not at the end.
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "alpha.ex" ]
+        - [ bands, "Nightwish,Within Temptation" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Nightwish,Within Temptation,Delain", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  # percent encode on a particular field.
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, alpha.ex ]
+        - [ comets, "1P/Halley, 21P/Giacobini-Zinner, 103P/Hartley" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ comets,   { value: "1P%2FHalley%2C%2021P%2FGiacobini-Zinner%2C%20103P%2FHartley", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  # Decode a cookie
+  - all: { headers: { fields: [[ uuid, 6 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, alpha.ex ]
+        - [ comets-encoded, "1P%2FHalley%2C%2021P%2FGiacobini-Zinner%2C%20103P%2FHartley" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ comets-decoded, { value: "1P/Halley, 21P/Giacobini-Zinner, 103P/Hartley", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+- protocol: [ { name: ip, version : 4} ]
+  transactions:
+
+  ## Checks for regular expression modifier.
+  - all: { headers: { fields: [[ uuid, rxp-basic ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "bravo.ex" ]
+        - [ bands, "Nightwish,Within Temptation" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Delain,Within Temptation", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, rxp-basic-miss ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "bravo.ex" ]
+        - [ bands, "Xandria,Within Temptation" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Xandria,Within Temptation", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, rxp-swap ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain/albums"
+      headers:
+        fields:
+        - [ Host, "charlie.ex" ]
+        - [ bands, "Nightwish,Delain" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ bands,   { value: "Delain;Nightwish", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp

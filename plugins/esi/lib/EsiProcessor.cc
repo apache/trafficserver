@@ -42,9 +42,10 @@ DbgCtl dbg_ctl{"plugin_esi_procesor"};
 //
 #define DBG(FMT, ...) Dbg(dbg_ctl, FMT " contp=%p", ##__VA_ARGS__, _cont_addr)
 
-EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr)
+EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr,
+                           unsigned max_doc_size)
   : _curr_state(STOPPED),
-    _parser(),
+    _parser(max_doc_size),
     _n_prescanned_nodes(0),
     _n_processed_nodes(0),
     _n_processed_try_nodes(0),

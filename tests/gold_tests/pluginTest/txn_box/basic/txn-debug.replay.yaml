@@ -1,0 +1,54 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - debug: "ua-req" # make sure we're looking for messages in the right spot.
+      - with: ua-req-host
+        select:
+        - match: "host.wanting.debug.com"
+          do:
+          - txn-debug: true
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- transactions:
+
+  - client-request:
+      <<: *base-req
+      url: "/some/path"
+      headers:
+        fields:
+        - [ Host, host.wanting.debug.com ]
+        - [ uuid, "debug-expected" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base-req
+      url: "/some/path"
+      headers:
+        fields:
+        - [ Host, no.debug.com ]
+        - [ uuid, "debug-not-expected" ]
+    server-response:
+      <<: *base-rsp
+      status: 200
