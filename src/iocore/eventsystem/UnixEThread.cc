@@ -32,6 +32,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 #include "P_EventSystem.h"
+#include "iocore/eventsystem/Lock.h"
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -328,9 +329,10 @@ EThread::execute()
   // Do the start event first.
   // coverity[lock]
   if (start_event) {
-    MUTEX_TAKE_LOCK_FOR(start_event->mutex, this, start_event->continuation);
-    start_event->continuation->handleEvent(EVENT_IMMEDIATE, start_event);
-    MUTEX_UNTAKE_LOCK(start_event->mutex, this);
+    {
+      SCOPED_MUTEX_LOCK(lock, start_event->mutex, this);
+      start_event->continuation->handleEvent(EVENT_IMMEDIATE, start_event);
+    }
     free_event(start_event);
     start_event = nullptr;
   }
