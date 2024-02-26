@@ -111,11 +111,9 @@
 #endif
 
 #ifdef DEBUG
-#define MUTEX_TAKE_LOCK(_m, _t)         Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(MakeSourceLocation(), nullptr, _m, _t)
+#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
 #else
-#define MUTEX_TAKE_LOCK(_m, _t)         Mutex_lock(_m, _t)
-#define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(_m, _t)
+#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(_m, _t)
 #endif // DEBUG
 
 #define MUTEX_UNTAKE_LOCK(_m, _t) Mutex_unlock(_m, _t)
