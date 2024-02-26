@@ -64,7 +64,5 @@ tr.Processes.Default.ReturnCode = 0
 # Give tests up to 10 seconds to complete.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    "N=10 ; while [ $$N -gt 0 ] ; do " + "if [ ! -f " + InProgressFilePathspec +
-    " ] ; then exit 0 ; fi ; sleep 1 ; N=$$(( N-1 )) ; " + "done ; echo 'TIMEOUT' ; exit 1")
+tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 15 1 -f ' + InProgressFilePathspec)
 tr.Processes.Default.ReturnCode = 0
