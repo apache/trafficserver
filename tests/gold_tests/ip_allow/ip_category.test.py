@@ -20,6 +20,8 @@ Verify IP allow ip_category behavior.
 import os
 import re
 
+from typing import List
+
 Test.Summary = '''
 Verify IP allow ip_category behavior.
 '''
@@ -28,7 +30,7 @@ Verify IP allow ip_category behavior.
 class CategoryFile:
     """Encapsulate the various ip_category.yaml contents."""
 
-    contents: list['CategoryFile'] = []
+    contents: List['CategoryFile'] = []
     parent_directory: str = Test.RunDirectory
     _index: int = 0
 
@@ -126,7 +128,7 @@ class Test_ip_category:
 
     def __init__(
             self, name: str, replay_file: str, ip_allow_config: str, ip_category_config: 'CategoryFile', acl_configuration: str,
-            expected_responses: list[int]):
+            expected_responses: List[int]):
         """Initialize the test.
 
         :param name: The name of the test.
