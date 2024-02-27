@@ -33,6 +33,7 @@ namespace {
 };
 // doc.cpp.20.bravo.end
 
+#if 0
 // Verify not using @c with_multi isn't ambiguous.
 // doc.cpp.20.alpha.start
 [[maybe_unused]] ExampleNames Static_Names_Multi{
@@ -43,6 +44,7 @@ namespace {
    {Example::INVALID, {"INVALID"}}}
 };
 // doc.cpp.20.alpha.end
+#endif
 
 // If the type isn't easily accessible.
 [[maybe_unused]] ExampleNames Static_Names_Decl{

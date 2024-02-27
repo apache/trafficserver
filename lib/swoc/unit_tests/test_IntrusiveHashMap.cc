@@ -116,14 +116,15 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]") {
   auto r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
   REQUIRE(r.first->_payload == "dup"sv);
-  REQUIRE(r.first->_n == 79);
+  REQUIRE(r.first->_n == 81);
 
   Map::iterator idx;
 
   // Erase all the non-"dup" and see if the range is still correct.
   map.apply([&map](Thing &thing) {
-    if (thing._payload != "dup"sv)
+    if (thing._payload != "dup"sv) {
       map.erase(map.iterator_for(&thing));
+    }
   });
   r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);

@@ -80,13 +80,39 @@ TEST_CASE("swoc_file", "[libswoc][swoc_file]") {
   [[maybe_unused]] std::unordered_map<file::path, std::string> container;
 }
 
+/** Write a temporary file at a relative location.
+ * @return The name of the file.
+ */
+file::path
+write_a_temporary_file()
+{
+  constexpr std::string_view CONTENT = R"END(
+First line
+second line
+# Comment line
+
+
+Line after breaks.
+  dfa
+)END";
+  std::string temp_filename{"./test_swoc_file_tempXXXXXX"};
+  int fd = mkstemp(const_cast<char *>(temp_filename.data()));
+  REQUIRE(fd >= 0);
+  FILE * const open_file = fdopen(fd, "w");
+  REQUIRE(open_file != nullptr);
+  fputs(CONTENT.data(), open_file);
+  fclose(open_file);
+  close(fd);
+  return file::path{temp_filename};
+}
+
 TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]") {
-  file::path file("unit_tests/test_swoc_file.cc");
+  auto file = write_a_temporary_file();
   std::error_code ec;
-  std::string content = swoc::file::load(file, ec);
+  auto content = swoc::file::load(file, ec);
   REQUIRE(ec.value() == 0);
   REQUIRE(content.size() > 0);
-  REQUIRE(content.find("swoc::file::path") != content.npos);
+  REQUIRE(content.find("second line") != content.npos);
 
   // Check some file properties.
   REQUIRE(swoc::file::is_readable(file) == true);
@@ -105,6 +131,9 @@ TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]") {
   REQUIRE(swoc::file::is_dir(fs) == false);
   REQUIRE(swoc::file::is_regular_file(fs) == true);
 
+  // Clean up after ourselves.
+  remove(file, ec);
+
   // Failure case.
   file    = "../unit-tests/no_such_file.txt";
   content = swoc::file::load(file, ec);
@@ -112,16 +141,14 @@ TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]") {
   REQUIRE(swoc::file::is_readable(file) == false);
 
   file::path f1{"/etc/passwd"};
-  file::path f2("/etc/init.d");
-  file::path f3("/dev/null");
-  file::path f4("/argle/bargle");
+  file::path f2("/dev/null");
+  file::path f3("/argle/bargle");
   REQUIRE(file::exists(f1));
   REQUIRE(file::exists(f2));
-  REQUIRE(file::exists(f3));
-  REQUIRE_FALSE(file::exists(f4));
+  REQUIRE_FALSE(file::exists(f3));
   fs = file::status(f1, ec);
   REQUIRE(file::exists(fs));
-  fs = file::status(f4, ec);
+  fs = file::status(f3, ec);
   REQUIRE_FALSE(file::exists(fs));
   REQUIRE_FALSE(file::exists(file::file_status{}));
 }

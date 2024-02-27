@@ -9,6 +9,7 @@
 
 #include <set>
 #include <iostream>
+#include <type_traits>
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
@@ -1239,11 +1240,11 @@ TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
   auto const &cspace = space;
   if (auto [r, p] = *(cspace.find(a1)); !r.empty()) {
     Thing const &cp = p;
-    static_assert(std::is_const_v<typeof(cp)>, "Payload was expected to be const.");
+    static_assert(std::is_const_v<typename std::remove_reference<decltype(cp)>::type>, "Payload was expected to be const.");
     REQUIRE(false); // Checking this syntax doesn't copy the payload.
   }
   if (auto [r, p] = *(cspace.find(a1)); !r.empty()) {
-    static_assert(std::is_const_v<typeof(p)>, "Payload was expected to be const.");
+    static_assert(std::is_const_v<typename std::remove_reference<decltype(p)>::type>, "Payload was expected to be const.");
     REQUIRE(false); // Checking this syntax doesn't copy the payload.
   }
 
