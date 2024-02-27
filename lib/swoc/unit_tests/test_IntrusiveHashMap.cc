@@ -19,6 +19,7 @@
 */
 
 #include <iostream>
+#include <iterator>
 #include <string_view>
 #include <string>
 #include <bitset>
@@ -110,21 +111,55 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]") {
   marks[0] = 1;
   REQUIRE(marks.all());
   map.insert(new Thing("dup"sv, 79));
+
+  // Test equal_range with a single value.
+  auto r = map.equal_range("dup"sv);
+  auto reverse_it = std::make_reverse_iterator(r.end());
+  auto end = std::make_reverse_iterator(r.begin());
+  REQUIRE(reverse_it != end);
+  REQUIRE(reverse_it->_payload == "dup"sv);
+  REQUIRE(reverse_it->_n == 79);
+  REQUIRE((++reverse_it) == end);
+
+  // Add more values for equal_range to interact with.
   map.insert(new Thing("dup"sv, 80));
   map.insert(new Thing("dup"sv, 81));
 
-  auto r = map.equal_range("dup"sv);
+  r = map.equal_range("dup"sv);
+  REQUIRE(r.begin()->_payload == "dup"sv);
+  REQUIRE(r.begin()->_n == 79);
   REQUIRE(r.first != r.second);
-  REQUIRE(r.first->_payload == "dup"sv);
-  REQUIRE(r.first->_n == 81);
+  REQUIRE(r.first == r.begin());
+  REQUIRE(r.second == r.end());
+
+  // Verify the range is correct and that accessing them one at a time works in
+  // FIFO order.
+  auto iter = r.begin();
+  REQUIRE(iter->_payload == "dup"sv);
+  REQUIRE(iter->_n == 79);
+  REQUIRE((++iter)->_payload == "dup"sv);
+  REQUIRE(iter->_n == 80);
+  REQUIRE((++iter)->_payload == "dup"sv);
+  REQUIRE(iter->_n == 81);
+  REQUIRE((++iter) == r.end());
+
+  // Verify you can walk backwards, accessing the elements in a LIFO order.
+  reverse_it = std::make_reverse_iterator(r.end());
+  end = std::make_reverse_iterator(r.begin());
+  REQUIRE(reverse_it->_payload == "dup"sv);
+  REQUIRE(reverse_it->_n == 81);
+  REQUIRE((++reverse_it)->_payload == "dup"sv);
+  REQUIRE(reverse_it->_n == 80);
+  REQUIRE((++reverse_it)->_payload == "dup"sv);
+  REQUIRE(reverse_it->_n == 79);
+  REQUIRE((++reverse_it) == end);
 
   Map::iterator idx;
 
   // Erase all the non-"dup" and see if the range is still correct.
   map.apply([&map](Thing &thing) {
-    if (thing._payload != "dup"sv) {
+    if (thing._payload != "dup"sv)
       map.erase(map.iterator_for(&thing));
-    }
   });
   r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
@@ -138,6 +173,14 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]") {
   REQUIRE(idx->_n != r.first->_n);
   REQUIRE(idx->_n == 81);
   REQUIRE(++idx == map.end());
+
+  // Now verify we can go backwards.
+  REQUIRE((--idx)->_payload == "dup"sv);
+  REQUIRE(idx->_n != r.first->_n);
+  REQUIRE(idx->_n == 81);
+  REQUIRE((--idx)->_payload == "dup"sv);
+  REQUIRE(idx->_n != r.first->_n);
+  REQUIRE(idx->_n == 80);
   // Verify only the "dup" items are left.
   for (auto &&elt : map) {
     REQUIRE(elt._payload == "dup"sv);
