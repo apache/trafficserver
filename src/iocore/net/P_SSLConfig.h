@@ -60,12 +60,6 @@ using init_ssl_ctx_func  = void (*)(void *, bool);
 using load_ssl_file_func = void (*)(const char *);
 
 struct SSLConfigParams : public ConfigInfo {
-  enum SSL_SESSION_CACHE_MODE {
-    SSL_SESSION_CACHE_MODE_OFF                 = 0,
-    SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL = 1,
-    SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL     = 2
-  };
-
   SSLConfigParams();
   ~SSLConfigParams() override;
 
@@ -83,12 +77,6 @@ struct SSLConfigParams : public ConfigInfo {
   int verify_depth;
   int ssl_origin_session_cache;
   int ssl_origin_session_cache_size;
-  int ssl_session_cache; // SSL_SESSION_CACHE_MODE
-  int ssl_session_cache_size;
-  int ssl_session_cache_num_buckets;
-  int ssl_session_cache_skip_on_contention;
-  int ssl_session_cache_timeout;
-  int ssl_session_cache_auto_clear;
 
   char *clientCertPath;
   char *clientCertPathOnly;
@@ -139,9 +127,6 @@ struct SSLConfigParams : public ConfigInfo {
 
   static int origin_session_cache;
   static size_t origin_session_cache_size;
-  static size_t session_cache_number_buckets;
-  static size_t session_cache_max_bucket_size;
-  static bool session_cache_skip_on_lock_contention;
 
   static swoc::IPRangeSet *proxy_protocol_ip_addrs;
 
@@ -263,5 +248,4 @@ private:
   static int configid;
 };
 
-extern SSLSessionCache *session_cache;
 extern SSLOriginSessionCache *origin_sess_cache;

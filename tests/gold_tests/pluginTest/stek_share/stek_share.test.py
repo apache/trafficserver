@@ -164,10 +164,6 @@ ts1.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
-        'proxy.config.ssl.session_cache.value': 2,
-        'proxy.config.ssl.session_cache.size': 1024,
-        'proxy.config.ssl.session_cache.timeout': 7200,
-        'proxy.config.ssl.session_cache.num_buckets': 16,
         'proxy.config.ssl.server.session_ticket.enable': 1,
         'proxy.config.ssl.server.cipher_suite':
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
@@ -184,10 +180,6 @@ ts2.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
-        'proxy.config.ssl.session_cache.value': 2,
-        'proxy.config.ssl.session_cache.size': 1024,
-        'proxy.config.ssl.session_cache.timeout': 7200,
-        'proxy.config.ssl.session_cache.num_buckets': 16,
         'proxy.config.ssl.server.session_ticket.enable': 1,
         'proxy.config.ssl.server.cipher_suite':
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
@@ -204,10 +196,6 @@ ts3.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
-        'proxy.config.ssl.session_cache.value': 2,
-        'proxy.config.ssl.session_cache.size': 1024,
-        'proxy.config.ssl.session_cache.timeout': 7200,
-        'proxy.config.ssl.session_cache.num_buckets': 16,
         'proxy.config.ssl.server.session_ticket.enable': 1,
         'proxy.config.ssl.server.cipher_suite':
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
@@ -224,10 +212,6 @@ ts4.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
-        'proxy.config.ssl.session_cache.value': 2,
-        'proxy.config.ssl.session_cache.size': 1024,
-        'proxy.config.ssl.session_cache.timeout': 7200,
-        'proxy.config.ssl.session_cache.num_buckets': 16,
         'proxy.config.ssl.server.session_ticket.enable': 1,
         'proxy.config.ssl.server.cipher_suite':
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
@@ -244,10 +228,6 @@ ts5.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
-        'proxy.config.ssl.session_cache.value': 2,
-        'proxy.config.ssl.session_cache.size': 1024,
-        'proxy.config.ssl.session_cache.timeout': 7200,
-        'proxy.config.ssl.session_cache.num_buckets': 16,
         'proxy.config.ssl.server.session_ticket.enable': 1,
         'proxy.config.ssl.server.cipher_suite':
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'

@@ -1367,11 +1367,6 @@ int TSVConnIsSsl(TSVConn sslp);
 int TSVConnProvidedSslCert(TSVConn sslp);
 const char *TSVConnSslSniGet(TSVConn sslp, int *length);
 
-TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
-int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
-TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
-TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
-
 /* --------------------------------------------------------------------------
    HTTP transactions */
 void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
