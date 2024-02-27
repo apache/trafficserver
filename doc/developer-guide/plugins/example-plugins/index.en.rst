@@ -49,7 +49,7 @@ understand the following topics:
 
 The two sample plugins discussed in this chapter are ``denylist_1.cc``
 and ``basic_auth.cc``. To make this two plugins available, you must enable experimental plugins when
-building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
+building |TS| by passing the ``-DENABLE_EXAMPLE=ON`` to the ``cmake`` command
 when building.
 
 when :ref:`setting the build configuration <admin-configuration-options>` for |TS|.
