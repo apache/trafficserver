@@ -68,27 +68,59 @@ Http3Frame::type(const uint8_t *buf, size_t buf_len)
 // Generic Frame
 //
 
-Http3Frame::Http3Frame(const uint8_t *buf, size_t buf_len)
+Http3Frame::Http3Frame(IOBufferReader &reader) : _reader(&reader)
 {
+  // Type field and Length field are variable-length integers, which can be 64 bits for each.
+  // 16 bytes (128 bits) is large enough to contain the two fields.
+  constexpr int MAX_HEADER_SIZE = 16;
+  uint8_t       header[MAX_HEADER_SIZE];
+  uint8_t      *p          = reinterpret_cast<uint8_t *>(reader.memcpy(header, MAX_HEADER_SIZE));
+  uint64_t      header_len = p - header;
+
   // Type
   size_t   type_field_length = 0;
   uint64_t type              = 0;
   // Ideally we'd simply pass this->_type to decode, but arm compilers complain with:
   // error: dereferencing type-punned pointer will break strict-aliasing rules
-  int ret     = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
+  int ret = QUICVariableInt::decode(type, type_field_length, header, header_len);
+  if (ret != 0) {
+    this->_is_valid = false;
+    return;
+  }
   this->_type = static_cast<Http3FrameType>(type);
-  ink_assert(ret != 1);
+
+  // Check if we can proceed to read Length field
+  if (header_len <= type_field_length) {
+    this->_is_valid = false;
+    return;
+  }
 
   // Length
   size_t length_field_length = 0;
-  ret = QUICVariableInt::decode(this->_length, length_field_length, buf + type_field_length, buf_len - type_field_length);
-  ink_assert(ret != 1);
+  ret = QUICVariableInt::decode(this->_length, length_field_length, header + type_field_length, header_len - type_field_length);
+  if (ret != 0) {
+    this->_is_valid = false;
+    return;
+  }
 
-  // Payload offset
-  this->_payload_offset = type_field_length + length_field_length;
+  // Rest of the data is Frame Payload
+  this->_reader->consume(type_field_length + length_field_length);
 }
 
 Http3Frame::Http3Frame(Http3FrameType type) : _type(type) {}
+
+Http3Frame::~Http3Frame()
+{
+  if (this->_reader) {
+    this->_reader->dealloc();
+  }
+}
+
+bool
+Http3Frame::is_valid() const
+{
+  return this->_is_valid;
+}
 
 uint64_t
 Http3Frame::total_length() const
@@ -112,6 +144,22 @@ Http3Frame::type() const
   }
 }
 
+bool
+Http3Frame::update()
+{
+  if (!this->_is_ready) {
+    this->_is_ready = this->_parse();
+  }
+
+  return this->_is_ready;
+}
+
+bool
+Http3Frame::_parse()
+{
+  return true;
+}
+
 Ptr<IOBufferBlock>
 Http3Frame::to_io_buffer_block() const
 {
@@ -120,16 +168,16 @@ Http3Frame::to_io_buffer_block() const
 }
 
 void
-Http3Frame::reset(const uint8_t *buf, size_t len)
+Http3Frame::reset(IOBufferReader &reader)
 {
   this->~Http3Frame();
-  new (this) Http3Frame(buf, len);
+  new (this) Http3Frame(reader);
 }
 
 //
 // UNKNOWN Frame
 //
-Http3UnknownFrame::Http3UnknownFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len), _buf(buf), _buf_len(buf_len) {}
+Http3UnknownFrame::Http3UnknownFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
 Ptr<IOBufferBlock>
 Http3UnknownFrame::to_io_buffer_block() const
@@ -150,11 +198,7 @@ Http3UnknownFrame::to_io_buffer_block() const
 //
 // DATA Frame
 //
-Http3DataFrame::Http3DataFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
-{
-  this->_payload     = buf + this->_payload_offset;
-  this->_payload_len = buf_len - this->_payload_offset;
-}
+Http3DataFrame::Http3DataFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
 Http3DataFrame::Http3DataFrame(ats_unique_buf payload, size_t payload_len)
   : Http3Frame(Http3FrameType::DATA), _payload_uptr(std::move(payload)), _payload_len(payload_len)
@@ -186,10 +230,10 @@ Http3DataFrame::to_io_buffer_block() const
 }
 
 void
-Http3DataFrame::reset(const uint8_t *buf, size_t len)
+Http3DataFrame::reset(IOBufferReader &reader)
 {
   this->~Http3DataFrame();
-  new (this) Http3DataFrame(buf, len);
+  new (this) Http3DataFrame(reader);
 }
 
 const uint8_t *
@@ -204,20 +248,27 @@ Http3DataFrame::payload_length() const
   return this->_payload_len;
 }
 
+IOBufferReader *
+Http3DataFrame::data() const
+{
+  return _reader;
+}
+
 //
 // HEADERS Frame
 //
-Http3HeadersFrame::Http3HeadersFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
-{
-  this->_header_block     = buf + this->_payload_offset;
-  this->_header_block_len = buf_len - this->_payload_offset;
-}
+Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
 Http3HeadersFrame::Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len)
   : Http3Frame(Http3FrameType::HEADERS), _header_block_uptr(std::move(header_block)), _header_block_len(header_block_len)
 {
   this->_length       = header_block_len;
   this->_header_block = this->_header_block_uptr.get();
+}
+
+Http3HeadersFrame::~Http3HeadersFrame()
+{
+  ats_free(this->_header_block);
 }
 
 Ptr<IOBufferBlock>
@@ -243,10 +294,10 @@ Http3HeadersFrame::to_io_buffer_block() const
 }
 
 void
-Http3HeadersFrame::reset(const uint8_t *buf, size_t len)
+Http3HeadersFrame::reset(IOBufferReader &reader)
 {
   this->~Http3HeadersFrame();
-  new (this) Http3HeadersFrame(buf, len);
+  new (this) Http3HeadersFrame(reader);
 }
 
 const uint8_t *
@@ -261,61 +312,28 @@ Http3HeadersFrame::header_block_length() const
   return this->_header_block_len;
 }
 
+bool
+Http3HeadersFrame::_parse()
+{
+  if (this->_reader->read_avail() != static_cast<int64_t>(this->_length)) {
+    // Whole payload is not received yet
+    return false;
+  }
+
+  this->_header_block_len = this->_length;
+  this->_header_block     = static_cast<uint8_t *>(ats_malloc(this->_header_block_len));
+  this->_reader->memcpy(this->_header_block);
+
+  return true;
+}
+
 //
 // SETTINGS Frame
 //
 
-Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint32_t max_settings) : Http3Frame(buf, buf_len)
+Http3SettingsFrame::Http3SettingsFrame(IOBufferReader &reader, uint32_t max_settings)
+  : Http3Frame(reader), _max_settings(max_settings)
 {
-  size_t   len       = this->_payload_offset;
-  uint32_t nsettings = 0;
-
-  while (len < buf_len) {
-    if (nsettings >= max_settings) {
-      this->_error_code   = Http3ErrorCode::H3_EXCESSIVE_LOAD;
-      this->_error_reason = reinterpret_cast<const char *>("too many settings");
-      break;
-    }
-
-    size_t id_len = QUICVariableInt::size(buf + len);
-    if ((len + id_len) >=
-        buf_len) { // if the id is larger than the buffer or at the boundary of the buffer (i.e. no value), it is invalid
-      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
-      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
-      break;
-    }
-    uint16_t id  = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len         += id_len;
-
-    size_t value_len = QUICVariableInt::size(buf + len);
-    if ((len + value_len) > buf_len) {
-      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
-      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
-      break;
-    }
-    uint64_t value  = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len            += value_len;
-
-    // Ignore any SETTINGS identifier it does not understand.
-    bool ignore = true;
-    for (const auto &known_id : Http3SettingsFrame::VALID_SETTINGS_IDS) {
-      if (id == static_cast<uint64_t>(known_id)) {
-        ignore = false;
-        break;
-      }
-    }
-
-    if (ignore) {
-      continue;
-    }
-
-    this->_settings.insert(std::make_pair(static_cast<Http3SettingsId>(id), value));
-    ++nsettings;
-  }
-
-  if (len == buf_len) {
-    this->_valid = true;
-  }
 }
 
 Ptr<IOBufferBlock>
@@ -363,10 +381,10 @@ Http3SettingsFrame::to_io_buffer_block() const
 }
 
 void
-Http3SettingsFrame::reset(const uint8_t *buf, size_t len)
+Http3SettingsFrame::reset(IOBufferReader &reader)
 {
   this->~Http3SettingsFrame();
-  new (this) Http3SettingsFrame(buf, len);
+  new (this) Http3SettingsFrame(reader);
 }
 
 bool
@@ -405,6 +423,72 @@ Http3SettingsFrame::set(Http3SettingsId id, uint64_t value)
   this->_settings[id] = value;
 }
 
+bool
+Http3SettingsFrame::_parse()
+{
+  if (this->_reader->read_avail() != static_cast<int64_t>(this->_length)) {
+    // Whole payload is not received yet
+    return false;
+  }
+
+  uint8_t *buf = static_cast<uint8_t *>(ats_malloc(this->_length));
+  this->_reader->memcpy(buf);
+
+  size_t   len       = 0;
+  uint32_t nsettings = 0;
+
+  while (len < this->_length) {
+    if (nsettings >= this->_max_settings) {
+      this->_error_code   = Http3ErrorCode::H3_EXCESSIVE_LOAD;
+      this->_error_reason = reinterpret_cast<const char *>("too many settings");
+      break;
+    }
+
+    size_t id_len = QUICVariableInt::size(buf + len);
+    if ((len + id_len) >=
+        this->_length) { // if the id is larger than the buffer or at the boundary of the buffer (i.e. no value), it is invalid
+      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
+      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
+      break;
+    }
+    uint16_t id  = QUICIntUtil::read_QUICVariableInt(buf + len, this->_length - len);
+    len         += id_len;
+
+    size_t value_len = QUICVariableInt::size(buf + len);
+    if ((len + value_len) > this->_length) {
+      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
+      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
+      break;
+    }
+    uint64_t value  = QUICIntUtil::read_QUICVariableInt(buf + len, this->_length - len);
+    len            += value_len;
+
+    // Ignore any SETTINGS identifier it does not understand.
+    bool ignore = true;
+    for (const auto &known_id : Http3SettingsFrame::VALID_SETTINGS_IDS) {
+      if (id == static_cast<uint64_t>(known_id)) {
+        ignore = false;
+        break;
+      }
+    }
+
+    if (ignore) {
+      continue;
+    }
+
+    this->_settings.insert(std::make_pair(static_cast<Http3SettingsId>(id), value));
+    ++nsettings;
+  }
+
+  if (len == this->_length) {
+    this->_valid = true;
+  }
+
+  ats_free(buf);
+
+  return true;
+}
+
 //
 // Http3FrameFactory
 //
@@ -415,43 +499,50 @@ Http3FrameFactory::create_null_frame()
 }
 
 Http3FrameUPtr
-Http3FrameFactory::create(const uint8_t *buf, size_t len)
+Http3FrameFactory::create(IOBufferReader &reader)
 {
   ts::Http3Config::scoped_config params;
   Http3Frame                    *frame = nullptr;
-  Http3FrameType                 type  = Http3Frame::type(buf, len);
+
+  // FIXME Frame type can be longer than 1 byte
+  uint8_t type_buf[1];
+  reader.read(type_buf, sizeof(type_buf));
+  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
 
   switch (type) {
   case Http3FrameType::HEADERS:
     frame = http3HeadersFrameAllocator.alloc();
-    new (frame) Http3HeadersFrame(buf, len);
+    new (frame) Http3HeadersFrame(reader);
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
   case Http3FrameType::DATA:
     frame = http3DataFrameAllocator.alloc();
-    new (frame) Http3DataFrame(buf, len);
+    new (frame) Http3DataFrame(reader);
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
   case Http3FrameType::SETTINGS:
     frame = http3SettingsFrameAllocator.alloc();
-    new (frame) Http3SettingsFrame(buf, len, params->max_settings());
+    new (frame) Http3SettingsFrame(reader, params->max_settings());
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
   default:
     // Unknown frame
     Dbg(dbg_ctl_http3_frame_factory, "Unknown frame type %hhx", static_cast<uint8_t>(type));
     frame = http3FrameAllocator.alloc();
-    new (frame) Http3Frame(buf, len);
+    new (frame) Http3Frame(reader);
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_frame);
   }
 }
 
-std::shared_ptr<const Http3Frame>
-Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
+std::shared_ptr<Http3Frame>
+Http3FrameFactory::fast_create(IOBufferReader &reader)
 {
-  Http3FrameType type = Http3Frame::type(buf, len);
+  // FIXME Frame type can be longer than 1 byte
+  uint8_t type_buf[1];
+  reader.read(type_buf, sizeof(type_buf));
+  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
   if (type == Http3FrameType::UNKNOWN) {
     if (!this->_unknown_frame) {
-      this->_unknown_frame = Http3FrameFactory::create(buf, len);
+      this->_unknown_frame = Http3FrameFactory::create(reader);
     } else {
-      this->_unknown_frame->reset(buf, len);
+      this->_unknown_frame->reset(reader);
     }
     return this->_unknown_frame;
   }
@@ -459,30 +550,15 @@ Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
   std::shared_ptr<Http3Frame> frame = this->_reusable_frames[static_cast<uint8_t>(type)];
 
   if (frame == nullptr) {
-    frame = Http3FrameFactory::create(buf, len);
+    frame = Http3FrameFactory::create(reader);
     if (frame != nullptr) {
       this->_reusable_frames[static_cast<uint8_t>(type)] = frame;
     }
   } else {
-    frame->reset(buf, len);
+    frame->reset(reader);
   }
 
   return frame;
-}
-
-std::shared_ptr<const Http3Frame>
-Http3FrameFactory::fast_create(IOBufferReader &reader, size_t frame_len)
-{
-  uint8_t buf[65536];
-
-  // FIXME DATA frames can be giga bytes
-  ink_assert(sizeof(buf) > frame_len);
-
-  if (reader.read(buf, frame_len) < static_cast<int64_t>(frame_len)) {
-    // Return if whole frame data is not available
-    return nullptr;
-  }
-  return this->fast_create(buf, frame_len);
 }
 
 Http3HeadersFrameUPtr

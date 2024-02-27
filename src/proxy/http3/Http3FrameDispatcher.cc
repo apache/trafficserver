@@ -50,10 +50,9 @@ Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
 Http3ErrorUPtr
 Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stream_type, IOBufferReader &reader, uint64_t &nread)
 {
-  std::shared_ptr<const Http3Frame> frame(nullptr);
-  Http3ErrorUPtr                    error = Http3ErrorUPtr(nullptr);
-  nread                                   = 0;
-  uint32_t frame_count                    = 0;
+  Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
+  nread                = 0;
+  uint32_t frame_count = 0;
 
   while (true) {
     // Read a length of Type field and hopefully a length of Length field too
@@ -94,32 +93,46 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
     }
 
     if (this->_reading_state == READING_PAYLOAD) {
-      // Create a frame
-      // Type field length + Length field length + Payload length
-      size_t frame_len     = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
-      auto   cloned_reader = reader.clone();
-      frame                = this->_frame_factory.fast_create(*cloned_reader, frame_len);
-      cloned_reader->dealloc();
-      if (frame == nullptr) {
-        break;
+      if (this->_current_frame == nullptr) {
+        // Create a frame
+        // Type field length + Length field length + Payload length
+        size_t frame_len = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
+
+        // Create a reader to read one frame. The reader will be deallocated by the frame object created
+        auto cloned_reader        = reader.clone();
+        cloned_reader->size_limit = frame_len;
+        this->_current_frame      = this->_frame_factory.fast_create(*cloned_reader);
+        if (this->_current_frame == nullptr) {
+          cloned_reader->dealloc();
+          break;
+        }
+        this->_bytes_to_skip = this->_current_frame->total_length();
+        ++frame_count;
       }
-      ++frame_count;
 
-      // Consume buffer if frame is created
-      nread += frame_len;
-      reader.consume(frame_len);
-
-      // Dispatch
-      Http3FrameType type = frame->type();
-      Dbg(dbg_ctl_http3, "[RX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(type), frame_len);
-      std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
-      for (auto h : handlers) {
-        error = h->handle_frame(frame, frame_count - 1, stream_type);
-        if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-          return error;
+      if (this->_current_frame->update()) {
+        // Dispatch
+        Http3FrameType type = this->_current_frame->type();
+        Debug("http3", "[RX] [%" PRIu64 "] | %s size=%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
+              this->_current_frame->total_length());
+        std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
+        for (auto h : handlers) {
+          error = h->handle_frame(this->_current_frame, frame_count - 1, stream_type);
+          if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+            return error;
+          }
         }
       }
-      this->_reading_state = READING_TYPE_LEN;
+
+      auto skip = std::min(static_cast<uint64_t>(reader.read_avail()), this->_bytes_to_skip);
+      reader.consume(skip);
+      this->_bytes_to_skip -= skip;
+      nread                += skip;
+
+      if (this->_bytes_to_skip == 0) {
+        this->_current_frame = nullptr;
+        this->_reading_state = READING_TYPE_LEN;
+      }
     }
   }
 
