@@ -136,54 +136,6 @@ TLSSessionResumptionSupport::getSSLCurveNID() const
   return this->_sslCurveNID;
 }
 
-SSL_SESSION *
-TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int len, int *copy)
-{
-  SSLSessionID sid(id, len);
-
-  *copy = 0;
-  if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl.session_cache.get");
-    if (dbg_ctl.tag_on()) {
-      char printable_buf[(len * 2) + 1];
-      sid.toString(printable_buf, sizeof(printable_buf));
-      DbgPrint(dbg_ctl, "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
-    }
-  }
-
-  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
-    hook = hook->m_link.next;
-  }
-
-  SSL_SESSION *session             = nullptr;
-  ssl_session_cache_exdata *exdata = nullptr;
-  if (session_cache->getSession(sid, &session, &exdata)) {
-    ink_assert(session);
-    ink_assert(exdata);
-
-    // Double check the timeout
-    if (is_ssl_session_timed_out(session)) {
-      Metrics::Counter::increment(ssl_rsb.session_cache_miss);
-// Due to bug in openssl, the timeout is checked, but only removed
-// from the openssl built-in hash table.  The external remove cb is not called
-#if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
-      ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
-#endif
-      SSL_SESSION_free(session);
-      session = nullptr;
-    } else {
-      Metrics::Counter::increment(ssl_rsb.session_cache_hit);
-      this->_setSSLSessionCacheHit(true);
-      this->_setSSLCurveNID(exdata->curve);
-    }
-  } else {
-    Metrics::Counter::increment(ssl_rsb.session_cache_miss);
-  }
-  return session;
-}
-
 std::shared_ptr<SSL_SESSION>
 TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
 {

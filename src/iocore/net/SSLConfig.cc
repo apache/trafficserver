@@ -52,29 +52,26 @@
 #include "SSLSessionTicket.h"
 #include "iocore/net/YamlSNIConfig.h"
 
-int SSLConfig::config_index                                 = 0;
-int SSLConfig::configids[]                                  = {0, 0};
-int SSLCertificateConfig::configid                          = 0;
-int SSLTicketKeyConfig::configid                            = 0;
-int SSLConfigParams::ssl_maxrecord                          = 0;
-int SSLConfigParams::ssl_misc_max_iobuffer_size_index       = 8;
-bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
-bool SSLConfigParams::ssl_ocsp_enabled                      = false;
-int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
-bool SSLConfigParams::ssl_ocsp_request_mode                 = false;
-int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
-int SSLConfigParams::ssl_ocsp_update_period                 = 60;
-char *SSLConfigParams::ssl_ocsp_user_agent                  = nullptr;
-int SSLConfigParams::ssl_handshake_timeout_in               = 0;
-int SSLConfigParams::origin_session_cache                   = 1;
-size_t SSLConfigParams::origin_session_cache_size           = 10240;
-size_t SSLConfigParams::session_cache_number_buckets        = 1024;
-bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
-size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
-swoc::IPRangeSet *SSLConfigParams::proxy_protocol_ip_addrs  = nullptr;
-bool SSLConfigParams::ssl_ktls_enabled                      = false;
+int SSLConfig::config_index                                = 0;
+int SSLConfig::configids[]                                 = {0, 0};
+int SSLCertificateConfig::configid                         = 0;
+int SSLTicketKeyConfig::configid                           = 0;
+int SSLConfigParams::ssl_maxrecord                         = 0;
+int SSLConfigParams::ssl_misc_max_iobuffer_size_index      = 8;
+bool SSLConfigParams::ssl_allow_client_renegotiation       = false;
+bool SSLConfigParams::ssl_ocsp_enabled                     = false;
+int SSLConfigParams::ssl_ocsp_cache_timeout                = 3600;
+bool SSLConfigParams::ssl_ocsp_request_mode                = false;
+int SSLConfigParams::ssl_ocsp_request_timeout              = 10;
+int SSLConfigParams::ssl_ocsp_update_period                = 60;
+char *SSLConfigParams::ssl_ocsp_user_agent                 = nullptr;
+int SSLConfigParams::ssl_handshake_timeout_in              = 0;
+int SSLConfigParams::origin_session_cache                  = 1;
+size_t SSLConfigParams::origin_session_cache_size          = 10240;
+init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb         = nullptr;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb       = nullptr;
+swoc::IPRangeSet *SSLConfigParams::proxy_protocol_ip_addrs = nullptr;
+bool SSLConfigParams::ssl_ktls_enabled                     = false;
 
 const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
 uint32_t SSLConfigParams::server_max_early_data      = 0;
@@ -122,14 +119,7 @@ SSLConfigParams::reset()
   verifyServerProperties                               = YamlSNIConfig::Property::NONE;
   ssl_ctx_options                                      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_options                               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_session_cache                                    = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size                               = 1024 * 100;
-  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
-  ssl_session_cache_skip_on_contention = 0;
-  ssl_session_cache_timeout            = 0;
-  ssl_session_cache_auto_clear         = 1;
-  configExitOnLoadError                = 1;
-  clientCertExitOnLoadError            = 0;
+  configExitOnLoadError                                = 1;
 }
 
 void
@@ -442,23 +432,9 @@ SSLConfigParams::initialize()
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache.enabled");
   REC_ReadConfigInteger(ssl_origin_session_cache_size, "proxy.config.ssl.origin_session_cache.size");
-  REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache.value");
-  REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
-  REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
-  REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
-  REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
-  REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
   SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
-  SSLConfigParams::session_cache_max_bucket_size =
-    static_cast<size_t>(ceil(static_cast<double>(ssl_session_cache_size) / ssl_session_cache_num_buckets));
-  SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
-  SSLConfigParams::session_cache_number_buckets          = ssl_session_cache_num_buckets;
-
-  if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
-    session_cache = new SSLSessionCache();
-  }
 
   if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0) {
     origin_sess_cache = new SSLOriginSessionCache();
