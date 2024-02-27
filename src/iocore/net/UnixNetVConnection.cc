@@ -1373,6 +1373,12 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
 
   void *arg = this->_prepareForMigration();
 
+  // Do_io_close will signal the VC to be freed on the original thread
+  // Since we moved the con context, the fd will not be closed
+  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+  // processed on two threads simultaneously
+  this->ep.stop();
+
   // Create new VC:
   UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(this->_getNetProcessor()->allocate_vc(t));
   ink_assert(newvc != nullptr);
