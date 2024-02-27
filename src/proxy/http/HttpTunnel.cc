@@ -157,8 +157,8 @@ ChunkedHandler::read_size()
           }
         } else {
           // We are done parsing size
-          if ((num_digits == 0 || running_sum < 0) ||                               /* Bogus chunk size */
-              (!ParseRules::is_cr(*tmp) && !ParseRules::is_ws(*tmp) && *tmp != ';') /* Unexpected character */
+          if ((num_digits == 0 || running_sum < 0) ||       /* Bogus chunk size */
+              (!ParseRules::is_wslfcr(*tmp) && *tmp != ';') /* Unexpected character */
           ) {
             state = CHUNK_READ_ERROR;
             done  = true;
