@@ -57,16 +57,16 @@ public:
   }
   ~RegexContext()
   {
-    if (_general_context) {
+    if (_general_context != nullptr) {
       pcre2_general_context_free(_general_context);
     }
-    if (_compile_context) {
+    if (_compile_context != nullptr) {
       pcre2_compile_context_free(_compile_context);
     }
-    if (_match_context) {
+    if (_match_context != nullptr) {
       pcre2_match_context_free(_match_context);
     }
-    if (_jit_stack) {
+    if (_jit_stack != nullptr) {
       pcre2_jit_stack_free(_jit_stack);
     }
   }
@@ -143,7 +143,7 @@ RegexMatches::malloc(size_t size, void *caller)
 //----------------------------------------------------------------------------
 RegexMatches::~RegexMatches()
 {
-  if (_match_data) {
+  if (_match_data != nullptr) {
     pcre2_match_data_free(_match_data);
   }
 }
@@ -206,7 +206,7 @@ Regex::Regex(Regex &&that) noexcept
 //----------------------------------------------------------------------------
 Regex::~Regex()
 {
-  if (_code) {
+  if (_code != nullptr) {
     pcre2_code_free(_code);
   }
 }
@@ -225,7 +225,7 @@ Regex::compile(std::string_view pattern, uint32_t flags)
 bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
-  if (_code) {
+  if (_code != nullptr) {
     pcre2_code_free(_code);
   }
   PCRE2_SIZE error_offset;
@@ -252,7 +252,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 bool
 Regex::exec(std::string_view subject) const
 {
-  if (!_code) {
+  if (_code == nullptr) {
     return false;
   }
   RegexMatches matches;
@@ -265,7 +265,7 @@ Regex::exec(std::string_view subject) const
 int32_t
 Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
-  if (!_code) {
+  if (_code == nullptr) {
     return 0;
   }
   int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),

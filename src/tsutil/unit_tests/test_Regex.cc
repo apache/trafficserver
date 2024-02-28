@@ -122,12 +122,6 @@ TEST_CASE("Regex", "[libts][Regex]")
     }
   }
 
-  // test for invalid regular expression
-  {
-    Regex r;
-    REQUIRE(r.compile(R"((\d+)", RE_CASE_INSENSITIVE) == false);
-  }
-
   // test getting submatches with operator[]
   for (auto &item : submatch_test_data) {
     Regex r;
@@ -161,5 +155,28 @@ TEST_CASE("Regex", "[libts][Regex]")
         REQUIRE(test.submatches[i] == std::string_view{test.subject.data() + ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]});
       }
     }
+  }
+
+  // test for invalid regular expression
+  {
+    Regex r;
+    REQUIRE(r.compile(R"((\d+)", RE_CASE_INSENSITIVE) == false);
+  }
+
+  // test for not compiling regular expression
+  {
+    Regex r;
+    RegexMatches matches;
+    REQUIRE(r.exec("foo") == false);
+    REQUIRE(r.exec("foo", matches) == 0);
+  }
+
+  // test for recompiling the regular expression
+  {
+    Regex r;
+    REQUIRE(r.compile(R"(foo)") == true);
+    REQUIRE(r.exec("foo") == true);
+    REQUIRE(r.compile(R"(bar)") == true);
+    REQUIRE(r.exec("bar") == true);
   }
 }
