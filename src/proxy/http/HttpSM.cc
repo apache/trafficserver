@@ -1094,7 +1094,13 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     // use this value just to get around other values
     t_state.hdr_info.response_error = HttpTransact::STATUS_CODE_SERVER_ERROR;
     break;
-
+  case EVENT_INTERVAL:
+    // If we get EVENT_INTERNAL it means that we moved the transaction
+    // to a different thread in do_http_server_open.  Since we didn't
+    // do any of the actual work in do_http_server_open, we have to
+    // go back and do it now.
+    do_http_server_open(true);
+    return 0;
   default:
     ink_release_assert(0);
     break;
@@ -1849,6 +1855,11 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     return 0;
   }
+  case EVENT_INTERVAL: // Delayed call from another thread
+    if (server_txn == nullptr) {
+      do_http_server_open();
+    }
+    break;
   default:
     Error("[HttpSM::state_http_server_open] Unknown event: %d", event);
     ink_release_assert(0);
