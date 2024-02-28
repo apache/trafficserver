@@ -126,6 +126,19 @@ TEST_CASE("XPACK_String", "[xpack]")
     }
   }
 
+  SECTION("Zero-size Dynamic Table")
+  {
+    XpackDynamicTable dt(0);
+    XpackLookupResult result;
+
+    REQUIRE(dt.size() == 0);
+    REQUIRE(dt.maximum_size() == 0);
+    REQUIRE(dt.is_empty());
+    REQUIRE(dt.count() == 0);
+    result = dt.lookup("", "");
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+  }
+
   SECTION("Dynamic Table")
   {
     constexpr uint16_t MAX_SIZE = 128;

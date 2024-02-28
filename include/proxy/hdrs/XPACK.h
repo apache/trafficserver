@@ -112,4 +112,9 @@ private:
    * Passing a value more than UINT32_MAX evicts every entry and return false.
    */
   bool _make_space(uint64_t required_size);
+
+  /**
+   * Calcurates the index number for _entries, which is a kind of circular buffer.
+   */
+  uint32_t _calc_index(uint32_t base, int64_t offset) const;
 };

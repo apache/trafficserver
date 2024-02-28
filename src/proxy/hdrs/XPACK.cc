@@ -245,12 +245,12 @@ XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, c
     return {0, XpackLookupResult::MatchType::NONE};
   }
 
-  if (index < this->_entries[(this->_entries_tail + 1) % this->_max_entries].index) {
+  if (index < this->_entries[this->_calc_index(this->_entries_tail, 1)].index) {
     // The index is invalid
     return {0, XpackLookupResult::MatchType::NONE};
   }
 
-  uint32_t pos = (this->_entries_head - (this->_entries[this->_entries_head].index - index)) % this->_max_entries;
+  uint32_t pos = this->_calc_index(this->_entries_head, -(this->_entries[this->_entries_head].index - index));
   *name_len    = this->_entries[pos].name_len;
   *value_len   = this->_entries[pos].value_len;
   this->_storage.read(this->_entries[pos].offset, name, *name_len, value, *value_len);
@@ -265,8 +265,8 @@ XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, 
 {
   XPACKDebug("Lookup entry: name=%.*s, value=%.*s", static_cast<int>(name_len), name, static_cast<int>(value_len), value);
   XpackLookupResult::MatchType match_type = XpackLookupResult::MatchType::NONE;
-  uint32_t i                              = (this->_entries_tail + 1) % this->_max_entries;
-  uint32_t end                            = (this->_entries_head + 1) % this->_max_entries;
+  uint32_t i                              = this->_calc_index(this->_entries_tail, 1);
+  uint32_t end                            = this->_calc_index(this->_entries_head, 1);
   uint32_t candidate_index                = 0;
   const char *tmp_name                    = nullptr;
   const char *tmp_value                   = nullptr;
@@ -276,7 +276,7 @@ XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, 
     return {candidate_index, match_type};
   }
 
-  for (; i != end; i = (i + 1) % this->_max_entries) {
+  for (; i != end; i = this->_calc_index(i, 1)) {
     if (name_len != 0 && this->_entries[i].name_len == name_len) {
       this->_storage.read(this->_entries[i].offset, &tmp_name, this->_entries[i].name_len, &tmp_value, this->_entries[i].value_len);
       if (match(name, name_len, tmp_name, this->_entries[i].name_len)) {
@@ -345,7 +345,7 @@ XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *v
   // Insert
   const char *wks = nullptr;
   hdrtoken_tokenize(name, name_len, &wks);
-  this->_entries_head                 = (this->_entries_head + 1) % this->_max_entries;
+  this->_entries_head                 = this->_calc_index(this->_entries_head, 1);
   this->_entries[this->_entries_head] = {
     this->_entries_inserted++,
     this->_storage.write(name, static_cast<uint32_t>(name_len), value, static_cast<uint32_t>(value_len)),
@@ -433,14 +433,14 @@ XpackDynamicTable::maximum_size() const
 void
 XpackDynamicTable::ref_entry(uint32_t index)
 {
-  uint32_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
+  uint32_t pos = this->_calc_index(this->_entries_head, (index - this->_entries[this->_entries_head].index));
   ++this->_entries[pos].ref_count;
 }
 
 void
 XpackDynamicTable::unref_entry(uint32_t index)
 {
-  uint32_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
+  uint32_t pos = this->_calc_index(this->_entries_head, (index - this->_entries[this->_entries_head].index));
   --this->_entries[pos].ref_count;
 }
 
@@ -474,7 +474,7 @@ bool
 XpackDynamicTable::_make_space(uint64_t required_size)
 {
   uint32_t freed = 0;
-  uint32_t tail  = (this->_entries_tail + 1) % this->_max_entries;
+  uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
 
   while (required_size > freed) {
     if (this->_entries_head < tail) {
@@ -484,12 +484,12 @@ XpackDynamicTable::_make_space(uint64_t required_size)
       break;
     }
     freed += this->_entries[tail].name_len + this->_entries[tail].value_len + ADDITIONAL_32_BYTES;
-    tail   = (tail + 1) % this->_max_entries;
+    tail   = this->_calc_index(tail, 1);
   }
 
   // Evict
   if (freed > 0) {
-    XPACKDebug("Evict entries: from %u to %u", this->_entries[(this->_entries_tail + 1) % this->_max_entries].index,
+    XPACKDebug("Evict entries: from %u to %u", this->_entries[this->_calc_index(this->_entries_tail, 1)].index,
                this->_entries[tail - 1].index);
     this->_available    += freed;
     this->_entries_tail  = tail - 1;
@@ -497,6 +497,16 @@ XpackDynamicTable::_make_space(uint64_t required_size)
   }
 
   return required_size <= this->_available;
+}
+
+uint32_t
+XpackDynamicTable::_calc_index(uint32_t base, int64_t offset) const
+{
+  if (unlikely(this->_max_entries == 0)) {
+    return base + offset;
+  } else {
+    return (base + offset) % this->_max_entries;
+  }
 }
 
 //
