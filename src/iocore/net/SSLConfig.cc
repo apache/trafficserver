@@ -550,7 +550,7 @@ SSLConfigParams::initialize()
   }
   // Can't get SSL client context.
   if (this->clientCertExitOnLoadError) {
-    Fatal("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    Emergency("Can't initialize the SSL client, HTTPS in remap rules will not function");
   } else {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
@@ -637,7 +637,7 @@ SSLCertificateConfig::startup()
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
   if (!reconfigure() && params->configExitOnLoadError) {
-    Fatal("failed to load SSL certificate file, %s", params->configFilePath);
+    Emergency("failed to load SSL certificate file, %s", params->configFilePath);
   }
 
   return true;

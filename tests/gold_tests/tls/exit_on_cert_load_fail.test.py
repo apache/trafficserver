@@ -85,9 +85,9 @@ class Test_exit_on_cert_load_fail:
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR:", "These tests should have error logs.")
 
         if self.enable_exit_on_load:
-            self._ts.ReturnCode = 70
+            self._ts.ReturnCode = 33
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "FATAL: ", "Failure loading the certs results in a fatal error.")
+                "EMERGENCY: ", "Failure loading the certs results in an emergency error.")
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
                 "Traffic Server is fully initialized", "Traffic Server should exit upon the load failure.")
         else:
