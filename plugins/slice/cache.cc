@@ -22,7 +22,6 @@
  */
 
 #include "cache.h"
-#include "ts/ts.h"
 #include <cassert>
 
 ObjectSizeCache::ObjectSizeCache(cache_size_type cache_size)
@@ -33,14 +32,17 @@ ObjectSizeCache::ObjectSizeCache(cache_size_type cache_size)
 std::optional<uint64_t>
 ObjectSizeCache::get(const std::string_view url)
 {
+  std::lock_guard lock{_mutex};
   if (auto it = _index.find(url); it != _index.end()) {
     // Cache hit
+    _cache_hits++;
     cache_size_type i = it->second;
     _visits[i]        = true;
     assert(url == _urls[i]);
     return _object_sizes[i];
   } else {
     // Cache miss
+    _cache_misses++;
     return std::nullopt;
   }
 }
@@ -48,12 +50,15 @@ ObjectSizeCache::get(const std::string_view url)
 void
 ObjectSizeCache::set(const std::string_view url, uint64_t object_size)
 {
+  std::lock_guard lock{_mutex};
   cache_size_type i;
   if (auto it = _index.find(url); it != _index.end()) {
     // Already exists in cache.  Overwrite.
+    _cache_write_hits++;
     i = it->second;
   } else {
     // Doesn't exist in cache.  Evict something else.
+    _cache_write_misses++;
     find_eviction_slot();
     i                = _hand;
     _urls[i]         = url;
@@ -88,4 +93,16 @@ ObjectSizeCache::find_eviction_slot()
     _index.erase(it);
     _urls[_hand].erase();
   }
+}
+std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>
+ObjectSizeCache::cache_stats()
+{
+  std::lock_guard lock{_mutex};
+  return {_cache_hits, _cache_misses, _cache_write_hits, _cache_write_misses};
+}
+
+ObjectSizeCache::cache_size_type
+ObjectSizeCache::cache_size()
+{
+  return _cache_size;
 }

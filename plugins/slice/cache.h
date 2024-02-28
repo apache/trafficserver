@@ -26,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <mutex>
 
 class ObjectSizeCache
 {
@@ -51,6 +52,10 @@ public:
    */
   void set(const std::string_view url, object_size_type object_size);
 
+  cache_size_type cache_size();
+
+  std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> cache_stats();
+
 private:
   void find_eviction_slot();
 
@@ -60,4 +65,10 @@ private:
   std::vector<object_size_type> _object_sizes;
   std::vector<bool> _visits;
   std::unordered_map<std::string_view, cache_size_type> _index;
+  std::mutex _mutex;
+
+  uint64_t _cache_hits         = 0;
+  uint64_t _cache_misses       = 0;
+  uint64_t _cache_write_hits   = 0;
+  uint64_t _cache_write_misses = 0;
 };

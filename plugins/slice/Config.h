@@ -19,6 +19,7 @@
 #pragma once
 
 #include "slice.h"
+#include "cache.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -45,8 +46,9 @@ struct Config {
   int         m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
   int         m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
-  RefType m_reftype{First};          // reference slice is relative to request
-  bool    m_head_strip_range{false}; // strip range header for head requests
+  RefType m_reftype{First};       // reference slice is relative to request
+  bool m_head_strip_range{false}; // strip range header for head requests
+  uint64_t m_min_size_to_slice{0}; // Only strip objects larger than this
 
   std::string m_skip_header;
   std::string m_crr_ims_header;
@@ -73,7 +75,15 @@ struct Config {
   // If no null reg, true, otherwise check against regex
   bool matchesRegex(char const *const url, int const urllen) const;
 
+  // Add an object size to cache
+  void size_cache_add(std::string_view url, uint64_t size);
+
+  // Did we cache this internally as a small object?
+  bool is_known_large_obj(std::string_view url);
+
 private:
   TSHRTime   m_nextlogtime{0}; // next time to log in ns
   std::mutex m_mutex;
+  std::optional<ObjectSizeCache> m_oscache;
+  void setCacheSize(size_t entries);
 };

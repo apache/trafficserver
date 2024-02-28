@@ -25,7 +25,7 @@ target_compile_definitions(test_range PRIVATE UNITTEST)
 target_link_libraries(test_range PRIVATE catch2::catch2 ts::tsutil)
 add_test(NAME test_range COMMAND test_range)
 
-add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc)
+add_executable(test_config test_config.cc ${PROJECT_SOURCE_DIR}/Config.cc ${PROJECT_SOURCE_DIR}/cache.cc)
 target_compile_definitions(test_config PRIVATE UNITTEST)
 target_link_libraries(test_config PRIVATE PCRE::PCRE catch2::catch2 ts::tsutil)
 add_test(NAME test_config COMMAND test_config)

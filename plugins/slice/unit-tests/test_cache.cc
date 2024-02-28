@@ -24,6 +24,7 @@
 #include <optional>
 #include <random>
 #include <sstream>
+#include <thread>
 #define CATCH_CONFIG_MAIN /* include main function */
 #include "catch.hpp"      /* catch unit-test framework */
 #include "../cache.h"
@@ -66,13 +67,33 @@ TEST_CASE("eviction", "[slice][metadatacache]")
   REQUIRE(found == cache_size);
 }
 
+TEST_CASE("tiny cache", "[slice][metadatacache]")
+{
+  constexpr int cache_size = 1;
+  ObjectSizeCache cache{cache_size};
+  for (uint64_t i = 0; i < cache_size * 100; i++) {
+    std::stringstream ss;
+    ss << "http://example.com/" << i;
+    cache.set(ss.str(), i);
+  }
+  size_t found = 0;
+  for (uint64_t i = 0; i < cache_size * 100; i++) {
+    std::stringstream ss;
+    ss << "http://example.com/" << i;
+    std::optional<uint64_t> size = cache.get(ss.str());
+    if (size.has_value()) {
+      CHECK(size.value() == i);
+      found++;
+    }
+  }
+  REQUIRE(found == cache_size);
+}
+
 TEST_CASE("hit rate", "[slice][metadatacache]")
 {
   constexpr int cache_size = 10;
   ObjectSizeCache cache{cache_size};
 
-  size_t hits   = 0;
-  size_t misses = 0;
   std::mt19937 gen;
   std::poisson_distribution<uint64_t> d{cache_size};
 
@@ -84,14 +105,50 @@ TEST_CASE("hit rate", "[slice][metadatacache]")
     std::optional<uint64_t> size = cache.get(ss.str());
     if (size.has_value()) {
       CHECK(size.value() == obj);
-      hits++;
     } else {
       cache.set(ss.str(), obj);
-      misses++;
     }
   }
 
+  auto [hits, misses, write_hits, write_misses] = cache.cache_stats();
   INFO("Hits: " << hits);
   INFO("Misses: " << misses);
   REQUIRE(hits > cache_size * 50);
+}
+
+TEST_CASE("threads", "[slice][metadatacache]")
+{
+  constexpr int cache_size = 10;
+  ObjectSizeCache cache{cache_size};
+
+  std::mt19937 gen;
+  std::poisson_distribution<uint64_t> d{cache_size};
+  std::vector<std::thread> threads;
+
+  auto runfunc = [&]() {
+    for (uint64_t i = 0; i < cache_size * 100; i++) {
+      std::stringstream ss;
+      uint64_t obj = d(gen);
+
+      ss << "http://example.com/" << obj;
+      std::optional<uint64_t> size = cache.get(ss.str());
+      if (size.has_value()) {
+        CHECK(size.value() == obj);
+      } else {
+        cache.set(ss.str(), obj);
+      }
+    }
+  };
+
+  for (int i = 0; i < 4; i++) {
+    threads.emplace_back(runfunc);
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+  auto [hits, misses, write_hits, write_misses] = cache.cache_stats();
+  INFO("Hits: " << hits);
+  INFO("Misses: " << misses);
+  REQUIRE(hits > cache_size * 50 * 4);
 }

@@ -23,6 +23,7 @@
 #include "HttpHeader.h"
 #include "response.h"
 #include "transfer.h"
+#include "ts/apidefs.h"
 #include "util.h"
 
 #include <cinttypes>
@@ -87,6 +88,24 @@ enum HeaderState {
   Passthru,
 };
 
+static void
+update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
+{
+  int urllen   = 0;
+  char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
+  if (urlstr != nullptr) {
+    if (size <= 0) {
+      DEBUG_LOG("Ignoring invalid content length for %.*s: %lld", urllen, urlstr, size);
+      return;
+    }
+
+    config.size_cache_add({urlstr, static_cast<size_t>(urllen)}, static_cast<uint64_t>(size));
+    TSfree(urlstr);
+  } else {
+    ERROR_LOG("Could not get URL from transaction.");
+  }
+}
+
 HeaderState
 handleFirstServerHeader(Data *const data, TSCont const contp)
 {
@@ -121,6 +140,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     }
     DEBUG_LOG("Passthru bytes: header: %" PRId64 " body: %" PRId64, hlen, clen);
     if (clen != INT64_MAX) {
+      update_object_size(data->m_txnp, clen, *data->m_config);
       TSVIONBytesSet(output_vio, hlen + clen);
     } else {
       TSVIONBytesSet(output_vio, clen);
@@ -139,6 +159,8 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     TSVIOReenable(output_vio);
     return HeaderState::Fail;
   }
+
+  update_object_size(data->m_txnp, blockcr.m_length, *data->m_config);
 
   // set the resource content length from block response
   data->m_contentlen = blockcr.m_length;

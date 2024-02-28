@@ -18,6 +18,7 @@
 
 #include "Config.h"
 
+#include <cassert>
 #include <cctype>
 #include <cinttypes>
 #include <cstdlib>
@@ -123,13 +124,15 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("blockbytes-test"),      required_argument, nullptr, 't'},
     {const_cast<char *>("prefetch-count"),       required_argument, nullptr, 'f'},
     {const_cast<char *>("strip-range-for-head"), no_argument,       nullptr, 'h'},
+    {const_cast<char *>("minimum-size"),         required_argument, nullptr, 'm'},
+    {const_cast<char *>("metadata-cache-size"),  required_argument, nullptr, 'z'},
     {nullptr,                                    0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lp:r:s:t:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lm:p:r:s:t:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -228,6 +231,25 @@ Config::fromArgs(int const argc, char const *const argv[])
     case 'h': {
       m_head_strip_range = true;
     } break;
+    case 'm': {
+      int64_t const bytesread = bytesFrom(optarg);
+      if (bytesread < 0) {
+        DEBUG_LOG("Invalid minimum-size: %s", optarg);
+      }
+      m_min_size_to_slice = bytesread;
+      DEBUG_LOG("Only slicing objects %" PRIu64 " bytes or larger", m_min_size_to_slice);
+    } break;
+    case 'z': {
+      try {
+        size_t size = std::stoul(optarg);
+        setCacheSize(size);
+        DEBUG_LOG("Metadata cache size: %zu entries", size);
+      } catch (std::invalid_argument e) {
+        ERROR_LOG("Invalid metadata cache size argument: %s", optarg);
+      } catch (std::out_of_range e) {
+        ERROR_LOG("Metadata cache size out of range: %s", optarg);
+      }
+    } break;
     default:
       break;
     }
@@ -254,6 +276,15 @@ Config::fromArgs(int const argc, char const *const argv[])
   if (m_skip_header.empty()) {
     m_skip_header = DefaultSliceSkipHeader;
     DEBUG_LOG("Using default slice skip header %s", m_skip_header.c_str());
+  }
+
+  if (m_min_size_to_slice > 0) {
+    if (m_oscache.has_value()) {
+      DEBUG_LOG("Metadata cache size: %zu", m_oscache->cache_size());
+    } else {
+      ERROR_LOG("An metadata cache is required when --minimum-size is specified!  Using a default size of 16384 entries.");
+      setCacheSize(16384);
+    }
   }
 
   return true;
@@ -308,4 +339,43 @@ Config::matchesRegex(char const *const url, int const urllen) const
   }
 
   return matches;
+}
+
+void
+Config::setCacheSize(size_t entries)
+{
+  if (entries == 0) {
+    m_oscache.reset();
+  } else {
+    m_oscache.emplace(entries);
+  }
+}
+
+bool
+Config::is_known_large_obj(std::string_view url)
+{
+  if (m_min_size_to_slice <= 0) {
+    // If conditional slicing is not set, all objects are large enough to slice
+    return true;
+  }
+
+  assert(m_oscache.has_value()); // object size cache is always present when conditionally slicing
+  std::optional<uint64_t> size = m_oscache->get(url);
+  if (size.has_value()) {
+    DEBUG_LOG("Found url in cache: %.*s -> %" PRIu64, static_cast<int>(url.size()), url.data(), size.value());
+    if (size.value() >= m_min_size_to_slice) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void
+Config::size_cache_add(std::string_view url, uint64_t size)
+{
+  if (m_oscache) {
+    DEBUG_LOG("Adding url to cache: %.*s -> %" PRIu64, static_cast<int>(url.size()), url.data(), size);
+    m_oscache->set(url, size);
+  }
 }

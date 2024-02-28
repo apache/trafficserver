@@ -23,23 +23,47 @@
 #include "HttpHeader.h"
 #include "intercept.h"
 
+#include "ts/apidefs.h"
 #include "ts/remap.h"
 #include "ts/ts.h"
 
+#include <charconv>
 #include <netinet/in.h>
-#include <mutex>
 
 namespace
 {
+struct PluginInfo {
+  Config config;
+  TSCont read_obj_size_contp;
+};
+
 Config globalConfig;
+TSCont global_read_obj_size_contp;
+
+static bool
+should_skip_this_obj(TSHttpTxn txnp, Config *const config)
+{
+  int len            = 0;
+  char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
+
+  if (!config->is_known_large_obj({urlstr, static_cast<size_t>(len)})) {
+    DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
+    return true;
+  }
+
+  return false;
+}
 
 bool
-read_request(TSHttpTxn txnp, Config *const config)
+read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
 {
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
   HttpHeader const header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
+
+  bool ret                  = false;
+  bool should_read_obj_size = false;
 
   if (TS_HTTP_METHOD_GET == header.method() || TS_HTTP_METHOD_HEAD == header.method() || TS_HTTP_METHOD_PURGE == header.method()) {
     if (!header.hasKey(config->m_skip_header.data(), config->m_skip_header.size())) {
@@ -47,7 +71,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
       if (TS_HTTP_STATUS_NONE != txnstat) {
         DEBUG_LOG("txn status change detected (%d), skipping plugin\n", static_cast<int>(txnstat));
-        return false;
+        goto out;
       }
 
       if (config->hasRegex()) {
@@ -58,7 +82,7 @@ read_request(TSHttpTxn txnp, Config *const config)
           if (!shouldslice) {
             DEBUG_LOG("request failed regex, not slicing: '%.*s'", urllen, urlstr);
             TSfree(urlstr);
-            return false;
+            goto out;
           }
 
           DEBUG_LOG("request passed regex, slicing: '%.*s'", urllen, urlstr);
@@ -75,11 +99,11 @@ read_request(TSHttpTxn txnp, Config *const config)
       // connection back into ATS
       sockaddr const *const ip = TSHttpTxnClientAddrGet(txnp);
       if (nullptr == ip) {
-        return false;
+        goto out;
       }
 
       TSAssert(nullptr != config);
-      Data *const data = new Data(config);
+      std::unique_ptr<Data> data = std::make_unique<Data>(config);
 
       data->m_method_type = header.method();
       data->m_txnp        = txnp;
@@ -90,16 +114,20 @@ read_request(TSHttpTxn txnp, Config *const config)
       } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
       } else {
-        delete data;
-        return false;
+        goto out;
       }
 
       // need to reset the HOST field for global plugin
       data->m_hostlen = sizeof(data->m_hostname) - 1;
       if (!header.valueForKey(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, data->m_hostname, &data->m_hostlen)) {
         DEBUG_LOG("Unable to get hostname from header");
-        delete data;
-        return false;
+        goto out;
+      }
+
+      // check if object is previously known to be too small to slice
+      if (should_skip_this_obj(txnp, config)) {
+        should_read_obj_size = true;
+        goto out;
       }
 
       // is the plugin configured to use a remap host?
@@ -118,8 +146,7 @@ read_request(TSHttpTxn txnp, Config *const config)
           if (TS_SUCCESS != rcode) {
             ERROR_LOG("Error cloning pristine url");
             TSMBufferDestroy(newbuf);
-            delete data;
-            return false;
+            goto out;
           }
 
           data->m_urlbuf = newbuf;
@@ -152,8 +179,7 @@ read_request(TSHttpTxn txnp, Config *const config)
               TSHandleMLocRelease(newbuf, nullptr, newloc);
             }
             TSMBufferDestroy(newbuf);
-            delete data;
-            return false;
+            goto out;
           }
 
           data->m_urlbuf = newbuf;
@@ -173,8 +199,8 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      TSCont const  icontp(TSContCreate(intercept_hook, mutex));
-      TSContDataSet(icontp, (void *)data);
+      TSCont const icontp(TSContCreate(intercept_hook, mutex));
+      TSContDataSet(icontp, data.release());
 
       // Skip remap and remap rule requirement
       TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
@@ -182,13 +208,53 @@ read_request(TSHttpTxn txnp, Config *const config)
       // Grab the transaction
       TSHttpTxnIntercept(icontp, txnp);
 
-      return true;
+      ret = true;
     } else {
       DEBUG_LOG("slice passing GET or HEAD request through to next plugin");
     }
   }
 
-  return false;
+out:
+  if (should_read_obj_size) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_obj_size_contp);
+  }
+  return ret;
+}
+
+static int
+read_obj_size(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
+  PluginInfo *info = static_cast<PluginInfo *>(TSContDataGet(contp));
+
+  int urllen   = 0;
+  char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
+  if (urlstr != nullptr) {
+    {
+      TxnHdrMgr response;
+      response.populateFrom(txnp, TSHttpTxnServerRespGet);
+      HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
+      char constr[1024];
+      int conlen;
+      bool const hasContentLength(
+        resp_header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
+      if (hasContentLength) {
+        uint64_t content_length;
+
+        [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
+        if (ec == std::errc()) {
+          info->config.size_cache_add({urlstr, static_cast<size_t>(urllen)}, content_length);
+        } else {
+          ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
+        }
+      }
+    }
+    TSfree(urlstr);
+  }
+
+  // Reenable and continue with the state machine.
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
 }
 
 int
@@ -199,7 +265,7 @@ global_read_request_hook(TSCont // contp
                          void *edata)
 {
   TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
-  read_request(txnp, &globalConfig);
+  read_request(txnp, &globalConfig, global_read_obj_size_contp);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
@@ -216,9 +282,9 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  Config *const config = static_cast<Config *>(ih);
+  PluginInfo *const info = static_cast<PluginInfo *>(ih);
 
-  if (read_request(txnp, config)) {
+  if (read_request(txnp, &info->config, info->read_obj_size_contp)) {
     return TSREMAP_DID_REMAP_STOP;
   } else {
     return TSREMAP_NO_REMAP;
@@ -234,9 +300,16 @@ TSRemapOSResponse(void * /* ih ATS_UNUSED */, TSHttpTxn /* rh ATS_UNUSED */, int
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  Config *const config = new Config;
-  config->fromArgs(argc - 2, argv + 2);
-  *ih = static_cast<void *>(config);
+  PluginInfo *const info = new PluginInfo;
+
+  info->config.fromArgs(argc - 2, argv + 2);
+
+  TSCont read_obj_size_contp = TSContCreate(read_obj_size, nullptr);
+  TSContDataSet(read_obj_size_contp, static_cast<void *>(info));
+  info->read_obj_size_contp = read_obj_size_contp;
+
+  *ih = static_cast<void *>(info);
+
   return TS_SUCCESS;
 }
 
@@ -244,8 +317,9 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   if (nullptr != ih) {
-    Config *const config = static_cast<Config *>(ih);
-    delete config;
+    PluginInfo *const info = static_cast<PluginInfo *>(ih);
+    TSContDestroy(info->read_obj_size_contp);
+    delete info;
   }
 }
 
@@ -273,8 +347,9 @@ TSPluginInit(int argc, char const *argv[])
 
   globalConfig.fromArgs(argc - 1, argv + 1);
 
-  TSCont const contp(TSContCreate(global_read_request_hook, nullptr));
+  TSCont const global_read_request_contp(TSContCreate(global_read_request_hook, nullptr));
+  global_read_obj_size_contp = TSContCreate(read_obj_size, nullptr);
 
   // Called immediately after the request header is read from the client
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_read_request_contp);
 }
