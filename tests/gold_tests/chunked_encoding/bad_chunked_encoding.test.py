@@ -125,13 +125,15 @@ class MalformedChunkHeaderTest:
     def setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess("verifier-server2", self.chunkedReplayFile)
 
-        # The server's responses will fail the first two transactions
+        # The server's responses will fail the first three transactions
         # because ATS will close the connection due to the malformed
         # chunk headers.
         self.server.Streams.stdout += Testers.ContainsExpression(
             "Unexpected chunked content for key 1: too small", "Verify that writing the first response failed.")
+        self.server.Streams.stdout += Testers.ExcludesExpression(
+            "chunked body of 3 bytes for key 2 with chunk stream", "Verify that writing the second response failed.")
         self.server.Streams.stdout += Testers.ContainsExpression(
-            "Unexpected chunked content for key 2: too small", "Verify that writing the second response failed.")
+            "Unexpected chunked content for key 3: too small", "Verify that writing the third response failed.")
 
         # ATS should close the connection before any body gets through. "abc"
         # is the body sent by the client for each of these chunked cases.
@@ -170,11 +172,14 @@ class MalformedChunkHeaderTest:
         # code from the verifier client.
         tr.Processes.Default.ReturnCode = 1
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            r"(Unexpected chunked content for key 3: too small|Failed HTTP/1 transaction with key: 3)",
-            "Verify that ATS closed the third transaction.")
-        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             r"(Unexpected chunked content for key 4: too small|Failed HTTP/1 transaction with key: 4)",
-            "Verify that ATS closed the fourth transaction.")
+            "Verify that ATS closed the forth transaction.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"(Unexpected chunked content for key 5: too small|Failed HTTP/1 transaction with key: 5)",
+            "Verify that ATS closed the fifth transaction.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"(Unexpected chunked content for key 6: too small|Failed HTTP/1 transaction with key: 6)",
+            "Verify that ATS closed the sixth transaction.")
 
         # ATS should close the connection before any body gets through. "def"
         # is the body sent by the server for each of these chunked cases.
