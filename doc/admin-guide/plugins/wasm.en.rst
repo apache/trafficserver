@@ -14,6 +14,9 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+
+.. include:: ../../common.defs
+
 .. _admin-plugins-wasm:
 
 
@@ -101,12 +104,15 @@ Compiling the Plugin
 
 **Configure ATS to compile with experimental plugins**
 
+To make this plugin available, you must enable experimental plugins when
+building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
+when building.
+
 ::
 
-  autoreconf -f -i
-  ./configure --enable-debug=yes --enable-experimental-plugins=yes
-  make
-  sudo make install
+   $ cmake ...  -DCMAKE_BUILD_TYPE="Debug" -DBUILD_EXPERIMENTAL_PLUGINS=ON
+   $ cmake --build ...
+   $ sudo cmake --install ...
 
 Examples
 ========

@@ -48,9 +48,9 @@ understand the following topics:
 -  Working with HTTP header functions
 
 The two sample plugins discussed in this chapter are ``denylist_1.cc``
-and ``basic_auth.cc``. To build and install the example plugins use ::
-
-   ./configure --enable-example-plugins
+and ``basic_auth.cc``. To make this two plugins available, you must enable experimental plugins when
+building |TS| by passing the ``-DENABLE_EXAMPLE=ON`` to the ``cmake`` command
+when building.
 
 when :ref:`setting the build configuration <admin-configuration-options>` for |TS|.
 
