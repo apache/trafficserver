@@ -36,9 +36,9 @@ if there were no query string at all.
 Installation
 ============
 
-To make this plugin available, you must enable experimental plugins
-
-    ./configure --enable-experimental-plugins
+To make this plugin available, you must enable experimental plugins when
+building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
+when building.
 
 Configuration
 =============
@@ -300,9 +300,8 @@ active.
 Example
 =======
 
-#. Enable experimental plugins when building |TS|::
-
-    ./configure --enable-experimental-plugins
+#. Enable experimental plugins when building |TS| by by passing
+   the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command.
 
 #. Generate a secrets configuration for |TS| (replacing the output location
    with something appropriate to your |TS| installation)::

@@ -1,3 +1,4 @@
+.. include:: ../../common.defs
 .. _admin-plugins-combo-handler:
 
 Combo Handler Plugin
@@ -29,11 +30,9 @@ or Javascript files into one.
 Installation
 ============
 
-This plugin is only built if the configure option ::
-
-    --enable-experimental-plugins
-
-is given at build time. Note that this plugin is built and installed in
+To make this plugin available, you must enable experimental plugins when
+building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake``
+command when building. Note that this plugin is built and installed in
 combination with the ESI module, since they share common code.
 
 Configuration

@@ -50,8 +50,9 @@ The NuRaft library must be installed for this plugin to build. It can be specifi
 This plugin also uses `YAML-CPP library <https://github.com/jbeder/yaml-cpp>` for reading the configuration file.
 The YAML-CPP library must be installed for this plugin to build. It can be specified by the `--with-yaml-cpp` argument to configure.
 
-As part of the experimental plugs, the `--enable-experimental-plugins` option must also be given to configure to build this plugin.
-
+To make this plugin available, you must enable experimental plugins when
+building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
+when building.
 
 Config File
 ===========
