@@ -250,7 +250,7 @@ XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, c
     return {0, XpackLookupResult::MatchType::NONE};
   }
 
-  uint32_t pos = this->_calc_index(this->_entries_head, -(this->_entries[this->_entries_head].index - index));
+  uint32_t pos = this->_calc_index(this->_entries_head, index - this->_entries[this->_entries_head].index);
   *name_len    = this->_entries[pos].name_len;
   *value_len   = this->_entries[pos].value_len;
   this->_storage.read(this->_entries[pos].offset, name, *name_len, value, *value_len);
