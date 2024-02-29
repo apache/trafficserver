@@ -663,7 +663,7 @@ template <> struct formatter<Url::Scheme> {
   auto
   format(Url::Scheme &scheme, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", scheme.getSV());
+    return fmt::format_to(ctx.out(), "{}", scheme.getSV());
   }
 };
 
@@ -678,7 +678,7 @@ template <> struct formatter<Url::Host> {
   auto
   format(Url::Host &host, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", host.getSV());
+    return fmt::format_to(ctx.out(), "{}", host.getSV());
   }
 };
 
@@ -693,7 +693,7 @@ template <> struct formatter<Url::Port> {
   auto
   format(Url::Port &port, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", integer(port));
+    return fmt::format_to(ctx.out(), "{}", integer(port));
   }
 };
 
@@ -708,7 +708,7 @@ template <> struct formatter<Url::Path::String> {
   auto
   format(Url::Path::String &path, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", path.getSV());
+    return fmt::format_to(ctx.out(), "{}", path.getSV());
   }
 };
 
@@ -723,7 +723,7 @@ template <> struct formatter<Url::Path> {
   auto
   format(Url::Path &path, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", path.getSV());
+    return fmt::format_to(ctx.out(), "{}", path.getSV());
   }
 };
 
@@ -738,7 +738,7 @@ template <> struct formatter<Url::Query::Parameter> {
   auto
   format(Url::Query::Parameter &param, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", param.getSV());
+    return fmt::format_to(ctx.out(), "{}", param.getSV());
   }
 };
 
@@ -753,7 +753,7 @@ template <> struct formatter<Url::Query> {
   auto
   format(Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", query.getSV());
+    return fmt::format_to(ctx.out(), "{}", query.getSV());
   }
 };
 
