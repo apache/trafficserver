@@ -65,7 +65,7 @@ template <typename Key, typename Value> class StringTree
     using self_type = Node;
     using ptr_type  = self_type *;
 
-    Node(Key k, Value v, int32_t r = -1) : key{k}, value{v}, rank{r}
+    Node(Key k, Value v, int32_t r = -1) : key{std::move(k)}, value{std::move(v)}, rank{r}
     {
       left  = this;
       right = this;
