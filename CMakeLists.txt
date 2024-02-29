@@ -253,7 +253,7 @@ if(LibLZMA_FOUND)
 endif()
 
 find_package(PCRE REQUIRED)
-find_package(PCRE2 COMPONENTS 8BIT)
+pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 include(CheckOpenSSLIsBoringSSL)
 include(CheckOpenSSLIsQuictls)

@@ -50,9 +50,10 @@ add_library(
   ts_unit_parser.cc
   Regex.cc
 )
+
 add_library(ts::tsutil ALIAS tsutil)
 set_target_properties(tsutil PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSUTIL_PUBLIC_HEADERS}")
-target_link_libraries(tsutil PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE)
+target_link_libraries(tsutil PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PkgConfig::PCRE2)
 
 install(
   TARGETS tsutil

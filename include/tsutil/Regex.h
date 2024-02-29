@@ -28,24 +28,60 @@
 #include <vector>
 #include <memory>
 
-#include "swoc/MemSpan.h"
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
-/// Match flags for regular expression evaluation.
+/// @brief Match flags for regular expression evaluation.
 enum REFlags {
-  RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
-  RE_UNANCHORED       = 0x0002, ///< Unanchored (DFA defaults to anchored).
-  RE_ANCHORED         = 0x0004, ///< Anchored (Regex defaults to unanchored).
+  RE_CASE_INSENSITIVE = PCRE2_CASELESS,  ///< Ignore case (default: case sensitive).
+  RE_UNANCHORED       = PCRE2_MULTILINE, ///< Unanchored (DFA defaults to anchored).
+  RE_ANCHORED         = PCRE2_ANCHORED,  ///< Anchored (Regex defaults to unanchored).
 };
 
-/** Wrapper for PCRE evaluation.
- *
- */
+/// @brief Wrapper for PCRE2 match data.
+class RegexMatches
+{
+  friend class Regex;
+
+public:
+  /** Construct a new RegexMatches object.
+   *
+   * @param size The number of matches to allocate space for.
+   */
+  RegexMatches(uint32_t size = DEFAULT_MATCHES);
+  ~RegexMatches();
+
+  /** Get the match at the given index.
+   *
+   * @return The match at the given index.
+   */
+  std::string_view operator[](size_t index) const;
+  /** Get the ovector pointer for the capture groups.  Don't use this unless you know what you are doing.
+   *
+   * @return ovector pointer.
+   */
+  size_t *get_ovector_pointer();
+  int32_t size() const;
+
+protected:
+  pcre2_match_data *get_match_data();
+  void set_subject(std::string_view subject);
+  void set_size(int32_t size);
+
+private:
+  constexpr static uint32_t DEFAULT_MATCHES = 10;
+  static void *malloc(size_t size, void *caller);
+  pcre2_match_data *_match_data = nullptr;
+  std::string_view _subject;
+  char _buffer[24 + 96 + 16 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 16 bytes per match.
+  size_t _buffer_bytes_used = 0;
+  int32_t _size             = 0;
+};
+
+/// @brief Wrapper for PCRE2 regular expression.
 class Regex
 {
 public:
-  /// Default number of capture groups.
-  static constexpr size_t DEFAULT_GROUP_COUNT = 10;
-
   Regex()              = default;
   Regex(Regex const &) = delete; // No copying.
   Regex(Regex &&that) noexcept;
@@ -59,46 +95,43 @@ public:
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
    */
-  bool compile(const char *pattern, unsigned flags = 0);
+  bool compile(std::string_view pattern, uint32_t flags = 0);
+
+  /** Compile the @a pattern into a regular expression.
+   *
+   * @param pattern Source pattern for regular expression (null terminated).
+   * @param error String to receive error message.
+   * @param erroffset Pointer to integer to receive error offset.
+   * @param flags Compilation flags.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   */
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
 
   /** Execute the regular expression.
    *
-   * @param str String to match against.
+   * @param subject String to match against.
    * @return @c true if the pattern matched, @a false if not.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
-  bool exec(std::string_view const &str) const;
+  bool exec(std::string_view subject) const;
 
   /** Execute the regular expression.
    *
-   * @param str String to match against.
-   * @param ovector Capture results.
-   * @param ovecsize Number of elements in @a ovector.
-   * @return @c true if the pattern matched, @a false if not.
-   *
-   * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
-   */
-  bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
-
-  /** Execute the regular expression.
-   *
-   * @param str String to match against.
-   * @param ovector Capture results.
-   * @param ovecsize Number of elements in @a ovector.
-   * @return @c true if the pattern matched, @a false if not.
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    *
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  bool exec(std::string_view str, swoc::MemSpan<int> groups) const;
+  int exec(std::string_view subject, RegexMatches &matches) const;
 
-  /// @return The number of groups captured in the last call to @c exec.
+  /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();
 
 private:
@@ -106,8 +139,7 @@ private:
   // enough to use as pointers. For some reason the header defines in name only a struct and
   // then aliases it to the standard name, rather than simply declare the latter in name only.
   // The goal is completely wrap PCRE and not include that header in client code.
-  void *regex       = nullptr; ///< Compiled expression.
-  void *regex_extra = nullptr; ///< Extra information about the expression.
+  pcre2_code *_code = nullptr;
 };
 
 /** Deterministic Finite state Automata container.
@@ -122,18 +154,18 @@ public:
   ~DFA();
 
   /// @return The number of patterns successfully compiled.
-  int compile(std::string_view const &pattern, unsigned flags = 0);
+  int32_t compile(std::string_view pattern, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int compile(const char **patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(const char **patterns, int npatterns, unsigned flags = 0);
 
   /** Match @a str against the internal patterns.
    *
    * @param str String to match.
    * @return Index of the matched pattern, -1 if no match.
    */
-  int match(std::string_view const &str) const;
+  int32_t match(std::string_view str) const;
 
 private:
   struct Pattern {
@@ -148,7 +180,7 @@ private:
    * @param flags Regular expression compilation flags.
    * @return @c true if @a pattern was successfully compiled, @c false if not.
    */
-  bool build(std::string_view const &pattern, unsigned flags = 0);
+  bool build(std::string_view pattern, unsigned flags = 0);
 
   std::vector<Pattern> _patterns;
 };
