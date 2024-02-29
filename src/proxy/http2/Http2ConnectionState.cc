@@ -176,8 +176,18 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
     stream->set_trailing_header_is_possible();
   }
 
-  // If payload length is 0 without END_STREAM flag, do nothing
-  if (payload_length == 0 && !stream->receive_end_stream) {
+  // If payload length is 0 without END_STREAM flag, just count it
+  const uint32_t unpadded_length = payload_length - pad_length;
+  if (unpadded_length == 0 && !stream->receive_end_stream) {
+    this->increment_received_empty_frame_count();
+    if (this->get_received_empty_frame_count() > configured_max_empty_frames_per_minute) {
+      Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
+      Http2StreamDebug(this->session, id, "Observed too frequent empty frames: %u within a last minute",
+                       this->get_received_empty_frame_count());
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                        "recv priority too frequent empty frame");
+    }
+
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
 
@@ -993,6 +1003,19 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                       "continuation bad client id");
   }
 
+  if (payload_length == 0 && (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) == 0x0) {
+    this->increment_received_empty_frame_count();
+    if (this->get_received_empty_frame_count() > configured_max_empty_frames_per_minute) {
+      Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
+      Http2StreamDebug(this->session, stream_id, "Observed too frequent empty frames: %u within a last minute",
+                       this->get_received_empty_frame_count());
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                        "recv priority too frequent empty frame");
+    }
+
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+  }
+
   // Find opened stream
   // CONTINUATION frames MUST be associated with a stream.  If a
   // CONTINUATION frame is received whose stream identifier field is 0x0,
@@ -1278,6 +1301,8 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
+  configured_max_empty_frames_per_minute      = Http2::max_empty_frames_per_minute;
+
   if (auto snis = session->get_netvc()->get_service<TLSSNISupport>(); snis) {
     if (snis->hints_from_sni.http2_max_settings_frames_per_minute.has_value()) {
       configured_max_settings_frames_per_minute = snis->hints_from_sni.http2_max_settings_frames_per_minute.value();
@@ -2761,6 +2786,17 @@ uint32_t
 Http2ConnectionState::get_received_continuation_frame_count()
 {
   return this->_received_continuation_frame_counter.get_count();
+}
+
+Http2ConnectionState::increment_received_empty_frame_count()
+{
+  this->_received_empty_frame_counter.increment();
+}
+
+uint32_t
+Http2ConnectionState::get_received_empty_frame_count()
+{
+  return this->_received_empty_frame_counter.get_count();
 }
 
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.

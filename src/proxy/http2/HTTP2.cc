@@ -491,6 +491,7 @@ uint32_t Http2::max_ping_frames_per_minute         = 60;
 uint32_t Http2::max_priority_frames_per_minute     = 120;
 uint32_t Http2::max_rst_stream_frames_per_minute   = 200;
 uint32_t Http2::max_continuation_frames_per_minute = 120;
+uint32_t Http2::max_empty_frames_per_minute        = 0;
 float    Http2::min_avg_window_update              = 2560.0;
 uint32_t Http2::con_slow_log_threshold             = 0;
 uint32_t Http2::stream_slow_log_threshold          = 0;
@@ -601,6 +602,8 @@ Http2::init()
     Metrics::Counter::createPtr("proxy.process.http2.max_rst_stream_frames_per_minute_exceeded");
   http2_rsb.max_continuation_frames_per_minute_exceeded =
     Metrics::Counter::createPtr("proxy.process.http2.max_continuation_frames_per_minute_exceeded");
+  http2_rsb.max_empty_frames_per_minute_exceeded =
+    Metrics::Counter::createPtr("proxy.process.http2.max_empty_frames_per_minute_exceeded");
   http2_rsb.insufficient_avg_window_update = Metrics::Counter::createPtr("proxy.process.http2.insufficient_avg_window_update");
   http2_rsb.max_concurrent_streams_exceeded_in =
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
