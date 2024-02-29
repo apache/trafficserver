@@ -120,3 +120,7 @@ set_target_properties(
 install(TARGETS libswoc PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/swoc)
 
 add_library(libswoc::libswoc ALIAS libswoc)
+
+if(BUILD_TESTING)
+add_subdirectory(unit_tests)
+endif()

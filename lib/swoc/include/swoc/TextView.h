@@ -1384,7 +1384,7 @@ TextView::suffix(int n) const noexcept {
 inline TextView
 TextView::suffix_at(char c) const {
   self_type zret;
-  if (auto n = this->rfind(c); n != npos) {
+  if (auto n = this->rfind(c); n != npos && n + 1 < this->size()) {
     ++n;
     zret.assign(this->data() + n, this->size() - n);
   }
