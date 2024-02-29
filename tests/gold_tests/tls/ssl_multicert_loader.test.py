@@ -102,8 +102,8 @@ tr4.Processes.Default.Command = 'echo Waiting'
 tr4.Processes.Default.ReturnCode = 0
 tr4.Processes.Default.StartBefore(ts2)
 
-ts2.ReturnCode = 70  # ink_fatal will exit with EX_SOFTWARE.
+ts2.ReturnCode = 33  # ink_emergency will exit with UNRECOVERABLE_EXIT.
 ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
     'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
-ts2.Disk.diags_log.Content = Testers.IncludesExpression('FATAL: failed to load SSL certificate file', 'check diags.log"')
+ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
