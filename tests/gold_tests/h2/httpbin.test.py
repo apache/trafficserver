@@ -28,7 +28,7 @@ Test HTTP/2 with httpbin origin server
 # Require HTTP/2 enabled Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
-    Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
+    Condition.HasProgram("sha1sum", "sha1sum need to be installed on system for this test to work"),
 )
 # Test.ContinueOnFail = True
 
@@ -103,7 +103,7 @@ test_run.StillRunningAfter = httpbin
 
 # Test Case 2: Chunked
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | shasum -a 256'.format(
+test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | sha1sum'.format(
     ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_2_stdout.gold"

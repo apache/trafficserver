@@ -22,7 +22,7 @@ Test a basic remap of a http connection with Stream Priority Feature
 
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
-    Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
+    Condition.HasProgram("sha1sum", "sha1sum need to be installed on system for this test to work"),
 )
 Test.ContinueOnFail = True
 
@@ -69,7 +69,7 @@ ts.Disk.records_config.update(
 
 # Test Case 0:
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfile | shasum -a 256'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfile | sha1sum'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
