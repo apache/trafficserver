@@ -264,7 +264,7 @@ template <> struct formatter<Crypto::SHA256> {
   auto
   format(Crypto::SHA256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", sha.hex());
+    return fmt::format_to(ctx.out(), "{}", sha.hex());
   }
 };
 
@@ -279,7 +279,7 @@ template <> struct formatter<Crypto::SHA512> {
   auto
   format(Crypto::SHA512 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", sha.hex());
+    return fmt::format_to(ctx.out(), "{}", sha.hex());
   }
 };
 
@@ -294,7 +294,7 @@ template <> struct formatter<Crypto::AES256> {
   auto
   format(Crypto::AES256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", Crypto::Base64::encode(sha.message()));
+    return fmt::format_to(ctx.out(), "{}", Crypto::Base64::encode(sha.message()));
   }
 };
 
