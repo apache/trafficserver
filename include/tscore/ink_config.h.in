@@ -78,6 +78,7 @@
 #define TS_USE_TLS_SET_CIPHERSUITES @use_tls_set_ciphersuites@
 #define TS_HAS_TLS_KEYLOGGING @has_tls_keylogging@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
+#define TS_USE_MMAP @use_mmap@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@
 #define TS_USE_TLS_OCSP @use_tls_ocsp@
 #define TS_HAS_TLS_EARLY_DATA @has_tls_early_data@

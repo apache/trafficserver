@@ -33,6 +33,9 @@
 #include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 #include "records/I_RecProcess.h"
+#if TS_USE_MMAP
+#include <sys/mman.h>
+#endif
 
 static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
@@ -56,7 +59,14 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define MAX_AIO_EVENTS 1024
 
+#if TS_USE_MMAP
+struct ink_aiocb : public iocb {
+  void *aio_fildes;
+};
+#else
 typedef struct iocb ink_aiocb;
+#endif
+
 typedef struct io_event ink_io_event_t;
 
 // XXX hokey old-school compatibility with ink_aiocb.h ...
@@ -67,7 +77,21 @@ typedef struct io_event ink_io_event_t;
 #else
 
 struct ink_aiocb {
-  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+#if TS_USE_MMAP
+  struct aio_mmap {
+    void *first = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+    void *last  = nullptr;
+    operator char *() const { return (char *)first; }
+    void
+    operator=(void *p)
+    {
+      first = p;
+      last  = nullptr;
+    }
+  } aio_fildes;
+#else
+  int aio_fildes = -1; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+#endif
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
@@ -114,7 +138,7 @@ struct AIOVec : public Continuation {
 
   int mainEvent(int event, Event *e);
 };
-
+#if !TS_USE_MMAP
 struct DiskHandler : public Continuation {
   Event *trigger_event;
   io_context_t ctx;
@@ -133,6 +157,7 @@ struct DiskHandler : public Continuation {
     }
   }
 };
+#endif
 #endif
 
 void ink_aio_init(ts::ModuleVersion version);

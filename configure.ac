@@ -1704,6 +1704,15 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
 AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
 
+AC_MSG_CHECKING([enable mmap instead read/write])
+AC_ARG_ENABLE([mmap],
+  [AS_HELP_STRING([--enable-mmap], [WARNING this is experimental mmap instead read and write support @<:@default=no@:>@])],
+  [enable_mmap="${enableval}"],
+  [enable_mmap=no]
+)
+AC_MSG_RESULT([$enable_mmap])
+TS_ARG_ENABLE_VAR([use], [mmap])
+
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
 use_hwloc=0

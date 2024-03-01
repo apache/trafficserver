@@ -378,6 +378,9 @@ Lread:
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   }
   offset = 0;
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_read(&io) >= 0);
   Debug("cache_scan_truss", "read %p:scanObject %" PRId64 " %zu", this, (int64_t)io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
   return EVENT_CONT;
