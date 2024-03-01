@@ -164,7 +164,7 @@ HQSession::main_event_handler(int event, void *edata)
     this->do_io_close();
     for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
       SCOPED_MUTEX_LOCK(lock, t->mutex, this_ethread());
-      t->handleEvent(event);
+      t->handleEvent(event, edata);
     }
     break;
   }
