@@ -138,7 +138,7 @@ template <> struct formatter<Time::Local> {
   auto
   format(Time::Local &time, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", time.epoch());
+    return fmt::format_to(ctx.out(), "{}", time.epoch());
   }
 };
 } // namespace fmt

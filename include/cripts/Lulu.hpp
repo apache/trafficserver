@@ -574,7 +574,7 @@ template <> struct formatter<Versions> {
   auto
   format(Versions &version, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", version.getSV());
+    return fmt::format_to(ctx.out(), "{}", version.getSV());
   }
 };
 
@@ -589,7 +589,7 @@ template <> struct formatter<Versions::Major> {
   auto
   format(Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", integer(major));
+    return fmt::format_to(ctx.out(), "{}", integer(major));
   }
 };
 
@@ -604,7 +604,7 @@ template <> struct formatter<Versions::Minor> {
   auto
   format(Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", integer(minor));
+    return fmt::format_to(ctx.out(), "{}", integer(minor));
   }
 };
 
@@ -619,7 +619,7 @@ template <> struct formatter<Versions::Patch> {
   auto
   format(Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", integer(patch));
+    return fmt::format_to(ctx.out(), "{}", integer(patch));
   }
 };
 
@@ -634,7 +634,7 @@ template <> struct formatter<TSHttpStatus> {
   auto
   format(const TSHttpStatus &stat, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", static_cast<int>(stat));
+    return fmt::format_to(ctx.out(), "{}", static_cast<int>(stat));
   }
 };
 
@@ -649,7 +649,7 @@ template <> struct formatter<Cript::StringViewWrapper> {
   auto
   format(const Cript::StringViewWrapper &sv, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return format_to(ctx.out(), "{}", sv.getSV());
+    return fmt::format_to(ctx.out(), "{}", sv.getSV());
   }
 };
 
