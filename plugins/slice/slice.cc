@@ -29,6 +29,8 @@
 
 #include <charconv>
 #include <netinet/in.h>
+#include <array>
+#include <tuple>
 
 namespace
 {
