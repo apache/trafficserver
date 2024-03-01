@@ -51,12 +51,6 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ts
 )
 
-install(
-  TARGETS tsapibackend
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
 endif()
