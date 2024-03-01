@@ -99,7 +99,7 @@ update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
       return;
     }
 
-    config.size_cache_add({urlstr, static_cast<size_t>(urllen)}, static_cast<uint64_t>(size));
+    config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, static_cast<uint64_t>(size));
     TSfree(urlstr);
   } else {
     ERROR_LOG("Could not get URL from transaction.");

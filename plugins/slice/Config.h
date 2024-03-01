@@ -76,10 +76,15 @@ struct Config {
   bool matchesRegex(char const *const url, int const urllen) const;
 
   // Add an object size to cache
-  void size_cache_add(std::string_view url, uint64_t size);
+  void sizeCacheAdd(std::string_view url, uint64_t size);
 
   // Did we cache this internally as a small object?
-  bool is_known_large_obj(std::string_view url);
+  bool isKnownLargeObj(std::string_view url);
+
+  // Metadata cache stats
+  int stat_read_hits_id{-1}, stat_read_misses_id{-1}, stat_write_hits_id{-1}, stat_write_misses_id{-1};
+  bool stats_enabled{false};
+  void updateStats(const std::function<void(int, uint64_t)> &update_func);
 
 private:
   TSHRTime   m_nextlogtime{0}; // next time to log in ns

@@ -46,7 +46,9 @@ should_skip_this_obj(TSHttpTxn txnp, Config *const config)
   int len            = 0;
   char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-  if (!config->is_known_large_obj({urlstr, static_cast<size_t>(len)})) {
+  config->updateStats([](int stat_id, uint64_t stat_value) { TSStatIntSet(stat_id, static_cast<TSMgmtInt>(stat_value)); });
+
+  if (!config->isKnownLargeObj({urlstr, static_cast<size_t>(len)})) {
     DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
     return true;
   }
@@ -243,7 +245,7 @@ read_obj_size(TSCont contp, TSEvent event, void *edata)
 
         [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
         if (ec == std::errc()) {
-          info->config.size_cache_add({urlstr, static_cast<size_t>(urllen)}, content_length);
+          info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
         } else {
           ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
         }
@@ -297,6 +299,38 @@ TSRemapOSResponse(void * /* ih ATS_UNUSED */, TSHttpTxn /* rh ATS_UNUSED */, int
 {
 }
 
+static bool
+register_stat(const char *name, int &id)
+{
+  if (TSStatFindName(name, &id) == TS_ERROR) {
+    id = TSStatCreate(name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    if (id == TS_ERROR) {
+      ERROR_LOG("Failed to register stat '%s'", name);
+      return false;
+    }
+  }
+
+  DEBUG_LOG("[%s] %s registered with id %d", PLUGIN_NAME, name, id);
+
+  return true;
+}
+
+static void
+init_stats(Config &config)
+{
+  const std::array<std::pair<const char *, int &>, 4> stats{
+    {{PLUGIN_NAME ".metadata_cache.read.hits", config.stat_read_hits_id},
+     {PLUGIN_NAME ".metadata_cache.read.misses", config.stat_read_misses_id},
+     {PLUGIN_NAME ".metadata_cache.write.hits", config.stat_write_hits_id},
+     {PLUGIN_NAME ".metadata_cache.write.misses", config.stat_write_misses_id}}
+  };
+
+  config.stats_enabled = true;
+  for (const auto &stat : stats) {
+    config.stats_enabled &= register_stat(stat.first, stat.second);
+  }
+}
+
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
@@ -307,6 +341,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   TSCont read_obj_size_contp = TSContCreate(read_obj_size, nullptr);
   TSContDataSet(read_obj_size_contp, static_cast<void *>(info));
   info->read_obj_size_contp = read_obj_size_contp;
+
+  init_stats(info->config);
 
   *ih = static_cast<void *>(info);
 
@@ -352,4 +388,7 @@ TSPluginInit(int argc, char const *argv[])
 
   // Called immediately after the request header is read from the client
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_read_request_contp);
+
+  // Register stats for metadata cache
+  init_stats(globalConfig);
 }

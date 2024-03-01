@@ -351,8 +351,21 @@ Config::setCacheSize(size_t entries)
   }
 }
 
+void
+Config::updateStats(const std::function<void(int, uint64_t)> &update_func)
+{
+  // TODO: check if this update is too frequent
+  if (stats_enabled) {
+    auto [cache_read_hits, cache_read_misses, cache_write_hits, cache_write_misses] = m_oscache->cache_stats();
+    update_func(stat_read_hits_id, cache_read_hits);
+    update_func(stat_read_misses_id, cache_read_misses);
+    update_func(stat_write_hits_id, cache_write_hits);
+    update_func(stat_write_misses_id, cache_write_misses);
+  }
+}
+
 bool
-Config::is_known_large_obj(std::string_view url)
+Config::isKnownLargeObj(std::string_view url)
 {
   if (m_min_size_to_slice <= 0) {
     // If conditional slicing is not set, all objects are large enough to slice
@@ -372,7 +385,7 @@ Config::is_known_large_obj(std::string_view url)
 }
 
 void
-Config::size_cache_add(std::string_view url, uint64_t size)
+Config::sizeCacheAdd(std::string_view url, uint64_t size)
 {
   if (m_oscache) {
     DEBUG_LOG("Adding url to cache: %.*s -> %" PRIu64, static_cast<int>(url.size()), url.data(), size);
