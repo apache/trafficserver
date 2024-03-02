@@ -234,26 +234,27 @@ read_obj_size(TSCont contp, TSEvent event, void *edata)
   int urllen   = 0;
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
   if (urlstr != nullptr) {
-    {
-      TxnHdrMgr response;
-      response.populateFrom(txnp, TSHttpTxnServerRespGet);
-      HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
-      char constr[1024];
-      int conlen;
-      bool const hasContentLength(
-        resp_header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
-      if (hasContentLength) {
-        uint64_t content_length;
+    TxnHdrMgr response;
+    response.populateFrom(txnp, TSHttpTxnServerRespGet);
+    HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
+    char constr[1024];
+    int conlen;
+    bool const hasContentLength(resp_header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
+    if (hasContentLength) {
+      uint64_t content_length;
 
-        [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
-        if (ec == std::errc()) {
-          info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
-        } else {
-          ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
-        }
+      [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
+      if (ec == std::errc()) {
+        info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
+      } else {
+        ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
       }
+    } else {
+      DEBUG_LOG("Could not get a content length for updating object size");
     }
     TSfree(urlstr);
+  } else {
+    ERROR_LOG("Could not get URL for obj size.");
   }
 
   // Reenable and continue with the state machine.
