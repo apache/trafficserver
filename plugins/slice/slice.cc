@@ -238,7 +238,7 @@ read_obj_size(TSCont contp, TSEvent event, void *edata)
     response.populateFrom(txnp, TSHttpTxnServerRespGet);
     HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
     char constr[1024];
-    int conlen;
+    int conlen = sizeof constr;
     bool const hasContentLength(resp_header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
     if (hasContentLength) {
       uint64_t content_length;
