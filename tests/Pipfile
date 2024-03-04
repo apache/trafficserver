@@ -53,5 +53,8 @@ pyyaml ="*"
 grpcio = "*"
 grpcio-tools = "*"
 
+pyOpenSSL = "*"
+eventlet = "*"
+
 [requires]
 python_version = "3"
