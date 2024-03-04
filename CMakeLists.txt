@@ -521,10 +521,10 @@ if(HOST_OS STREQUAL "linux")
   link_libraries(dl)
 endif(HOST_OS STREQUAL "linux")
 
-if(HOST_OS STREQUAL "darwin")
+if(CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
   set(CMAKE_MACOSX_RPATH 1)
   link_libraries("-ld_classic")
-endif(HOST_OS STREQUAL "darwin")
+endif()
 
 if(HOST_OS STREQUAL "freebsd")
   set(CMAKE_THREAD_LIBS_INIT "-lpthread")
