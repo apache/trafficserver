@@ -128,7 +128,7 @@ private:
   /// hold the first element on the entire tree.
   node_type_ptr _head;
   /// this gets incremented on every insert.
-  int32_t _rank_counter;
+  int32_t _rank_counter{0};
   /// recursive memory cleanup function.
   void freeup(Node *n);
   /// clean up function, should deal with all the crap.
