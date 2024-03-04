@@ -366,6 +366,21 @@ HostDBProcessor::init()
   REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
   REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
   REC_EstablishStaticConfigInt32U(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
+  const char *interval_config = "proxy.config.hostdb.host_file.interval";
+  {
+    RecInt tmp_interval{};
+
+    REC_ReadConfigInteger(tmp_interval, interval_config);
+    hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
+  }
+  RecRegisterConfigUpdateCb(
+    interval_config,
+    [&](const char *, RecDataT, RecData data, void *) {
+      hostdb_hostfile_check_interval = std::chrono::seconds(data.rec_int);
+
+      return REC_ERR_OKAY;
+    },
+    nullptr);
 
   //
   // Initialize hostdb_current_timestamp which is our cached version of
@@ -376,7 +391,6 @@ HostDBProcessor::init()
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, &HostDBContinuation::backgroundEvent);
   b->mutex = new_ProxyMutex();
-  b->updateHostFileConfig();
   eventProcessor.schedule_every(b, HRTIME_SECONDS(1), ET_DNS);
 
   return 0;
@@ -1330,15 +1344,6 @@ HostDBContinuation::do_dns()
   }
 }
 
-void
-HostDBContinuation::updateHostFileConfig()
-{
-  RecInt tmp_interval{};
-
-  REC_ReadConfigInteger(tmp_interval, "proxy.config.hostdb.host_file.interval");
-  hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
-}
-
 //
 // Background event
 // Increment the hostdb_current_timestamp which functions as our cached version
@@ -1360,7 +1365,6 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 
-    updateHostFileConfig();
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Dbg(dbg_ctl_hostdb, "%s",
