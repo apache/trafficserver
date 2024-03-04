@@ -538,7 +538,7 @@ endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib64")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
+add_compile_definitions(${HOST_OS} PACKAGE_NAME="Apache Traffic Server" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>)
 
 # Enable fuzzing
