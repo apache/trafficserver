@@ -1253,7 +1253,8 @@ TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
   auto &v1 = *spot;
   auto &p1 = get<1>(v1);
 
-  if (auto &&[r, p] = *(cspace.find(a1)); !r.empty()) {
+  auto const iter = cspace.find(a1);
+  if (auto &&[r, p] = *iter; !r.empty()) {
     static_assert(std::is_same_v<swoc::IPRangeView const &, decltype(r)>);
     IPRange rr = r;
     swoc::IPRangeView rvv{r};
