@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include <tscore/TSSystemState.h>
 
 #include "tscore/ink_align.h"
@@ -197,4 +199,48 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   } else {
     return schedule(e->init(cont, ink_get_hrtime() + t, t), et);
   }
+}
+
+TS_INLINE std::vector<TSAction>
+EventProcessor::schedule_entire(Continuation *cont, ink_hrtime t, ink_hrtime p, EventType et, int callback_event, void *cookie)
+{
+  ThreadGroupDescriptor *tg = &thread_group[et];
+  EThread *curr_thread      = this_ethread();
+
+  std::vector<TSAction> actions;
+
+  for (int i = 0; i < tg->_count; i++) {
+    Event *e = eventAllocator.alloc();
+
+    e->ethread        = tg->_thread[i];
+    e->callback_event = callback_event;
+    e->cookie         = cookie;
+
+    if (t == 0 && p == 0) {
+      e->init(cont, 0, 0);
+    } else if (t != 0 && p == 0) {
+      e->init(cont, ink_get_hrtime() + t, 0);
+    } else if (t == 0 && p != 0) {
+      if (p < 0) {
+        e->init(cont, p, p);
+      } else {
+        e->init(cont, ink_get_hrtime() + p, p);
+      }
+    } else {
+      ink_assert(!"not reached");
+    }
+
+    e->mutex = new_ProxyMutex();
+
+    if (curr_thread != nullptr && e->ethread == curr_thread) {
+      e->ethread->EventQueueExternal.enqueue_local(e);
+    } else {
+      e->ethread->EventQueueExternal.enqueue(e);
+    }
+
+    /* This is a hack. Should be handled in ink_types */
+    actions.push_back((TSAction)((uintptr_t) reinterpret_cast<TSAction>(e) | 0x1));
+  }
+
+  return actions;
 }

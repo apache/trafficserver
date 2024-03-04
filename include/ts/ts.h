@@ -34,6 +34,7 @@
 #endif
 
 #include <type_traits>
+#include <vector>
 
 #include "tsutil/DbgCtl.h"
 #include "ts/apidefs.h"
@@ -1283,8 +1284,10 @@ void TSContDataSet(TSCont contp, void *data);
 void *TSContDataGet(TSCont contp);
 TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
+std::vector<TSAction> TSContScheduleOnEntirePool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
+std::vector<TSAction> TSContScheduleEveryOnEntirePool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
 TSEventThread TSContThreadAffinityGet(TSCont contp);
 void TSContThreadAffinityClear(TSCont contp);
