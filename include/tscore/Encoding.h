@@ -19,9 +19,7 @@
   limitations under the License.
  */
 
-#include "tscore/Arena.h"
-#include "tscore/Diags.h"
-#include "tscore/ink_string.h"
+class Arena;
 
 /*-------------------------------------------------------------------------
   Encoding::escapify_url_common

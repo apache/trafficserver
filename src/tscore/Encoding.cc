@@ -20,7 +20,10 @@
  */
 
 #include "swoc/bwf_ip.h"
+#include "tscore/Arena.h"
 #include "tscore/Encoding.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_string.h"
 
 /*-------------------------------------------------------------------------
   Encoding::escapify_url_common
