@@ -204,8 +204,8 @@ private:
 
   NetTimeout _timeout{};
   HTTPParser http_parser;
-  EThread *_thread = nullptr;
-  Http2StreamId _id;
+  EThread *_thread        = nullptr;
+  Http2StreamId _id       = -1;
   Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
   int64_t _http_sm_id     = -1;
 

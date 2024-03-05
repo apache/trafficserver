@@ -22,6 +22,7 @@
  */
 
 #include "../../iocore/net/P_Net.h"
+#include "iocore/eventsystem/Lock.h"
 #include "proxy/http2/HTTP2.h"
 #include "proxy/http2/Http2ConnectionState.h"
 #include "proxy/http2/Http2ClientSession.h"
@@ -35,6 +36,7 @@
 #include "iocore/net/TLSSNISupport.h"
 
 #include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
 #include "tsutil/PostScript.h"
 #include "tsutil/LocalBuffer.h"
 
@@ -1447,7 +1449,14 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
-    _scheduled = false;
+    _priority_scheduled = false;
+  } break;
+
+  case HTTP2_SESSION_EVENT_DATA: {
+    REMEMBER(event, this->recursion);
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    this->restart_streams();
+    _data_scheduled = false;
   } break;
 
   // Initiate a graceful shutdown
@@ -2014,9 +2023,9 @@ Http2ConnectionState::update_initial_local_rwnd(Http2WindowSize new_size)
 }
 
 void
-Http2ConnectionState::schedule_stream(Http2Stream *stream)
+Http2ConnectionState::schedule_stream_to_send_priority_frames(Http2Stream *stream)
 {
-  Http2StreamDebug(session, stream->get_id(), "Scheduled");
+  Http2StreamDebug(session, stream->get_id(), "Scheduling sending priority frames");
 
   Http2DependencyTree::Node *node = stream->priority_node;
   ink_release_assert(node != nullptr);
@@ -2024,11 +2033,26 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   dependency_tree->activate(node);
 
-  if (!_scheduled) {
-    _scheduled = true;
+  if (!_priority_scheduled) {
+    _priority_scheduled = true;
 
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
     this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+  }
+}
+
+void
+Http2ConnectionState::schedule_stream_to_send_data_frames(Http2Stream *stream)
+{
+  Http2StreamDebug(session, stream->get_id(), "Scheduling sending data frames");
+
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
+  if (!_data_scheduled) {
+    _data_scheduled = true;
+
+    SET_HANDLER(&Http2ConnectionState::main_event_handler);
+    this_ethread()->schedule_in((Continuation *)this, HRTIME_MSECOND, HTTP2_SESSION_EVENT_DATA);
   }
 }
 
@@ -2214,6 +2238,9 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
       } else {
         ink_release_assert(!"What case is this?");
       }
+    } else if (result == Http2SendDataFrameResult::NOT_WRITE_AVAIL) {
+      // Schedule an even to wake up and try to resend the stream.
+      schedule_stream_to_send_data_frames(stream);
     }
   }
   if (!more_data && result != Http2SendDataFrameResult::DONE) {
@@ -2230,13 +2257,14 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   int payload_length          = 0;
   uint8_t flags               = 0x00;
 
-  Http2StreamDebug(session, stream->get_id(), "Send HEADERS frame");
-
   // For outbound streams, set the ID if it has not yet already been set
   // Need to defer setting the stream ID to avoid another later created stream
   // sending out first.  This may cause the peer to issue a stream or connection
   // error (new stream less that the greatest we have seen so far)
   this->set_stream_id(stream);
+
+  // Keep this debug below set_stream_id so that the id is correct.
+  Http2StreamDebug(session, stream->get_id(), "Send HEADERS frame");
 
   HTTPHdr *send_hdr = stream->get_send_header();
   if (stream->expect_send_trailer()) {
