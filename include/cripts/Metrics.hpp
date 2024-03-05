@@ -122,7 +122,7 @@ class Counter : public detail::BaseMetrics
   using self_type  = Counter;
 
 public:
-  Counter(const Cript::string_view &name) : super_type(name) {}
+  Counter(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Counter::create(name)); }
 
   // Counters can only increment, so lets produce some nice compile time erorrs too
   void decrement(int64_t) = delete;
@@ -161,7 +161,7 @@ class Gauge : public detail::BaseMetrics
   using self_type  = Gauge;
 
 public:
-  Gauge(const Cript::string_view &name) : super_type(name) {}
+  Gauge(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Gauge::create(name)); }
 
   static self_type *
   create(const Cript::string_view &name)
