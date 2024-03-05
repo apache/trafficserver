@@ -66,16 +66,13 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
   HttpHeader const header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
-  bool ret                  = false;
-  bool should_read_obj_size = false;
-
   if (TS_HTTP_METHOD_GET == header.method() || TS_HTTP_METHOD_HEAD == header.method() || TS_HTTP_METHOD_PURGE == header.method()) {
     if (!header.hasKey(config->m_skip_header.data(), config->m_skip_header.size())) {
       // check if any previous plugin has monkeyed with the transaction status
       TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
       if (TS_HTTP_STATUS_NONE != txnstat) {
         DEBUG_LOG("txn status change detected (%d), skipping plugin\n", static_cast<int>(txnstat));
-        goto out;
+        return false;
       }
 
       if (config->hasRegex()) {
@@ -86,7 +83,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
           if (!shouldslice) {
             DEBUG_LOG("request failed regex, not slicing: '%.*s'", urllen, urlstr);
             TSfree(urlstr);
-            goto out;
+            return false;
           }
 
           DEBUG_LOG("request passed regex, slicing: '%.*s'", urllen, urlstr);
@@ -103,7 +100,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
       // connection back into ATS
       sockaddr const *const ip = TSHttpTxnClientAddrGet(txnp);
       if (nullptr == ip) {
-        goto out;
+        return false;
       }
 
       TSAssert(nullptr != config);
@@ -118,20 +115,20 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
       } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
       } else {
-        goto out;
+        return false;
       }
 
       // need to reset the HOST field for global plugin
       data->m_hostlen = sizeof(data->m_hostname) - 1;
       if (!header.valueForKey(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, data->m_hostname, &data->m_hostlen)) {
         DEBUG_LOG("Unable to get hostname from header");
-        goto out;
+        return false;
       }
 
       // check if object is previously known to be too small to slice
       if (should_skip_this_obj(txnp, config)) {
-        should_read_obj_size = true;
-        goto out;
+        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_obj_size_contp);
+        return false;
       }
 
       // is the plugin configured to use a remap host?
@@ -150,7 +147,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
           if (TS_SUCCESS != rcode) {
             ERROR_LOG("Error cloning pristine url");
             TSMBufferDestroy(newbuf);
-            goto out;
+            return false;
           }
 
           data->m_urlbuf = newbuf;
@@ -183,7 +180,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
               TSHandleMLocRelease(newbuf, nullptr, newloc);
             }
             TSMBufferDestroy(newbuf);
-            goto out;
+            return false;
           }
 
           data->m_urlbuf = newbuf;
@@ -212,17 +209,13 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
       // Grab the transaction
       TSHttpTxnIntercept(icontp, txnp);
 
-      ret = true;
+      return true;
     } else {
       DEBUG_LOG("slice passing GET or HEAD request through to next plugin");
     }
   }
 
-out:
-  if (should_read_obj_size) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_obj_size_contp);
-  }
-  return ret;
+  return false;
 }
 
 static int

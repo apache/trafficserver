@@ -282,7 +282,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     if (m_oscache.has_value()) {
       DEBUG_LOG("Metadata cache size: %zu", m_oscache->cache_size());
     } else {
-      ERROR_LOG("An metadata cache is required when --minimum-size is specified!  Using a default size of 16384 entries.");
+      ERROR_LOG("--metadata-cache-size is required when --minimum-size is specified!  Using a default size of 16384.");
       setCacheSize(16384);
     }
   }
