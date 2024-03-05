@@ -52,7 +52,7 @@ set(CRIPTS_PUBLIC_HEADERS
 add_library(cripts SHARED ${CPP_FILES})
 add_library(ts::cripts ALIAS cripts)
 
-target_link_libraries(cripts PUBLIC libswoc::libswoc fmt::fmt PkgConfig::PCRE2 OpenSSL::Crypto ts::tsapi)
+target_link_libraries(cripts PUBLIC libswoc::libswoc fmt::fmt PkgConfig::PCRE2 OpenSSL::Crypto)
 set_target_properties(cripts PROPERTIES PUBLIC_HEADER "${CRIPTS_PUBLIC_HEADERS}")
 
 set_target_properties(

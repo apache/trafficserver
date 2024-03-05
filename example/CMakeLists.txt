@@ -17,6 +17,8 @@
 
 # It might be better if this is a subproject
 
+include(add_atsplugin)
+
 add_subdirectory(plugins)
 if(ENABLE_CRIPTS)
   add_subdirectory(cripts)
