@@ -169,7 +169,7 @@ Cript::string::split(char delim) const &
 std::vector<Cript::string_view>
 Cript::splitter(Cript::string_view input, char delim)
 {
-  return {};
+  return details::splitter<Cript::string_view>(input, delim);
 }
 
 bool
