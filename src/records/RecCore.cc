@@ -560,19 +560,23 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     return REC_ERR_FAIL;
   }
 
-  // First find the new metrics, this is a bit of a hack, beacuse we still use the old
-  // librecords callback with a "pseudo" record.
-  RecRecord tmp;
+  if ((rec_type & (RECT_PROCESS | RECT_NODE | RECT_PLUGIN))) {
+    // First find the new metrics, this is a bit of a hack, because we still use the old
+    // librecords callback with a "pseudo" record.
+    RecRecord tmp;
 
-  tmp.rec_type  = RECT_ALL;
-  tmp.data_type = RECD_INT;
+    tmp.rec_type  = RECT_PROCESS;
+    tmp.data_type = RECD_INT;
 
-  for (auto &&[name, val] : ts::Metrics::instance()) {
-    if (regex.match(name.data()) >= 0) {
-      tmp.name         = name.data();
-      tmp.data.rec_int = val;
-      callback(&tmp, data);
+    for (auto &&[name, val] : ts::Metrics::instance()) {
+      if (regex.match(name.data()) >= 0) {
+        tmp.name         = name.data();
+        tmp.data.rec_int = val;
+        callback(&tmp, data);
+      }
     }
+    // all done for metrics
+    return REC_ERR_OKAY;
   }
 
   num_records = g_num_records;

@@ -148,6 +148,11 @@ void static get_record_regex_impl(std::string const &regex, unsigned recType, Co
       return;
     }
 
+    if (!ctx.checkCb(record->rec_type, ctx.ec)) {
+      // error_code in the callback will be set.
+      return;
+    }
+
     YAML::Node recordYaml;
 
     try {
@@ -159,6 +164,14 @@ void static get_record_regex_impl(std::string const &regex, unsigned recType, Co
 
     // we have to append the records to the context one.
     ctx.yaml.push_back(recordYaml);
+  };
+
+  ctx.checkCb = [recType](RecT rec_type, std::error_code &ec) {
+    if ((recType & rec_type) == 0) {
+      ec = rpc::handlers::errors::RecordError::REQUESTED_TYPE_MISMATCH;
+      return false;
+    }
+    return true;
   };
 
   const auto ret = RecLookupMatchingRecords(recType, regex.c_str(), yamlConverter, &ctx);
