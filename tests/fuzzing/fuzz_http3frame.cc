@@ -29,7 +29,9 @@
 
 #define TEST_THREADS 1
 
-bool DoInitialization() {
+bool
+DoInitialization()
+{
   Layout::create();
   RecProcessInit();
   LibRecordsConfigInit();
