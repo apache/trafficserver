@@ -22,6 +22,7 @@ foreach(EXA ${CRIPTS_EXAMPLES})
   get_filename_component(EXA ${EXA} NAME_WLE)
   add_atsplugin(cripts_${EXA} ${EXA}.cc)
   target_link_libraries(cripts_${EXA} PRIVATE ts::cripts)
+  verify_remap_plugin(cripts_${EXA})
 endforeach()
 
 # This is a hack, but useful to run clang-tidy across all of Cripts
