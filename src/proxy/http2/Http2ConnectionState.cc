@@ -1445,7 +1445,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     SET_HANDLER(&Http2ConnectionState::state_closed);
   } break;
 
-  case HTTP2_SESSION_EVENT_XMIT: {
+  case HTTP2_SESSION_EVENT_PRIO: {
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
@@ -2037,7 +2037,7 @@ Http2ConnectionState::schedule_stream_to_send_priority_frames(Http2Stream *strea
     _priority_scheduled = true;
 
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_PRIO);
   }
 }
 
@@ -2098,7 +2098,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     break;
   }
 
-  this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+  this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_PRIO);
   return;
 }
 
