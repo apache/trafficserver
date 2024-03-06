@@ -211,6 +211,7 @@ QPACK::event_handler(int event, Event *data)
     break;
   case VC_EVENT_EOS:
     adapter->clear_eos_event(data);
+    ret = EVENT_DONE;
     break;
   default:
     ret = EVENT_DONE;
