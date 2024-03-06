@@ -158,6 +158,8 @@ public:
   void schedule_stream_to_send_priority_frames(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
   void schedule_stream_to_send_data_frames(Http2Stream *stream);
+  void schedule_retransmit(ink_hrtime t);
+  void cancel_retransmit();
   void send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
@@ -398,6 +400,7 @@ private:
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
+  Event *retransmit_event           = nullptr;
 
   uint32_t configured_max_settings_frames_per_minute   = 0;
   uint32_t configured_max_ping_frames_per_minute       = 0;
