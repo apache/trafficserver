@@ -340,7 +340,7 @@ get_cached_header_info(StateInfo *state)
   chi->date    = 0;
   chi->max_age = 0;
 
-  // -1 is used as a placeholder for teh following two meaning that their
+  // -1 is used as a placeholder for the following two meaning that their
   // respective directives were not in the Cache-Control header.
   chi->stale_while_revalidate = -1;
   chi->stale_if_error         = -1;
