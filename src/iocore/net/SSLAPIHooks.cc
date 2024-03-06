@@ -25,8 +25,19 @@
 
 SSLAPIHooks *g_ssl_hooks = nullptr;
 
+namespace
+{
+// structure to delete the global hooks
+struct GlobalHooksDeleter {
+  ~GlobalHooksDeleter() { delete g_ssl_hooks; }
+};
+} // namespace
+GlobalHooksDeleter g_hooks_deleter;
+
 void
 init_global_ssl_hooks()
 {
-  g_ssl_hooks = new SSLAPIHooks;
+  if (g_ssl_hooks == nullptr) {
+    g_ssl_hooks = new SSLAPIHooks;
+  }
 }
