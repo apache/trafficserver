@@ -158,9 +158,12 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]") {
 
   // Erase all the non-"dup" and see if the range is still correct.
   map.apply([&map](Thing &thing) {
-    if (thing._payload != "dup"sv)
+    if (thing._payload != "dup"sv) {
       map.erase(map.iterator_for(&thing));
+      delete &thing;
+    }
   });
+
   r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
   idx = r.first;
@@ -269,6 +272,14 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]") {
     }
   }
   REQUIRE(miss_p == false);
+
+  // Delete everything in strings.
+  for (auto &&s : strings) {
+    free(const_cast<char *>(s.data()));
+  }
+
+  // Delete everything in ihm.
+  ihm.apply([](Thing *thing) { delete thing; });
 };
 
 TEST_CASE("IntrusiveHashMap Utilities", "[IntrusiveHashMap]") {}
