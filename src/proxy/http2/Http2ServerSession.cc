@@ -215,7 +215,7 @@ Http2ServerSession::main_event_handler(int event, void *edata)
     retval = 0;
     break;
 
-  case HTTP2_SESSION_EVENT_XMIT:
+  case HTTP2_SESSION_EVENT_PRIO:
   default:
     Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
