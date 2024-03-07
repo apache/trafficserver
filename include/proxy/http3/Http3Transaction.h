@@ -69,6 +69,9 @@ public:
   virtual int state_stream_closed(int event, Event *data) = 0;
   NetVConnectionContext_t direction() const;
 
+  // For Queue from tscore/Link.h
+  LINK(HQTransaction, link);
+
 protected:
   virtual int64_t _process_read_vio()  = 0;
   virtual int64_t _process_write_vio() = 0;
