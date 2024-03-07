@@ -3,6 +3,7 @@
         "name": "English",
         "versions": [
             "latest",
+            "10.0.x",
             "9.2.x",
             "9.1.x",
             "9.0.x",
@@ -14,6 +15,7 @@
         "name": "日本語",
         "versions": [
             "latest",
+            "10.0.x",
             "9.2.x",
             "9.1.x",
             "9.0.x",
