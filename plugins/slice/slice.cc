@@ -30,17 +30,16 @@
 #include <charconv>
 #include <netinet/in.h>
 #include <array>
-#include <tuple>
 
 namespace
 {
 struct PluginInfo {
   Config config;
-  TSCont read_obj_size_contp;
+  TSCont read_resp_hdr_contp;
 };
 
 Config globalConfig;
-TSCont global_read_obj_size_contp;
+TSCont global_read_resp_hdr_contp;
 
 static bool
 should_skip_this_obj(TSHttpTxn txnp, Config *const config)
@@ -59,7 +58,7 @@ should_skip_this_obj(TSHttpTxn txnp, Config *const config)
 }
 
 bool
-read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
+read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
 {
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
@@ -90,11 +89,6 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
           TSfree(urlstr);
         }
       }
-
-      // turn off any and all transaction caching (shouldn't matter)
-      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
-      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);
-      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, false);
 
       DEBUG_LOG("slice accepting and slicing");
       // connection back into ATS
@@ -127,7 +121,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
 
       // check if object is previously known to be too small to slice
       if (should_skip_this_obj(txnp, config)) {
-        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_obj_size_contp);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
         return false;
       }
 
@@ -219,10 +213,15 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_obj_size_contp)
 }
 
 static int
-read_obj_size(TSCont contp, TSEvent event, void *edata)
+read_resp_hdr(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
   PluginInfo *info = static_cast<PluginInfo *>(TSContDataGet(contp));
+
+  // This function does the following things:
+  // 1. Parse the object size from Content-Length
+  // 2. Cache the object size
+  // 3. If the object will be sliced in subsequent requests, turn off the cache to avoid taking up space, and head-of-line blocking.
 
   int urllen   = 0;
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
@@ -239,6 +238,10 @@ read_obj_size(TSCont contp, TSEvent event, void *edata)
       [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
       if (ec == std::errc()) {
         info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
+        if (content_length >= info->config.m_min_size_to_slice) {
+          // This object will be sliced in future requests.  Don't cache it for now.
+          TSHttpTxnServerRespNoStoreSet(txnp, 1);
+        }
       } else {
         ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
       }
@@ -263,7 +266,7 @@ global_read_request_hook(TSCont // contp
                          void *edata)
 {
   TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
-  read_request(txnp, &globalConfig, global_read_obj_size_contp);
+  read_request(txnp, &globalConfig, global_read_resp_hdr_contp);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
@@ -282,7 +285,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED 
 {
   PluginInfo *const info = static_cast<PluginInfo *>(ih);
 
-  if (read_request(txnp, &info->config, info->read_obj_size_contp)) {
+  if (read_request(txnp, &info->config, info->read_resp_hdr_contp)) {
     return TSREMAP_DID_REMAP_STOP;
   } else {
     return TSREMAP_NO_REMAP;
@@ -334,9 +337,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 
   info->config.fromArgs(argc - 2, argv + 2);
 
-  TSCont read_obj_size_contp = TSContCreate(read_obj_size, nullptr);
-  TSContDataSet(read_obj_size_contp, static_cast<void *>(info));
-  info->read_obj_size_contp = read_obj_size_contp;
+  TSCont read_resp_hdr_contp = TSContCreate(read_resp_hdr, nullptr);
+  TSContDataSet(read_resp_hdr_contp, static_cast<void *>(info));
+  info->read_resp_hdr_contp = read_resp_hdr_contp;
 
   init_stats(info->config);
 
@@ -350,7 +353,7 @@ TSRemapDeleteInstance(void *ih)
 {
   if (nullptr != ih) {
     PluginInfo *const info = static_cast<PluginInfo *>(ih);
-    TSContDestroy(info->read_obj_size_contp);
+    TSContDestroy(info->read_resp_hdr_contp);
     delete info;
   }
 }
@@ -380,7 +383,7 @@ TSPluginInit(int argc, char const *argv[])
   globalConfig.fromArgs(argc - 1, argv + 1);
 
   TSCont const global_read_request_contp(TSContCreate(global_read_request_hook, nullptr));
-  global_read_obj_size_contp = TSContCreate(read_obj_size, nullptr);
+  global_read_resp_hdr_contp = TSContCreate(read_resp_hdr, nullptr);
 
   // Called immediately after the request header is read from the client
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_read_request_contp);

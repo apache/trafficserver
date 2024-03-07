@@ -355,7 +355,7 @@ void
 Config::updateStats(const std::function<void(int, uint64_t)> &update_func)
 {
   // TODO: check if this update is too frequent
-  if (stats_enabled) {
+  if (stats_enabled && m_oscache) {
     auto [cache_read_hits, cache_read_misses, cache_write_hits, cache_write_misses] = m_oscache->cache_stats();
     update_func(stat_read_hits_id, cache_read_hits);
     update_func(stat_read_misses_id, cache_read_misses);
