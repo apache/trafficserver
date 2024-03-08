@@ -967,7 +967,7 @@ static const RecordElement RecordsConfig[] =
   //        ###########
   //        # CONNECT #
   //        ###########
-  {RECT_CONFIG, "proxy.config.http.connect_ports", RECD_STRING, "443", RECU_DYNAMIC, RR_NULL, RECC_STR, "^(\\*|[[:digit:][:space:]]+)$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.connect_ports", RECD_STRING, "443", RECU_DYNAMIC, RR_NULL, RECC_STR, "^(\\*|[[:digit:][:space:]-]+)$", RECA_NULL}
   ,
   //        ##########################
   //        # Various update periods #
