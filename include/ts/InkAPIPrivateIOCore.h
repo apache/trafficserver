@@ -132,61 +132,18 @@ void TSIOBufferBlockDestroy(TSIOBufferBlock blockp);
 using INKUDPPacket     = void *;
 using INKUDPacketQueue = void *;
 using INKUDPConn       = void *;
-/* ===== UDP Connections ===== */
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-TSAction INKUDPBind(TSCont contp, unsigned int ip, int port);
 
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-TSAction INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *buf, int len);
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-TSAction INKUDPRecvFrom(TSCont contp, INKUDPConn udp);
-
-/****************************************************************************
- *  Return file descriptor.
- *  contact: OXYGEN
- ****************************************************************************/
-int INKUDPConnFdGet(INKUDPConn udp);
-
-/* ===== UDP Packet ===== */
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-INKUDPPacket INKUDPPacketCreate();
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-TSIOBufferBlock INKUDPPacketBufferBlockGet(INKUDPPacket packet);
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-unsigned int INKUDPPacketFromAddressGet(INKUDPPacket packet);
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-int INKUDPPacketFromPortGet(INKUDPPacket packet);
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-INKUDPConn INKUDPPacketConnGet(INKUDPPacket packet);
-
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-void INKUDPPacketDestroy(INKUDPPacket packet);
-
-/* ===== Packet Queue ===== */
-/****************************************************************************
- *  contact: OXYGEN
- ****************************************************************************/
-INKUDPPacket INKUDPPacketGet(INKUDPacketQueue queuep);
+TSAction INKUDPBind_Deprecated(TSCont contp, unsigned int ip, int port) {
+  Log("INKUDPBind is deprecated, use new TS APIs instead");
+}
+TSAction INKUDPSendTo_Deprecated(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *buf, int len) {
+  Log("INKUDPSendTo is deprecated, use new TS APIs instead");
+}
+TSAction INKUDPRecvFrom_Deprecated(TSCont contp, INKUDPConn udp){
+  Log("INKUDPRecvFrom is deprecated, use new TS APIs instead");
+}
+INKUDPPacket INKUDPPacketCreate_Deprecated(); 
+unsigned int INKUDPPacketFromAddressGet_Deprecated(INKUDPPacket packet){
+  Log("INKUDPPacketFromAddressGet deprecated");
+INKUDPBind(contp, ip, port);
+TSUDPBind(contp, ip, port);
