@@ -136,7 +136,10 @@
       "displayName": "CI OSX",
       "description": "CI Pipeline config for OSX",
       "inherits": ["ci"],
-      "generator": "Unix Makefiles"
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "ENABLE_CRIPTS": true
+      }
     },
     {
       "name": "ci-rocky",
@@ -157,7 +160,8 @@
       "inherits": ["ci"],
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
-        "opentelemetry_ROOT": "/opt"
+        "opentelemetry_ROOT": "/opt",
+        "ENABLE_CRIPTS": true
       }
     },
     {

@@ -24,6 +24,8 @@ import sys
 class TestGrpc():
     """Test basic gRPC traffic."""
 
+    num_client_connections = 50
+
     def __init__(self, description: str):
         """Configure a TestRun for gRPC traffic.
 
@@ -64,8 +66,16 @@ class TestGrpc():
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{dns_port}",
                 'proxy.config.dns.resolv_conf': "NULL",
-                "proxy.config.diags.debug.enabled": 1,
+
+                # Disable debug logging to avoid excessive log file size. I keep
+                # it here for convenience of use during manual debugging.
+                "proxy.config.diags.debug.enabled": 0,
                 "proxy.config.diags.debug.tags": "http",
+
+                # The Python gRPC module uses many WINDO_UPDATE frames of small
+                # sizes, so we have to disable the min_avg_window_update to
+                # avoid ATS generating ERRORS logs and GOAWAY frames for them.
+                "proxy.config.http2.min_avg_window_update": 0,
             })
         return self._ts
 
@@ -84,8 +94,11 @@ class TestGrpc():
         self._server.Setup.Copy(server_key)
 
         port = get_port(self._server, 'port')
-        command = (f'{sys.executable} {tr.RunDirectory}/grpc_server.py {port} '
-                   'server.pem server.key')
+        # Each connection performs two requests, so multiply the number of
+        # connections by 2 to get the expected number of transactions.
+        command = (
+            f'{sys.executable} {tr.RunDirectory}/grpc_server.py {port} '
+            f'server.pem server.key {TestGrpc.num_client_connections * 2}')
         self._server.Command = command
         self._server.ReturnCode = 0
         return self._server
@@ -100,10 +113,12 @@ class TestGrpc():
         ts_cert = os.path.join(self._ts.Variables.SSLDir, 'server.pem')
         # The cert is for example.com, so we must use that domain.
         hostname = 'example.com'
-        command = (f'{sys.executable} {tr.RunDirectory}/grpc_client.py '
-                   f'{hostname} {proxy_port} {ts_cert}')
+        command = (
+            f'{sys.executable} {tr.RunDirectory}/grpc_client.py '
+            f'{hostname} {proxy_port} {ts_cert} {TestGrpc.num_client_connections}')
         tr.Processes.Default.Command = command
         tr.Processes.Default.ReturnCode = 0
+        tr.TimeOut = 10
 
     def _compile_protobuf_files(self) -> None:
         """Compile the protobuf files."""

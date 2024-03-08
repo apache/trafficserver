@@ -47,11 +47,14 @@ another thread this can be problematic to be correctly timed. The return value c
 If :arg:`contp` has no thread affinity set, the thread it is now scheduled on will be set
 as its thread affinity thread.
 
-Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
+Note that the `TSContSchedule` family of API shall only be called from an ATS EThread.
 Calling it from raw non-EThreads can result in unpredictable behavior.
 
 See Also
 ========
 
 :doc:`TSContScheduleOnPool.en`
+:doc:`TSContScheduleOnEntirePool.en`
 :doc:`TSContScheduleEveryOnPool.en`
+:doc:`TSContScheduleEveryOnThread.en`
+:doc:`TSContScheduleEveryOnEntirePool.en`

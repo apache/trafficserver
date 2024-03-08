@@ -35,7 +35,7 @@ class Test_remap_acl:
 
     def __init__(
             self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool, acl_configuration: str,
-            named_acls: List[Tuple[str, str]], expected_responses: list[int]):
+            named_acls: List[Tuple[str, str]], expected_responses: List[int]):
         """Initialize the test.
 
         :param name: The name of the test.

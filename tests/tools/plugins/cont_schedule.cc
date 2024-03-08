@@ -47,11 +47,57 @@ static TSEventThread thread_2 = nullptr;
 static TSCont contp_1 = nullptr;
 static TSCont contp_2 = nullptr;
 
+static int TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata);
 static int TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata);
 static int TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata);
 static int TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata);
 static int TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *edata);
-static int TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata);
+static int TSContScheduleOnEntirePool_handler(TSCont contp, TSEvent event, void *edata);
+static int TSContScheduleEveryOnPool_handler(TSCont contp, TSEvent event, void *edata);
+static int TSContScheduleEveryOnThread_handler(TSCont contp, TSEvent event, void *edata);
+static int TSContScheduleEveryOnEntirePool_handler(TSCont contp, TSEvent event, void *edata);
+
+static int
+TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
+{
+  Dbg(dbg_ctl_hdl, "TSContThreadAffinity handler thread [%p]", TSThreadSelf());
+
+  thread_1 = TSEventThreadSelf();
+
+  if (TSContThreadAffinityGet(contp) != nullptr) {
+    Dbg(dbg_ctl_chk, "pass [affinity thread is not null]");
+    TSContThreadAffinityClear(contp);
+    if (TSContThreadAffinityGet(contp) == nullptr) {
+      Dbg(dbg_ctl_chk, "pass [affinity thread is cleared]");
+      TSContThreadAffinitySet(contp, TSEventThreadSelf());
+      if (TSContThreadAffinityGet(contp) == thread_1) {
+        Dbg(dbg_ctl_chk, "pass [affinity thread is set]");
+      } else {
+        Dbg(dbg_ctl_chk, "fail [affinity thread is not set]");
+      }
+    } else {
+      Dbg(dbg_ctl_chk, "fail [affinity thread is not cleared]");
+    }
+  } else {
+    Dbg(dbg_ctl_chk, "fail [affinity thread is null]");
+  }
+
+  return 0;
+}
+
+void
+TSContThreadAffinity_test()
+{
+  TSCont contp = TSContCreate(TSContThreadAffinity_handler, TSMutexCreate());
+
+  if (contp == nullptr) {
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
+  }
+}
 
 static int
 TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
@@ -171,44 +217,106 @@ TSContScheduleOnThread_test()
 }
 
 static int
-TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
+TSContScheduleOnEntirePool_handler(TSCont contp, TSEvent event, void *edata)
 {
-  Dbg(dbg_ctl_hdl, "TSContThreadAffinity handler thread [%p]", TSThreadSelf());
-
-  thread_1 = TSEventThreadSelf();
-
-  if (TSContThreadAffinityGet(contp) != nullptr) {
-    Dbg(dbg_ctl_chk, "pass [affinity thread is not null]");
-    TSContThreadAffinityClear(contp);
-    if (TSContThreadAffinityGet(contp) == nullptr) {
-      Dbg(dbg_ctl_chk, "pass [affinity thread is cleared]");
-      TSContThreadAffinitySet(contp, TSEventThreadSelf());
-      if (TSContThreadAffinityGet(contp) == thread_1) {
-        Dbg(dbg_ctl_chk, "pass [affinity thread is set]");
-      } else {
-        Dbg(dbg_ctl_chk, "fail [affinity thread is not set]");
-      }
-    } else {
-      Dbg(dbg_ctl_chk, "fail [affinity thread is not cleared]");
-    }
-  } else {
-    Dbg(dbg_ctl_chk, "fail [affinity thread is null]");
-  }
-
+  Dbg(dbg_ctl_hdl, "TSContScheduleOnEntirePool handler thread [%p]", TSThreadSelf());
   return 0;
 }
 
 void
-TSContThreadAffinity_test()
+TSContScheduleOnEntirePool_test()
 {
-  TSCont contp = TSContCreate(TSContThreadAffinity_handler, TSMutexCreate());
+  TSCont contp = TSContCreate(TSContScheduleOnEntirePool_handler, nullptr);
 
   if (contp == nullptr) {
     Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
     abort();
   } else {
     Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
-    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
+    TSContScheduleOnEntirePool(contp, 0, TS_THREAD_POOL_NET);
+  }
+}
+
+static int
+TSContScheduleEveryOnPool_handler(TSCont contp, TSEvent event, void *edata)
+{
+  Dbg(dbg_ctl_hdl, "TSContScheduleEveryOnPool handler thread [%p]", TSThreadSelf());
+
+  if (thread_1 == nullptr) {
+    // First time here, record thread id.
+    thread_1 = TSEventThreadSelf();
+  } else {
+    // Second time here, we should be on a different thread since affinity was cleared.
+    if (thread_1 == TSEventThreadSelf()) {
+      Dbg(dbg_ctl_chk, "pass [should be the same thread]");
+    } else {
+      Dbg(dbg_ctl_chk, "fail [not on the same thread]");
+    }
+  }
+  return 0;
+}
+
+void
+TSContScheduleEveryOnPool_test()
+{
+  TSCont contp = TSContCreate(TSContScheduleEveryOnPool_handler, TSMutexCreate());
+
+  if (contp == nullptr) {
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleEveryOnPool(contp, 900, TS_THREAD_POOL_NET);
+  }
+}
+
+static int
+TSContScheduleEveryOnThread_handler(TSCont contp, TSEvent event, void *edata)
+{
+  Dbg(dbg_ctl_hdl, "TSContScheduleEveryOnThread handler thread [%p]", TSThreadSelf());
+
+  if (thread_1 == TSEventThreadSelf()) {
+    Dbg(dbg_ctl_chk, "pass [should be the same thread]");
+  } else {
+    Dbg(dbg_ctl_chk, "fail [not on the same thread]");
+  }
+  return 0;
+}
+
+void
+TSContScheduleEveryOnThread_test()
+{
+  TSCont contp = TSContCreate(TSContScheduleEveryOnThread_handler, TSMutexCreate());
+
+  thread_1 = TSEventThreadSelf();
+
+  if (contp == nullptr) {
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleEveryOnThread(contp, 900, thread_1);
+  }
+}
+
+static int
+TSContScheduleEveryOnEntirePool_handler(TSCont contp, TSEvent event, void *edata)
+{
+  Dbg(dbg_ctl_hdl, "TSContScheduleEveryOnEntirePool handler thread [%p]", TSThreadSelf());
+  return 0;
+}
+
+void
+TSContScheduleEveryOnEntirePool_test()
+{
+  TSCont contp = TSContCreate(TSContScheduleEveryOnEntirePool_handler, nullptr);
+
+  if (contp == nullptr) {
+    Dbg(dbg_ctl_schd, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    Dbg(dbg_ctl_schd, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleEveryOnEntirePool(contp, 900, TS_THREAD_POOL_NET);
   }
 }
 
@@ -218,13 +326,25 @@ LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
   if (event == TS_EVENT_LIFECYCLE_TASK_THREADS_READY) {
     switch (test_flag) {
     case 1:
-      TSContScheduleOnPool_test();
+      TSContThreadAffinity_test();
       break;
     case 2:
-      TSContScheduleOnThread_test();
+      TSContScheduleOnPool_test();
       break;
     case 3:
-      TSContThreadAffinity_test();
+      TSContScheduleOnThread_test();
+      break;
+    case 4:
+      TSContScheduleOnEntirePool_test();
+      break;
+    case 5:
+      TSContScheduleEveryOnPool_test();
+      break;
+    case 6:
+      TSContScheduleEveryOnThread_test();
+      break;
+    case 7:
+      TSContScheduleEveryOnEntirePool_test();
       break;
     default:
       break;
@@ -238,15 +358,27 @@ TSPluginInit(int argc, const char *argv[])
 {
   if (argc == 2) {
     int len = strlen(argv[1]);
-    if (len == 4 && strncmp(argv[1], "pool", 4) == 0) {
-      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnPool");
+    if (len == 8 && strncmp(argv[1], "affinity", 8) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContThreadAffinity");
       test_flag = 1;
+    } else if (len == 4 && strncmp(argv[1], "pool", 4) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnPool");
+      test_flag = 2;
     } else if (len == 6 && strncmp(argv[1], "thread", 6) == 0) {
       Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnThread");
-      test_flag = 2;
-    } else if (len == 8 && strncmp(argv[1], "affinity", 8) == 0) {
-      Dbg(dbg_ctl_init, "initializing plugin for testing TSContThreadAffinity");
       test_flag = 3;
+    } else if (len == 6 && strncmp(argv[1], "entire", 6) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleOnEntirePool");
+      test_flag = 4;
+    } else if (len == 10 && strncmp(argv[1], "every_pool", 10) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleEveryOnPool");
+      test_flag = 5;
+    } else if (len == 12 && strncmp(argv[1], "every_thread", 12) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleEveryOnThread");
+      test_flag = 6;
+    } else if (len == 12 && strncmp(argv[1], "every_entire", 12) == 0) {
+      Dbg(dbg_ctl_init, "initializing plugin for testing TSContScheduleEveryOnEntirePool");
+      test_flag = 7;
     } else {
       goto Lerror;
     }

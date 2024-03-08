@@ -95,16 +95,16 @@ public:
       if (queue["max_age"]) {
         _max_age = std::chrono::seconds(queue["max_age"].as<uint32_t>());
       }
+    }
 
-      const YAML::Node &metrics = node["metrics"];
+    const YAML::Node &metrics = node["metrics"];
 
-      if (metrics) {
-        std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
-        std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
+    if (metrics) {
+      std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
+      std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
 
-        Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
-        initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
-      }
+      Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
+      initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
     }
 
     return true;

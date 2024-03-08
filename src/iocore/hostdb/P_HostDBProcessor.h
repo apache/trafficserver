@@ -235,9 +235,6 @@ struct HostDBContinuation : public Continuation {
   int retryEvent(int event, Event *e);
   int setbyEvent(int event, Event *e);
 
-  // update the host file config variables
-  void updateHostFileConfig();
-
   /// Recompute the hash and update ancillary values.
   void refresh_hash();
   void do_dns();

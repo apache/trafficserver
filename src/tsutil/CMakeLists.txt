@@ -50,16 +50,19 @@ add_library(
   ts_unit_parser.cc
   Regex.cc
 )
+
 add_library(ts::tsutil ALIAS tsutil)
 set_target_properties(tsutil PROPERTIES POSITION_INDEPENDENT_CODE TRUE PUBLIC_HEADER "${TSUTIL_PUBLIC_HEADERS}")
-target_link_libraries(tsutil PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE)
+target_link_libraries(tsutil PUBLIC libswoc::libswoc yaml-cpp::yaml-cpp PkgConfig::PCRE2)
 
-install(
-  TARGETS tsutil
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil
-)
+if(BUILD_SHARED_LIBS)
+  install(
+    TARGETS tsutil
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil
+  )
+endif()
 
 if(BUILD_TESTING)
   add_executable(

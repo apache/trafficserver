@@ -38,10 +38,9 @@ writeable by the traffic_server process's user::
 Installation
 ------------
 
-Since Header Frequency plugin is an expiremental plugin, |TS| must be configured
-to build experimental plugins in order to use it::
-
-    -DBUILD_EXPERIMENTAL_PLUGINS=ON
+Since Header Frequency plugin is an expiremental plugin. To make this plugin available,
+you must enable experimental plugins when building |TS| by passing the
+``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command when building.
 
 
 Once built, add the following line to :file:`plugin.config` and restart |TS| to use it::

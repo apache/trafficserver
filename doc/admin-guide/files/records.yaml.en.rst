@@ -3992,6 +3992,12 @@ Client-Related Configuration
 
    The filename of SSL client certificate installed on |TS|.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.cert.exit_on_load_fail INT 0
+
+   By default (``0``), |TS| will start even if problems occur when loading the
+   SSL client certificates.  If true (``1``), SSL client certificate load
+   failures will prevent |TS| from starting.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.path STRING /config
    :reloadable:
 

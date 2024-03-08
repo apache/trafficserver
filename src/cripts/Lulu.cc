@@ -166,6 +166,12 @@ Cript::string::split(char delim) const &
   return details::splitter<Cript::string_view>(*this, delim);
 }
 
+std::vector<Cript::string_view>
+Cript::splitter(Cript::string_view input, char delim)
+{
+  return details::splitter<Cript::string_view>(input, delim);
+}
+
 bool
 Control::Base::_get(Cript::Context *context) const
 {

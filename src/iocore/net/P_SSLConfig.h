@@ -96,6 +96,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *clientKeyPathOnly;
   char *clientCACertFilename;
   char *clientCACertPath;
+  int clientCertExitOnLoadError;
   YamlSNIConfig::Policy verifyServerPolicy;
   YamlSNIConfig::Property verifyServerProperties;
   bool tls_server_connection;

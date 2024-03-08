@@ -576,7 +576,8 @@ types supported:
 Operand     Description
 =========== ===================================================================
 /regex/     Matches the condition's provided value against the regular
-            expression.
+            expression. Start the regex with (?i) to flag it for a case
+            insensitive match, e.g. /(?i)regex/ will match ReGeX.
 <string     Matches if the value from the condition is lexically less than
             *string*.
 >string     Matches if the value from the condition is lexically greater than

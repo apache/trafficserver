@@ -42,12 +42,32 @@ sessions:
   - client-request:
       method: "POST"
       version: "1.1"
-      url: /large/chunk/size/header
+      url: /malformed/chunk/header2
       headers:
         fields:
         - [ Host, example.com ]
         - [ Transfer-Encoding, chunked ]
         - [ uuid, 2 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header sizes are in hex, so a size of `3z` is malformed.
+        data: 3z%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /large/chunk/size/header
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 3 ]
       content:
         transfer: plain
         encoding: uri
@@ -70,7 +90,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 3 ]
+        - [ uuid, 4 ]
 
     # The connection will be dropped and this response will not go out.
     server-response:
@@ -89,11 +109,34 @@ sessions:
   - client-request:
       method: "GET"
       version: "1.1"
+      url: /response/malformed/chunk/size2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 5 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header sizes are in hex, so a size of `1z` is malformed.
+        data: 1z%0D%0Adef%0D%0A0%0D%0A%0D%0A
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
       url: /response/large/chunk/size
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 4 ]
+        - [ uuid, 6 ]
 
     # The connection will be dropped and this response will not go out.
     server-response:
