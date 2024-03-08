@@ -22,6 +22,7 @@ add_atsplugin(
   factory.cc
   header_rewrite.cc
   lulu.cc
+  matcher.cc
   operator.cc
   operators.cc
   parser.cc

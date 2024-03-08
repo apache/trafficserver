@@ -41,7 +41,7 @@ ConditionStatus::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), nullptr, 10)));
+  match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
   _matcher = match;
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -77,7 +77,7 @@ ConditionMethod::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
@@ -123,7 +123,7 @@ ConditionRandom::initialize(Parser &p)
   _seed = getpid() * tv.tv_usec;
   _max  = strtol(_qualifier.c_str(), nullptr, 10);
 
-  match->set(static_cast<unsigned int>(strtol(p.get_arg().c_str(), nullptr, 10)));
+  match->set(static_cast<unsigned int>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
   _matcher = match;
 }
 
@@ -195,7 +195,7 @@ ConditionHeader::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
@@ -259,7 +259,7 @@ ConditionUrl::initialize(Parser &p)
   Condition::initialize(p);
 
   MatcherType *match = new MatcherType(_cond_op);
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 }
 
@@ -367,6 +367,7 @@ ConditionUrl::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
+
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
@@ -377,7 +378,7 @@ ConditionDBM::initialize(Parser &p)
   Condition::initialize(p);
 
   MatcherType *match = new MatcherType(_cond_op);
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 
   std::string::size_type pos = _qualifier.find_first_of(',');
@@ -442,7 +443,7 @@ ConditionCookie::initialize(Parser &p)
 
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
@@ -527,7 +528,7 @@ ConditionIp::initialize(Parser &p)
   } else {
     MatcherType *match = new MatcherType(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods());
     _matcher = match;
   }
 }
@@ -625,7 +626,7 @@ ConditionTransactCount::initialize(Parser &p)
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
 
-  match->set(strtol(arg.c_str(), nullptr, 10));
+  match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
 }
 
@@ -715,7 +716,7 @@ ConditionNow::initialize(Parser &p)
 
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
+  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
   _matcher = match;
 }
 
@@ -788,13 +789,13 @@ ConditionGeo::initialize(Parser &p)
   if (is_int_type()) {
     Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
 
-    match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
+    match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
     _matcher = match;
   } else {
     // The default is to have a string matcher
     Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods());
     _matcher = match;
   }
 }
@@ -869,13 +870,13 @@ ConditionId::initialize(Parser &p)
   if (_id_qual == ID_QUAL_REQUEST) {
     Matchers<uint64_t> *match = new Matchers<uint64_t>(_cond_op);
 
-    match->set(static_cast<uint64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
+    match->set(static_cast<uint64_t>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
     _matcher = match;
   } else {
     // The default is to have a string matcher
     Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods());
     _matcher = match;
   }
 }
@@ -952,7 +953,7 @@ ConditionCidr::initialize(Parser &p)
 
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 }
 
@@ -1061,7 +1062,7 @@ ConditionInbound::initialize(Parser &p)
   } else {
     MatcherType *match = new MatcherType(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods());
     _matcher = match;
   }
 }
@@ -1231,7 +1232,7 @@ ConditionSessionTransactCount::initialize(Parser &p)
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
 
-  match->set(strtol(arg.c_str(), nullptr, 10));
+  match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
 }
 
@@ -1265,7 +1266,7 @@ ConditionTcpInfo::initialize(Parser &p)
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
 
-  match->set(strtol(arg.c_str(), nullptr, 10));
+  match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
 }
 
@@ -1336,7 +1337,7 @@ ConditionCache::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 }
 
@@ -1384,7 +1385,7 @@ ConditionNextHop::initialize(Parser &p)
   Condition::initialize(p);
 
   MatcherType *match = new MatcherType(_cond_op);
-  match->set(p.get_arg());
+  match->set(p.get_arg(), mods());
   _matcher = match;
 }
 
@@ -1424,6 +1425,8 @@ bool
 ConditionNextHop::eval(const Resources &res)
 {
   std::string s;
+
   append_value(s, res);
+
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
