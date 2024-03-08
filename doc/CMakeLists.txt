@@ -35,6 +35,8 @@ add_custom_target(
   generate_docs_setup
   COMMENT "Copy static files to build directory"
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/static ${CMAKE_CURRENT_BINARY_DIR}/static
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/_templates
+          ${CMAKE_CURRENT_BINARY_DIR}/_templates
 )
 
 # generate svg files from uml files
