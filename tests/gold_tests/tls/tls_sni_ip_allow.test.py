@@ -144,7 +144,7 @@ class TestSniIpAllow:
         # non-zero return code.
         p.ReturnCode = 1
 
-        p.Streams.All += Testers.ContainsExpression('allowed-response', 'The response to teh allowed request should be recieved.')
+        p.Streams.All += Testers.ContainsExpression('allowed-response', 'The response to the allowed request should be recieved.')
         p.Streams.All += Testers.ExcludesExpression(
             'blocked-response', 'The response to the blocked request should not have been recieved.')
 
