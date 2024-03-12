@@ -57,10 +57,10 @@ namespace rpc::handlers::storage
 {
 namespace err = rpc::handlers::errors;
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 set_storage_offline(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
 
   for (auto &&it : params) {
     std::string device = it.as<std::string>();
@@ -75,16 +75,18 @@ set_storage_offline(std::string_view const &id, YAML::Node const &params)
       n["has_online_storage_left"] = ret ? "true" : "false";
       resp.result().push_back(std::move(n));
     } else {
-      resp.errata().push(err::make_errata(err::Codes::STORAGE, "Passed device:'{}' does not match any defined storage", device));
+      resp.errata()
+        .assign(std::error_code{errors::Codes::STORAGE})
+        .note("Passed device: '{}' does not match any defined storage", device);
     }
   }
   return resp;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 get_storage_status(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
 
   for (auto &&it : params) {
     std::string device = it.as<std::string>();
@@ -93,7 +95,9 @@ get_storage_status(std::string_view const &id, YAML::Node const &params)
     if (d) {
       resp.result().push_back(*d);
     } else {
-      resp.errata().push(err::make_errata(err::Codes::STORAGE, "Passed device:'{}' does not match any defined storage", device));
+      resp.errata()
+        .assign(std::error_code{errors::Codes::STORAGE})
+        .note("Passed device: '{}' does not match any defined storage", device);
     }
   }
   return resp;

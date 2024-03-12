@@ -37,6 +37,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_meta.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/ts_errata.h
 )
 add_library(
   tsutil
@@ -49,6 +50,7 @@ add_library(
   YamlCfg.cc
   ts_unit_parser.cc
   Regex.cc
+  ts_errata.cc
 )
 
 add_library(ts::tsutil ALIAS tsutil)

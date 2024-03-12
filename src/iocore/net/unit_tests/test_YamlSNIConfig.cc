@@ -48,13 +48,13 @@ check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_por
 TEST_CASE("YamlSNIConfig sets port ranges appropriately")
 {
   YamlSNIConfig conf{};
-  ts::Errata zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml")};
-  if (!zret.isOK()) {
+  swoc::Errata zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml")};
+  if (!zret.is_ok()) {
     std::stringstream errorstream;
     errorstream << zret;
     FAIL(errorstream.str());
   }
-  REQUIRE(zret.isOK());
+  REQUIRE(zret.is_ok());
   REQUIRE(conf.items.size() == 7);
 
   SECTION("If no ports were specified, port range should contain all ports.")
@@ -113,11 +113,11 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
   std::string filepath;
   swoc::bwprint(filepath, "{}/sni_conf_test_bad_port_{}.yaml", _XSTR(LIBINKNET_UNIT_TEST_DIR), port_str);
 
-  ts::Errata zret{conf.loader(filepath)};
+  swoc::Errata zret{conf.loader(filepath)};
   std::stringstream errorstream;
   errorstream << zret;
 
   std::string expected;
-  swoc::bwprint(expected, "1 [1]: yaml-cpp: error at line 20, column 5: bad port range: {}\n", port_str);
+  swoc::bwprint(expected, "Error: exception - yaml-cpp: error at line 20, column 5: bad port range: {}\n", port_str);
   CHECK(errorstream.str() == expected);
 }

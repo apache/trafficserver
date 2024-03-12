@@ -117,7 +117,7 @@ namespace rpc
 {
 extern std::mutex g_rpcHandlingMutex;
 extern std::condition_variable g_rpcHandlingCompletion;
-extern ts::Rv<YAML::Node> g_rpcHandlerResponseData;
+extern swoc::Rv<YAML::Node> g_rpcHandlerResponseData;
 extern bool g_rpcHandlerProcessingCompleted;
 } // namespace rpc
 
@@ -8765,7 +8765,7 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 {
   Debug("rpc.api", ">> Handler seems to be done with an error");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
-  ::rpc::g_rpcHandlerResponseData        = ts::Errata{}.push(1, ec, std::string{descr, descr_len});
+  ::rpc::g_rpcHandlerResponseData        = swoc::Errata(ts::make_errno_code(ec), "{}", swoc::TextView{descr, descr_len});
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
   Debug("rpc.api", ">> error  flagged.");

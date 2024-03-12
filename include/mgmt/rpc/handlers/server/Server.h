@@ -24,7 +24,7 @@
 
 namespace rpc::handlers::server
 {
-ts::Rv<YAML::Node> server_start_drain(std::string_view const &id, YAML::Node const &params);
-ts::Rv<YAML::Node> server_stop_drain(std::string_view const &id, YAML::Node const &);
+swoc::Rv<YAML::Node> server_start_drain(std::string_view const &id, YAML::Node const &params);
+swoc::Rv<YAML::Node> server_stop_drain(std::string_view const &id, YAML::Node const &);
 void server_shutdown(YAML::Node const &);
 } // namespace rpc::handlers::server

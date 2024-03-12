@@ -44,8 +44,8 @@ struct HostCmdInfo {
 
 } // namespace
 
-ts::Rv<YAML::Node> server_get_status(std::string_view const id, YAML::Node const &params);
-ts::Rv<YAML::Node> server_set_status(std::string_view const id, YAML::Node const &params);
+swoc::Rv<YAML::Node> server_get_status(std::string_view const id, YAML::Node const &params);
+swoc::Rv<YAML::Node> server_set_status(std::string_view const id, YAML::Node const &params);
 
 HostStatRec::HostStatRec()
   : status(TS_HOST_STATUS_UP),
@@ -419,11 +419,11 @@ template <> struct convert<HostCmdInfo> {
 } // namespace YAML
 
 // JSON-RPC method to retrieve host status information.
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 server_get_status(std::string_view id, YAML::Node const &params)
 {
   namespace err = rpc::handlers::errors;
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   YAML::Node statusList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
 
   try {
@@ -470,12 +470,12 @@ server_get_status(std::string_view id, YAML::Node const &params)
 }
 
 // JSON-RPC method to mark up or down a host.
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 server_set_status(std::string_view id, YAML::Node const &params)
 {
   Debug("host_statuses", "id=%s", id.data());
   namespace err = rpc::handlers::errors;
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
 
   try {
     if (!params.IsNull()) {
@@ -489,7 +489,7 @@ server_set_status(std::string_view id, YAML::Node const &params)
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
-      resp.errata().push(err::make_errata(err::Codes::SERVER, "Invalid input parameters, null"));
+      resp.errata().assign(std::error_code{rpc::handlers::errors::Codes::SERVER}).note("Invalid input parameters, null");
     }
 
     // schedule a write to the persistent store.
@@ -497,7 +497,9 @@ server_set_status(std::string_view id, YAML::Node const &params)
     eventProcessor.schedule_imm(new HostStatusSync, ET_TASK);
   } catch (std::exception const &ex) {
     Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
-    resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during host status set: {}", ex.what()));
+    resp.errata()
+      .assign(std::error_code{rpc::handlers::errors::Codes::SERVER})
+      .note("Error found during host status set: {}", ex.what());
   }
   return resp;
 }
