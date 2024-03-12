@@ -226,7 +226,7 @@ IPCSocketServer::run()
         rpc::Context ctx;
         // we want to make sure the peer's credentials are ok.
         ctx.get_auth().add_checker(
-          [&](TSRPCHandlerOptions const &opt, ts::Errata &errata) -> void { return late_check_peer_credentials(fd, opt, errata); });
+          [&](TSRPCHandlerOptions const &opt, swoc::Errata &errata) -> void { late_check_peer_credentials(fd, opt, errata); });
 
         if (auto response = rpc::JsonRPCManager::instance().handle_call(ctx, json); response) {
           // seems a valid response.
@@ -446,19 +446,23 @@ IPCSocketServer::Config::Config()
 }
 
 void
-IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, ts::Errata &errata) const
+IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, swoc::Errata &errata) const
 {
   swoc::LocalBufferWriter<256> w;
   // For privileged calls, ensure we have caller credentials and that the caller is privileged.
+  auto ecode = [](UnauthorizedErrorCode c) -> std::error_code {
+    return std::error_code(static_cast<unsigned>(c), std::generic_category());
+  };
+
   if (has_peereid() && options.auth.restricted) {
     uid_t euid = -1;
     gid_t egid = -1;
     if (get_peereid(peedFd, &euid, &egid) == -1) {
-      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR),
-                  w.print("Error getting peer credentials: {}\0", swoc::bwf::Errno{}).data());
+      errata.assign(ecode(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR))
+        .note("Error getting peer credentials: {}", swoc::bwf::Errno{});
     } else if (euid != 0 && euid != geteuid()) {
-      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PERMISSION_DENIED),
-                  w.print("Denied privileged API access for uid={} gid={}\0", euid, egid).data());
+      errata.assign(ecode(UnauthorizedErrorCode::PERMISSION_DENIED))
+        .note("Denied privileged API access for uid={} gid={}", euid, egid);
     }
   }
 }

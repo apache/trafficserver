@@ -22,6 +22,8 @@
   limitations under the License.
  */
 
+#include <deque>
+
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include "tscore/Tokenizer.h"

@@ -115,7 +115,7 @@ class yamlcpp_json_decoder
       return {request, error::RPCErrorCode::PARSE_ERROR};
     }
     // TODO  We may want to extend the error handling and inform the user if there is  more than one invalid field in the request,
-    // so far we notify only the first one, we can use the data field to add more errors in it. ts::Errata
+    // so far we notify only the first one, we can use the data field to add more errors in it. swoc::Errata
     return {request, {/*ok*/}};
   }
 
@@ -182,19 +182,19 @@ class yamlcpp_json_encoder
   /// @param json   output parameter. YAML::Emitter.
   ///
   static void
-  encode_error(std::error_code error, ts::Errata const &errata, YAML::Emitter &json)
+  encode_error(std::error_code error, swoc::Errata const &errata, YAML::Emitter &json)
   {
     json << YAML::Key << "error";
     json << YAML::BeginMap;
     json << YAML::Key << "code" << YAML::Value << error.value();
     json << YAML::Key << "message" << YAML::Value << error.message();
-    if (!errata.isOK()) {
+    if (!errata.is_ok()) {
       json << YAML::Key << "data";
       json << YAML::BeginSeq;
       for (auto const &err : errata) {
         json << YAML::BeginMap;
-        json << YAML::Key << "code" << YAML::Value << err.getCode();
-        json << YAML::Key << "message" << YAML::Value << err.text();
+        json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
         json << YAML::EndMap;
       }
       json << YAML::EndSeq;
@@ -204,7 +204,7 @@ class yamlcpp_json_encoder
 
   /// Convenience functions to call encode_error.
   static void
-  encode_error(ts::Errata const &errata, YAML::Emitter &json)
+  encode_error(swoc::Errata const &errata, YAML::Emitter &json)
   {
     encode_error({error::RPCErrorCode::ExecutionError}, errata, json);
   }
@@ -229,7 +229,7 @@ class yamlcpp_json_encoder
     }
     // Registered handler error: They have set the error on the response from the registered handler. This uses ExecutionError as
     // top error.
-    else if (!resp.callResult.errata.isOK()) {
+    else if (!resp.callResult.errata.is_ok()) {
       encode_error(resp.callResult.errata, json);
     }
     // A valid response: The registered handler have set the proper result and no error was flagged.

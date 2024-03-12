@@ -23,18 +23,18 @@
 
 #pragma once
 
-#include "tscore/ink_mutex.h"
-#include "tscore/List.h"
-
-#include "tscore/Errata.h"
-
-#include "mgmt/rpc/jsonrpc/JsonRPC.h"
-
 #include <unordered_map>
 #include <string_view>
 #include <forward_list>
 #include <mutex>
 #include <functional>
+
+#include "tsutil/ts_errata.h"
+
+#include "tscore/ink_mutex.h"
+#include "tscore/List.h"
+
+#include <mgmt/rpc/jsonrpc/JsonRPC.h>
 
 class ConfigUpdateCbTable;
 
@@ -121,7 +121,7 @@ public:
     time_t fileLastModified = 0;
   };
 
-  using CallbackType = std::function<ts::Errata(std::string const &, std::string const &)>;
+  using CallbackType = std::function<swoc::Errata(std::string const &, std::string const &)>;
 
   ~FileManager();
   FileManager(const FileManager &obj)         = delete;
@@ -139,8 +139,8 @@ public:
     _configCallbacks.push_front(std::move(f));
   }
 
-  ts::Errata fileChanged(std::string const &fileName, std::string const &configName);
-  ts::Errata rereadConfig();
+  swoc::Errata fileChanged(std::string const &fileName, std::string const &configName);
+  swoc::Errata rereadConfig();
   bool isConfigStale();
   void configFileChild(const char *parent, const char *child);
 
@@ -169,7 +169,7 @@ private:
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                      ConfigManager *parentConfig);
   /// JSONRPC endpoint
-  ts::Rv<YAML::Node> get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params);
+  swoc::Rv<YAML::Node> get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc

@@ -45,18 +45,17 @@
 static constexpr auto logTag{"filemanager"};
 namespace
 {
-ts::Errata
+swoc::Errata
 handle_file_reload(std::string const &fileName, std::string const &configName)
 {
   Debug(logTag, "handling reload %s - %s", fileName.c_str(), configName.c_str());
-  ts::Errata ret;
+  swoc::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
     if (auto zret = RecReadYamlConfigFile(); zret) {
       RecConfigWarnIfUnregistered();
     } else {
-      std::string str;
-      ret.push(1, swoc::bwprint(str, "Error reading {}. {}", fileName));
+      ret.note("Error reading {}", fileName).note(zret);
     }
   } else {
     RecT rec_type;
@@ -64,8 +63,7 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
     if (RecGetRecordType(data, &rec_type) == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
       RecSetSyncRequired(data);
     } else {
-      std::string str;
-      ret.push(1, swoc::bwprint(str, "Unknown file change {}.", configName));
+      ret.note("Unknown file change {}.", configName);
     }
   }
 
@@ -90,7 +88,7 @@ FileManager::FileManager()
 
   // Register the files registry jsonrpc endpoint
   rpc::add_method_handler("filemanager.get_files_registry",
-                          [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
+                          [this](std::string_view const &id, const YAML::Node &req) -> swoc::Rv<YAML::Node> {
                             return get_files_registry_rpc_endpoint(id, req);
                           },
                           &rpc::core_ats_rpc_service_provider_handle, {{rpc::NON_RESTRICTED_API}});
@@ -163,17 +161,20 @@ FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
   return found;
 }
 
-ts::Errata
+swoc::Errata
 FileManager::fileChanged(std::string const &fileName, std::string const &configName)
 {
   Debug("filemanager", "file changed %s", fileName.c_str());
-  ts::Errata ret;
+  swoc::Errata ret;
 
   std::lock_guard<std::mutex> guard(_callbacksMutex);
   for (auto const &call : _configCallbacks) {
     if (auto const &r = call(fileName, configName); !r) {
       Debug("filemanager", "something back from callback %s", fileName.c_str());
-      std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
+      if (ret.empty()) {
+        ret.note("Errors while reloading configurations.");
+      }
+      ret.note(r);
     }
   }
 
@@ -206,10 +207,10 @@ FileManager::invokeConfigPluginCallbacks()
 //   although it is tempting, DO NOT CALL FROM SIGNAL HANDLERS
 //      This function is not Async-Signal Safe.  It
 //      is thread safe
-ts::Errata
+swoc::Errata
 FileManager::rereadConfig()
 {
-  ts::Errata ret;
+  swoc::Errata ret;
 
   ConfigManager *rb;
   std::vector<ConfigManager *> changedFiles;
@@ -225,7 +226,8 @@ FileManager::rereadConfig()
       auto const &r = fileChanged(rb->getFileName(), rb->getConfigName());
 
       if (!r) {
-        std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
+        ret.note("Errors while reloading configurations.");
+        ret.note(r);
       }
 
       changedFiles.push_back(rb);
@@ -265,7 +267,10 @@ FileManager::rereadConfig()
   for (size_t i = 0; i < n; i++) {
     if (std::find(changedFiles.begin(), changedFiles.end(), parentFileNeedChange[i]) == changedFiles.end()) {
       if (auto const &r = fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName()); !r) {
-        std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
+        if (ret.empty()) {
+          ret.note("Error while handling parent file name changed.");
+        }
+        ret.note(r);
       }
     }
   }
@@ -277,13 +282,19 @@ FileManager::rereadConfig()
   if (found && enabled) {
     if (auto const &r = fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
         !r) {
-      std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
+      if (ret.empty()) {
+        ret.note("Error while loading body factory templates");
+      }
+      ret.note(r);
     }
   }
 
   if (auto const &r = fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename");
       !r) {
-    std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
+    if (ret.empty()) {
+      ret.note("Error while loading ticket keys");
+    }
+    ret.note(r);
   }
 
   return ret;
@@ -325,7 +336,7 @@ FileManager::configFileChild(const char *parent, const char *child)
 }
 
 auto
-FileManager::get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params) -> ts::Rv<YAML::Node>
+FileManager::get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params) -> swoc::Rv<YAML::Node>
 {
   // If any error, the rpc manager will catch it and respond with it.
   YAML::Node configs{YAML::NodeType::Sequence};

@@ -29,6 +29,8 @@
 
 #include "swoc/MemSpan.h"
 #include "swoc/BufferWriter.h"
+#include "tsutil/ts_bw_format.h"
+#include "tsutil/ts_errata.h"
 #include "tscore/Layout.h"
 
 #include "mgmt/rpc/server/CommBase.h"
@@ -134,7 +136,7 @@ private:
   void bind(std::error_code &ec);
   void listen(std::error_code &ec);
   void close();
-  void late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, ts::Errata &errata) const;
+  void late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, swoc::Errata &errata) const;
 
   std::atomic_bool _running;
 
