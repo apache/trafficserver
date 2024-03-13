@@ -221,4 +221,7 @@ TEST_CASE("MemArena example", "[libswoc][MemArena][example]") {
   REQUIRE(arena.contains(ihm));
   REQUIRE(arena.contains(thing));
   REQUIRE(arena.contains(thing->name.data()));
+
+  // Call the destructor for the IntrusiveHashMap to free anything it allocated.
+  ihm->~Map();
 };

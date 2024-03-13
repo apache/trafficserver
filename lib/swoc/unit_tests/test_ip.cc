@@ -1094,7 +1094,7 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
   using PAYLOAD = std::bitset<32>;
   using Space   = swoc::IPSpace<PAYLOAD>;
 
-  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 6> ranges = {
+  std::vector<std::tuple<TextView, std::vector<unsigned>>> ranges = {
     {{"172.28.56.12-172.28.56.99"_tv, {0, 2, 3}},
      {"10.10.35.0/24"_tv, {1, 2}},
      {"192.168.56.0/25"_tv, {10, 12, 31}},

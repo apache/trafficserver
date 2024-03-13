@@ -118,6 +118,7 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]") {
 
   list.append(thing);
   list.erase(list.tail());
+  delete thing; // this deletes "two"
   REQUIRE(list.count() == 3);
   REQUIRE(list.tail() != nullptr);
   REQUIRE(list.tail()->_payload == "muddle");
@@ -126,6 +127,9 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]") {
   list.insert_before(list.end(), new Thing("trailer"));
   REQUIRE(list.count() == 4);
   REQUIRE(list.tail()->_payload == "trailer");
+
+  // Delete everything in list.
+  list.apply([](Thing *thing) { delete thing; });
 }
 
 TEST_CASE("IntrusiveDList list prefix", "[libswoc][IntrusiveDList]") {
@@ -174,6 +178,21 @@ TEST_CASE("IntrusiveDList list prefix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list_rest.head()->_payload == "16");
   REQUIRE(list.count() == 0);
   REQUIRE(list.head() == nullptr);
+
+  // Delete everything in list.
+  list.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_1.
+  list_1.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_5.
+  list_5.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_most.
+  list_most.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_rest.
+  list_rest.apply([](Thing *thing) { delete thing; });
 }
 
 TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
@@ -230,6 +249,21 @@ TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list.tail()->_payload == "20");
   REQUIRE(list.nth(7)->_payload == "8");
   REQUIRE(list.nth(17)->_payload == "18");
+
+  // Delete everything in list.
+  list.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_1.
+  list_1.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_5.
+  list_5.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_most.
+  list_most.apply([](Thing *thing) { delete thing; });
+
+  // Delete everything in list_rest.
+  list_rest.apply([](Thing *thing) { delete thing; });
 }
 
 TEST_CASE("IntrusiveDList Extra", "[libswoc][IntrusiveDList]") {
@@ -269,4 +303,7 @@ TEST_CASE("IntrusiveDList Extra", "[libswoc][IntrusiveDList]") {
     bwprint(tmp, "{}", idx);
     REQUIRE(spot->_payload == tmp);
   }
+
+  // Delete everything in list.
+  list.apply([](Thing *thing) { delete thing; });
 }
