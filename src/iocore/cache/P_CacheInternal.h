@@ -28,6 +28,7 @@
 #include "tscore/InkErrno.h"
 
 #include "proxy/hdrs/HTTP.h"
+#include "P_CacheDoc.h"
 #include "P_CacheHttp.h"
 #include "P_CacheHosting.h"
 #include "tsutil/Metrics.h"

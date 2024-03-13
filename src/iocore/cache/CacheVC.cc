@@ -24,6 +24,7 @@
 #include "iocore/cache/Cache.h"
 #include "iocore/cache/CacheDefs.h"
 #include "P_CacheDisk.h"
+#include "P_CacheDoc.h"
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"

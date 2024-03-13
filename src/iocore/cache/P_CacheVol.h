@@ -24,6 +24,7 @@
 #pragma once
 
 #include "P_CacheDir.h"
+#include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
@@ -70,10 +71,6 @@
   dir_offset_evac_bucket((_d->offset_to_vol_offset(_o)
 
 // Documents
-
-#define DOC_MAGIC       ((uint32_t)0x5F129B13)
-#define DOC_CORRUPT     ((uint32_t)0xDEADBABE)
-#define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 struct Cache;
 class Stripe;
@@ -359,40 +356,6 @@ struct CacheVol {
   CacheVol() {}
 };
 
-// Note : hdr() needs to be 8 byte aligned.
-struct Doc {
-  uint32_t magic;     // DOC_MAGIC
-  uint32_t len;       // length of this fragment (including hlen & sizeof(Doc), unrounded)
-  uint64_t total_len; // total length of document
-#if TS_ENABLE_FIPS == 1
-  // For FIPS CryptoHash is 256 bits vs. 128, and the 'first_key' must be checked first, so
-  // ensure that the new 'first_key' overlaps the old 'first_key' and that the rest of the data layout
-  // is the same by putting 'key' at the ned.
-  CryptoHash first_key; ///< first key in object.
-#else
-  CryptoHash first_key; ///< first key in object.
-  CryptoHash key;       ///< Key for this doc.
-#endif
-  uint32_t hlen;         ///< Length of this header.
-  uint32_t doc_type : 8; ///< Doc type - indicates the format of this structure and its content.
-  uint32_t v_major  : 8; ///< Major version number.
-  uint32_t v_minor  : 8; ///< Minor version number.
-  uint32_t unused   : 8; ///< Unused, forced to zero.
-  uint32_t sync_serial;
-  uint32_t write_serial;
-  uint32_t pinned; ///< pinned until - CAVEAT: use uint32_t instead of time_t for the cache compatibility
-  uint32_t checksum;
-#if TS_ENABLE_FIPS == 1
-  CryptoHash key; ///< Key for this doc.
-#endif
-
-  uint32_t data_len() const;
-  uint32_t prefix_len() const;
-  int single_fragment() const;
-  char *hdr();
-  char *data();
-};
-
 // Global Data
 
 extern Stripe **gstripes;
@@ -483,36 +446,6 @@ inline off_t
 Stripe::vol_relative_length(off_t start_offset) const
 {
   return (this->len + this->skip) - start_offset;
-}
-
-inline uint32_t
-Doc::prefix_len() const
-{
-  return sizeof(Doc) + hlen;
-}
-
-inline uint32_t
-Doc::data_len() const
-{
-  return len - sizeof(Doc) - hlen;
-}
-
-inline int
-Doc::single_fragment() const
-{
-  return data_len() == total_len;
-}
-
-inline char *
-Doc::hdr()
-{
-  return reinterpret_cast<char *>(this) + sizeof(Doc);
-}
-
-inline char *
-Doc::data()
-{
-  return this->hdr() + hlen;
 }
 
 // inline Functions

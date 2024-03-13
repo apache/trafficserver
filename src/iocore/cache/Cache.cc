@@ -23,6 +23,7 @@
 
 #include "iocore/cache/Cache.h"
 
+#include "P_CacheDoc.h"
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"
 

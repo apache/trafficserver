@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "P_CacheDoc.h"
+
 #include "iocore/cache/CacheDefs.h"
 #include "P_CacheHttp.h"
 #include "iocore/eventsystem/EventSystem.h"
