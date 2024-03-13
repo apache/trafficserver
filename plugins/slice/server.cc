@@ -99,7 +99,14 @@ update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
       return;
     }
 
-    config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, static_cast<uint64_t>(size));
+    if (static_cast<uint64_t>(size) >= config.m_min_size_to_slice) {
+      config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, static_cast<uint64_t>(size));
+      TSStatIntIncrement(config.stat_TP, 1);
+    } else {
+      config.sizeCacheRemove({urlstr, static_cast<size_t>(urllen)});
+      TSStatIntIncrement(config.stat_FP, 1);
+    }
+
     TSfree(urlstr);
   } else {
     ERROR_LOG("Could not get URL from transaction.");

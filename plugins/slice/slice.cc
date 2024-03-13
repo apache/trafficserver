@@ -47,8 +47,6 @@ should_skip_this_obj(TSHttpTxn txnp, Config *const config)
   int len            = 0;
   char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-  config->updateStats([](int stat_id, uint64_t stat_value) { TSStatIntSet(stat_id, static_cast<TSMgmtInt>(stat_value)); });
-
   if (!config->isKnownLargeObj({urlstr, static_cast<size_t>(len)})) {
     DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
     return true;
@@ -119,9 +117,9 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
         return false;
       }
 
-      // check if object is previously known to be too small to slice
+      // check if object is large enough to slice - skip small and unknown size objects
       if (should_skip_this_obj(txnp, config)) {
-        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
         return false;
       }
 
@@ -227,7 +225,7 @@ read_resp_hdr(TSCont contp, TSEvent event, void *edata)
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
   if (urlstr != nullptr) {
     TxnHdrMgr response;
-    response.populateFrom(txnp, TSHttpTxnServerRespGet);
+    response.populateFrom(txnp, TSHttpTxnClientRespGet);
     HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
     char constr[1024];
     int conlen = sizeof constr;
@@ -237,10 +235,14 @@ read_resp_hdr(TSCont contp, TSEvent event, void *edata)
 
       [[maybe_unused]] auto [ptr, ec] = std::from_chars(constr, constr + conlen, content_length);
       if (ec == std::errc()) {
-        info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
         if (content_length >= info->config.m_min_size_to_slice) {
+          // Remember that this object is big
+          info->config.sizeCacheAdd({urlstr, static_cast<size_t>(urllen)}, content_length);
           // This object will be sliced in future requests.  Don't cache it for now.
           TSHttpTxnServerRespNoStoreSet(txnp, 1);
+          TSStatIntIncrement(info->config.stat_FN, 1);
+        } else {
+          TSStatIntIncrement(info->config.stat_TN, 1);
         }
       } else {
         ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
@@ -315,18 +317,19 @@ register_stat(const char *name, int &id)
 }
 
 static void
-init_stats(Config &config)
+init_stats(Config &config, const std::string &prefix)
 {
   const std::array<std::pair<const char *, int &>, 4> stats{
-    {{PLUGIN_NAME ".metadata_cache.read.hits", config.stat_read_hits_id},
-     {PLUGIN_NAME ".metadata_cache.read.misses", config.stat_read_misses_id},
-     {PLUGIN_NAME ".metadata_cache.write.hits", config.stat_write_hits_id},
-     {PLUGIN_NAME ".metadata_cache.write.misses", config.stat_write_misses_id}}
+    {{".metadata_cache.true_large_objects", config.stat_TP},
+     {".metadata_cache.true_small_objects", config.stat_TN},
+     {".metadata_cache.false_large_objects", config.stat_FP},
+     {".metadata_cache.false_small_objects", config.stat_FN}}
   };
 
   config.stats_enabled = true;
   for (const auto &stat : stats) {
-    config.stats_enabled &= register_stat(stat.first, stat.second);
+    const std::string name  = std::string{PLUGIN_NAME "."} + prefix + stat.first;
+    config.stats_enabled   &= register_stat(name.c_str(), stat.second);
   }
 }
 
@@ -341,7 +344,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   TSContDataSet(read_resp_hdr_contp, static_cast<void *>(info));
   info->read_resp_hdr_contp = read_resp_hdr_contp;
 
-  init_stats(info->config);
+  if (!info->config.stat_prefix.empty()) {
+    init_stats(info->config, info->config.stat_prefix);
+  }
 
   *ih = static_cast<void *>(info);
 
@@ -389,5 +394,5 @@ TSPluginInit(int argc, char const *argv[])
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_read_request_contp);
 
   // Register stats for metadata cache
-  init_stats(globalConfig);
+  init_stats(globalConfig, "global");
 }

@@ -126,13 +126,14 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("strip-range-for-head"), no_argument,       nullptr, 'h'},
     {const_cast<char *>("minimum-size"),         required_argument, nullptr, 'm'},
     {const_cast<char *>("metadata-cache-size"),  required_argument, nullptr, 'z'},
+    {const_cast<char *>("stats-prefix"),         required_argument, nullptr, 'x'},
     {nullptr,                                    0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lm:p:r:s:t:z:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lm:p:r:s:t:x:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -250,6 +251,10 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Metadata cache size out of range: %s", optarg);
       }
     } break;
+    case 'x': {
+      stat_prefix = optarg;
+      DEBUG_LOG("Stat prefix: %s", stat_prefix.c_str());
+    } break;
     default:
       break;
     }
@@ -280,7 +285,7 @@ Config::fromArgs(int const argc, char const *const argv[])
 
   if (m_min_size_to_slice > 0) {
     if (m_oscache.has_value()) {
-      DEBUG_LOG("Metadata cache size: %zu", m_oscache->cache_size());
+      DEBUG_LOG("Metadata cache size: %zu", m_oscache->cache_capacity());
     } else {
       ERROR_LOG("--metadata-cache-size is required when --minimum-size is specified!  Using a default size of 16384.");
       setCacheSize(16384);
@@ -351,19 +356,6 @@ Config::setCacheSize(size_t entries)
   }
 }
 
-void
-Config::updateStats(const std::function<void(int, uint64_t)> &update_func)
-{
-  // TODO: check if this update is too frequent
-  if (stats_enabled && m_oscache) {
-    auto [cache_read_hits, cache_read_misses, cache_write_hits, cache_write_misses] = m_oscache->cache_stats();
-    update_func(stat_read_hits_id, cache_read_hits);
-    update_func(stat_read_misses_id, cache_read_misses);
-    update_func(stat_write_hits_id, cache_write_hits);
-    update_func(stat_write_misses_id, cache_write_misses);
-  }
-}
-
 bool
 Config::isKnownLargeObj(std::string_view url)
 {
@@ -390,5 +382,14 @@ Config::sizeCacheAdd(std::string_view url, uint64_t size)
   if (m_oscache) {
     DEBUG_LOG("Adding url to cache: %.*s -> %" PRIu64, static_cast<int>(url.size()), url.data(), size);
     m_oscache->set(url, size);
+  }
+}
+
+void
+Config::sizeCacheRemove(std::string_view url)
+{
+  if (m_oscache) {
+    DEBUG_LOG("Removing url from cache: %.*s", static_cast<int>(url.size()), url.data());
+    m_oscache->remove(url);
   }
 }

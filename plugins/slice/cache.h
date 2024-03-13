@@ -34,7 +34,7 @@ public:
   using cache_size_type  = size_t;
   using object_size_type = uint64_t;
 
-  ObjectSizeCache(cache_size_type cache_size);
+  ObjectSizeCache(cache_size_type capacity);
 
   /**
    * @brief Get an object size from cache.
@@ -52,23 +52,27 @@ public:
    */
   void set(const std::string_view url, object_size_type object_size);
 
-  cache_size_type cache_size();
+  /**
+   * @brief Remove an object from cache
+   *
+   * @param url The URL of the object
+   */
+  void remove(const std::string_view url);
 
-  std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> cache_stats();
+  // Max capacity of the cache
+  cache_size_type cache_capacity();
+
+  // Current number of used entries in the cache
+  cache_size_type cache_count();
 
 private:
   void find_eviction_slot();
 
-  cache_size_type _cache_size;
+  cache_size_type _cache_capacity;
   cache_size_type _hand{0};
   std::vector<std::string> _urls;
   std::vector<object_size_type> _object_sizes;
   std::vector<bool> _visits;
   std::unordered_map<std::string_view, cache_size_type> _index;
   std::mutex _mutex;
-
-  uint64_t _cache_hits         = 0;
-  uint64_t _cache_misses       = 0;
-  uint64_t _cache_write_hits   = 0;
-  uint64_t _cache_write_misses = 0;
 };

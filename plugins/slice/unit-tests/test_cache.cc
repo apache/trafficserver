@@ -45,6 +45,19 @@ TEST_CASE("cache hit", "[slice][metadatacache]")
   CHECK(res2.value() == 123);
 }
 
+TEST_CASE("cache remove", "[slice][metadatacache]")
+{
+  ObjectSizeCache cache{1024};
+  cache.set("example.com/123"sv, 123);
+  std::optional res2 = cache.get("example.com/123"sv);
+  CHECK(res2.value() == 123);
+  cache.remove("example.com/123"sv);
+  std::optional res3 = cache.get("example.com/123"sv);
+  REQUIRE(!res3.has_value());
+  REQUIRE(cache.cache_count() == 0);
+  REQUIRE(cache.cache_capacity() == 1024);
+}
+
 TEST_CASE("eviction", "[slice][metadatacache]")
 {
   constexpr int cache_size = 10;
@@ -93,9 +106,9 @@ TEST_CASE("hit rate", "[slice][metadatacache]")
 {
   constexpr int cache_size = 10;
   ObjectSizeCache cache{cache_size};
-
   std::mt19937 gen;
   std::poisson_distribution<uint64_t> d{cache_size};
+  std::atomic<int> hits{0}, misses{0};
 
   for (uint64_t i = 0; i < cache_size * 100; i++) {
     std::stringstream ss;
@@ -105,12 +118,13 @@ TEST_CASE("hit rate", "[slice][metadatacache]")
     std::optional<uint64_t> size = cache.get(ss.str());
     if (size.has_value()) {
       CHECK(size.value() == obj);
+      hits++;
     } else {
       cache.set(ss.str(), obj);
+      misses++;
     }
   }
 
-  auto [hits, misses, write_hits, write_misses] = cache.cache_stats();
   INFO("Hits: " << hits);
   INFO("Misses: " << misses);
   REQUIRE(hits > cache_size * 50);
@@ -124,6 +138,7 @@ TEST_CASE("threads", "[slice][metadatacache]")
   std::mt19937 gen;
   std::poisson_distribution<uint64_t> d{cache_size};
   std::vector<std::thread> threads;
+  std::atomic<int> hits{0}, misses{0};
 
   auto runfunc = [&]() {
     for (uint64_t i = 0; i < cache_size * 100; i++) {
@@ -134,8 +149,10 @@ TEST_CASE("threads", "[slice][metadatacache]")
       std::optional<uint64_t> size = cache.get(ss.str());
       if (size.has_value()) {
         CHECK(size.value() == obj);
+        hits++;
       } else {
         cache.set(ss.str(), obj);
+        misses++;
       }
     }
   };
@@ -147,8 +164,9 @@ TEST_CASE("threads", "[slice][metadatacache]")
   for (auto &t : threads) {
     t.join();
   }
-  auto [hits, misses, write_hits, write_misses] = cache.cache_stats();
   INFO("Hits: " << hits);
   INFO("Misses: " << misses);
   REQUIRE(hits > cache_size * 50 * 4);
+  REQUIRE(cache.cache_count() == cache_size);
+  REQUIRE(cache.cache_capacity() == cache_size);
 }
