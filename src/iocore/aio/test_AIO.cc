@@ -361,16 +361,13 @@ int
 read_config(const char *config_filename)
 {
   std::ifstream fin(config_filename);
+  if (!fin.rdbuf()->is_open()) {
+    return (0);
+  }
+
   char field_name[256];
   char field_value[256];
 
-  if (!fin.rdbuf()->is_open()) {
-    fin.open("sample.cfg");
-    if (!fin.rdbuf()->is_open()) {
-      cout << "cannot open config files " << config_filename << endl;
-      return (0);
-    }
-  }
   while (!fin.eof()) {
     field_name[0] = '\0';
     fin >> field_name;
@@ -459,13 +456,20 @@ public:
 #endif
 
 int
-main(int /* argc ATS_UNUSED */, char *argv[])
+main(int argc, char *argv[])
 {
   int i;
-  printf("input file %s\n", argv[1]);
-  if (!read_config(argv[1])) {
+
+  // Read the configuration file
+  const char *config_filename = "sample.cfg";
+  if (argc == 2) {
+    config_filename = argv[1];
+  }
+  printf("configuration file: %s\n", config_filename);
+  if (!read_config(config_filename)) {
     exit(1);
   }
+
   if (num_processors == 0) {
     num_processors = ink_number_of_processors();
   }
