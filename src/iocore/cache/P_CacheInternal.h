@@ -23,13 +23,12 @@
 
 #pragma once
 
-#include "iocore/cache/Doc.h"
-
 #include "iocore/eventsystem/Continuation.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
 
 #include "proxy/hdrs/HTTP.h"
+#include "P_CacheDoc.h"
 #include "P_CacheHttp.h"
 #include "P_CacheHosting.h"
 #include "tsutil/Metrics.h"

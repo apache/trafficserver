@@ -24,10 +24,10 @@
 #pragma once
 
 #include "P_CacheDir.h"
+#include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
-#include "iocore/cache/Doc.h"
 
 #include "iocore/eventsystem/EThread.h"
 
