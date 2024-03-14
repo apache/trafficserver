@@ -101,8 +101,6 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 #endif
 #endif
 
-SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
-
 static int ssl_vc_index = -1;
 
 static ink_mutex *mutex_buf      = nullptr;
@@ -185,92 +183,6 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 {
   scoped_BIO bio(BIO_new_file(chainfile, "r"));
   return SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get());
-}
-
-static SSL_SESSION *
-#if defined(LIBRESSL_VERSION_NUMBER)
-ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
-#else
-ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
-#endif
-{
-  TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
-
-  ink_assert(srs);
-  if (srs) {
-    return srs->getSession(ssl, id, len, copy);
-  }
-
-  return nullptr;
-}
-
-static int
-ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
-{
-#ifdef TLS1_3_VERSION
-  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
-    return 0;
-  }
-#endif
-
-  unsigned int len        = 0;
-  const unsigned char *id = SSL_SESSION_get_id(sess, &len);
-
-  SSLSessionID sid(id, len);
-
-  if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl_session_cache.insert");
-    if (dbg_ctl.tag_on()) {
-      char printable_buf[(len * 2) + 1];
-
-      sid.toString(printable_buf, sizeof(printable_buf));
-      DbgPrint(dbg_ctl, "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
-    }
-  }
-
-  Metrics::Counter::increment(ssl_rsb.session_cache_new_session);
-  session_cache->insertSession(sid, sess, ssl);
-
-  // Call hook after new session is created
-  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_NEW, &sid);
-    hook = hook->m_link.next;
-  }
-
-  return 0;
-}
-
-static void
-ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
-{
-#ifdef TLS1_3_VERSION
-  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
-    return;
-  }
-#endif
-
-  unsigned int len        = 0;
-  const unsigned char *id = SSL_SESSION_get_id(sess, &len);
-  SSLSessionID sid(id, len);
-
-  // Call hook before session is removed
-  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_REMOVE, &sid);
-    hook = hook->m_link.next;
-  }
-
-  if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl_session_cache.remove");
-    if (dbg_ctl.tag_on()) {
-      char printable_buf[(len * 2) + 1];
-      sid.toString(printable_buf, sizeof(printable_buf));
-      DbgPrint(dbg_ctl, "ssl_rm_cached_session cached session '%s'", printable_buf);
-    }
-  }
-
-  session_cache->removeSession(sid);
 }
 
 // Callback function for verifying client certificate
@@ -437,12 +349,15 @@ ssl_cert_callback(SSL *ssl, void *arg)
     }
 
     // Reset the ticket callback if needed
-    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+    SSL_CTX *ctx                                         = SSL_get_SSL_CTX(ssl);
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+    if (sslMultiCertSettings->session_ticket_enabled != 0) {
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-    SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
+      SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
 #else
-    SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
+      SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
 #endif
+    }
   }
 #endif
 
@@ -632,9 +547,9 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
     Metrics::Counter::increment(ssl_rsb.total_ticket_keys_renewed);
   }
 
-// Setting the callback can only fail if OpenSSL does not recognize the
-// SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
-// so that we don't leave a ticket_key pointer attached if it fails.
+  // Setting the callback can only fail if OpenSSL does not recognize the
+  // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
+  // so that we don't leave a ticket_key pointer attached if it fails.
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
 #else
@@ -1279,9 +1194,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       SSL_CTX_set_max_proto_version(ctx, ver);
     }
 
-    if (!this->_setup_session_cache(ctx)) {
-      goto fail;
-    }
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
     Dbg(dbg_ctl_ssl_load, "enabling SSL_MODE_RELEASE_BUFFERS");
@@ -1386,44 +1299,6 @@ fail:
 bool
 SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
 {
-  const SSLConfigParams *params = this->_params;
-
-  Dbg(dbg_ctl_ssl_session_cache,
-      "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
-      "skip_on_contention=%d, timeout=%d, auto_clear=%d",
-      ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
-      params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
-
-  if (params->ssl_session_cache_timeout) {
-    SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
-  }
-
-  int additional_cache_flags  = 0;
-  additional_cache_flags     |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
-
-  switch (params->ssl_session_cache) {
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
-    Dbg(dbg_ctl_ssl_session_cache, "disabling SSL session cache");
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
-    break;
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
-    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with OpenSSL implementation");
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | additional_cache_flags);
-    SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
-    break;
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
-    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with ATS implementation");
-    /* Add all the OpenSSL callbacks */
-    SSL_CTX_sess_set_new_cb(ctx, ssl_new_cached_session);
-    SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
-    SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
-
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL | additional_cache_flags);
-    break;
-  }
-  }
   return true;
 }
 

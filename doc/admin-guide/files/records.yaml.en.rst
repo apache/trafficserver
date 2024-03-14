@@ -3811,58 +3811,6 @@ SSL Termination
   Setting a value less than or equal to ``0`` effectively disables
   SSL session cache for the origin server.
 
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
-
-   Enables the SSL session cache:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Disables the session cache entirely.
-   ``1`` Enables the session cache using OpenSSL's implementation.
-   ``2`` Default. Enables the session cache using |TS|'s implementation. This
-         implementation should perform much better than the OpenSSL
-         implementation.
-   ===== ======================================================================
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
-
-  This configuration specifies the lifetime of SSL session cache
-  entries in seconds. If it is ``0``, then the SSL library will use
-  a default value, typically 300 seconds. Note: This option has no affect
-  when using the |TS| session cache (option ``2`` in
-  ``proxy.config.ssl.session_cache``)
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
-
-  This will set the OpenSSL auto clear flag. Auto clear is enabled by
-  default with ``1`` it can be disabled by changing this setting to ``0``.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
-
-  This configuration specifies the maximum number of entries
-  the SSL session cache may contain.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 256
-
-  This configuration specifies the number of buckets to use with the
-  |TS| SSL session cache implementation. The TS implementation
-  is a fixed size hash map where each bucket is protected by a mutex.
-
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.skip_cache_on_bucket_contention INT 0
-
-   This configuration specifies the behavior of the |TS| SSL session
-   cache implementation during lock contention on each bucket:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Default. Don't skip session caching when bucket lock is contented.
-   ``1`` Disable the SSL session cache for a connection during lock contention.
-   ===== ======================================================================
-
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
 
   Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.

@@ -51,7 +51,6 @@ public:
   bool getSSLOriginSessionCacheHit() const;
   ssl_curve_id getSSLCurveNID() const;
 
-  SSL_SESSION *getSession(SSL *ssl, const unsigned char *id, int len, int *copy);
   std::shared_ptr<SSL_SESSION> getOriginSession(SSL *ssl, const std::string &lookup_key);
 
 protected:
