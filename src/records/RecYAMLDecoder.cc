@@ -127,7 +127,7 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
   }
 
   if (!check_expr.empty() && RecordValidityCheck(value_str.c_str(), check_type, check_expr.c_str()) == false) {
-    errata.note(ERRATA_WARN, "{} - Validity Check failed. '{}' againts '{}'. Default value will be used", record_name, check_expr,
+    errata.note(ERRATA_WARN, "{} - Validity Check failed. '{}' against '{}'. Default value will be used", record_name, check_expr,
                 value_str);
     return;
   }
