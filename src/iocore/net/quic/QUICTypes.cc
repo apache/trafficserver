@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICIntUtil.h"
