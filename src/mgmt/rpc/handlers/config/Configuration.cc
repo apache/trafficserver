@@ -23,6 +23,7 @@
 
 #include "records/RecCore.h"
 #include "../../../../records/P_RecCore.h"
+#include "../../../../records/P_RecUtils.h"
 #include "tscore/Diags.h"
 
 #include "mgmt/config/FileManager.h"
@@ -147,7 +148,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     auto const &[dataType, checkType, pattern, updateType] = recordCtx;
 
     // run the check only if we have something to check against it.
-    if (pattern != nullptr && utils::recordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
+    if (pattern != nullptr && RecordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
       resp.errata()
         .assign(std::error_code{errors::Codes::RECORD})
         .note("{}", std::error_code{err::RecordError::VALIDITY_CHECK_ERROR});
