@@ -408,12 +408,12 @@ private:
   Event             *_data_event         = nullptr;
   Event             *retransmit_event    = nullptr;
 
-  uint32_t configured_max_settings_frames_per_minute     = 0;
-  uint32_t configured_max_ping_frames_per_minute         = 0;
-  uint32_t configured_max_priority_frames_per_minute     = 0;
-  uint32_t configured_max_rst_stream_frames_per_minute   = 0;
-  uint32_t configured_max_continuation_frames_per_minute = 0;
-  uint32_t configured_max_empty_frames_per_minute        = 0;
+  int32_t configured_max_settings_frames_per_minute     = 0;
+  int32_t configured_max_ping_frames_per_minute         = 0;
+  int32_t configured_max_priority_frames_per_minute     = 0;
+  int32_t configured_max_rst_stream_frames_per_minute   = 0;
+  int32_t configured_max_continuation_frames_per_minute = 0;
+  int32_t configured_max_empty_frames_per_minute        = 0;
 };
 
 ///////////////////////////////////////////////

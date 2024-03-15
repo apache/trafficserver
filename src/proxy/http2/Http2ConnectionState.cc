@@ -180,7 +180,8 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   const uint32_t unpadded_length = payload_length - pad_length;
   if (unpadded_length == 0 && !stream->receive_end_stream) {
     this->increment_received_empty_frame_count();
-    if (this->get_received_empty_frame_count() > configured_max_empty_frames_per_minute) {
+    if (configured_max_empty_frames_per_minute >= 0 &&
+        this->get_received_empty_frame_count() > static_cast<uint32_t>(configured_max_empty_frames_per_minute)) {
       Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
       Http2StreamDebug(this->session, id, "Observed too frequent empty frames: %u within a last minute",
                        this->get_received_empty_frame_count());
@@ -574,8 +575,8 @@ Http2ConnectionState::rcv_priority_frame(const Http2Frame &frame)
   // Update PRIORITY frame count per minute
   this->increment_received_priority_frame_count();
   // Close this connection if its priority frame count received exceeds a limit
-  if (configured_max_priority_frames_per_minute != 0 &&
-      this->get_received_priority_frame_count() > configured_max_priority_frames_per_minute) {
+  if (configured_max_priority_frames_per_minute >= 0 &&
+      this->get_received_priority_frame_count() > static_cast<uint32_t>(configured_max_priority_frames_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_priority_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent priority changes: %u priority changes within a last minute",
                      this->get_received_priority_frame_count());
@@ -649,8 +650,8 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
   // Update RST_STREAM frame count per minute
   this->increment_received_rst_stream_frame_count();
   // Close this connection if its RST_STREAM frame count exceeds a limit
-  if (configured_max_rst_stream_frames_per_minute != 0 &&
-      this->get_received_rst_stream_frame_count() > configured_max_rst_stream_frames_per_minute) {
+  if (configured_max_rst_stream_frames_per_minute >= 0 &&
+      this->get_received_rst_stream_frame_count() > static_cast<uint32_t>(configured_max_rst_stream_frames_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_rst_stream_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent RST_STREAM frames: %u frames within a last minute",
                      this->get_received_rst_stream_frame_count());
@@ -698,8 +699,8 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   // Update SETTINGS frame count per minute
   this->increment_received_settings_frame_count();
   // Close this connection if its SETTINGS frame count exceeds a limit
-  if (configured_max_settings_frames_per_minute != 0 &&
-      this->get_received_settings_frame_count() > configured_max_settings_frames_per_minute) {
+  if (configured_max_settings_frames_per_minute >= 0 &&
+      this->get_received_settings_frame_count() > static_cast<uint32_t>(configured_max_settings_frames_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_settings_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
                      this->get_received_settings_frame_count());
@@ -739,7 +740,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
 
   uint32_t n_settings = 0;
   while (nbytes < frame.header().length) {
-    if (n_settings >= Http2::max_settings_per_frame) {
+    if (Http2::max_settings_per_frame >= 0 && n_settings >= static_cast<uint32_t>(Http2::max_settings_per_frame)) {
       Metrics::Counter::increment(http2_rsb.max_settings_per_frame_exceeded);
       Http2StreamDebug(this->session, stream_id, "Observed too many settings in a frame");
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -780,7 +781,8 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   // Update settings count per minute
   this->increment_received_settings_count(n_settings);
   // Close this connection if its settings count received exceeds a limit
-  if (this->get_received_settings_count() > Http2::max_settings_per_minute) {
+  if (Http2::max_settings_per_frame >= 0 &&
+      this->get_received_settings_count() > static_cast<uint32_t>(Http2::max_settings_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_settings_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
                      this->get_received_settings_count());
@@ -834,7 +836,8 @@ Http2ConnectionState::rcv_ping_frame(const Http2Frame &frame)
   // Update PING frame count per minute
   this->increment_received_ping_frame_count();
   // Close this connection if its ping count received exceeds a limit
-  if (configured_max_ping_frames_per_minute != 0 && this->get_received_ping_frame_count() > configured_max_ping_frames_per_minute) {
+  if (configured_max_ping_frames_per_minute >= 0 &&
+      this->get_received_ping_frame_count() > static_cast<uint32_t>(configured_max_ping_frames_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_ping_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent PING frames: %u PING frames within a last minute",
                      this->get_received_ping_frame_count());
@@ -1005,7 +1008,8 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
 
   if (payload_length == 0 && (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) == 0x0) {
     this->increment_received_empty_frame_count();
-    if (this->get_received_empty_frame_count() > configured_max_empty_frames_per_minute) {
+    if (configured_max_empty_frames_per_minute >= 0 &&
+        this->get_received_empty_frame_count() > static_cast<uint32_t>(configured_max_empty_frames_per_minute)) {
       Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
       Http2StreamDebug(this->session, stream_id, "Observed too frequent empty frames: %u within a last minute",
                        this->get_received_empty_frame_count());
