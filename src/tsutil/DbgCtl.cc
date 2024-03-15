@@ -158,6 +158,26 @@ DbgCtl::_new_reference(char const *tag)
 
   ++_RegistryAccessor::registry_reference_count;
 
+  // It seems there is a mutex in the C/C++ runtime that both dlopen() and _cxa_thread_atexit() lock while running.
+  // Creating a _RegistryAccessor instance locks the registry mutex.  If the subsequent code in this function triggers
+  // the construction of a thread_local variable (with a non-trivial destructor), the following deadlock scenario is
+  // possible:
+  // 1.  Thread 1 calls a DbgCtl constructor, which locks the registry mutex, but then is suspended.
+  // 2.  Thread 2 calls dlopen() for a plugin, locking the runtime mutex.  It then executes the constructor for a
+  //     statically allocated DbgCtl object, which blocks on locking the registry mutex.
+  // 3.  Thread 1 resumes, and calls member functions of the derived class of DebugInterface.  If this causes the
+  //     the construction of a thread_local variable with a non-trivial destructor, _cxa_thread_atexit() will be called
+  //     to set up a call of the variable's destructor at thread exit.  The call to _cxa_thread_atexit() will block on
+  //     the runtime mutex (held by Thread 2).  So Thread 1 holds the registry mutex and is blocked waiting for the
+  //     runtime mutex.  And Thread 2 holds the runtime mutex and is blocked waiting for the registry mutex.  Deadlock.
+  //
+  // This deadlock is avoided by calling this function, which must make sure all thread_local variables used by
+  // the instance of the derived class of DebugInterface are constructed.
+  //
+  if (p) {
+    p->cons_thread_local();
+  }
+
   _RegistryAccessor ra;
 
   auto &d{ra.data()};
@@ -285,6 +305,9 @@ DebugInterface::get_instance()
 void
 DebugInterface::set_instance(DebugInterface *i)
 {
+  // See comments in DbgCtl::_new_reference().
+  i->cons_thread_local();
+
   di_inst = i;
   DbgCtl::update([&](const char *t) { return i->debug_tag_activated(t); });
 }

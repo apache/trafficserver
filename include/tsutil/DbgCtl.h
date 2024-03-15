@@ -45,6 +45,14 @@ public:
   virtual void print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
                         va_list ap) const              = 0;
 
+  // Trigger the construction of all statically allocated thread_local variables used by the instance of the derived
+  // class, which have non-trivial destructors.  This is necessary to avoid a potential deadlock condition when loading
+  // a plugin.
+  virtual void
+  cons_thread_local()
+  {
+  }
+
   static DebugInterface *get_instance();
   static void set_instance(DebugInterface *);
 

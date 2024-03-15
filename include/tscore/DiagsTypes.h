@@ -156,6 +156,8 @@ public:
     return unlikely(this->on(mode)) && tag_activated(tag, mode);
   }
 
+  void cons_thread_local() override;
+
   /////////////////////////////////////
   // low-level tag inquiry functions //
   /////////////////////////////////////

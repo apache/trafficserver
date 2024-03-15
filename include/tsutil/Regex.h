@@ -134,6 +134,8 @@ public:
   /// @return The number of capture groups in the compiled pattern.
   int get_capture_count();
 
+  static void cons_thread_local();
+
 private:
   // @internal - Because the PCRE header is badly done, we can't forward declare the PCRE
   // enough to use as pointers. For some reason the header defines in name only a struct and

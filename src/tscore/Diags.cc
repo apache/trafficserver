@@ -314,6 +314,12 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 #endif
 }
 
+void
+Diags::cons_thread_local()
+{
+  Regex::cons_thread_local();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //      bool Diags::tag_activated(char * tag, DiagsTagType mode)
