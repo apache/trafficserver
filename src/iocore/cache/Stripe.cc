@@ -210,7 +210,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
   memset(static_cast<void *>(evacuate), 0, evac_len);
 
-  Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
+  Dbg(dbg_ctl_cache_init, "Stripe %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
       (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
 
   raw_dir = nullptr;

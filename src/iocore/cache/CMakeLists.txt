@@ -33,6 +33,7 @@ add_library(
   RamCacheLRU.cc
   Store.cc
   Stripe.cc
+  YamlStorageConfig.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 
@@ -54,6 +55,7 @@ if(HAVE_LZMA_H)
 endif()
 
 if(BUILD_TESTING)
+  # Unit Tests with unit_tests/main.cc
   macro(add_cache_test name)
     add_executable(${name} unit_tests/main.cc unit_tests/stub.cc unit_tests/CacheTestHandler.cc ${ARGN})
     target_link_libraries(${name} PRIVATE ts::inkcache catch2::catch2)
@@ -86,4 +88,9 @@ if(BUILD_TESTING)
   add_cache_test(Update_S_to_L unit_tests/test_Update_S_to_L.cc)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
 
+  # Unit Tests without unit_tests/main.cc
+  add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)
+  target_include_directories(test_ConfigVolumes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(test_ConfigVolumes ts::inkcache catch2::catch2)
+  add_test(NAME test_ConfigVolumes COMMAND test_ConfigVolumes)
 endif()

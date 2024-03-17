@@ -47,7 +47,7 @@ ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_port} htt
 ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_portv6} http://localhost:{ts.Variables.port}')
 
 # Size of object to get.  (NOTE:  If you increase this significantly you may also have to increase cache
-# capacity in tests/gold_tests/autest-size/min_cfg/storage.config.  Also, for very large objects, if
+# capacity in tests/gold_tests/autest-size/min_cfg/storage.yaml.  Also, for very large objects, if
 # proxy.config.diags.debug.enabled is 1, the PUSH request will timeout and fail.)
 #
 obj_kilobytes = 10 * 1024

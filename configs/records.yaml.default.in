@@ -25,7 +25,7 @@ ts:
 ##############################################################################
 # RAM and disk cache configurations. Docs:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#ram-cache
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.yaml.en.html
 ##############################################################################
     ram_cache:
       size: -1

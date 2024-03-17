@@ -73,7 +73,6 @@ initializeRegistry()
   registerFile("proxy.config.cache.ip_categories.filename", ts::filename::IP_CATEGORIES, NOT_REQUIRED);
   registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT, NOT_REQUIRED);
   registerFile("proxy.config.url_remap.filename", ts::filename::REMAP, NOT_REQUIRED);
-  registerFile("", ts::filename::VOLUME, NOT_REQUIRED);
   registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING, NOT_REQUIRED);
   registerFile("", ts::filename::PLUGIN, NOT_REQUIRED);
   registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS, NOT_REQUIRED);

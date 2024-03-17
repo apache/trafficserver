@@ -1,0 +1,28 @@
+#
+# storage.yaml - Span and Volume Configuration file
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.yaml.en.html
+#
+# The storage configuration is a list of all the storage to be used by the cache and volume
+#
+#   cache:           # file level key
+#     spans:         #
+#       - id:        # identifier / name of the span
+#         path:      # path to storage
+#         size:      # size in bytes, required for file system storage, optional for raw device
+#         hash_seed: # optional, used to isolate lookup from path changes
+#     volumes:       # optional
+#       - id:        # identifier [1-255]
+#         size:      # optional, size in percentage
+#         scheme:    # optional, default to "http"
+#         ram_cache: # optional, default to "true"
+#         spans:     # optional
+#           - use:   # Span identifier
+#             size:  # size allocated to this volume
+#
+cache:
+  spans:
+    - id: "span-1"
+      path: @rel_cachedir@
+      size: 256M

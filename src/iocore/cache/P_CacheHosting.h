@@ -22,11 +22,14 @@
  */
 
 #pragma once
-#include <memory>
-#include <shared_mutex>
+
 #include "P_Cache.h"
+#include "iocore/cache/CacheDefs.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
+
+#include <memory>
+#include <shared_mutex>
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
@@ -288,25 +291,40 @@ private:
   ReplaceablePtr<CacheHostTable> *ppt;
 };
 
-/* list of volumes in the volume.config file */
+/**
+  List of volumes in the storage.yaml
+ */
 struct ConfigVol {
-  int number;
-  CacheType scheme;
-  off_t size;
-  bool in_percent;
-  bool ramcache_enabled;
-  int percent;
-  CacheVol *cachep;
+  struct Size {
+    int64_t absolute_value = 0;
+    bool in_percent        = false;
+    int percent            = 0;
+
+    bool is_empty() const;
+  };
+
+  struct Span {
+    std::string use;
+    Size size;
+  };
+  using Spans = std::vector<Span>;
+
+  int number            = 0;
+  CacheType scheme      = CACHE_NONE_TYPE;
+  bool ramcache_enabled = true;
+  Size size;
+  Spans spans;
+
+  CacheVol *cachep = nullptr;
   LINK(ConfigVol, link);
 };
 
 struct ConfigVolumes {
-  int num_volumes;
-  int num_http_volumes;
+  int num_volumes      = 0;
+  int num_http_volumes = 0;
   Queue<ConfigVol> cp_queue;
-  void read_config_file();
-  void BuildListFromString(char *config_file_path, char *file_buf);
 
+  void complement();
   void
   clear_all()
   {
