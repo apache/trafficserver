@@ -33,3 +33,5 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
   )
 endif()
+
+clang_tidy_check(traffic_logstats)

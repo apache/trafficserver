@@ -23,3 +23,5 @@ add_executable(
 target_link_libraries(traffic_ctl ts::tscore libswoc::libswoc yaml-cpp::yaml-cpp ts::tsutil)
 
 install(TARGETS traffic_ctl)
+
+clang_tidy_check(traffic_ctl)

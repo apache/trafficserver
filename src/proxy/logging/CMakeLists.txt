@@ -49,3 +49,5 @@ if(BUILD_TESTING)
   target_link_libraries(test_RolledLogDeleter tscore records catch2::catch2)
   add_test(NAME test_RolledLogDeleter COMMAND test_RolledLogDeleter)
 endif()
+
+clang_tidy_check(logging)

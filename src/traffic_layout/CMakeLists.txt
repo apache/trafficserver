@@ -32,3 +32,5 @@ if(HAVE_BROTLI_ENCODE_H)
 endif()
 
 install(TARGETS traffic_layout)
+
+clang_tidy_check(traffic_layout)

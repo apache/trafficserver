@@ -85,3 +85,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_tsutil COMMAND $<TARGET_FILE:test_tsutil>)
 endif()
+
+clang_tidy_check(tsutil)

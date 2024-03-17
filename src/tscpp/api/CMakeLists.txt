@@ -82,3 +82,5 @@ set(TSCPP_API_PUBLIC_HEADERS
 set_target_properties(tscppapi PROPERTIES PUBLIC_HEADER "${TSCPP_API_PUBLIC_HEADERS}")
 
 install(TARGETS tscppapi PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tscpp/api)
+
+clang_tidy_check(tscppapi)

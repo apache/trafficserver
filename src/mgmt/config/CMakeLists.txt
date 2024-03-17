@@ -23,3 +23,5 @@ target_link_libraries(
   PUBLIC ts::tscore
   PRIVATE ts::proxy
 )
+
+clang_tidy_check(configmanager)

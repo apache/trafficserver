@@ -19,3 +19,5 @@ add_executable(traffic_top traffic_top.cc ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPC
 target_include_directories(traffic_top PRIVATE ${CURSES_INCLUDE_DIRS})
 target_link_libraries(traffic_top PRIVATE ts::tscore ts::inkevent libswoc::libswoc ${CURSES_LIBRARIES})
 install(TARGETS traffic_top)
+
+clang_tidy_check(traffic_top)

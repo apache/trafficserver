@@ -64,3 +64,5 @@ if(BUILD_TESTING)
   add_test(NAME test_MIOBufferWriter COMMAND test_MIOBufferWriter)
 
 endif()
+
+clang_tidy_check(inkevent)

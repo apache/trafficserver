@@ -125,3 +125,5 @@ if(BUILD_TESTING)
   target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
   add_test(NAME test_net COMMAND test_net)
 endif()
+
+clang_tidy_check(inknet)

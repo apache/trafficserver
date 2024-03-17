@@ -69,3 +69,5 @@ if(BUILD_TESTING)
   target_link_libraries(test_jsonrpcserver catch2::catch2 ts::jsonrpc_server ts::inkevent libswoc::libswoc)
   add_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
 endif()
+
+clang_tidy_check(jsonrpc_protocol)

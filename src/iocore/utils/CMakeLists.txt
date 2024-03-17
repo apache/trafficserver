@@ -19,3 +19,5 @@ add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
 add_library(ts::inkutils ALIAS inkutils)
 
 target_link_libraries(inkutils PUBLIC ts::inkevent ts::tscore)
+
+clang_tidy_check(inkutils)

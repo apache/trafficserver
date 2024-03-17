@@ -65,3 +65,5 @@ endif(TS_USE_LINUX_IO_URING)
 set_target_properties(traffic_server PROPERTIES ENABLE_EXPORTS ON)
 
 install(TARGETS traffic_server)
+
+clang_tidy_check(traffic_server)

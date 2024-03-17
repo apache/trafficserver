@@ -87,3 +87,5 @@ if(BUILD_TESTING)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
 
 endif()
+
+clang_tidy_check(inkcache)

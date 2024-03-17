@@ -34,3 +34,5 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/iocore/aio
   )
 endif()
+
+clang_tidy_check(aio)

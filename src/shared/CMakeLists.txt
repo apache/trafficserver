@@ -19,3 +19,5 @@ add_library(overridable_txn_vars STATIC overridable_txn_vars.cc)
 add_library(ts::overridable_txn_vars ALIAS overridable_txn_vars)
 
 target_link_libraries(overridable_txn_vars PRIVATE ts::inknet)
+
+clang_tidy_check(overridable_txn_vars)

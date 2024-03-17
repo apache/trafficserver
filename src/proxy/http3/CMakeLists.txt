@@ -84,3 +84,5 @@ target_link_libraries(
           ts::tscore
 )
 add_test(NAME test_qpack COMMAND test_qpack)
+
+clang_tidy_check(http3)

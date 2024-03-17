@@ -187,3 +187,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
 endif()
+
+clang_tidy_check(tscore)
