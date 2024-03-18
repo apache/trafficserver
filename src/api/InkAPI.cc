@@ -4848,6 +4848,25 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetyp
   s->internal_msg_buffer_type = mimetype;
 }
 
+char *
+TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm             = (HttpSM *)txnp;
+  HttpTransact::State *s = &(sm->t_state);
+
+  if (buflength) {
+    *buflength = s->internal_msg_buffer_size;
+  }
+
+  if (mimetype) {
+    *mimetype = s->internal_msg_buffer_type;
+  }
+
+  return s->internal_msg_buffer;
+}
+
 void
 TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 {

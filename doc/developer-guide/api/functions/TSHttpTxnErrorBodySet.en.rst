@@ -39,3 +39,24 @@ Note that both string arguments must be allocated with :c:func:`TSmalloc` or
 :c:func:`TSstrdup`.  The :arg:`mimetype` is optional, and if not provided it
 defaults to :literal:`text/html`. Sending an empty string would prevent setting
 a content type header (but that is not advised).
+
+
+TSHttpTxnErrorBodyGet
+*********************
+
+Gets the error body as set above.
+
+Synopsis
+========
+
+.. code-block:: cpp
+
+    #include <ts/ts.h>
+
+.. function:: char * TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype)
+
+Description
+===========
+
+This is the getter version for the above setter. The :arg:`mimetype` and the :arg:`buflength`
+arguments can be :const:`nullptr` if the caller is not interested in the mimetype or the length.
