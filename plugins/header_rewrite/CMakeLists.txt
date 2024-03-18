@@ -42,6 +42,7 @@ target_link_libraries(
 )
 
 if(maxminddb_FOUND)
+  target_compile_definitions(header_rewrite PUBLIC TS_USE_HRW_MAXMINDDB=1)
   target_sources(header_rewrite PRIVATE conditions_geo_maxmind.cc)
   target_link_libraries(header_rewrite PRIVATE maxminddb::maxminddb)
 endif()
