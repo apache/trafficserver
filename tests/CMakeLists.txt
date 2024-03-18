@@ -27,6 +27,7 @@ function(ADD_AUTEST_PLUGIN _NAME)
                        "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
     )
   endif()
+  set_target_properties(${_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs")
   set_target_properties(${_NAME} PROPERTIES PREFIX "")
   set_target_properties(${_NAME} PROPERTIES SUFFIX ".so")
   remove_definitions(-DATS_BUILD) # remove the ATS_BUILD define for plugins to build without issue
