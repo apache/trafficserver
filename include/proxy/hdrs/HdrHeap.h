@@ -271,13 +271,11 @@ public:
   void dump_heap(int len = -1);
 
   uint32_t m_magic;
-  bool m_writeable;
   char *m_free_start;
   char *m_data_start;
   uint32_t m_size;
 
-  // HdrBuf heap pointers
-  uint32_t m_free_size;
+  bool m_writeable;
 
   // Overflow block ptr
   //   Overflow blocks are necessary because we can
@@ -287,6 +285,9 @@ public:
   //    header on them, although only first block can
   //    point to string heaps
   HdrHeap *m_next;
+
+  // HdrBuf heap pointers
+  uint32_t m_free_size;
 
   int demote_rw_str_heap();
   void coalesce_str_heaps(int incoming_size = 0);
@@ -330,8 +331,8 @@ public:
 
   // String Heap access
   Ptr<HdrStrHeap> m_read_write_heap;
-  int m_lost_string_space;
   StrHeapDesc m_ronly_heap[HDR_BUF_RONLY_HEAPS];
+  int m_lost_string_space;
 };
 
 static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{swoc::round_up(sizeof(HdrHeap))};
