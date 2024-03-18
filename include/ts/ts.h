@@ -1600,6 +1600,16 @@ TSReturnCode TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp);
 void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype);
 
 /**
+   Retrives the error body, if any, from a transaction. This would be a body as set
+   via the API body.
+
+   @param txnp HTTP transaction whose parent proxy to get.
+   @param buflength Optional outpu pointer to the length of the body message.
+   @param mimetype Optional output pointer to the MIME type of the response.
+*/
+char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
+
+/**
     Retrieves the parent proxy hostname and port, if parent
     proxying is enabled. If parent proxying is not enabled,
     TSHttpTxnParentProxyGet() sets hostname to nullptr and port to -1.
