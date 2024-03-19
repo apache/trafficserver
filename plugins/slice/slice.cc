@@ -119,7 +119,8 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
 
       // check if object is large enough to slice - skip small and unknown size objects
       if (should_skip_this_obj(txnp, config)) {
-        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, read_resp_hdr_contp);
         return false;
       }
 
@@ -225,7 +226,8 @@ read_resp_hdr(TSCont contp, TSEvent event, void *edata)
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
   if (urlstr != nullptr) {
     TxnHdrMgr response;
-    response.populateFrom(txnp, TSHttpTxnClientRespGet);
+    TxnHdrMgr::HeaderGetFunc func = event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ? TSHttpTxnCachedRespGet : TSHttpTxnServerRespGet;
+    response.populateFrom(txnp, func);
     HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
     char constr[1024];
     int conlen = sizeof constr;
@@ -246,13 +248,16 @@ read_resp_hdr(TSCont contp, TSEvent event, void *edata)
         }
       } else {
         ERROR_LOG("Could not parse content-length: %.*s", conlen, constr);
+        TSStatIntIncrement(info->config.stat_bad_cl, 1);
       }
     } else {
       DEBUG_LOG("Could not get a content length for updating object size");
+      TSStatIntIncrement(info->config.stat_no_cl, 1);
     }
     TSfree(urlstr);
   } else {
     ERROR_LOG("Could not get URL for obj size.");
+    TSStatIntIncrement(info->config.stat_no_url, 1);
   }
 
   // Reenable and continue with the state machine.
@@ -319,11 +324,16 @@ register_stat(const char *name, int &id)
 static void
 init_stats(Config &config, const std::string &prefix)
 {
-  const std::array<std::pair<const char *, int &>, 4> stats{
-    {{".metadata_cache.true_large_objects", config.stat_TP},
+  const std::array<std::pair<const char *, int &>, 7> stats{
+    {
+     {".metadata_cache.true_large_objects", config.stat_TP},
      {".metadata_cache.true_small_objects", config.stat_TN},
      {".metadata_cache.false_large_objects", config.stat_FP},
-     {".metadata_cache.false_small_objects", config.stat_FN}}
+     {".metadata_cache.false_small_objects", config.stat_FN},
+     {".metadata_cache.no_content_length", config.stat_no_cl},
+     {".metadata_cache.bad_content_length", config.stat_bad_cl},
+     {".metadata_cache.no_url", config.stat_no_url},
+     }
   };
 
   config.stats_enabled = true;

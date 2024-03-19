@@ -86,7 +86,7 @@ struct Config {
 
   // Metadata cache stats
   std::string stat_prefix{};
-  int stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0};
+  int stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0}, stat_no_cl{0}, stat_bad_cl{0}, stat_no_url{0};
   bool stats_enabled{false};
 
 private:
