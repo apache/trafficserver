@@ -28,7 +28,6 @@
 #include <variant>
 #include <mutex>
 
-#include "tscore/Errata.h"
 #include "tscore/Diags.h"
 #include "ts/apidefs.h"
 
@@ -66,7 +65,7 @@ private:
 
 public:
   // Possible RPC method signatures.
-  using MethodHandlerSignature       = std::function<ts::Rv<YAML::Node>(std::string_view const &, const YAML::Node &)>;
+  using MethodHandlerSignature       = std::function<swoc::Rv<YAML::Node>(std::string_view const &, const YAML::Node &)>;
   using PluginMethodHandlerSignature = std::function<void(std::string_view const &, const YAML::Node &)>;
   using NotificationHandlerSignature = std::function<void(const YAML::Node &)>;
 
@@ -216,8 +215,8 @@ private:
     bool remove_handler(std::string_view name);
 
     // JSONRPC API - here for now.
-    ts::Rv<YAML::Node> show_registered_handlers(std::string_view const &, const YAML::Node &);
-    ts::Rv<YAML::Node> get_service_descriptor(std::string_view const &, const YAML::Node &);
+    swoc::Rv<YAML::Node> show_registered_handlers(std::string_view const &, const YAML::Node &);
+    swoc::Rv<YAML::Node> get_service_descriptor(std::string_view const &, const YAML::Node &);
 
     // Supported handler endpoint types.
     using Method       = FunctionWrapper<MethodHandlerSignature>;
@@ -248,7 +247,7 @@ private:
       explicit operator bool() const;
       bool operator!() const;
       /// Invoke the actual handler callback.
-      ts::Rv<YAML::Node> invoke(specs::RPCRequestInfo const &request) const;
+      swoc::Rv<YAML::Node> invoke(specs::RPCRequestInfo const &request) const;
       /// Check if the handler was registered as method.
       bool is_method() const;
 

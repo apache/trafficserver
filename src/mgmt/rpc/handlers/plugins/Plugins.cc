@@ -56,7 +56,7 @@ namespace rpc::handlers::plugins
 {
 namespace err = rpc::handlers::errors;
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
 {
   // The rpc could be ready before plugins are initialized.
@@ -65,7 +65,7 @@ plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
     return err::make_errata(err::Codes::PLUGIN, "Plugin is not yet ready to handle any messages.");
   }
 
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   try {
     // keep the data.
     PluginMsgInfo info = params.as<PluginMsgInfo>();

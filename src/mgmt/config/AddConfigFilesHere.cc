@@ -26,7 +26,6 @@
 #include "../../records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "mgmt/config/FileManager.h"
-#include "tscore/Errata.h"
 
 static constexpr bool REQUIRED{true};
 static constexpr bool NOT_REQUIRED{false};

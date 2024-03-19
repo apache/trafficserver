@@ -24,3 +24,5 @@ if(TS_USE_REMOTE_UNWINDING)
 endif()
 
 install(TARGETS traffic_crashlog)
+
+clang_tidy_check(traffic_crashlog)

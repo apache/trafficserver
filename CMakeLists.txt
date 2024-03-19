@@ -42,6 +42,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE -DATS_BUILD)
 
 include(layout)
+include(ClangTidy)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(DEBUG _DEBUG)
@@ -577,6 +578,8 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
   message(STATUS "Autoconf build detected in source tree. Removing autoconf headers.")
 endif()
 
+set(CMAKE_HOST "${CMAKE_HOST_SYSTEM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
+
 # In-tree autoconf configuration causes duplicate definitions of some symbols
 # in generated headers. If the files don't exist, no error is emitted.
 file(REMOVE "${PROJECT_SOURCE_DIR}/include/tscore/ink_config.h")
@@ -757,6 +760,7 @@ install(FILES "${PROJECT_BINARY_DIR}/Findtsapi.cmake" DESTINATION ${CMAKE_INSTAL
 # Display build summary
 include(CMakePrintHelpers)
 message(STATUS "Build Summary:")
+cmake_print_variables(CMAKE_HOST)
 cmake_print_variables(CMAKE_SYSTEM_NAME)
 cmake_print_variables(CMAKE_SYSTEM_VERSION)
 cmake_print_variables(CMAKE_SYSTEM_PROCESSOR)

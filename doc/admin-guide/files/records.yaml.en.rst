@@ -4544,7 +4544,7 @@ HTTP/2 Configuration
    :reloadable:
    :units: bytes
 
-   Specifies the high water mark for all HTTP/2 frames on an outoging connection.
+   Specifies the high water mark for all HTTP/2 frames on an outgoing connection.
    Default is -1 to preserve existing water marking behavior.
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`http2_buffer_water_mark <override-h2-properties>` attribute.

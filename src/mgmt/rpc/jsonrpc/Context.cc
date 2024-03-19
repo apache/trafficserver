@@ -22,10 +22,10 @@
 namespace rpc
 {
 // --- Call Context impl
-ts::Errata
+swoc::Errata
 Context::Auth::is_blocked(TSRPCHandlerOptions const &options) const
 {
-  ts::Errata out;
+  swoc::Errata out;
   // check every registered callback and see if they have something to say. Then report back to the manager
   for (auto &&check : _checkers) {
     check(options, out);

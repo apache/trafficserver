@@ -23,7 +23,7 @@
 #include <functional>
 #include <string_view>
 
-#include "tscore/Errata.h"
+#include "tsutil/ts_errata.h"
 #include "ts/apidefs.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
@@ -40,15 +40,15 @@ constexpr bool NON_RESTRICTED_API{false};
 ///
 class Context
 {
-  using checker_cb = std::function<void(TSRPCHandlerOptions const &, ts::Errata &)>;
+  using checker_cb = std::function<void(TSRPCHandlerOptions const &, swoc::Errata &)>;
   /// @brief Internal class to hold the permission checker part.
   struct Auth {
     /// Checks for permissions. This function checks for every registered permission checker.
     ///
     /// @param options Registered handler options.
-    /// @return ts::Errata The errata will be filled by each of the registered checkers, if there was any issue validating the
+    /// @return swoc::Errata The errata will be filled by each of the registered checkers, if there was any issue validating the
     ///                    call, then the errata reflects that.
-    ts::Errata is_blocked(TSRPCHandlerOptions const &options) const;
+    swoc::Errata is_blocked(TSRPCHandlerOptions const &options) const;
 
     /// Add permission checkers.
     template <typename F>

@@ -39,7 +39,6 @@ add_library(
   CryptoHash.cc
   Diags.cc
   Encoding.cc
-  Errata.cc
   EventNotify.cc
   Extendible.cc
   FrequencyCounter.cc
@@ -145,7 +144,6 @@ if(BUILD_TESTING)
     unit_tests/test_AcidPtr.cc
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
-    unit_tests/test_Errata.cc
     unit_tests/test_Extendible.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
@@ -189,3 +187,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
 endif()
+
+clang_tidy_check(tscore)

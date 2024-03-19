@@ -482,8 +482,8 @@ Mod_as_text_block::operator()(Context &ctx, Feature &feature)
 {
   Feature zret;
   if (IndexFor(STRING) == feature.index()) {
-    auto tag = std::get<IndexFor(STRING)>(feature); // get the name.
-    zret     = Ex_text_block::extract_block(ctx, tag);
+    auto const &tag = std::get<IndexFor(STRING)>(feature); // get the name.
+    zret            = Ex_text_block::extract_block(ctx, tag);
   }
 
   if (is_nil(zret)) {

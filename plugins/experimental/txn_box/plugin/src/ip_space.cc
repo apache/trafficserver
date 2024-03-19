@@ -612,8 +612,8 @@ Do_ip_space_define::define_column(Config &cfg, YAML::Node node)
     break;
   }
   _row_size += col._row_size;
-  _cols.emplace_back(std::move(col));
   _col_names.define(col._idx, col._name);
+  _cols.emplace_back(std::move(col));
   return {};
 }
 

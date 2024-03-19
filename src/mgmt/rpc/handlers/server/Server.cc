@@ -79,10 +79,10 @@ set_server_drain(bool drain)
   metrics[drain_id].store(TSSystemState::is_draining() ? 1 : 0);
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 server_start_drain(std::string_view const &id, YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   try {
     if (!params.IsNull()) {
       DrainInfo di = params.as<DrainInfo>();
@@ -93,23 +93,23 @@ server_start_drain(std::string_view const &id, YAML::Node const &params)
     if (!is_server_draining()) {
       set_server_drain(true);
     } else {
-      resp.errata().push(err::make_errata(err::Codes::SERVER, "Server already draining."));
+      resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server already draining.");
     }
   } catch (std::exception const &ex) {
     Debug("rpc.handler.server", "Got an error DrainInfo decoding: %s", ex.what());
-    resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during server drain: {}", ex.what()));
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Error found during server drain: {}", ex.what());
   }
   return resp;
 }
 
-ts::Rv<YAML::Node>
+swoc::Rv<YAML::Node>
 server_stop_drain(std::string_view const &id, [[maybe_unused]] YAML::Node const &params)
 {
-  ts::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node> resp;
   if (is_server_draining()) {
     set_server_drain(false);
   } else {
-    resp.errata().push(err::make_errata(err::Codes::SERVER, "Server is not draining."));
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server is not draining.");
   }
 
   return resp;

@@ -37,6 +37,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_meta.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/ts_errata.h
 )
 add_library(
   tsutil
@@ -49,6 +50,7 @@ add_library(
   YamlCfg.cc
   ts_unit_parser.cc
   Regex.cc
+  ts_errata.cc
 )
 
 add_library(ts::tsutil ALIAS tsutil)
@@ -62,6 +64,8 @@ if(BUILD_SHARED_LIBS)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil
   )
+else()
+  install(FILES ${TSUTIL_PUBLIC_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tsutil)
 endif()
 
 if(BUILD_TESTING)
@@ -81,3 +85,5 @@ if(BUILD_TESTING)
 
   add_test(NAME test_tsutil COMMAND $<TARGET_FILE:test_tsutil>)
 endif()
+
+clang_tidy_check(tsutil)

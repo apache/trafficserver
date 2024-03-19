@@ -117,7 +117,7 @@ namespace rpc
 {
 extern std::mutex g_rpcHandlingMutex;
 extern std::condition_variable g_rpcHandlingCompletion;
-extern ts::Rv<YAML::Node> g_rpcHandlerResponseData;
+extern swoc::Rv<YAML::Node> g_rpcHandlerResponseData;
 extern bool g_rpcHandlerProcessingCompleted;
 } // namespace rpc
 
@@ -4846,6 +4846,25 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetyp
   s->internal_msg_buffer_type = mimetype;
 }
 
+char *
+TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm             = (HttpSM *)txnp;
+  HttpTransact::State *s = &(sm->t_state);
+
+  if (buflength) {
+    *buflength = s->internal_msg_buffer_size;
+  }
+
+  if (mimetype) {
+    *mimetype = s->internal_msg_buffer_type;
+  }
+
+  return s->internal_msg_buffer;
+}
+
 void
 TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 {
@@ -8796,7 +8815,7 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 {
   Debug("rpc.api", ">> Handler seems to be done with an error");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
-  ::rpc::g_rpcHandlerResponseData        = ts::Errata{}.push(1, ec, std::string{descr, descr_len});
+  ::rpc::g_rpcHandlerResponseData        = swoc::Errata(ts::make_errno_code(ec), "{}", swoc::TextView{descr, descr_len});
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
   Debug("rpc.api", ">> error  flagged.");

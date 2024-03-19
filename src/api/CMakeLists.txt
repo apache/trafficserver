@@ -23,7 +23,7 @@ set(TSAPI_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_
                          ${PROJECT_SOURCE_DIR}/include/ts/TsException.h ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
 )
 
-target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE OpenSSL::SSL)
+target_link_libraries(tsapi PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp PCRE::PCRE PkgConfig::PCRE2 OpenSSL::SSL)
 set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
@@ -54,3 +54,5 @@ install(
 if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
 endif()
+
+clang_tidy_check(tsapi)

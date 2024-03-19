@@ -212,4 +212,10 @@ TEST_CASE("IntrusiveDList Inheritance", "[libswoc][IntrusiveDList][example]") {
   }
   REQUIRE(priv2_list.head()->payload() == "Item 1");
   REQUIRE(priv2_list.tail()->payload() == "Item 23");
+
+  // Delete everything in priv_list.
+  priv_list.apply([](PrivateThing *thing) { delete thing; });
+
+  // Delete everything in priv2_list.
+  priv2_list.apply([](PrivateThing2 *thing) { delete thing; });
 }

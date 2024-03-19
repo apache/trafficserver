@@ -47,7 +47,7 @@ endif()
 target_link_libraries(
   proxy
   PUBLIC ts::inkcache ts::inkevent ts::tsutil ts::tscore
-  PRIVATE ts::jsonrpc_protocol ts::inkutils ts::tsapibackend
+  PRIVATE ts::rpcpublichandlers ts::jsonrpc_protocol ts::inkutils ts::tsapibackend
 )
 
 add_subdirectory(hdrs)
@@ -59,3 +59,5 @@ add_subdirectory(logging)
 if(TS_USE_QUIC)
   add_subdirectory(http3)
 endif()
+
+clang_tidy_check(proxy)

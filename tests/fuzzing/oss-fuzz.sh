@@ -17,6 +17,26 @@
 #  limitations under the License.
 ################################################################################
 
+# install build stuff
+CFLAGS_SAVE="$CFLAGS"
+CXXFLAGS_SAVE="$CXXFLAGS"
+RUSTFLAGS_SAVE="$RUSTFLAGS"
+unset CFLAGS
+unset CXXFLAGS
+unset RUSTFLAGS
+export AFL_NOOPT=1
+
+apt-get install -y libev-dev libjemalloc-dev python2-dev libxml2-dev libpython2-dev libc-ares-dev libsystemd-dev libevent-dev libjansson-dev zlib1g-dev sudo autoconf libtool pkg-config
+curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=nightly
+export PATH="/root/.cargo/bin:${PATH}"
+
+BASE=/opt $SRC/trafficserver/tools/build_h3_tools.sh
+
+export CFLAGS="${CFLAGS_SAVE}"
+export CXXFLAGS="${CXXFLAGS_SAVE}"
+export RUSTFLAGS="${RUSTFLAGS_SAVE}"
+unset AFL_NOOPT
+
 # don't use __cxa_atexit for coverage sanitizer
 if [[ $SANITIZER = coverage ]]
 then
@@ -30,12 +50,16 @@ then
 fi
 
 mkdir -p build && cd build/
-cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -DENABLE_HWLOC=OFF -DENABLE_JEMALLOC=OFF -DENABLE_LUAJIT=OFF ../.
+cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -DENABLE_HWLOC=OFF -DENABLE_JEMALLOC=OFF -DENABLE_LUAJIT=OFF -Dquiche_ROOT=/opt/quiche -DENABLE_QUICHE=TRUE -DOPENSSL_INCLUDE_DIR=/opt/boringssl/include -DOPENSSL_ROOT_DIR=/opt/boringssl ../.
 make -j$(nproc) --ignore-errors
 
 cp tests/fuzzing/fuzz_* $OUT/
 cp -r tests/fuzzing/lib/ $OUT/
 cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
+
+cp /opt/boringssl/lib/libssl.so $OUT/lib/
+cp /opt/boringssl/lib/libcrypto.so $OUT/lib/
+cp /opt/quiche/lib/libquiche.so $OUT/lib/
 
 if [[ $SANITIZER = undefined ]]
 then
