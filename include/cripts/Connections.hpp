@@ -25,7 +25,6 @@ class Context;
 #include "ts/apidefs.h"
 #include "ts/ts.h"
 
-
 #include "cripts/Matcher.hpp"
 
 namespace Cript
@@ -170,6 +169,33 @@ class ConnBase
 
   }; // End class ConnBase::Congestion
 
+  class Mark
+  {
+    using self_type = Mark;
+
+  public:
+    friend class ConnBase;
+
+    Mark()                       = default;
+    void operator=(const Mark &) = delete;
+
+    // Same here, no API in ATS to Get() the mark on a VC.
+    operator integer() const { return _val; }
+
+    void
+    operator=(int val)
+    {
+      TSAssert(_owner);
+      _owner->setMark(val);
+      _val = val;
+    }
+
+  private:
+    ConnBase *_owner = nullptr;
+    integer _val     = -1;
+
+  }; // End class ConnBase::Mark
+
   class Geo
   {
     using self_type = Geo;
@@ -279,7 +305,7 @@ class ConnBase
 public:
   void operator=(const ConnBase &) = delete;
 
-  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = this; }
+  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = this; }
 
   [[nodiscard]] virtual int fd() const = 0; // This needs the txnp from the Context
 
@@ -311,11 +337,13 @@ public:
 
   [[nodiscard]] virtual int count() const = 0;
   virtual void setDscp(int val)           = 0;
+  virtual void setMark(int val)           = 0;
   Dscp dscp;
   Congestion congestion;
   TcpInfo tcpinfo;
   Geo geo;
   Pacing pacing;
+  Mark mark;
 
   Cript::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
@@ -350,6 +378,12 @@ public:
     TSHttpTxnClientPacketDscpSet(_state->txnp, val);
   }
 
+  void
+  setMark(int val) override
+  {
+    TSHttpTxnClientPacketMarkSet(_state->txnp, val);
+  }
+
 }; // End class Client::Connection
 
 } // namespace Client
@@ -374,6 +408,12 @@ public:
   setDscp(int val) override
   {
     TSHttpTxnServerPacketDscpSet(_state->txnp, val);
+  }
+
+  void
+  setMark(int val) override
+  {
+    TSHttpTxnServerPacketMarkSet(_state->txnp, val);
   }
 
 }; // End class Server::Connection

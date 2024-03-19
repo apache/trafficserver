@@ -91,6 +91,7 @@ do_send_response()
   conn.congestion = "bbr";
   conn.dscp       = 8;
   conn.pacing     = 100000;
+  conn.mark       = 17;
 
   // Some file operations (note that the paths aren't required here, can just be strings, but it's a good practice)
   static const File::Path p1("/tmp/foo");
