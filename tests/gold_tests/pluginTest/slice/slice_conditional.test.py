@@ -78,7 +78,7 @@ while (slice_end < body_len):
         slice_end = body_len
     res_large_slice = {
         "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" +
+            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Accept-Ranges: bytes\r\n" +
             f"Content-Range: bytes {slice_begin}-{slice_end - 1}/{body_len}\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
         "body": large_body[slice_begin:slice_end]
     }
