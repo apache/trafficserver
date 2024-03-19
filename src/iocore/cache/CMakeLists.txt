@@ -85,5 +85,6 @@ if(BUILD_TESTING)
   add_cache_test(Update_L_to_S unit_tests/test_Update_L_to_S.cc)
   add_cache_test(Update_S_to_L unit_tests/test_Update_S_to_L.cc)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
+  add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
 
 endif()
