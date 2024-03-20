@@ -50,12 +50,13 @@ class yamlcpp_json_decoder
   decode_and_validate(YAML::Node const &node) noexcept
   {
     specs::RPCRequestInfo request;
-    if (!node.IsDefined() || (node.Type() != YAML::NodeType::Map) || (node.size() == 0)) {
-      // We only care about structures with elements.
-      return {request, error::RPCErrorCode::INVALID_REQUEST};
-    }
 
     try {
+      if (!node.IsDefined() || (node.Type() != YAML::NodeType::Map) || (node.size() == 0)) {
+        // We only care about structures with elements.
+        return {request, error::RPCErrorCode::INVALID_REQUEST};
+      }
+
       // try the id first so we can use for a possible error.
       // All this may be obsolete if we decided to accept only strings.
       if (auto id = node["id"]) {
