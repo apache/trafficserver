@@ -26,6 +26,8 @@
 #include "iocore/cache/AggregateWriteBuffer.h"
 #include "iocore/cache/CacheEvacuateDocVC.h"
 
+// These macros allow two incrementing unsigned values x and y to maintain
+// their ordering when one of them overflows, given that the values stay close to each other.
 #define UINT_WRAP_LTE(_x, _y) (((_y) - (_x)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_GTE(_x, _y) (((_x) - (_y)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_LT(_x, _y)  (((_x) - (_y)) >= INT_MAX) // exploit overflow
