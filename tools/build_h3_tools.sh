@@ -186,8 +186,9 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b v1.2.0 https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
+git submodule update --init
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
@@ -203,7 +204,7 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.4.0 https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -220,8 +221,9 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.58.0 https://github.com/tatsuhiro-t/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b v1.60.0 https://github.com/tatsuhiro-t/nghttp2.git
 cd nghttp2
+git submodule update --init
 autoreconf -if
 if [ `uname -s` = "Darwin" ] || [ `uname -s` = "FreeBSD" ]
 then
