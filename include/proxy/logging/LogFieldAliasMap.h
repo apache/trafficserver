@@ -69,7 +69,7 @@ any memory the map may have allocated.
 
  *****************************************************************************/
 
-class LogFieldAliasMap : public RefCountObj
+class LogFieldAliasMap : public RefCountObjInHeap
 {
 public:
   // the logging system assumes log entries of type sINT are

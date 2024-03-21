@@ -60,7 +60,7 @@ AcceptFunction net_accept;
 class UnixNetVConnection;
 
 // TODO fix race between cancel accept and call back
-struct NetAcceptAction : public Action, public RefCountObj {
+struct NetAcceptAction : public Action, public RefCountObjInHeap {
   Server *server;
 
   void

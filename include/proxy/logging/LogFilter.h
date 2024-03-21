@@ -39,7 +39,7 @@
   function which, given a LogAccess object, returns true if
   the log entry is to be tossed out.
   -------------------------------------------------------------------------*/
-class LogFilter : public RefCountObj
+class LogFilter : public RefCountObjInHeap
 {
 public:
   enum Type {

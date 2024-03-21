@@ -22,7 +22,7 @@
 #include "tscore/Ptr.h"
 #include "catch.hpp"
 
-struct PtrObject : RefCountObj {
+struct PtrObject : RefCountObjInHeap {
   PtrObject(unsigned *_c) : count(_c) { ++(*count); }
   ~PtrObject() override { --(*count); }
   unsigned *count;
