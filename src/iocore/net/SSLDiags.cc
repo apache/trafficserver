@@ -184,6 +184,11 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
 const char *
 SSLErrorName(int ssl_error)
 {
+#ifdef OPENSSL_IS_BORINGSSL
+  const char *err_descr = SSL_error_description(ssl_error);
+  return err_descr != nullptr ? err_descr : "unknown SSL error";
+#else
+  // Note: This needs some updates as well for quictls.
   static const char *names[] = {
     "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
     "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
@@ -193,6 +198,7 @@ SSLErrorName(int ssl_error)
   }
 
   return names[ssl_error];
+#endif
 }
 
 void
