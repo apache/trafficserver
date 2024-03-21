@@ -73,7 +73,7 @@ HostDBInfo::assign(SRV const *srv, char const *name) -> self_type &
   data.srv.srv_priority = srv->priority;
   data.srv.srv_port     = srv->port;
   data.srv.key          = srv->key;
-  data.srv.srv_offset   = reinterpret_cast<char const *>(this) - name;
+  data.srv.srv_offset   = name - reinterpret_cast<char const *>(this);
   return *this;
 }
 
