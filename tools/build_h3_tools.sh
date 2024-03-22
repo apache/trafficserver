@@ -144,11 +144,7 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
-# Latest quiche commits breaks our code so we build from the last commit
-# we know it works, in this case this commit includes the rpath fix commit
-# for quiche. https://github.com/cloudflare/quiche/pull/1508
-# Why does the latest break our code? -> https://github.com/cloudflare/quiche/pull/1537
-git checkout a1b212761c6cc0b77b9121cdc313e507daf6deb3
+git checkout 0.20.1
 QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
@@ -186,8 +182,9 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b v1.2.0 https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
+git submodule update --init
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
@@ -203,7 +200,7 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.1.0 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.4.0 https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -220,8 +217,9 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.58.0 https://github.com/tatsuhiro-t/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b v1.60.0 https://github.com/tatsuhiro-t/nghttp2.git
 cd nghttp2
+git submodule update --init
 autoreconf -if
 if [ `uname -s` = "Darwin" ] || [ `uname -s` = "FreeBSD" ]
 then
