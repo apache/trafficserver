@@ -57,10 +57,12 @@ void ink_queue_load_64(void *dst, void *src);
 #define INK_QUEUE_LD64(dst, src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
 #endif
 
+// passing a const volatile value of 0 works around a gcc bug
 #if TS_HAS_128BIT_CAS
-#define INK_QUEUE_LD(dst, src)                                                       \
-  do {                                                                               \
-    *(__int128_t *)&(dst) = __sync_val_compare_and_swap((__int128_t *)&(src), 0, 0); \
+#define INK_QUEUE_LD(dst, src)                                                                     \
+  do {                                                                                             \
+    const volatile __int128_t iqld0 = 0;                                                           \
+    *(__int128_t *)&(dst)           = __sync_val_compare_and_swap((__int128_t *)&(src), 0, iqld0); \
   } while (0)
 #else
 #define INK_QUEUE_LD(dst, src) INK_QUEUE_LD64(dst, src)
