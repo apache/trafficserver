@@ -23,8 +23,10 @@ function(add_atsplugin name)
     target_link_libraries(${name} PRIVATE ts::tsapi ts::tsutil)
   else()
     target_include_directories(
-      ${name} PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
-                      "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
+      ${name}
+      PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
+              "$<TARGET_PROPERTY:libswoc::libswoc,INTERFACE_INCLUDE_DIRECTORIES>"
+              "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
     )
   endif()
   set_target_properties(${name} PROPERTIES PREFIX "")
