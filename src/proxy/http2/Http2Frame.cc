@@ -22,6 +22,7 @@
  */
 
 #include "proxy/http2/Http2Frame.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 //
 // Http2Frame
@@ -60,8 +61,14 @@ Http2DataFrame::write_to(MIOBuffer *iobuffer) const
     int64_t written = 0;
     // Fill current IOBufferBlock as much as possible to reduce SSL_write() calls
     while (written < this->_payload_len) {
-      int64_t read_len  = std::min(this->_payload_len - written, this->_reader->block_read_avail());
-      written          += iobuffer->write(this->_reader->start(), read_len);
+      int64_t read_len = std::min(this->_payload_len - written, this->_reader->block_read_avail());
+
+      if (iobuffer->block_write_avail() < read_len) {
+        // This block size is the buffer size that we pass to SSLWriteBuffer
+        iobuffer->append_block(Http2::write_buffer_block_size_index);
+      }
+
+      written += iobuffer->write(this->_reader->start(), read_len);
       this->_reader->consume(read_len);
     }
     len += written;
