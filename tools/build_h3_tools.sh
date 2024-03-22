@@ -144,11 +144,7 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
-# Latest quiche commits breaks our code so we build from the last commit
-# we know it works, in this case this commit includes the rpath fix commit
-# for quiche. https://github.com/cloudflare/quiche/pull/1508
-# Why does the latest break our code? -> https://github.com/cloudflare/quiche/pull/1537
-git checkout a1b212761c6cc0b77b9121cdc313e507daf6deb3
+git checkout 0.20.1
 QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
