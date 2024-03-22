@@ -49,7 +49,6 @@ res_small = {
 }
 server.addResponse("sessionlog.json", req_small, res_small)
 
-large_body = "large object!"
 # large object, all in one slice
 req_large = {
     "headers": "GET /large HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
@@ -57,12 +56,13 @@ req_large = {
 }
 res_large = {
     "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
-    "body": large_body
+    "body": "unsliced large object!"
 }
 server.addResponse("sessionlog.json", req_large, res_large)
 
 # large object, this populates the individual slices in the server
 
+large_body = "large object sliced!"
 body_len = len(large_body)
 slice_begin = 0
 slice_end = 0
@@ -95,13 +95,13 @@ ts.Disk.remap_config.AddLines(
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': '1',
-        'proxy.config.diags.debug.tags': 'http|cache|slice|xdebug',
+        'proxy.config.diags.debug.enabled': '0',
+        'proxy.config.diags.debug.tags': 'http|cache|slice|xdebug|cache_range_requests',
     })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 
-# Test case 1: first request of small object
+# Test case: first request of small object
 tr = Test.AddTestRun("Small request 1")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -112,7 +112,7 @@ ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
 tr.StillRunningAfter = ts
 
-# Test case 2: second request of small object - expect cache hit
+# Test case: second request of small object - expect cache hit
 tr = Test.AddTestRun("Small request 2")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/small'
@@ -121,29 +121,38 @@ ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
 tr.StillRunningAfter = ts
 
-# Test case 3: first request of large object - expect unsliced, cache write disabled
+# Test case: range request of small object - expect cache hit (proxy.config.http.cache.range.lookup = 1)
+tr = Test.AddTestRun("Small request - ranged")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -r 1-2 http://slice/small'
+ps.ReturnCode = 0
+ps.Streams.stderr.Content = Testers.ContainsExpression('mo', 'expected mo')
+ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
+tr.StillRunningAfter = ts
+
+# Test case: first request of large object - expect unsliced, cache write disabled
 tr = Test.AddTestRun("Large request 1")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/large'
 ps.ReturnCode = 0
-ps.Streams.stderr.Content = Testers.ContainsExpression('large object!', 'expected large object')
+ps.Streams.stderr.Content = Testers.ContainsExpression('unsliced large object!', 'expected large object')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
 tr.StillRunningAfter = ts
 
-# Test case 4: first request of large object - expect sliced, cache miss
+# Test case: first request of large object - expect sliced, cache miss
 tr = Test.AddTestRun("Large request 2")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/large'
 ps.ReturnCode = 0
-ps.Streams.stderr.Content = Testers.ContainsExpression('large object!', 'expected large object')
+ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
 tr.StillRunningAfter = ts
 
-## Test case 4: first request of large object - expect cache hit
-#tr = Test.AddTestRun("Large request 3")
-#ps = tr.Processes.Default
-#ps.Command = curl_and_args + ' http://slice/large'
-#ps.ReturnCode = 0
-#ps.Streams.stderr.Content = Testers.ContainsExpression('large object!', 'expected large object')
-#ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
-#tr.StillRunningAfter = ts
+## Test case: first request of large object - expect cache hit
+tr = Test.AddTestRun("Large request 3")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/large'
+ps.ReturnCode = 0
+ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
+ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
+tr.StillRunningAfter = ts

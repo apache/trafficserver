@@ -30,9 +30,14 @@
 #include <charconv>
 #include <netinet/in.h>
 #include <array>
+#include <string_view>
 
 namespace
 {
+using namespace std::string_view_literals;
+constexpr std::string_view SKIP_CRR_HDR_NAME  = "X-Skip-Crr"sv;
+constexpr std::string_view SKIP_CRR_HDR_VALUE = "-"sv;
+
 struct PluginInfo {
   Config config;
   TSCont read_resp_hdr_contp;
@@ -121,6 +126,14 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
       if (should_skip_this_obj(txnp, config)) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, read_resp_hdr_contp);
         TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, read_resp_hdr_contp);
+
+        // If the client sends a range request, and we don't slice, the range request goes to cache_range_requests, and can be
+        // cached as a range request. We don't want that, and instead want to skip CRR entirely.
+        if (header.hasKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE)) {
+          HttpHeader mutable_header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
+          mutable_header.setKeyVal(SKIP_CRR_HDR_NAME.data(), SKIP_CRR_HDR_NAME.length(), SKIP_CRR_HDR_VALUE.data(),
+                                   SKIP_CRR_HDR_VALUE.length());
+        }
         return false;
       }
 
