@@ -59,3 +59,8 @@ C++ Plugin API Deprecated
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is deprecated in this release.  It will be deleted in ATS 11.
+
+Symbols With INKUDP Prefix
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the plugin API, all types and functions starting with the prefix INKUDP are removed.
