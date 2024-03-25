@@ -25,6 +25,8 @@
 
 #include <array>
 #include <assert.h>
+#include <vector>
+#include <mutex>
 
 //----------------------------------------------------------------------------
 namespace
@@ -41,7 +43,19 @@ my_free(void *ptr, void * /*caller*/)
 {
   free(ptr);
 }
-} // namespace
+
+class RegexContext; // defined below
+class RegexContextCleanup
+{
+public:
+  void push_back(RegexContext *ctx);
+  ~RegexContextCleanup();
+
+private:
+  std::vector<RegexContext *> _contexts;
+  std::mutex _mutex;
+};
+RegexContextCleanup regex_context_cleanup;
 
 //----------------------------------------------------------------------------
 class RegexContext
@@ -52,6 +66,7 @@ public:
   {
     if (!_regex_context) {
       _regex_context = new RegexContext();
+      regex_context_cleanup.push_back(_regex_context);
     }
     return _regex_context;
   }
@@ -105,12 +120,20 @@ private:
 thread_local RegexContext *RegexContext::_regex_context = nullptr;
 
 //----------------------------------------------------------------------------
-namespace
+
+RegexContextCleanup::~RegexContextCleanup()
 {
-struct RegexContextCleanup {
-  ~RegexContextCleanup() { delete RegexContext::get_instance(); }
-};
-thread_local RegexContextCleanup cleanup;
+  for (auto ctx : _contexts) {
+    delete ctx;
+  }
+}
+void
+RegexContextCleanup::push_back(RegexContext *ctx)
+{
+  std::lock_guard<std::mutex> guard(_mutex);
+  _contexts.push_back(ctx);
+}
+
 } // namespace
 
 //----------------------------------------------------------------------------
