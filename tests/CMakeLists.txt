@@ -28,7 +28,7 @@ function(ADD_AUTEST_PLUGIN _NAME)
     )
   endif()
   set_target_properties(
-    ${_NAME} 
+    ${_NAME}
     PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
                PREFIX ""
                SUFFIX ".so"
