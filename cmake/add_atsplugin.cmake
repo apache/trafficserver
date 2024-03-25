@@ -27,6 +27,7 @@ function(add_atsplugin name)
       PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
               "$<TARGET_PROPERTY:libswoc::libswoc,INTERFACE_INCLUDE_DIRECTORIES>"
               "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
+              "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INTERFACE_INCLUDE_DIRECTORIES>"
     )
   endif()
   set_target_properties(${name} PROPERTIES PREFIX "")
