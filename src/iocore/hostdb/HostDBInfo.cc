@@ -67,8 +67,8 @@ HostDBInfo::assign(IpAddr const &addr) -> self_type &
 
 /** Assign SRV record and name
  *
- * @param srv Pointer to SRV to assign.
- * @param name Pointer to hostname for the record
+ * @param[in] srv Pointer to SRV from which to assign.
+ * @param[in] name Pointer to hostname for the record
  *
  * @note This function assumes that name is stored near to the this pointer of
  * the assigned instance within a uint16_t worth of bytes.  This invariant must
