@@ -41,6 +41,17 @@ enum MatcherOps {
   MATCH_IP_RANGES,
 };
 
+// Condition modifiers
+enum CondModifiers {
+  COND_NONE   = 0,
+  COND_OR     = 1,
+  COND_AND    = 2,
+  COND_NOT    = 4,
+  COND_NOCASE = 8,
+  COND_LAST   = 16,
+  COND_CHAIN  = 32 // Not implemented
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Matchers (this is also the interface)
 //
@@ -77,36 +88,11 @@ public:
   };
 
   void
-  setRegex(const std::string & /* data ATS_UNUSED */)
-  {
-    if (!reHelper.setRegexMatch(_data)) {
-      std::stringstream ss;
-      ss << _data;
-      TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-      Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
-      throw std::runtime_error("Malformed regex");
-    } else {
-      Dbg(pi_dbg_ctl, "Regex precompiled successfully");
-    }
-  }
-
-  void
-  setRegex(const unsigned int /* t ATS_UNUSED */)
-  {
-    return;
-  }
-  void
-  setRegex(const TSHttpStatus /* t ATS_UNUSED */)
-  {
-    return;
-  }
-
-  void
-  set(const T &d)
+  set(const T &d, CondModifiers mods)
   {
     _data = d;
-    if (_op == MATCH_REGULAR_EXPRESSION) {
-      setRegex(d);
+    if (mods & COND_NOCASE) {
+      _nocase = true;
     }
   }
 
@@ -158,6 +144,7 @@ private:
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " == ", r);
     }
+
     return r;
   }
 
@@ -169,6 +156,7 @@ private:
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " < ", r);
     }
+
     return r;
   }
 
@@ -180,6 +168,7 @@ private:
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " > ", r);
     }
+
     return r;
   }
 
@@ -198,24 +187,25 @@ private:
   }
 
   bool
-  test_reg(const std::string &t) const
+  test_reg(const std::string &t, bool nocase = false) const
   {
     int ovector[OVECCOUNT];
 
-    Dbg(pi_dbg_ctl, "Test regular expression %s : %s", _data.c_str(), t.c_str());
-    if (reHelper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
+    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
+    if (_reHelper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
       return true;
     }
+
     return false;
   }
 
   T _data;
-  regexHelper reHelper;
+  regexHelper _reHelper;
+  bool _nocase = false;
 };
 
 // Specialized case matcher for the IP addresses matches.
-// ToDo: we should specialize the regex matcher as well.
 template <> class Matchers<const sockaddr *> : public Matcher
 {
 public:
@@ -236,16 +226,16 @@ public:
   bool
   test(const sockaddr *addr) const
   {
-    if (ipHelper.contains(swoc::IPAddr(addr))) {
+    if (_ipHelper.contains(swoc::IPAddr(addr))) {
       if (pi_dbg_ctl.on()) {
         char text[INET6_ADDRSTRLEN];
 
         Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
       }
       return true;
-    } else {
-      return false;
     }
+
+    return false;
   }
 
 private:
@@ -254,12 +244,12 @@ private:
   {
     while (text) {
       if (swoc::IPRange r; r.load(text.take_prefix_at(','))) {
-        ipHelper.mark(r);
+        _ipHelper.mark(r);
       }
     }
 
-    if (ipHelper.count() > 0) {
-      Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", ipHelper.count());
+    if (_ipHelper.count() > 0) {
+      Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", _ipHelper.count());
       return true;
     } else {
       Dbg(pi_dbg_ctl, "    No IP ranges added, possibly bad input");
@@ -267,5 +257,5 @@ private:
     }
   }
 
-  swoc::IPRangeSet ipHelper;
+  swoc::IPRangeSet _ipHelper;
 };

@@ -18,14 +18,14 @@
 #include "regex_helper.h"
 
 bool
-regexHelper::setRegexMatch(const std::string &s)
+regexHelper::setRegexMatch(const std::string &s, bool nocase)
 {
   const char *errorComp  = nullptr;
   const char *errorStudy = nullptr;
   int erroffset;
 
   regexString = s;
-  regex       = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, nullptr);
+  regex       = pcre_compile(regexString.c_str(), nocase ? PCRE_CASELESS : 0, &errorComp, &erroffset, nullptr);
 
   if (regex == nullptr) {
     return false;
