@@ -299,7 +299,7 @@ Ex_txn_conf::validate(Config &cfg, Spec &spec, const TextView &arg)
 Feature
 Ex_txn_conf::extract(Context &ctx, const Extractor::Spec &spec)
 {
-  Feature zret;
+  Feature zret{};
   auto var               = spec._data.span.rebind<store_type>()[0];
   auto &&[value, errata] = ctx._txn.override_fetch(*var);
   if (errata.is_ok()) {

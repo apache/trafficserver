@@ -428,7 +428,7 @@ Mod_filter::compare(Context &ctx, Feature const &feature) const -> Case const *
 Rv<Feature>
 Mod_filter::operator()(Context &ctx, Feature &feature)
 {
-  Feature zret;
+  Feature zret{};
   if (feature.is_list()) {
     auto src    = std::get<IndexFor(TUPLE)>(feature);
     auto farray = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));

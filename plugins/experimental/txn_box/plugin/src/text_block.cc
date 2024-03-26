@@ -480,7 +480,7 @@ Mod_as_text_block::load(Config &cfg, YAML::Node, TextView, TextView, YAML::Node 
 Rv<Feature>
 Mod_as_text_block::operator()(Context &ctx, Feature &feature)
 {
-  Feature zret;
+  Feature zret{};
   if (IndexFor(STRING) == feature.index()) {
     auto const &tag = std::get<IndexFor(STRING)>(feature); // get the name.
     zret            = Ex_text_block::extract_block(ctx, tag);

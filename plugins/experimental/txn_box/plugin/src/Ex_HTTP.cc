@@ -557,7 +557,7 @@ Ex_ua_req_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_ua_req_port::extract(Context &ctx, Spec const &)
 {
-  Feature zret;
+  Feature zret{};
   if (auto hdr{ctx.ua_req_hdr()}; hdr.is_valid()) {
     if (ts::URL url{hdr.url()}; url.is_valid()) {
       zret = static_cast<feature_type_for<INTEGER>>(url.port());
@@ -585,7 +585,7 @@ Ex_proxy_req_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_proxy_req_port::extract(Context &ctx, Spec const &)
 {
-  Feature zret;
+  Feature zret{};
   if (auto hdr{ctx.proxy_req_hdr()}; hdr.is_valid()) {
     if (ts::URL url{hdr.url()}; url.is_valid()) {
       zret = static_cast<feature_type_for<INTEGER>>(url.port());
@@ -1022,7 +1022,7 @@ Ex_pre_remap_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_pre_remap_port::extract(Context &ctx, Spec const &)
 {
-  Feature zret;
+  Feature zret{};
   if (auto url{ctx._txn.pristine_url_get()}; url.is_valid()) {
     zret = static_cast<feature_type_for<INTEGER>>(url.port());
   }
@@ -1048,7 +1048,7 @@ Ex_remap_target_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_remap_target_port::extract(Context &ctx, Spec const &)
 {
-  Feature zret;
+  Feature zret{};
   if (ctx._remap_info) {
     if (ts::URL url{ctx._remap_info->requestBufp, ctx._remap_info->mapFromUrl}; url.is_valid()) {
       zret = static_cast<feature_type_for<INTEGER>>(url.port());
@@ -1077,7 +1077,7 @@ Ex_remap_replacement_port::validate(Config &, Spec &, const swoc::TextView &)
 Feature
 Ex_remap_replacement_port::extract(Context &ctx, Spec const &)
 {
-  Feature zret;
+  Feature zret{};
   if (ctx._remap_info) {
     if (ts::URL url{ctx._remap_info->requestBufp, ctx._remap_info->mapToUrl}; url.is_valid()) {
       zret = static_cast<feature_type_for<INTEGER>>(url.port());
