@@ -65,6 +65,17 @@ HostDBInfo::assign(IpAddr const &addr) -> self_type &
   return *this;
 }
 
+/** Assign SRV record and name
+ *
+ * @param srv Pointer to SRV to assign.
+ * @param name Pointer to hostname for the record
+ *
+ * @note This function assumes that name is stored near to the this pointer of
+ * the assigned instance within a uint16_t worth of bytes.  This invariant must
+ * be adhered to by the caller.
+ *
+ * @todo Refactor handling of SRV records
+ */
 auto
 HostDBInfo::assign(SRV const *srv, char const *name) -> self_type &
 {
@@ -73,7 +84,9 @@ HostDBInfo::assign(SRV const *srv, char const *name) -> self_type &
   data.srv.srv_priority = srv->priority;
   data.srv.srv_port     = srv->port;
   data.srv.key          = srv->key;
-  data.srv.srv_offset   = name - reinterpret_cast<char const *>(this);
+  // Danger! This offset calculation assumes that name and this are with 16-bits of each
+  // other.  This invariant must be upheld for every caller of this function.
+  data.srv.srv_offset = name - reinterpret_cast<char const *>(this);
   return *this;
 }
 
