@@ -95,8 +95,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit(), limiter->max_queue(),
-      static_cast<long>(limiter->max_age().count()), limiter->error());
+  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u, conntrack=%s)", limiter->limit(),
+      limiter->max_queue(), static_cast<long>(limiter->max_age().count()), limiter->error(), limiter->conntrack() ? "yes" : "no");
 
   return TS_SUCCESS;
 }
@@ -110,6 +110,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   auto *limiter = static_cast<TxnRateLimiter *>(ih);
 
   if (limiter) {
+    TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+
+    if (limiter->conntrack()) {
+      int count = TSHttpSsnTransactionCount(ssnp);
+
+      if (count > 1) { // The first transaction is the connect, so we need to have at least 2 to be "established"
+        Dbg(dbg_ctl, "Allowing an established connection to pass through, txn=%d", count);
+        return TSREMAP_NO_REMAP;
+      }
+    }
+
     if (!limiter->reserve()) {
       if (!limiter->max_queue() || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
@@ -121,8 +132,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         Dbg(dbg_ctl, "Adding rate limiting hook, we are at capacity");
       }
     } else {
-      limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
-      Dbg(dbg_ctl, "Adding txn-close hook, we're not at capacity");
+      if (limiter->conntrack()) {
+        limiter->setupSsnCont(ssnp);
+        Dbg(dbg_ctl, "Adding ssn-close hook, we're not at capacity");
+      } else {
+        limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
+        Dbg(dbg_ctl, "Adding txn-close hook, we're not at capacity");
+      }
     }
   }
 
