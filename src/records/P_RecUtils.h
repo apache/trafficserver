@@ -76,3 +76,15 @@ void RecDebugOff();
 
 #define RecLog(level, fmt, ...)   _RecLog(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
 #define RecDebug(level, fmt, ...) _RecDebug(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
+
+// -- Helper functions
+///
+/// @brief Runs a validity check base on the type and the pattern.
+///
+/// @param value Value where the validity check should be applied.
+/// @param checkType The type of the value.
+/// @param pattern  The pattern.
+/// @return true if the validity was ok, false otherwise.
+///
+bool RecordValidityCheck(const char *value, RecCheckT checkType,
+                         const char *pattern); // code originally from WebMgmtUtils
