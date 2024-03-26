@@ -23,7 +23,10 @@
 
 #include "main.h"
 
+#include "tscore/EventNotify.h"
+
 #include <array>
+#include <cstdio>
 #include <ostream>
 
 // Required by main.h
@@ -76,9 +79,15 @@ std::array<AddWriterBranchTest, 32> add_writer_branch_test_cases = {
    }
 };
 
-class FakeVC final : public CacheVC
+class FakeVC : public CacheVC
 {
 public:
+  FakeVC()
+  {
+    this->buf = new_IOBufferData(iobuffer_size_to_index(1024, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+    SET_HANDLER(&FakeVC::handle_call);
+  }
+
   void
   set_agg_len(int agg_len)
   {
@@ -102,7 +111,53 @@ public:
   {
     this->f.readers = readers;
   }
+
+  int
+  handle_call(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
+  {
+    return EVENT_CONT;
+  }
 };
+
+class NotifyingVC final : public FakeVC
+{
+public:
+  NotifyingVC(EventNotify *notifier) : _notifier{notifier} { SET_HANDLER(&NotifyingVC::handle_call); }
+
+  int
+  handle_call(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
+  {
+    ++this->calls;
+    this->_notifier->signal();
+    return EVENT_CONT;
+  }
+
+  int calls{0};
+
+private:
+  EventNotify *_notifier;
+};
+
+/* Catch test helper to provide a Stripe with a valid file descriptor.
+ *
+ * The file will be deleted automatically when the application ends normally.
+ * If the Stripe already has a valid file descriptor, that file will NOT be
+ * closed.
+ *
+ * @param stripe: A Stripe object with no valid file descriptor.
+ * @return The std::FILE* stream if successful, otherwise the Catch test will
+ *   be failed at the point of error.
+ */
+static std::FILE *
+attach_tmpfile_to_stripe(Stripe &stripe)
+{
+  auto *file{std::tmpfile()};
+  REQUIRE(file != nullptr);
+  int fd{fileno(file)};
+  REQUIRE(fd != -1);
+  stripe.fd = fd;
+  return file;
+}
 
 TEST_CASE("The behavior of Stripe::add_writer.")
 {
@@ -155,5 +210,82 @@ TEST_CASE("The behavior of Stripe::add_writer.")
       bool result = stripe.add_writer(&vc);
       CHECK(true == result);
     }
+  }
+}
+
+// This test case demonstrates how to set up a Stripe and make
+// a call to aggWrite without causing memory errors. It uses a
+// tmpfile for the Stripe to write to.
+TEST_CASE("aggWrite behavior")
+{
+  Stripe stripe;
+
+  // These things are needed for the metrics increments in agg_copy.
+  CacheVol cache_vol;
+  stripe.cache_vol                                = &cache_vol;
+  cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
+  stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
+
+  // A number of things must be initialized in a certain way for Stripe
+  // not to segfault, hit an assertion, or exhibit zero-division.
+  // I justpicked values that happen to work.
+  stripe.sector_size = 256;
+  stripe.skip        = 0;
+  stripe.start       = 20;
+  stripe.len         = 1024;
+  stripe.buckets     = 10;
+  stripe.segments    = 100;
+  stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), 1024));
+  stripe.dir         = reinterpret_cast<Dir *>(stripe.raw_dir + stripe.headerlen());
+
+  stripe.evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
+  memset(static_cast<void *>(stripe.evacuate), 0, 2024);
+
+  StripteHeaderFooter header;
+  header.write_pos = 0;
+  header.agg_pos   = 1;
+  stripe.header    = &header;
+  attach_tmpfile_to_stripe(stripe);
+
+  // The virtual connection doing the write also needs a few things
+  // set up in order to do anything interesting that doesnt crash.
+  EventNotify notifier;
+  NotifyingVC vc{&notifier};
+  vc.stripe = &stripe;
+  vc.dir    = *stripe.dir;
+  vc.set_write_len(1);
+  vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
+
+  stripe.len = vc.agg_len + header.write_pos + 1;
+  stripe.add_writer(&vc);
+
+  SECTION("Given the aggregation buffer is only partially full and no sync, "
+          "when we call aggWrite, "
+          "then nothing should be written to disk.")
+  {
+    header.agg_pos = 0;
+    CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
+    stripe.aggWrite(0, 0);
+    CHECK(0 == header.agg_pos);
+  }
+
+  SECTION("Given the aggregation buffer is partially full and sync is set, "
+          "when we schedule aggWrite, "
+          "then the virtual connection's callback should be invoked.")
+  {
+    vc.f.sync          = 1;
+    vc.f.use_first_key = 1;
+
+    // We don't hold the lock - the eventProcessor will acquire it.
+    eventProcessor.schedule_imm(&stripe, ET_CALL, AIO_EVENT_DONE);
+
+    vc.write_serial     = 1;
+    header.write_serial = 10;
+
+    while (vc.calls < 1) {
+      notifier.lock();
+      notifier.wait();
+    }
+    CHECK(true);
   }
 }
