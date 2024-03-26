@@ -80,6 +80,7 @@ public:
   void set_expect_send_trailer() override;
   bool expect_receive_trailer() const override;
   void set_expect_receive_trailer() override;
+  void set_close_connection(HTTPHdr &hdr) const override;
 
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
   void send_headers(Http2ConnectionState &cstate);
@@ -446,4 +447,12 @@ inline void
 Http2Stream::set_read_done()
 {
   read_vio.nbytes = read_vio.ndone;
+}
+
+inline void
+Http2Stream::set_close_connection(HTTPHdr &hdr) const
+{
+  // Set the "Connection: close" header for HTTP/2 headers, it will be
+  // removed after triggering a grace shutdown by sending a GOAWAY frame.
+  hdr.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
 }

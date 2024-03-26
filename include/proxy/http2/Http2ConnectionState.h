@@ -264,6 +264,11 @@ private:
    */
   bool _has_dynamic_stream_window() const;
 
+  /**
+   * Helper function to finish handling the shutdown event.
+   */
+  void _shutdown_cont();
+
   // NOTE: 'stream_list' has only active streams.
   //   If given Stream Identifier is not found in stream_list and it is less
   //   than or equal to latest_streamid_in, the state of Stream
