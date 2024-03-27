@@ -407,7 +407,11 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
           _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
         }
       } else if (send_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+        if (receive_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+        } else {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+        }
       } else {
         // Do not change state
       }
