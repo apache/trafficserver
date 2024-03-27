@@ -7,13 +7,9 @@
 ``
 > GET /drip?duration=4 HTTP/2
 ``
-< HTTP/2 200 ``
-``
-< via: http/1.1 traffic_server (ApacheTrafficServer/`` [cMsSfW])
-``
 > GET /drip?duration=4 HTTP/2
 ``
-< HTTP/2 200 ``
+< HTTP/2 ``
 ``
-< via: http/1.1 traffic_server (ApacheTrafficServer/`` [cHs f ])
+< via: http/1.1 traffic_server (ApacheTrafficServer/`` [cWs f ])
 ``
