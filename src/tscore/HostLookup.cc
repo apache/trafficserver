@@ -33,6 +33,7 @@
 #include "tscore/HostLookup.h"
 #include "tscpp/util/TextView.h"
 
+#include <algorithm>
 #include <string_view>
 #include <array>
 #include <memory>
