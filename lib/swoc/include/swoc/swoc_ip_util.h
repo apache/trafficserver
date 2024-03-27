@@ -65,7 +65,7 @@ inline bool is_private_network_order(in6_addr const& addr) {
   return (addr.s6_addr[0] & 0xFE) == 0xFC; // fc00::/7
 }
 
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
 inline bool is_loopback_network_order(in_addr_t addr) {
   return (addr & 0xFF) == 0x7F;
