@@ -1062,7 +1062,7 @@ svto_radix(TextView &src) {
   static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
   uintmax_t zret                       = 0;
   uintmax_t v;
-  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < RADIX) {
+  while (src.size() && ((v = swoc::svtoi_convert[uint8_t(*src)]) < RADIX)) {
     // Tweaked for performance - need to check range after @a RADIX multiply.
     ++src; // Update view iff the character is parsed.
     if (zret <= OVERFLOW_LIMIT && v <= (MAX - (zret *= RADIX)) ) {
