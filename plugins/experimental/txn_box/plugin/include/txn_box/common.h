@@ -198,10 +198,10 @@ indexed_init_list(GENERATOR &&g)
 }
 
 template <typename GENERATOR, size_t... IDX>
-constexpr std::array<std::result_of_t<GENERATOR(size_t)>, sizeof...(IDX)>
+constexpr std::array<std::invoke_result_t<GENERATOR, size_t>, sizeof...(IDX)>
 indexed_array(GENERATOR &&g, std::index_sequence<IDX...> &&)
 {
-  return std::array<std::result_of_t<GENERATOR(size_t)>, sizeof...(IDX)>{g(IDX)...};
+  return std::array<std::invoke_result_t<GENERATOR, size_t>, sizeof...(IDX)>{g(IDX)...};
 }
 template <size_t N, typename GENERATOR>
 constexpr std::array<std::result_of_t<GENERATOR(size_t)>, N>
