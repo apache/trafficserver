@@ -307,7 +307,7 @@ namespace io
     const Node::Result result  = data_->process(operation->buffer_);
     operation->bytes_         += result.first;
     operation->process();
-    if (result.second && data_.unique()) {
+    if (result.second && data_.use_count() == 1) {
       data_.reset();
     }
   }
@@ -448,7 +448,7 @@ namespace io
       assert(*it != nullptr);
       const Node::Result result  = (*it)->process(b);
       length                    += result.first;
-      if (!result.second || !it->unique()) {
+      if (!result.second || it->use_count() != 1) {
         break;
       }
     }

@@ -564,7 +564,7 @@ add_subdirectory(lib)
 # there are warnings, we can't do anything about it.
 # Note: -DCMAKE_COMPILE_WARNING_AS_ERROR=ON will turn warnings into errors.
 add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
-add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override>")
+add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension>")
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
 
 if(NOT EXTERNAL_YAML_CPP)
