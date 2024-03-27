@@ -112,6 +112,7 @@ auto_option(
   MagickWand
   MagickCore
 )
+
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 # This creates the magic import target if necessary (older cmake)
