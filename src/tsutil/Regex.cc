@@ -123,6 +123,7 @@ thread_local RegexContext *RegexContext::_regex_context = nullptr;
 
 RegexContextCleanup::~RegexContextCleanup()
 {
+  std::lock_guard<std::mutex> guard(_mutex);
   for (auto ctx : _contexts) {
     delete ctx;
   }
