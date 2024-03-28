@@ -38,7 +38,7 @@ public:
     pcre_free(regexExtra);
   }
 
-  bool setRegexMatch(const std::string &s);
+  bool setRegexMatch(const std::string &s, bool nocase = false);
   int regexMatch(const char *, int, int ovector[]) const;
 
 private:

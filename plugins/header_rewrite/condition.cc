@@ -75,6 +75,14 @@ Condition::initialize(Parser &p)
     _mods = static_cast<CondModifiers>(_mods | COND_NOT);
   }
 
+  // The NOCASE / CASE modifier is a bit special, since it ripples down into the Matchers for
+  // strings and regexes.
+  if (p.mod_exist("NOCASE")) {
+    _mods = static_cast<CondModifiers>(_mods | COND_NOCASE);
+  } else if (p.mod_exist("CASE")) {
+    // Nothing to do, this is the default
+  }
+
   if (p.mod_exist("L")) {
     _mods = static_cast<CondModifiers>(_mods | COND_LAST);
   }
