@@ -605,6 +605,8 @@ AND    Indicates that both the current condition and the next must be true.
 NOT    Inverts the condition.
 OR     Indicates that either the current condition or the next one must be
        true, as contrasted with the default behavior from ``[AND]``.
+NOCASE Indicates that the string comparison, or regular expression, should be
+       case-insensitive. The default is to be case-sensitive.
 ====== ========================================================================
 
 Operators
