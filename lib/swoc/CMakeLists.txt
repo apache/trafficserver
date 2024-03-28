@@ -44,6 +44,7 @@ set(HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/string_view_util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/swoc_file.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/swoc_ip.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/swoc_ip_util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/swoc_meta.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/swoc/swoc_version.h
 )
