@@ -186,7 +186,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
       Http2StreamDebug(this->session, id, "Observed too frequent empty frames: %u within a last minute",
                        this->get_received_empty_frame_count());
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
-                        "recv priority too frequent empty frame");
+                        "recv data too frequent empty frame");
     }
 
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -1014,7 +1014,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
       Http2StreamDebug(this->session, stream_id, "Observed too frequent empty frames: %u within a last minute",
                        this->get_received_empty_frame_count());
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
-                        "recv priority too frequent empty frame");
+                        "recv continuation too frequent empty frame");
     }
   }
 
