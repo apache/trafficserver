@@ -11,8 +11,9 @@
       "displayName": "Default build with ninja",
       "description": "Default build using Ninja generator",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-default",
+      "binaryDir": "${sourceDir}/build-${presetName}",
       "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "cmake/default.toolchain.cmake",
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON"
       }
@@ -38,14 +39,26 @@
     },
     {
       "name": "release",
+      "inherits": ["default"],
       "displayName": "Release build",
       "description": "Release build with Ninja generator",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
-        "CMAKE_INSTALL_PREFIX": "/opt/ats",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON"
+      }
+    },
+    {
+      "name": "reldbg",
+      "inherits": ["default"],
+      "displayName": "Release build with debug info",
+      "description": "Release build with Ninja generator and debug info",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-reldbg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON"
       }
     },
@@ -65,7 +78,6 @@
       "displayName": "development",
       "description": "Development Presets",
       "inherits": ["default"],
-      "binaryDir": "${sourceDir}/build-${presetName}",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_COLOR_DIAGNOSTICS": "ON",
