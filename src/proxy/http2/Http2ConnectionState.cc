@@ -1016,8 +1016,6 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                         "recv priority too frequent empty frame");
     }
-
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
 
   // Find opened stream
