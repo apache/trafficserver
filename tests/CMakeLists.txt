@@ -33,7 +33,6 @@ function(ADD_AUTEST_PLUGIN _NAME)
                PREFIX ""
                SUFFIX ".so"
   )
-  remove_definitions(-DATS_BUILD) # remove the ATS_BUILD define for plugins to build without issue
 endfunction()
 
 add_subdirectory(tools/plugins)
