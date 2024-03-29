@@ -4579,6 +4579,16 @@ HTTP/2 Configuration
    Clients exceeding this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_empty_frames_per_minute INT 0
+   :reloadable:
+
+   Specifies how many empty frames |TS| receives for a minute at maximum.
+   What "empty frames" means here is DATA frame that does not carry payload
+   nor END_STREAM flag, and CONTINUATION frame that does not carry payload
+   nor END_HEADERS flag.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
 .. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
    :reloadable:
 
