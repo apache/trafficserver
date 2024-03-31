@@ -135,6 +135,8 @@ SieveLru::parseYaml(const YAML::Node &node)
   Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %ld)", _name.c_str(), _permablock_limit, _permablock_threshold,
       static_cast<long>(_permablock_max_age.count()));
 
+  _initialized = true;
+
   return true;
 }
 
