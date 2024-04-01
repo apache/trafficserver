@@ -50,6 +50,10 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
+  // Helpers to check VIO states
+  bool is_readable();
+  bool is_writable();
+
   void clear_read_ready_event(Event *e);
   void clear_read_complete_event(Event *e);
   void clear_write_ready_event(Event *e);

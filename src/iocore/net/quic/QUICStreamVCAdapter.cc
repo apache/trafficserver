@@ -328,6 +328,18 @@ QUICStreamVCAdapter::reenable(VIO *vio)
   // until the application consume data.
 }
 
+bool
+QUICStreamVCAdapter::is_readable()
+{
+  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes == _read_vio.ndone;
+}
+
+bool
+QUICStreamVCAdapter::is_writable()
+{
+  return this->stream().direction() != QUICStreamDirection::RECEIVE && _write_vio.nbytes != -1;
+}
+
 int
 QUICStreamVCAdapter::state_stream_open(int event, void *data)
 {
