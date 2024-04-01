@@ -69,10 +69,12 @@ protected:
 
 private:
   void _handle_uni_stream_on_read_ready(int event, VIO *vio);
+  void _handle_uni_stream_on_read_complete(int event, VIO *vio);
   void _handle_uni_stream_on_write_ready(int event, VIO *vio);
   void _handle_uni_stream_on_write_complete(int event, VIO *vio);
   void _handle_uni_stream_on_eos(int event, VIO *vio);
   void _handle_bidi_stream_on_read_ready(int event, VIO *vio);
+  void _handle_bidi_stream_on_read_complete(int event, VIO *vio);
   void _handle_bidi_stream_on_write_ready(int event, VIO *vio);
   void _handle_bidi_stream_on_write_complete(int event, VIO *vio);
   void _handle_bidi_stream_on_eos(int event, VIO *vio);

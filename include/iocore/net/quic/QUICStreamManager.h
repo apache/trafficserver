@@ -47,9 +47,9 @@ public:
   QUICStream *find_stream(QUICStreamId stream_id);
 
   QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id);
-  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
-  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
-  QUICConnectionErrorUPtr delete_stream(QUICStreamId &new_stream_id);
+  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId new_stream_id);
+  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId new_stream_id);
+  QUICConnectionErrorUPtr delete_stream(QUICStreamId new_stream_id);
   void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
 
   void set_default_application(QUICApplication *app);
