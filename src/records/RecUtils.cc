@@ -21,13 +21,21 @@
   limitations under the License.
  */
 
+#if __has_include("pcre/pcre.h")
+#include <pcre/pcre.h>
+#elif __has_include("pcre.h")
+#include <pcre.h>
+#else
+#error "Unable to locate PCRE heeader"
+#endif
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ParseRules.h"
+#include "tscore/Tokenizer.h"
 #include "records/RecordsConfig.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
-
 //-------------------------------------------------------------------------
 // RecRecord initializer / Free
 //-------------------------------------------------------------------------
@@ -373,4 +381,112 @@ RecDataSetFromString(RecDataT data_type, RecData *data_dst, const char *data_str
   }
 
   return RecDataSet(data_type, data_dst, &data_src);
+}
+//-------------------------------------------------------------------------
+// Basic functions to help setting a record value properly. All this functionality is originally from WebMgmtUtils.
+// TODO: we can work out something different.
+namespace
+{ // anonymous namespace
+bool
+recordRegexCheck(const char *pattern, const char *value)
+{
+  pcre *regex;
+  const char *error;
+  int erroffset;
+
+  regex = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
+  if (!regex) {
+    return false;
+  } else {
+    int r = pcre_exec(regex, nullptr, value, strlen(value), 0, 0, nullptr, 0);
+
+    pcre_free(regex);
+    return (r != -1) ? true : false;
+  }
+
+  return false; // no-op
+}
+
+bool
+recordRangeCheck(const char *pattern, const char *value)
+{
+  char *p = const_cast<char *>(pattern);
+  Tokenizer dashTok("-");
+
+  if (recordRegexCheck("^[0-9]+$", value)) {
+    while (*p != '[') {
+      p++;
+    } // skip to '['
+    if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
+      int l_limit = atoi(dashTok[0]);
+      int u_limit = atoi(dashTok[1]);
+      int val     = atoi(value);
+      if (val >= l_limit && val <= u_limit) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool
+recordIPCheck(const char *pattern, const char *value)
+{
+  //  regex_t regex;
+  //  int result;
+  bool check;
+  const char *range_pattern = R"(\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\])";
+  const char *ip_pattern    = "[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9]";
+
+  Tokenizer dotTok1(".");
+  Tokenizer dotTok2(".");
+
+  check = true;
+  if (recordRegexCheck(range_pattern, pattern) && recordRegexCheck(ip_pattern, value)) {
+    if (dotTok1.Initialize(const_cast<char *>(pattern), COPY_TOKS) == 4 &&
+        dotTok2.Initialize(const_cast<char *>(value), COPY_TOKS) == 4) {
+      for (int i = 0; i < 4 && check; i++) {
+        if (!recordRangeCheck(dotTok1[i], dotTok2[i])) {
+          check = false;
+        }
+      }
+      if (check) {
+        return true;
+      }
+    }
+  } else if (strcmp(value, "") == 0) {
+    return true;
+  }
+  return false;
+}
+} // namespace
+
+bool
+RecordValidityCheck(const char *value, RecCheckT checkType, const char *pattern)
+{
+  switch (checkType) {
+  case RECC_STR:
+    if (recordRegexCheck(pattern, value)) {
+      return true;
+    }
+    break;
+  case RECC_INT:
+    if (recordRangeCheck(pattern, value)) {
+      return true;
+    }
+    break;
+  case RECC_IP:
+    if (recordIPCheck(pattern, value)) {
+      return true;
+    }
+    break;
+  case RECC_NULL:
+    // skip checking
+    return true;
+  default:
+    // unknown RecordCheckType...
+    ;
+  }
+
+  return false;
 }
