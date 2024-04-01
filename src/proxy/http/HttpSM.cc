@@ -4420,8 +4420,8 @@ HttpSM::do_hostdb_lookup()
     }
     pending_action = hostDBProcessor.getSRVbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_srv_info, d, 0, opt);
     if (pending_action.empty()) {
-      char const *host_name = t_state.dns_info.resolved_p ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
-      opt.port              = t_state.dns_info.resolved_p            ? t_state.dns_info.srv_port :
+      char const *host_name = t_state.dns_info.is_srv() ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
+      opt.port              = t_state.dns_info.is_srv()              ? t_state.dns_info.srv_port :
                               t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
                                                                        t_state.hdr_info.client_request.port_get();
       opt.flags   = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
