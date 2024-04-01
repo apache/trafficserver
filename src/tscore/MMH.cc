@@ -234,11 +234,14 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
     // check alignment
     int alignment = static_cast<int>((intptr_t)in & 0x3);
     if (alignment) {
-#if defined(_BIG_ENDIAN)
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && defined(__ORDER_LITTLE_ENDIAN__)
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define big_endian 1
-#elif defined(_LITTLE_ENDIAN)
-#define big_endian 0
 #else
+#define big_endian 0
+#endif
+#else
+#warning "compiler is not GCC compatible"
       unsigned int endian = 1;
       int big_endian      = !*reinterpret_cast<char *>(&endian);
 #endif
