@@ -15,15 +15,24 @@
 #
 #######################
 
+include(add_atsplugin)
+
 function(ADD_AUTEST_PLUGIN _NAME)
   add_library(${_NAME} MODULE ${ARGN})
+  if(LINK_PLUGINS AND BUILD_SHARED_LIBS)
+    target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsutil)
+  else()
+    target_include_directories(
+      ${_NAME} PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
+                       "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
+    )
+  endif()
   set_target_properties(
     ${_NAME}
     PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
                PREFIX ""
                SUFFIX ".so"
   )
-  target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsutil)
 endfunction()
 
 add_subdirectory(tools/plugins)
