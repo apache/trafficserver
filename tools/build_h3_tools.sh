@@ -127,14 +127,23 @@ if [ ! -d boringssl ]; then
 fi
 cd boringssl
 cmake \
-  -B build \
+  -B build-shared \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
   -DBUILD_SHARED_LIBS=1
-cmake --build build -j ${num_threads}
-sudo cmake --install build
+cmake \
+  -B build-static \
+  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes' \
+  -DBUILD_SHARED_LIBS=0
+cmake --build build-shared -j ${num_threads}
+cmake --build build-static -j ${num_threads}
+sudo cmake --install build-shared
+sudo cmake --install build-static
 sudo chmod -R a+rX ${BASE}
 cd ..
 

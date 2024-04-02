@@ -1017,7 +1017,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             }
           }
           // Archetypical example - "%zd" doesn't work on FreeBSD, "%ld" doesn't work on Ubuntu, "%lld" doesn't work on Fedora.
-          Dbg_bw(dbg_ctl_dns_srv, "inserted SRV RR record [{}] into HostDB with TTL: {} seconds", t->host, ttl);
+          Dbg_bw(dbg_ctl_dns_srv, "inserted SRV RR record [{}] into HostDB with TTL: {} seconds", item.srvname(), ttl);
         }
       } else { // Otherwise this is a regular dns response
         unsigned idx = 0;
@@ -1761,7 +1761,7 @@ HostDBRecord::serve_stale_but_revalidate() const
 HostDBInfo *
 HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_seconds fail_window)
 {
-  ink_assert(rr_count <= 0 || static_cast<unsigned int>(rr_count) > hostdb_round_robin_max_count);
+  ink_assert(rr_count <= 0 || static_cast<unsigned int>(rr_count) < hostdb_round_robin_max_count);
 
   int i           = 0;
   int live_n      = 0;
@@ -1796,7 +1796,7 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
   }
 
   if (result) {
-    ink_strlcpy(target, this->name(), MAXDNAME);
+    ink_strlcpy(target, result->srvname(), MAXDNAME);
     return result;
   }
   return nullptr;

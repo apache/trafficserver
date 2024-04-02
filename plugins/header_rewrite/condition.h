@@ -30,17 +30,6 @@
 #include "matcher.h"
 #include "parser.h"
 
-// Condition modifiers
-enum CondModifiers {
-  COND_NONE   = 0,
-  COND_OR     = 1,
-  COND_AND    = 2,
-  COND_NOT    = 4,
-  COND_NOCASE = 8, // Not implemented
-  COND_LAST   = 16,
-  COND_CHAIN  = 32 // Not implemented
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Conditions (this is also the interface)
 //
@@ -91,6 +80,12 @@ public:
   last() const
   {
     return _mods & COND_LAST;
+  }
+
+  CondModifiers
+  mods() const
+  {
+    return _mods;
   }
 
   // Setters
