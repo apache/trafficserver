@@ -86,37 +86,37 @@ class Url
 
     // This is not ideal, but best way I can think of for now to mixin the Cript::string_view mixin class
     // Remember to add things here when added to the Lulu.hpp file for the mixin class... :/
-    Cript::StringViewWrapper &
+    Cript::string_view &
     ltrim(char c)
     {
       return _data.ltrim(c);
     }
 
-    Cript::StringViewWrapper &
+    Cript::string_view &
     rtrim(char c)
     {
       return _data.rtrim(c);
     }
 
-    Cript::StringViewWrapper &
+    Cript::string_view &
     trim(char c)
     {
       return _data.trim(c);
     }
 
-    Cript::StringViewWrapper &
+    Cript::string_view &
     ltrim(const char *chars = " \t\r\n")
     {
       return _data.ltrim(chars);
     }
 
-    Cript::StringViewWrapper &
+    Cript::string_view &
     rtrim(const char *chars = " \t\r\n")
     {
       return _data.rtrim(chars);
     }
 
-    Cript::StringViewWrapper &
+    Cript::string_view &
     trim(const char *chars = " \t")
     {
       return _data.trim(chars);
@@ -141,7 +141,7 @@ class Url
     }
 
   protected:
-    mutable Cript::StringViewWrapper _data;
+    mutable Cript::string_view _data;
     Url *_owner  = nullptr;
     bool _loaded = false;
 
