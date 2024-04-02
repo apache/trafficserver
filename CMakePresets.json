@@ -45,7 +45,7 @@
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON"
       }
     },
@@ -55,10 +55,8 @@
       "displayName": "Release build with debug info",
       "description": "Release build with Ninja generator and debug info",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-reldbg",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON"
       }
     },
