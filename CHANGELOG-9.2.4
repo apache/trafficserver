@@ -8,7 +8,22 @@ Changes with Apache Traffic Server 9.2.4
   #10551 - Make NextHopConsistentHash unit test stable
   #10556 - s3_auth: Clear handling TSAction in the config_reloader
   #10579 - Fix typo in docs for sni.yml
+  #10590 - applying additional accepts PR to 9.2.x
   #10591 - Fix typo in block_errors documentation
   #10621 - Fixed h2spec 6.4.3 test (#10584)
   #10622 - Fix H2 debug message for a rate limit (#10583)
   #10625 - Make bad disk detection more robust (backport for 9.2.x)
+  #10640 - Add VIA RWW cache result as acceptable for an IMS_HIT
+  #10673 - Do not overwrite the error code of GOAWAY frame
+  #10744 - Update accept thread configuration changes from #10687 applied to 9.2.x
+  #10896 - 9.2.x: yapf: use yapf instead of autopep8
+  #10925 - Use slice req method type in Data obj
+  #10962 - adds stdint.h include to ink_file.h needed for rocky9/clang16
+  #10988 - header_freq: Fix msg lock issues
+  #11009 - Segmentation crash caused by setting unavailable_server_retry_responses in parent.config
+  #11021 - Ensure connection retry attempts can reach the config specified value
+  #11030 - Allows the set-body to run as a pseudo remap hook
+  #11044 - delete simple_server_retry_responses
+  #11073 - Fix a bug in parsing chunked messages
+  #11085 - doc: max_rst_stream_frames_per_minute defaults to 200
+  #11206 - Add proxy.config.http2.max_continuation_frames_per_minute
