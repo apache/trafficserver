@@ -148,6 +148,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_http2_max_ping_frames_per_minute,
                                                TS_http2_max_priority_frames_per_minute,
                                                TS_http2_max_rst_stream_frames_per_minute,
+                                               TS_http2_max_continuation_frames_per_minute,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
                                                TS_valid_tls_versions_in,
@@ -192,6 +193,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_http2_max_rst_stream_frames_per_minute]) {
       item.http2_max_rst_stream_frames_per_minute = node[TS_http2_max_rst_stream_frames_per_minute].as<int>();
+    }
+    if (node[TS_http2_max_continuation_frames_per_minute]) {
+      item.http2_max_continuation_frames_per_minute = node[TS_http2_max_continuation_frames_per_minute].as<int>();
     }
 
     // enum

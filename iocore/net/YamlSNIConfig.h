@@ -60,6 +60,7 @@ TSDECL(http2_max_settings_frames_per_minute);
 TSDECL(http2_max_ping_frames_per_minute);
 TSDECL(http2_max_priority_frames_per_minute);
 TSDECL(http2_max_rst_stream_frames_per_minute);
+TSDECL(http2_max_continuation_frames_per_minute);
 TSDECL(host_sni_policy);
 #undef TSDECL
 
@@ -94,6 +95,7 @@ struct YamlSNIConfig {
     std::optional<int> http2_max_ping_frames_per_minute;
     std::optional<int> http2_max_priority_frames_per_minute;
     std::optional<int> http2_max_rst_stream_frames_per_minute;
+    std::optional<int> http2_max_continuation_frames_per_minute;
 
     bool tunnel_prewarm_srv                  = false;
     uint32_t tunnel_prewarm_min              = 0;
