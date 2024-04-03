@@ -22,6 +22,9 @@ import re
 
 Test.Summary = __doc__
 
+# Skip if plugin not present. Plugin gets built only if openssl is used(not BoringSSL).
+Test.SkipUnless(Condition.PluginExists('ja3_fingerprint.so'))
+
 
 class JA3FingerprintTest:
     """Verify the behavior of the JA3 fingerprint plugin."""
