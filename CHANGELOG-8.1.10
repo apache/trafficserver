@@ -1,0 +1,4 @@
+Changes with Apache Traffic Server 8.1.10
+  #10618 - Fix typo in block_errors documentation (#10591)
+  #10623 - Fix H2 debug message for a rate limit (#10583)
+  #11207 - Add proxy.config.http2.max_continuation_frames_per_minute 
