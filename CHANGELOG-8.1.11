@@ -1,0 +1,5 @@
+Changes with Apache Traffic Server 8.1.11
+  #11597 - Stricten field name check
+  #11598 - Normalize Accept-Encoding header value before cache lookup
+  #11600 - Remove a trailing whitespace
+  #11605 - proxy.config.http.drop_chunked_trailers (8.1.x)
