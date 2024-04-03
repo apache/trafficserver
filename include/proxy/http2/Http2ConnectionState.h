@@ -197,6 +197,8 @@ public:
   uint32_t get_received_priority_frame_count();
   void increment_received_rst_stream_frame_count();
   uint32_t get_received_rst_stream_frame_count();
+  void increment_received_continuation_frame_count();
+  uint32_t get_received_continuation_frame_count();
 
   ssize_t get_peer_rwnd() const;
   Http2ErrorCode increment_peer_rwnd(size_t amount);
@@ -331,6 +333,7 @@ private:
   FrequencyCounter _received_ping_frame_counter;
   FrequencyCounter _received_priority_frame_counter;
   FrequencyCounter _received_rst_stream_frame_counter;
+  FrequencyCounter _received_continuation_frame_counter;
 
   /** Records the various settings for each SETTINGS frame that we've sent.
    *
@@ -399,10 +402,11 @@ private:
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
 
-  uint32_t configured_max_settings_frames_per_minute   = 0;
-  uint32_t configured_max_ping_frames_per_minute       = 0;
-  uint32_t configured_max_priority_frames_per_minute   = 0;
-  uint32_t configured_max_rst_stream_frames_per_minute = 0;
+  uint32_t configured_max_settings_frames_per_minute     = 0;
+  uint32_t configured_max_ping_frames_per_minute         = 0;
+  uint32_t configured_max_priority_frames_per_minute     = 0;
+  uint32_t configured_max_rst_stream_frames_per_minute   = 0;
+  uint32_t configured_max_continuation_frames_per_minute = 0;
 };
 
 ///////////////////////////////////////////////

@@ -66,6 +66,7 @@ TSDECL(http2_max_settings_frames_per_minute);
 TSDECL(http2_max_ping_frames_per_minute);
 TSDECL(http2_max_priority_frames_per_minute);
 TSDECL(http2_max_rst_stream_frames_per_minute);
+TSDECL(http2_max_continuation_frames_per_minute);
 TSDECL(quic);
 TSDECL(host_sni_policy);
 TSDECL(http2_initial_window_size_in);
@@ -111,6 +112,7 @@ struct YamlSNIConfig {
     std::optional<int> http2_max_ping_frames_per_minute;
     std::optional<int> http2_max_priority_frames_per_minute;
     std::optional<int> http2_max_rst_stream_frames_per_minute;
+    std::optional<int> http2_max_continuation_frames_per_minute;
     uint32_t server_max_early_data = 0;
     std::optional<int> http2_initial_window_size_in;
 
