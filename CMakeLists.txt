@@ -15,6 +15,8 @@
 #
 #######################
 
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "In source builds are disabled.  Use a preset, -B or run from a different directory")
 endif()
