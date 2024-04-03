@@ -1994,6 +1994,12 @@ Http2ConnectionState::increment_received_continuation_frame_count()
   this->_received_continuation_frame_counter.increment();
 }
 
+uint32_t
+Http2ConnectionState::get_received_continuation_frame_count()
+{
+  return this->_received_continuation_frame_counter.get_count();
+}
+
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.
 // Main purpose of this is preventing DDoS Attacks.
 unsigned
