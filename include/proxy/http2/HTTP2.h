@@ -103,6 +103,7 @@ struct Http2StatsBlock {
   Metrics::Counter::AtomicType *max_ping_frames_per_minute_exceeded;
   Metrics::Counter::AtomicType *max_priority_frames_per_minute_exceeded;
   Metrics::Counter::AtomicType *max_rst_stream_frames_per_minute_exceeded;
+  Metrics::Counter::AtomicType *max_continuation_frames_per_minute_exceeded;
   Metrics::Counter::AtomicType *insufficient_avg_window_update;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_in;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_out;
@@ -427,6 +428,7 @@ public:
   static uint32_t max_ping_frames_per_minute;
   static uint32_t max_priority_frames_per_minute;
   static uint32_t max_rst_stream_frames_per_minute;
+  static uint32_t max_continuation_frames_per_minute;
   static float min_avg_window_update;
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;

@@ -139,6 +139,18 @@ private:
   int value = -1;
 };
 
+class HTTP2MaxContinuationFramesPerMinute : public ActionItem
+{
+public:
+  HTTP2MaxContinuationFramesPerMinute(int value) : value(value) {}
+  ~HTTP2MaxContinuationFramesPerMinute() override {}
+
+  int SNIAction(SSL &ssl, const Context &ctx) const override;
+
+private:
+  int value = -1;
+};
+
 class TunnelDestination : public ActionItem
 {
   // ID of the configured variable. This will be used to know which function

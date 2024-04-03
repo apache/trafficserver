@@ -175,6 +175,9 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (http2_max_rst_stream_frames_per_minute.has_value()) {
     actions.push_back(std::make_unique<HTTP2MaxRstStreamFramesPerMinute>(http2_max_rst_stream_frames_per_minute.value()));
   }
+  if (http2_max_continuation_frames_per_minute.has_value()) {
+    actions.push_back(std::make_unique<HTTP2MaxContinuationFramesPerMinute>(http2_max_continuation_frames_per_minute.value()));
+  }
 
   actions.push_back(std::make_unique<ServerMaxEarlyData>(server_max_early_data));
   actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
@@ -222,6 +225,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_http2_max_ping_frames_per_minute,
                                                TS_http2_max_priority_frames_per_minute,
                                                TS_http2_max_rst_stream_frames_per_minute,
+                                               TS_http2_max_continuation_frames_per_minute,
                                                TS_quic,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
@@ -276,6 +280,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_http2_max_rst_stream_frames_per_minute]) {
       item.http2_max_rst_stream_frames_per_minute = node[TS_http2_max_rst_stream_frames_per_minute].as<int>();
+    }
+    if (node[TS_http2_max_continuation_frames_per_minute]) {
+      item.http2_max_continuation_frames_per_minute = node[TS_http2_max_continuation_frames_per_minute].as<int>();
     }
     if (node[TS_quic]) {
       item.offer_quic = node[TS_quic].as<bool>();
