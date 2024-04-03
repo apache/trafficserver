@@ -1285,8 +1285,9 @@ void
 LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 {
   if (buf && m_client_req_unmapped_url_canon_str) {
+    // m_client_req_unmapped_url_canon_str is not necessarily null terminated.
     m_client_req_unmapped_url_canon_len = std::min(len, m_client_req_unmapped_url_canon_len);
-    ink_strlcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len + 1);
+    memcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len);
   }
 }
 
