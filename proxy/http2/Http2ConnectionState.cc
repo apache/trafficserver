@@ -912,8 +912,7 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // Close this connection if its CONTINUATION frame count exceeds a limit.
   if (cstate.get_received_continuation_frame_count() > Http2::max_continuation_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_CONTINUATION_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
-    Http2StreamDebug(cstate.ua_session, stream_id,
-                     "Observed too frequent CONTINUATION frames: %u frames within a last minute",
+    Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent CONTINUATION frames: %u frames within a last minute",
                      cstate.get_received_continuation_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "reset too frequent CONTINUATION frames");
