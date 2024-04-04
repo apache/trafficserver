@@ -1507,7 +1507,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #elif SSL_ERROR_WANT_X509_LOOKUP
   case SSL_ERROR_WANT_X509_LOOKUP:
 #endif
-#if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP)
+#ifdef SSL_ERROR_PENDING_CERTIFICATE
+  case SSL_ERROR_PENDING_CERTIFICATE:
+#endif
+#if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP) || defined(SSL_ERROR_PENDING_CERTIFICATE)
     if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
