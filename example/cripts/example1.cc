@@ -158,6 +158,10 @@ do_remap()
   CDebug("Path[1] is {}", url.path[1]);
   CDebug("Query is {}", url.query);
 
+  auto testing_trim = url.path.trim();
+
+  CDebug("Trimmed path is {}", testing_trim);
+
   if (url.query["foo"] > 100) {
     CDebug("Query[foo] is > 100");
   }
