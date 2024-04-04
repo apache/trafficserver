@@ -2584,7 +2584,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
       ssize_t read_bytes = 0;
 #endif
 
-#ifdef HAVE_SSL_READ_EARLY_DATA
+#if HAVE_SSL_READ_EARLY_DATA
       ret = SSL_read_early_data(ssl, buf, static_cast<size_t>(nbytes), &read_bytes);
       if (ret == SSL_READ_EARLY_DATA_ERROR) {
         had_error_on_reading_early_data = true;
