@@ -70,11 +70,10 @@ public:
   constexpr StringViewMixin() = default;
   constexpr StringViewMixin(const char *s) { _value = mixin_type(s, strlen(s)); }
   constexpr StringViewMixin(const char *s, mixin_type::size_type count) { _value = mixin_type(s, count); }
-  constexpr StringViewMixin(Cript::string_view &str) { _value = str; }
+  constexpr StringViewMixin(const Cript::string_view &str) { _value = str; }
 
   virtual self_type &operator=(const mixin_type str) = 0;
 
-  // ToDo: We need the toFloat() and toBool() methods here
   operator integer() const { return integer_helper(_value); }
 
   [[nodiscard]] integer
@@ -87,6 +86,18 @@ public:
   asInteger() const
   {
     return integer(*this);
+  }
+
+  [[nodiscard]] double
+  toFloat() const
+  {
+    return float(*this);
+  }
+
+  [[nodiscard]] bool
+  toBool() const
+  {
+    return bool(*this);
   }
 
   std::vector<mixin_type>
@@ -178,73 +189,64 @@ public:
 
   // ToDo: There are other members of std::string_view /swoc::TextView that we may want to incorporate here,
   // to make the mixin class more complete.
-
-  // ToDo: These are additions made by us, would be in C++20
   ChildT &
   ltrim(char c)
   {
-    _value.remove_prefix(_value.find_first_not_of(c));
+    _value.ltrim(c);
     return *(static_cast<ChildT *>(this));
   }
 
   ChildT &
   rtrim(char c)
   {
-    auto n = _value.find_last_not_of(c);
-
-    _value.remove_suffix(_value.size() - (n == mixin_type::npos ? 0 : n + 1));
+    _value.rtrim(c);
     return *(static_cast<ChildT *>(this));
   }
 
   ChildT &
   trim(char c)
   {
-    this->ltrim(c);
-    this->rtrim(c);
+    _value.trim(c);
     return *(static_cast<ChildT *>(this));
   }
 
   ChildT &
   ltrim(const char *chars = " \t\r\n")
   {
-    _value.remove_prefix(_value.find_first_not_of(chars));
+    _value.ltrim(chars);
     return *(static_cast<ChildT *>(this));
   }
 
   ChildT &
   rtrim(const char *chars = " \t\r\n")
   {
-    auto n = _value.find_last_not_of(chars);
-
-    _value.remove_suffix(_value.size() - (n == mixin_type::npos ? 0 : n + 1));
+    _value.rtrim(chars);
     return *(static_cast<ChildT *>(this));
   }
 
   ChildT &
   trim(const char *chars = " \t")
   {
-    this->ltrim(chars);
-    this->rtrim(chars);
-
+    _value.trim(chars);
     return *(static_cast<ChildT *>(this));
   }
 
   [[nodiscard]] constexpr char const *
   data_end() const noexcept
   {
-    return _value.data() + _value.size();
+    return _value.data_end();
   }
 
   [[nodiscard]] bool
   ends_with(Cript::string_view const suffix) const
   {
-    return _value.size() >= suffix.size() && 0 == ::memcmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
+    return _value.ends_with(suffix);
   }
 
   [[nodiscard]] bool
   starts_with(Cript::string_view const prefix) const
   {
-    return _value.size() >= prefix.size() && 0 == ::memcmp(_value.data(), prefix.data(), prefix.size());
+    return _value.starts_with(prefix);
   }
 
 protected:
@@ -258,24 +260,6 @@ private:
   mixin_type _value;
 }; // End class Cript::StringViewMixin
 
-// ToDo: This is wonky right now, but once we're fully on ATS v10.0.0, we should just
-// eliminate all this and use swoc::TextView directly and consistently.
-class StringViewWrapper : public StringViewMixin<StringViewWrapper>
-{
-  using self_type  = StringViewWrapper;
-  using super_type = StringViewMixin<self_type>;
-
-public:
-  using super_type::super_type;
-  StringViewWrapper &
-  operator=(const Cript::string_view str) override
-  {
-    _setSV(str);
-    return *this;
-  }
-};
-
-// ToDo: Should this be a mixin class too ?
 class string : public std::string
 {
   using super_type = std::string;
@@ -316,9 +300,9 @@ public:
   string(super_type &&that) : super_type(std::move(that)) {}
   string(self_type &&that) : super_type(std::move(that)) {}
 
-  // ToDo: This seems to be ambiquous with STL implementation
-  //  operator Cript::string_view() const { return {this->c_str(), this->size()}; }
+  operator Cript::string_view() const { return {this->c_str(), this->size()}; }
 
+  // Make sure to keep these updated with C++20 ...
   self_type &
   ltrim(char c = ' ')
   {
@@ -635,21 +619,6 @@ template <> struct formatter<TSHttpStatus> {
   format(const TSHttpStatus &stat, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", static_cast<int>(stat));
-  }
-};
-
-template <> struct formatter<Cript::StringViewWrapper> {
-  constexpr auto
-  parse(format_parse_context &ctx) -> decltype(ctx.begin())
-  {
-    return ctx.begin();
-  }
-
-  template <typename FormatContext>
-  auto
-  format(const Cript::StringViewWrapper &sv, FormatContext &ctx) -> decltype(ctx.out())
-  {
-    return fmt::format_to(ctx.out(), "{}", sv.getSV());
   }
 };
 

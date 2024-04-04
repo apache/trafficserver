@@ -164,10 +164,10 @@ public:
       return matched();
     }
 
-    Cript::StringViewWrapper
+    Cript::string_view
     operator[](size_t ix) const
     {
-      Cript::StringViewWrapper ret;
+      Cript::string_view ret;
 
       if ((count() > ix) && _ovector) {
         ret = {_subject.substr(_ovector[ix * 2], _ovector[ix * 2 + 1] - _ovector[ix * 2])};
