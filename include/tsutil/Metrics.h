@@ -237,10 +237,7 @@ public:
   iterator
   end() const
   {
-    _storage->_mutex.lock();
-    int16_t blob   = _storage->_cur_blob;
-    int16_t offset = _storage->_cur_off;
-    _storage->_mutex.unlock();
+    auto [blob, offset] = _storage->current();
 
     return iterator(*this, _makeId(blob, offset));
   }
@@ -264,6 +261,7 @@ private:
   {
     return _storage->_create(name);
   }
+
   SpanType
   _createSpan(size_t size, IdType *id = nullptr)
   {
@@ -289,14 +287,15 @@ private:
     return _makeId(std::get<0>(id), std::get<1>(id));
   }
 
-  struct Storage {
-    int _refs;
+  class Storage
+  {
     BlobStorage _blobs;
     uint16_t _cur_blob = 0;
     uint16_t _cur_off  = 0;
     LookupTable _lookups;
     mutable std::mutex _mutex;
 
+  public:
     Storage(const self_type &)          = delete;
     Storage &operator=(const Storage &) = delete;
     Storage &operator=(Storage &&)      = delete;
@@ -308,6 +307,7 @@ private:
       release_assert(_blobs[0]);
       release_assert(0 == _create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
     }
+
     ~Storage()
     {
       for (size_t i = 0; i <= _cur_blob; ++i) {
@@ -323,6 +323,13 @@ private:
     std::string_view name(IdType id) const;
     SpanType _createSpan(size_t size, IdType *id = nullptr);
     bool rename(IdType id, const std::string_view name);
+
+    std::pair<int16_t, int16_t>
+    current() const
+    {
+      std::lock_guard<std::mutex> lock(_mutex);
+      return {_cur_blob, _cur_off};
+    }
 
     bool
     valid(IdType id) const
