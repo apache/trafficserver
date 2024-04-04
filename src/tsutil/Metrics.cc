@@ -22,22 +22,24 @@
  */
 
 #include "tsutil/Assert.h"
+#include <memory>
 #include "tsutil/Metrics.h"
 
 namespace ts
 {
 
-// This is the singleton instance of the metrics class.
 Metrics &
 Metrics::instance()
 {
-  static Metrics _instance;
+  // This is the singleton instance of the metrics storage class.
+  static std::shared_ptr<Storage> _metrics_store = std::make_shared<Storage>();
+  thread_local Metrics _instance(_metrics_store);
 
   return _instance;
 }
 
 void
-Metrics::_addBlob() // The mutex must be held before calling this!
+Metrics::Storage::_addBlob() // The mutex must be held before calling this!
 {
   auto blob = new Metrics::NamesAndAtomics();
 
@@ -49,7 +51,7 @@ Metrics::_addBlob() // The mutex must be held before calling this!
 }
 
 Metrics::IdType
-Metrics::_create(std::string_view name)
+Metrics::Storage::_create(std::string_view name)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   auto it = _lookups.find(name);
@@ -73,7 +75,7 @@ Metrics::_create(std::string_view name)
 }
 
 Metrics::IdType
-Metrics::lookup(const std::string_view name) const
+Metrics::Storage::lookup(const std::string_view name) const
 {
   std::lock_guard<std::mutex> lock(_mutex);
   auto it = _lookups.find(name);
@@ -86,7 +88,7 @@ Metrics::lookup(const std::string_view name) const
 }
 
 Metrics::AtomicType *
-Metrics::lookup(Metrics::IdType id, std::string_view *out_name) const
+Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name) const
 {
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
@@ -105,7 +107,7 @@ Metrics::lookup(Metrics::IdType id, std::string_view *out_name) const
 }
 
 Metrics::AtomicType *
-Metrics::lookup(const std::string_view name, Metrics::IdType *out_id) const
+Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id) const
 {
   Metrics::IdType id          = lookup(name);
   Metrics::AtomicType *result = nullptr;
@@ -122,7 +124,7 @@ Metrics::lookup(const std::string_view name, Metrics::IdType *out_id) const
 }
 
 std::string_view
-Metrics::name(Metrics::IdType id) const
+Metrics::Storage::name(Metrics::IdType id) const
 {
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
@@ -139,7 +141,7 @@ Metrics::name(Metrics::IdType id) const
 }
 
 Metrics::SpanType
-Metrics::_createSpan(size_t size, Metrics::IdType *id)
+Metrics::Storage::_createSpan(size_t size, Metrics::IdType *id)
 {
   release_assert(size <= MAX_SIZE);
   std::lock_guard<std::mutex> lock(_mutex);
@@ -163,7 +165,7 @@ Metrics::_createSpan(size_t size, Metrics::IdType *id)
 }
 
 bool
-Metrics::rename(Metrics::IdType id, std::string_view name)
+Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
 {
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
