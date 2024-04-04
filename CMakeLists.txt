@@ -461,8 +461,10 @@ check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
-check_symbol_exists(SSL_read_early_data "openssl/ssl.h" TS_HAS_TLS_EARLY_DATA)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
+check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
+check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)
+check_symbol_exists(SSL_in_early_data "openssl/ssl.h" HAVE_SSL_IN_EARLY_DATA)
 check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(SSL_CTX_set_keylog_callback "openssl/ssl.h" TS_HAS_TLS_KEYLOGGING)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
@@ -479,7 +481,15 @@ endif()
 
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(HAVE_SSL_READ_EARLY_DATA ${TS_HAS_TLS_EARLY_DATA})
+set(TS_HAS_TLS_EARLY_DATA
+    ${HAVE_SSL_SET_MAX_EARLY_DATA}
+    |
+    ${HAVE_SSL_READ_EARLY_DATA}
+    |
+    ${HAVE_SSL_WRITE_EARLY_DATA}
+    |
+    ${HAVE_SSL_IN_EARLY_DATA}
+)
 
 set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
