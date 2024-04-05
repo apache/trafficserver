@@ -1437,6 +1437,12 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
               client_ip, session->get_connection_id(), stream_id, error.msg);
       }
       this->send_rst_stream_frame(stream_id, error.code);
+
+      // start closing stream on stream error
+      if (Http2Stream *stream = find_stream(stream_id); stream != nullptr) {
+        ink_assert(stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED);
+        stream->initiating_close();
+      }
     }
   }
 }
