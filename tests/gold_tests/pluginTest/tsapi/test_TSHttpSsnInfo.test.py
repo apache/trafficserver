@@ -73,7 +73,7 @@ Test.Env["OUTPUT_FILE"] = log_path
 # H2 SETTINGS, PRIORITY, HEADERS, CONTINUATION, DATA, GOAWAY
 tr = Test.AddTestRun()
 tr.TimeOut = 10
-tr.Processes.Default.Command = f"nghttp -vn --continuation 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
+tr.Processes.Default.Command = f"nghttp -vn --continuation 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -85,7 +85,7 @@ tr.StillRunningAfter = ts
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
     tr = Test.AddTestRun()
     tr.TimeOut = 10
-    tr.Processes.Default.Command = f"curl -k --http3 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
+    tr.Processes.Default.Command = f"curl -k --http3 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.stdout = "test_TSHttpSsnInfo_curl0.gold"
     tr.StillRunningAfter = httpbin
