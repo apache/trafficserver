@@ -317,7 +317,10 @@ endif()
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
 
 if(ENABLE_ASAN)
-  add_compile_options(-fsanitize=address)
+  if(ENABLE_JEMALLOC OR ENABLE_MIMALLOC)
+    message(FATAL_ERROR "ENABLE_JEMALLOC and ENABLE_MIMALLOC are not compatible with asan builds")
+  endif()
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address)
 endif()
 
