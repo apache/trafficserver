@@ -1792,6 +1792,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 
   // Clear the session timeout.  Let the transaction timeouts reign
   session->get_proxy_session()->cancel_inactivity_timeout();
+  session->get_proxy_session()->set_session_active();
 
   return new_stream;
 }
