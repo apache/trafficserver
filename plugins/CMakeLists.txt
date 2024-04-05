@@ -45,7 +45,7 @@ add_subdirectory(tcpinfo)
 add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
 
-if(NOT OPENSSL_IS_BORINGSSL)
+if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_AWSLC)
   add_subdirectory(ja3_fingerprint)
 endif()
 
