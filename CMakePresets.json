@@ -314,7 +314,8 @@
       "inherits": ["branch"],
       "cacheVariables": {
         "ENABLE_AUTEST": "ON",
-        "ENABLE_EXAMPLE": "ON"
+        "ENABLE_EXAMPLE": "ON",
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic"
       }
     },
     {
