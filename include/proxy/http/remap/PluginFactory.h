@@ -120,4 +120,13 @@ protected:
   bool _preventiveCleaning = true;
 
   static constexpr const char *const _tag = "plugin_factory"; /** @brief log tag used by this class */
+  static const DbgCtl &_dbg_ctl();
 };
+
+inline const DbgCtl &
+PluginFactory::_dbg_ctl()
+{
+  static DbgCtl dc{_tag};
+
+  return dc;
+}

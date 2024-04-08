@@ -30,7 +30,7 @@
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
-#define PluginDebug Debug
+#define PluginDbg   Dbg
 #define PluginError Error
 #endif
 #include "../../../iocore/eventsystem/P_EventSystem.h"
@@ -94,7 +94,7 @@ PluginFactory::PluginFactory()
     }
   }
 
-  PluginDebug(_tag, "created plugin factory %s", getUuid());
+  PluginDbg(_dbg_ctl(), "created plugin factory %s", getUuid());
 }
 
 PluginFactory::~PluginFactory()
@@ -104,7 +104,7 @@ PluginFactory::~PluginFactory()
 
   fs::remove_all(_runtimeDir, _ec);
 
-  PluginDebug(_tag, "destroyed plugin factory %s", getUuid());
+  PluginDbg(_dbg_ctl(), "destroyed plugin factory %s", getUuid());
   delete _uuid;
 }
 
@@ -112,7 +112,7 @@ PluginFactory &
 PluginFactory::addSearchDir(const fs::path &searchDir)
 {
   _searchDirs.push_back(searchDir);
-  PluginDebug(_tag, "added plugin search dir %s", searchDir.c_str());
+  PluginDbg(_dbg_ctl(), "added plugin search dir %s", searchDir.c_str());
   return *this;
 }
 
@@ -120,7 +120,7 @@ PluginFactory &
 PluginFactory::setRuntimeDir(const fs::path &runtimeDir)
 {
   _runtimeDir = runtimeDir / fs::path(getUuid());
-  PluginDebug(_tag, "set plugin runtime dir %s", runtimeDir.c_str());
+  PluginDbg(_dbg_ctl(), "set plugin runtime dir %s", runtimeDir.c_str());
   return *this;
 }
 
@@ -148,14 +148,14 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
   if (effectivePath.empty()) {
     error.assign("failed to find plugin '").append(configPath.string()).append("'");
     // The error will be reported by the caller but add debug log entry with this tag for convenience.
-    PluginDebug(_tag, "%s", error.c_str());
+    PluginDbg(_dbg_ctl(), "%s", error.c_str());
     return nullptr;
   }
 
   // The plugin may have opt out by `TSPluginDSOReloadEnable`, let's check and overwrite
   if (dynamicReloadEnabled && PluginDso::loadedPlugins()->isPluginInDsoOptOutTable(effectivePath)) {
     // plugin not interested to be reload.
-    PluginDebug(_tag, "Plugin %s not interested in taking part of the reload.", effectivePath.c_str());
+    PluginDbg(_dbg_ctl(), "Plugin %s not interested in taking part of the reload.", effectivePath.c_str());
     dynamicReloadEnabled = false;
   }
 
@@ -165,7 +165,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
 
   if (nullptr == plugin) {
     /* The plugin requested have not been loaded yet. */
-    PluginDebug(_tag, "plugin '%s' has not been loaded yet, loading as remap plugin", configPath.c_str());
+    PluginDbg(_dbg_ctl(), "plugin '%s' has not been loaded yet, loading as remap plugin", configPath.c_str());
 
     fs::path runtimePath;
 
@@ -176,15 +176,15 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
       runtimePath /= effectivePath.relative_path();
 
       fs::path parent = runtimePath.parent_path();
-      PluginDebug(_tag, "Using effectivePath: [%s] runtimePath: [%s] parent: [%s]", effectivePath.c_str(), runtimePath.c_str(),
-                  parent.c_str());
+      PluginDbg(_dbg_ctl(), "Using effectivePath: [%s] runtimePath: [%s] parent: [%s]", effectivePath.c_str(), runtimePath.c_str(),
+                parent.c_str());
       if (!fs::create_directories(parent, _ec)) {
         error.assign("failed to create plugin runtime dir");
         return nullptr;
       }
     } else {
       runtimePath = effectivePath;
-      PluginDebug(_tag, "Using effectivePath: [%s] runtimePath: [%s]", effectivePath.c_str(), runtimePath.c_str());
+      PluginDbg(_dbg_ctl(), "Using effectivePath: [%s] runtimePath: [%s]", effectivePath.c_str(), runtimePath.c_str());
     }
 
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
@@ -199,7 +199,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
           }
         } else {
           /* Plugin DSO load succeeded but instance init failed. */
-          PluginDebug(_tag, "plugin '%s' instance init failed", configPath.c_str());
+          PluginDbg(_dbg_ctl(), "plugin '%s' instance init failed", configPath.c_str());
           plugin->unload(error);
           delete plugin;
         }
@@ -209,12 +209,12 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
         }
       } else {
         /* Plugin DSO load failed. */
-        PluginDebug(_tag, "plugin '%s' DSO load failed", configPath.c_str());
+        PluginDbg(_dbg_ctl(), "plugin '%s' DSO load failed", configPath.c_str());
         delete plugin;
       }
     }
   } else {
-    PluginDebug(_tag, "plugin '%s' has already been loaded", configPath.c_str());
+    PluginDbg(_dbg_ctl(), "plugin '%s' has already been loaded", configPath.c_str());
     inst = RemapPluginInst::init(plugin, argc, argv, error);
     if (nullptr != inst) {
       _instList.append(inst);
@@ -276,7 +276,7 @@ PluginFactory::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabl
 void
 PluginFactory::deactivate()
 {
-  PluginDebug(_tag, "deactivate configuration used by factory '%s'", getUuid());
+  PluginDbg(_dbg_ctl(), "deactivate configuration used by factory '%s'", getUuid());
 
   _instList.apply([](RemapPluginInst &pluginInst) -> void { pluginInst.done(); });
 }

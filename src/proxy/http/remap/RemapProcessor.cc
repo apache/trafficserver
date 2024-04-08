@@ -24,8 +24,12 @@
 #include "proxy/http/remap/RemapProcessor.h"
 
 RemapProcessor remapProcessor;
-extern ClassAllocator<RemapPlugins> pluginAllocator;
 
+namespace
+{
+DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+
+} // end anonymous namespace
 /**
   Most of this comes from UrlRewrite::Remap(). Generally, all this does
   is set "map" to the appropriate entry from the HttpSM's leased m_remap
@@ -36,7 +40,7 @@ extern ClassAllocator<RemapPlugins> pluginAllocator;
 bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 {
-  Debug("url_rewrite", "setting up for remap: %p", s);
+  Dbg(dbg_ctl_url_rewrite, "setting up for remap: %p", s);
   URL *request_url        = nullptr;
   bool mapping_found      = false;
   HTTPHdr *request_header = &s->hdr_info.client_request;
@@ -53,7 +57,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 
   if (unlikely((table->num_rules_forward == 0) && (table->num_rules_forward_with_recv_port == 0))) {
     ink_assert(table->forward_mappings.empty() && table->forward_mappings_with_recv_port.empty());
-    Debug("url_rewrite", "[lookup] No forward mappings found; Skipping...");
+    Dbg(dbg_ctl_url_rewrite, "[lookup] No forward mappings found; Skipping...");
     return false;
   }
 
@@ -74,18 +78,18 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
     request_host_len = 0;
   }
 
-  Debug("url_rewrite", "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
+  Dbg(dbg_ctl_url_rewrite, "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
 
   if (table->num_rules_forward_with_recv_port) {
-    Debug("url_rewrite", "[lookup] forward mappings with recv port found; Using recv port %d",
-          s->client_info.dst_addr.host_order_port());
+    Dbg(dbg_ctl_url_rewrite, "[lookup] forward mappings with recv port found; Using recv port %d",
+        s->client_info.dst_addr.host_order_port());
     if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host,
                                                 request_host_len, s->url_map)) {
-      Debug("url_rewrite", "Found forward mapping with recv port");
+      Dbg(dbg_ctl_url_rewrite, "Found forward mapping with recv port");
       mapping_found = true;
     } else if (table->num_rules_forward == 0) {
       ink_assert(table->forward_mappings.empty());
-      Debug("url_rewrite", "No forward mappings left");
+      Dbg(dbg_ctl_url_rewrite, "No forward mappings left");
       return false;
     }
   }
@@ -98,7 +102,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   // they function as default rules for server requests.
   // If there's no host, we've already done this.
   if (!mapping_found && table->nohost_rules && request_host_len) {
-    Debug("url_rewrite", "[lookup] nothing matched");
+    Dbg(dbg_ctl_url_rewrite, "[lookup] nothing matched");
     mapping_found = table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
   }
 
@@ -122,7 +126,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   if (mapping_found) {
     request_header->mark_target_dirty();
   } else {
-    Debug("url_rewrite", "RemapProcessor::setup_for_remap did not find a mapping");
+    Dbg(dbg_ctl_url_rewrite, "RemapProcessor::setup_for_remap did not find a mapping");
   }
 
   return mapping_found;
@@ -235,11 +239,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
   if (request_url && host_hdr != nullptr && s->txn_conf->maintain_pristine_host_hdr == 0) {
-    if (is_debug_tag_set("url_rewrite")) {
+    if (dbg_ctl_url_rewrite.on()) {
       int old_host_hdr_len;
       char *old_host_hdr = const_cast<char *>(request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len));
       if (old_host_hdr) {
-        Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
+        Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
       }
     }
     //
@@ -267,9 +271,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     //   through
     if (tmp >= TS_MAX_HOST_NAME_LEN) {
       request_header->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
-      Debug("url_rewrite", "Host: Header too long after rewrite");
+      Dbg(dbg_ctl_url_rewrite, "Host: Header too long after rewrite");
     } else {
-      Debug("url_rewrite", "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
+      Dbg(dbg_ctl_url_rewrite, "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
       request_header->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host_hdr_buf, tmp);
     }
   }
@@ -282,7 +286,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 Action *
 RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 {
-  Debug("url_rewrite", "Beginning RemapProcessor::perform_remap");
+  Dbg(dbg_ctl_url_rewrite, "Beginning RemapProcessor::perform_remap");
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url        = request_header->url_get();
   url_mapping *map        = s->url_map.getMapping();
@@ -290,7 +294,7 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 
   if (!map) {
     Error("Could not find corresponding url_mapping for this transaction %p", s);
-    Debug("url_rewrite", "Could not find corresponding url_mapping for this transaction");
+    Dbg(dbg_ctl_url_rewrite, "Could not find corresponding url_mapping for this transaction");
     ink_assert(!"this should never happen -- call setup_for_remap first");
     cont->handleEvent(EVENT_REMAP_ERROR, nullptr);
     return ACTION_RESULT_DONE;

@@ -37,6 +37,12 @@
 
 ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator("httpServerSessionAllocator");
 
+namespace
+{
+DbgCtl dbg_ctl_http_ss{"http_ss"};
+
+} // end anonymous namespace
+
 Http1ServerSession::Http1ServerSession() : super_type(), trans(this) {}
 
 void
@@ -90,7 +96,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
     read_buffer = iobuf;
     _reader     = reader;
   }
-  Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
+  Dbg(dbg_ctl_http_ss, "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = INIT;
 
   new_vc->set_tcp_congestion_control(SERVER_SIDE);
@@ -102,7 +108,7 @@ Http1ServerSession::do_io_close(int alerrno)
   // Only do the close bookkeeping 1 time
   if (state != SSN_CLOSED) {
     swoc::LocalBufferWriter<256> w;
-    bool debug_p = is_debug_tag_set("http_ss");
+    bool debug_p = dbg_ctl_http_ss.on();
 
     state = SSN_CLOSED;
 
@@ -116,7 +122,7 @@ Http1ServerSession::do_io_close(int alerrno)
     this->release_outbound_connection_tracking();
 
     if (debug_p) {
-      Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
+      Dbg(dbg_ctl_http_ss, "%.*s", static_cast<int>(w.size()), w.data());
     }
 
     if (_vc) {
@@ -141,8 +147,8 @@ Http1ServerSession::do_io_close(int alerrno)
 void
 Http1ServerSession::release(ProxyTransaction *trans)
 {
-  Debug("http_ss", "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
-        sharing_match);
+  Dbg(dbg_ctl_http_ss, "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
+      sharing_match);
   if (state == SSN_IN_USE) {
     // The caller should have already set the inactive timeout to the keep alive timeout
     // Unfortunately, we do not have access to that value from here.

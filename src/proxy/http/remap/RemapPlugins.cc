@@ -24,7 +24,13 @@
 
 #include "proxy/http/remap/RemapPlugins.h"
 
+namespace
+{
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
+
+DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+
+} // end anonymous namespace
 
 TSRemapStatus
 RemapPlugins::run_plugin(RemapPluginInst *plugin)
@@ -86,14 +92,14 @@ RemapPlugins::run_single_remap()
   RemapPluginInst *plugin      = map->get_plugin_instance(_cur); // get the nth plugin in our list of plugins
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
   bool zret                    = true; // default - last iteration.
-  Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
-        _cur == 1 ? "st" :
-        _cur == 2 ? "nd" :
-        _cur == 3 ? "rd" :
-                    "th");
+  Dbg(dbg_ctl_url_rewrite, "running single remap rule id %d for the %d%s time", map->map_id, _cur,
+      _cur == 1 ? "st" :
+      _cur == 2 ? "nd" :
+      _cur == 3 ? "rd" :
+                  "th");
 
   if (0 == _cur) {
-    Debug("url_rewrite", "setting the remapped url by copying from mapping rule");
+    Dbg(dbg_ctl_url_rewrite, "setting the remapped url by copying from mapping rule");
     url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
   }
 
@@ -112,11 +118,11 @@ RemapPlugins::run_single_remap()
     }
 
     if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
-      Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop after %d rewrites", _rewritten);
+      Dbg(dbg_ctl_url_rewrite, "breaking remap plugin chain since last plugin said we should stop after %d rewrites", _rewritten);
     } else if (_cur >= map->plugin_instance_count()) {
-      Debug("url_rewrite", "completed all remap plugins for rule id %d, changed by %d plugins", map->map_id, _rewritten);
+      Dbg(dbg_ctl_url_rewrite, "completed all remap plugins for rule id %d, changed by %d plugins", map->map_id, _rewritten);
     } else {
-      Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
+      Dbg(dbg_ctl_url_rewrite, "completed single remap, attempting another via immediate callback");
       zret = false; // not done yet.
     }
   }

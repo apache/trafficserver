@@ -36,14 +36,22 @@
 
 #include <algorithm>
 
-#define PreWarmSMDebug(fmt, ...)  Debug("prewarm_sm", "[%p] " fmt, this, ##__VA_ARGS__);
-#define PreWarmSMVDebug(fmt, ...) Debug("v_prewarm_sm", "[%p] " fmt, this, ##__VA_ARGS__);
+#define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
+#define PreWarmSMVDbg(fmt, ...) Dbg(dbg_ctl_v_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
 
 ClassAllocator<PreWarmSM> preWarmSMAllocator("preWarmSMAllocator");
 PreWarmManager prewarmManager;
 
 namespace
 {
+DbgCtl dbg_ctl_prewarm_sm{"prewarm_sm"};
+DbgCtl dbg_ctl_v_prewarm_conf{"v_prewarm_conf"};
+DbgCtl dbg_ctl_v_prewarm_q{"v_prewarm_q"};
+DbgCtl dbg_ctl_prewarm{"prewarm"};
+DbgCtl dbg_ctl_prewarm_m{"prewarm_m"};
+DbgCtl dbg_ctl_v_prewarm_sm{"v_prewarm_sm"};
+DbgCtl dbg_ctl_v_prewarm_init{"v_prewarm_init"};
+
 using namespace std::literals;
 
 constexpr ts_seconds DOWN_SERVER_TIMEOUT = 300s;
@@ -112,8 +120,8 @@ PreWarmSM::PreWarmSM(const PreWarm::SPtrConstDst &dst, const PreWarm::SPtrConstC
 {
   SET_HANDLER(&PreWarmSM::state_init);
 
-  Debug("v_prewarm_conf", "host=%p _dst=%ld _conf=%ld _stats_ids=%ld", dst->host.data(), _dst.use_count(), _conf.use_count(),
-        _stats_ids.use_count());
+  Dbg(dbg_ctl_v_prewarm_conf, "host=%p _dst=%ld _conf=%ld _stats_ids=%ld", dst->host.data(), _dst.use_count(), _conf.use_count(),
+      _stats_ids.use_count());
 }
 
 PreWarmSM::~PreWarmSM() {}
@@ -228,8 +236,8 @@ PreWarmSM::state_init(int event, void *data)
     _timeout.set_active_timeout(_conf->connect_timeout);
     _milestones.mark(Milestone::INIT);
 
-    PreWarmSMDebug("pre-warming a netvc dst=%.*s:%d type=%d alpn=%d retry=%" PRIu32, (int)_dst->host.size(), _dst->host.data(),
-                   _dst->port, (int)_dst->type, _dst->alpn_index, _retry_counter);
+    PreWarmSMDbg("pre-warming a netvc dst=%.*s:%d type=%d alpn=%d retry=%" PRIu32, (int)_dst->host.size(), _dst->host.data(),
+                 _dst->port, (int)_dst->type, _dst->alpn_index, _retry_counter);
 
     if (_conf->srv_enabled) {
       char target[MAXDNAME];
@@ -241,7 +249,7 @@ PreWarmSM::state_init(int event, void *data)
       memcpy(target + target_len, _dst->host.data(), _dst->host.size());
       target_len += _dst->host.size();
 
-      PreWarmSMVDebug("lookup SRV by %.*s", (int)target_len, target);
+      PreWarmSMVDbg("lookup SRV by %.*s", (int)target_len, target);
 
       Action *srv_lookup_action_handle = hostDBProcessor.getSRVbyname_imm(
         this, static_cast<cb_process_result_pfn>(&PreWarmSM::process_srv_info), target, target_len);
@@ -249,7 +257,7 @@ PreWarmSM::state_init(int event, void *data)
         _pending_action = srv_lookup_action_handle;
       }
     } else {
-      PreWarmSMVDebug("lookup A/AAAA by %.*s", (int)_dst->host.size(), _dst->host.data());
+      PreWarmSMVDbg("lookup A/AAAA by %.*s", (int)_dst->host.size(), _dst->host.data());
 
       Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(
         this, static_cast<cb_process_result_pfn>(&PreWarmSM::process_hostdb_info), _dst->host.data(), _dst->host.size());
@@ -278,7 +286,7 @@ PreWarmSM::state_dns_lookup(int event, void *data)
     _pending_action = nullptr;
 
     if (record == nullptr || record->is_failed()) {
-      PreWarmSMVDebug("hostdb lookup is failed");
+      PreWarmSMVDbg("hostdb lookup is failed");
 
       retry();
       return EVENT_DONE;
@@ -287,7 +295,7 @@ PreWarmSM::state_dns_lookup(int event, void *data)
     HostDBInfo *info = record->select_next_rr(ts_clock::now(), DOWN_SERVER_TIMEOUT);
 
     if (info == nullptr) {
-      PreWarmSMVDebug("hostdb lookup found no entry");
+      PreWarmSMVDbg("hostdb lookup found no entry");
       retry();
       return EVENT_DONE;
     }
@@ -296,9 +304,9 @@ PreWarmSM::state_dns_lookup(int event, void *data)
 
     addr.network_order_port() = htons(_dst->port);
 
-    if (is_debug_tag_set("v_prewarm_sm")) {
+    if (dbg_ctl_v_prewarm_sm.on()) {
       char addrbuf[INET6_ADDRPORTSTRLEN];
-      PreWarmSMVDebug("hostdb lookup is done %s", ats_ip_nptop(addr, addrbuf, sizeof(addrbuf)));
+      PreWarmSMVDbg("hostdb lookup is done %s", ats_ip_nptop(addr, addrbuf, sizeof(addrbuf)));
     }
 
     SET_HANDLER(&PreWarmSM::state_net_open);
@@ -376,7 +384,7 @@ PreWarmSM::state_net_open(int event, void *data)
     NetVConnection *netvc = static_cast<NetVConnection *>(vio->vc_server);
 
     ink_release_assert(netvc == _netvc);
-    PreWarmSMVDebug("%s Handshake is done netvc=%p", (_dst->type == SNIRoutingType::FORWARD) ? "TCP" : "TLS", _netvc);
+    PreWarmSMVDbg("%s Handshake is done netvc=%p", (_dst->type == SNIRoutingType::FORWARD) ? "TCP" : "TLS", _netvc);
 
     SET_HANDLER(&PreWarmSM::state_open);
     _timeout.cancel_active_timeout();
@@ -433,12 +441,12 @@ PreWarmSM::state_open(int event, void *data)
 
     ink_release_assert(netvc == _netvc);
 
-    if (is_debug_tag_set("prewarm_sm")) {
+    if (dbg_ctl_prewarm_sm.on()) {
       if (_read_buf_reader->is_read_avail_more_than(0)) {
         uint64_t read_len = _read_buf_reader->read_avail();
-        PreWarmSMDebug("buffering data from origin server len=%" PRIu64, read_len);
+        PreWarmSMDbg("buffering data from origin server len=%" PRIu64, read_len);
 
-        if (is_debug_tag_set("v_prewarm_sm")) {
+        if (dbg_ctl_v_prewarm_sm.on()) {
           uint8_t buf[1024];
           read_len = std::min(static_cast<uint64_t>(sizeof(buf)), read_len);
           _read_buf_reader->memcpy(buf, read_len);
@@ -446,7 +454,7 @@ PreWarmSM::state_open(int event, void *data)
           swoc::LocalBufferWriter<2048> bw;
           bw.print("{:x}", swoc::MemSpan<void const>(buf, read_len));
 
-          PreWarmSMVDebug("\n%.*s\n", int(bw.extent()), bw.data());
+          PreWarmSMVDbg("\n%.*s\n", int(bw.extent()), bw.data());
         }
       }
     }
@@ -457,7 +465,7 @@ PreWarmSM::state_open(int event, void *data)
     // possibly inactive timeout at origin server
     [[fallthrough]];
   case VC_EVENT_INACTIVITY_TIMEOUT: {
-    PreWarmSMDebug("%s (%d)", get_vc_event_name(event), event);
+    PreWarmSMDbg("%s (%d)", get_vc_event_name(event), event);
     stop();
     break;
   }
@@ -704,9 +712,9 @@ PreWarmQueue::state_running(int event, void *data)
       _prewarm_on_event_interval(dst, info);
 
       // set prewarmManager.stats
-      Debug("v_prewarm_q", "dst=%.*s:%d type=%d alpn=%d miss=%d hit=%d init=%d open=%d", (int)dst->host.size(), dst->host.data(),
-            dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
-            (int)info.open_list->size());
+      Dbg(dbg_ctl_v_prewarm_q, "dst=%.*s:%d type=%d alpn=%d miss=%d hit=%d init=%d open=%d", (int)dst->host.size(),
+          dst->host.data(), dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
+          (int)info.open_list->size());
 
       auto &[counters, gauges] = *info.stats_ids;
 
@@ -857,7 +865,7 @@ PreWarmQueue::_prewarm_on_event_interval(const PreWarm::SPtrConstDst &dst, const
     break;
   }
 
-  Debug("v_prewarm_q", "prewarm_size=%" PRId32, n);
+  Dbg(dbg_ctl_v_prewarm_q, "prewarm_size=%" PRId32, n);
 
   for (uint32_t i = 0; i < n; ++i) {
     _new_prewarm_sm(dst, info.conf, info.stats_ids);
@@ -993,7 +1001,7 @@ PreWarmManager::reconfigure_prewarming_on_threads()
   EventProcessor::ThreadGroupDescriptor *tg = &(eventProcessor.thread_group[0]);
   ink_release_assert(memcmp(tg->_name.data(), "ET_NET", 6) == 0);
 
-  Debug("prewarm", "reconfigure prewarming");
+  Dbg(dbg_ctl_prewarm, "reconfigure prewarming");
 
   for (int i = 0; i < tg->_count; ++i) {
     EThread *ethread = tg->_thread[i];
@@ -1091,9 +1099,9 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
     }
 
     for (int id : alpn_ids) {
-      Debug("prewarm_m", "sni=%s dst=%s type=%d alpn=%d min=%d max=%d c_timeout=%d i_timeout=%d srv=%d", item.fqdn.c_str(),
-            item.tunnel_destination.c_str(), (int)item.tunnel_type, id, (int)item.tunnel_prewarm_min, (int)item.tunnel_prewarm_max,
-            (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
+      Dbg(dbg_ctl_prewarm_m, "sni=%s dst=%s type=%d alpn=%d min=%d max=%d c_timeout=%d i_timeout=%d srv=%d", item.fqdn.c_str(),
+          item.tunnel_destination.c_str(), (int)item.tunnel_type, id, (int)item.tunnel_prewarm_min, (int)item.tunnel_prewarm_max,
+          (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
 
       std::string dst_fqdn;
       int32_t port;
@@ -1171,7 +1179,7 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       } else {
         ++stats_counter;
         counters[j] = metric;
-        Debug("v_prewarm_init", "conter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
+        Dbg(dbg_ctl_v_prewarm_init, "conter stat id=%d name=%s", Metrics::Counter::lookup(name), name);
       }
     }
 
@@ -1188,7 +1196,7 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       } else {
         ++stats_counter;
         gauges[j] = metric;
-        Debug("v_prewarm_init", "gauge stat id=%d name=%s", Metrics::Gauge::lookup(name), name);
+        Dbg(dbg_ctl_v_prewarm_init, "gauge stat id=%d name=%s", Metrics::Gauge::lookup(name), name);
       }
     }
 

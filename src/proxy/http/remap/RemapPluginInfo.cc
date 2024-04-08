@@ -34,7 +34,7 @@
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
-#define PluginDebug Debug
+#define PluginDbg   Dbg
 #define PluginError Error
 #endif
 
@@ -55,7 +55,7 @@ RemapPluginInfo::getFunctionSymbol(const char *symbol)
   std::string error; /* ignore the error, return nullptr if symbol not defined */
   void *address = nullptr;
   if (getSymbol(symbol, address, error)) {
-    PluginDebug(_tag, "plugin '%s' found symbol '%s'", _configPath.c_str(), symbol);
+    PluginDbg(_dbg_ctl(), "plugin '%s' found symbol '%s'", _configPath.c_str(), symbol);
   }
   return reinterpret_cast<T *>(address);
 }
@@ -111,7 +111,7 @@ RemapPluginInfo::load(std::string &error)
   }
 
   if (valid) {
-    PluginDebug(_tag, "plugin '%s' callbacks validated", _configPath.c_str());
+    PluginDbg(_dbg_ctl(), "plugin '%s' callbacks validated", _configPath.c_str());
   } else {
     PluginError("plugin '%s' callbacks validation failed: %s", _configPath.c_str(), error.c_str());
   }
@@ -125,7 +125,7 @@ RemapPluginInfo::init(std::string &error)
   TSRemapInterface ri;
   bool result = true;
 
-  PluginDebug(_tag, "started initializing plugin '%s'", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "started initializing plugin '%s'", _configPath.c_str());
 
   /* A buffer to get the error from the plugin instance init function, be defensive here. */
   char tmpbuf[2048];
@@ -148,7 +148,7 @@ RemapPluginInfo::init(std::string &error)
 
   resetPluginContext();
 
-  PluginDebug(_tag, "finished initializing plugin '%s'", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "finished initializing plugin '%s'", _configPath.c_str());
 
   return result;
 }
@@ -168,7 +168,7 @@ RemapPluginInfo::initInstance(int argc, char **argv, void **ih, std::string &err
   TSReturnCode res = TS_SUCCESS;
   bool result      = true;
 
-  PluginDebug(_tag, "started initializing instance of plugin '%s'", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "started initializing instance of plugin '%s'", _configPath.c_str());
 
   /* A buffer to get the error from the plugin instance init function, be defensive here. */
   char tmpbuf[2048];
@@ -201,7 +201,7 @@ RemapPluginInfo::initInstance(int argc, char **argv, void **ih, std::string &err
     }
   }
 
-  PluginDebug(_tag, "finished initializing instance of plugin '%s'", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "finished initializing instance of plugin '%s'", _configPath.c_str());
 
   return result;
 }
@@ -277,12 +277,12 @@ RemapPluginInfo::setPluginContext()
 {
   _tempContext        = pluginThreadContext;
   pluginThreadContext = this;
-  PluginDebug(_tag, "change plugin context from dso-addr:%p to dso-addr:%p", pluginThreadContext, _tempContext);
+  PluginDbg(_dbg_ctl(), "change plugin context from dso-addr:%p to dso-addr:%p", pluginThreadContext, _tempContext);
 }
 
 inline void
 RemapPluginInfo::resetPluginContext()
 {
-  PluginDebug(_tag, "change plugin context from dso-addr:%p to dso-addr:%p (restore)", this, pluginThreadContext);
+  PluginDbg(_dbg_ctl(), "change plugin context from dso-addr:%p to dso-addr:%p (restore)", this, pluginThreadContext);
   pluginThreadContext = _tempContext;
 }
