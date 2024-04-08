@@ -788,7 +788,6 @@ api_init()
     TS_HTTP_LEN_S_MAXAGE         = HTTP_LEN_S_MAXAGE;
 
     init_global_http_hooks();
-    init_global_ssl_hooks();
     init_global_lifecycle_hooks();
     global_config_cbs = new ConfigUpdateCbTable;
 
