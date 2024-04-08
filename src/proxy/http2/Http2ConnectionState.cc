@@ -1489,7 +1489,6 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_XMIT: {
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    Note("Flushing due to XMIT event");
     this->session->flush();
   } break;
 
@@ -2100,8 +2099,6 @@ Http2ConnectionState::schedule_retransmit(ink_hrtime t)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   if (retransmit_event == nullptr) {
-    Note("Scheduling retransmit in %" PRId64 "ms", t / HRTIME_MSECOND);
-
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
     retransmit_event = this_ethread()->schedule_in((Continuation *)this, t, HTTP2_SESSION_EVENT_XMIT);
   }
