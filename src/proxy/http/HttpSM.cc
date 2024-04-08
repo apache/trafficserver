@@ -1711,8 +1711,12 @@ HttpSM::create_server_txn(PoolableSession *new_session)
     server_txn->attach_transaction(this);
     if (t_state.current.request_to == ResolveInfo::PARENT_PROXY) {
       new_session->to_parent_proxy = true;
-      Metrics::Gauge::increment(http_rsb.current_parent_proxy_connections);
-      Metrics::Counter::increment(http_rsb.total_parent_proxy_connections);
+      if (server_txn->get_proxy_ssn()->get_transact_count() == 1) {
+        // These are connection-level metrics, so only increment them for the
+        // first transaction lest they get overcounted.
+        Metrics::Gauge::increment(http_rsb.current_parent_proxy_connections);
+        Metrics::Counter::increment(http_rsb.total_parent_proxy_connections);
+      }
     } else {
       new_session->to_parent_proxy = false;
     }
