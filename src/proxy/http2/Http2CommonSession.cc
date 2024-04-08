@@ -159,7 +159,6 @@ Http2CommonSession::xmit(const Http2TxFrame &frame, bool flush)
     if (this->_pending_sending_data_size >= this->_write_size_threshold) {
       flush = true;
     } else {
-      Note("Calling schedule_transmit because write threshold is not exceeded.");
       // Observe that schedule_transmit will only schedule the first time we
       // don't flush because the threshold is not met.
       this->connection_state.schedule_retransmit(HRTIME_MSECONDS(Http2::write_time_threshold));
