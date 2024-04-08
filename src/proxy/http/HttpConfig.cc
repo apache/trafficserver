@@ -53,6 +53,12 @@
   REC_EstablishStaticConfigByte(_ix, _n);      \
   REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
 
+namespace
+{
+DbgCtl dbg_ctl_http_config{"http_config"};
+
+} // end anonymous namespace
+
 class HttpConfigCont : public Continuation
 {
 public:
@@ -74,7 +80,7 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
+  Dbg(dbg_ctl_http_config, "enum element %.*s", static_cast<int>(key.size()), key.data());
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
     if (key.compare(list[i]._key) == 0) {
@@ -126,7 +132,7 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
   std::string_view key_list(key);
   size_t start  = 0;
   size_t offset = 0;
-  Debug("http_config", "enum mask value %s", key);
+  Dbg(dbg_ctl_http_config, "enum mask value %s", key);
   do {
     offset = key_list.find(',', start);
     if (offset == std::string_view::npos) {

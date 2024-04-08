@@ -41,6 +41,14 @@
 
 using namespace std::literals;
 
+namespace
+{
+DbgCtl dbg_ctl_http_trans{"http_trans"};
+DbgCtl dbg_ctl_http_transact_headers{"http_transact_headers"};
+DbgCtl dbg_ctl_anon{"anon"};
+
+} // end anonymous namespace
+
 bool
 HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)
 {
@@ -272,8 +280,8 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing
   } else if (outgoing_ver == HTTPVersion(1, 0)) {
     convert_to_1_0_request_header(outgoing_request);
   } else {
-    Debug("http_trans", "[HttpTransactHeaders::convert_request]"
-                        "Unsupported Version - passing through");
+    Dbg(dbg_ctl_http_trans, "[HttpTransactHeaders::convert_request]"
+                            "Unsupported Version - passing through");
   }
 }
 
@@ -287,8 +295,8 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoin
   } else if (outgoing_ver == HTTPVersion(1, 0)) {
     convert_to_1_0_response_header(outgoing_response, reason_phrase);
   } else {
-    Debug("http_trans", "[HttpTransactHeaders::convert_response]"
-                        "Unsupported Version - passing through");
+    Dbg(dbg_ctl_http_trans, "[HttpTransactHeaders::convert_response]"
+                            "Unsupported Version - passing through");
   }
 }
 
@@ -347,7 +355,7 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response, 
 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
-    Debug("http_transact_headers", "Setting HTTP/1.0 reason phrase to '%s'", reason_phrase);
+    Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.0 reason phrase to '%s'", reason_phrase);
     outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
   }
 
@@ -369,7 +377,7 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, 
 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
-    Debug("http_transact_headers", "Setting HTTP/1.1 reason phrase to '%s'", reason_phrase);
+    Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.1 reason phrase to '%s'", reason_phrase);
     outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
   }
 }
@@ -898,8 +906,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
-          http_txn_conf->global_user_agent_header);
+    Dbg(dbg_ctl_http_trans, "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
+        http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
       if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
         header->field_attach(ua_field);
@@ -942,7 +950,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
 
       if (ats_ip_ntop(&src_addr.sa, hdr.aux_data(), hdr.remaining()) == nullptr) {
-        Debug("http_trans", "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
+        Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
         return;
       }
 
@@ -996,7 +1004,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
 
       if (ats_ip_ntop(&s->client_info.dst_addr.sa, hdr.aux_data(), hdr.remaining()) == nullptr) {
-        Debug("http_trans", "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
+        Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
         return;
       }
 
@@ -1093,8 +1101,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       request->value_append(MIME_FIELD_FORWARDED, MIME_LEN_FORWARDED, sV.data(), sV.size(), true, ','); // true => separator must
                                                                                                         // be inserted
 
-      Debug("http_trans", "[add_forwarded_field_to_outgoing_request] Forwarded header (%.*s) added", static_cast<int>(hdr.size()),
-            hdr.data());
+      Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] Forwarded header (%.*s) added",
+          static_cast<int>(hdr.size()), hdr.data());
     }
   }
 
@@ -1118,7 +1126,7 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
 
     // This will remove any old string (free it), and set our Server header.
     if (do_add && likely(ua_field)) {
-      Debug("http_trans", "Adding Server: %s", http_txn_conf->proxy_response_server_string);
+      Dbg(dbg_ctl_http_trans, "Adding Server: %s", http_txn_conf->proxy_response_server_string);
       header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string,
                               http_txn_conf->proxy_response_server_string_len);
     }
@@ -1135,27 +1143,27 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_
 
   // From
   if (http_txn_conf->anonymize_remove_from) {
-    Debug("anon", "removing 'From' headers");
+    Dbg(dbg_ctl_anon, "removing 'From' headers");
     header->field_delete(MIME_FIELD_FROM, MIME_LEN_FROM);
   }
   // Referer
   if (http_txn_conf->anonymize_remove_referer) {
-    Debug("anon", "removing 'Referer' headers");
+    Dbg(dbg_ctl_anon, "removing 'Referer' headers");
     header->field_delete(MIME_FIELD_REFERER, MIME_LEN_REFERER);
   }
   // User-Agent
   if (http_txn_conf->anonymize_remove_user_agent) {
-    Debug("anon", "removing 'User-agent' headers");
+    Dbg(dbg_ctl_anon, "removing 'User-agent' headers");
     header->field_delete(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT);
   }
   // Cookie
   if (http_txn_conf->anonymize_remove_cookie) {
-    Debug("anon", "removing 'Cookie' headers");
+    Dbg(dbg_ctl_anon, "removing 'Cookie' headers");
     header->field_delete(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
   }
   // Client-ip
   if (http_txn_conf->anonymize_remove_client_ip) {
-    Debug("anon", "removing 'Client-ip' headers");
+    Dbg(dbg_ctl_anon, "removing 'Client-ip' headers");
     header->field_delete(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP);
   }
   /////////////////////////////////////////////
@@ -1170,10 +1178,10 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_
     const char *anon_string;
 
     anon_string = http_config_param->anonymize_other_header_list;
-    Debug("anon", "removing other headers (%s)", anon_string);
+    Dbg(dbg_ctl_anon, "removing other headers (%s)", anon_string);
     HttpCompat::parse_comma_list(&anon_list, anon_string);
     for (field = anon_list.head; field != nullptr; field = field->next) {
-      Debug("anon", "removing '%s' headers", field->str);
+      Dbg(dbg_ctl_anon, "removing '%s' headers", field->str);
       header->field_delete(field->str, field->len);
     }
   }
@@ -1192,38 +1200,38 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
         // Force Accept-Encoding header to gzip or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
           header->field_value_set(ae_field, "gzip", 4);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-gzip Accept-Encoding");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] removed non-gzip Accept-Encoding");
         }
       } else if (normalize_ae == 2) {
         // Force Accept-Encoding header to br (Brotli) or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
           header->field_value_set(ae_field, "br", 2);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
           header->field_value_set(ae_field, "gzip", 4);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br Accept-Encoding");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] removed non-br Accept-Encoding");
         }
       } else if (normalize_ae == 3) {
         // Force Accept-Encoding header to br,gzip, or br, or gzip, or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br") &&
             HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
           header->field_value_set(ae_field, "br, gzip", 8);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
           header->field_value_set(ae_field, "br", 2);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
           header->field_value_set(ae_field, "gzip", 4);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br non-gzip Accept-Encoding");
+          Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] removed non-br non-gzip Accept-Encoding");
         }
       } else {
         static bool logged = false;

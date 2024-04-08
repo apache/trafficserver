@@ -36,6 +36,9 @@
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
 // member function.
+#define SsnDbg(ssn, dbg_ctl, ...) SpecificDbg((ssn)->debug(), dbg_ctl, __VA_ARGS__)
+
+// deprecated
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyTransaction;
