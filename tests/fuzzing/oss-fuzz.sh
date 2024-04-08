@@ -65,4 +65,5 @@ if [[ $SANITIZER = undefined ]]
 then
     rm -f $OUT/fuzz_http
     rm -f $OUT/fuzz_hpack
+    rm -f $OUT/fuzz_http3frame
 fi
