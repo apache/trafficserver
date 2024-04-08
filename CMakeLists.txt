@@ -75,6 +75,7 @@ execute_process(
 
 # Options
 include(AutoOptionHelpers)
+find_package(PkgConfig)
 auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
 auto_option(
   JEMALLOC
