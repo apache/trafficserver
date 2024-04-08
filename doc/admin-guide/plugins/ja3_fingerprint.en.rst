@@ -55,13 +55,25 @@ or :file:`remap.config`.
 
 .. option:: --ja3log
 
-
    This option enables logging to the file ``ja3_fingerprint.log`` in the standard logging
    directory. The format is ::
 
       [time] [client IP] [JA3 string] [JA3 hash]
 
    By default this is not enabled.
+
+.. option:: --modify-incoming
+
+   As described above, typically, the ``X-JA3-Sig`` header is added to the request as it is sent
+   upstream so that any upstream hosts can make use of it.  The ``--modify-incoming`` option
+   instructs the plugin to add the ``X-JA3-Sig`` header field earlier on the incoming request so
+   that other plugins can make use of it while processing the request. To be precise,
+   ``--modify-incoming`` adds the ``X-JA3-Sig`` header field in the
+   ``TS_HTTP_READ_REQUEST_HDR_HOOK`` hook rather than the default ``TS_HTTP_SEND_REQUEST_HDR_HOOK``
+   hook.
+
+   This option is only useful when the plugin is configured as a global plugin. By default this
+   is not enabled.
 
 Requirement
 =============
