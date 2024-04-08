@@ -33,6 +33,7 @@
 
 #include <swoc/TextView.h>
 #include <swoc/swoc_meta.h>
+#include <swoc/MemArena.h>
 
 // fwd declarations.
 class Comparison;
@@ -70,6 +71,19 @@ template <typename Key, typename Value> class StringTree
       left  = this;
       right = this;
     }
+
+    ~Node()
+    {
+      reset();
+      if (left && left->bit_count) {
+        std::destroy_at(left);
+      }
+
+      if (right && right->bit_count) {
+        std::destroy_at(right);
+      }
+    }
+
     Key key;
     Value value;
     /// bit pos where it differs from previous node.
@@ -77,14 +91,21 @@ template <typename Key, typename Value> class StringTree
     /// key/value rank.
     int32_t rank;
     /// only two ways, btree
-    self_type *left;
-    self_type *right;
+    self_type *left{nullptr};
+    self_type *right{nullptr};
 
     Node()                        = delete;
     Node(Node const &)            = delete;
     Node(Node &&)                 = delete;
     Node &operator=(Node const &) = delete;
     Node &operator=(Node &&)      = delete;
+
+  private:
+    void
+    reset()
+    {
+      this->bit_count = 0;
+    }
   };
   // types
   using node_type     = Node;
@@ -129,10 +150,7 @@ private:
   node_type_ptr _head;
   /// this gets incremented on every insert.
   int32_t _rank_counter{0};
-  /// recursive memory cleanup function.
-  void freeup(Node *n);
-  /// clean up function, should deal with all the crap.
-  void cleanup();
+  swoc::MemArena _arena; ///< Storage for nodes
 };
 
 /// --------------------------------------------------------------------------------------------------------------------
@@ -215,13 +233,13 @@ template <typename Key, typename Value> StringTree<Key, Value>::StringTree()
   // We do not set the rank now, as for the head, -1 should be ok.
   // we may be able to no need to initialize empty string if Key=string_view, thinking about this
   // as isPrefix may badly fail if null. Maybe check for head(before call to isPrefix).
-  _head            = new Node(Key{""}, Value{});
+  _head            = _arena.make<Node>(Key{""}, Value{});
   _head->bit_count = 0;
 }
 
 template <typename Key, typename Value> StringTree<Key, Value>::~StringTree()
 {
-  cleanup();
+  std::destroy_at(_head);
 }
 
 template <typename Key, typename Value>
@@ -247,7 +265,7 @@ StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *c
   std::size_t const first_diff_bit = (search_node == _head ? 1 : detail::get_first_diff_bit_position(key, search_node->key));
 
   // Getting ready the new node.
-  node_type_ptr new_node = new Node(key, value, _rank_counter++);
+  node_type_ptr new_node = _arena.make<Node>(key, value, _rank_counter++);
 
   // we will work on this two from now. Always left to start.
   node_type_ptr p = _head;
@@ -363,33 +381,6 @@ StringTree<Key, Value>::prefix_match(Key const &prefix, Comparison *cmp) const
   return search;
 }
 
-template <typename Key, typename Value>
-void
-StringTree<Key, Value>::freeup(Node *n)
-{
-  if (n == nullptr) {
-    return;
-  }
-
-  node_type_ptr left  = n->left;
-  node_type_ptr right = n->right;
-
-  if (left->bit_count >= n->bit_count && (left != n && left != _head)) {
-    freeup(left);
-  }
-  if (right->bit_count >= n->bit_count && (right != n && right != _head)) {
-    freeup(right);
-  }
-  // ^^ should catch the nullptr
-  delete n;
-}
-
-template <typename Key, typename Value>
-void
-StringTree<Key, Value>::cleanup()
-{
-  freeup(_head);
-}
 /// --------------------------------------------------------------------------------------------------------------------
 
 ///
