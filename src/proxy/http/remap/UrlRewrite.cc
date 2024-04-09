@@ -87,6 +87,25 @@ UrlRewrite::load()
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 
+  // This is "optional", and this configuration is not set by default.
+  char buf[PATH_NAME_MAX];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.plugin.compiler_path", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    std::error_code ec;
+    fs::path compilerPath  = fs::path(buf);
+    fs::file_status status = fs::status(compilerPath, ec);
+
+    if (ec || !swoc::file::is_regular_file(status)) {
+      Error("Configured plugin compiler path '%s' is not a regular file", buf);
+      return false;
+    } else {
+      // This also adds the configuration directory (etc/trafficserver) to find Cripts etc.
+      pluginFactory.setCompilerPath(compilerPath).addSearchDir(RecConfigReadConfigDir());
+    }
+  }
+
   /* Initialize the next hop strategy factory */
   std::string sf = RecConfigReadConfigPath("proxy.config.url_remap.strategies.filename", "strategies.yaml");
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());

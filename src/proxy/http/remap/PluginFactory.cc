@@ -124,6 +124,14 @@ PluginFactory::setRuntimeDir(const fs::path &runtimeDir)
   return *this;
 }
 
+PluginFactory &
+PluginFactory::setCompilerPath(const fs::path &compilerPath)
+{
+  _compilerPath = compilerPath;
+  PluginDbg(_dbg_ctl(), "set plugin compiler path %s", compilerPath.c_str());
+  return *this;
+}
+
 const char *
 PluginFactory::getUuid()
 {
@@ -175,6 +183,20 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
       runtimePath /= _runtimeDir;
       runtimePath /= effectivePath.relative_path();
 
+      // Special case for Cripts
+      if (!runtimePath.string().ends_with(".so")) {
+        if (_compilerPath.empty()) {
+          error.assign("compiler path not set for compiling plugins");
+          return nullptr;
+        }
+
+        // Add .so to the source file, so e.g. example.cc.so. ToDo: libswoc doesn't allow appending to the extension.
+        std::string newPath = runtimePath.string();
+
+        newPath.append(".so");
+        runtimePath = newPath;
+      }
+
       fs::path parent = runtimePath.parent_path();
       PluginDbg(_dbg_ctl(), "Using effectivePath: [%s] runtimePath: [%s] parent: [%s]", effectivePath.c_str(), runtimePath.c_str(),
                 parent.c_str());
@@ -189,7 +211,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
 
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
     if (nullptr != plugin) {
-      if (plugin->load(error)) {
+      if (plugin->load(error, _compilerPath)) {
         if (plugin->init(error)) {
           PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);

@@ -1036,7 +1036,7 @@ try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::
     const auto runtime_path = temporary_directory / plugin_path.filename();
     const fs::path unused_config;
     auto plugin_info = std::make_unique<RemapPluginInfo>(unused_config, plugin_path, runtime_path);
-    bool loaded      = plugin_info->load(error);
+    bool loaded      = plugin_info->load(error, unused_config); // ToDo: Will this ever need support for cripts
     if (!fs::remove(temporary_directory, ec)) {
       fprintf(stderr, "ERROR: could not remove temporary directory '%s': %s\n", temporary_directory.c_str(), ec.message().c_str());
     }
