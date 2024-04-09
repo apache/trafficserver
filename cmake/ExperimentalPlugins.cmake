@@ -70,7 +70,7 @@ auto_option(
   PACKAGE_DEPENDS
   opentelemetry
   Protobuf
-  curl
+  CURL
   DEFAULT
   ${_DEFAULT}
 )
