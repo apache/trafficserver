@@ -360,6 +360,15 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
   return 1;
 }
 
+struct TestRefCountObj : public RefCountObj {
+  void
+  free() override
+  {
+    std::printf("FAILED: TestRefCountObj object should not be freed\n");
+    std::exit(1);
+  }
+};
+
 int
 test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *request_tgt, const char *response,
                                  const char *response_tgt)
@@ -404,7 +413,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (2) copy the request header ***/
   HTTPHdr new_hdr, marshal_hdr;
-  RefCountObj ref;
+  TestRefCountObj ref;
 
   // Pretend to pin this object with a refcount.
   ref.refcount_inc();

@@ -81,7 +81,7 @@ public:
 
 // LogObject is atomically reference counted, and the reference count is always owned by
 // one or more LogObjectManagers.
-class LogObject : public RefCountObj
+class LogObject : public RefCountObjInHeap
 {
 public:
   enum LogObjectFlags {

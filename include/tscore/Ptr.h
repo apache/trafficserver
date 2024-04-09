@@ -40,6 +40,7 @@ struct ForceVFPTToTop {
 //
 // class RefCountObj
 // prototypical class for reference counting
+// not necessarily allocated with new
 //
 ////////////////////////////////////////////////////////////////////////
 class RefCountObj : public ForceVFPTToTop
@@ -71,14 +72,26 @@ public:
     return m_refcount;
   }
 
-  virtual void
-  free()
-  {
-    delete this;
-  }
+  virtual void free() = 0;
 
 private:
   std::atomic<int> m_refcount = 0;
+};
+
+////////////////////////////////////////////////////////////////////////
+//
+// class RefCountObjInHeap
+// reference counted object allocated with new
+//
+////////////////////////////////////////////////////////////////////////
+class RefCountObjInHeap : public RefCountObj
+{
+public:
+  void
+  free() override
+  {
+    delete this;
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////

@@ -39,7 +39,7 @@ class BaseMetaInfo;
   LogFile
   -------------------------------------------------------------------------*/
 
-class LogFile : public LogBufferSink, public RefCountObj
+class LogFile : public LogBufferSink, public RefCountObjInHeap
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size = 4 * 9216,

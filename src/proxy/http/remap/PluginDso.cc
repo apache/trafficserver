@@ -266,15 +266,15 @@ PluginDso::clean(std::string &error)
 void
 PluginDso::acquire()
 {
-  this->refcount_inc();
-  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
+  ++this->_instanceCount;
+  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->_instanceCount.load(), this);
 }
 
 void
 PluginDso::release()
 {
-  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
-  if (0 == this->refcount_dec()) {
+  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->_instanceCount.load() - 1, this);
+  if (0 == --this->_instanceCount) {
     PluginDbg(_dbg_ctl(), "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
     _plugins->remove(this);
   }
@@ -283,21 +283,21 @@ PluginDso::release()
 void
 PluginDso::incInstanceCount()
 {
-  _instanceCount.refcount_inc();
-  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  ++_instanceCount;
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.load(), this);
 }
 
 void
 PluginDso::decInstanceCount()
 {
-  _instanceCount.refcount_dec();
-  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  --_instanceCount;
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.load(), this);
 }
 
 int
-PluginDso::instanceCount()
+PluginDso::instanceCount() const
 {
-  return _instanceCount.refcount();
+  return _instanceCount;
 }
 
 bool

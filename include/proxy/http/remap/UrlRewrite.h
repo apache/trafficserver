@@ -56,7 +56,7 @@ enum mapping_type {
 /**
  *
  **/
-class UrlRewrite : public RefCountObj
+class UrlRewrite : public RefCountObjInHeap
 {
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
