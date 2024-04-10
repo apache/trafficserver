@@ -117,8 +117,6 @@ CacheDisk::~CacheDisk()
       while (disk_stripes[i] && (q = (disk_stripes[i]->dpb_queue.pop()))) {
         delete q;
       }
-      delete disk_stripes[i];
-      disk_stripes[i] = nullptr;
     }
     ats_free(disk_stripes);
     free(header);
