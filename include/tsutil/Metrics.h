@@ -27,7 +27,6 @@
 #include <unordered_map>
 #include <tuple>
 #include <mutex>
-#include <thread>
 #include <atomic>
 #include <cstdint>
 #include <string>
@@ -103,29 +102,33 @@ public:
   Metrics &operator=(Metrics &&)          = delete;
   Metrics(Metrics &&)                     = delete;
 
-  virtual ~Metrics()
-  {
-    for (size_t i = 0; i <= _cur_blob; ++i) {
-      delete _blobs[i];
-    }
-  }
-
-  Metrics()
-  {
-    _blobs[0] = new NamesAndAtomics();
-    release_assert(_blobs[0]);
-    release_assert(0 == _create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
-  }
+  virtual ~Metrics() {}
 
   // The singleton instance, owned by the Metrics class
   static Metrics &instance();
 
   // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
-  IdType lookup(const std::string_view name) const;
-  AtomicType *lookup(const std::string_view name, IdType *out_id) const;
-  AtomicType *lookup(IdType id, std::string_view *out_name = nullptr) const;
-  bool rename(IdType id, const std::string_view name);
+  IdType
+  lookup(const std::string_view name) const
+  {
+    return _storage->lookup(name);
+  }
+  AtomicType *
+  lookup(const std::string_view name, IdType *out_id) const
+  {
+    return _storage->lookup(name, out_id);
+  }
+  AtomicType *
+  lookup(IdType id, std::string_view *out_name = nullptr) const
+  {
+    return _storage->lookup(id, out_name);
+  }
+  bool
+  rename(IdType id, const std::string_view name)
+  {
+    return _storage->rename(id, name);
+  }
 
   AtomicType &
   operator[](IdType id)
@@ -155,14 +158,16 @@ public:
     return (metric ? metric->_value.fetch_sub(val, MEMORY_ORDER) : NOT_FOUND);
   }
 
-  std::string_view name(IdType id) const;
+  std::string_view
+  name(IdType id) const
+  {
+    return _storage->name(id);
+  }
 
   bool
   valid(IdType id) const
   {
-    auto [blob, entry] = _splitID(id);
-
-    return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+    return _storage->valid(id);
   }
 
   // Static methods to encapsulate access to the atomic's
@@ -232,10 +237,7 @@ public:
   iterator
   end() const
   {
-    _mutex.lock();
-    int16_t blob   = _cur_blob;
-    int16_t offset = _cur_off;
-    _mutex.unlock();
+    auto [blob, offset] = _storage->current();
 
     return iterator(*this, _makeId(blob, offset));
   }
@@ -254,8 +256,17 @@ public:
 
 private:
   // These are private, to assure that we don't use them by accident creating naked metrics
-  IdType _create(const std::string_view name);
-  SpanType _createSpan(size_t size, IdType *id = nullptr);
+  IdType
+  _create(const std::string_view name)
+  {
+    return _storage->create(name);
+  }
+
+  SpanType
+  _createSpan(size_t size, IdType *id = nullptr)
+  {
+    return _storage->createSpan(size, id);
+  }
 
   // These are little helpers around managing the ID's
   static constexpr std::tuple<uint16_t, uint16_t>
@@ -276,13 +287,60 @@ private:
     return _makeId(std::get<0>(id), std::get<1>(id));
   }
 
-  void _addBlob();
+  class Storage
+  {
+    BlobStorage _blobs;
+    uint16_t _cur_blob = 0;
+    uint16_t _cur_off  = 0;
+    LookupTable _lookups;
+    mutable std::mutex _mutex;
 
-  mutable std::mutex _mutex;
-  LookupTable _lookups;
-  BlobStorage _blobs;
-  uint16_t _cur_blob = 0;
-  uint16_t _cur_off  = 0;
+  public:
+    Storage(const Storage &)            = delete;
+    Storage &operator=(const Storage &) = delete;
+
+    Storage()
+    {
+      _blobs[0] = new NamesAndAtomics();
+      release_assert(_blobs[0]);
+      release_assert(0 == create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+    }
+
+    ~Storage()
+    {
+      for (size_t i = 0; i <= _cur_blob; ++i) {
+        delete _blobs[i];
+      }
+    }
+
+    IdType create(const std::string_view name);
+    void addBlob();
+    IdType lookup(const std::string_view name) const;
+    AtomicType *lookup(const std::string_view name, IdType *out_id) const;
+    AtomicType *lookup(Metrics::IdType id, std::string_view *out_name = nullptr) const;
+    std::string_view name(IdType id) const;
+    SpanType createSpan(size_t size, IdType *id = nullptr);
+    bool rename(IdType id, const std::string_view name);
+
+    std::pair<int16_t, int16_t>
+    current() const
+    {
+      std::lock_guard lock(_mutex);
+      return {_cur_blob, _cur_off};
+    }
+
+    bool
+    valid(IdType id) const
+    {
+      auto [blob, entry] = _splitID(id);
+
+      return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+    }
+  };
+
+  Metrics(std::shared_ptr<Storage> &str) : _storage(str) {}
+
+  std::shared_ptr<Storage> _storage;
 
 public:
   // These are sort of factory classes, using the Metrics singleton for all storage etc.
