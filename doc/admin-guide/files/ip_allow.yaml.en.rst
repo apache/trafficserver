@@ -143,6 +143,28 @@ enables all methods for all outbound connections.
    since, while those are decrypted, they are not processed by |TS|.  For
    details, see :ref:`sni-routing` and :file:`sni.yaml`.
 
+Timing
+======
+
+IP allow rules are applied at different stages, depending on the type of rule:
+
+* **On connection accept:** At the beginning of accepting a connection, if the
+  source IP address matches an ``in`` rule and the rule denies all methods from
+  this client (meaning that all transactions from the client are denied), the
+  connection is immediately closed by |TS|. The idea is that since the
+  administrator wants to deny all transactions from the client, |TS| should just
+  reject any connection from the client and not even process data from it. Note
+  that this means that for these all-method rules, no transactions are ever
+  processed by |TS|, and thus there will be no transaction log entries for these
+  denied connections.
+* **Post remap:** ``in`` rules that are not all-method rules (meaning they apply
+  only to certain methods) are processed for each transaction after the client
+  headers are parsed and remap is applied. Processing the rules post-remap
+  allows for remap ACL modifications (see :ref:`Remap ACL Filters
+  <acl-filters>`).
+* **Preceding server connect:** ``out`` rules are applied after DNS resolution of
+  the upstream server but before the connection is established.
+
 Examples
 ========
 
