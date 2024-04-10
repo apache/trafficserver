@@ -44,6 +44,13 @@ Thread::Thread()
   mutex = new_ProxyMutex();
 }
 
+Thread::~Thread()
+{
+  if (this_thread_ptr == this) {
+    this_thread_ptr = nullptr;
+  }
+}
+
 ///////////////////////////////////////////////
 // Unix & non-NT Interface impl              //
 ///////////////////////////////////////////////

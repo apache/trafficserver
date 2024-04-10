@@ -3701,7 +3701,7 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 
   TSSslHookInternalID internalId{id};
   if (internalId.is_in_bounds()) {
-    g_ssl_hooks->append(internalId, icontp);
+    SSLAPIHooks::instance()->append(internalId, icontp);
   } else { // Follow through the regular HTTP hook framework
     http_global_hooks->append(id, icontp);
   }

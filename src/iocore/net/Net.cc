@@ -149,7 +149,6 @@ ink_net_init(ts::ModuleVersion version)
   if (!init_called) {
     configure_net();
     register_net_stats();
-    init_global_ssl_hooks();
   }
 
   init_called = 1;
