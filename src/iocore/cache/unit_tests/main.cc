@@ -141,7 +141,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     ink_assert(GLOBAL_DATA != nullptr);
 
     init_global_http_hooks();
-    init_global_ssl_hooks();
 
     netProcessor.init();
     eventProcessor.start(THREADS);
