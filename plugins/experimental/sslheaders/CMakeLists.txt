@@ -16,7 +16,8 @@
 #######################
 
 add_library(sslhdr STATIC expand.cc util.cc)
-target_link_libraries(sslhdr PRIVATE OpenSSL::SSL libswoc::libswoc)
+target_link_libraries(sslhdr PRIVATE OpenSSL::SSL libswoc::libswoc # transitive
+)
 set_target_properties(sslhdr PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(BUILD_TESTING)
