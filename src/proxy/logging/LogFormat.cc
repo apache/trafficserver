@@ -49,6 +49,13 @@
 //
 bool LogFormat::m_tagging_on = false;
 
+namespace
+{
+DbgCtl dbg_ctl_log_format{"log-format"};
+DbgCtl dbg_ctl_log_agg{"log-agg"};
+DbgCtl dbg_ctl_log_slice{"log-slice"};
+
+} // end anonymous namespace
 /*-------------------------------------------------------------------------
   LogFormat::setup
   -------------------------------------------------------------------------*/
@@ -281,13 +288,13 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   if (strcasecmp(token, "format") == 0) {
-    Debug("log-format", "this is a format");
+    Dbg(dbg_ctl_log_format, "this is a format");
   } else {
-    Debug("log-format", "should be 'format'");
+    Dbg(dbg_ctl_log_format, "should be 'format'");
     return nullptr;
   }
 
@@ -297,16 +304,16 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   if (!strcasecmp(token, "disabled")) {
-    Debug("log-format", "format not enabled, skipping ...");
+    Dbg(dbg_ctl_log_format, "format not enabled, skipping ...");
     return nullptr;
   } else if (!strcasecmp(token, "enabled")) {
-    Debug("log-format", "enabled format");
+    Dbg(dbg_ctl_log_format, "enabled format");
   } else {
-    Debug("log-format", "should be 'enabled' or 'disabled', not %s", token);
+    Dbg(dbg_ctl_log_format, "should be 'enabled' or 'disabled', not %s", token);
     return nullptr;
   }
 
@@ -315,7 +322,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   format_id = atoi(token);
@@ -326,7 +333,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   format_name = token;
@@ -336,7 +343,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   format_str = token;
@@ -346,7 +353,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   *file_name = ats_strdup(token);
@@ -356,7 +363,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   if (!strcasecmp(token, "ASCII")) {
@@ -364,7 +371,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   } else if (!strcasecmp(token, "BINARY")) {
     *file_type = LOG_FILE_BINARY;
   } else {
-    Debug("log-format", "%s is not a valid file format (ASCII or BINARY)", token);
+    Dbg(dbg_ctl_log_format, "%s is not a valid file format (ASCII or BINARY)", token);
     return nullptr;
   }
 
@@ -373,7 +380,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getRest();
   if (token == nullptr) {
-    Debug("log-format", "token expected");
+    Dbg(dbg_ctl_log_format, "token expected");
     return nullptr;
   }
   // set header to NULL if "none" was specified (a NULL header means
@@ -381,7 +388,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   *file_header = strcmp(token, "none") == 0 ? nullptr : ats_strdup(token);
 
-  Debug("log-format", "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
+  Dbg(dbg_ctl_log_format, "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
 
   format = new LogFormat(format_name, format_str);
   ink_assert(format != nullptr);
@@ -433,12 +440,12 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     if (begin_paren) {
       char *end_paren = strchr(symbol, ')');
       if (end_paren) {
-        Debug("log-agg", "Aggregate symbol: %s", symbol);
+        Dbg(dbg_ctl_log_agg, "Aggregate symbol: %s", symbol);
         *begin_paren = '\0';
         *end_paren   = '\0';
         name         = begin_paren + 1;
         sym          = symbol;
-        Debug("log-agg", "Aggregate = %s, field = %s", sym, name);
+        Dbg(dbg_ctl_log_agg, "Aggregate = %s, field = %s", sym, name);
         aggregate = LogField::valid_aggregate_name(sym);
         if (aggregate == LogField::NO_AGGREGATE) {
           Note("Invalid aggregate specification: %s", sym);
@@ -460,7 +467,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
             field_list->add(new_f, false);
             field_count++;
             *contains_aggregates = true;
-            Debug("log-agg", "Aggregate field %s(%s) added", sym, name);
+            Dbg(dbg_ctl_log_agg, "Aggregate field %s(%s) added", sym, name);
           }
         }
       } else {
@@ -473,7 +480,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     // Now check for a container field, which starts with '{'
     //
     else if (*symbol == '{') {
-      Debug("log-format", "Container symbol: %s", symbol);
+      Dbg(dbg_ctl_log_format, "Container symbol: %s", symbol);
       f              = nullptr;
       char *name_end = strchr(symbol, '}');
       if (name_end != nullptr) {
@@ -481,7 +488,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         *name_end = 0;            // changes '}' to '\0'
         sym       = name_end + 1; // start of container symbol
         LogSlice slice(sym);
-        Debug("log-format", "Name = %s, symbol = %s", name, sym);
+        Dbg(dbg_ctl_log_format, "Name = %s, symbol = %s", name, sym);
         container = LogField::valid_container_name(sym);
         if (container == LogField::NO_CONTAINER) {
           Note("Invalid container specification: %s", sym);
@@ -490,11 +497,11 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           ink_assert(f != nullptr);
           if (slice.m_enable) {
             f->m_slice = slice;
-            Debug("log-slice", "symbol = %s, [%d:%d]", sym, f->m_slice.m_start, f->m_slice.m_end);
+            Dbg(dbg_ctl_log_slice, "symbol = %s, [%d:%d]", sym, f->m_slice.m_start, f->m_slice.m_end);
           }
           field_list->add(f, false);
           field_count++;
-          Debug("log-format", "Container field {%s}%s added", name, sym);
+          Dbg(dbg_ctl_log_format, "Container field {%s}%s added", name, sym);
         }
       } else {
         Note("Invalid container field specification: no trailing "
@@ -507,17 +514,17 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     //
     else {
       LogSlice slice(symbol);
-      Debug("log-format", "Regular field symbol: %s", symbol);
+      Dbg(dbg_ctl_log_format, "Regular field symbol: %s", symbol);
       f = Log::global_field_list.find_by_symbol(symbol);
       if (f != nullptr) {
         LogField *cpy = new LogField(*f);
         if (slice.m_enable) {
           cpy->m_slice = slice;
-          Debug("log-slice", "symbol = %s, [%d:%d]", symbol, cpy->m_slice.m_start, cpy->m_slice.m_end);
+          Dbg(dbg_ctl_log_slice, "symbol = %s, [%d:%d]", symbol, cpy->m_slice.m_start, cpy->m_slice.m_end);
         }
         field_list->add(cpy, false);
         field_count++;
-        Debug("log-format", "Regular field %s added", symbol);
+        Dbg(dbg_ctl_log_format, "Regular field %s added", symbol);
       } else {
         Note("The log format symbol %s was not found in the "
              "list of known symbols.",
@@ -726,7 +733,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   (*fields_str)[fields_pos] = '\0';
   (*printf_str)[printf_pos] = '\0';
 
-  Debug("log-format", "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"", field_count, *fields_str, *printf_str);
+  Dbg(dbg_ctl_log_format, "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"", field_count, *fields_str, *printf_str);
   return field_count;
 }
 

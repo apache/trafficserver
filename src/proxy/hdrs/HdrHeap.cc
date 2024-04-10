@@ -45,6 +45,12 @@ static constexpr uint32_t MAX_HDR_HEAP_OBJ_LENGTH = (1 << 20) - 1; ///< m_length
 Allocator hdrHeapAllocator("hdrHeap", HdrHeap::DEFAULT_SIZE);
 Allocator strHeapAllocator("hdrStrHeap", HdrStrHeap::DEFAULT_SIZE);
 
+namespace
+{
+DbgCtl dbg_ctl_http{"http"};
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -53,8 +59,8 @@ obj_describe(HdrHeapObjImpl *obj, bool recurse)
 {
   static const char *obj_names[] = {"EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK"};
 
-  Debug("http", "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
-        obj->m_obj_flags);
+  Dbg(dbg_ctl_http, "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
+      obj->m_obj_flags);
 
   switch (obj->m_type) {
   case HDR_HEAP_OBJ_EMPTY:
@@ -337,7 +343,7 @@ HdrHeap::demote_rw_str_heap()
       i.m_heap_start    = reinterpret_cast<char *>(m_read_write_heap.get());
       i.m_heap_len      = m_read_write_heap->total_size() - m_read_write_heap->space_avail();
 
-      //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->total_size());
+      //          Dbg(dbg_ctl_hdrs, "Demoted rw heap of %d size", m_read_write_heap->total_size());
       m_read_write_heap = nullptr;
       return 0;
     }

@@ -31,6 +31,13 @@
 #include <algorithm>
 #include <memory>
 
+namespace
+{
+DbgCtl dbg_ctl_log{"log"};
+DbgCtl dbg_ctl_xml{"xml"};
+
+} // end anonymous namespace
+
 bool
 YamlLogConfig::parse(const char *cfgFilename)
 {
@@ -71,7 +78,7 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
     if (fmt->valid()) {
       cfg->format_list.add(fmt, false);
 
-      if (is_debug_tag_set("log")) {
+      if (dbg_ctl_log.on()) {
         printf("The following format was added to the global format list\n");
         fmt->display(stdout);
       }
@@ -88,7 +95,7 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
     if (filter) {
       cfg->filter_list.add(filter, false);
 
-      if (is_debug_tag_set("xml")) {
+      if (dbg_ctl_xml.on()) {
         printf("The following filter was added to the global filter list\n");
         filter->display(stdout);
       }

@@ -45,6 +45,13 @@ char INVALID_STR[] = "!INVALID_STR!";
 //
 #define MARSHAL_RECORD_LENGTH 32
 
+namespace
+{
+DbgCtl dbg_ctl_log_escape{"log-escape"};
+DbgCtl dbg_ctl_log_resolve{"log-resolve"};
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   LogAccess
 
@@ -711,7 +718,7 @@ escape_json(char *dest, const char *buf, int len)
 int
 unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
 {
-  Debug("log-escape", "unmarshal_str_json start, len=%d, slice=%p", len, slice);
+  Dbg(dbg_ctl_log_escape, "unmarshal_str_json start, len=%d, slice=%p", len, slice);
 
   char *val_buf     = *buf;
   int   val_len     = static_cast<int>(::strlen(val_buf));
@@ -723,7 +730,7 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
     int offset, n;
 
     n = slice->toStrOffset(escaped_len, &offset);
-    Debug("log-escape", "unmarshal_str_json start, n=%d, offset=%d", n, offset);
+    Dbg(dbg_ctl_log_escape, "unmarshal_str_json start, n=%d, offset=%d", n, offset);
     if (n <= 0) {
       return 0;
     }
@@ -1182,16 +1189,16 @@ char *
 resolve_logfield_string(LogAccess *context, const char *format_str)
 {
   if (!context) {
-    Debug("log-resolve", "No context to resolve?");
+    Dbg(dbg_ctl_log_resolve, "No context to resolve?");
     return nullptr;
   }
 
   if (!format_str) {
-    Debug("log-resolve", "No format to resolve?");
+    Dbg(dbg_ctl_log_resolve, "No format to resolve?");
     return nullptr;
   }
 
-  Debug("log-resolve", "Resolving: %s", format_str);
+  Dbg(dbg_ctl_log_resolve, "Resolving: %s", format_str);
 
   //
   // Divide the format string into two parts: one for the printf-style
@@ -1206,14 +1213,14 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // format_str. Nothing to free here either.
   //
   if (!n_fields) {
-    Debug("log-resolve", "No fields found; returning copy of format_str");
+    Dbg(dbg_ctl_log_resolve, "No fields found; returning copy of format_str");
     ats_free(printf_str);
     ats_free(fields_str);
     return ats_strdup(format_str);
   }
 
-  Debug("log-resolve", "%d fields: %s", n_fields, fields_str);
-  Debug("log-resolve", "printf string: %s", printf_str);
+  Dbg(dbg_ctl_log_resolve, "%d fields: %s", n_fields, fields_str);
+  Dbg(dbg_ctl_log_resolve, "printf string: %s", printf_str);
 
   LogFieldList fields;
   bool         contains_aggregates;
@@ -1230,14 +1237,14 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // temporary storage buffer.  Make sure the LogAccess context is
   // initialized first.
   //
-  Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
+  Dbg(dbg_ctl_log_resolve, "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
   char    *buf          = static_cast<char *>(ats_malloc(bytes_needed));
   unsigned bytes_used   = fields.marshal(context, buf);
 
   ink_assert(bytes_needed == bytes_used);
-  Debug("log-resolve", "    %u bytes marshalled", bytes_used);
+  Dbg(dbg_ctl_log_resolve, "    %u bytes marshalled", bytes_used);
 
   //
   // Now we can "unmarshal" the data from the buffer into a string,

@@ -30,9 +30,13 @@
 #include "tscore/ink_memory.h"
 #include "tsutil/LocalBuffer.h"
 
-#define XPACKDebug(fmt, ...) Debug("xpack", fmt, ##__VA_ARGS__)
+namespace
+{
+DbgCtl dbg_ctl_xpack{"xpack"};
 
-static inline bool
+#define XPACKDbg(fmt, ...) Dbg(dbg_ctl_xpack, fmt, ##__VA_ARGS__)
+
+inline bool
 match(const char *s1, int s1_len, const char *s2, int s2_len)
 {
   if (s1_len != s2_len) {
@@ -49,6 +53,8 @@ match(const char *s1, int s1_len, const char *s2, int s2_len)
 
   return true;
 }
+
+} // end anonymous namespace
 
 //
 // [RFC 7541] 5.1. Integer representation
@@ -216,7 +222,7 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 //
 XpackDynamicTable::XpackDynamicTable(uint32_t size) : _maximum_size(size), _available(size), _max_entries(size), _storage(size)
 {
-  XPACKDebug("Dynamic table size: %u", size);
+  XPACKDbg("Dynamic table size: %u", size);
   this->_entries      = static_cast<struct XpackDynamicTableEntry *>(ats_malloc(sizeof(struct XpackDynamicTableEntry) * size));
   this->_entries_head = size - 1;
   this->_entries_tail = size - 1;
@@ -233,7 +239,7 @@ XpackDynamicTable::~XpackDynamicTable()
 const XpackLookupResult
 XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, const char **value, size_t *value_len) const
 {
-  XPACKDebug("Lookup entry: abs_index=%u", index);
+  XPACKDbg("Lookup entry: abs_index=%u", index);
 
   if (this->is_empty()) {
     // There's no entry
@@ -263,7 +269,7 @@ XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, c
 const XpackLookupResult
 XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len) const
 {
-  XPACKDebug("Lookup entry: name=%.*s, value=%.*s", static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+  XPACKDbg("Lookup entry: name=%.*s, value=%.*s", static_cast<int>(name_len), name, static_cast<int>(value_len), value);
   XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
   uint32_t                     i               = this->_calc_index(this->_entries_tail, 1);
   uint32_t                     end             = this->_calc_index(this->_entries_head, 1);
@@ -293,7 +299,7 @@ XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, 
     }
   }
 
-  XPACKDebug("Lookup entry: candidate_index=%u, match_type=%u", candidate_index, match_type);
+  XPACKDbg("Lookup entry: candidate_index=%u, match_type=%u", candidate_index, match_type);
   return {candidate_index, match_type};
 }
 
@@ -307,7 +313,7 @@ const XpackLookupResult
 XpackDynamicTable::lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
                                    size_t *value_len) const
 {
-  XPACKDebug("Lookup entry: rel_index=%u", relative_index);
+  XPACKDbg("Lookup entry: rel_index=%u", relative_index);
   return this->lookup(this->_entries[this->_entries_head].index - relative_index, name, name_len, value, value_len);
 }
 
@@ -355,8 +361,8 @@ XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *v
     wks};
   this->_available -= required_size;
 
-  XPACKDebug("Insert Entry: entry=%u, index=%u, size=%zu", this->_entries_head, this->_entries_inserted - 1, name_len + value_len);
-  XPACKDebug("Available size: %u", this->_available);
+  XPACKDbg("Insert Entry: entry=%u, index=%u, size=%zu", this->_entries_head, this->_entries_inserted - 1, name_len + value_len);
+  XPACKDbg("Available size: %u", this->_available);
   return {this->_entries_inserted, value_len ? XpackLookupResult::MatchType::EXACT : XpackLookupResult::MatchType::NAME};
 }
 
@@ -489,11 +495,11 @@ XpackDynamicTable::_make_space(uint64_t required_size)
 
   // Evict
   if (freed > 0) {
-    XPACKDebug("Evict entries: from %u to %u", this->_entries[this->_calc_index(this->_entries_tail, 1)].index,
-               this->_entries[tail - 1].index);
+    XPACKDbg("Evict entries: from %u to %u", this->_entries[this->_calc_index(this->_entries_tail, 1)].index,
+             this->_entries[tail - 1].index);
     this->_available    += freed;
     this->_entries_tail  = tail - 1;
-    XPACKDebug("Available size: %u", this->_available);
+    XPACKDbg("Available size: %u", this->_available);
   }
 
   return required_size <= this->_available;

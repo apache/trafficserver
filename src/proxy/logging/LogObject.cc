@@ -42,17 +42,28 @@
 #include <thread>
 #include <map>
 
-static bool
+namespace
+{
+DbgCtl dbg_ctl_log_logbuffer{"log-logbuffer"};
+DbgCtl dbg_ctl_log_config{"log-config"};
+DbgCtl dbg_ctl_log{"log"};
+DbgCtl dbg_ctl_log_agg{"log-agg"};
+DbgCtl dbg_ctl_log_buffer{"log-buffer"};
+DbgCtl dbg_ctl_log_config_transfer{"log-config-transfer"};
+
+bool
 should_roll_on_time(Log::RollingEnabledValues roll)
 {
   return roll == Log::ROLL_ON_TIME_ONLY || roll == Log::ROLL_ON_TIME_OR_SIZE;
 }
 
-static bool
+bool
 should_roll_on_size(Log::RollingEnabledValues roll)
 {
   return roll == Log::ROLL_ON_SIZE_ONLY || roll == Log::ROLL_ON_TIME_OR_SIZE;
 }
+
+} // end anonymous namespace
 
 size_t
 LogBufferManager::preproc_buffers(LogBufferSink *sink)
@@ -81,7 +92,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
     prepared++;
   }
 
-  Debug("log-logbuffer", "prepared %d buffers", prepared);
+  Dbg(dbg_ctl_log_logbuffer, "prepared %d buffers", prepared);
   return prepared;
 }
 
@@ -137,12 +148,12 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
   }
   _setup_rolling(cfg, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
-  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p fast=%d", m_filename, this, m_fast);
+  Dbg(dbg_ctl_log_config, "exiting LogObject constructor, filename=%s this=%p fast=%d", m_filename, this, m_fast);
 }
 
 LogObject::~LogObject()
 {
-  Debug("log-config", "entering LogObject destructor, this=%p", this);
+  Dbg(dbg_ctl_log_config, "entering LogObject destructor, this=%p", this);
 
   preproc_buffers();
   ats_free(m_basename);
@@ -383,7 +394,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
         int idx = m_buffer_manager_idx++ % m_flush_threads;
-        Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
+        Dbg(dbg_ctl_log_logbuffer, "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager[idx].add_to_flush_queue(buffer);
         Log::preproc_notify[idx].signal();
         buffer = nullptr;
@@ -496,12 +507,12 @@ private:
       period = 1;
     }
     eventProcessor.schedule_every(this, period * HRTIME_SECOND, ET_CALL);
-    Debug("log-config", "thread local buffer manager init: %d wakeup period", period);
+    Dbg(dbg_ctl_log_config, "thread local buffer manager init: %d wakeup period", period);
   }
 
   ~ThreadLocalLogBufferManager() override
   {
-    Debug("log-config", "thread local buffer manager destructor");
+    Dbg(dbg_ctl_log_config, "thread local buffer manager destructor");
     // only the LogBuffer objects are owned by this
     for (auto [o, b] : current_buffers) {
       // ideally we flush these here but there are shutdown order issues so if the
@@ -562,7 +573,7 @@ void
 LogObject::flush_buffer(LogBuffer *buffer)
 {
   int idx = m_buffer_manager_idx++ % m_flush_threads;
-  Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
+  Dbg(dbg_ctl_log_logbuffer, "adding buffer %d to flush list after checkout", buffer->get_id());
   m_buffer_manager[idx].add_to_flush_queue(buffer);
   Log::preproc_notify[idx].signal();
 }
@@ -578,7 +589,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   // likewise, send data to a remote client even if local space is exhausted
   // (if there is a remote client, m_logFile will be NULL
   if (Log::config->logging_space_exhausted && !writes_to_pipe() && m_logFile) {
-    Debug("log", "logging space exhausted, can't write to:%s, drop this entry", m_logFile->get_name());
+    Dbg(dbg_ctl_log, "logging space exhausted, can't write to:%s, drop this entry", m_logFile->get_name());
     return Log::FULL;
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers
@@ -589,12 +600,12 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   }
 
   if (lad && m_filter_list.toss_this_entry(lad)) {
-    Debug("log", "entry filtered, skipping ...");
+    Dbg(dbg_ctl_log, "entry filtered, skipping ...");
     return Log::SKIP;
   }
 
   if (lad && m_filter_list.wipe_this_entry(lad)) {
-    Debug("log", "entry wiped, ...");
+    Dbg(dbg_ctl_log, "entry wiped, ...");
   }
 
   if (lad && m_format->is_aggregate()) {
@@ -622,10 +633,10 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     }
 
     if (time_now < m_format->m_interval_next) {
-      Debug("log-agg",
-            "Time now = %ld, next agg = %ld; not time "
-            "for aggregate entry",
-            time_now, m_format->m_interval_next);
+      Dbg(dbg_ctl_log_agg,
+          "Time now = %ld, next agg = %ld; not time "
+          "for aggregate entry",
+          time_now, m_format->m_interval_next);
       return Log::AGGR;
     }
     // can easily compute bytes_needed because all fields are INTs
@@ -638,7 +649,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   }
 
   if (bytes_needed == 0) {
-    Debug("log-buffer", "Nothing to log, bytes_needed = 0");
+    Dbg(dbg_ctl_log_buffer, "Nothing to log, bytes_needed = 0");
     return Log::SKIP;
   }
 
@@ -668,7 +679,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     bytes_used = m_format->m_field_list.marshal_agg(&(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
     m_format->m_interval_next += m_format->m_interval_sec;
-    Debug("log-agg", "Aggregate entry created; next time is %ld", m_format->m_interval_next);
+    Dbg(dbg_ctl_log_agg, "Aggregate entry created; next time is %ld", m_format->m_interval_next);
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
@@ -949,10 +960,10 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
 
         ink_release_assert(retVal == NO_FILENAME_CONFLICTS);
 
-        Debug("log",
-              "LogObjectManager managing object %s (%s) "
-              "[signature = %" PRIu64 ", address = %p]",
-              log_object->get_base_filename(), log_object->get_full_filename(), log_object->get_signature(), log_object);
+        Dbg(dbg_ctl_log,
+            "LogObjectManager managing object %s (%s) "
+            "[signature = %" PRIu64 ", address = %p]",
+            log_object->get_base_filename(), log_object->get_full_filename(), log_object->get_signature(), log_object);
 
         if (log_object->has_alternate_name()) {
           Warning("The full path for the (%s) LogObject "
@@ -1002,13 +1013,13 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
       if (got_sig && signature == obj_sig) {
         conflicts = false;
       }
-      Debug("log",
-            "LogObjectManager::_solve_filename_conflicts\n"
-            "\tfilename = %s\n"
-            "\tmeta file signature = %" PRIu64 "\n"
-            "\tlog object signature = %" PRIu64 "\n"
-            "\tconflicts = %d",
-            filename, signature, obj_sig, conflicts);
+      Dbg(dbg_ctl_log,
+          "LogObjectManager::_solve_filename_conflicts\n"
+          "\tfilename = %s\n"
+          "\tmeta file signature = %" PRIu64 "\n"
+          "\tlog object signature = %" PRIu64 "\n"
+          "\tconflicts = %d",
+          filename, signature, obj_sig, conflicts);
     }
 
     if (conflicts) {
@@ -1220,17 +1231,17 @@ LogObjectManager::open_local_pipes()
 void
 LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
 {
-  Debug("log-config-transfer", "transferring objects from LogObjectManager %p, to %p", &old_mgr, this);
+  Dbg(dbg_ctl_log_config_transfer, "transferring objects from LogObjectManager %p, to %p", &old_mgr, this);
 
-  if (is_debug_tag_set("log-config-transfer")) {
-    Debug("log-config-transfer", "TRANSFER OBJECTS: list of old objects");
+  if (dbg_ctl_log_config_transfer.on()) {
+    Dbg(dbg_ctl_log_config_transfer, "TRANSFER OBJECTS: list of old objects");
     for (auto &_object : old_mgr._objects) {
-      Debug("log-config-transfer", "%s", _object->get_original_filename());
+      Dbg(dbg_ctl_log_config_transfer, "%s", _object->get_original_filename());
     }
 
-    Debug("log-config-transfer", "TRANSFER OBJECTS : list of new objects");
+    Dbg(dbg_ctl_log_config_transfer, "TRANSFER OBJECTS : list of new objects");
     for (unsigned i = 0; i < this->_objects.size(); i++) {
-      Debug("log-config-transfer", "%s", _objects[i]->get_original_filename());
+      Dbg(dbg_ctl_log_config_transfer, "%s", _objects[i]->get_original_filename());
     }
   }
 
@@ -1242,7 +1253,7 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
   for (auto old_obj : old_mgr._objects) {
     LogObject *new_obj;
 
-    Debug("log-config-transfer", "examining existing object %s", old_obj->get_base_filename());
+    Dbg(dbg_ctl_log_config_transfer, "examining existing object %s", old_obj->get_base_filename());
 
     // See if any of the new objects is just a copy of an old one. If so, transfer the
     // old one to the new manager and delete the new one. We don't use Vec::in here because
@@ -1250,11 +1261,11 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
     for (unsigned j = 0; j < _objects.size(); j++) {
       new_obj = _objects[j];
 
-      Debug("log-config-transfer", "comparing existing object %s to new object %s", old_obj->get_base_filename(),
-            new_obj->get_base_filename());
+      Dbg(dbg_ctl_log_config_transfer, "comparing existing object %s to new object %s", old_obj->get_base_filename(),
+          new_obj->get_base_filename());
 
       if (*new_obj == *old_obj) {
-        Debug("log-config-transfer", "keeping existing object %s", old_obj->get_base_filename());
+        Dbg(dbg_ctl_log_config_transfer, "keeping existing object %s", old_obj->get_base_filename());
 
         old_obj->refcount_inc();
         this->_objects[j] = old_obj;
@@ -1267,8 +1278,8 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
     }
   }
 
-  if (is_debug_tag_set("log-config-transfer")) {
-    Debug("log-config-transfer", "Log Object List after transfer:");
+  if (dbg_ctl_log_config_transfer.on()) {
+    Dbg(dbg_ctl_log_config_transfer, "Log Object List after transfer:");
     display();
   }
 }

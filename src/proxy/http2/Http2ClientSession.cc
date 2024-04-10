@@ -30,12 +30,18 @@
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
-static int
+namespace
+{
+DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
+
+int
 send_connection_event(Continuation *cont, int event, void *edata)
 {
   SCOPED_MUTEX_LOCK(lock, cont->mutex, this_ethread());
   return cont->handleEvent(event, edata);
 }
+
+} // end anonymous namespace
 
 Http2ClientSession::Http2ClientSession() : super() {}
 
@@ -103,7 +109,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   if (auto eds = new_vc->get_service<TLSEarlyDataSupport>(); eds) {
     this->read_from_early_data = eds->get_early_data_len();
-    Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "read_from_early_data = %" PRId64, this->read_from_early_data);
   }
 
   Http2SsnDebug("session born, netvc %p", this->_vc);

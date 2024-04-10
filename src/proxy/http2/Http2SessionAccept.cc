@@ -26,6 +26,12 @@
 #include "iocore/utils/Machine.h"
 #include "proxy/IPAllow.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http2_seq{"http2_seq"};
+
+} // end anonymous namespace
+
 Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
 {
   SET_HANDLER(&Http2SessionAccept::mainEvent);
@@ -46,11 +52,11 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   netvc->attributes = this->options.transport_type;
 
-  if (is_debug_tag_set("http2_seq")) {
+  if (dbg_ctl_http2_seq.on()) {
     ip_port_text_buffer ipb;
 
-    Debug("http2_seq", "[HttpSessionAccept2:mainEvent %p] accepted connection from %s transport type = %d", netvc,
-          ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+    DbgPrint(dbg_ctl_http2_seq, "[HttpSessionAccept2:mainEvent %p] accepted connection from %s transport type = %d", netvc,
+             ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());

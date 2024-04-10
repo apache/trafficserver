@@ -525,9 +525,9 @@ PrefixMod::check(HttpRequestData *req) const
   const char *path = req->hdr->url_get()->path_get(&path_len);
   bool        zret = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
   /*
-    Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
-      path_len, path, text.size(), text.data(),
-      zret ? "Match" : "Fail"
+    Dbg(dbg_ctl_cache_control, "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
+        path_len, path, text.size(), text.data(),
+        zret ? "Match" : "Fail"
     );
   */
   return zret;
