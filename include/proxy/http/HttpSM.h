@@ -186,7 +186,7 @@ public:
 
   void init(bool from_early_data = false);
 
-  void attach_client_session(ProxyTransaction *client_vc_arg);
+  void attach_client_session(ProxyTransaction *txn);
 
   // Called after the network connection has been completed
   //  to set the session timeouts and initiate a read while
