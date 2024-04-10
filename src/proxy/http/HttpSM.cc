@@ -371,16 +371,16 @@ HttpSM::start_sub_sm()
 }
 
 void
-HttpSM::attach_client_session(ProxyTransaction *client_vc)
+HttpSM::attach_client_session(ProxyTransaction *txn)
 {
   milestones[TS_MILESTONE_UA_BEGIN] = ink_get_hrtime();
-  ink_assert(client_vc != nullptr);
+  ink_assert(txn != nullptr);
 
-  NetVConnection *netvc = client_vc->get_netvc();
+  NetVConnection *netvc = txn->get_netvc();
   if (!netvc) {
     return;
   }
-  _ua.set_txn(client_vc, milestones);
+  _ua.set_txn(txn, milestones);
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
   // and netvc == _ua.get_txn()->get_netvc().
@@ -389,7 +389,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   mptcp_state = netvc->get_mptcp_state();
 
   ink_release_assert(_ua.get_txn()->get_half_close_flag() == false);
-  mutex = client_vc->mutex;
+  mutex = txn->mutex;
   if (_ua.get_txn()->debug()) {
     debug_on = true;
   }
@@ -408,7 +408,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   // Allocate a user agent entry in the state machine's
   //   vc table
   _ua.set_entry(vc_table.new_entry());
-  _ua.get_entry()->vc      = client_vc;
+  _ua.get_entry()->vc      = txn;
   _ua.get_entry()->vc_type = HTTP_UA_VC;
 
   ats_ip_copy(&t_state.client_info.src_addr, netvc->get_remote_addr());
@@ -417,7 +417,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
   // Record api hook set state
-  hooks_set = client_vc->has_hooks();
+  hooks_set = txn->has_hooks();
 
   // Setup for parsing the header
   _ua.get_entry()->vc_read_handler = &HttpSM::state_read_client_request_header;
@@ -434,14 +434,14 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  _ua.get_entry()->read_vio  = client_vc->do_io_read(this, 0, _ua.get_txn()->get_remote_reader()->mbuf);
-  _ua.get_entry()->write_vio = client_vc->do_io_write(this, 0, nullptr);
+  _ua.get_entry()->read_vio  = txn->do_io_read(this, 0, _ua.get_txn()->get_remote_reader()->mbuf);
+  _ua.get_entry()->write_vio = txn->do_io_write(this, 0, nullptr);
 
   /////////////////////////
   // set up timeouts     //
   /////////////////////////
-  client_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
-  client_vc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
+  txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
+  txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
   ++reentrancy_count;
   // Add our state sm to the sm list
