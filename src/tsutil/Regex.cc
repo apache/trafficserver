@@ -64,7 +64,11 @@ public:
   static RegexContext *
   get_instance()
   {
-    if (!_regex_context) {
+    if (_shutdown == true) {
+      return nullptr;
+    }
+
+    if (_regex_context == nullptr) {
       _regex_context = new RegexContext();
       regex_context_cleanup.push_back(_regex_context);
     }
@@ -72,6 +76,8 @@ public:
   }
   ~RegexContext()
   {
+    _shutdown = true;
+
     if (_general_context != nullptr) {
       pcre2_general_context_free(_general_context);
     }
@@ -115,9 +121,11 @@ private:
   pcre2_match_context *_match_context     = nullptr;
   pcre2_jit_stack *_jit_stack             = nullptr;
   thread_local static RegexContext *_regex_context;
+  static bool _shutdown; // flag to indicate destructor was called, so no new instances can be created
 };
 
 thread_local RegexContext *RegexContext::_regex_context = nullptr;
+bool RegexContext::_shutdown                            = false;
 
 //----------------------------------------------------------------------------
 
@@ -249,13 +257,21 @@ Regex::compile(std::string_view pattern, uint32_t flags)
 bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
+  // free the existing compiled regex if there is one
   if (_code != nullptr) {
     pcre2_code_free(_code);
   }
+
+  // get the RegexContext instance - should only be null when shutting down
+  RegexContext *regex_context = RegexContext::get_instance();
+  if (regex_context == nullptr) {
+    return false;
+  }
+
   PCRE2_SIZE error_offset;
   int error_code;
   _code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                        RegexContext::get_instance()->get_compile_context());
+                        regex_context->get_compile_context());
   if (!_code) {
     erroroffset = error_offset;
 
@@ -289,11 +305,19 @@ Regex::exec(std::string_view subject) const
 int32_t
 Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
+  // check if there is a compiled regex
   if (_code == nullptr) {
     return 0;
   }
+
+  // get the RegexContext instance - should only be null when shutting down
+  RegexContext *regex_context = RegexContext::get_instance();
+  if (regex_context == nullptr) {
+    return false;
+  }
+
   int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
-                          RegexContext::get_instance()->get_match_context());
+                          regex_context->get_match_context());
 
   matches.set_size(count);
 
