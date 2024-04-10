@@ -60,6 +60,7 @@ Value::set_value(const std::string &val)
             tcond_val->initialize(parser);
           } else {
             // TODO: should we produce error here?
+            Dbg(dbg_ctl, "Error parsing value '%s'", _value.c_str());
           }
         }
       } else {
