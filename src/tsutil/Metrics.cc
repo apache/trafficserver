@@ -39,7 +39,7 @@ Metrics::instance()
 }
 
 void
-Metrics::Storage::_addBlob() // The mutex must be held before calling this!
+Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = new Metrics::NamesAndAtomics();
 
@@ -51,9 +51,9 @@ Metrics::Storage::_addBlob() // The mutex must be held before calling this!
 }
 
 Metrics::IdType
-Metrics::Storage::_create(std::string_view name)
+Metrics::Storage::create(std::string_view name)
 {
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard lock(_mutex);
   auto it = _lookups.find(name);
 
   if (it != _lookups.end()) {
@@ -68,7 +68,7 @@ Metrics::Storage::_create(std::string_view name)
   _lookups.emplace(std::get<0>(names[_cur_off]), id);
 
   if (++_cur_off >= MAX_SIZE) {
-    _addBlob(); // This resets _cur_off to 0 as well
+    addBlob(); // This resets _cur_off to 0 as well
   }
 
   return id;
@@ -77,7 +77,7 @@ Metrics::Storage::_create(std::string_view name)
 Metrics::IdType
 Metrics::Storage::lookup(const std::string_view name) const
 {
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard lock(_mutex);
   auto it = _lookups.find(name);
 
   if (it != _lookups.end()) {
@@ -141,13 +141,13 @@ Metrics::Storage::name(Metrics::IdType id) const
 }
 
 Metrics::SpanType
-Metrics::Storage::_createSpan(size_t size, Metrics::IdType *id)
+Metrics::Storage::createSpan(size_t size, Metrics::IdType *id)
 {
   release_assert(size <= MAX_SIZE);
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard lock(_mutex);
 
   if (_cur_off + size > MAX_SIZE) {
-    _addBlob();
+    addBlob();
   }
 
   Metrics::IdType span_start      = _makeId(_cur_blob, _cur_off);
@@ -176,7 +176,7 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
   }
 
   std::string &cur = std::get<0>(std::get<0>(*blob)[offset]);
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard lock(_mutex);
 
   if (cur.length() > 0) {
     _lookups.erase(cur);

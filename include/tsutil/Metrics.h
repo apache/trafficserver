@@ -259,13 +259,13 @@ private:
   IdType
   _create(const std::string_view name)
   {
-    return _storage->_create(name);
+    return _storage->create(name);
   }
 
   SpanType
   _createSpan(size_t size, IdType *id = nullptr)
   {
-    return _storage->_createSpan(size, id);
+    return _storage->createSpan(size, id);
   }
 
   // These are little helpers around managing the ID's
@@ -296,16 +296,14 @@ private:
     mutable std::mutex _mutex;
 
   public:
-    Storage(const self_type &)          = delete;
+    Storage(const Storage &)            = delete;
     Storage &operator=(const Storage &) = delete;
-    Storage &operator=(Storage &&)      = delete;
-    Storage(Storage &&)                 = delete;
 
     Storage()
     {
       _blobs[0] = new NamesAndAtomics();
       release_assert(_blobs[0]);
-      release_assert(0 == _create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
+      release_assert(0 == create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
     }
 
     ~Storage()
@@ -315,19 +313,19 @@ private:
       }
     }
 
-    IdType _create(const std::string_view name);
-    void _addBlob();
+    IdType create(const std::string_view name);
+    void addBlob();
     IdType lookup(const std::string_view name) const;
     AtomicType *lookup(const std::string_view name, IdType *out_id) const;
     AtomicType *lookup(Metrics::IdType id, std::string_view *out_name = nullptr) const;
     std::string_view name(IdType id) const;
-    SpanType _createSpan(size_t size, IdType *id = nullptr);
+    SpanType createSpan(size_t size, IdType *id = nullptr);
     bool rename(IdType id, const std::string_view name);
 
     std::pair<int16_t, int16_t>
     current() const
     {
-      std::lock_guard<std::mutex> lock(_mutex);
+      std::lock_guard lock(_mutex);
       return {_cur_blob, _cur_off};
     }
 
