@@ -70,7 +70,7 @@ const int BROTLI_LGW               = 16;
 
 static const char *global_hidden_header_name = nullptr;
 
-static TSMutex compress_config_mutex = TSMutexCreate();
+static TSMutex compress_config_mutex = nullptr;
 
 // Current global configuration, and the previous one (for cleanup)
 Configuration *cur_config  = nullptr;
@@ -1017,6 +1017,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   const char *config_path = nullptr;
+  compress_config_mutex   = TSMutexCreate();
 
   if (argc > 2) {
     fatal("the compress plugin does not accept more than 1 plugin argument");
