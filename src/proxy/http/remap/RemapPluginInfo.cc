@@ -77,11 +77,11 @@ RemapPluginInfo::RemapPluginInfo(const fs::path &configPath, const fs::path &eff
 }
 
 bool
-RemapPluginInfo::load(std::string &error)
+RemapPluginInfo::load(std::string &error, const fs::path &compilerPath)
 {
   error.clear();
 
-  if (!PluginDso::load(error)) {
+  if (!PluginDso::load(error, compilerPath)) {
     return false;
   }
 

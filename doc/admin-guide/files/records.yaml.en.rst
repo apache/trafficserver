@@ -4901,6 +4901,20 @@ Plug-in Configuration
    Enables (``1``) or disables (``0``) the dynamic reload feature for remap
    plugins (`remap.config`). Global plugins (`plugin.config`) do not have dynamic reload feature yet.
 
+.. ts:cv:: CONFIG proxy.config.plugin.compiler_path STRING ""
+
+   Specifies an optional compiler tool path for compiling plugins. This tool should
+   be an executable, which takes two arguments:
+
+   === ======================================================================
+   Arg Description
+   === ======================================================================
+   1   This is the path to the source file, which should be compiled
+   2   This is the path to the DSO file, which will be created and loaded
+   === ======================================================================
+
+   The script should exit with a status code of ``0`` if the compilation was successful.
+
 .. ts:cv:: CONFIG proxy.config.plugin.vc.default_buffer_index INT 8
    :reloadable:
    :overridable:

@@ -83,7 +83,7 @@ public:
   ~RemapPluginInfo();
 
   /* Overload to add / execute remap plugin specific tasks during the plugin loading */
-  bool load(std::string &error) override;
+  bool load(std::string &error, const fs::path &compilerPath) override;
 
   /* Used by the factory to invoke callbacks during plugin load, init and unload  */
   bool init(std::string &error) override;
