@@ -656,7 +656,7 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
   }
 
   if (stream != nullptr) {
-    Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM: Error Code: %u", rst_stream.error_code);
+    Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM frame: Error Code: %u", rst_stream.error_code);
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
     stream->initiating_close();
   }
@@ -2533,7 +2533,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 void
 Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  Http2StreamDebug(session, id, "Send RST_STREAM: error code=%u", static_cast<uint32_t>(ec));
+  Http2StreamDebug(session, id, "Send RST_STREAM frame: Error Code: %u", static_cast<uint32_t>(ec));
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Metrics::Counter::increment(http2_rsb.stream_errors_count);
@@ -2640,7 +2640,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
   ink_assert(this->session != nullptr);
 
-  Http2ConDebug(session, "Send GOAWAY frame: error code=%u last_stream_id=%d", static_cast<uint32_t>(ec), id);
+  Http2ConDebug(session, "Send GOAWAY frame: Error Code: %u, Last Stream Id: %d", static_cast<uint32_t>(ec), id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Metrics::Counter::increment(http2_rsb.connection_errors_count);

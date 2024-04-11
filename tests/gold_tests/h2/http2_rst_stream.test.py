@@ -66,7 +66,7 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received DATA frame',
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received RST_STREAM frame', 'Received RST_STREAM frame.')
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression('RST_STREAM: Error Code: 2', 'Error Code: ')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression('Parsed RST_STREAM frame: Error Code: 2', 'Error Code: ')
 
 #
 # Client sends RST_STREAM after HEADERS frame
@@ -110,7 +110,7 @@ ts.Disk.traffic_out.Content += Testers.ExcludesExpression('Received DATA frame',
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received RST_STREAM frame', 'Received RST_STREAM frame.')
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression('RST_STREAM: Error Code: 5', 'Error Code: ')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression('Parsed RST_STREAM frame: Error Code: 5', 'Error Code: ')
 
 #
 # Server sends RST_STREAM after HEADERS frame
@@ -147,8 +147,6 @@ server.Streams.All += "gold/server_after_headers.gold"
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received RST_STREAM frame', 'Received RST_STREAM frame.')
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression('Send RST_STREAM frame', 'Send RST_STREAM frame.')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression('Parsed RST_STREAM frame: Error Code: 11', 'Error Code: ')
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression('Parsed RST_STREAM: Error Code: 11', 'Error Code: ')
-
-ts.Disk.traffic_out.Content += Testers.ContainsExpression('Sending RST_STREAM: Error Code: 0', 'Error Code: ')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression('Send RST_STREAM frame: Error Code: 0', 'Error Code: ')
