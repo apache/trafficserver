@@ -291,11 +291,8 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                 std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
                                 g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
                                 g_rpcHandlerProcessingCompleted = false;
-                                // seems to be done, set the response. As the response data is a swoc::Rv this will handle both,
-                                // error and non error cases.
+                                // swoc::Rv this will handle both, error and success cases.
                                 ret = std::move(g_rpcHandlerResponseData);
-                                // clean up the shared data.
-                                //                                g_rpcHandlerResponseData.clear(); // moved so no cleanup?
                                 lock.unlock();
                               }},
              this->_func);
