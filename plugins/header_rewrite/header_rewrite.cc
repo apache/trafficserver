@@ -180,7 +180,12 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
     Parser p;
 
     // Tokenize and parse this line
-    if (!p.parse_line(line) || p.empty()) {
+    if (!p.parse_line(line)) {
+      Dbg(dbg_ctl, "Error parsing line '%s'", line.c_str());
+      continue;
+    }
+
+    if (p.empty()) {
       continue;
     }
 
