@@ -313,7 +313,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
   // get the RegexContext instance - should only be null when shutting down
   RegexContext *regex_context = RegexContext::get_instance();
   if (regex_context == nullptr) {
-    return false;
+    return 0;
   }
 
   int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
