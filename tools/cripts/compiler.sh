@@ -72,7 +72,7 @@ if [ -d "$CACHE_DIR" ]; then
 
     [ -d "$cache_tree" ] || mkdir -p "$cache_tree"
 
-    if [ ! "$SOURCE" -nt "$cache_file" ]; then
+    if [ "$SOURCE" -ot "$cache_file" ]; then
         cp "$cache_file" "$DEST"
         exit 0
     fi

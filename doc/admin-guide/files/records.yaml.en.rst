@@ -4903,7 +4903,7 @@ Plug-in Configuration
 
 .. ts:cv:: CONFIG proxy.config.plugin.compiler_path STRING ""
 
-   Specifies an option compiler tool path for compiling plugins. This tool should
+   Specifies an optional compiler tool path for compiling plugins. This tool should
    be an executable, which takes two arguments:
 
    === ======================================================================
