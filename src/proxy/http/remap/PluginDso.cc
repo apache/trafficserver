@@ -38,6 +38,8 @@
 #define PluginError Error
 #endif
 
+#include <cstdlib>
+
 namespace
 {
 
@@ -69,7 +71,7 @@ PluginDso::~PluginDso()
 }
 
 bool
-PluginDso::load(std::string &error)
+PluginDso::load(std::string &error, const fs::path &compilerPath)
 {
   /* Clear all errors */
   error.clear();
@@ -89,13 +91,27 @@ PluginDso::load(std::string &error)
   } else {
     PluginDbg(_dbg_ctl(), "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
 
-    /* Copy the installed plugin DSO to a runtime directory if dynamic reload enabled */
     std::error_code ec;
-    if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
+
+    if (!_effectivePath.string().ends_with(".so")) {
+      if (!isDynamicReloadEnabled()) {
+        concat_error(error, "Dynamic reload must be enabled for Cript files");
+        result = false;
+      } else {
+        std::string command = compilerPath.string() + " " + _effectivePath.string() + " " + _runtimePath.string();
+
+        if (std::system(command.c_str()) != 0) {
+          concat_error(error, "Compile script failed");
+          result = false;
+        }
+      }
+    } else if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
       concat_error(error, "failed to create a copy");
       concat_error(error, ec.message());
       result = false;
-    } else {
+    }
+
+    if (result) {
       PluginDbg(_dbg_ctl(), "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
 
       /* Save the time for later checking if DSO got modified in consecutive DSO reloads */

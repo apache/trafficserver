@@ -95,6 +95,7 @@ public:
   virtual ~PluginFactory();
 
   PluginFactory &setRuntimeDir(const fs::path &runtimeDir);
+  PluginFactory &setCompilerPath(const fs::path &compilerPath);
   PluginFactory &addSearchDir(const fs::path &searchDir);
 
   RemapPluginInst *getRemapPlugin(const fs::path &configPath, int argc, char **argv, std::string &error, bool dynamicReloadEnabled);
@@ -112,6 +113,7 @@ protected:
 
   std::vector<fs::path> _searchDirs; /** @brief ordered list of search paths where we look for plugins */
   fs::path _runtimeDir;              /** @brief the path where we would create a temporary copies of the plugins to load */
+  fs::path _compilerPath;            /** @brief the compilation script to use for cripts and other non-DSO plugins */
 
   PluginInstList _instList;
 

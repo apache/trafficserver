@@ -66,7 +66,7 @@ public:
   virtual ~PluginDso();
 
   /* DSO Load, unload, get symbols from DSO */
-  virtual bool load(std::string &error);
+  virtual bool load(std::string &error, const fs::path &compilerPath);
   virtual bool unload(std::string &error);
   bool isLoaded();
   bool getSymbol(const char *symbol, void *&address, std::string &error) const;
