@@ -172,7 +172,15 @@ RegexMatches::RegexMatches(uint32_t size)
   pcre2_general_context *ctx = pcre2_general_context_create(
     &RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
 
-  _MatchData::set(_match_data, pcre2_match_data_create(size, ctx));
+
+  pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
+  if (match_data == nullptr) {
+    // buffer was too small, allocate from heap
+    match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
+  }
+
+  _MatchData::set(_match_data, match_data);
+
 }
 
 //----------------------------------------------------------------------------
@@ -188,9 +196,8 @@ RegexMatches::malloc(size_t size, void *caller)
     return ptr;
   }
 
-  // otherwise use system malloc if the buffer is too small
-  void *ptr = ::malloc(size);
-  return ptr;
+  // return nullptr if buffer is too small
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------

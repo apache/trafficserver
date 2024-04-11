@@ -179,4 +179,12 @@ TEST_CASE("Regex", "[libts][Regex]")
     REQUIRE(r.compile(R"(bar)") == true);
     REQUIRE(r.exec("bar") == true);
   }
+
+  // test with matches set to 100
+  {
+    Regex r;
+    RegexMatches matches(100);
+    REQUIRE(r.compile(R"(foo)") == true);
+    REQUIRE(r.exec("foo", matches) == 1);
+  }
 }
