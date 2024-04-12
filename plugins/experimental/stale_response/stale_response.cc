@@ -1068,6 +1068,7 @@ TSPluginInit(int argc, const char *argv[])
   // proxy.config.http.insert_age_in_response
   if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_TAG, "reserve state info slot", &(plugin_config->txn_slot))) {
     TSError("stale_response [%s] failed to user argument data. Plugin registration failed.", PLUGIN_TAG);
+    delete plugin_config;
     return;
   }
   TSCont main_contp = TSContCreate(global_request_header_hook, nullptr);
