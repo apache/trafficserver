@@ -173,6 +173,7 @@
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
       "inherits": ["ci"],
       "cacheVariables": {
+        "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
         "CMAKE_CXX_STANDARD": "20"
       }
@@ -185,6 +186,7 @@
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/boringssl",
         "quiche_ROOT": "/opt/quiche",
+        "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "ENABLE_QUICHE": true
