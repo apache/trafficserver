@@ -2969,6 +2969,12 @@ HttpSM::tunnel_handler(int event, void *data)
 {
   STATE_ENTER(&HttpSM::tunnel_handler, event);
 
+  // If we had already received EOS, just go away. We would sometimes see
+  // a WRITE event appear after receiving EOS from the server connection
+  if ((event == VC_EVENT_WRITE_READY || event == VC_EVENT_WRITE_COMPLETE) && server_entry->eos) {
+    return 0;
+  }
+
   ink_assert(event == HTTP_TUNNEL_EVENT_DONE || event == VC_EVENT_INACTIVITY_TIMEOUT);
   // The tunnel calls this when it is done
   terminate_sm = true;
