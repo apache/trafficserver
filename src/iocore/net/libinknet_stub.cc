@@ -61,5 +61,3 @@ void
 FetchSM::ext_init(Continuation *, char const *, char const *, char const *, sockaddr const *, int)
 {
 }
-
-ChunkedHandler::ChunkedHandler() {}
