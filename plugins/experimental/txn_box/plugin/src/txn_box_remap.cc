@@ -112,7 +112,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   }
 
   G._remap_ctx_storage_required += cfg->reserved_ctx_storage_size();
-  *ih                            = new RemapContext{cfg};
+  *ih                            = new RemapContext{std::move(cfg)};
   return TS_SUCCESS;
 }
 
