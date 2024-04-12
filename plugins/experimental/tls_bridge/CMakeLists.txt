@@ -17,6 +17,6 @@
 
 add_atsplugin(tls_bridge tls_bridge.cc)
 
-target_link_libraries(tls_bridge PRIVATE libswoc::libswoc PCRE::PCRE # transitive
+target_link_libraries(tls_bridge PRIVATE libswoc::libswoc PCRE::PCRE PkgConfig::PCRE2 # transitive
 )
 verify_global_plugin(tls_bridge)
