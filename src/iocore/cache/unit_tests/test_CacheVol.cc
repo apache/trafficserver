@@ -323,6 +323,10 @@ ClearCacheVolList(Queue<CacheVol> *cpl, int len)
   int i        = 0;
   CacheVol *cp = nullptr;
   while ((cp = cpl->dequeue())) {
+    for (int d_no = 0; d_no < gndisks; d_no++) {
+      cp->disk_stripes[d_no]->disk->delete_volume(cp->vol_number);
+      cp->disk_stripes[d_no] = nullptr;
+    }
     ats_free(cp->disk_stripes);
     ats_free(cp->stripes);
     delete (cp);
@@ -365,6 +369,8 @@ public:
   cache_init_success_callback(int event, void *e) override
   {
     // Test
+    ClearCacheVolList(&cp_list, cp_list_len);
+
     save_state();
     srand48(time(nullptr));
 
@@ -393,6 +399,5 @@ TEST_CASE("CacheVol")
 
   this_ethread()->schedule_imm(init);
   this_thread()->execute();
-
   return;
 }
