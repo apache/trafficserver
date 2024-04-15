@@ -23,10 +23,17 @@
 
 #include "tsutil/Regex.h"
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include <array>
 #include <assert.h>
 #include <vector>
 #include <mutex>
+
+static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSERSITIVE for current PCRE2 version.");
+static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_MULTILINE for current PCRE2 version.");
+static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCRE2 version.");
 
 //----------------------------------------------------------------------------
 namespace
@@ -146,12 +153,26 @@ RegexContextCleanup::push_back(RegexContext *ctx)
 } // namespace
 
 //----------------------------------------------------------------------------
+struct RegexMatches::_MatchData {
+  static pcre2_match_data *
+  get(_MatchDataPtr const &p)
+  {
+    return static_cast<pcre2_match_data *>(p._ptr);
+  }
+  static void
+  set(_MatchDataPtr &p, pcre2_match_data *ptr)
+  {
+    p._ptr = ptr;
+  }
+};
+
+//----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
   pcre2_general_context *ctx = pcre2_general_context_create(
     &RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
 
-  _match_data = pcre2_match_data_create(size, ctx);
+  _MatchData::set(_match_data, pcre2_match_data_create(size, ctx));
 }
 
 //----------------------------------------------------------------------------
@@ -175,8 +196,9 @@ RegexMatches::malloc(size_t size, void *caller)
 //----------------------------------------------------------------------------
 RegexMatches::~RegexMatches()
 {
-  if (_match_data != nullptr) {
-    pcre2_match_data_free(_match_data);
+  auto ptr = _MatchData::get(_match_data);
+  if (ptr != nullptr) {
+    pcre2_match_data_free(ptr);
   }
 }
 
@@ -184,7 +206,7 @@ RegexMatches::~RegexMatches()
 size_t *
 RegexMatches::get_ovector_pointer()
 {
-  return pcre2_get_ovector_pointer(_match_data);
+  return pcre2_get_ovector_pointer(_MatchData::get(_match_data));
 }
 
 //----------------------------------------------------------------------------
@@ -195,51 +217,45 @@ RegexMatches::size() const
 }
 
 //----------------------------------------------------------------------------
-pcre2_match_data *
-RegexMatches::get_match_data()
-{
-  return _match_data;
-}
-
-//----------------------------------------------------------------------------
-void
-RegexMatches::set_size(int32_t size)
-{
-  _size = size;
-}
-
-//----------------------------------------------------------------------------
-void
-RegexMatches::set_subject(std::string_view subject)
-{
-  _subject = subject;
-}
-
-//----------------------------------------------------------------------------
 std::string_view
 RegexMatches::operator[](size_t index) const
 {
   // check if the index is valid
-  if (index >= pcre2_get_ovector_count(_match_data)) {
+  if (index >= pcre2_get_ovector_count(_MatchData::get(_match_data))) {
     return std::string_view();
   }
 
-  PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(_match_data);
+  PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(_MatchData::get(_match_data));
   return std::string_view(_subject.data() + ovector[2 * index], ovector[2 * index + 1] - ovector[2 * index]);
 }
 
 //----------------------------------------------------------------------------
+struct Regex::_Code {
+  static pcre2_code *
+  get(_CodePtr const &p)
+  {
+    return static_cast<pcre2_code *>(p._ptr);
+  }
+  static void
+  set(_CodePtr &p, pcre2_code *ptr)
+  {
+    p._ptr = ptr;
+  }
+};
+
+//----------------------------------------------------------------------------
 Regex::Regex(Regex &&that) noexcept
 {
-  _code      = that._code;
-  that._code = nullptr;
+  _code = that._code;
+  _Code::set(that._code, nullptr);
 }
 
 //----------------------------------------------------------------------------
 Regex::~Regex()
 {
-  if (_code != nullptr) {
-    pcre2_code_free(_code);
+  auto ptr = _Code::get(_code);
+  if (ptr != nullptr) {
+    pcre2_code_free(ptr);
   }
 }
 
@@ -258,8 +274,8 @@ bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
   // free the existing compiled regex if there is one
-  if (_code != nullptr) {
-    pcre2_code_free(_code);
+  if (auto ptr = _Code::get(_code); ptr != nullptr) {
+    pcre2_code_free(ptr);
   }
 
   // get the RegexContext instance - should only be null when shutting down
@@ -270,9 +286,9 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
   PCRE2_SIZE error_offset;
   int error_code;
-  _code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                        regex_context->get_compile_context());
-  if (!_code) {
+  auto code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
+                            regex_context->get_compile_context());
+  if (!code) {
     erroroffset = error_offset;
 
     // get pcre2 error message
@@ -283,7 +299,9 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
   }
 
   // support for JIT
-  pcre2_jit_compile(_code, PCRE2_JIT_COMPLETE);
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+
+  _Code::set(_code, code);
 
   return true;
 }
@@ -292,7 +310,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 bool
 Regex::exec(std::string_view subject) const
 {
-  if (_code == nullptr) {
+  if (_Code::get(_code) == nullptr) {
     return false;
   }
   RegexMatches matches;
@@ -305,28 +323,23 @@ Regex::exec(std::string_view subject) const
 int32_t
 Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
+  auto code = _Code::get(_code);
+
   // check if there is a compiled regex
-  if (_code == nullptr) {
+  if (code == nullptr) {
     return 0;
   }
+  int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0,
+                          RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
 
-  // get the RegexContext instance - should only be null when shutting down
-  RegexContext *regex_context = RegexContext::get_instance();
-  if (regex_context == nullptr) {
-    return 0;
-  }
-
-  int count = pcre2_match(_code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0, matches.get_match_data(),
-                          regex_context->get_match_context());
-
-  matches.set_size(count);
+  matches._size = count;
 
   if (count < 0) {
     return count;
   }
 
   if (count > 0) {
-    matches.set_subject(subject);
+    matches._subject = subject;
   }
 
   return count;
@@ -337,7 +350,7 @@ int32_t
 Regex::get_capture_count()
 {
   int captures = -1;
-  if (pcre2_pattern_info(_code, PCRE2_INFO_CAPTURECOUNT, &captures) != 0) {
+  if (pcre2_pattern_info(_Code::get(_code), PCRE2_INFO_CAPTURECOUNT, &captures) != 0) {
     return -1;
   }
   return captures;
