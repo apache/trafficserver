@@ -13,6 +13,7 @@
 #include <functional>
 #include <array>
 #include <variant>
+#include <ctype.h>
 
 #include "swoc/swoc_version.h"
 #include "swoc/IntrusiveHashMap.h"
@@ -567,7 +568,7 @@ Lexicon<E>::Item::ValueLinkage::key_of(Item *item) {
 template <typename E>
 uint32_t
 Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s) {
-  return Hash32FNV1a().hash_immediate(transform_view_of(&toupper, s));
+  return Hash32FNV1a().hash_immediate(transform_view_of(&::toupper, s));
 }
 
 template <typename E>
