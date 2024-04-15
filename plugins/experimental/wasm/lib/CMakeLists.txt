@@ -33,6 +33,7 @@ endif()
 
 add_library(wasmlib STATIC ${CC_FILES})
 if(wamr_FOUND)
+  target_compile_options(wasmlib PRIVATE -Wno-missing-field-initializers)
   target_link_libraries(wasmlib PUBLIC wamr::wamr)
 endif()
 
