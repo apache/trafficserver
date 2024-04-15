@@ -1,8 +1,6 @@
 +++++++++ Proxy's Request after hooks +++++++++
-``
-+++++++++ Proxy's Request after hooks +++++++++
 -- State Machine Id``
-POST ``
+POST /some/path/http2``
 Host: ``
 Content-Type: ``
 uuid: ``
