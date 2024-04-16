@@ -74,5 +74,16 @@ auto_option(
   DEFAULT
   ${_DEFAULT}
 )
+auto_option(
+  WASM
+  FEATURE_VAR
+  BUILD_WASM
+  WITH_SUBDIRECTORY
+  plugins/experimental/wasm
+  PACKAGE_DEPENDS
+  wamr
+  DEFAULT
+  ${_DEFAULT}
+)
 
 unset(_DEFAULT)

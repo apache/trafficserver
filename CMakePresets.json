@@ -164,6 +164,7 @@
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
         "ENABLE_CRIPTS": true
       }
     },
@@ -175,6 +176,7 @@
       "cacheVariables": {
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
         "CMAKE_CXX_STANDARD": "20"
       }
     },
@@ -188,6 +190,7 @@
         "quiche_ROOT": "/opt/quiche",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "ENABLE_QUICHE": true
       }
