@@ -1573,6 +1573,10 @@ Http2ConnectionState::state_closed(int event, void *edata)
     ink_release_assert(zombie_event == nullptr);
   } else if (edata == fini_event) {
     fini_event = nullptr;
+  } else if (edata == _priority_event) {
+    _priority_event = nullptr;
+  } else if (edata == _data_event) {
+    _data_event = nullptr;
   } else if (edata == shutdown_cont_event) {
     shutdown_cont_event = nullptr;
   } else if (edata == retransmit_event) {
