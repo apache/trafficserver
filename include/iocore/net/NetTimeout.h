@@ -219,14 +219,18 @@ template <class T, class List>
 inline void
 ActivityCop<T, List>::start()
 {
-  _event = this_ethread()->schedule_every(this, HRTIME_SECONDS(_freq));
+  if (_event == nullptr) {
+    _event = this_ethread()->schedule_every(this, HRTIME_SECONDS(_freq));
+  }
 }
 
 template <class T, class List>
 inline void
 ActivityCop<T, List>::stop()
 {
-  _event->cancel();
+  if (_event != nullptr) {
+    _event->cancel();
+  }
 }
 
 template <class T, class List>
