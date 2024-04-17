@@ -1377,6 +1377,15 @@ Http2ConnectionState::destroy()
   if (zombie_event) {
     zombie_event->cancel();
   }
+
+  if (_priority_event) {
+    _priority_event->cancel();
+  }
+
+  if (_data_event) {
+    _data_event->cancel();
+  }
+
   if (retransmit_event) {
     retransmit_event->cancel();
   }
@@ -1462,10 +1471,15 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     ink_release_assert(zombie_event == nullptr);
   } else if (edata == fini_event) {
     fini_event = nullptr;
+  } else if (edata == _priority_event) {
+    _priority_event = nullptr;
+  } else if (edata == _data_event) {
+    _data_event = nullptr;
   } else if (edata == retransmit_event) {
     retransmit_event = nullptr;
   }
   ++recursion;
+
   switch (event) {
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
@@ -1483,14 +1497,12 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
-    _priority_scheduled = false;
   } break;
 
   case HTTP2_SESSION_EVENT_DATA: {
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     this->restart_streams();
-    _data_scheduled = false;
   } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
@@ -2077,11 +2089,9 @@ Http2ConnectionState::schedule_stream_to_send_priority_frames(Http2Stream *strea
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   dependency_tree->activate(node);
 
-  if (!_priority_scheduled) {
-    _priority_scheduled = true;
-
+  if (_priority_event == nullptr) {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_PRIO);
+    _priority_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_PRIO);
   }
 }
 
@@ -2092,11 +2102,9 @@ Http2ConnectionState::schedule_stream_to_send_data_frames(Http2Stream *stream)
 
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  if (!_data_scheduled) {
-    _data_scheduled = true;
-
+  if (_data_event == nullptr) {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    this_ethread()->schedule_in(static_cast<Continuation *>(this), HRTIME_MSECOND, HTTP2_SESSION_EVENT_DATA);
+    _data_event = this_ethread()->schedule_in(static_cast<Continuation *>(this), HRTIME_MSECOND, HTTP2_SESSION_EVENT_DATA);
   }
 }
 
@@ -2165,7 +2173,10 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     break;
   }
 
-  this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_PRIO);
+  if (_priority_event == nullptr) {
+    _priority_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_PRIO);
+  }
+
   return;
 }
 
