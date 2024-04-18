@@ -28,6 +28,7 @@
 #include "P_QUICPacketHandler.h"
 #include "P_QUICNetProcessor.h"
 #include "P_QUICClosedConCollector.h"
+#include "P_SSLCertLookup.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include <quiche.h>

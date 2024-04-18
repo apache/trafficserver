@@ -25,12 +25,27 @@
 
 #include <atomic>
 
+#include "tscore/List.h"
+#include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/EventSystem.h"
-#include "../../../src/iocore/net/P_UnixNetState.h"
 #include "iocore/net/EventIO.h"
 #include "iocore/net/ReadWriteEventIO.h"
 
 class NetHandler;
+
+class Event;
+class NetEvent;
+
+struct NetState {
+  int enabled = 0;
+  VIO vio;
+  Link<NetEvent> ready_link;
+  SLink<NetEvent> enable_link;
+  int in_enabled_list = 0;
+  int triggered       = 0;
+
+  NetState() : vio(VIO::NONE) {}
+};
 
 // this class is used to NetHandler to hide some detail of NetEvent.
 // To combine the `UDPConenction` and `NetEvent`. NetHandler should

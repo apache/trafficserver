@@ -18,6 +18,7 @@
   limitations under the License.
  */
 
+#include "iocore/net/EventIO.h"
 #include "iocore/dns/DNSEventIO.h"
 #include "P_DNSConnection.h"
 

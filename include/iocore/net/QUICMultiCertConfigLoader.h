@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "../../../src/iocore/net/P_SSLCertLookup.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
 class QUICCertConfig
 {

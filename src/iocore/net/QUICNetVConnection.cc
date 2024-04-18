@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "P_SSLUtils.h"
 #include "P_QUICNetVConnection.h"
 #include "P_QUICPacketHandler.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"

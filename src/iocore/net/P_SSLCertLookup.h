@@ -29,6 +29,7 @@
 #include <unordered_map>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/SSLTypes.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;
@@ -40,14 +41,6 @@ struct SSLContextStorage;
 enum class SSLCertContextOption {
   OPT_NONE,  ///< Nothing special. Implies valid context.
   OPT_TUNNEL ///< Just tunnel, don't terminate.
-};
-
-/** Used to discern the context type when BoringSSL is used for the SSL implementation.
- */
-enum class SSLCertContextType {
-  GENERIC, ///< Generic Context (can be either EC or RSA)
-  RSA,     ///< RSA-based Context
-  EC       ///< EC-based Context
 };
 
 /**
@@ -84,9 +77,7 @@ struct ssl_ticket_key_block {
   ssl_ticket_key_t keys[];
 };
 
-using shared_SSLMultiCertConfigParams = std::shared_ptr<SSLMultiCertConfigParams>;
-using shared_SSL_CTX                  = std::shared_ptr<SSL_CTX>;
-using shared_ssl_ticket_key_block     = std::shared_ptr<ssl_ticket_key_block>;
+using shared_ssl_ticket_key_block = std::shared_ptr<ssl_ticket_key_block>;
 
 /** A certificate context.
 

@@ -27,7 +27,7 @@
 #include <quiche.h>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "../../../../src/iocore/net/P_SSLCertLookup.h"
+#include "iocore/net/SSLTypes.h"
 
 class QUICConfigParams : public ConfigInfo
 {

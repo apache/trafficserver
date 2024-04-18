@@ -30,15 +30,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-
-#if TS_USE_KQUEUE
-#include <sys/event.h>
-#define INK_EVP_IN  0x001
-#define INK_EVP_PRI 0x002
-#define INK_EVP_OUT 0x004
-#define INK_EVP_ERR 0x010
-#define INK_EVP_HUP 0x020
-#endif
+#include "iocore/net/EventIO.h"
 
 #define POLL_DESCRIPTOR_SIZE 32768
 
