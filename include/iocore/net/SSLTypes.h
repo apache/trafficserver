@@ -24,6 +24,7 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include <memory>
 
 enum class SNIRoutingType {
   NONE = 0,
