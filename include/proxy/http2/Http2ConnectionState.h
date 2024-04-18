@@ -393,8 +393,6 @@ private:
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id = 0;
-  bool _priority_scheduled          = false;
-  bool _data_scheduled              = false;
   bool fini_received                = false;
   bool in_destroy                   = false;
   int recursion                     = 0;
@@ -403,6 +401,8 @@ private:
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
+  Event *_priority_event            = nullptr;
+  Event *_data_event                = nullptr;
   Event *retransmit_event           = nullptr;
 
   uint32_t configured_max_settings_frames_per_minute     = 0;
