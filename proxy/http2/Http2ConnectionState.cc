@@ -263,8 +263,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       // Terminate the connection with COMPRESSION_ERROR because we don't decompress the field block in this HEADERS frame.
       // TODO: try to decompress to keep HPACK Dynamic Table in sync.
       if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
-        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR,
-                          error.msg);
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR, error.msg);
       }
 
       return error;
