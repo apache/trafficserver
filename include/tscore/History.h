@@ -74,7 +74,7 @@ public:
   }
 
 private:
-  HistoryEntry history[Count];
+  HistoryEntry history[Count] = {};
 
   unsigned int history_pos = 0;
 };
