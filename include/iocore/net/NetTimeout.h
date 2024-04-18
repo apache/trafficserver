@@ -230,6 +230,7 @@ ActivityCop<T, List>::stop()
 {
   if (_event != nullptr) {
     _event->cancel();
+    _event = nullptr;
   }
 }
 
