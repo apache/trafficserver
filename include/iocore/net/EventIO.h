@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_config.h"
+#include "tscore/ink_platform.h"
 
 struct PollDescriptor;
 
