@@ -24,6 +24,7 @@
 #pragma once
 
 #include <atomic>
+#include <vector>
 
 #include "NetTimeout.h"
 
@@ -242,6 +243,7 @@ private:
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
+  std::vector<Event *> _xmit_events;
 };
 
 ///////////////////////////////////////////////

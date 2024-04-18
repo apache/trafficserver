@@ -36,8 +36,9 @@
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/LocalBuffer.h"
 
-#include <sstream>
+#include <algorithm>
 #include <numeric>
+#include <sstream>
 
 #define REMEMBER(e, r)                                     \
   {                                                        \
@@ -1197,6 +1198,9 @@ Http2ConnectionState::destroy()
   if (zombie_event) {
     zombie_event->cancel();
   }
+  for (auto *event : _xmit_events) {
+    event->cancel();
+  }
   // release the mutex after the events are cancelled and sessions are destroyed.
   mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
 }
@@ -1279,6 +1283,10 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     ink_release_assert(zombie_event == nullptr);
   } else if (edata == fini_event) {
     fini_event = nullptr;
+  }
+  if (auto const xmit_event = std::find(_xmit_events.begin(), _xmit_events.end(), static_cast<Event *>(edata));
+      xmit_event != _xmit_events.end()) {
+    _xmit_events.erase(xmit_event);
   }
   ++recursion;
   switch (event) {
@@ -1382,6 +1390,10 @@ Http2ConnectionState::state_closed(int event, void *edata)
     fini_event = nullptr;
   } else if (edata == shutdown_cont_event) {
     shutdown_cont_event = nullptr;
+  }
+  if (auto const xmit_event = std::find(_xmit_events.begin(), _xmit_events.end(), static_cast<Event *>(edata));
+      xmit_event != _xmit_events.end()) {
+    _xmit_events.erase(xmit_event);
   }
   return 0;
 }
@@ -1702,7 +1714,7 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
     _scheduled = true;
 
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+    _xmit_events.push_back(this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT));
   }
 }
 
@@ -1747,7 +1759,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     break;
   }
 
-  this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+  _xmit_events.push_back(this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT));
   return;
 }
 
