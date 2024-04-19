@@ -480,7 +480,12 @@ ts_lua_client_response_set_error_resp(lua_State *L)
 
   status = luaL_checkinteger(L, 1);
 
-  reason     = TSHttpHdrReasonLookup(TSHttpStatus(status));
+  reason = TSHttpHdrReasonLookup(TSHttpStatus(status));
+  if (reason == nullptr) {
+    // ATS core could not find a reason string for this status. Simply use an
+    // empty string for the reason.
+    reason = "";
+  }
   reason_len = strlen(reason);
 
   TSHttpHdrStatusSet(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TSHttpStatus(status));
