@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "tsutil/Regex.h"
+#include <tsutil/Regex.h>
+#include <tsutil/Assert.h>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
 #include <array>
-#include <assert.h>
 #include <vector>
 #include <mutex>
 
@@ -172,7 +172,14 @@ RegexMatches::RegexMatches(uint32_t size)
   pcre2_general_context *ctx = pcre2_general_context_create(
     &RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
 
-  _MatchData::set(_match_data, pcre2_match_data_create(size, ctx));
+  pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
+  if (match_data == nullptr) {
+    // buffer was too small, allocate from heap
+    debug_assert_message(false, "RegexMatches data buffer too small, increase the buffer size in Regex.h");
+    match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
+  }
+
+  _MatchData::set(_match_data, match_data);
 }
 
 //----------------------------------------------------------------------------
@@ -188,9 +195,8 @@ RegexMatches::malloc(size_t size, void *caller)
     return ptr;
   }
 
-  // otherwise use system malloc if the buffer is too small
-  void *ptr = ::malloc(size);
-  return ptr;
+  // return nullptr if buffer is too small
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -381,7 +387,7 @@ DFA::build(const std::string_view pattern, unsigned flags)
 int32_t
 DFA::compile(std::string_view pattern, unsigned flags)
 {
-  assert(_patterns.empty());
+  release_assert(_patterns.empty());
   this->build(pattern, flags);
   return _patterns.size();
 }

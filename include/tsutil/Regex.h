@@ -67,7 +67,7 @@ private:
   constexpr static uint32_t DEFAULT_MATCHES = 10;
   static void *malloc(size_t size, void *caller);
   std::string_view _subject;
-  char _buffer[24 + 96 + 16 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 16 bytes per match.
+  char _buffer[24 + 96 + 28 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 28 bytes per match.
   size_t _buffer_bytes_used = 0;
   int32_t _size             = 0;
 
