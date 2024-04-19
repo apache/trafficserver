@@ -228,14 +228,14 @@ TEST_CASE("aggWrite behavior")
 
   // A number of things must be initialized in a certain way for Stripe
   // not to segfault, hit an assertion, or exhibit zero-division.
-  // I justpicked values that happen to work.
+  // I just picked values that happen to work.
   stripe.sector_size = 256;
   stripe.skip        = 0;
-  stripe.start       = 20;
   stripe.len         = 1024;
-  stripe.buckets     = 10;
-  stripe.segments    = 100;
-  stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), 1024));
+  stripe.segments    = 1;
+  stripe.buckets     = 4;
+  stripe.start       = stripe.skip + 2 * stripe.dirlen();
+  stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), stripe.dirlen()));
   stripe.dir         = reinterpret_cast<Dir *>(stripe.raw_dir + stripe.headerlen());
 
   stripe.evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
@@ -264,28 +264,46 @@ TEST_CASE("aggWrite behavior")
           "then nothing should be written to disk.")
   {
     header.agg_pos = 0;
-    CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
-    stripe.aggWrite(0, 0);
+    {
+      CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
+      stripe.aggWrite(0, 0);
+    }
+    // The virtual connection's callback should be called after aggWrite.
+    // If we don't wait for it, it could come after the connection object
+    // is freed and cause and invalid memory access.
+    while (vc.calls < 1) {
+      notifier.lock();
+      notifier.wait();
+    }
     CHECK(0 == header.agg_pos);
   }
 
   SECTION("Given the aggregation buffer is partially full and sync is set, "
           "when we schedule aggWrite, "
-          "then the virtual connection's callback should be invoked.")
+          "then some bytes should be written to disk.")
   {
     vc.f.sync          = 1;
     vc.f.use_first_key = 1;
 
-    // We don't hold the lock - the eventProcessor will acquire it.
-    eventProcessor.schedule_imm(&stripe, ET_CALL, AIO_EVENT_DONE);
-
     vc.write_serial     = 1;
     header.write_serial = 10;
+
+    {
+      CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
+      stripe.aggWrite(0, 0);
+    }
 
     while (vc.calls < 1) {
       notifier.lock();
       notifier.wait();
     }
-    CHECK(true);
+    // We don't check here what bytes were written. In fact according
+    // to valgrind it's writing uninitialized parts of the aggregation
+    // buffer, but that's OK because in this SECTION we only care that
+    // something was written successfully without anything blowing up.
+    CHECK(0 < header.agg_pos);
   }
+
+  ats_free(stripe.raw_dir);
+  ats_free(stripe.evacuate);
 }
