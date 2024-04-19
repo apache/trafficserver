@@ -231,7 +231,7 @@ TEST_CASE("aggWrite behavior")
   // I just picked values that happen to work.
   stripe.sector_size = 256;
   stripe.skip        = 0;
-  stripe.len         = 1024;
+  stripe.len         = 600000000000000;
   stripe.segments    = 1;
   stripe.buckets     = 4;
   stripe.start       = stripe.skip + 2 * stripe.dirlen();
@@ -242,7 +242,7 @@ TEST_CASE("aggWrite behavior")
   memset(static_cast<void *>(stripe.evacuate), 0, 2024);
 
   StripteHeaderFooter header;
-  header.write_pos = 0;
+  header.write_pos = 50000;
   header.agg_pos   = 1;
   stripe.header    = &header;
   attach_tmpfile_to_stripe(stripe);
@@ -256,7 +256,6 @@ TEST_CASE("aggWrite behavior")
   vc.set_write_len(1);
   vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
 
-  stripe.len = vc.agg_len + header.write_pos + 1;
   stripe.add_writer(&vc);
 
   SECTION("Given the aggregation buffer is only partially full and no sync, "
