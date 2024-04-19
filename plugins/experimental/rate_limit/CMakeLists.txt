@@ -19,6 +19,7 @@ project(rate_limit)
 
 add_atsplugin(
   rate_limit
+  limiter.cc
   ip_reputation.cc
   rate_limit.cc
   sni_limiter.cc
