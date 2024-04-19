@@ -102,6 +102,7 @@ are available:
    ":8080" being appended to the string.
 
 .. option:: --conntrack
+
    This flag tells the limiter that rather than limiting the number of active transactions,
    it should limit the number of active connections. This allows an established connection
    to make any number of transactions, but limits the number of connections that can be
