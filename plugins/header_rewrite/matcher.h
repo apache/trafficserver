@@ -67,7 +67,7 @@ protected:
 template <class T> class Matchers : public Matcher
 {
 public:
-  explicit Matchers<T>(const MatcherOps op) : Matcher(op), _data() {}
+  explicit Matchers(const MatcherOps op) : Matcher(op), _data() {}
   // Getters / setters
   const T &
   get() const
@@ -218,7 +218,7 @@ private:
 template <> class Matchers<const sockaddr *> : public Matcher
 {
 public:
-  explicit Matchers<const sockaddr *>(const MatcherOps op) : Matcher(op) {}
+  explicit Matchers(const MatcherOps op) : Matcher(op) {}
 
   void
   set(const std::string &data)
