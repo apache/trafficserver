@@ -30,3 +30,4 @@ add_atsplugin(
 
 target_link_libraries(rate_limit PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
 verify_global_plugin(rate_limit)
+verify_remap_plugin(rate_limit)

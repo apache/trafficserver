@@ -19,3 +19,4 @@ add_atsplugin(cachekey cachekey.cc common.cc configs.cc pattern.cc plugin.cc)
 
 target_link_libraries(cachekey PRIVATE PCRE::PCRE)
 verify_global_plugin(cachekey)
+verify_remap_plugin(cachekey)

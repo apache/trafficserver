@@ -36,6 +36,8 @@ target_link_libraries(
   PUBLIC jansson::jansson
 )
 
+verify_remap_plugin(uri_signing)
+
 if(BUILD_TESTING)
   add_subdirectory(unit_tests)
 endif()

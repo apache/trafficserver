@@ -33,6 +33,8 @@ add_atsplugin(
 
 target_link_libraries(prefetch PRIVATE OpenSSL::Crypto PCRE::PCRE)
 
+verify_remap_plugin(prefetch)
+
 if(BUILD_TESTING)
   add_subdirectory(test)
 endif()

@@ -47,3 +47,6 @@ add_atsplugin(
 target_link_libraries(txn_box PRIVATE libswoc::libswoc PkgConfig::PCRE2 OpenSSL::SSL yaml-cpp::yaml-cpp)
 
 target_include_directories(txn_box PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+verify_global_plugin(txn_box)
+verify_remap_plugin(txn_box)
