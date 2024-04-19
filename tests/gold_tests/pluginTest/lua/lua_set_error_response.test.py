@@ -90,7 +90,7 @@ class TestLuaSetErrorResponse:
         client.StartBefore(self._dns)
         client.StartBefore(self._ts)
         client.Streams.All += Testers.ContainsExpression(
-            'HTTP/1.1 418', 'The modified HTTP 418 response should be received by the client.')
+            "HTTP/1.1 418 I'm a teapot", 'The modified HTTP 418 response should be received by the client.')
         client.Streams.All += Testers.ContainsExpression('bad luck', 'The modified HTTP response body should contain "bad luck".')
         return client
 
