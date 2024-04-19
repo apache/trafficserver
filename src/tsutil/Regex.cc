@@ -175,7 +175,7 @@ RegexMatches::RegexMatches(uint32_t size)
   pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
   if (match_data == nullptr) {
     // buffer was too small, allocate from heap
-    debug_assert("Buffer too small, allocating from heap");
+    debug_assert_message(false, "RegexMatches data buffer too small, increase the buffer size in Regex.h");
     match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
   }
 

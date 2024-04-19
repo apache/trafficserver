@@ -180,11 +180,13 @@ TEST_CASE("Regex", "[libts][Regex]")
     REQUIRE(r.exec("bar") == true);
   }
 
-  // test with matches set to 100
+// test with matches set to 100, don't run the test in debug mode or the test will abort with a message to increase the buffer size
+#ifndef DEBUG
   {
     Regex r;
     RegexMatches matches(100);
     REQUIRE(r.compile(R"(foo)") == true);
     REQUIRE(r.exec("foo", matches) == 1);
   }
+#endif
 }
