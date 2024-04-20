@@ -264,7 +264,7 @@ TEST_CASE("aggWrite behavior")
   {
     header.agg_pos = 0;
     {
-      CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
+      SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.aggWrite(0, 0);
     }
     // The virtual connection's callback should be called after aggWrite.
@@ -288,7 +288,7 @@ TEST_CASE("aggWrite behavior")
     header.write_serial = 10;
 
     {
-      CACHE_TRY_LOCK(lock, stripe.mutex, this_ethread());
+      SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.aggWrite(0, 0);
     }
 
