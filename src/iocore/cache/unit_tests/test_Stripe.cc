@@ -119,23 +119,37 @@ public:
   }
 };
 
-class NotifyingVC final : public FakeVC
+class WaitingVC final : public FakeVC
 {
 public:
-  NotifyingVC(EventNotify *notifier) : _notifier{notifier} { SET_HANDLER(&NotifyingVC::handle_call); }
+  WaitingVC(Stripe *stripe)
+  {
+    SET_HANDLER(&WaitingVC::handle_call);
+    this->stripe = stripe;
+    this->dir    = *stripe->dir;
+  }
+
+  void
+  wait_for_callback()
+  {
+    this->_notifier.lock();
+    while (!this->_got_callback) {
+      this->_notifier.wait();
+    }
+    this->_notifier.unlock();
+  }
 
   int
   handle_call(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
   {
-    ++this->calls;
-    this->_notifier->signal();
+    this->_got_callback = true;
+    this->_notifier.signal();
     return EVENT_CONT;
   }
 
-  int calls{0};
-
 private:
-  EventNotify *_notifier;
+  EventNotify _notifier;
+  bool _got_callback{false};
 };
 
 /* Catch test helper to provide a Stripe with a valid file descriptor.
@@ -157,6 +171,38 @@ attach_tmpfile_to_stripe(Stripe &stripe)
   REQUIRE(fd != -1);
   stripe.fd = fd;
   return file;
+}
+
+// We can't return a stripe from this function because the copy
+// and move constructors are deleted.
+static void
+init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header)
+{
+  // These things are needed for the metrics increments in agg_copy.
+  CacheVol cache_vol;
+  stripe.cache_vol                                = &cache_vol;
+  cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
+  stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
+
+  // A number of things must be initialized in a certain way for Stripe
+  // not to segfault, hit an assertion, or exhibit zero-division.
+  // I just picked values that happen to work.
+  stripe.sector_size = 256;
+  stripe.skip        = 0;
+  stripe.len         = 600000000000000;
+  stripe.segments    = 1;
+  stripe.buckets     = 4;
+  stripe.start       = stripe.skip + 2 * stripe.dirlen();
+  stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), stripe.dirlen()));
+  stripe.dir         = reinterpret_cast<Dir *>(stripe.raw_dir + stripe.headerlen());
+
+  stripe.evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
+  memset(static_cast<void *>(stripe.evacuate), 0, 2024);
+
+  header.write_pos = 50000;
+  header.agg_pos   = 1;
+  stripe.header    = &header;
+  attach_tmpfile_to_stripe(stripe);
 }
 
 TEST_CASE("The behavior of Stripe::add_writer.")
@@ -219,43 +265,11 @@ TEST_CASE("The behavior of Stripe::add_writer.")
 TEST_CASE("aggWrite behavior")
 {
   Stripe stripe;
-
-  // These things are needed for the metrics increments in agg_copy.
-  CacheVol cache_vol;
-  stripe.cache_vol                                = &cache_vol;
-  cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
-  stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
-
-  // A number of things must be initialized in a certain way for Stripe
-  // not to segfault, hit an assertion, or exhibit zero-division.
-  // I just picked values that happen to work.
-  stripe.sector_size = 256;
-  stripe.skip        = 0;
-  stripe.len         = 600000000000000;
-  stripe.segments    = 1;
-  stripe.buckets     = 4;
-  stripe.start       = stripe.skip + 2 * stripe.dirlen();
-  stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), stripe.dirlen()));
-  stripe.dir         = reinterpret_cast<Dir *>(stripe.raw_dir + stripe.headerlen());
-
-  stripe.evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
-  memset(static_cast<void *>(stripe.evacuate), 0, 2024);
-
   StripteHeaderFooter header;
-  header.write_pos = 50000;
-  header.agg_pos   = 1;
-  stripe.header    = &header;
-  attach_tmpfile_to_stripe(stripe);
-
-  // The virtual connection doing the write also needs a few things
-  // set up in order to do anything interesting that doesnt crash.
-  EventNotify notifier;
-  NotifyingVC vc{&notifier};
-  vc.stripe = &stripe;
-  vc.dir    = *stripe.dir;
+  init_stripe_for_writing(stripe, header);
+  WaitingVC vc{&stripe};
   vc.set_write_len(1);
   vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
-
   stripe.add_writer(&vc);
 
   SECTION("Given the aggregation buffer is only partially full and no sync, "
@@ -267,15 +281,7 @@ TEST_CASE("aggWrite behavior")
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.aggWrite(0, 0);
     }
-    // The virtual connection's callback should be called after aggWrite.
-    // If we don't wait for it, it could come after the connection object
-    // is freed and cause and invalid memory access.
-    notifier.lock();
-    while (vc.calls < 1) {
-      notifier.wait();
-    }
-    notifier.unlock();
-
+    vc.wait_for_callback();
     CHECK(0 == header.agg_pos);
   }
 
@@ -283,23 +289,15 @@ TEST_CASE("aggWrite behavior")
           "when we schedule aggWrite, "
           "then some bytes should be written to disk.")
   {
-    vc.f.sync          = 1;
-    vc.f.use_first_key = 1;
-
+    vc.f.sync           = 1;
+    vc.f.use_first_key  = 1;
     vc.write_serial     = 1;
     header.write_serial = 10;
-
     {
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.aggWrite(0, 0);
     }
-
-    notifier.lock();
-    while (vc.calls < 1) {
-      notifier.wait();
-    }
-    notifier.unlock();
-
+    vc.wait_for_callback();
     // We don't check here what bytes were written. In fact according
     // to valgrind it's writing uninitialized parts of the aggregation
     // buffer, but that's OK because in this SECTION we only care that
