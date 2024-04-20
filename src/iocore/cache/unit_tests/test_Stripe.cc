@@ -270,10 +270,12 @@ TEST_CASE("aggWrite behavior")
     // The virtual connection's callback should be called after aggWrite.
     // If we don't wait for it, it could come after the connection object
     // is freed and cause and invalid memory access.
+    notifier.lock();
     while (vc.calls < 1) {
-      notifier.lock();
       notifier.wait();
     }
+    notifier.unlock();
+
     CHECK(0 == header.agg_pos);
   }
 
@@ -292,10 +294,12 @@ TEST_CASE("aggWrite behavior")
       stripe.aggWrite(0, 0);
     }
 
+    notifier.lock();
     while (vc.calls < 1) {
-      notifier.lock();
       notifier.wait();
     }
+    notifier.unlock();
+
     // We don't check here what bytes were written. In fact according
     // to valgrind it's writing uninitialized parts of the aggregation
     // buffer, but that's OK because in this SECTION we only care that
