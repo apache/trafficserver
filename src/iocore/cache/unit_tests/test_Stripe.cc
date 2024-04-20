@@ -176,10 +176,8 @@ attach_tmpfile_to_stripe(Stripe &stripe)
 // We can't return a stripe from this function because the copy
 // and move constructors are deleted.
 static void
-init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header)
+init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
 {
-  // These things are needed for the metrics increments in agg_copy.
-  CacheVol cache_vol;
   stripe.cache_vol                                = &cache_vol;
   cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
   stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
@@ -266,7 +264,8 @@ TEST_CASE("aggWrite behavior")
 {
   Stripe stripe;
   StripteHeaderFooter header;
-  init_stripe_for_writing(stripe, header);
+  CacheVol cache_vol;
+  init_stripe_for_writing(stripe, header, cache_vol);
   WaitingVC vc{&stripe};
   vc.set_write_len(1);
   vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
