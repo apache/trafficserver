@@ -47,6 +47,7 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "P_TLSKeyLogger.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/net/SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"

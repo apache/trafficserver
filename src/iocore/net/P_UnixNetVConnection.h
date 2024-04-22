@@ -36,7 +36,6 @@
 #include "tscore/ink_sock.h"
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/NetVConnection.h"
-#include "P_UnixNetState.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 #include "iocore/net/NetEvent.h"

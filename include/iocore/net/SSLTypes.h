@@ -23,9 +23,31 @@
 
 #pragma once
 
+#include <openssl/ssl.h>
+#include <memory>
+
 enum class SNIRoutingType {
   NONE = 0,
   BLIND,
   FORWARD,
   PARTIAL_BLIND,
 };
+
+/** Used to discern the context type when BoringSSL is used for the SSL implementation.
+ */
+enum class SSLCertContextType {
+  GENERIC, ///< Generic Context (can be either EC or RSA)
+  RSA,     ///< RSA-based Context
+  EC       ///< EC-based Context
+};
+
+#ifndef OPENSSL_IS_BORINGSSL
+using ssl_curve_id = int;
+#else
+using ssl_curve_id = uint16_t;
+#endif
+
+struct SSLMultiCertConfigParams;
+
+using shared_SSLMultiCertConfigParams = std::shared_ptr<SSLMultiCertConfigParams>;
+using shared_SSL_CTX                  = std::shared_ptr<SSL_CTX>;

@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include "../../../../src/iocore/net/P_Net.h"
-
 #include "iocore/net/quic/QUICApplication.h"
 #include "iocore/net/quic/QUICStreamManager.h"
 #include "iocore/net/quic/QUICEvents.h"

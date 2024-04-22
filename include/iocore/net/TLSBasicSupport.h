@@ -27,7 +27,7 @@
 #include <openssl/ssl.h>
 
 #include "tscore/ink_hrtime.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLTypes.h"
 
 class TLSBasicSupport
 {

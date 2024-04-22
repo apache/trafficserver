@@ -41,6 +41,7 @@
 #include "P_SSLConfig.h"
 #include "P_TLSKeyLogger.h"
 #include "BoringSSLUtils.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "SSLSessionCache.h"

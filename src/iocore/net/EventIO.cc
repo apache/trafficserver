@@ -23,6 +23,7 @@
 
 #include "iocore/net/EventIO.h"
 #include "tscore/ink_assert.h"
+#include "P_UnixPollDescriptor.h"
 
 int
 EventIO::start_common(EventLoop l, int afd, int e)

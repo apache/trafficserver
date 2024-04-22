@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
