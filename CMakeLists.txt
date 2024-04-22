@@ -340,7 +340,7 @@ set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
 if(EXTERNAL_YAML_CPP)
   message(STATUS "Looking for external yaml-cpp")
   find_package(yaml-cpp "0.8.0" REQUIRED)
-  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
+  set(YAMLCPP_LIB_VERSION ${yaml-cpp_VERSION})
   find_package_message(
     yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}"
   )
