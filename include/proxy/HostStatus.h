@@ -175,8 +175,28 @@ struct HostStatRec {
   }
 };
 
-struct HostStatusSync : public Continuation {
+class HostStatusSync : public Continuation
+{
+private:
+  HostStatusSync()
+  {
+    getHostStatusPersistentFilePath();
+
+    SET_HANDLER(&HostStatusSync::mainEvent);
+  }
+
+  ~HostStatusSync() = default;
+
+public:
+  HostStatusSync(HostStatusSync const &) = delete;
+
   std::string hostRecordsFile;
+
+  static HostStatusSync *
+  new_instance()
+  {
+    return new HostStatusSync;
+  }
 
   void sync_task();
   void
@@ -186,18 +206,14 @@ struct HostStatusSync : public Continuation {
     hostRecordsFile = Layout::relative_to(rundir, ts::filename::HOST_RECORDS);
   }
 
-public:
-  HostStatusSync()
-  {
-    getHostStatusPersistentFilePath();
-
-    SET_HANDLER(&HostStatusSync::mainEvent);
-  }
-
+  // Deletes instance.
   int
   mainEvent(int event, Event *e)
   {
     sync_task();
+
+    delete this;
+
     return EVENT_DONE;
   }
 };
