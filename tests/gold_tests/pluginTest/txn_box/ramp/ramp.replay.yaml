@@ -7,7 +7,9 @@ meta:
       select:
       - lt: 300
         do:
-          ua-req-host: "ex.two"
+        - ua-req-url-host: "ex.two"
+        - ua-req-url-port: {server_port}
+        - ua-req-scheme: "http"
 
   blocks:
   - base_request: &base_request
