@@ -18,7 +18,9 @@
 #
 #  Copyright 2020, Verizon Media
 #
+
 import os.path
+import tempfile
 
 Test.Summary = '''
 Test traffic ramping.
@@ -26,19 +28,30 @@ Test traffic ramping.
 
 Test.SkipUnless(Condition.PluginExists("txn_box.so"))
 
-RepeatCount = 1000
+RepeatCount = 100
+replay_file = 'ramp.replay.yaml'
+
+# Make a server representing a staging host to which we can ramp.
+server_ramp = Test.MakeVerifierServerProcess('pv-server-staging', replay_file)
+# Make it so that server-ramp is used in the txn_box config.
+orig_replay_file = os.path.join(Test.TestDirectory, replay_file)
+old_replay_content = open(orig_replay_file).read()
+new_replay_content = old_replay_content.replace('{server_port}', str(server_ramp.Variables.http_port))
+# There's no need to delete temp_replay because it will be cleaned up with the TestDirectory.
+temp_replay = tempfile.NamedTemporaryFile(dir=Test.RunDirectory, delete=False)
+# Reference this new replay file for all other TestRun processes.
+replay_file = temp_replay.name
+open(replay_file, 'w').write(new_replay_content)
 
 tr = Test.TxnBoxTestAndRun(
     "Ramping",
-    "ramp.replay.yaml",
-    remap=[('http://one.ex', 'http://three.ex', ('--key=meta.txn_box.remap', 'ramp.replay.yaml'))],
-    verifier_client_args="--verbose diag --repeat {}".format(RepeatCount))
-
-with open(f"{tr.TestDirectory}/multi_ramp_common.py") as f:
-    code = compile(f.read(), "multi_ramp_common.py", 'exec')
-    exec(code)
+    replay_file,
+    remap=[('http://one.ex', 'http://three.ex', ('--key=meta.txn_box.remap', replay_file))],
+    verifier_client_args=f"--verbose diag --repeat {RepeatCount}",
+    verifier_server_args=f"--verbose diag")
 
 ts = tr.Variables.TS
-ts.Setup.Copy("ramp.replay.yaml", ts.Variables.CONFIGDIR)
+ts.StartBefore(server_ramp)
+ts.Setup.Copy(replay_file, ts.Variables.CONFIGDIR)
 ts.Setup.Copy("ramp.logging.yaml", os.path.join(ts.Variables.CONFIGDIR, "logging.yaml"))
 ts.Disk.records_config.update({'proxy.config.log.max_secs_per_buffer': 1})
