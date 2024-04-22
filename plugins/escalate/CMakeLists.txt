@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(escalate escalate.cc)
+verify_remap_plugin(escalate)

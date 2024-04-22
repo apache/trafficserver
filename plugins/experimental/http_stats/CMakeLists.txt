@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(http_stats http_stats.cc)
+verify_remap_plugin(http_stats)

@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(conf_remap conf_remap.cc)
+verify_remap_plugin(conf_remap)
