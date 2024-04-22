@@ -18,3 +18,4 @@
 add_atsplugin(money_trace money_trace.cc)
 target_link_libraries(money_trace PRIVATE libswoc::libswoc)
 verify_global_plugin(money_trace)
+verify_remap_plugin(money_trace)

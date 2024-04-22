@@ -17,3 +17,4 @@
 
 add_atsplugin(url_sig url_sig.cc)
 target_link_libraries(url_sig PRIVATE OpenSSL::SSL PCRE::PCRE)
+verify_remap_plugin(url_sig)

@@ -17,3 +17,4 @@
 
 add_atsplugin(authproxy authproxy.cc utils.cc)
 verify_global_plugin(authproxy)
+verify_remap_plugin(authproxy)

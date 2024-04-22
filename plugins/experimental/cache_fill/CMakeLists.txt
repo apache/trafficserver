@@ -16,3 +16,5 @@
 #######################
 
 add_atsplugin(cache_fill background_fetch.cc cache_fill.cc)
+
+verify_remap_plugin(cache_fill)

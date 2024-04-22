@@ -18,3 +18,4 @@
 add_atsplugin(background_fetch background_fetch.cc configs.cc headers.cc rules.cc)
 target_link_libraries(background_fetch PRIVATE libswoc::libswoc)
 verify_global_plugin(background_fetch)
+verify_remap_plugin(background_fetch)

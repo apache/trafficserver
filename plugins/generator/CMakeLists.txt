@@ -17,3 +17,4 @@
 
 add_atsplugin(generator generator.cc)
 verify_global_plugin(generator)
+verify_remap_plugin(generator)

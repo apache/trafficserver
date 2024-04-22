@@ -23,6 +23,8 @@ if(maxminddb_FOUND)
     maxmind_acl PRIVATE libswoc::libswoc ts::tsapi yaml-cpp::yaml-cpp maxminddb::maxminddb PCRE::PCRE
   )
 
+  verify_remap_plugin(maxmind_acl)
+
 else()
   message(STATUS "skipping maxmind_acl plugin (missing maxminddb)")
 endif()

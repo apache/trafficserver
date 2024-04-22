@@ -21,6 +21,8 @@ add_atsplugin(s3_auth s3_auth.cc aws_auth_v4.cc)
 
 target_link_libraries(s3_auth PRIVATE OpenSSL::Crypto)
 
+verify_remap_plugin(s3_auth)
+
 if(BUILD_TESTING)
   add_subdirectory(unit_tests)
 endif()
