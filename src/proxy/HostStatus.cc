@@ -494,7 +494,7 @@ server_set_status(std::string_view id, YAML::Node const &params)
 
     // schedule a write to the persistent store.
     Debug("host_statuses", "updating persistent store");
-    eventProcessor.schedule_imm(new HostStatusSync, ET_TASK);
+    eventProcessor.schedule_imm(HostStatusSync::new_instance(), ET_TASK);
   } catch (std::exception const &ex) {
     Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
     resp.errata()
