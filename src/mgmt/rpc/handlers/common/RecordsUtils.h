@@ -24,11 +24,9 @@
 
 #include "tsutil/ts_errata.h"
 
-#include "mgmt/rpc/handlers/common/convert.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "records/RecCore.h"
-#include "../../../../../src/records/P_RecCore.h"
 #include "tscore/Diags.h"
 
 #include <yaml-cpp/yaml.h>

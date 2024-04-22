@@ -78,6 +78,7 @@ extern "C" int plock(int);
 #include "../iocore/dns/P_SplitDNS.h"
 #include "../iocore/hostdb/P_HostDB.h"
 #include "../iocore/cache/P_Cache.h"
+#include "../records/P_RecCore.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
 #include "records/RecordsConfig.h"

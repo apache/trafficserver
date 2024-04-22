@@ -18,12 +18,12 @@
   limitations under the License.
 */
 
-#include "mgmt/rpc/handlers/common/RecordsUtils.h"
+#include "RecordsUtils.h"
 
 #include <system_error>
 #include <string>
 
-#include "mgmt/rpc/handlers/common/convert.h"
+#include "convert.h"
 #include "../../../../records/P_RecCore.h"
 #include "tscore/Tokenizer.h"
 
