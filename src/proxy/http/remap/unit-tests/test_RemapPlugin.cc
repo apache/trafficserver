@@ -44,7 +44,7 @@ std::error_code ec;
 static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeDir     = sandboxDir / "runtime";
 static fs::path searchDir      = sandboxDir / "search";
-static fs::path pluginBuildDir = fs::current_path() / "unit-tests/.libs";
+static fs::path pluginBuildDir = fs::current_path();
 
 void
 clean()
@@ -106,7 +106,7 @@ setupSandBox(const fs::path configPath)
 bool
 loadPlugin(RemapPluginUnitTest *plugin, std::string &error, PluginDebugObject *&debugObject)
 {
-  bool result = plugin->load(error);
+  bool result = plugin->load(error, fs::path()); // Dummy compiler path.
   debugObject = plugin->getDebugObject();
   return result;
 }

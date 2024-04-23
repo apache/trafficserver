@@ -40,3 +40,7 @@ target_link_libraries(
   PUBLIC ts::proxy ts::tscore
   PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
 )
+
+if(BUILD_TESTING)
+  add_subdirectory(unit-tests)
+endif()

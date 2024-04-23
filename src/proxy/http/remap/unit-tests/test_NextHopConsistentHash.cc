@@ -52,7 +52,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -191,7 +191,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -301,7 +301,7 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("ignore-self-detect-false");
 
     HostStatus &hs = HostStatus::instance();
@@ -351,7 +351,7 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("ignore-self-detect-true");
 
     HostStatus &hs = HostStatus::instance();
@@ -401,7 +401,7 @@ SCENARIO("Testing NextHopConsistentHash same host different port markdown", "[Ne
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("same-host-different-port");
 
     WHEN("the config is loaded.")
@@ -469,7 +469,7 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("hash-string-override");
 
     WHEN("the config is loaded.")
@@ -529,7 +529,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-2");
 
     WHEN("the config is loaded.")
@@ -648,7 +648,7 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
   GIVEN("Loading the peering.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory                    nhf(TS_SRC_DIR "unit-tests/peering.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/peering.yaml");
     strategy = nhf.strategyInstance("peering-group-1");
 
     WHEN("the config is loaded.")

@@ -44,9 +44,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
   GIVEN("Loading the strategy.yaml with included 'hosts.yaml'.")
   {
 #ifdef TS_SRC_DIR
-    REQUIRE(chdir(TS_SRC_DIR) == 0);
+    REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
 #endif
-    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/strategy.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/strategy.yaml");
 
     WHEN("the two files are loaded.")
     {
@@ -219,7 +219,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
   GIVEN("loading a yaml config, simple-strategy.yaml ")
   {
-    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/simple-strategy.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/simple-strategy.yaml");
 
     WHEN("loading the single file")
     {
@@ -360,7 +360,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
   GIVEN("loading a yaml config combining hosts and strategies into one file, combined.yaml")
   {
-    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/combined.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/combined.yaml");
 
     WHEN("loading the single file")
     {
@@ -782,7 +782,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
 {
   GIVEN("Loading the strategies using a directory of 'yaml' files")
   {
-    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/strategies-dir");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/strategies-dir");
 
     WHEN("the two files are loaded.")
     {

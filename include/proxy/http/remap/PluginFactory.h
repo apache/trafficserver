@@ -31,8 +31,6 @@
 #include "proxy/http/remap/PluginDso.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 
-#include "tscore/Ptr.h"
-
 #include "tscore/ink_uuid.h"
 #include "ts/apidefs.h"
 
