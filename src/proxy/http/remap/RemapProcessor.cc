@@ -176,7 +176,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
           if (!map->negative_referer) {
             break;
           }
-        } else if (ri->regx_valid && (pcre_exec(ri->regx, nullptr, tmp_referer_buf, referer_len, 0, 0, nullptr, 0) != -1)) {
+        } else if (ri->regex_valid && ri->regex.exec(std::string_view(tmp_referer_buf, referer_len))) {
           enabled_flag = ri->negative ? false : true;
           break;
         }

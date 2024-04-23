@@ -156,16 +156,14 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 /**
  *
  **/
-referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
-  : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
+referer_info::referer_info(const char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
 {
-  const char *error;
+  std::string error;
   int         erroffset;
 
   if (error_flag) {
     *error_flag = false;
   }
-  regx = nullptr;
 
   if (_ref) {
     if (*_ref == '~') {
@@ -177,16 +175,14 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
       if (!strcmp(referer, "*")) {
         any = true;
       } else {
-        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, nullptr);
-        if (!regx) {
+        regex_valid = regex.compile(referer, error, erroffset, RE_CASE_INSENSITIVE);
+        if (regex_valid == false) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
-            ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
+            ink_strlcpy(errmsgbuf, error.c_str(), errmsgbuf_size);
           }
           if (error_flag) {
             *error_flag = true;
           }
-        } else {
-          regx_valid = true;
         }
       }
     }
@@ -201,10 +197,4 @@ referer_info::~referer_info()
   ats_free(referer);
   referer      = nullptr;
   referer_size = 0;
-
-  if (regx_valid) {
-    pcre_free(regx);
-    regx       = nullptr;
-    regx_valid = false;
-  }
 }
