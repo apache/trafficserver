@@ -21,18 +21,11 @@
   limitations under the License.
  */
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ParseRules.h"
 #include "tscore/Tokenizer.h"
+#include "tsutil/Regex.h"
 #include "records/RecordsConfig.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
@@ -390,18 +383,13 @@ namespace
 bool
 recordRegexCheck(const char *pattern, const char *value)
 {
-  pcre *regex;
-  const char *error;
-  int erroffset;
+  Regex regex;
 
-  regex = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
-  if (!regex) {
+  bool rval = regex.compile(pattern);
+  if (rval == false) {
     return false;
   } else {
-    int r = pcre_exec(regex, nullptr, value, strlen(value), 0, 0, nullptr, 0);
-
-    pcre_free(regex);
-    return (r != -1) ? true : false;
+    return regex.exec(value);
   }
 
   return false; // no-op
