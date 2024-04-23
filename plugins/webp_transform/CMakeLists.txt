@@ -18,4 +18,4 @@
 add_atsplugin(webp_transform ImageTransform.cc)
 target_link_libraries(webp_transform PRIVATE ImageMagick::Magick++ tscppapi)
 
-verify_global_plugin(webp_transform)
+verify_global_plugin(webp_transform ${CMAKE_CURRENT_SOURCE_DIR}/image_magic_dlopen_leak_suppression.txt)
