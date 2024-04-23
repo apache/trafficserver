@@ -32,7 +32,7 @@
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
-#include "iocore/cache/CacheEvacuateDocVC.h"
+#include "CacheEvacuateDocVC.h"
 
 // tscore
 #include "tscore/Diags.h"
