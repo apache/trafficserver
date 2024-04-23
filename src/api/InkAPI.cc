@@ -8813,6 +8813,9 @@ TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_v
   // TSYaml to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure
   // the version is the same.
   if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
+    Debug("rpc.api", "[%.*s] YAML version check failed. Passed='%.*s', expected='%s'", static_cast<int>(provider_len),
+          provider_name, static_cast<int>(yamlcpp_lib_len), yaml_version, YAMLCPP_LIB_VERSION);
+
     return nullptr;
   }
 
