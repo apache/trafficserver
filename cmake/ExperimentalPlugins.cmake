@@ -27,6 +27,8 @@ else()
   set(_DEFAULT OFF)
 endif()
 
+include(add_atsplugin)
+
 auto_option(
   MAXMIND_ACL
   FEATURE_VAR
