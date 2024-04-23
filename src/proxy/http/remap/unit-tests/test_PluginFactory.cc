@@ -106,7 +106,7 @@ static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeRootDir = sandboxDir / "runtime";
 static fs::path runtimeDir     = runtimeRootDir / tempComponent;
 static fs::path searchDir      = sandboxDir / "search";
-static fs::path pluginBuildDir = fs::current_path() / "unit-tests/.libs";
+static fs::path pluginBuildDir = fs::current_path();
 
 void
 clean()
@@ -472,7 +472,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
     fs::path runtimePath1            = runtimeDir / effectivePath1.relative_path();
     fs::path runtimePath2            = runtimeDir / effectivePath2.relative_path();
     fs::path runtimePath3            = runtimeDir / effectivePath3.relative_path();
-    fs::path pluginBuildPath         = fs::current_path() / fs::path("unit-tests/.libs") / pluginName;
+    fs::path pluginBuildPath         = fs::current_path() / pluginName;
 
     std::string error;
 
