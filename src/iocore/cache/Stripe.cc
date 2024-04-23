@@ -24,10 +24,13 @@
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
 
+#include "tsutil/DbgCtl.h"
+
 #include "tscore/hugepages.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_memory.h"
 
+#include <cstddef>
 #include <cstring>
 
 using CacheHTTPInfo = HTTPInfo;
@@ -35,10 +38,21 @@ using CacheHTTPInfo = HTTPInfo;
 namespace
 {
 
+DbgCtl dbg_ctl_cache_init{"cache_init"};
+
+constexpr int DIRECTORY_FOOTER_SIZE{ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter))};
+
 int
 compare_ushort(void const *a, void const *b)
 {
   return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
+}
+
+template <typename T, typename U>
+constexpr double
+percent(T part, U whole)
+{
+  return static_cast<double>(part) / static_cast<double>(whole) * 100.0;
 }
 
 } // namespace
@@ -68,6 +82,65 @@ struct StripeInitInfo {
 ////
 // Stripe
 //
+
+Stripe::Stripe(off_t blocks, off_t dir_skip)
+  : skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))}, start{skip}, len{blocks * STORE_BLOCK_SIZE}
+{
+  ink_assert(this->len < MAX_STRIPE_SIZE);
+
+  this->_init_data(STORE_BLOCK_SIZE);
+  this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
+}
+
+void
+Stripe::_init_data(off_t store_block_size)
+{
+  // iteratively calculate start + buckets; updates this->start
+  this->_init_data_internal();
+  this->_init_data_internal();
+  this->_init_data_internal();
+
+  this->data_blocks = (this->len - (this->start - this->skip)) / store_block_size;
+}
+
+void
+Stripe::_init_data_internal()
+{
+  // step1: calculate the number of entries.
+  off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
+  // step2: calculate the number of buckets
+  off_t total_buckets = total_entries / DIR_DEPTH;
+  // step3: calculate the number of segments, no segment has more than 16384 buckets
+  this->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  // step4: divide total_buckets into segments on average.
+  this->buckets = (total_buckets + this->segments - 1) / this->segments;
+  // step5: set the start pointer.
+  this->start = this->skip + 2 * this->dirlen();
+}
+
+void
+Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_size)
+{
+  ink_assert(directory_size <= static_cast<std::size_t>(this->len));
+  // It's probably invalid for the directory to be this small, but at least we
+  // know we will allocate sufficient space for the data we initialize
+  // pointers to, and we can't corrupt our dir pointer by writing to the
+  // footer.
+  ink_release_assert(directory_size >= sizeof(Dir) + header_size + footer_size);
+
+  Dbg(dbg_ctl_cache_init, "Stripe %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(),
+      directory_size, (long long)this->len, percent(directory_size, this->len));
+  if (ats_hugepage_enabled()) {
+    this->raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+  }
+  if (nullptr == this->raw_dir) {
+    this->raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+  }
+  this->dir    = reinterpret_cast<Dir *>(this->raw_dir + header_size);
+  this->header = reinterpret_cast<StripteHeaderFooter *>(this->raw_dir);
+  std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
+  this->footer = reinterpret_cast<StripteHeaderFooter *>(this->raw_dir + footer_offset);
+}
 
 int
 Stripe::dir_check()
@@ -259,53 +332,6 @@ Stripe::_init_dir()
       }
     }
   }
-}
-
-void
-Stripe::_init_data_internal()
-{
-  // step1: calculate the number of entries.
-  off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
-  // step2: calculate the number of buckets
-  off_t total_buckets = total_entries / DIR_DEPTH;
-  // step3: calculate the number of segments, no segment has more than 16384 buckets
-  this->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
-  // step4: divide total_buckets into segments on average.
-  this->buckets = (total_buckets + this->segments - 1) / this->segments;
-  // step5: set the start pointer.
-  this->start = this->skip + 2 * this->dirlen();
-}
-
-void
-Stripe::_init_data(off_t blocks, off_t dir_skip)
-{
-  len = blocks * STORE_BLOCK_SIZE;
-  ink_assert(len <= MAX_STRIPE_SIZE);
-
-  skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
-
-  // successive approximation, directory/meta data eats up some storage
-  start = skip;
-
-  // iteratively calculate start + buckets
-  this->_init_data_internal();
-  this->_init_data_internal();
-  this->_init_data_internal();
-
-  data_blocks = (len - (start - skip)) / STORE_BLOCK_SIZE;
-
-  // raw_dir
-  raw_dir = nullptr;
-  if (ats_hugepage_enabled()) {
-    raw_dir = static_cast<char *>(ats_alloc_hugepage(this->dirlen()));
-  }
-  if (raw_dir == nullptr) {
-    raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), this->dirlen()));
-  }
-
-  dir    = reinterpret_cast<Dir *>(raw_dir + this->headerlen());
-  header = reinterpret_cast<StripteHeaderFooter *>(raw_dir);
-  footer = reinterpret_cast<StripteHeaderFooter *>(raw_dir + this->dirlen() - ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter)));
 }
 
 bool

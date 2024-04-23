@@ -156,11 +156,12 @@ public:
 
   int within_hit_evacuate_window(Dir const *dir) const;
 
-  StripeSM() : Continuation(new_ProxyMutex())
-  {
-    open_dir.mutex = mutex;
-    SET_HANDLER(&StripeSM::aggWrite);
-  }
+  /**
+   * StripeSM constructor.
+   *
+   * @param blocks: Number of blocks. Must be at least 10.
+   */
+  StripeSM(off_t blocks, off_t dir_skip);
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
 
