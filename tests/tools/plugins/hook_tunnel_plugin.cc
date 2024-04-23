@@ -31,7 +31,7 @@ static int stat_error        = 0;
 static int stat_test_done    = 0;
 
 static const char PLUGIN_TAG[] = PLUGIN_NAME;
-static DbgCtl plugin_ctl{PLUGIN_TAG};
+static DbgCtl     plugin_ctl{PLUGIN_TAG};
 
 static int
 tunnelStart(TSCont cont, TSEvent event, void *edata)

@@ -65,7 +65,7 @@ TEST_CASE("History", "[libts][History]")
   REQUIRE(string_view{buf} == "test_History.cc:49 (C_A_T_C_H_T_E_S_T_0)");
 
   swoc::LocalBufferWriter<128> w;
-  SM<HISTORY_DEFAULT_SIZE> *sm = new SM<HISTORY_DEFAULT_SIZE>;
+  SM<HISTORY_DEFAULT_SIZE>    *sm = new SM<HISTORY_DEFAULT_SIZE>;
   SM_REMEMBER(sm, 1, 1);
   SM_REMEMBER(sm, 2, 2);
   SM_REMEMBER(sm, 3, NO_REENTRANT);

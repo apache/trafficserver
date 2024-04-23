@@ -39,14 +39,14 @@ class HTTPHdr;
 using Http2StreamId = uint32_t;
 
 constexpr Http2StreamId HTTP2_CONNECTION_CONTROL_STREAM = 0;
-constexpr uint8_t HTTP2_FRAME_NO_FLAG                   = 0;
+constexpr uint8_t       HTTP2_FRAME_NO_FLAG             = 0;
 
 // [RFC 7540] 6.9.2. Initial Flow Control Window Size
 // the flow control window can be come negative so we need to track it with a signed type.
 using Http2WindowSize = int32_t;
 
 extern const char *const HTTP2_CONNECTION_PREFACE;
-const size_t HTTP2_CONNECTION_PREFACE_LEN = 24;
+const size_t             HTTP2_CONNECTION_PREFACE_LEN = 24;
 
 const size_t HTTP2_FRAME_HEADER_LEN       = 9;
 const size_t HTTP2_DATA_PADLEN_LEN        = 1;
@@ -73,16 +73,16 @@ const uint32_t HTTP2_MAX_BUFFER_USAGE       = 524288;
 // The RFC says weight value is 1 to 256, but the value in TS is between 0 to 255
 // to use uint8_t. So the default weight is 16 minus 1.
 const uint32_t HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY = 0;
-const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT             = 15;
+const uint8_t  HTTP2_PRIORITY_DEFAULT_WEIGHT            = 15;
 
 // Statistics
 struct Http2StatsBlock {
-  Metrics::Gauge::AtomicType *current_client_session_count;
-  Metrics::Gauge::AtomicType *current_server_session_count;
-  Metrics::Gauge::AtomicType *current_active_client_connection_count;
-  Metrics::Gauge::AtomicType *current_active_server_connection_count;
-  Metrics::Gauge::AtomicType *current_client_stream_count;
-  Metrics::Gauge::AtomicType *current_server_stream_count;
+  Metrics::Gauge::AtomicType   *current_client_session_count;
+  Metrics::Gauge::AtomicType   *current_server_session_count;
+  Metrics::Gauge::AtomicType   *current_active_client_connection_count;
+  Metrics::Gauge::AtomicType   *current_active_server_connection_count;
+  Metrics::Gauge::AtomicType   *current_client_stream_count;
+  Metrics::Gauge::AtomicType   *current_server_stream_count;
   Metrics::Counter::AtomicType *total_client_stream_count;
   Metrics::Counter::AtomicType *total_server_stream_count;
   Metrics::Counter::AtomicType *total_transactions_time;
@@ -260,9 +260,9 @@ enum Http2SettingsIdentifier {
 
 // [RFC 7540] 4.1. Frame Format
 struct Http2FrameHeader {
-  uint32_t length;
-  uint8_t type;
-  uint8_t flags;
+  uint32_t      length;
+  uint8_t       type;
+  uint8_t       flags;
   Http2StreamId streamid;
 };
 
@@ -277,8 +277,8 @@ struct Http2Error {
   };
 
   Http2ErrorClass cls;
-  Http2ErrorCode code;
-  const char *msg;
+  Http2ErrorCode  code;
+  const char     *msg;
 };
 
 // [RFC 7540] 6.5.1. SETTINGS Format
@@ -291,23 +291,23 @@ struct Http2SettingsParameter {
 struct Http2Priority {
   Http2Priority() : weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY) {}
 
-  bool exclusive_flag = false;
-  uint8_t weight;
+  bool     exclusive_flag = false;
+  uint8_t  weight;
   uint32_t stream_dependency;
 };
 
 // [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
   Http2HeadersParameter() {}
-  uint8_t pad_length = 0;
+  uint8_t       pad_length = 0;
   Http2Priority priority;
 };
 
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
   Http2Goaway() {}
-  Http2StreamId last_streamid = 0;
-  Http2ErrorCode error_code   = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  Http2StreamId  last_streamid = 0;
+  Http2ErrorCode error_code    = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 
   // NOTE: we don't (de)serialize the variable length debug data at this layer
   // because there's
@@ -323,7 +323,7 @@ struct Http2RstStream {
 
 // [RFC 7540] 6.6 PUSH_PROMISE Format
 struct Http2PushPromise {
-  uint8_t pad_length              = 0;
+  uint8_t       pad_length        = 0;
   Http2StreamId promised_streamid = 0;
 };
 
@@ -378,7 +378,7 @@ Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32
 
 ParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
 ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
-void http2_init();
+void        http2_init();
 
 /** Each of these values correspond to the flow control policy described in or
  * records.yaml documentation for proxy.config.http2.flow_control.policy_in.
@@ -397,30 +397,30 @@ enum class Http2FlowControlPolicy {
 class Http2
 {
 public:
-  static uint32_t max_concurrent_streams_in;
-  static uint32_t min_concurrent_streams_in;
-  static uint32_t max_active_streams_in;
-  static bool throttling;
-  static uint32_t stream_priority_enabled;
-  static uint32_t initial_window_size_in;
+  static uint32_t               max_concurrent_streams_in;
+  static uint32_t               min_concurrent_streams_in;
+  static uint32_t               max_active_streams_in;
+  static bool                   throttling;
+  static uint32_t               stream_priority_enabled;
+  static uint32_t               initial_window_size_in;
   static Http2FlowControlPolicy flow_control_policy_in;
-  static uint32_t max_frame_size;
-  static uint32_t header_table_size;
-  static uint32_t max_header_list_size;
-  static uint32_t accept_no_activity_timeout;
-  static uint32_t no_activity_timeout_in;
-  static uint32_t active_timeout_in;
-  static uint32_t push_diary_size;
-  static uint32_t zombie_timeout_in;
+  static uint32_t               max_frame_size;
+  static uint32_t               header_table_size;
+  static uint32_t               max_header_list_size;
+  static uint32_t               accept_no_activity_timeout;
+  static uint32_t               no_activity_timeout_in;
+  static uint32_t               active_timeout_in;
+  static uint32_t               push_diary_size;
+  static uint32_t               zombie_timeout_in;
 
-  static uint32_t max_concurrent_streams_out;
-  static uint32_t min_concurrent_streams_out;
-  static uint32_t max_active_streams_out;
-  static uint32_t no_activity_timeout_out;
-  static uint32_t initial_window_size_out;
+  static uint32_t               max_concurrent_streams_out;
+  static uint32_t               min_concurrent_streams_out;
+  static uint32_t               max_active_streams_out;
+  static uint32_t               no_activity_timeout_out;
+  static uint32_t               initial_window_size_out;
   static Http2FlowControlPolicy flow_control_policy_out;
 
-  static float stream_error_rate_threshold;
+  static float    stream_error_rate_threshold;
   static uint32_t stream_error_sampling_threshold;
   static uint32_t max_settings_per_frame;
   static uint32_t max_settings_per_minute;
@@ -429,12 +429,12 @@ public:
   static uint32_t max_priority_frames_per_minute;
   static uint32_t max_rst_stream_frames_per_minute;
   static uint32_t max_continuation_frames_per_minute;
-  static float min_avg_window_update;
+  static float    min_avg_window_update;
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;
   static uint32_t header_table_size_limit;
   static uint32_t write_buffer_block_size;
-  static float write_size_threshold;
+  static float    write_size_threshold;
   static uint32_t write_time_threshold;
   static uint32_t buffer_water_mark;
 

@@ -25,8 +25,8 @@
 
 namespace
 {
-const std::string PLUGIN_TAG_KEY{"tag"};
-const std::string PLUGIN_DATA_KEY{"data"};
+const std::string     PLUGIN_TAG_KEY{"tag"};
+const std::string     PLUGIN_DATA_KEY{"data"};
 static constexpr auto logTag{"rpc.plugins"};
 
 struct PluginMsgInfo {

@@ -302,7 +302,7 @@ SieveLru::dump()
 
   for (uint32_t i = 0; i < _num_buckets + 1; ++i) {
     int64_t cnt = 0, sum = 0;
-    auto lru = _buckets[i];
+    auto    lru = _buckets[i];
 
     std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
     for (auto &it : *lru) {

@@ -37,38 +37,38 @@
 #include <chrono>
 #include <shared_mutex>
 
-using swoc::TextView;
 using std::chrono::duration_cast;
 using swoc::round_down;
 using swoc::round_up;
+using swoc::TextView;
 
-HostDBProcessor hostDBProcessor;
-int HostDBProcessor::hostdb_strict_round_robin = 0;
-int HostDBProcessor::hostdb_timed_round_robin  = 0;
-HostDBProcessor::Options const HostDBProcessor::DEFAULT_OPTIONS;
+HostDBProcessor                   hostDBProcessor;
+int                               HostDBProcessor::hostdb_strict_round_robin = 0;
+int                               HostDBProcessor::hostdb_timed_round_robin  = 0;
+HostDBProcessor::Options const    HostDBProcessor::DEFAULT_OPTIONS;
 HostDBContinuation::Options const HostDBContinuation::DEFAULT_OPTIONS;
-int hostdb_enable                              = true;
-int hostdb_migrate_on_demand                   = true;
-int hostdb_lookup_timeout                      = 30;
-int hostdb_re_dns_on_reload                    = false;
-int hostdb_ttl_mode                            = TTL_OBEY;
-unsigned int hostdb_round_robin_max_count      = 16;
-unsigned int hostdb_ip_stale_interval          = HOST_DB_IP_STALE;
-unsigned int hostdb_ip_timeout_interval        = HOST_DB_IP_TIMEOUT;
-unsigned int hostdb_ip_fail_timeout_interval   = HOST_DB_IP_FAIL_TIMEOUT;
-unsigned int hostdb_serve_stale_but_revalidate = 0;
-static ts_seconds hostdb_hostfile_check_interval{std::chrono::hours(24)};
+int                               hostdb_enable                     = true;
+int                               hostdb_migrate_on_demand          = true;
+int                               hostdb_lookup_timeout             = 30;
+int                               hostdb_re_dns_on_reload           = false;
+int                               hostdb_ttl_mode                   = TTL_OBEY;
+unsigned int                      hostdb_round_robin_max_count      = 16;
+unsigned int                      hostdb_ip_stale_interval          = HOST_DB_IP_STALE;
+unsigned int                      hostdb_ip_timeout_interval        = HOST_DB_IP_TIMEOUT;
+unsigned int                      hostdb_ip_fail_timeout_interval   = HOST_DB_IP_FAIL_TIMEOUT;
+unsigned int                      hostdb_serve_stale_but_revalidate = 0;
+static ts_seconds                 hostdb_hostfile_check_interval{std::chrono::hours(24)};
 // Epoch timestamp of the current hosts file check. This also functions as a
 // cached version of ts_clock::now().
 std::atomic<ts_time> hostdb_current_timestamp{TS_TIME_ZERO};
 // Epoch timestamp of the last time we actually checked for a hosts file update.
 static ts_time hostdb_last_timestamp{TS_TIME_ZERO};
 // Epoch timestamp when we updated the hosts file last.
-static ts_time hostdb_hostfile_update_timestamp{TS_TIME_ZERO};
-int hostdb_max_count = DEFAULT_HOST_DB_SIZE;
+static ts_time          hostdb_hostfile_update_timestamp{TS_TIME_ZERO};
+int                     hostdb_max_count = DEFAULT_HOST_DB_SIZE;
 static swoc::file::path hostdb_hostfile_path;
-int hostdb_disable_reverse_lookup = 0;
-int hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
+int                     hostdb_disable_reverse_lookup = 0;
+int                     hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
@@ -122,7 +122,7 @@ void UpdateHostsFile(swoc::file::path const &path, ts_seconds interval);
 
 static inline bool
 is_addr_valid(uint8_t af, ///< Address family (format of data)
-              void *ptr   ///< Raw address data (not a sockaddr variant!)
+              void   *ptr ///< Raw address data (not a sockaddr variant!)
 )
 {
   return (AF_INET == af && INADDR_ANY != *(reinterpret_cast<in_addr_t *>(ptr))) ||
@@ -199,7 +199,7 @@ HostDBHash::refresh()
 
   if (host_name) {
     const char *server_line = dns_server ? dns_server->x_dns_ip_line : nullptr;
-    uint8_t m               = static_cast<uint8_t>(db_mark); // be sure of the type.
+    uint8_t     m           = static_cast<uint8_t>(db_mark); // be sure of the type.
 
     ctx.update(host_name.data(), host_name.size());
     ctx.update(reinterpret_cast<uint8_t *>(&port), sizeof(port));
@@ -212,7 +212,7 @@ HostDBHash::refresh()
     // so that it does not intersect the string space
     //
     char buff[TS_IP6_SIZE + 4];
-    int n = ip.isIp6() ? sizeof(in6_addr) : sizeof(in_addr_t);
+    int  n = ip.isIp6() ? sizeof(in6_addr) : sizeof(in_addr_t);
     memset(buff, 0, 2);
     memcpy(buff + 2, ip._addr._byte, n);
     memset(buff + 2 + n, 0, 2);
@@ -233,10 +233,10 @@ HostDBCache::HostDBCache() {}
 bool
 HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 {
-  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
   std::shared_lock<ts::shared_mutex> lock{bucket_lock};
-  bool retval                  = false;
-  Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
+  bool                               retval = false;
+  Queue<HostDBContinuation>         &q      = pending_dns_for_hash(hash);
   for (HostDBContinuation *c = q.head; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash == c->hash.hash) {
       retval = true;
@@ -249,10 +249,10 @@ HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 bool
 HostDBCache::remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c)
 {
-  bool retval                   = false;
-  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  bool                               retval      = false;
+  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
   std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-  Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
+  Queue<HostDBContinuation>         &q = pending_dns_for_hash(hash);
   if (q.in(c)) {
     q.remove(c);
     retval = true;
@@ -264,7 +264,7 @@ std::shared_ptr<HostFile>
 HostDBCache::acquire_host_file()
 {
   std::shared_lock lock(host_file_mutex);
-  auto zret = host_file;
+  auto             zret = host_file;
   return zret;
 }
 
@@ -279,7 +279,7 @@ struct HostDBBackgroundTask : public Continuation {
   ts_hr_time start_time;
 
   virtual int sync_event(int event, void *edata) = 0;
-  int wait_event(int event, void *edata);
+  int         wait_event(int event, void *edata);
 
   HostDBBackgroundTask(ts_seconds frequency);
 };
@@ -293,8 +293,8 @@ int
 HostDBCache::start(int flags)
 {
   (void)flags; // unused
-  MgmtInt hostdb_max_size = 0;
-  int hostdb_partitions   = 64;
+  MgmtInt hostdb_max_size   = 0;
+  int     hostdb_partitions = 64;
 
   // Read configuration
   // Command line overrides manager configuration.
@@ -500,7 +500,7 @@ probe(HostDBHash const &hash, bool ignore_timeout)
   }
 
   // Otherwise HostDB is enabled, so we'll do our thing
-  uint64_t folded_hash          = hash.hash.fold();
+  uint64_t          folded_hash = hash.hash.fold();
   ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(folded_hash);
 
   Ptr<HostDBRecord> record;
@@ -539,7 +539,7 @@ probe(HostDBHash const &hash, bool ignore_timeout)
         swoc::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
                       record->ip_timeout_interval)
           .c_str());
-    HostDBContinuation *c = hostDBContAllocator.alloc();
+    HostDBContinuation         *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
     copt.host_res_style = record->af_family == AF_INET6 ? HOST_RES_IPV6_ONLY : HOST_RES_IPV4_ONLY;
     c->init(hash, copt);
@@ -555,10 +555,10 @@ probe(HostDBHash const &hash, bool ignore_timeout)
 Action *
 HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt)
 {
-  bool force_dns        = false;
-  EThread *thread       = this_ethread();
-  Ptr<ProxyMutex> mutex = thread->mutex;
-  ip_text_buffer ipb;
+  bool            force_dns = false;
+  EThread        *thread    = this_ethread();
+  Ptr<ProxyMutex> mutex     = thread->mutex;
+  ip_text_buffer  ipb;
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
     force_dns = true;
@@ -596,7 +596,7 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
       ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
 
       // If we can get the lock and a level 1 probe succeeds, return
-      HostDBRecord::Handle r = probe(hash, false);
+      HostDBRecord::Handle               r = probe(hash, false);
       std::shared_lock<ts::shared_mutex> lock{bucket_lock};
       if (r) {
         // fail, see if we should retry with alternate
@@ -641,7 +641,7 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
 Lretry:
   // Otherwise, create a continuation to do a deeper probe in the background
   //
-  HostDBContinuation *c = hostDBContAllocator.alloc();
+  HostDBContinuation         *c = hostDBContAllocator.alloc();
   HostDBContinuation::Options copt;
   copt.timeout        = opt.timeout;
   copt.force_dns      = force_dns;
@@ -760,7 +760,7 @@ HostDBProcessor::iterate(Continuation *cont)
 
   Metrics::Counter::increment(hostdb_rsb.total_lookups);
 
-  HostDBContinuation *c = hostDBContAllocator.alloc();
+  HostDBContinuation         *c = hostDBContAllocator.alloc();
   HostDBContinuation::Options copt;
   copt.cont           = cont;
   copt.force_dns      = false;
@@ -929,9 +929,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       Dbg(dbg_ctl_hostdb, "Removing the old record when the DNS lookup failed with NXDOMAIN");
     }
 
-    int valid_records  = 0;
-    void *first_record = nullptr;
-    sa_family_t af     = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
+    int         valid_records = 0;
+    void       *first_record  = nullptr;
+    sa_family_t af            = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
 
     // Find the first record and total number of records.
     if (!failed) {
@@ -995,7 +995,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       // Fill in record type specific data.
       if (is_srv()) {
         char *pos = rr_info.rebind<char>().end();
-        SRV *q[valid_records];
+        SRV  *q[valid_records];
         ink_assert(valid_records <= (int)hostdb_round_robin_max_count);
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
@@ -1036,10 +1036,10 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     if (!serve_stale) { // implies r != old_r
-      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
       std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-      auto const duration_till_revalidate = r->expiry_time().time_since_epoch();
-      auto const seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
+      auto const                         duration_till_revalidate = r->expiry_time().time_since_epoch();
+      auto const                         seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
       hostDB.refcountcache->put(r->key, r.get(), r->_record_size, seconds_till_revalidate);
     } else {
       Warning("Fallback to serving stale record, skip re-update of hostdb for %.*s", int(query_name.size()), query_name.data());
@@ -1118,7 +1118,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
-    ts::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
+    ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
     std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
     auto &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
@@ -1216,9 +1216,9 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 int
 HostDBContinuation::set_check_pending_dns()
 {
-  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-  Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
+  Queue<HostDBContinuation>         &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
     Metrics::Counter::increment(hostdb_rsb.insert_duplicate_to_pending_dns);
@@ -1241,11 +1241,11 @@ void
 HostDBContinuation::remove_and_trigger_pending_dns()
 {
   Queue<HostDBContinuation> qq;
-  HostDBContinuation *c         = nullptr;
-  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  HostDBContinuation       *c           = nullptr;
+  ts::shared_mutex         &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   {
     std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-    Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
+    Queue<HostDBContinuation>         &q = hostDB.pending_dns_for_hash(hash.hash);
     q.remove(this);
     c = q.head;
     while (c) {
@@ -1377,7 +1377,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     } else if (!hostdb_hostfile_path.empty()) {
       hostdb_last_timestamp = hostdb_current_timestamp;
       std::error_code ec;
-      auto stat{swoc::file::status(hostdb_hostfile_path, ec)};
+      auto            stat{swoc::file::status(hostdb_hostfile_path, ec)};
       if (!ec) {
         if (swoc::file::last_write_time(stat) > hostdb_hostfile_update_timestamp) {
           update_p = true; // same file but it's changed.
@@ -1459,11 +1459,11 @@ struct HostDBTestReverse;
 using HostDBTestReverseHandler = int (HostDBTestReverse::*)(int, void *);
 struct HostDBTestReverse : public Continuation {
   RegressionTest *test;
-  int type;
-  int *status;
+  int             type;
+  int            *status;
 
-  int outstanding = 0;
-  int total       = 0;
+  int           outstanding = 0;
+  int           total       = 0;
   std::ranlux48 randu;
 
   int
@@ -1540,11 +1540,11 @@ struct HostDBFileContinuation : public Continuation {
   using self = HostDBFileContinuation;
   using Keys = std::vector<CryptoHash>;
 
-  int idx          = 0;       ///< Working index.
-  const char *name = nullptr; ///< Host name (just for debugging)
-  Keys *keys       = nullptr; ///< Entries from file.
-  CryptoHash hash;            ///< Key for entry.
-  ats_scoped_str path;        ///< Used to keep the host file name around.
+  int            idx  = 0;       ///< Working index.
+  const char    *name = nullptr; ///< Host name (just for debugging)
+  Keys          *keys = nullptr; ///< Entries from file.
+  CryptoHash     hash;           ///< Key for entry.
+  ats_scoped_str path;           ///< Used to keep the host file name around.
 
   HostDBFileContinuation() : Continuation(nullptr) {}
   /// Finish update
@@ -1600,11 +1600,11 @@ UpdateHostsFile(swoc::file::path const &path, ts_seconds interval)
 struct HostDBRegressionContinuation;
 
 struct HostDBRegressionContinuation : public Continuation {
-  int hosts;
-  const char **hostnames;
+  int             hosts;
+  const char    **hostnames;
   RegressionTest *test;
-  int type;
-  int *status;
+  int             type;
+  int            *status;
 
   int success;
   int failure;
@@ -1695,7 +1695,7 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
 {
   const swoc::Scalar<8, ssize_t> qn_size = round_up(query_name.size() + 1);
   const swoc::Scalar<8, ssize_t> r_size  = round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
-  int iobuffer_index                     = iobuffer_size_to_index(r_size, hostdb_max_iobuf_index);
+  int                            iobuffer_index = iobuffer_size_to_index(r_size, hostdb_max_iobuf_index);
   ink_release_assert(iobuffer_index >= 0);
   auto ptr = ioBufAllocator[iobuffer_index].alloc_void();
   memset(ptr, 0, r_size);
@@ -1763,11 +1763,11 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
 {
   ink_assert(rr_count <= 0 || static_cast<unsigned int>(rr_count) < hostdb_round_robin_max_count);
 
-  int i           = 0;
-  int live_n      = 0;
-  uint32_t weight = 0, p = INT32_MAX;
+  int         i      = 0;
+  int         live_n = 0;
+  uint32_t    weight = 0, p = INT32_MAX;
   HostDBInfo *result = nullptr;
-  auto rr            = this->rr_info();
+  auto        rr     = this->rr_info();
   // Array of live targets, sized by @a live_n
   HostDBInfo *live[rr.count()];
   for (auto &target : rr) {

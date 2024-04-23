@@ -31,8 +31,8 @@ Matcher::PCRE::~PCRE()
 void *
 Matcher::PCRE::Result::malloc(PCRE2_SIZE size, void *context)
 {
-  auto *result   = static_cast<Result *>(context);
-  std::byte *ret = result->_ctx_data + result->_ctx_ix;
+  auto      *result = static_cast<Result *>(context);
+  std::byte *ret    = result->_ctx_data + result->_ctx_ix;
 
   TSReleaseAssert(size < (sizeof(result->_ctx_data) - result->_ctx_ix));
   result->_ctx_ix += size;
@@ -43,8 +43,8 @@ Matcher::PCRE::Result::malloc(PCRE2_SIZE size, void *context)
 void
 Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
 {
-  int errorcode          = 0;
-  PCRE2_SIZE erroroffset = 0;
+  int         errorcode   = 0;
+  PCRE2_SIZE  erroroffset = 0;
   pcre2_code *re =
     pcre2_compile(reinterpret_cast<PCRE2_SPTR>(regex.data()), regex.length(), options, &errorcode, &erroroffset, nullptr);
 
@@ -68,9 +68,9 @@ Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
 Matcher::PCRE::Result
 Matcher::PCRE::contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t options)
 {
-  Matcher::PCRE::Result res(subject);
-  pcre2_general_context *ctx = pcre2_general_context_create(
-    &Matcher::PCRE::Result::malloc, [](void *, void *) -> void {}, static_cast<void *>(&res));
+  Matcher::PCRE::Result  res(subject);
+  pcre2_general_context *ctx =
+    pcre2_general_context_create(&Matcher::PCRE::Result::malloc, [](void *, void *) -> void {}, static_cast<void *>(&res));
 
   for (auto &it : _regexes) {
     auto &[_, re] = it;

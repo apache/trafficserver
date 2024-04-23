@@ -114,7 +114,7 @@ Connection::open(NetVCOptions const &opt)
 {
   ink_assert(fd == NO_FD);
 
-  int res = 0; // temp result
+  int        res = 0; // temp result
   IpEndpoint local_addr;
   sock_type = NetVCOptions::USE_UDP == opt.ip_proto ? SOCK_DGRAM : SOCK_STREAM;
   int family;

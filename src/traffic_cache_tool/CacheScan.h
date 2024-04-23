@@ -39,7 +39,7 @@ namespace ct
 {
 class CacheScan
 {
-  Stripe *stripe         = nullptr;
+  Stripe      *stripe    = nullptr;
   url_matcher *u_matcher = nullptr;
 
 public:
@@ -53,12 +53,12 @@ public:
   ~CacheScan() { delete u_matcher; }
   Errata Scan(bool search = false);
   Errata get_alternates(const char *buf, int length, bool search);
-  int unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
+  int    unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
   Errata unmarshal(char *buf, int len, RefCountObj *block_ref);
   Errata unmarshal(HTTPHdrImpl *obj, intptr_t offset);
   Errata unmarshal(URLImpl *obj, intptr_t offset);
   Errata unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset);
   Errata unmarshal(MIMEHdrImpl *obj, intptr_t offset);
-  bool check_url(swoc::MemSpan<char> &mem, URLImpl *url);
+  bool   check_url(swoc::MemSpan<char> &mem, URLImpl *url);
 };
 } // namespace ct

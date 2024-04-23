@@ -52,7 +52,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -82,9 +82,9 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
       //
       THEN("when making requests and taking nodes down.")
       {
-        HttpSM sm;
+        HttpSM        sm;
         ParentResult *result = &sm.t_state.parent_result;
-        TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+        TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
@@ -191,7 +191,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -212,9 +212,9 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
     // state changes induced by using multiple WHEN() and THEN()
     WHEN("initial requests are made and hosts are unavailable .")
     {
-      HttpSM sm;
+      HttpSM        sm;
       ParentResult *result = &sm.t_state.parent_result;
-      TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+      TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
       THEN("when making requests and taking nodes down.")
       {
@@ -301,7 +301,7 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("ignore-self-detect-false");
 
     HostStatus &hs = HostStatus::instance();
@@ -321,9 +321,9 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
     {
       THEN("when making requests to localhost.")
       {
-        HttpSM sm;
+        HttpSM        sm;
         ParentResult *result = &sm.t_state.parent_result;
-        TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+        TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
@@ -351,7 +351,7 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("ignore-self-detect-true");
 
     HostStatus &hs = HostStatus::instance();
@@ -371,9 +371,9 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
     {
       THEN("when making requests to localhost.")
       {
-        HttpSM sm;
+        HttpSM        sm;
         ParentResult *result = &sm.t_state.parent_result;
-        TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+        TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
@@ -401,7 +401,7 @@ SCENARIO("Testing NextHopConsistentHash same host different port markdown", "[Ne
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("same-host-different-port");
 
     WHEN("the config is loaded.")
@@ -418,9 +418,9 @@ SCENARIO("Testing NextHopConsistentHash same host different port markdown", "[Ne
     {
       THEN("when making requests and taking nodes down.")
       {
-        HttpSM sm;
+        HttpSM        sm;
         ParentResult *result = &sm.t_state.parent_result;
-        TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+        TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
@@ -469,7 +469,7 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("hash-string-override");
 
     WHEN("the config is loaded.")
@@ -486,9 +486,9 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
     {
       THEN("when making requests and taking nodes down.")
       {
-        HttpSM sm;
+        HttpSM        sm;
         ParentResult *result = &sm.t_state.parent_result;
-        TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+        TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
@@ -529,7 +529,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-2");
 
     WHEN("the config is loaded.")
@@ -545,9 +545,9 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
     // making requests and marking down hosts with a config set for alternating ring mode.
     WHEN("requests are made in a config set for alternating rings and hosts are marked down.")
     {
-      HttpSM sm;
+      HttpSM        sm;
       ParentResult *result = &sm.t_state.parent_result;
-      TSHttpTxn txnp       = reinterpret_cast<TSHttpTxn>(&sm);
+      TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
 
       THEN("expect the following results when making requests and marking hosts down.")
       {
@@ -648,7 +648,7 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
   GIVEN("Loading the peering.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf(TS_SRC_DIR "/peering.yaml");
+    NextHopStrategyFactory                    nhf(TS_SRC_DIR "/peering.yaml");
     strategy = nhf.strategyInstance("peering-group-1");
 
     WHEN("the config is loaded.")

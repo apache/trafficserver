@@ -67,16 +67,16 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   // ProxySession Methods
-  int get_transact_count() const override;
+  int         get_transact_count() const override;
   const char *get_protocol_string() const override;
-  void increment_current_active_connections_stat() override;
-  void decrement_current_active_connections_stat() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
-  void start() override;
-  void free() override;
-  bool is_chunked_encoding_supported() const override;
+  void        increment_current_active_connections_stat() override;
+  void        decrement_current_active_connections_stat() override;
+  void        new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void        start() override;
+  void        free() override;
+  bool        is_chunked_encoding_supported() const override;
 
-  IOBufferReader *get_remote_reader() override;
+  IOBufferReader   *get_remote_reader() override;
   IpEndpoint const &get_server_ip() const;
 
   ProxyTransaction *new_transaction() override;

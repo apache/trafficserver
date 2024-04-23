@@ -126,23 +126,23 @@ struct CacheVC : public CacheVConnection {
   }
 
   bool writer_done();
-  int calluser(int event);
-  int callcont(int event);
-  int die();
-  int dead(int event, Event *e);
+  int  calluser(int event);
+  int  callcont(int event);
+  int  die();
+  int  dead(int event, Event *e);
 
-  int handleReadDone(int event, Event *e);
-  int handleRead(int event, Event *e);
+  int  handleReadDone(int event, Event *e);
+  int  handleRead(int event, Event *e);
   bool load_from_ram_cache();
   bool load_from_last_open_read_call();
   bool load_from_aggregation_buffer();
-  int do_read_call(CacheKey *akey);
-  int handleWrite(int event, Event *e);
-  int handleWriteLock(int event, Event *e);
-  int do_write_call();
-  int do_write_lock();
-  int do_write_lock_call();
-  int do_sync(uint32_t target_write_serial);
+  int  do_read_call(CacheKey *akey);
+  int  handleWrite(int event, Event *e);
+  int  handleWriteLock(int event, Event *e);
+  int  do_write_call();
+  int  do_write_lock();
+  int  do_write_lock_call();
+  int  do_sync(uint32_t target_write_serial);
 
   int openReadClose(int event, Event *e);
   int openReadReadDone(int event, Event *e);
@@ -193,10 +193,10 @@ struct CacheVC : public CacheVConnection {
     io.aiocb.aio_fildes = AIO_AGG_WRITE_IN_PROGRESS;
   }
 
-  void cancel_trigger();
+  void    cancel_trigger();
   int64_t get_object_size() override;
-  void set_http_info(CacheHTTPInfo *info) override;
-  void get_http_info(CacheHTTPInfo **info) override;
+  void    set_http_info(CacheHTTPInfo *info) override;
+  void    get_http_info(CacheHTTPInfo **info) override;
   /** Get the fragment table.
       @return The address of the start of the fragment table,
       or @c nullptr if there is no fragment table.
@@ -206,9 +206,9 @@ struct CacheVC : public CacheVConnection {
       @return Length of header data used for alternates.
    */
   virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = nullptr);
-  bool is_pread_capable() override;
-  bool set_pin_in_cache(time_t time_pin) override;
-  time_t get_pin_in_cache() override;
+  bool             is_pread_capable() override;
+  bool             set_pin_in_cache(time_t time_pin) override;
+  time_t           get_pin_in_cache() override;
 
   // number of bytes to memset to 0 in the CacheVC when we free
   // it. All member variables starting from vio are memset to 0.
@@ -221,25 +221,25 @@ struct CacheVC : public CacheVConnection {
   // These are variables that are always set to the correct values
   // before being used by the CacheVC
   CacheKey key, first_key, earliest_key, update_key;
-  Dir dir, earliest_dir, overwrite_dir, first_dir;
+  Dir      dir, earliest_dir, overwrite_dir, first_dir;
   // end Region A
 
   // Start Region B
   // These variables are individually cleared or reset when the
   // CacheVC is freed. All these variables must be reset/cleared
   // in free_CacheVC.
-  Action _action;
-  CacheHTTPHdr request;
+  Action              _action;
+  CacheHTTPHdr        request;
   CacheHTTPInfoVector vector;
-  CacheHTTPInfo alternate;
-  Ptr<IOBufferData> buf;
-  Ptr<IOBufferData> first_buf;
-  Ptr<IOBufferBlock> blocks; // data available to write
-  Ptr<IOBufferBlock> writer_buf;
+  CacheHTTPInfo       alternate;
+  Ptr<IOBufferData>   buf;
+  Ptr<IOBufferData>   first_buf;
+  Ptr<IOBufferBlock>  blocks; // data available to write
+  Ptr<IOBufferBlock>  writer_buf;
 
-  OpenDirEntry *od = nullptr;
+  OpenDirEntry       *od = nullptr;
   AIOCallbackInternal io;
-  int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
+  int                 alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
   // end Region B
 
@@ -250,43 +250,43 @@ struct CacheVC : public CacheVConnection {
   // of this region.
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
-  VIO vio;
-  CacheFragType frag_type;
-  CacheHTTPInfo *info;
-  CacheHTTPInfoVector *write_vector;
+  VIO                       vio;
+  CacheFragType             frag_type;
+  CacheHTTPInfo            *info;
+  CacheHTTPInfoVector      *write_vector;
   const HttpConfigAccessor *params;
-  int header_len;        // for communicating with agg_copy
-  int frag_len;          // for communicating with agg_copy
-  uint32_t write_len;    // for communicating with agg_copy
-  uint32_t agg_len;      // for communicating with aggWrite
-  uint32_t write_serial; // serial of the final write for SYNC
-  Stripe *stripe;
-  Dir *last_collision;
-  Event *trigger;
-  CacheKey *read_key;
-  ContinuationHandler save_handler;
-  uint32_t pin_in_cache;
-  ink_hrtime start_time;
-  int op_type; // Index into the metrics array for this operation, rather than a CacheOpType (fewer casts)
-  int recursive;
-  int closed;
-  uint64_t seek_to;      // pread offset
-  int64_t offset;        // offset into 'blocks' of data to write
-  int64_t writer_offset; // offset of the writer for reading from a writer
-  int64_t length;        // length of data available to write
-  int64_t doc_pos;       // read position in 'buf'
-  uint64_t write_pos;    // length written
-  uint64_t total_len;    // total length written and available to write
-  uint64_t doc_len;      // total_length (of the selected alternate for HTTP)
-  uint64_t update_len;
-  int fragment;
-  int scan_msec_delay;
-  CacheVC *write_vc;
-  char *hostname;
-  int host_len;
-  int header_to_write_len;
-  void *header_to_write;
-  short writer_lock_retry;
+  int                       header_len;   // for communicating with agg_copy
+  int                       frag_len;     // for communicating with agg_copy
+  uint32_t                  write_len;    // for communicating with agg_copy
+  uint32_t                  agg_len;      // for communicating with aggWrite
+  uint32_t                  write_serial; // serial of the final write for SYNC
+  Stripe                   *stripe;
+  Dir                      *last_collision;
+  Event                    *trigger;
+  CacheKey                 *read_key;
+  ContinuationHandler       save_handler;
+  uint32_t                  pin_in_cache;
+  ink_hrtime                start_time;
+  int                       op_type; // Index into the metrics array for this operation, rather than a CacheOpType (fewer casts)
+  int                       recursive;
+  int                       closed;
+  uint64_t                  seek_to;       // pread offset
+  int64_t                   offset;        // offset into 'blocks' of data to write
+  int64_t                   writer_offset; // offset of the writer for reading from a writer
+  int64_t                   length;        // length of data available to write
+  int64_t                   doc_pos;       // read position in 'buf'
+  uint64_t                  write_pos;     // length written
+  uint64_t                  total_len;     // total length written and available to write
+  uint64_t                  doc_len;       // total_length (of the selected alternate for HTTP)
+  uint64_t                  update_len;
+  int                       fragment;
+  int                       scan_msec_delay;
+  CacheVC                  *write_vc;
+  char                     *hostname;
+  int                       host_len;
+  int                       header_to_write_len;
+  void                     *header_to_write;
+  short                     writer_lock_retry;
   union {
     uint32_t flags;
     struct {

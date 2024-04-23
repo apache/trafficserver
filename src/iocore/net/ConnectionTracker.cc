@@ -115,7 +115,7 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
 
   if (RECD_STRING == dtype) {
     ConnectionTracker::MatchType match_type;
-    std::string_view tag{data.rec_string};
+    std::string_view             tag{data.rec_string};
     if (ConnectionTracker::lookup_match_type(tag, match_type)) {
       config->server_match = match_type;
       return true;
@@ -171,11 +171,11 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
 ConnectionTracker::TxnState
 ConnectionTracker::obtain_inbound(IpEndpoint const &addr)
 {
-  TxnState zret;
-  CryptoHash hash;
-  Group::Key key{addr, hash, MatchType::MATCH_IP};
+  TxnState                    zret;
+  CryptoHash                  hash;
+  Group::Key                  key{addr, hash, MatchType::MATCH_IP};
   std::lock_guard<std::mutex> lock(_inbound_table._mutex); // Table lock
-  auto loc = _inbound_table._table.find(key);
+  auto                        loc = _inbound_table._table.find(key);
   if (loc != _inbound_table._table.end()) {
     zret._g = loc->second;
   } else {
@@ -191,12 +191,12 @@ ConnectionTracker::obtain_inbound(IpEndpoint const &addr)
 ConnectionTracker::TxnState
 ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr)
 {
-  TxnState zret;
+  TxnState   zret;
   CryptoHash hash;
   CryptoContext().hash_immediate(hash, fqdn.data(), fqdn.size());
-  Group::Key key{addr, hash, txn_cnf.server_match};
+  Group::Key                  key{addr, hash, txn_cnf.server_match};
   std::lock_guard<std::mutex> lock(_outbound_table._mutex); // Table lock
-  auto loc = _outbound_table._table.find(key);
+  auto                        loc = _outbound_table._table.find(key);
   if (loc != _outbound_table._table.end()) {
     zret._g = loc->second;
   } else {
@@ -271,7 +271,7 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
   bool zret = false;
   // This is a bit clunky because the goal is to store just the tick count as an atomic.
   // Might check to see if an atomic time_point is really atomic and avoid this.
-  Ticker last_tick{_last_alert};                  // Load the most recent alert time in ticks.
+  Ticker    last_tick{_last_alert};               // Load the most recent alert time in ticks.
   TimePoint last{TimePoint::duration{last_tick}}; // Most recent alert time in a time_point.
   TimePoint now = Clock::now();                   // Current time_point.
   if (last + _alert_delay <= now) {
@@ -290,7 +290,7 @@ ConnectionTracker::Group::release()
 {
   if (_count > 0) {
     if (--_count == 0) {
-      TableSingleton &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
+      TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
       std::lock_guard<std::mutex> lock(table._mutex); // Table lock
       if (_count > 0) {
         // Someone else grabbed the Group between our last check and taking the
@@ -325,8 +325,8 @@ ConnectionTracker::get_outbound_groups(std::vector<std::shared_ptr<Group const>>
 std::string
 ConnectionTracker::outbound_to_json_string()
 {
-  std::string text;
-  size_t extent = 0;
+  std::string                    text;
+  size_t                         extent = 0;
   static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [
 )"};
   static const swoc::bwf::Format item_fmt{
@@ -340,7 +340,7 @@ ConnectionTracker::outbound_to_json_string()
     return w;
   };
 
-  swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
+  swoc::FixedBufferWriter                   null_bw{nullptr}; // Empty buffer for sizing work.
   std::vector<std::shared_ptr<Group const>> groups;
 
   self_type::get_outbound_groups(groups);
@@ -419,7 +419,7 @@ ConnectionTracker::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
   time_t lat; // last alert time (epoch seconds)
 
   if (_g->_blocked > 0 && _g->should_alert(&lat)) {
-    auto blocked = _g->_blocked.exchange(0);
+    auto                         blocked = _g->_blocked.exchange(0);
     swoc::LocalBufferWriter<256> w;
     w.print("Peer unblocked: [{}] count={} limit={} group=({}) blocked={} peer={}\0", swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv),
             count, config->server_max, *_g, blocked, addr);

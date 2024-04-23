@@ -70,8 +70,8 @@ using CTypeResult = unsigned int;
 #define is_http_field_value_BIT (((CTypeResult)1) << 31)
 
 extern const CTypeResult parseRulesCType[];
-extern const char parseRulesCTypeToUpper[];
-extern const char parseRulesCTypeToLower[];
+extern const char        parseRulesCTypeToUpper[];
+extern const char        parseRulesCTypeToLower[];
 
 class ParseRules
 {
@@ -152,11 +152,11 @@ public:
 
   static CTypeResult strncasecmp_eow(const char *s1, const char *s2, int n);
   static const char *strcasestr(const char *s1, const char *s2);
-  static int strlen_eow(const char *s);
+  static int         strlen_eow(const char *s);
   static const char *strstr_eow(const char *s1, const char *s2);
 
-  static char ink_toupper(char c);
-  static char ink_tolower(char c);
+  static char        ink_toupper(char c);
+  static char        ink_tolower(char c);
   static const char *memchr(const char *s, char c, int max_length);
   static const char *strchr(const char *s, char c);
 
@@ -554,7 +554,7 @@ ParseRules::ink_toupper(char c)
 #ifndef COMPILE_PARSE_RULES
   return parseRulesCTypeToUpper[static_cast<unsigned char>(c)];
 #else
-  int up_case            = c;
+  int       up_case      = c;
   const int up_case_diff = 'a' - 'A';
 
   if (c >= 'a' && c <= 'z') {
@@ -570,7 +570,7 @@ ParseRules::ink_tolower(char c)
 #ifndef COMPILE_PARSE_RULES
   return parseRulesCTypeToLower[static_cast<unsigned char>(c)];
 #else
-  int lo_case            = c;
+  int       lo_case      = c;
   const int lo_case_diff = 'a' - 'A';
 
   if (c >= 'A' && c <= 'Z') {
@@ -855,9 +855,9 @@ ink_get_hex(char c)
   return ((c - 'a') + 10);
 }
 
-int64_t ink_atoi64(const char *, const char **end = nullptr);
+int64_t  ink_atoi64(const char *, const char **end = nullptr);
 uint64_t ink_atoui64(const char *);
-int64_t ink_atoi64(const char *, int);
+int64_t  ink_atoi64(const char *, int);
 
 static inline int
 ink_atoi(const char *str)

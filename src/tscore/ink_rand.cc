@@ -82,7 +82,7 @@ InkRand::seed(uint64_t seed)
 uint64_t
 InkRand::random()
 {
-  int i;
+  int      i;
   uint64_t x;
 
   if (mti >= NN) { /* generate NN words at one time */

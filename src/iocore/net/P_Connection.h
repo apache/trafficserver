@@ -79,11 +79,11 @@ struct NetVCOptions;
 //
 ///////////////////////////////////////////////////////////////////////
 struct Connection {
-  SOCKET fd;                 ///< Socket for connection.
-  IpEndpoint addr;           ///< Associated address.
-  bool is_bound     = false; ///< Flag for already bound to a local address.
-  bool is_connected = false; ///< Flag for already connected.
-  int sock_type     = 0;
+  SOCKET     fd;                   ///< Socket for connection.
+  IpEndpoint addr;                 ///< Associated address.
+  bool       is_bound     = false; ///< Flag for already bound to a local address.
+  bool       is_connected = false; ///< Flag for already connected.
+  int        sock_type    = 0;
 
   /** Create and initialize the socket for this connection.
 
@@ -109,7 +109,7 @@ struct Connection {
       @return 0 on success, -ERRNO on failure.
       @see open
   */
-  int connect(sockaddr const *to,                       ///< Remote address and port.
+  int connect(sockaddr const     *to,                   ///< Remote address and port.
               NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options
   );
 
@@ -147,7 +147,7 @@ protected:
    * certain subclasses. Those provide a public assignment that depends on this method.
    */
   Connection &operator=(Connection const &that) = default;
-  void _cleanup();
+  void        _cleanup();
 };
 
 ///////////////////////////////////////////////////////////////////////

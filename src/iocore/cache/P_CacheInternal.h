@@ -144,10 +144,10 @@ struct CacheRemoveCont : public Continuation {
 
 // Global Data
 extern ClassAllocator<CacheVC> cacheVConnectionAllocator;
-extern CacheSync *cacheDirSync;
+extern CacheSync              *cacheDirSync;
 // Function Prototypes
-int cache_write(CacheVC *, CacheHTTPInfoVector *);
-int get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
+int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
+int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
 CacheEvacuateDocVC *new_DocEvacuator(int nbytes, Stripe *stripe);
 
 // inline Functions
@@ -174,8 +174,8 @@ free_CacheVC(CacheVC *cont)
 {
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
-  ProxyMutex *mutex = cont->mutex.get();
-  Stripe *stripe    = cont->stripe;
+  ProxyMutex *mutex  = cont->mutex.get();
+  Stripe     *stripe = cont->stripe;
 
   if (stripe) {
     Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
@@ -370,8 +370,8 @@ Stripe::close_write(CacheVC *cont)
 inline int
 Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  Stripe *stripe = this;
-  bool agg_error = false;
+  Stripe *stripe    = this;
+  bool    agg_error = false;
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && this->get_agg_todo_size() > cache_config_agg_write_backlog);
 #ifdef CACHE_AGG_FAIL_RATE
@@ -551,13 +551,13 @@ class Stripe;
 class CacheHostTable;
 
 struct Cache {
-  int cache_read_done       = 0;
-  int total_good_nvol       = 0;
-  int total_nvol            = 0;
-  int ready                 = CACHE_INITIALIZING;
-  int64_t cache_size        = 0; // in store block size
-  int total_initialized_vol = 0;
-  CacheType scheme          = CACHE_NONE_TYPE;
+  int       cache_read_done       = 0;
+  int       total_good_nvol       = 0;
+  int       total_nvol            = 0;
+  int       ready                 = CACHE_INITIALIZING;
+  int64_t   cache_size            = 0; // in store block size
+  int       total_initialized_vol = 0;
+  CacheType scheme                = CACHE_NONE_TYPE;
 
   ReplaceablePtr<CacheHostTable> hosttable;
 
@@ -572,11 +572,11 @@ struct Cache {
                  int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500);
 
-  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                    CacheFragType type, const char *hostname, int host_len);
-  Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
-                     const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
-                     int host_len = 0);
+  Action     *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
+                        CacheFragType type, const char *hostname, int host_len);
+  Action     *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
+                         const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
+                         int host_len = 0);
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
 
@@ -608,7 +608,7 @@ Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_g
 inline unsigned int
 cache_hash(const CryptoHash &hash)
 {
-  uint64_t f         = hash.fold();
+  uint64_t     f     = hash.fold();
   unsigned int mhash = (unsigned int)(f >> 32);
   return mhash;
 }

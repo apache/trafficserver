@@ -44,7 +44,7 @@ public:
   ~Http3SessionAccept();
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
-  int mainEvent(int event, void *netvc) override;
+  int  mainEvent(int event, void *netvc) override;
 
 private:
   Http3SessionAccept(const Http3SessionAccept &);

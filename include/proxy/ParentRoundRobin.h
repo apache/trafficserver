@@ -34,9 +34,9 @@
 class ParentRoundRobin : public ParentSelectionStrategy
 {
   ParentRR_t round_robin_type;
-  int latched_parent;
-  pRecord *parents;
-  int num_parents;
+  int        latched_parent;
+  pRecord   *parents;
+  int        num_parents;
 
 public:
   ParentRoundRobin(ParentRecord *_parent_record, ParentRR_t _round_robin_type);
@@ -46,7 +46,7 @@ public:
   {
     return parents;
   }
-  void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
-                    unsigned int retry_time) override;
+  void     selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
+                        unsigned int retry_time) override;
   uint32_t numParents(ParentResult *result) const override;
 };

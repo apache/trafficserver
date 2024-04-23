@@ -186,7 +186,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     return;
   }
 
-  int i = -1, len = 0;
+  int  i = -1, len = 0;
   char c;
   while (c = basename[len], c != 0) {
     if (c == '.') {
@@ -198,8 +198,8 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     --len;
   }; // remove dot at end of name
 
-  const char *ext = nullptr;
-  int ext_len     = 0;
+  const char *ext     = nullptr;
+  int         ext_len = 0;
   if (i < 0) { // no extension, add one
     switch (file_format) {
     case LOG_FILE_ASCII:
@@ -271,13 +271,13 @@ LogObject::compute_signature(LogFormat *format, char *filename, unsigned int fla
   if (filename_sv == "stdout" || filename_sv == "stderr") {
     return 0;
   }
-  char *fl           = format->fieldlist();
-  char *ps           = format->printf_str();
+  char    *fl        = format->fieldlist();
+  char    *ps        = format->printf_str();
   uint64_t signature = 0;
 
   if (fl && ps && filename) {
-    int buf_size = strlen(fl) + strlen(ps) + strlen(filename) + 2;
-    char *buffer = static_cast<char *>(ats_malloc(buf_size));
+    int   buf_size = strlen(fl) + strlen(ps) + strlen(filename) + 2;
+    char *buffer   = static_cast<char *>(ats_malloc(buf_size));
 
     ink_string_concatenate_strings(buffer, fl, ps, filename,
                                    flags & LogObject::BINARY ? "B" : (flags & LogObject::WRITES_TO_PIPE ? "P" : "A"), NULL);
@@ -333,10 +333,10 @@ LogBuffer *
 LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 {
   LogBuffer::LB_ResultCode result_code;
-  LogBuffer *buffer;
-  LogBuffer *new_buffer = nullptr;
-  bool retry            = true;
-  head_p old_h;
+  LogBuffer               *buffer;
+  LogBuffer               *new_buffer = nullptr;
+  bool                     retry      = true;
+  head_p                   old_h;
 
   do {
     // To avoid a race condition, we keep a count of held references in
@@ -446,8 +446,8 @@ int
 LogObject::va_log(LogAccess *lad, const char *fmt, va_list ap)
 {
   static const unsigned MAX_ENTRY = 16 * LOG_KILOBYTE; // 16K? Really?
-  char entry[MAX_ENTRY];
-  unsigned len = 0;
+  char                  entry[MAX_ENTRY];
+  unsigned              len = 0;
 
   ink_assert(fmt != nullptr);
   len = 0;
@@ -571,8 +571,8 @@ int
 LogObject::log(LogAccess *lad, std::string_view text_entry)
 {
   LogBuffer *buffer;
-  size_t offset       = 0; // prevent warning
-  size_t bytes_needed = 0, bytes_used = 0;
+  size_t     offset       = 0; // prevent warning
+  size_t     bytes_needed = 0, bytes_used = 0;
 
   // log to a pipe even if space is exhausted since pipe uses no space
   // likewise, send data to a remote client even if local space is exhausted
@@ -610,10 +610,10 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
 
     // step through each of the fields and update the LogField object
     // with the newly-marshalled data
-    LogFieldList *fl = &m_format->m_field_list;
-    char *data_ptr   = m_format->m_agg_marshal_space;
-    LogField *f;
-    int64_t val;
+    LogFieldList *fl       = &m_format->m_field_list;
+    char         *data_ptr = m_format->m_agg_marshal_space;
+    LogField     *f;
+    int64_t       val;
     for (f = fl->first(); f; f = fl->next(f)) {
       // convert to host order to do computations
       val = (f->is_time_field()) ? time_now : *(reinterpret_cast<int64_t *>(data_ptr));
@@ -758,9 +758,9 @@ LogObject::roll_files(long time_now)
     return 0;
   }
 
-  unsigned num_rolled = 0;
-  bool roll_on_time   = false;
-  bool roll_on_size   = false;
+  unsigned num_rolled   = 0;
+  bool     roll_on_time = false;
+  bool     roll_on_size = false;
 
   if (!time_now) {
     time_now = LogUtils::timestamp();
@@ -991,12 +991,12 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
   } else {
     // file exists, try to read metafile to get object signature
     //
-    uint64_t signature = 0;
+    uint64_t     signature = 0;
     BaseMetaInfo meta_info(filename);
-    bool conflicts = true;
+    bool         conflicts = true;
 
     if (meta_info.file_open_successful()) {
-      bool got_sig     = meta_info.get_log_object_signature(&signature);
+      bool     got_sig = meta_info.get_log_object_signature(&signature);
       uint64_t obj_sig = log_object->get_signature();
 
       if (got_sig && signature == obj_sig) {
@@ -1035,7 +1035,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
           struct stat s;
           if (stat(filename, &s) < 0) {
             const char *msg = "Cannot stat log file %s: %s";
-            char *se        = strerror(errno);
+            char       *se  = strerror(errno);
 
             Error(msg, filename, se);
             retVal    = ERROR_DETERMINING_FILE_INFO;
@@ -1102,7 +1102,7 @@ LogObjectManager::_has_internal_filename_conflict(std::string_view filename, Log
 int
 LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int maxConflicts, int fileNum)
 {
-  int retVal           = NO_FILENAME_CONFLICTS;
+  int         retVal   = NO_FILENAME_CONFLICTS;
   const char *filename = log_object->get_full_filename();
 
   if (_has_internal_filename_conflict(filename, _objects) || _has_internal_filename_conflict(filename, _APIobjects)) {
@@ -1387,7 +1387,7 @@ static LogObject *
 MakeTestLogObject(const char *name)
 {
   const char *tmpdir = getenv("TMPDIR");
-  LogFormat format("testfmt", nullptr);
+  LogFormat   format("testfmt", nullptr);
 
   if (!tmpdir) {
     tmpdir = "/tmp";

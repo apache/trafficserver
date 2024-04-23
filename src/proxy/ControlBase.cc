@@ -72,11 +72,11 @@ struct TimeMod : public ControlBase::Modifier {
 
   static const char *const NAME;
 
-  Type type() const override;
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
-  void print(FILE *f) const override;
-  static TimeMod *make(char *value, const char **error);
+  Type               type() const override;
+  const char        *name() const override;
+  bool               check(HttpRequestData *req) const override;
+  void               print(FILE *f) const override;
+  static TimeMod    *make(char *value, const char **error);
   static const char *timeOfDayToSeconds(const char *time_str, time_t *seconds);
 };
 
@@ -104,7 +104,7 @@ bool
 TimeMod::check(HttpRequestData *req) const
 {
   struct tm cur_time;
-  time_t timeOfDay = req->xact_start;
+  time_t    timeOfDay = req->xact_start;
   // Use this to account for daylight savings time.
   ink_localtime_r(&timeOfDay, &cur_time);
   timeOfDay = cur_time.tm_hour * (60 * 60) + cur_time.tm_min * 60 + cur_time.tm_sec;
@@ -115,9 +115,9 @@ TimeMod *
 TimeMod::make(char *value, const char **error)
 {
   Tokenizer rangeTok("-");
-  TimeMod *mod = nullptr;
-  TimeMod tmp;
-  int num_tok;
+  TimeMod  *mod = nullptr;
+  TimeMod   tmp;
+  int       num_tok;
 
   num_tok = rangeTok.Initialize(value, SHARE_TOKS);
   if (num_tok == 1) {
@@ -139,10 +139,10 @@ TimeMod::make(char *value, const char **error)
 const char *
 TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
 {
-  int hour   = 0;
-  int min    = 0;
-  int sec    = 0;
-  time_t tmp = 0;
+  int    hour = 0;
+  int    min  = 0;
+  int    sec  = 0;
+  time_t tmp  = 0;
 
   // coverity[secure_coding]
   if (sscanf(time_str, "%d:%d:%d", &hour, &min, &sec) != 3) {
@@ -179,8 +179,8 @@ struct PortMod : public ControlBase::Modifier {
   static const char *const NAME;
 
   const char *name() const override;
-  bool check(HttpRequestData *req) const override;
-  void print(FILE *f) const override;
+  bool        check(HttpRequestData *req) const override;
+  void        print(FILE *f) const override;
 
   static PortMod *make(char *value, const char **error);
 };
@@ -209,8 +209,8 @@ PortMod *
 PortMod::make(char *value, const char **error)
 {
   Tokenizer rangeTok("-");
-  PortMod tmp;
-  int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
+  PortMod   tmp;
+  int       num_tok = rangeTok.Initialize(value, SHARE_TOKS);
 
   *error = nullptr;
   if (num_tok > 2) {
@@ -242,9 +242,9 @@ struct IPortMod : public ControlBase::Modifier {
 
   IPortMod(int port);
 
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
-  void print(FILE *f) const override;
+  const char      *name() const override;
+  bool             check(HttpRequestData *req) const override;
+  void             print(FILE *f) const override;
   static IPortMod *make(char *value, const char **error);
 };
 
@@ -271,7 +271,7 @@ IPortMod *
 IPortMod::make(char *value, const char **error)
 {
   IPortMod *zret = nullptr;
-  int port;
+  int       port;
   // coverity[secure_coding]
   if (sscanf(value, "%u", &port) == 1) {
     zret = new IPortMod(port);
@@ -288,10 +288,10 @@ struct SrcIPMod : public ControlBase::Modifier {
 
   static const char *const NAME;
 
-  Type type() const override;
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
-  void print(FILE *f) const override;
+  Type             type() const override;
+  const char      *name() const override;
+  bool             check(HttpRequestData *req) const override;
+  void             print(FILE *f) const override;
   static SrcIPMod *make(char *value, const char **error);
 };
 
@@ -322,7 +322,7 @@ SrcIPMod::check(HttpRequestData *req) const
 SrcIPMod *
 SrcIPMod::make(char *value, const char **error)
 {
-  SrcIPMod tmp;
+  SrcIPMod  tmp;
   SrcIPMod *zret = nullptr;
   *error         = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
@@ -339,10 +339,10 @@ struct SchemeMod : public ControlBase::Modifier {
 
   SchemeMod(int scheme);
 
-  Type type() const override;
+  Type        type() const override;
   const char *name() const override;
-  bool check(HttpRequestData *req) const override;
-  void print(FILE *f) const override;
+  bool        check(HttpRequestData *req) const override;
+  void        print(FILE *f) const override;
 
   const char *getWksText() const;
 
@@ -382,8 +382,8 @@ SchemeMod::print(FILE *f) const
 SchemeMod *
 SchemeMod::make(char *value, const char **error)
 {
-  SchemeMod *zret = nullptr;
-  int scheme      = hdrtoken_tokenize(value, strlen(value));
+  SchemeMod *zret   = nullptr;
+  int        scheme = hdrtoken_tokenize(value, strlen(value));
   if (scheme < 0) {
     *error = "Unknown scheme";
   } else {
@@ -428,7 +428,7 @@ TextMod::set(const char *value)
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  std::string _s; ///< Storage for all strings.
+  std::string                 _s; ///< Storage for all strings.
   std::vector<swoc::TextView> text_vec;
   MultiTextMod();
   ~MultiTextMod() override = default;
@@ -465,9 +465,9 @@ MultiTextMod::set(char *value)
 struct MethodMod : public TextMod {
   static const char *const NAME;
 
-  Type type() const override;
+  Type        type() const override;
   const char *name() const override;
-  bool check(HttpRequestData *req) const override;
+  bool        check(HttpRequestData *req) const override;
 
   static MethodMod *make(char *value, const char **error);
 };
@@ -485,7 +485,7 @@ MethodMod::name() const
 bool
 MethodMod::check(HttpRequestData *req) const
 {
-  int method_len;
+  int         method_len;
   const char *method = req->hdr->method_get(&method_len);
   return method_len >= static_cast<int>(text.size()) && 0 == strncasecmp(method, text.data(), text.size());
 }
@@ -501,9 +501,9 @@ MethodMod::make(char *value, const char **)
 struct PrefixMod : public TextMod {
   static const char *const NAME;
 
-  Type type() const override;
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
+  Type              type() const override;
+  const char       *name() const override;
+  bool              check(HttpRequestData *req) const override;
   static PrefixMod *make(char *value, const char **error);
 };
 
@@ -521,9 +521,9 @@ PrefixMod::name() const
 bool
 PrefixMod::check(HttpRequestData *req) const
 {
-  int path_len;
+  int         path_len;
   const char *path = req->hdr->url_get()->path_get(&path_len);
-  bool zret        = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
+  bool        zret = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
   /*
     Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
       path_len, path, text.size(), text.data(),
@@ -549,9 +549,9 @@ PrefixMod::make(char *value, const char ** /* error ATS_UNUSED */)
 struct SuffixMod : public MultiTextMod {
   static const char *const NAME;
 
-  Type type() const override;
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
+  Type              type() const override;
+  const char       *name() const override;
+  bool              check(HttpRequestData *req) const override;
   static SuffixMod *make(char *value, const char **error);
 };
 const char *const SuffixMod::NAME = "Suffix";
@@ -568,7 +568,7 @@ SuffixMod::name() const
 bool
 SuffixMod::check(HttpRequestData *req) const
 {
-  int path_len;
+  int         path_len;
   const char *path = req->hdr->url_get()->path_get(&path_len);
 
   if (1 == this->text_vec.size() && 1 == this->text_vec[0].size() && this->text_vec[0][0] == '*') {
@@ -596,9 +596,9 @@ SuffixMod::make(char *value, const char ** /* error ATS_UNUSED */)
 struct TagMod : public TextMod {
   static const char *const NAME;
 
-  Type type() const override;
-  const char *name() const override;
-  bool check(HttpRequestData *req) const override;
+  Type           type() const override;
+  const char    *name() const override;
+  bool           check(HttpRequestData *req) const override;
   static TagMod *make(char *value, const char **error);
 };
 const char *const TagMod::NAME = "Tag";
@@ -627,7 +627,7 @@ TagMod::make(char *value, const char ** /* error ATS_UNUSED */)
 
 // ----------
 struct InternalMod : public ControlBase::Modifier {
-  bool flag;
+  bool                     flag;
   static const char *const NAME;
 
   Type
@@ -777,7 +777,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
   const char *errBuf = nullptr;
-  mod_errors err     = ME_UNKNOWN;
+  mod_errors  err    = ME_UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 

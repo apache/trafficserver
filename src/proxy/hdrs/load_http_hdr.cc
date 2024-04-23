@@ -56,8 +56,8 @@
 
 void *low_load_addr  = NULL;
 void *high_load_addr = NULL;
-int heap_load_size   = 0;
-int marshalled       = 0;
+int   heap_load_size = 0;
+int   marshalled     = 0;
 
 // Diags *diags;
 
@@ -90,7 +90,7 @@ load_string(const char *s, int len, int offset)
 void
 process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
 {
-  char *s;
+  char        *s;
   HTTPHdrImpl *hhdr = (HTTPHdrImpl *)obj;
 
   if (hhdr->m_polarity == HTTP_TYPE_REQUEST) {
@@ -247,9 +247,9 @@ load_buffer(int fd, hdr_type h_type)
   hdr_size       = (num_lines * 16);
   heap_load_size = hdr_size;
 
-  char *hdr_heap = (char *)ats_malloc(hdr_size);
-  int bytes_read = 0;
-  int cur_line   = 0;
+  char *hdr_heap   = (char *)ats_malloc(hdr_size);
+  int   bytes_read = 0;
+  int   cur_line   = 0;
 
   while (cur_line < num_lines && bytes_read < hdr_size) {
     int *cur_ptr;
@@ -275,7 +275,7 @@ load_buffer(int fd, hdr_type h_type)
   }
 
   HdrHeap *my_heap = (HdrHeap *)hdr_heap;
-  int offset       = hdr_heap - (char *)old_addr;
+  int      offset  = hdr_heap - (char *)old_addr;
 
   // Patch up some values
   if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {

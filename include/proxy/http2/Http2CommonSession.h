@@ -84,20 +84,20 @@ public:
   /////////////////////
   // Methods
 
-  bool common_free(ProxySession *ssn);
-  void write_reenable();
+  bool    common_free(ProxySession *ssn);
+  void    write_reenable();
   int64_t xmit(const Http2TxFrame &frame, bool flush = true);
-  void flush();
+  void    flush();
 
-  int64_t get_connection_id();
+  int64_t          get_connection_id();
   Ptr<ProxyMutex> &get_mutex();
-  NetVConnection *get_netvc();
-  void do_clear_session_active();
+  NetVConnection  *get_netvc();
+  void             do_clear_session_active();
 
   ////////////////////
   // Accessors
   void set_dying_event(int event);
-  int get_dying_event() const;
+  int  get_dying_event() const;
   bool ready_to_free() const;
   bool is_recursing() const;
   void set_half_close_local_flag(bool flag);
@@ -109,7 +109,7 @@ public:
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 
   int64_t write_avail();
-  bool is_write_high_water() const;
+  bool    is_write_high_water() const;
 
   virtual ProxySession *get_proxy_session() = 0;
 
@@ -147,36 +147,36 @@ protected:
   // Variables
   SessionHandler session_handler = nullptr;
 
-  MIOBuffer *read_buffer              = nullptr;
+  MIOBuffer      *read_buffer         = nullptr;
   IOBufferReader *_read_buffer_reader = nullptr;
 
-  VIO *write_vio                       = nullptr;
-  MIOBuffer *write_buffer              = nullptr;
+  VIO            *write_vio            = nullptr;
+  MIOBuffer      *write_buffer         = nullptr;
   IOBufferReader *_write_buffer_reader = nullptr;
 
-  Http2FrameHeader current_hdr        = {0, 0, 0, 0};
-  uint32_t _write_size_threshold      = 0;
-  uint32_t _write_time_threshold      = 100;
-  ink_hrtime _write_buffer_last_flush = 0;
+  Http2FrameHeader current_hdr              = {0, 0, 0, 0};
+  uint32_t         _write_size_threshold    = 0;
+  uint32_t         _write_time_threshold    = 100;
+  ink_hrtime       _write_buffer_last_flush = 0;
 
-  History<HISTORY_DEFAULT_SIZE> _history;
+  History<HISTORY_DEFAULT_SIZE>                                                     _history;
   Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
-  int dying_event                = 0;
-  bool kill_me                   = false;
-  Http2SessionCod cause_of_death = Http2SessionCod::NOT_PROVIDED;
-  bool half_close_local          = false;
-  int recursion                  = 0;
+  int             dying_event      = 0;
+  bool            kill_me          = false;
+  Http2SessionCod cause_of_death   = Http2SessionCod::NOT_PROVIDED;
+  bool            half_close_local = false;
+  int             recursion        = 0;
 
   std::unordered_set<std::string> *_h2_pushed_urls = nullptr;
 
   Event *_reenable_event = nullptr;
-  int _n_frame_read      = 0;
+  int    _n_frame_read   = 0;
 
   uint32_t _pending_sending_data_size = 0;
 
-  int64_t read_from_early_data   = 0;
-  bool cur_frame_from_early_data = false;
+  int64_t read_from_early_data      = 0;
+  bool    cur_frame_from_early_data = false;
 
   // Counter for received frames
   std::atomic<uint64_t> _frame_counts_in[HTTP2_FRAME_TYPE_MAX + 1] = {

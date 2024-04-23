@@ -81,28 +81,28 @@ struct CacheVol;
 class CacheEvacuateDocVC;
 
 struct StripteHeaderFooter {
-  unsigned int magic;
+  unsigned int      magic;
   ts::VersionNumber version;
-  time_t create_time;
-  off_t write_pos;
-  off_t last_write_pos;
-  off_t agg_pos;
-  uint32_t generation; // token generation (vary), this cannot be 0
-  uint32_t phase;
-  uint32_t cycle;
-  uint32_t sync_serial;
-  uint32_t write_serial;
-  uint32_t dirty;
-  uint32_t sector_size;
-  uint32_t unused; // pad out to 8 byte boundary
-  uint16_t freelist[1];
+  time_t            create_time;
+  off_t             write_pos;
+  off_t             last_write_pos;
+  off_t             agg_pos;
+  uint32_t          generation; // token generation (vary), this cannot be 0
+  uint32_t          phase;
+  uint32_t          cycle;
+  uint32_t          sync_serial;
+  uint32_t          write_serial;
+  uint32_t          dirty;
+  uint32_t          sector_size;
+  uint32_t          unused; // pad out to 8 byte boundary
+  uint16_t          freelist[1];
 };
 
 // Key and Earliest key for each fragment that needs to be evacuated
 struct EvacuationKey {
   SLink<EvacuationKey> link;
-  CryptoHash key;
-  CryptoHash earliest_key;
+  CryptoHash           key;
+  CryptoHash           earliest_key;
 };
 
 struct EvacuationBlock {
@@ -120,7 +120,7 @@ struct EvacuationBlock {
   Dir dir;
   Dir new_dir;
   // we need to have a list of evacuationkeys because of collision.
-  EvacuationKey evac_frags;
+  EvacuationKey       evac_frags;
   CacheEvacuateDocVC *earliest_evacuator;
   LINK(EvacuationBlock, link);
 };
@@ -128,53 +128,53 @@ struct EvacuationBlock {
 class Stripe : public Continuation
 {
 public:
-  char *path = nullptr;
+  char          *path = nullptr;
   ats_scoped_str hash_text;
-  CryptoHash hash_id;
-  int fd = -1;
+  CryptoHash     hash_id;
+  int            fd = -1;
 
-  char *raw_dir               = nullptr;
-  Dir *dir                    = nullptr;
-  StripteHeaderFooter *header = nullptr;
-  StripteHeaderFooter *footer = nullptr;
-  int segments                = 0;
-  off_t buckets               = 0;
-  off_t recover_pos           = 0;
-  off_t prev_recover_pos      = 0;
-  off_t scan_pos              = 0;
-  off_t skip                  = 0; // start of headers
-  off_t start                 = 0; // start of data
-  off_t len                   = 0;
-  off_t data_blocks           = 0;
-  int hit_evacuate_window     = 0;
-  AIOCallbackInternal io;
+  char                *raw_dir             = nullptr;
+  Dir                 *dir                 = nullptr;
+  StripteHeaderFooter *header              = nullptr;
+  StripteHeaderFooter *footer              = nullptr;
+  int                  segments            = 0;
+  off_t                buckets             = 0;
+  off_t                recover_pos         = 0;
+  off_t                prev_recover_pos    = 0;
+  off_t                scan_pos            = 0;
+  off_t                skip                = 0; // start of headers
+  off_t                start               = 0; // start of data
+  off_t                len                 = 0;
+  off_t                data_blocks         = 0;
+  int                  hit_evacuate_window = 0;
+  AIOCallbackInternal  io;
 
   Queue<CacheVC, Continuation::Link_link> sync;
 
   Event *trigger = nullptr;
 
-  OpenDir open_dir;
-  RamCache *ram_cache            = nullptr;
-  int evacuate_size              = 0;
-  DLL<EvacuationBlock> *evacuate = nullptr;
-  DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
-  CacheEvacuateDocVC *doc_evacuator = nullptr;
+  OpenDir               open_dir;
+  RamCache             *ram_cache     = nullptr;
+  int                   evacuate_size = 0;
+  DLL<EvacuationBlock> *evacuate      = nullptr;
+  DLL<EvacuationBlock>  lookaside[LOOKASIDE_SIZE];
+  CacheEvacuateDocVC   *doc_evacuator = nullptr;
 
   StripeInitInfo *init_info = nullptr;
 
-  CacheDisk *disk            = nullptr;
-  Cache *cache               = nullptr;
-  CacheVol *cache_vol        = nullptr;
-  uint32_t last_sync_serial  = 0;
-  uint32_t last_write_serial = 0;
-  uint32_t sector_size       = 0;
-  bool recover_wrapped       = false;
-  bool dir_sync_waiting      = false;
-  bool dir_sync_in_progress  = false;
-  bool writing_end_marker    = false;
+  CacheDisk *disk                 = nullptr;
+  Cache     *cache                = nullptr;
+  CacheVol  *cache_vol            = nullptr;
+  uint32_t   last_sync_serial     = 0;
+  uint32_t   last_write_serial    = 0;
+  uint32_t   sector_size          = 0;
+  bool       recover_wrapped      = false;
+  bool       dir_sync_waiting     = false;
+  bool       dir_sync_in_progress = false;
+  bool       writing_end_marker   = false;
 
-  CacheKey first_fragment_key;
-  int64_t first_fragment_offset = 0;
+  CacheKey          first_fragment_key;
+  int64_t           first_fragment_offset = 0;
   Ptr<IOBufferData> first_fragment_data;
 
   void cancel_trigger();
@@ -191,8 +191,8 @@ public:
   // currently http handles a write-lock failure by retrying the read
   OpenDirEntry *open_read(const CryptoHash *key) const;
   OpenDirEntry *open_read_lock(CryptoHash *key, EThread *t);
-  int close_read(CacheVC *cont) const;
-  int close_read_lock(CacheVC *cont);
+  int           close_read(CacheVC *cont) const;
+  int           close_read_lock(CacheVC *cont);
 
   int clear_dir_aio();
   int clear_dir();
@@ -211,7 +211,7 @@ public:
 
   bool evac_bucket_valid(off_t bucket) const;
 
-  int is_io_in_progress() const;
+  int  is_io_in_progress() const;
   void set_io_not_in_progress();
 
   int aggWriteDone(int event, Event *e);
@@ -243,21 +243,21 @@ public:
   int evacuateDocReadDone(int event, Event *e);
   int evacuateDoc(int event, Event *e);
 
-  int evac_range(off_t start, off_t end, int evac_phase);
-  void periodic_scan();
-  void scan_for_pinned_documents();
-  void evacuate_cleanup_blocks(int i);
-  void evacuate_cleanup();
+  int              evac_range(off_t start, off_t end, int evac_phase);
+  void             periodic_scan();
+  void             scan_for_pinned_documents();
+  void             evacuate_cleanup_blocks(int i);
+  void             evacuate_cleanup();
   EvacuationBlock *force_evacuate_head(Dir const *dir, int pinned);
-  int within_hit_evacuate_window(Dir const *dir) const;
-  uint32_t round_to_approx_size(uint32_t l) const;
+  int              within_hit_evacuate_window(Dir const *dir) const;
+  uint32_t         round_to_approx_size(uint32_t l) const;
 
   // inline functions
-  int headerlen() const;         // calculates the total length of the vol header and the freelist
-  int direntries() const;        // total number of dir entries
-  Dir *dir_segment(int s) const; // returns the first dir in the segment s
-  size_t dirlen() const;         // calculates the total length of header, directories and footer
-  int vol_out_of_phase_valid(Dir const *e) const;
+  int    headerlen() const;        // calculates the total length of the vol header and the freelist
+  int    direntries() const;       // total number of dir entries
+  Dir   *dir_segment(int s) const; // returns the first dir in the segment s
+  size_t dirlen() const;           // calculates the total length of header, directories and footer
+  int    vol_out_of_phase_valid(Dir const *e) const;
 
   int vol_out_of_phase_agg_valid(Dir const *e) const;
   int vol_out_of_phase_write_valid(Dir const *e) const;
@@ -276,8 +276,8 @@ public:
   }
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
-  int get_agg_buf_pos() const;
-  int get_agg_todo_size() const;
+  int                                      get_agg_buf_pos() const;
+  int                                      get_agg_todo_size() const;
 
   /**
    * Add a virtual connection waiting to write to this stripe.
@@ -341,13 +341,13 @@ struct AIO_failure_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number            = -1;
-  int scheme                = 0;
-  off_t size                = 0;
-  int num_vols              = 0;
-  bool ramcache_enabled     = true;
-  Stripe **stripes          = nullptr;
-  DiskStripe **disk_stripes = nullptr;
+  int          vol_number       = -1;
+  int          scheme           = 0;
+  off_t        size             = 0;
+  int          num_vols         = 0;
+  bool         ramcache_enabled = true;
+  Stripe     **stripes          = nullptr;
+  DiskStripe **disk_stripes     = nullptr;
   LINK(CacheVol, link);
   // per volume stats
   CacheStatsBlock vol_rsb;
@@ -357,12 +357,12 @@ struct CacheVol {
 
 // Global Data
 
-extern Stripe **gstripes;
-extern std::atomic<int> gnstripes;
-extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
+extern Stripe                        **gstripes;
+extern std::atomic<int>                gnstripes;
+extern ClassAllocator<OpenDirEntry>    openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
-extern ClassAllocator<EvacuationKey> evacuationKeyAllocator;
-extern unsigned short *vol_hash_table;
+extern ClassAllocator<EvacuationKey>   evacuationKeyAllocator;
+extern unsigned short                 *vol_hash_table;
 
 // inline Functions
 

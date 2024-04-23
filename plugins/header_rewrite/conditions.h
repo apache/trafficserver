@@ -167,7 +167,7 @@ protected:
 
 private:
   time_t _next = 0;
-  bool _last   = false;
+  bool   _last = false;
 };
 
 // cookie(name)
@@ -209,8 +209,7 @@ private:
         goto skip;
       }
 
-      for (start += name_len; start < end && *start == ' '; start++) {
-      }
+      for (start += name_len; start < end && *start == ' '; start++) {}
 
       if (start == end || *start++ != '=') {
         goto skip;
@@ -220,8 +219,7 @@ private:
         start++;
       }
 
-      for (last = start; last < end && *last != ';'; last++) {
-      }
+      for (last = start; last < end && *last != ';'; last++) {}
 
       *value_len = last - start;
       *value     = start;
@@ -289,7 +287,7 @@ protected:
 
 private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
-  UrlType _type;
+  UrlType       _type;
 };
 
 // DBM lookups
@@ -327,8 +325,8 @@ protected:
 private:
   // MDBM* _dbm;
   std::string _file;
-  Value _key;
-  TSMutex _mutex;
+  Value       _key;
+  TSMutex     _mutex;
 };
 
 class ConditionInternalTxn : public Condition
@@ -407,7 +405,7 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  int64_t get_now_qualified(NowQualifiers qual) const;
+  int64_t       get_now_qualified(NowQualifiers qual) const;
   NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
 
@@ -439,13 +437,13 @@ public:
   }
 
 private:
-  virtual int64_t get_geo_int(const sockaddr *addr) const;
+  virtual int64_t     get_geo_int(const sockaddr *addr) const;
   virtual std::string get_geo_string(const sockaddr *addr) const;
 
 protected:
-  bool eval(const Resources &res) override;
+  bool          eval(const Resources &res) override;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
-  bool _int_type          = false;
+  bool          _int_type = false;
 };
 
 // id: Various identifiers for the requests, server process etc.
@@ -493,12 +491,12 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  void _create_masks();
-  int _v4_cidr = 24;
-  int _v6_cidr = 48;
-  struct in_addr _v4_mask; // We do a 32-bit & using this mask, for efficiency
-  unsigned char _v6_mask;  // Only need one byte here, since we memset the rest (see next)
-  int _v6_zero_bytes;      // How many initial bytes to memset to 0
+  void           _create_masks();
+  int            _v4_cidr = 24;
+  int            _v6_cidr = 48;
+  struct in_addr _v4_mask;       // We do a 32-bit & using this mask, for efficiency
+  unsigned char  _v6_mask;       // Only need one byte here, since we memset the rest (see next)
+  int            _v6_zero_bytes; // How many initial bytes to memset to 0
 };
 
 /// Information about the inbound (client) session.
@@ -513,9 +511,9 @@ public:
   ConditionInbound(self &) = delete;
   self &operator=(self &)  = delete;
 
-  void initialize(Parser &p) override;
-  void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void        initialize(Parser &p) override;
+  void        set_qualifier(const std::string &q) override;
+  void        append_value(std::string &s, const Resources &res) override;
   static void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 
   static constexpr const char *TAG = "INBOUND";

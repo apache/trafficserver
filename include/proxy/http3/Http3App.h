@@ -54,7 +54,7 @@ public:
   void on_stream_close(QUICStream &stream) override;
 
   virtual void start();
-  virtual int main_event_handler(int event, Event *data);
+  virtual int  main_event_handler(int event, Event *data);
 
   // TODO: Return StreamIO. It looks bother that caller have to look up StreamIO by stream id.
   // Why not create_bidi_stream ?
@@ -82,14 +82,14 @@ private:
   void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
 
   QUICStreamVCAdapter::IOInfo &_get_stream_info(QUICStreamId stream_id);
-  void _update_vio_cont_to_QPACK(QPACK *qpack, QUICStreamVCAdapter *adapter);
+  void                         _update_vio_cont_to_QPACK(QPACK *qpack, QUICStreamVCAdapter *adapter);
 
-  Http3FrameHandler *_protocol_enforcer = nullptr;
-  Http3FrameHandler *_settings_handler  = nullptr;
-  Http3FrameGenerator *_settings_framer = nullptr;
+  Http3FrameHandler   *_protocol_enforcer = nullptr;
+  Http3FrameHandler   *_settings_handler  = nullptr;
+  Http3FrameGenerator *_settings_framer   = nullptr;
 
   Http3FrameDispatcher _control_stream_dispatcher;
-  Http3FrameCollector _control_stream_collector;
+  Http3FrameCollector  _control_stream_collector;
 
   std::map<QUICStreamId, Http3StreamType> _remote_uni_stream_map;
   std::map<QUICStreamId, Http3StreamType> _local_uni_stream_map;

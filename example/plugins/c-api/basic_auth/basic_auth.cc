@@ -40,7 +40,7 @@ base64_decode(const char *input)
 
   char *output;
   char *obuf;
-  int len;
+  int   len;
 
   for (len = 0; (input[len] != '\0') && (input[len] != '='); len++) {
     ;
@@ -87,14 +87,14 @@ authorized(char *user, char *password)
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc field_loc;
+  TSMBuffer   bufp;
+  TSMLoc      hdr_loc;
+  TSMLoc      field_loc;
   const char *val;
   const char *ptr;
 
   char *user, *password;
-  int authval_length;
+  int   authval_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
@@ -163,11 +163,11 @@ done:
 static void
 handle_response(TSHttpTxn txnp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc field_loc;
+  TSMBuffer   bufp;
+  TSMLoc      hdr_loc;
+  TSMLoc      field_loc;
   const char *insert = "Basic realm=\"proxy\"";
-  int len            = strlen(insert);
+  int         len    = strlen(insert);
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);
@@ -212,7 +212,7 @@ auth_plugin(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
-  int i, cc;
+  int                      i, cc;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

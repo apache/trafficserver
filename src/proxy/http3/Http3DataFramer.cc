@@ -34,7 +34,7 @@ Http3DataFramer::generate_frame()
     return Http3FrameFactory::create_null_frame();
   }
 
-  Http3FrameUPtr frame   = Http3FrameFactory::create_null_frame();
+  Http3FrameUPtr  frame  = Http3FrameFactory::create_null_frame();
   IOBufferReader *reader = this->_source_vio->get_reader();
 
   size_t payload_len = 128 * 1024;

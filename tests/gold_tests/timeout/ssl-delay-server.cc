@@ -44,14 +44,14 @@ char req_buf[10000];
 char post_buf[1000];
 
 SSL_CTX *svr_ctx;
-int connect_delay;
-int ttfb_delay;
+int      connect_delay;
+int      ttfb_delay;
 
 pthread_mutex_t *mutex_buf = nullptr;
 
 struct thread_info {
   struct addrinfo *result, *rp;
-  SSL_SESSION *session;
+  SSL_SESSION     *session;
 };
 
 void
@@ -78,7 +78,7 @@ char response_buf[] = "200 HTTP/1.1\r\nConnection: close\r\n\r\n";
 void *
 run_session(void *arg)
 {
-  int sfd  = (intptr_t)arg;
+  int  sfd = (intptr_t)arg;
   SSL *ssl = SSL_new(svr_ctx);
   if (ssl == nullptr) {
     fprintf(stderr, "Failed to create ssl\n");
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
 
   fprintf(stderr, "Listen on %d connect delay=%d ttfb delay=%d\n", listen_port, connect_delay, ttfb_delay);
 
-  int listenfd = socket(AF_INET, SOCK_STREAM, 0);
+  int                listenfd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in serv_addr;
 
   memset(&serv_addr, '0', sizeof(serv_addr));

@@ -33,8 +33,8 @@
 #include "tscore/Layout.h"
 #include "swoc/MemSpan.h"
 
-static RecMessageRecvCb g_recv_cb = nullptr;
-static void *g_recv_cookie        = nullptr;
+static RecMessageRecvCb g_recv_cb     = nullptr;
+static void            *g_recv_cookie = nullptr;
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc
@@ -72,14 +72,14 @@ RecMessageFree(RecMessage *msg)
 RecMessage *
 RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 {
-  int msg_ele_size;
-  int rec_name_len         = -1;
-  int rec_data_str_len     = -1;
-  int rec_data_def_str_len = -1;
-  int rec_cfg_chk_len      = -1;
+  int               msg_ele_size;
+  int               rec_name_len         = -1;
+  int               rec_data_str_len     = -1;
+  int               rec_data_def_str_len = -1;
+  int               rec_cfg_chk_len      = -1;
   RecMessageEleHdr *ele_hdr;
-  RecRecord *r;
-  char *p;
+  RecRecord        *r;
+  char             *p;
 
   // find out how much space we need
   msg_ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
@@ -177,7 +177,7 @@ int
 RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
   RecMessageEleHdr *eh;
-  RecRecord *r;
+  RecRecord        *r;
 
   if (itr == nullptr) {
     if (msg->entries == 0) {
@@ -248,9 +248,9 @@ RecMessage *
 RecMessageReadFromDisk(const char *fpath)
 {
   RecMessageHdr msg_hdr;
-  RecMessage *msg = nullptr;
-  RecHandle h_file;
-  int bytes_read;
+  RecMessage   *msg = nullptr;
+  RecHandle     h_file;
+  int           bytes_read;
 
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
@@ -286,9 +286,9 @@ Ldone:
 int
 RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 {
-  int msg_size;
+  int       msg_size;
   RecHandle h_file;
-  int bytes_written;
+  int       bytes_written;
 
   // Cap the message (e.g. when we read it, o_end should reflect the
   // size of the new buffer that we write to disk, not the size of the

@@ -26,11 +26,11 @@
 class HttpConfigAccessor
 {
 public:
-  virtual int8_t get_ignore_accept_mismatch() const          = 0;
-  virtual int8_t get_ignore_accept_charset_mismatch() const  = 0;
-  virtual int8_t get_ignore_accept_encoding_mismatch() const = 0;
-  virtual int8_t get_ignore_accept_language_mismatch() const = 0;
-  virtual const char *get_global_user_agent_header() const   = 0;
+  virtual int8_t      get_ignore_accept_mismatch() const          = 0;
+  virtual int8_t      get_ignore_accept_charset_mismatch() const  = 0;
+  virtual int8_t      get_ignore_accept_encoding_mismatch() const = 0;
+  virtual int8_t      get_ignore_accept_language_mismatch() const = 0;
+  virtual const char *get_global_user_agent_header() const        = 0;
 
 protected:
   HttpConfigAccessor() {}

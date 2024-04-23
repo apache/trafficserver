@@ -34,9 +34,9 @@ void
 delayHeader(TSHttpTxn txnp, const std::string &header, std::chrono::milliseconds delay)
 {
   if (header.size() > 0) {
-    TSMLoc hdr_loc   = nullptr;
-    TSMBuffer bufp   = nullptr;
-    TSMLoc field_loc = nullptr;
+    TSMLoc    hdr_loc   = nullptr;
+    TSMBuffer bufp      = nullptr;
+    TSMLoc    field_loc = nullptr;
 
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
@@ -59,9 +59,9 @@ void
 retryAfter(TSHttpTxn txnp, unsigned retry)
 {
   if (retry > 0) {
-    TSMLoc hdr_loc   = nullptr;
-    TSMBuffer bufp   = nullptr;
-    TSMLoc field_loc = nullptr;
+    TSMLoc    hdr_loc   = nullptr;
+    TSMBuffer bufp      = nullptr;
+    TSMLoc    field_loc = nullptr;
 
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 11, &field_loc)) {
@@ -85,17 +85,17 @@ retryAfter(TSHttpTxn txnp, unsigned retry)
 std::string
 getDescriptionFromUrl(const char *url)
 {
-  TSMBuffer const buf = TSMBufferCreate();
-  TSMLoc url_loc      = nullptr;
+  TSMBuffer const buf     = TSMBufferCreate();
+  TSMLoc          url_loc = nullptr;
 
-  const int url_len = strlen(url);
+  const int   url_len = strlen(url);
   std::string description;
 
   if (TS_SUCCESS == TSUrlCreate(buf, &url_loc) && TS_PARSE_DONE == TSUrlParse(buf, url_loc, &url, url + url_len)) {
-    int host_len, scheme_len = 0;
-    const char *s  = TSUrlSchemeGet(buf, url_loc, &scheme_len);
-    const char *h  = TSUrlHostGet(buf, url_loc, &host_len);
-    const int port = TSUrlPortGet(buf, url_loc);
+    int         host_len, scheme_len = 0;
+    const char *s    = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+    const char *h    = TSUrlHostGet(buf, url_loc, &host_len);
+    const int   port = TSUrlPortGet(buf, url_loc);
 
     const std::string hostname = std::string(h, host_len);
     const std::string scheme   = std::string(s, scheme_len);

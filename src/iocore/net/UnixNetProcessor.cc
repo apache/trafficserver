@@ -79,8 +79,8 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   static int net_accept_number = 0;
-  int accept_threads           = opt.accept_threads; // might be changed.
-  int listen_per_thread        = 0;
+  int        accept_threads    = opt.accept_threads; // might be changed.
+  int        listen_per_thread = 0;
   IpEndpoint accept_ip; // local binding address.
 
   NetAccept *na = createNetAccept(opt);
@@ -174,7 +174,7 @@ UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOp
     return nullptr;
   }
 
-  EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt.etype);
+  EThread            *t  = eventProcessor.assign_affinity_by_type(cont, opt.etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   vc->options = opt;
@@ -312,7 +312,7 @@ UnixNetProcessor::allocate_vc(EThread *t)
 }
 
 struct socks_conf_struct *NetProcessor::socks_conf_stuff = nullptr;
-int NetProcessor::accept_mss                             = 0;
+int                       NetProcessor::accept_mss       = 0;
 
 UnixNetProcessor unix_netProcessor;
-NetProcessor &netProcessor = unix_netProcessor;
+NetProcessor    &netProcessor = unix_netProcessor;

@@ -29,64 +29,64 @@ TEST_CASE("parse_rules", "[libts][parse_rules]")
 {
   // test "100"
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("100", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("100", &end);
     REQUIRE(value == 100);
     REQUIRE(*end == '\0');
   }
 
   // testf "1M"
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("1M", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("1M", &end);
     REQUIRE(value == 1 << 20);
     REQUIRE(*end == '\0');
   }
 
   // test -100
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("-100", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("-100", &end);
     REQUIRE(value == -100);
     REQUIRE(*end == '\0');
   }
 
   // testf "-1M"
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("-1M", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("-1M", &end);
     REQUIRE(value == (1 << 20) * -1);
     REQUIRE(*end == '\0');
   }
 
   // test "9223372036854775807"
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("9223372036854775807", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("9223372036854775807", &end);
     REQUIRE(value == 9223372036854775807ull);
     REQUIRE(*end == '\0');
   }
 
   // test "-9223372036854775807"
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("-9223372036854775807", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("-9223372036854775807", &end);
     REQUIRE(value == -9223372036854775807ll);
     REQUIRE(*end == '\0');
   }
 
   // testf "1.5T" - error case
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("1.5T", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("1.5T", &end);
     REQUIRE(value != 1649267441664);
     REQUIRE(*end != '\0');
   }
 
   // testf "asdf" - error case
   {
-    const char *end = nullptr;
-    int64_t value   = ink_atoi64("asdf", &end);
+    const char *end   = nullptr;
+    int64_t     value = ink_atoi64("asdf", &end);
     REQUIRE(value == 0);
     REQUIRE(*end != '\0');
   }

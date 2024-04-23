@@ -52,7 +52,7 @@ FetchPolicyLru::init(const char *parameters)
 
     /* Defaults are considered minimum */
     static const char *defaultStr = " (default)";
-    bool useDefault               = false;
+    bool               useDefault = false;
 
     /* Make sure size is not larger than what std::list is physically able to hold */
     LruList::size_type realMax = _list.max_size();

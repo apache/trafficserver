@@ -30,17 +30,17 @@
 #include "tsutil/PostScript.h"
 
 // Required by main.h
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
-extern int gndisks;
-extern CacheDisk **gdisks;
+extern int             gndisks;
+extern CacheDisk     **gdisks;
 extern Queue<CacheVol> cp_list;
-extern int cp_list_len;
-extern ConfigVolumes config_volumes;
+extern int             cp_list_len;
+extern ConfigVolumes   config_volumes;
 
 extern void cplist_init();
-extern int cplist_reconfigure();
+extern int  cplist_reconfigure();
 
 namespace
 {
@@ -56,13 +56,13 @@ DbgCtl dbg_ctl_cache_vol_test{"cache_vol_test"};
 static int configs = 4;
 
 Queue<CacheVol> saved_cp_list;
-int saved_cp_list_len;
-ConfigVolumes saved_config_volumes;
-int saved_gnstripes;
+int             saved_cp_list_len;
+ConfigVolumes   saved_config_volumes;
+int             saved_gnstripes;
 
-int ClearConfigVol(ConfigVolumes *configp);
-int ClearCacheVolList(Queue<CacheVol> *cpl, int len);
-int create_config(int i);
+int  ClearConfigVol(ConfigVolumes *configp);
+int  ClearCacheVolList(Queue<CacheVol> *cpl, int len);
+int  create_config(int i);
 void execute_and_verify();
 void save_state();
 void restore_state();
@@ -77,8 +77,8 @@ create_config(int num)
   switch (num) {
   case 0:
     for (i = 0; i < gndisks; i++) {
-      CacheDisk *d = gdisks[i];
-      int blocks   = d->num_usable_blocks;
+      CacheDisk *d      = gdisks[i];
+      int        blocks = d->num_usable_blocks;
       if (blocks < STORE_BLOCKS_PER_STRIPE) {
         Warning("Cannot run Cache_vol regression: not enough disk space");
         return 0;
@@ -146,9 +146,9 @@ create_config(int num)
 
   {
     /* calculate the total disk space */
-    InkRand *gen      = &this_ethread()->generator;
-    off_t total_space = 0;
-    vol_num           = 1;
+    InkRand *gen         = &this_ethread()->generator;
+    off_t    total_space = 0;
+    vol_num              = 1;
     if (num == 2) {
       Dbg(dbg_ctl_cache_vol_test, "Random Volumes after clearing the disks");
     } else {
@@ -236,9 +236,9 @@ execute_and_verify()
 
   /* check that the volumes and sizes
      match the configuration */
-  int matched   = 0;
-  ConfigVol *cp = config_volumes.cp_queue.head;
-  CacheVol *cachep;
+  int        matched = 0;
+  ConfigVol *cp      = config_volumes.cp_queue.head;
+  CacheVol  *cachep;
 
   for (int i = 0; i < config_volumes.num_volumes; i++) {
     cachep = cp_list.head;
@@ -302,7 +302,7 @@ execute_and_verify()
 int
 ClearConfigVol(ConfigVolumes *configp)
 {
-  int i         = 0;
+  int        i  = 0;
   ConfigVol *cp = nullptr;
   while ((cp = configp->cp_queue.dequeue())) {
     delete cp;
@@ -320,7 +320,7 @@ ClearConfigVol(ConfigVolumes *configp)
 int
 ClearCacheVolList(Queue<CacheVol> *cpl, int len)
 {
-  int i        = 0;
+  int       i  = 0;
   CacheVol *cp = nullptr;
   while ((cp = cpl->dequeue())) {
     for (int d_no = 0; d_no < gndisks; d_no++) {

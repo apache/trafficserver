@@ -230,12 +230,12 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
-                     const unsigned int reason);
-  void loadFromPersistentStore();
-  void loadRecord(std::string_view name, HostStatRec &h);
+  void         setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
+                             const unsigned int reason);
+  void         loadFromPersistentStore();
+  void         loadRecord(std::string_view name, HostStatRec &h);
   HostStatRec *getHostStatus(const std::string_view name);
-  void getAllHostStatuses(std::vector<HostStatuses> &hosts);
+  void         getAllHostStatuses(std::vector<HostStatuses> &hosts);
   std::string
   getHostStatusPersistentFilePath()
   {

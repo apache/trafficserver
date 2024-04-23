@@ -51,7 +51,7 @@ int
 run(T &mutex)
 {
   std::thread list[conf.nthreads];
-  int counter = 0;
+  int         counter = 0;
 
   for (int i = 0; i < conf.nthreads; i++) {
     new (&list[i]) std::thread{[&counter](T &mutex) {

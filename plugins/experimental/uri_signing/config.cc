@@ -33,18 +33,18 @@
 #define AUTH_DENY  0
 #define AUTH_ALLOW 1
 struct auth_directive {
-  char auth;
+  char  auth;
   char *container;
 };
 
 struct config {
-  struct hsearch_data *issuers;
-  cjose_jwk_t ***jwkis;
-  char **issuer_names;
-  struct signer signer;
+  struct hsearch_data   *issuers;
+  cjose_jwk_t         ***jwkis;
+  char                 **issuer_names;
+  struct signer          signer;
   struct auth_directive *auth_directives;
-  char *id;
-  bool strip_token;
+  char                  *id;
+  bool                   strip_token;
 };
 
 cjose_jwk_t **
@@ -67,7 +67,7 @@ find_keys(struct config *cfg, const char *issuer)
 cjose_jwk_t *
 find_key_by_kid(struct config *cfg, const char *issuer, const char *kid)
 {
-  const char *this_kid;
+  const char   *this_kid;
   cjose_jwk_t **jwkis = find_keys(cfg, issuer);
   if (!jwkis) {
     return nullptr;
@@ -181,8 +181,8 @@ load_jwk(json_t *obj, cjose_err *err)
 static struct config *
 read_config_from_json(json_t *const issuer_json)
 {
-  struct config *cfg = nullptr;
-  size_t issuers_ct  = 0;
+  struct config *cfg        = nullptr;
+  size_t         issuers_ct = 0;
 
   if (!json_is_object(issuer_json)) {
     PluginError("Config file is not a valid JSON object");
@@ -202,10 +202,10 @@ read_config_from_json(json_t *const issuer_json)
       goto issuer_fail;
     }
 
-    cjose_jwk_t ***jwkis = cfg->jwkis;
-    char **issuer        = cfg->issuer_names;
-    const char *json_issuer;
-    json_t *jwks;
+    cjose_jwk_t ***jwkis  = cfg->jwkis;
+    char         **issuer = cfg->issuer_names;
+    const char    *json_issuer;
+    json_t        *jwks;
     json_object_foreach(issuer_json, json_issuer, jwks)
     {
       *issuer = strdup(json_issuer);
@@ -271,13 +271,13 @@ read_config_from_json(json_t *const issuer_json)
       }
       PluginDebug("Created table with size %d", cfg->issuers->size);
 
-      const char *renewal_kid  = nullptr;
-      json_t *renewal_kid_json = json_object_get(jwks, "renewal_kid");
+      const char *renewal_kid      = nullptr;
+      json_t     *renewal_kid_json = json_object_get(jwks, "renewal_kid");
       if (renewal_kid_json) {
         renewal_kid = json_string_value(renewal_kid_json);
       }
 
-      json_t *id_json = json_object_get(jwks, "id");
+      json_t     *id_json = json_object_get(jwks, "id");
       const char *id;
       if (id_json) {
         id = json_string_value(id_json);
@@ -293,7 +293,7 @@ read_config_from_json(json_t *const issuer_json)
         cfg->strip_token = json_boolean_value(strip_json);
       }
 
-      size_t jwks_ct     = json_array_size(key_ary);
+      size_t        jwks_ct = json_array_size(key_ary);
       cjose_jwk_t **jwks = *jwkis++ = static_cast<cjose_jwk_t **>(malloc((jwks_ct + 1) * sizeof *jwks));
       PluginDebug("Created table with size %d", cfg->issuers->size);
       ENTRY *dummy;
@@ -303,7 +303,7 @@ read_config_from_json(json_t *const issuer_json)
         PluginDebug("Stored keys for %s at %16p", *issuer, jwks);
       }
 
-      json_t *jwk_obj;
+      json_t   *jwk_obj;
       cjose_err jwk_err;
       memset(&jwk_err, 0, sizeof(cjose_err));
       for (size_t idx = 0; (idx < jwks_ct) && (jwk_obj = json_array_get(key_ary, idx)); ++idx, ++jwks) {

@@ -69,10 +69,10 @@ public:
   // pointer aligned (4 or 8)
 
   // Tokenized values
-  int16_t m_scheme_wks_idx;
+  int16_t  m_scheme_wks_idx;
   uint16_t m_port;
-  uint8_t m_url_type;  // e.g. HTTP
-  uint8_t m_type_code; // RFC 1738 limits type code to 1 char
+  uint8_t  m_url_type;  // e.g. HTTP
+  uint8_t  m_type_code; // RFC 1738 limits type code to 1 char
   // 6 bytes
 
   uint32_t m_clean : 1;
@@ -85,32 +85,32 @@ public:
   const char *get_scheme(int *length);
   const char *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
   const char *get_user(int *length);
-  void set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char *get_password(int *length);
-  void set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char *get_host(int *length);
-  void set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int get_port();
-  void set_port(HdrHeap *heap, unsigned int port);
-  void set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int         get_port();
+  void        set_port(HdrHeap *heap, unsigned int port);
+  void        set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char *get_path(int *length);
-  void set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int get_type();
-  void set_type(int type);
-  int get_type_code();
-  void set_type_code(unsigned int typecode);
+  void        set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int         get_type();
+  void        set_type(int type);
+  int         get_type_code();
+  void        set_type_code(unsigned int typecode);
   const char *get_params(int *length);
-  void set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char *get_query(int *length);
-  void set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char *get_fragment(int *length);
-  void set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void        set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
 
   // Marshaling Functions
-  int marshal(MarshalXlate *str_xlate, int num_xlate);
-  void unmarshal(intptr_t offset);
-  void move_strings(HdrStrHeap *new_heap);
-  void rehome_strings(HdrHeap *new_heap);
+  int    marshal(MarshalXlate *str_xlate, int num_xlate);
+  void   unmarshal(intptr_t offset);
+  void   move_strings(HdrStrHeap *new_heap);
+  void   rehome_strings(HdrHeap *new_heap);
   size_t strings_length();
 
   // Sanity Check Functions
@@ -191,11 +191,11 @@ bool validate_scheme(std::string_view scheme);
 void url_init();
 
 URLImpl *url_create(HdrHeap *heap);
-void url_clear(URLImpl *url_impl);
-void url_nuke_proxy_stuff(URLImpl *d_url);
+void     url_clear(URLImpl *url_impl);
+void     url_nuke_proxy_stuff(URLImpl *d_url);
 
 URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
-void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
+void     url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
 // Normalization flag masks.
 namespace URLNormalize
@@ -203,17 +203,17 @@ namespace URLNormalize
 unsigned const NONE           = 0;
 unsigned const IMPLIED_SCHEME = 1; // If scheme missing, add scheme implied by URL type.
 unsigned const LC_SCHEME_HOST = 2; // Force scheme and host to lower case if necessary.
-};                                 // namespace URLNormalize
+}; // namespace URLNormalize
 
-int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset,
-              unsigned normalization_flags = URLNormalize::NONE);
+int  url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset,
+               unsigned normalization_flags = URLNormalize::NONE);
 void url_describe(HdrHeapObjImpl *raw, bool recurse);
 
-int url_length_get(URLImpl *url, unsigned normalization_flags = URLNormalize::NONE);
+int   url_length_get(URLImpl *url, unsigned normalization_flags = URLNormalize::NONE);
 char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
-void url_clear_string_ref(URLImpl *url);
+void  url_clear_string_ref(URLImpl *url);
 char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalization_flags = URLNormalize::NONE);
-void url_called_set(URLImpl *url);
+void  url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
 void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1);
@@ -277,37 +277,37 @@ public:
   char *string_get(Arena *arena, int *length = nullptr) const;
   char *string_get_ref(int *length = nullptr, unsigned normalization_flags = URLNormalize::NONE) const;
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
-  void hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
-  void host_hash_get(CryptoHash *hash) const;
+  void  hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
+  void  host_hash_get(CryptoHash *hash) const;
 
-  const char *scheme_get(int *length);
+  const char            *scheme_get(int *length);
   const std::string_view scheme_get();
-  int scheme_get_wksidx() const;
-  void scheme_set(const char *value, int length);
+  int                    scheme_get_wksidx() const;
+  void                   scheme_set(const char *value, int length);
 
   const char *user_get(int *length);
-  void user_set(const char *value, int length);
+  void        user_set(const char *value, int length);
   const char *password_get(int *length);
-  void password_set(const char *value, int length);
+  void        password_set(const char *value, int length);
   const char *host_get(int *length);
-  void host_set(const char *value, int length);
+  void        host_set(const char *value, int length);
 
-  int port_get() const;
-  int port_get_raw() const;
+  int  port_get() const;
+  int  port_get_raw() const;
   void port_set(int port);
 
   const char *path_get(int *length);
-  void path_set(const char *value, int length);
+  void        path_set(const char *value, int length);
 
-  int type_code_get();
+  int  type_code_get();
   void type_code_set(int type);
 
   const char *params_get(int *length);
-  void params_set(const char *value, int length);
+  void        params_set(const char *value, int length);
   const char *query_get(int *length);
-  void query_set(const char *value, int length);
+  void        query_set(const char *value, int length);
   const char *fragment_get(int *length);
-  void fragment_set(const char *value, int length);
+  void        fragment_set(const char *value, int length);
 
   /**
    * Parse the given URL string and populate URL state with the parts.
@@ -515,7 +515,7 @@ inline const std::string_view
 URL::scheme_get()
 {
   ink_assert(valid());
-  int length;
+  int         length;
   const char *scheme = m_url_impl->get_scheme(&length);
   return std::string_view{scheme, static_cast<size_t>(length)};
 }

@@ -28,12 +28,12 @@
 #include "txn_box/Expr.h"
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
-using swoc::MemSpan;
-using swoc::Errata;
-using swoc::BufferWriter;
-using swoc::FixedBufferWriter;
 using swoc::ArenaWriter;
+using swoc::BufferWriter;
+using swoc::Errata;
+using swoc::FixedBufferWriter;
+using swoc::MemSpan;
+using swoc::TextView;
 using namespace swoc::literals;
 
 /* ------------------------------------------------------------------------------------ */
@@ -193,7 +193,7 @@ Feature
 Expr::bwf_visitor::operator()(List const &list)
 {
   feature_type_for<TUPLE> expr_tuple = _ctx.alloc_span<Feature>(list._exprs.size());
-  unsigned idx                       = 0;
+  unsigned                idx        = 0;
   for (auto const &expr : list._exprs) {
     Feature feature{_ctx.extract(expr)};
     _ctx.commit(feature);
@@ -373,7 +373,7 @@ int
 Context::ts_callback(TSCont cont, TSEvent evt, void *)
 {
   self_type *self      = static_cast<self_type *>(TSContDataGet(cont));
-  auto txn             = self->_txn; // cache for TXN_CLOSE.
+  auto       txn       = self->_txn; // cache for TXN_CLOSE.
   self->_global_status = TS_EVENT_HTTP_CONTINUE;
 
   // Run the directives.

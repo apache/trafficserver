@@ -96,8 +96,8 @@ public:
   // @a thread and @a trigger_event are redundant - you can get the former from
   // the latter. If we don't get rid of @a trigger_event we should remove @a
   // thread.
-  EThread *thread      = nullptr;
-  Event *trigger_event = nullptr;
+  EThread *thread        = nullptr;
+  Event   *trigger_event = nullptr;
   QueM(NetEvent, NetState, read, ready_link) read_ready_list;
   QueM(NetEvent, NetState, write, ready_link) write_ready_list;
   Que(NetEvent, open_link) open_list;
@@ -139,7 +139,7 @@ public:
      mechanism relies on members being identical types.
   */
   static Config global_config;
-  Config config; ///< Per thread copy of the @c global_config
+  Config        config; ///< Per thread copy of the @c global_config
   // Active and keep alive queue values that depend on other configuration
   // values. These are never updated directly, they are computed from other
   // config values.
@@ -156,16 +156,16 @@ public:
   /// corresponding bit.
   static std::bitset<std::numeric_limits<unsigned int>::digits> active_thread_types;
 
-  int mainNetEvent(int event, Event *data);
-  int waitForActivity(ink_hrtime timeout) override;
-  void process_enabled_list();
-  void process_ready_list();
-  void manage_keep_alive_queue();
-  bool manage_active_queue(NetEvent *ne, bool ignore_queue_size);
-  void add_to_keep_alive_queue(NetEvent *ne);
-  void remove_from_keep_alive_queue(NetEvent *ne);
-  bool add_to_active_queue(NetEvent *ne);
-  void remove_from_active_queue(NetEvent *ne);
+  int        mainNetEvent(int event, Event *data);
+  int        waitForActivity(ink_hrtime timeout) override;
+  void       process_enabled_list();
+  void       process_ready_list();
+  void       manage_keep_alive_queue();
+  bool       manage_active_queue(NetEvent *ne, bool ignore_queue_size);
+  void       add_to_keep_alive_queue(NetEvent *ne);
+  void       remove_from_keep_alive_queue(NetEvent *ne);
+  bool       add_to_active_queue(NetEvent *ne);
+  void       remove_from_active_queue(NetEvent *ne);
   static int get_additional_accepts();
   static int get_per_client_max_connections_in();
 

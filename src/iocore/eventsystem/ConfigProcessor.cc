@@ -54,14 +54,14 @@ public:
 
 public:
   unsigned int m_id;
-  ConfigInfo *m_info;
+  ConfigInfo  *m_info;
 };
 
 unsigned int
 ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 {
   ConfigInfo *old_info;
-  int idx;
+  int         idx;
 
   if (id == 0) {
     id = ++ninfos;
@@ -105,7 +105,7 @@ ConfigInfo *
 ConfigProcessor::get(unsigned int id)
 {
   ConfigInfo *info;
-  int idx;
+  int         idx;
 
   ink_assert(id <= MAX_CONFIGS);
 
@@ -173,7 +173,7 @@ struct RegressionConfig : public ConfigInfo {
       return EVENT_DONE;
     }
 
-    int remain; // Number of remaining RegressionConfig objects to wait for.
+    int      remain; // Number of remaining RegressionConfig objects to wait for.
     CallType call;
   };
 
@@ -212,8 +212,8 @@ struct RegressionConfig : public ConfigInfo {
   }
 
   RegressionTest *test;
-  int *pstatus;
-  unsigned flags;
+  int            *pstatus;
+  unsigned        flags;
 };
 
 int RegressionConfig::nobjects = 0;
@@ -228,7 +228,7 @@ struct ProxyConfig_Set_Completion {
     configProcessor.set(configid, config, 1);
   }
 
-  int configid;
+  int               configid;
   RegressionConfig *config;
 };
 
@@ -261,7 +261,7 @@ struct ProxyConfig_Release_Completion {
     configProcessor.release(configid, config);
   }
 
-  int configid;
+  int               configid;
   RegressionConfig *config;
 };
 
@@ -269,7 +269,7 @@ struct ProxyConfig_Release_Completion {
 // release timeout.
 EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  int configid = 0;
+  int               configid = 0;
   RegressionConfig *config;
 
   *pstatus                   = REGRESSION_TEST_INPROGRESS;

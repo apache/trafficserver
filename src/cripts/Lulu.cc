@@ -26,7 +26,7 @@
 #if CRIPTS_HAS_MAXMIND
 #include <maxminddb.h>
 
-MMDB_s *gMaxMindDB                = nullptr;
+MMDB_s             *gMaxMindDB    = nullptr;
 const Cript::string maxMindDBPath = CRIPTS_MAXMIND_DB;
 #endif
 
@@ -67,8 +67,8 @@ integer_helper(std::string_view sv)
 int
 Cript::random(int max)
 {
-  static std::random_device r;
-  static std::default_random_engine e1(r());
+  static std::random_device          r;
+  static std::default_random_engine  e1(r());
   std::uniform_int_distribution<int> uniform_dist(1, max);
 
   return uniform_dist(e1);
@@ -82,7 +82,7 @@ std::vector<T>
 splitter(T input, char delim)
 {
   std::vector<T> output;
-  size_t first = 0;
+  size_t         first = 0;
 
   while (first < input.size()) {
     const auto second = input.find_first_of(delim, first);
@@ -185,8 +185,8 @@ Control::Base::_set(Cript::Context *context, bool value)
 }
 
 // Globals
-Proxy proxy;
-Control control;
+Proxy    proxy;
+Control  control;
 Versions version;
 
 std::string plugin_debug_tag;

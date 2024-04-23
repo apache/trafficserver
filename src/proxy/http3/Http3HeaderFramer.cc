@@ -84,7 +84,7 @@ void
 Http3HeaderFramer::_generate_header_block()
 {
   // Prase response header and generate header block
-  int bytes_used           = 0;
+  int         bytes_used   = 0;
   ParseResult parse_result = PARSE_RESULT_ERROR;
 
   if (this->_transaction->direction() == NET_VCONNECTION_OUT) {

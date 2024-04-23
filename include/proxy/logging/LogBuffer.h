@@ -51,8 +51,8 @@ class LogBufferIterator;
   -------------------------------------------------------------------------*/
 
 struct LogEntryHeader {
-  int64_t timestamp;      // the seconds portion of the timestamp
-  int32_t timestamp_usec; // the microseconds portion of the timestamp
+  int64_t  timestamp;      // the seconds portion of the timestamp
+  int32_t  timestamp_usec; // the microseconds portion of the timestamp
   uint32_t entry_len;
 };
 
@@ -155,7 +155,7 @@ public:
   LB_ResultCode fast_write(size_t *write_offset, size_t write_size);
   LB_ResultCode checkout_write(size_t *write_offset, size_t write_size);
   LB_ResultCode checkin_write(size_t write_offset);
-  void force_full();
+  void          force_full();
 
   LogBufferHeader *
   header() const
@@ -213,22 +213,22 @@ public:
   }
 
 private:
-  char *m_unaligned_buffer;         // the unaligned buffer
-  char *m_buffer;                   // the buffer
-  size_t m_size;                    // the buffer size
-  size_t m_buf_align;               // the buffer alignment
-  size_t m_write_align;             // the write alignment mask
-  int m_buffer_fast_allocator_size; // indicates whether the logbuffer is allocated from ioBuf
+  char  *m_unaligned_buffer;           // the unaligned buffer
+  char  *m_buffer;                     // the buffer
+  size_t m_size;                       // the buffer size
+  size_t m_buf_align;                  // the buffer alignment
+  size_t m_write_align;                // the write alignment mask
+  int    m_buffer_fast_allocator_size; // indicates whether the logbuffer is allocated from ioBuf
 
   long m_expiration_time; // buffer expiration time
 
-  LogObject *m_owner; // the LogObject that owns this buf.
+  LogObject       *m_owner; // the LogObject that owns this buf.
   LogBufferHeader *m_header;
 
   uint32_t m_id; // unique buffer id (for debugging)
 public:
-  LB_State m_state; // buffer state
-  int m_references; // outstanding checkout_write references.
+  LB_State m_state;      // buffer state
+  int      m_references; // outstanding checkout_write references.
 
   // noncopyable
   // -- member functions that are not allowed --
@@ -237,9 +237,9 @@ public:
 
 private:
   // private functions
-  size_t _add_buffer_header(const LogConfig *cfg);
+  size_t   _add_buffer_header(const LogConfig *cfg);
   unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
-  void freeLogBuffer();
+  void     freeLogBuffer();
 
   // -- member functions that are not allowed --
   LogBuffer();
@@ -259,14 +259,14 @@ class LogBufferList
 {
 private:
   Queue<LogBuffer> m_buffer_list;
-  ink_mutex m_mutex;
-  int m_size;
+  ink_mutex        m_mutex;
+  int              m_size;
 
 public:
   LogBufferList();
   ~LogBufferList();
 
-  void add(LogBuffer *lb);
+  void       add(LogBuffer *lb);
   LogBuffer *get();
   int
   get_size()
@@ -295,8 +295,8 @@ public:
   LogBufferIterator &operator=(const LogBufferIterator &) = delete;
 
 private:
-  bool m_in_network_order;
-  char *m_next;
+  bool     m_in_network_order;
+  char    *m_next;
   unsigned m_iter_entry_count;
   unsigned m_buffer_entry_count;
 

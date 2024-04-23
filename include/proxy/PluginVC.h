@@ -44,7 +44,7 @@ class PluginVCCore;
 
 struct PluginVCState {
   PluginVCState();
-  VIO vio;
+  VIO  vio;
   bool shutdown = false;
 };
 
@@ -88,25 +88,25 @@ public:
   void reenable_re(VIO *vio) override;
 
   // Timeouts
-  void set_active_timeout(ink_hrtime timeout_in) override;
-  void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void set_default_inactivity_timeout(ink_hrtime timeout_in) override;
-  bool is_default_inactivity_timeout() override;
-  void cancel_active_timeout() override;
-  void cancel_inactivity_timeout() override;
-  void add_to_keep_alive_queue() override;
-  void remove_from_keep_alive_queue() override;
-  bool add_to_active_queue() override;
+  void       set_active_timeout(ink_hrtime timeout_in) override;
+  void       set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void       set_default_inactivity_timeout(ink_hrtime timeout_in) override;
+  bool       is_default_inactivity_timeout() override;
+  void       cancel_active_timeout() override;
+  void       cancel_inactivity_timeout() override;
+  void       add_to_keep_alive_queue() override;
+  void       remove_from_keep_alive_queue() override;
+  bool       add_to_active_queue() override;
   ink_hrtime get_active_timeout() override;
   ink_hrtime get_inactivity_timeout() override;
 
   // Pure virtual functions we need to compile
   SOCKET get_socket() override;
-  void set_local_addr() override;
-  void set_remote_addr() override;
-  void set_remote_addr(const sockaddr *) override;
-  void set_mptcp_state() override;
-  int set_tcp_congestion_control(int) override;
+  void   set_local_addr() override;
+  void   set_remote_addr() override;
+  void   set_remote_addr(const sockaddr *) override;
+  void   set_mptcp_state() override;
+  int    set_tcp_congestion_control(int) override;
 
   void apply_options() override;
 
@@ -161,11 +161,11 @@ private:
 
   void setup_event_cb(ink_hrtime in, Event **e_ptr);
 
-  void update_inactive_time();
+  void    update_inactive_time();
   int64_t transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, int64_t act_on);
 
-  uint32_t magic;
-  PluginVC_t vc_type;
+  uint32_t      magic;
+  PluginVC_t    vc_type;
   PluginVCCore *core_obj;
 
   PluginVC *other_side;
@@ -176,22 +176,22 @@ private:
   bool need_read_process;
   bool need_write_process;
 
-  bool closed;
+  bool   closed;
   Event *sm_lock_retry_event;
   Event *core_lock_retry_event;
 
   bool deletable;
-  int reentrancy_count;
+  int  reentrancy_count;
 
   ink_hrtime active_timeout;
-  Event *active_event;
+  Event     *active_event;
 
   ink_hrtime inactive_timeout;
   ink_hrtime inactive_timeout_at;
-  Event *inactive_event;
+  Event     *inactive_event;
 
   const char *plugin_tag;
-  int64_t plugin_id;
+  int64_t     plugin_id;
 };
 
 class PluginVCCore : public Continuation
@@ -213,19 +213,19 @@ public:
   void attempt_delete();
 
   PluginVC *connect();
-  Action *connect_re(Continuation *c);
-  void kill_no_connect();
+  Action   *connect_re(Continuation *c);
+  void      kill_no_connect();
 
   /// Set the active address.
-  void set_active_addr(in_addr_t ip, ///< IPv4 address in host order.
-                       int port      ///< IP Port in host order.
+  void set_active_addr(in_addr_t ip,  ///< IPv4 address in host order.
+                       int       port ///< IP Port in host order.
   );
   /// Set the active address and port.
   void set_active_addr(sockaddr const *ip ///< Address and port used.
   );
   /// Set the passive address.
-  void set_passive_addr(in_addr_t ip, ///< IPv4 address in host order.
-                        int port      ///< IP port in host order.
+  void set_passive_addr(in_addr_t ip,  ///< IPv4 address in host order.
+                        int       port ///< IP port in host order.
   );
   /// Set the passive address.
   void set_passive_addr(sockaddr const *ip ///< Address and port.
@@ -252,7 +252,7 @@ private:
   void destroy();
 
   Continuation *connect_to = nullptr;
-  bool connected           = false;
+  bool          connected  = false;
 
   IpEndpoint passive_addr_struct;
   IpEndpoint active_addr_struct;
@@ -261,7 +261,7 @@ private:
   void *active_data  = nullptr;
 
   static int32_t nextid;
-  unsigned id = 0;
+  unsigned       id = 0;
 
   uint64_t buffer_size = BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_32K);
 };

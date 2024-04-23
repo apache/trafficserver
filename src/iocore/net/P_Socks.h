@@ -41,19 +41,19 @@ enum {
 };
 
 struct socks_conf_struct {
-  int socks_needed              = 0;
-  int server_connect_timeout    = 0;
-  int socks_timeout             = 100;
-  unsigned char default_version = 5;
-  std::string user_name_n_passwd;
+  int           socks_needed           = 0;
+  int           server_connect_timeout = 0;
+  int           socks_timeout          = 100;
+  unsigned char default_version        = 5;
+  std::string   user_name_n_passwd;
 
   int per_server_connection_attempts = 1;
   int connection_attempts            = 0;
 
   // the following ports are used by SocksProxy
-  int accept_enabled       = 0;
-  int accept_port          = 0;
-  unsigned short http_port = 1080;
+  int            accept_enabled = 0;
+  int            accept_port    = 0;
+  unsigned short http_port      = 1080;
 
   swoc::IPRangeSet ip_addrs;
 
@@ -78,15 +78,15 @@ invokeSocksAuthHandler(SocksAuthHandler &h, int arg1, unsigned char *arg2)
 }
 
 void loadSocksConfiguration(socks_conf_struct *socks_conf_stuff);
-int socks5BasicAuthHandler(int event, unsigned char *p, void (**)(void));
-int socks5PasswdAuthHandler(int event, unsigned char *p, void (**)(void));
-int socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
+int  socks5BasicAuthHandler(int event, unsigned char *p, void (**)(void));
+int  socks5PasswdAuthHandler(int event, unsigned char *p, void (**)(void));
+int  socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
 
 class UnixNetVConnection;
 using SocksNetVC = UnixNetVConnection;
 
 struct SocksEntry : public Continuation {
-  MIOBuffer *buf         = nullptr;
+  MIOBuffer      *buf    = nullptr;
   IOBufferReader *reader = nullptr;
 
   SocksNetVC *netVConnection = nullptr;
@@ -98,23 +98,23 @@ struct SocksEntry : public Continuation {
 
   int nattempts = 0;
 
-  Action action_;
-  int lerrno            = 0;
-  Event *timeout        = nullptr;
+  Action        action_;
+  int           lerrno  = 0;
+  Event        *timeout = nullptr;
   unsigned char version = 5;
 
   bool write_done = false;
 
   SocksAuthHandler auth_handler = nullptr;
-  unsigned char socks_cmd       = NORMAL_SOCKS;
+  unsigned char    socks_cmd    = NORMAL_SOCKS;
 
   // socks server selection:
   ParentConfigParams *server_params = nullptr;
-  HttpRequestData req_data; // We dont use any http specific fields.
-  ParentResult server_result;
+  HttpRequestData     req_data; // We dont use any http specific fields.
+  ParentResult        server_result;
 
-  int startEvent(int event, void *data);
-  int mainEvent(int event, void *data);
+  int  startEvent(int event, void *data);
+  int  mainEvent(int event, void *data);
   void findServer();
   void init(Ptr<ProxyMutex> &m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
   void free();

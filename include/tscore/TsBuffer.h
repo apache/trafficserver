@@ -47,7 +47,7 @@ struct Buffer {
   using self        = Buffer; ///< Self reference type.
   using pseudo_bool = bool (self::*)() const;
 
-  char *_ptr   = nullptr; ///< Pointer to base of memory chunk.
+  char  *_ptr  = nullptr; ///< Pointer to base of memory chunk.
   size_t _size = 0;       ///< Size of memory chunk.
 
   /// Default constructor (empty buffer).
@@ -57,8 +57,8 @@ struct Buffer {
       @note Due to ambiguity issues do not call this with
       two arguments if the first argument is 0.
    */
-  Buffer(char *ptr, ///< Pointer to buffer.
-         size_t n   ///< Size of buffer.
+  Buffer(char  *ptr, ///< Pointer to buffer.
+         size_t n    ///< Size of buffer.
   );
   /** Construct from two pointers.
       @note This presumes a half open range, (start, end]
@@ -113,7 +113,7 @@ struct Buffer {
   /// Set the chunk.
   /// Any previous values are discarded.
   /// @return @c this object.
-  self &set(char *ptr,   ///< Buffer address.
+  self &set(char  *ptr,  ///< Buffer address.
             size_t n = 0 ///< Buffer size.
   );
   /// Reset to empty.
@@ -127,8 +127,8 @@ struct ConstBuffer {
   using self        = ConstBuffer; ///< Self reference type.
   using pseudo_bool = bool (self::*)() const;
 
-  char const *_ptr = nullptr; ///< Pointer to base of memory chunk.
-  size_t _size     = 0;       ///< Size of memory chunk.
+  char const *_ptr  = nullptr; ///< Pointer to base of memory chunk.
+  size_t      _size = 0;       ///< Size of memory chunk.
 
   /// Default constructor (empty buffer).
   ConstBuffer();
@@ -136,7 +136,7 @@ struct ConstBuffer {
   /** Construct from pointer and size.
    */
   ConstBuffer(char const *ptr, ///< Pointer to buffer.
-              size_t n         ///< Size of buffer.
+              size_t      n    ///< Size of buffer.
   );
   /** Construct from two pointers.
       @note This presumes a half open range (start, end]
@@ -209,8 +209,8 @@ struct ConstBuffer {
   /// Set the chunk.
   /// Any previous values are discarded.
   /// @return @c this object.
-  self &set(char const *ptr, ///< Buffer address.
-            size_t n = 0     ///< Buffer size.
+  self &set(char const *ptr,  ///< Buffer address.
+            size_t      n = 0 ///< Buffer size.
   );
   /** Set from 2 pointers.
       @note This presumes a half open range (start, end]

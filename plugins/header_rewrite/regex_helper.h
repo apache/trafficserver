@@ -39,11 +39,11 @@ public:
   }
 
   bool setRegexMatch(const std::string &s, bool nocase = false);
-  int regexMatch(const char *, int, int ovector[]) const;
+  int  regexMatch(const char *, int, int ovector[]) const;
 
 private:
   std::string regexString;
-  pcre *regex            = nullptr;
-  pcre_extra *regexExtra = nullptr;
-  int regexCcount        = 0;
+  pcre       *regex       = nullptr;
+  pcre_extra *regexExtra  = nullptr;
+  int         regexCcount = 0;
 };

@@ -107,7 +107,7 @@ public:
   Ptr(Ptr<T> &&);
   ~Ptr();
 
-  void clear();
+  void    clear();
   Ptr<T> &operator=(const Ptr<T> &);
   Ptr<T> &operator=(Ptr<T> &&);
   Ptr<T> &operator=(T *);

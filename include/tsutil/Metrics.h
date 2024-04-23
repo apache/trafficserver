@@ -83,10 +83,10 @@ public:
   using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
   using SpanType = swoc::MemSpan<AtomicType>;
 
-  static constexpr uint16_t MAX_BLOBS = 8192;
-  static constexpr uint16_t MAX_SIZE  = 1024;                               // For a total of 8M metrics
-  static constexpr IdType NOT_FOUND   = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
-  static const auto MEMORY_ORDER      = std::memory_order_relaxed;
+  static constexpr uint16_t MAX_BLOBS    = 8192;
+  static constexpr uint16_t MAX_SIZE     = 1024;                               // For a total of 8M metrics
+  static constexpr IdType   NOT_FOUND    = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
+  static const auto         MEMORY_ORDER = std::memory_order_relaxed;
 
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
@@ -99,7 +99,7 @@ private:
 public:
   Metrics(const self_type &)              = delete;
   self_type &operator=(const self_type &) = delete;
-  Metrics &operator=(Metrics &&)          = delete;
+  Metrics   &operator=(Metrics &&)        = delete;
   Metrics(Metrics &&)                     = delete;
 
   virtual ~Metrics() {}
@@ -204,7 +204,7 @@ public:
     operator*() const
     {
       std::string_view name;
-      auto metric = _metrics.lookup(_it, &name);
+      auto             metric = _metrics.lookup(_it, &name);
 
       return std::make_tuple(name, metric->_value.load());
     }
@@ -224,7 +224,7 @@ public:
   private:
     void next();
 
-    const Metrics &_metrics;
+    const Metrics  &_metrics;
     Metrics::IdType _it;
   };
 
@@ -289,10 +289,10 @@ private:
 
   class Storage
   {
-    BlobStorage _blobs;
-    uint16_t _cur_blob = 0;
-    uint16_t _cur_off  = 0;
-    LookupTable _lookups;
+    BlobStorage        _blobs;
+    uint16_t           _cur_blob = 0;
+    uint16_t           _cur_off  = 0;
+    LookupTable        _lookups;
     mutable std::mutex _mutex;
 
   public:
@@ -313,14 +313,14 @@ private:
       }
     }
 
-    IdType create(const std::string_view name);
-    void addBlob();
-    IdType lookup(const std::string_view name) const;
-    AtomicType *lookup(const std::string_view name, IdType *out_id) const;
-    AtomicType *lookup(Metrics::IdType id, std::string_view *out_name = nullptr) const;
+    IdType           create(const std::string_view name);
+    void             addBlob();
+    IdType           lookup(const std::string_view name) const;
+    AtomicType      *lookup(const std::string_view name, IdType *out_id) const;
+    AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr) const;
     std::string_view name(IdType id) const;
-    SpanType createSpan(size_t size, IdType *id = nullptr);
-    bool rename(IdType id, const std::string_view name);
+    SpanType         createSpan(size_t size, IdType *id = nullptr);
+    bool             rename(IdType id, const std::string_view name);
 
     std::pair<int16_t, int16_t>
     current() const

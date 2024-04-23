@@ -30,8 +30,8 @@ struct CRYPTO_dynlock_value {
   CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex); }
   ~CRYPTO_dynlock_value() { ink_mutex_destroy(&mutex); }
   const char *file;
-  int line;
-  ink_mutex mutex;
+  int         line;
+  ink_mutex   mutex;
 };
 
 struct CRYPTO_dynlock_value *

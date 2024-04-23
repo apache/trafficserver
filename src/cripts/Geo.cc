@@ -37,7 +37,7 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
   ink_release_assert(addr != nullptr);
 
   Cript::string ret = "(unknown)";
-  int mmdb_error;
+  int           mmdb_error;
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
 

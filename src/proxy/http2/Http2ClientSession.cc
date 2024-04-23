@@ -162,7 +162,7 @@ int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
-  int retval;
+  int  retval;
   bool set_closed = false;
 
   recursion++;
@@ -229,7 +229,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     } else if (this->connection_state.get_stream_error_rate() >
                Http2::stream_error_rate_threshold) { // For a case many stream errors happened
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
+      const char         *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            client_ip, connection_id(), this->connection_state.get_stream_error_rate(),

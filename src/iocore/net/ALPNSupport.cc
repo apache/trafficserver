@@ -95,9 +95,9 @@ int
 ALPNSupport::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                   unsigned inlen)
 {
-  const unsigned char *npnptr = nullptr;
-  unsigned int npnsize        = 0;
-  int retval                  = SSL_TLSEXT_ERR_ALERT_FATAL;
+  const unsigned char *npnptr  = nullptr;
+  unsigned int         npnsize = 0;
+  int                  retval  = SSL_TLSEXT_ERR_ALERT_FATAL;
 
   if (this->getNPN(&npnptr, &npnsize) && npnsize > 0) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the

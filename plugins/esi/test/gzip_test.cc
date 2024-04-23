@@ -52,7 +52,7 @@ TEST_CASE("test esi plugin - gzip")
     REQUIRE(strncmp(expected_cdata, cdata.c_str(), cdata.size()) == 0);
 
     BufferList buf_list;
-    string data;
+    string     data;
     // check output of gunzip
     REQUIRE(gunzip(expected_cdata, 32, buf_list));
     data = (buf_list.begin())->data();
@@ -73,7 +73,7 @@ TEST_CASE("test esi plugin - gzip")
     const char expected_data[]  = "Hello World!";
 
     BufferList buf_list;
-    string data;
+    string     data;
     // check output of gunzip
     REQUIRE(gunzip(expected_cdata, 32, buf_list));
     data = (buf_list.begin())->data();

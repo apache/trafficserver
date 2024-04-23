@@ -34,8 +34,8 @@ using namespace atscppapi;
 struct atscppapi::ClientRequestState : noncopyable {
   TSHttpTxn txn_;
   TSMBuffer pristine_hdr_buf_;
-  TSMLoc pristine_url_loc_;
-  Url pristine_url_;
+  TSMLoc    pristine_url_loc_;
+  Url       pristine_url_;
   ClientRequestState(TSHttpTxn txn) : txn_(txn), pristine_hdr_buf_(nullptr), pristine_url_loc_(nullptr) {}
 };
 

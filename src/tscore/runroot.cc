@@ -37,7 +37,7 @@ bool
 exists(const std::string &dir)
 {
   struct stat buffer;
-  int result = stat(dir.c_str(), &buffer);
+  int         result = stat(dir.c_str(), &buffer);
   return (!result) ? true : false;
 }
 
@@ -45,7 +45,7 @@ bool
 is_directory(const std::string &directory)
 {
   struct stat buffer;
-  int result = stat(directory.c_str(), &buffer);
+  int         result = stat(directory.c_str(), &buffer);
   return (!result && (S_IFDIR & buffer.st_mode)) ? true : false;
 }
 
@@ -241,8 +241,8 @@ runroot_map(const std::string &file)
 {
   RunrootMapType map;
   try {
-    YAML::Node yamlfile = YAML::LoadFile(file);
-    std::string prefix  = file.substr(0, file.find_last_of('/'));
+    YAML::Node  yamlfile = YAML::LoadFile(file);
+    std::string prefix   = file.substr(0, file.find_last_of('/'));
 
     for (const auto &it : yamlfile) {
       // key value pairs of dirs

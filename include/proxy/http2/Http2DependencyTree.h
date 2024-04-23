@@ -99,17 +99,17 @@ public:
     return shadow == true;
   }
 
-  bool active     = false;
-  bool queued     = false;
-  bool shadow     = false;
-  uint32_t id     = HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY;
-  uint32_t weight = HTTP2_PRIORITY_DEFAULT_WEIGHT;
-  uint32_t point  = 0;
-  void *t         = nullptr;
-  Node *parent    = nullptr;
-  DLL<Node> children;
+  bool                        active = false;
+  bool                        queued = false;
+  bool                        shadow = false;
+  uint32_t                    id     = HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY;
+  uint32_t                    weight = HTTP2_PRIORITY_DEFAULT_WEIGHT;
+  uint32_t                    point  = 0;
+  void                       *t      = nullptr;
+  Node                       *parent = nullptr;
+  DLL<Node>                   children;
   PriorityQueueEntry<Node *> *entry;
-  PriorityQueue<Node *> *queue;
+  PriorityQueue<Node *>      *queue;
 };
 
 template <typename T> class Tree
@@ -120,17 +120,17 @@ public:
     _ancestors.resize(_max_ancestors);
   }
   ~Tree() { delete _root; }
-  Node *find(uint32_t id, bool *is_max_leaf = nullptr);
-  Node *find_shadow(uint32_t id, bool *is_max_leaf = nullptr);
-  Node *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t, bool shadow = false);
-  Node *reprioritize(uint32_t id, uint32_t new_parent_id, bool exclusive);
-  Node *reprioritize(Node *node, uint32_t id, bool exclusive);
-  Node *top();
-  void remove(Node *node);
-  void activate(Node *node);
-  void deactivate(Node *node, uint32_t sent);
-  void update(Node *node, uint32_t sent);
-  bool in(Node *current, Node *node);
+  Node    *find(uint32_t id, bool *is_max_leaf = nullptr);
+  Node    *find_shadow(uint32_t id, bool *is_max_leaf = nullptr);
+  Node    *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t, bool shadow = false);
+  Node    *reprioritize(uint32_t id, uint32_t new_parent_id, bool exclusive);
+  Node    *reprioritize(Node *node, uint32_t id, bool exclusive);
+  Node    *top();
+  void     remove(Node *node);
+  void     activate(Node *node);
+  void     deactivate(Node *node, uint32_t sent);
+  void     update(Node *node, uint32_t sent);
+  bool     in(Node *current, Node *node);
   uint32_t size() const;
   /*
    * Dump the priority tree relationships in JSON form for debugging
@@ -140,17 +140,17 @@ public:
   {
     _dump(_root, output);
   }
-  void add_ancestor(Node *node);
+  void     add_ancestor(Node *node);
   uint32_t was_ancestor(uint32_t id) const;
 
 private:
-  void _dump(Node *node, std::ostream &output) const;
+  void  _dump(Node *node, std::ostream &output) const;
   Node *_find(Node *node, uint32_t id, uint32_t depth = 1, bool *is_max_leaf = nullptr);
   Node *_top(Node *node);
-  void _change_parent(Node *node, Node *new_parent, bool exclusive);
-  bool in_parent_chain(Node *maybe_parent, Node *target);
+  void  _change_parent(Node *node, Node *new_parent, bool exclusive);
+  bool  in_parent_chain(Node *maybe_parent, Node *target);
 
-  Node *_root = new Node(this);
+  Node    *_root = new Node(this);
   uint32_t _max_depth;
   uint32_t _node_count = 0;
   /*
@@ -172,8 +172,8 @@ private:
    * longer state is retained, the lower the chance that streams are
    * assigned incorrect or default priority values."
    */
-  static const uint32_t _max_ancestors = 64;
-  uint32_t _ancestor_index             = 0;
+  static const uint32_t                      _max_ancestors  = 64;
+  uint32_t                                   _ancestor_index = 0;
   std::vector<std::pair<uint32_t, uint32_t>> _ancestors;
 };
 
@@ -277,8 +277,8 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
     return node;
   }
 
-  bool is_max_leaf = false;
-  Node *parent     = find_shadow(parent_id, &is_max_leaf); // Look for real and shadow nodes
+  bool  is_max_leaf = false;
+  Node *parent      = find_shadow(parent_id, &is_max_leaf); // Look for real and shadow nodes
 
   if (parent == nullptr) {
     if (parent_id < id) { // See if we still have a history of the parent
@@ -443,7 +443,7 @@ template <typename T>
 bool
 Tree<T>::in_parent_chain(Node *maybe_parent, Node *target)
 {
-  bool retval  = false;
+  bool  retval = false;
   Node *parent = target->parent;
   while (parent != nullptr && !retval) {
     retval = maybe_parent == parent;

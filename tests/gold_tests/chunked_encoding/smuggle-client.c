@@ -46,9 +46,9 @@ const char *req_and_post_buf =
 int
 main(int argc, char *argv[])
 {
-  struct addrinfo hints;
+  struct addrinfo  hints;
   struct addrinfo *result, *rp;
-  int sfd = -1, s;
+  int              sfd = -1, s;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <target addr> <target_port>\n", argv[0]);

@@ -64,11 +64,11 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
                                unsigned int retry_time)
 {
   Dbg(dbg_ctl_parent_select, "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
-  int cur_index          = 0;
-  bool parentUp          = false;
-  bool parentRetry       = false;
-  HostStatus &pStatus    = HostStatus::instance();
-  TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_UP;
+  int          cur_index   = 0;
+  bool         parentUp    = false;
+  bool         parentRetry = false;
+  HostStatus  &pStatus     = HostStatus::instance();
+  TSHostStatus host_stat   = TSHostStatus::TS_HOST_STATUS_UP;
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 

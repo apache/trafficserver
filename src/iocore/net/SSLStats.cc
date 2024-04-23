@@ -30,7 +30,7 @@
 #include "P_SSLUtils.h"
 #include "../../records/P_RecProcess.h"
 
-SSLStatsBlock ssl_rsb;
+SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
 // ToDo: This gets called once per global sync, for now at least.
@@ -83,7 +83,7 @@ void
 SSLInitializeStatistics()
 {
   SSL_CTX *ctx;
-  SSL *ssl;
+  SSL     *ssl;
   STACK_OF(SSL_CIPHER) * ciphers;
 
   // For now, register with the librecords global sync.

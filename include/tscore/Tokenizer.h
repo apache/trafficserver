@@ -111,13 +111,13 @@
 #define TOK_NODE_ELEMENTS 16
 
 struct tok_node {
-  char *el[TOK_NODE_ELEMENTS];
+  char     *el[TOK_NODE_ELEMENTS];
   tok_node *next;
 };
 
 struct tok_iter_state {
   tok_node *node;
-  int index;
+  int       index;
 };
 
 class Tokenizer
@@ -126,8 +126,8 @@ public:
   Tokenizer(const char *StrOfDelimiters);
   ~Tokenizer();
 
-  unsigned Initialize(char *str, unsigned options);
-  unsigned Initialize(const char *str); // Automatically sets option to copy
+  unsigned    Initialize(char *str, unsigned options);
+  unsigned    Initialize(const char *str); // Automatically sets option to copy
   const char *operator[](unsigned index) const;
 
   void
@@ -143,7 +143,7 @@ public:
   };
 
   unsigned count() const;
-  void Print() const;
+  void     Print() const;
 
   const char *iterFirst(tok_iter_state *state);
   const char *iterNext(tok_iter_state *state);
@@ -153,17 +153,17 @@ public:
   Tokenizer(const Tokenizer &)            = delete;
 
 private:
-  int isDelimiter(char c);
-  void addToken(char *startAddr, int length);
-  void ReUse();
-  char *strOfDelimit;
+  int      isDelimiter(char c);
+  void     addToken(char *startAddr, int length);
+  void     ReUse();
+  char    *strOfDelimit;
   tok_node start_node;
   unsigned numValidTokens;
   unsigned maxTokens;
-  int options;
-  bool quoteFound;
+  int      options;
+  bool     quoteFound;
 
   // State about where to add the next token
   tok_node *add_node;
-  int add_index;
+  int       add_index;
 };

@@ -101,9 +101,9 @@ public:
 
 private:
   std::string _address;
-  int _port;
+  int         _port;
   sockaddr_in _sockaddr;
-  bool _is_valid;
+  bool        _is_valid;
 };
 
 /** The user specified origin to which requests are redirected. */
@@ -118,7 +118,7 @@ parse_arguments(int argc, char const *argv[])
     return false;
   }
   char const *address = argv[1];
-  int port            = atoi(argv[2]);
+  int         port    = atoi(argv[2]);
   if (port <= 0 || port >= 65536) {
     TSError("Invalid port number %s", argv[2]);
     return false;

@@ -43,20 +43,20 @@ public:
   Pattern();
   virtual ~Pattern();
 
-  bool init(const String &pattern, const String &replacement, bool replace);
-  bool init(const String &config);
-  bool empty() const;
-  bool match(const String &subject);
-  bool capture(const String &subject, StringVector &result);
-  bool replace(const String &subject, String &result);
-  bool process(const String &subject, StringVector &result);
+  bool   init(const String &pattern, const String &replacement, bool replace);
+  bool   init(const String &config);
+  bool   empty() const;
+  bool   match(const String &subject);
+  bool   capture(const String &subject, StringVector &result);
+  bool   replace(const String &subject, String &result);
+  bool   process(const String &subject, StringVector &result);
   String getPattern();
 
 private:
   bool compile();
   void pcreFree();
 
-  pcre *_re          = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
+  pcre       *_re    = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
   pcre_extra *_extra = nullptr; /**< @brief PCRE study data block, computed during initialization */
 
   String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
@@ -79,15 +79,15 @@ public:
   MultiPattern(const String &name = "") : _name(name) {}
   virtual ~MultiPattern();
 
-  bool empty() const;
-  void add(Pattern *pattern);
-  virtual bool match(const String &subject) const;
-  virtual bool match(const String &subject, String &pattern) const;
+  bool          empty() const;
+  void          add(Pattern *pattern);
+  virtual bool  match(const String &subject) const;
+  virtual bool  match(const String &subject, String &pattern) const;
   const String &name() const;
 
 protected:
   std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
-  String _name;                 /**< @brief multi-pattern name */
+  String                 _name; /**< @brief multi-pattern name */
 
   // noncopyable
   MultiPattern(const MultiPattern &)            = delete; // disallow

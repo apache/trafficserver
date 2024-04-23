@@ -63,7 +63,7 @@ int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 // own independent data. All (and only) the threads created in the Event
 // Subsystem have this data.
 thread_local EThread *EThread::this_ethread_ptr;
-int EThread::default_wait_interval_ms = 10;
+int                   EThread::default_wait_interval_ms = 10;
 
 void
 EThread::set_specific()

@@ -50,15 +50,15 @@ enum HdrTokenType {
 };
 
 struct HdrTokenTypeBinding {
-  const char *name;
+  const char  *name;
   HdrTokenType type;
 };
 
 struct HdrTokenFieldInfo {
   const char *name;
-  int32_t slotid;
-  uint64_t mask;
-  uint32_t flags;
+  int32_t     slotid;
+  uint64_t    mask;
+  uint32_t    flags;
 };
 
 struct HdrTokenTypeSpecific {
@@ -70,10 +70,10 @@ struct HdrTokenTypeSpecific {
 };
 
 struct HdrTokenHeapPrefix {
-  int wks_idx;
-  int wks_length;
-  HdrTokenType wks_token_type;
-  HdrTokenFieldInfo wks_info;
+  int                  wks_idx;
+  int                  wks_length;
+  HdrTokenType         wks_token_type;
+  HdrTokenFieldInfo    wks_info;
   HdrTokenTypeSpecific wks_type_specific;
 };
 
@@ -86,14 +86,14 @@ enum HdrTokenInfoFlags {
 };
 
 extern DFA *hdrtoken_strs_dfa;
-extern int hdrtoken_num_wks;
+extern int  hdrtoken_num_wks;
 
-extern const char *hdrtoken_strs[];
-extern int hdrtoken_str_lengths[];
+extern const char  *hdrtoken_strs[];
+extern int          hdrtoken_str_lengths[];
 extern HdrTokenType hdrtoken_str_token_types[];
-extern int32_t hdrtoken_str_slotids[];
-extern uint64_t hdrtoken_str_masks[];
-extern uint32_t hdrtoken_str_flags[];
+extern int32_t      hdrtoken_str_slotids[];
+extern uint64_t     hdrtoken_str_masks[];
+extern uint32_t     hdrtoken_str_flags[];
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -101,10 +101,10 @@ extern uint32_t hdrtoken_str_flags[];
 //
 ////////////////////////////////////////////////////////////////////////////
 
-extern void hdrtoken_init();
-extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
-extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
-extern int hdrtoken_method_tokenize(const char *string, int string_len);
+extern void        hdrtoken_init();
+extern int         hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
+extern int         hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
+extern int         hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 

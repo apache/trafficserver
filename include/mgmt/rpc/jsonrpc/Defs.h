@@ -42,7 +42,7 @@ const std::string JSONRPC_VERSION{"2.0"};
 class RPCHandlerResponse
 {
 public:
-  YAML::Node result;   //!< The response from the registered handler.
+  YAML::Node   result; //!< The response from the registered handler.
   swoc::Errata errata; //!< The  error response from the registered handler.
 };
 
@@ -50,13 +50,13 @@ struct RPCResponseInfo {
   RPCResponseInfo(std::string const &id_) : id{id_} {} // Convenient
   RPCResponseInfo() = default;
   struct Error {
-    std::error_code ec; // protocol error track.
-    swoc::Errata data;  // internal error detail.
+    std::error_code ec;   // protocol error track.
+    swoc::Errata    data; // internal error detail.
   };
 
   std::string id; //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
                   //!< will not pass the validation)
-  Error error;    //!< Error code and details.
+  Error              error;      //!< Error code and details.
   RPCHandlerResponse callResult; //!< the actual handler's response
 };
 
@@ -122,7 +122,7 @@ template <typename Message> class RPCMessage
       YAML         //!< If messages arrives as YAML
     };
     MsgFormat msgFormat{MsgFormat::UNKNOWN};
-    bool isBatch{false};
+    bool      isBatch{false};
   };
 
 public:
@@ -184,7 +184,7 @@ public:
 
 private:
   MessageList _elements;
-  Metadata _metadata;
+  Metadata    _metadata;
 };
 
 } // namespace rpc::specs

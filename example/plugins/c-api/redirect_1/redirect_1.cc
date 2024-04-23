@@ -97,8 +97,8 @@ static void
 handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc, url_loc;
-  int host_length;
+  TSMLoc    hdr_loc, url_loc;
+  int       host_length;
 
   in_addr_t clientip = 0;
 
@@ -181,10 +181,10 @@ done:
 static void
 handle_response(TSHttpTxn txnp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc, newfield_loc;
+  TSMBuffer   bufp;
+  TSMLoc      hdr_loc, newfield_loc;
   char const *errormsg_body = "All requests from this IP address are redirected.\n";
-  char *tmp_body;
+  char       *tmp_body;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);
@@ -271,7 +271,7 @@ void
 update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   const char *txn_method;
-  int length;
+  int         length;
 
   txn_method = TSHttpHdrMethodGet(bufp, hdr_loc, &length);
 
@@ -313,7 +313,7 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  const char prefix[] = "http://";
+  const char               prefix[] = "http://";
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

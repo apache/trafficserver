@@ -65,10 +65,10 @@ enum AclOp {
 };
 
 const IpAllow::Record IpAllow::ALLOW_ALL_RECORD(ALL_METHOD_MASK);
-const IpAllow::ACL IpAllow::DENY_ALL_ACL;
+const IpAllow::ACL    IpAllow::DENY_ALL_ACL;
 
-size_t IpAllow::configid     = 0;
-bool IpAllow::accept_check_p = true; // initializing global flag for fast deny
+size_t IpAllow::configid       = 0;
+bool   IpAllow::accept_check_p = true; // initializing global flag for fast deny
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
 
@@ -158,7 +158,7 @@ IpAllow::ip_category_contains_addr(std::string const &category, swoc::IPAddr con
     return false;
   }
   auto const &space = spot->second;
-  bool const found  = space.find(addr) != space.end();
+  bool const  found = space.find(addr) != space.end();
   self->release();
   return found;
 }
@@ -166,7 +166,7 @@ IpAllow::ip_category_contains_addr(std::string const &category, swoc::IPAddr con
 IpAllow::ACL
 IpAllow::match(swoc::IPAddr const &addr, match_key_t key)
 {
-  self_type *self      = acquire();
+  self_type    *self   = acquire();
   Record const *record = nullptr;
   if (SRC_ADDR == key) {
     if (auto spot = self->_src_map.find(addr); spot != self->_src_map.end()) {
@@ -216,7 +216,7 @@ bwformat(BufferWriter &w, Spec const &spec, IpAllow::IpMap const &map)
     } else if (0 == mask) {
       w.write("NONE");
     } else {
-      bool leader        = false; // need leading vbar?
+      bool     leader    = false; // need leading vbar?
       uint32_t test_mask = 1;     // mask for current method.
       for (int i = 0; i < HTTP_WKSIDX_METHODS_CNT; ++i, test_mask <<= 1) {
         if (mask & test_mask) {
@@ -263,8 +263,8 @@ IpAllow::BuildTable()
   ink_assert(_src_map.count() == 0 && _dst_map.count() == 0);
 
   std::error_code ec;
-  std::string content{swoc::file::load(ip_allow_config_file, ec)};
-  swoc::Errata errata;
+  std::string     content{swoc::file::load(ip_allow_config_file, ec)};
+  swoc::Errata    errata;
   if (ec.value() == 0) {
     try {
       errata = this->YAMLBuildTable(content);
@@ -292,7 +292,7 @@ IpAllow::BuildTable()
 swoc::Errata
 IpAllow::YAMLLoadMethod(const YAML::Node &node, Record &rec)
 {
-  swoc::TextView value{node.Scalar()};
+  swoc::TextView                   value{node.Scalar()};
   swoc::Vectray<swoc::TextView, 8> names;
   // Process a single token. Required to deal with the variable number of tokens.
   auto parse_method = [&](swoc::TextView value) -> void {
@@ -374,10 +374,10 @@ IpAllow::YAMLLoadIPCategory(const YAML::Node &node, IpMap *map, IpAllow::Record 
 swoc::Errata
 IpAllow::YAMLLoadEntry(const YAML::Node &entry)
 {
-  AclOp op = ACL_OP_DENY; // "shut up", I explained to the compiler.
+  AclOp      op = ACL_OP_DENY; // "shut up", I explained to the compiler.
   YAML::Node node;
-  auto record = _arena.make<Record>();
-  IpMap *map  = nullptr; // src or dst map.
+  auto       record = _arena.make<Record>();
+  IpMap     *map    = nullptr; // src or dst map.
 
   if (!entry.IsMap()) {
     return swoc::Errata(ERRATA_ERROR, "{} {} - ACL items must be maps.", this, entry.Mark());
@@ -535,7 +535,7 @@ IpAllow::BuildCategories()
   }
 
   Note("%s loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
-  std::string content{swoc::file::load(ip_categories_config_file, ec)};
+  std::string  content{swoc::file::load(ip_categories_config_file, ec)};
   swoc::Errata errata;
   if (ec.value() == 0) {
     try {

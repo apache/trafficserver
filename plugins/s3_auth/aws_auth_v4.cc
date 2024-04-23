@@ -190,8 +190,8 @@ trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen)
   String in_str = trimWhiteSpaces(String(in, inLen));
   String out_str;
   out_str.reserve(in_str.size());
-  size_t n    = 0;
-  char prev_c = '\0';
+  size_t n      = 0;
+  char   prev_c = '\0';
 
   for (auto &c : in_str) {
     if (!isspace(c)) {
@@ -217,7 +217,7 @@ trimWhiteSpaces(const String &s)
 {
   /* @todo do this better? */
   static const String whiteSpace = " \t\n\v\f\r";
-  size_t start                   = s.find_first_not_of(whiteSpace);
+  size_t              start      = s.find_first_not_of(whiteSpace);
   if (String::npos == start) {
     return String();
   }
@@ -294,10 +294,10 @@ String
 getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSet &includeHeaders, const StringSet &excludeHeaders,
                               String &signedHeaders)
 {
-  int length;
-  const char *str = nullptr;
+  int           length;
+  const char   *str = nullptr;
   unsigned char canonicalRequestSha256Hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX canonicalRequestSha256Ctx;
+  SHA256_CTX    canonicalRequestSha256Ctx;
 
   SHA256_Init(&canonicalRequestSha256Ctx);
 
@@ -328,16 +328,16 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
    * <CanonicalQueryString>\n */
   const char *query = api.getQuery(&length);
 
-  StringSet paramNames;
-  StringMap paramsMap;
+  StringSet          paramNames;
+  StringMap          paramsMap;
   std::istringstream istr(String(query, length));
-  String token;
-  StringSet container;
+  String             token;
+  StringSet          container;
 
   while (std::getline(istr, token, '&')) {
     String::size_type pos(token.find_first_of('='));
-    String param(token.substr(0, pos == String::npos ? token.size() : pos));
-    String value(pos == String::npos ? "" : token.substr(pos + 1, token.size()));
+    String            param(token.substr(0, pos == String::npos ? token.size() : pos));
+    String            value(pos == String::npos ? "" : token.substr(pos + 1, token.size()));
 
     String encodedParam = canonicalEncode(param, /* isObjectName */ false);
     paramNames.insert(encodedParam);
@@ -361,8 +361,8 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   StringMap headersMap;
 
   for (HeaderIterator it = api.headerBegin(); it != api.headerEnd(); it++) {
-    int nameLen;
-    int valueLen;
+    int         nameLen;
+    int         valueLen;
     const char *name  = it.getName(&nameLen);
     const char *value = it.getValue(&valueLen);
 
@@ -664,17 +664,17 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
              size_t awsServiceLen, const char *dateTime, size_t dateTimeLen, const char *stringToSign, size_t stringToSignLen,
              char *signature, size_t signatureLen)
 {
-  unsigned int dateKeyLen = EVP_MAX_MD_SIZE;
+  unsigned int  dateKeyLen = EVP_MAX_MD_SIZE;
   unsigned char dateKey[EVP_MAX_MD_SIZE];
-  unsigned int dateRegionKeyLen = EVP_MAX_MD_SIZE;
+  unsigned int  dateRegionKeyLen = EVP_MAX_MD_SIZE;
   unsigned char dateRegionKey[EVP_MAX_MD_SIZE];
-  unsigned int dateRegionServiceKeyLen = EVP_MAX_MD_SIZE;
+  unsigned int  dateRegionServiceKeyLen = EVP_MAX_MD_SIZE;
   unsigned char dateRegionServiceKey[EVP_MAX_MD_SIZE];
-  unsigned int signingKeyLen = EVP_MAX_MD_SIZE;
+  unsigned int  signingKeyLen = EVP_MAX_MD_SIZE;
   unsigned char signingKey[EVP_MAX_MD_SIZE];
 
   size_t keyLen = 4 + awsSecretLen;
-  char key[keyLen];
+  char   key[keyLen];
   memcpy(key, "AWS4", 4);
   memcpy(key + 4, awsSecret, awsSecretLen);
 
@@ -733,8 +733,8 @@ AwsAuthV4::getAuthorizationHeader()
   String signedHeaders;
   String canonicalReq = getCanonicalRequestSha256Hash(_api, _signPayload, _includedHeaders, _excludedHeaders, signedHeaders);
 
-  int hostLen      = 0;
-  const char *host = _api.getHost(&hostLen);
+  int         hostLen = 0;
+  const char *host    = _api.getHost(&hostLen);
 
   String awsRegion = getRegion(_regionMap, host, hostLen);
 
@@ -744,7 +744,7 @@ AwsAuthV4::getAuthorizationHeader()
   std::cout << "<StringToSign>" << stringToSign << "</StringToSign>" << std::endl;
 #endif
 
-  char signature[EVP_MAX_MD_SIZE] = "";
+  char   signature[EVP_MAX_MD_SIZE] = "";
   size_t signatureLen =
     getSignature(_awsSecretAccessKey, _awsSecretAccessKeyLen, awsRegion.c_str(), awsRegion.length(), _awsService, _awsServiceLen,
                  _dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);
@@ -757,9 +757,7 @@ AwsAuthV4::getAuthorizationHeader()
   std::stringstream authorizationHeader;
   authorizationHeader << "AWS4-HMAC-SHA256 ";
   authorizationHeader << "Credential=" << String(_awsAccessKeyId, _awsAccessKeyIdLen) << "/" << String(_dateTime, 8) << "/"
-                      << awsRegion << "/" << String(_awsService, _awsServiceLen) << "/"
-                      << "aws4_request"
-                      << ",";
+                      << awsRegion << "/" << String(_awsService, _awsServiceLen) << "/" << "aws4_request" << ",";
   authorizationHeader << "SignedHeaders=" << signedHeaders << ",";
   authorizationHeader << "Signature=" << base16Signature;
 

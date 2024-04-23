@@ -47,14 +47,14 @@ int unescapifyStr(char *buffer);
 const char *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
 
 /// Convenience overload for IPv4.
-const char *ExtractIpRange(char *match_str,
+const char *ExtractIpRange(char      *match_str,
                            in_addr_t *addr1, ///< [in,out] Returned address in host order.
                            in_addr_t *addr2  ///< [in,out] Returned address in host order.
 );
 
 /// Convenience overload for IPv6.
 inline const char *
-ExtractIpRange(char *match_str,
+ExtractIpRange(char         *match_str,
                sockaddr_in6 *addr1, ///< [in,out] Returned address in network order.
                sockaddr_in6 *addr2  ///< [in,out] Returned address in network order.
 )
@@ -81,12 +81,12 @@ extern const char *matcher_type_str[];
 // A parsed config file line
 const int MATCHER_MAX_TOKENS = 40;
 struct matcher_line {
-  matcher_type type;                 // dest type
-  int dest_entry;                    // entry which specifies the destination
-  int num_el;                        // Number of elements
-  int line_num;                      // config file line number
-  char *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
-  matcher_line *next;                // use for linked list
+  matcher_type  type;                        // dest type
+  int           dest_entry;                  // entry which specifies the destination
+  int           num_el;                      // Number of elements
+  int           line_num;                    // config file line number
+  char         *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
+  matcher_line *next;                        // use for linked list
 };
 
 // Tag set to use to determining primary selector type
@@ -97,7 +97,7 @@ struct matcher_tags {
   const char *match_regex;
   const char *match_url;
   const char *match_host_regex;
-  bool dest_error_msg; // whether to use src or destination in any error messages
+  bool        dest_error_msg; // whether to use src or destination in any error messages
 
   bool
   empty() const

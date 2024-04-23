@@ -33,7 +33,7 @@ int
 main(int argc, const char **argv)
 {
   for (int i = 1; i < argc; ++i) {
-    int fd;
+    int                 fd;
     ink_device_geometry geometry;
 
     fd = open(argv[i], O_RDONLY);

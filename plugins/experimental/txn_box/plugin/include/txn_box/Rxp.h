@@ -115,8 +115,8 @@ class RxpOp
 
 public:
   struct DynamicRxp {
-    Expr _expr;        ///< Feature expression source for regular expression.
-    Rxp::Options _opt; ///< Options for regular expression.
+    Expr         _expr; ///< Feature expression source for regular expression.
+    Rxp::Options _opt;  ///< Options for regular expression.
   };
 
   RxpOp() = default;
@@ -153,7 +153,7 @@ protected:
     Rv<RxpOp> operator()(Expr::Direct &d);
     Rv<RxpOp> operator()(Expr::Composite &comp);
 
-    Config &_cfg;          ///< Configuration being loaded.
+    Config      &_cfg;     ///< Configuration being loaded.
     Rxp::Options _rxp_opt; ///< Any options from directive arguments.
   };
 
@@ -183,7 +183,7 @@ protected:
      */
     bool operator()(DynamicRxp const &dr) const;
 
-    Context &_ctx;       ///< Configuration context.
+    Context       &_ctx; ///< Configuration context.
     swoc::TextView _src; ///< regex text.
   };
 };

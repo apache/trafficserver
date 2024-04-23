@@ -69,8 +69,8 @@ struct Statistics {
 using Origins = std::vector<std::string>;
 
 struct Request {
-  std::string host;
-  int length;
+  std::string                  host;
+  int                          length;
   std::unique_ptr<ats::io::IO> io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
@@ -83,7 +83,7 @@ using Requests = std::vector<Request>;
 
 struct Instance {
   Origins origins;
-  bool skipPostPut;
+  bool    skipPostPut;
 };
 
 extern size_t timeout;

@@ -47,9 +47,9 @@ public:
   commit(const uint64_t log_idx, nuraft::buffer &data) override
   {
     // Extract bytes from "data".
-    size_t len = 0;
+    size_t                    len = 0;
     nuraft::buffer_serializer bs_data(data);
-    void *byte_array = bs_data.get_bytes(len);
+    void                     *byte_array = bs_data.get_bytes(len);
     // Dbg(dbg_ctl, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
     assert(len == SSL_TICKET_KEY_SIZE);
@@ -64,7 +64,7 @@ public:
     last_committed_idx_ = log_idx;
 
     nuraft::ptr<nuraft::buffer> ret = nuraft::buffer::alloc(sizeof(log_idx));
-    nuraft::buffer_serializer bs_ret(ret);
+    nuraft::buffer_serializer   bs_ret(ret);
     bs_ret.put_u64(log_idx);
 
     return ret;
@@ -128,18 +128,18 @@ public:
   {
     // Dbg(dbg_ctl, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
-    size_t len = 0;
+    size_t                    len = 0;
     nuraft::buffer_serializer bs_data(data);
-    void *byte_array = bs_data.get_bytes(len);
+    void                     *byte_array = bs_data.get_bytes(len);
 
     assert(len == SSL_TICKET_KEY_SIZE);
 
     ssl_ticket_key_t local_stek;
     std::memcpy(&local_stek, byte_array, len);
 
-    nuraft::ptr<nuraft::buffer> snp_buf  = s.serialize();
-    nuraft::ptr<nuraft::snapshot> ss     = nuraft::snapshot::deserialize(*snp_buf);
-    nuraft::ptr<struct snapshot_ctx> ctx = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
+    nuraft::ptr<nuraft::buffer>      snp_buf = s.serialize();
+    nuraft::ptr<nuraft::snapshot>    ss      = nuraft::snapshot::deserialize(*snp_buf);
+    nuraft::ptr<struct snapshot_ctx> ctx     = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
@@ -200,9 +200,9 @@ public:
       std::memcpy(&local_stek, &stek_, SSL_TICKET_KEY_SIZE);
     }
 
-    nuraft::ptr<nuraft::buffer> snp_buf  = s.serialize();
-    nuraft::ptr<nuraft::snapshot> ss     = nuraft::snapshot::deserialize(*snp_buf);
-    nuraft::ptr<struct snapshot_ctx> ctx = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
+    nuraft::ptr<nuraft::buffer>      snp_buf = s.serialize();
+    nuraft::ptr<nuraft::snapshot>    ss      = nuraft::snapshot::deserialize(*snp_buf);
+    nuraft::ptr<struct snapshot_ctx> ctx     = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
@@ -210,7 +210,7 @@ public:
     }
 
     nuraft::ptr<std::exception> except(nullptr);
-    bool ret = true;
+    bool                        ret = true;
     when_done(ret, except);
   }
 
@@ -218,7 +218,7 @@ private:
   struct snapshot_ctx {
     snapshot_ctx(nuraft::ptr<nuraft::snapshot> &s, ssl_ticket_key_t key) : snapshot_(s), stek_(key) {}
     nuraft::ptr<nuraft::snapshot> snapshot_;
-    ssl_ticket_key_t stek_;
+    ssl_ticket_key_t              stek_;
   };
 
   // Last committed Raft log number.

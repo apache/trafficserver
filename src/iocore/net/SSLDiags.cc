@@ -127,12 +127,12 @@ increment_ssl_server_error(unsigned long err)
 void
 SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
 {
-  unsigned long l;
-  char buf[256];
-  const char *file, *data;
-  int line, flags;
-  unsigned long es;
-  va_list ap;
+  unsigned long  l;
+  char           buf[256];
+  const char    *file, *data;
+  int            line, flags;
+  unsigned long  es;
+  va_list        ap;
   ip_text_buffer ip_buf = {'\0'};
 
   if (vc) {

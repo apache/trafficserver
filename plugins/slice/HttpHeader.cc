@@ -60,8 +60,8 @@ HttpHeader::urlString(int *const urllen) const
   char *urlstr = nullptr;
   TSAssert(nullptr != urllen);
 
-  TSMLoc locurl            = nullptr;
-  TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
+  TSMLoc             locurl = nullptr;
+  TSReturnCode const rcode  = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
   if (nullptr != locurl) {
     if (TS_SUCCESS == rcode) {
       urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
@@ -81,8 +81,8 @@ HttpHeader::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
     return false;
   }
 
-  TSMLoc locurlout   = nullptr;
-  TSReturnCode rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurlout);
+  TSMLoc       locurlout = nullptr;
+  TSReturnCode rcode     = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurlout);
   if (TS_SUCCESS != rcode) {
     return false;
   }
@@ -178,7 +178,7 @@ HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const 
   TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
 
   if (nullptr != locfield) {
-    int getlen               = 0;
+    int               getlen = 0;
     char const *const getstr = TSMimeHdrFieldValueStringGet(m_buffer, m_lochdr, locfield, index, &getlen);
 
     int const valcap = *vallen;
@@ -297,9 +297,9 @@ HttpHeader::toString() const
 
     if (nullptr != reader) {
       TSIOBufferBlock block = TSIOBufferReaderStart(reader);
-      bool done             = false;
+      bool            done  = false;
       while (!done && nullptr != block) {
-        int64_t avail        = 0;
+        int64_t     avail    = 0;
         char const *blockptr = TSIOBufferBlockReadStart(block, reader, &avail);
         if (0 < avail) {
           res.append(blockptr, avail);
@@ -337,14 +337,14 @@ HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const read
 
   int64_t avail = TSIOBufferReaderAvail(reader);
   if (0 < avail) {
-    TSIOBufferBlock block = TSIOBufferReaderStart(reader);
-    int64_t consumed      = 0;
+    TSIOBufferBlock block    = TSIOBufferReaderStart(reader);
+    int64_t         consumed = 0;
 
     parse_res = TS_PARSE_CONT;
 
     while (nullptr != block && 0 < avail) {
-      int64_t blockbytes       = 0;
-      char const *const bstart = TSIOBufferBlockReadStart(block, reader, &blockbytes);
+      int64_t           blockbytes = 0;
+      char const *const bstart     = TSIOBufferBlockReadStart(block, reader, &blockbytes);
 
       char const *ptr    = bstart;
       char const *endptr = ptr + blockbytes;

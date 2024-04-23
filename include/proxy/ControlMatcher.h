@@ -123,9 +123,9 @@ public:
   //  depending on how the module user wants to key
   //  the table
   virtual ~RequestData() {}
-  virtual char *get_string()       = 0;
-  virtual const char *get_host()   = 0;
-  virtual sockaddr const *get_ip() = 0;
+  virtual char           *get_string() = 0;
+  virtual const char     *get_host()   = 0;
+  virtual sockaddr const *get_ip()     = 0;
 
   virtual sockaddr const *get_client_ip() = 0;
 };
@@ -133,8 +133,8 @@ public:
 class HttpRequestData : public RequestData
 {
 public:
-  char *get_string() override;
-  const char *get_host() override;
+  char           *get_string() override;
+  const char     *get_host() override;
   sockaddr const *get_ip() override;
   sockaddr const *get_client_ip() override;
 
@@ -145,17 +145,17 @@ public:
     ink_zero(dest_ip);
   }
 
-  HTTPHdr *hdr             = nullptr;
-  char const *hostname_str = nullptr;
-  HttpApiInfo *api_info    = nullptr;
-  time_t xact_start        = 0;
-  IpEndpoint src_ip;
-  IpEndpoint dest_ip;
-  uint16_t incoming_port                = 0;
-  char *tag                             = nullptr;
-  bool internal_txn                     = false;
-  URL **cache_info_lookup_url           = nullptr;
-  URL **cache_info_parent_selection_url = nullptr;
+  HTTPHdr     *hdr          = nullptr;
+  char const  *hostname_str = nullptr;
+  HttpApiInfo *api_info     = nullptr;
+  time_t       xact_start   = 0;
+  IpEndpoint   src_ip;
+  IpEndpoint   dest_ip;
+  uint16_t     incoming_port                   = 0;
+  char        *tag                             = nullptr;
+  bool         internal_txn                    = false;
+  URL        **cache_info_lookup_url           = nullptr;
+  URL        **cache_info_parent_selection_url = nullptr;
 };
 
 // Mixin class for shared info across all templates. This just wraps the
@@ -170,11 +170,11 @@ public:
   ~BaseMatcher() { delete[] data_array; }
 
 protected:
-  int num_el               = -1;        // number of elements in the table
+  int         num_el       = -1;        // number of elements in the table
   const char *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
   const char *file_name    = nullptr;   // Used for Debug/Warning/Error messages
-  Data *data_array         = nullptr;   // Array with the Data elements
-  int array_len            = -1;        // length of the arrays (all three are the same length)
+  Data       *data_array   = nullptr;   // Array with the Data elements
+  int         array_len    = -1;        // length of the arrays (all three are the same length)
 };
 
 template <class Data, class MatchResult> class UrlMatcher : protected BaseMatcher<Data>
@@ -185,22 +185,22 @@ public:
   UrlMatcher(const char *name, const char *filename);
   ~UrlMatcher();
 
-  void AllocateSpace(int num_entries);
+  void   AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
 
-  using super::num_el;
-  using super::matcher_name;
-  using super::file_name;
-  using super::data_array;
   using super::array_len;
+  using super::data_array;
+  using super::file_name;
+  using super::matcher_name;
+  using super::num_el;
 
 private:
   std::unordered_map<std::string, int> url_ht;
-  char **url_str = nullptr; // array of url strings
-  int *url_value = nullptr; // array of posion of url strings
+  char                               **url_str   = nullptr; // array of url strings
+  int                                 *url_value = nullptr; // array of posion of url strings
 };
 
 template <class Data, class MatchResult> class RegexMatcher : protected BaseMatcher<Data>
@@ -211,17 +211,17 @@ public:
   RegexMatcher(const char *name, const char *filename);
   ~RegexMatcher();
 
-  void AllocateSpace(int num_entries);
+  void   AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
 
-  using super::num_el;
-  using super::matcher_name;
-  using super::file_name;
-  using super::data_array;
   using super::array_len;
+  using super::data_array;
+  using super::file_name;
+  using super::matcher_name;
+  using super::num_el;
 
 protected:
   pcre **re_array = nullptr; // array of compiled regexs
@@ -236,11 +236,11 @@ public:
   HostRegexMatcher(const char *name, const char *filename);
   void Match(RequestData *rdata, MatchResult *result) const;
 
-  using super::num_el;
-  using super::matcher_name;
-  using super::file_name;
-  using super::data_array;
   using super::array_len;
+  using super::data_array;
+  using super::file_name;
+  using super::matcher_name;
+  using super::num_el;
 };
 
 template <class Data, class MatchResult> class HostMatcher : protected BaseMatcher<Data>
@@ -251,17 +251,17 @@ public:
   HostMatcher(const char *name, const char *filename);
   ~HostMatcher();
 
-  void AllocateSpace(int num_entries);
+  void   AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
 
-  using super::num_el;
-  using super::matcher_name;
-  using super::file_name;
-  using super::data_array;
   using super::array_len;
+  using super::data_array;
+  using super::file_name;
+  using super::matcher_name;
+  using super::num_el;
 
   HostLookup *
   getHLookup()
@@ -281,17 +281,17 @@ template <class Data, class MatchResult> class IpMatcher : protected BaseMatcher
 public:
   IpMatcher(const char *name, const char *filename);
 
-  void AllocateSpace(int num_entries);
+  void   AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
 
   void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result) const;
   void Print() const;
 
-  using super::num_el;
-  using super::matcher_name;
-  using super::file_name;
-  using super::data_array;
   using super::array_len;
+  using super::data_array;
+  using super::file_name;
+  using super::matcher_name;
+  using super::num_el;
 
 private:
   static void PrintFunc(void *opaque_data);
@@ -345,15 +345,15 @@ public:
   }
 
   // private
-  RegexMatcher<Data, MatchResult> *reMatch;
-  UrlMatcher<Data, MatchResult> *urlMatch;
-  HostMatcher<Data, MatchResult> *hostMatch;
-  IpMatcher<Data, MatchResult> *ipMatch;
+  RegexMatcher<Data, MatchResult>     *reMatch;
+  UrlMatcher<Data, MatchResult>       *urlMatch;
+  HostMatcher<Data, MatchResult>      *hostMatch;
+  IpMatcher<Data, MatchResult>        *ipMatch;
   HostRegexMatcher<Data, MatchResult> *hrMatch;
 
   const matcher_tags *config_tags = nullptr;
-  char config_file_path[PATH_NAME_MAX];
-  int flags                = 0;
-  int m_numEntries         = 0;
-  const char *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
+  char                config_file_path[PATH_NAME_MAX];
+  int                 flags        = 0;
+  int                 m_numEntries = 0;
+  const char         *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };

@@ -83,7 +83,7 @@ struct IPCSocketClient {
   }
 
 protected:
-  std::string _path;
+  std::string        _path;
   struct sockaddr_un _server;
 
   int _sock{-1};

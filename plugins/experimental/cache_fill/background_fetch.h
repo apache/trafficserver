@@ -102,7 +102,7 @@ public:
 
 private:
   OutstandingRequests _urls;
-  TSMutex _lock = TSMutexCreate();
+  TSMutex             _lock = TSMutexCreate();
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -164,23 +164,23 @@ struct BgFetchData {
   bool initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp);
   void schedule();
 
-  TSMBuffer mbuf = TSMBufferCreate();
-  TSMLoc hdr_loc = TS_NULL_MLOC;
-  TSMLoc url_loc = TS_NULL_MLOC;
+  TSMBuffer mbuf    = TSMBufferCreate();
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
+  TSMLoc    url_loc = TS_NULL_MLOC;
 
   struct sockaddr_storage client_ip;
 
   // This is for the actual background fetch / NetVC
-  TSVConn vc                          = nullptr;
-  TSIOBuffer req_io_buf               = nullptr;
-  TSIOBuffer resp_io_buf              = nullptr;
+  TSVConn          vc                 = nullptr;
+  TSIOBuffer       req_io_buf         = nullptr;
+  TSIOBuffer       resp_io_buf        = nullptr;
   TSIOBufferReader req_io_buf_reader  = nullptr;
   TSIOBufferReader resp_io_buf_reader = nullptr;
-  TSVIO r_vio                         = nullptr;
-  TSVIO w_vio                         = nullptr;
+  TSVIO            r_vio              = nullptr;
+  TSVIO            w_vio              = nullptr;
 
 private:
   std::string _url;
-  int64_t _bytes = 0;
-  TSCont _cont   = nullptr;
+  int64_t     _bytes = 0;
+  TSCont      _cont  = nullptr;
 };

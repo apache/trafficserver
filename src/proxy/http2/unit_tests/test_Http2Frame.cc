@@ -27,19 +27,19 @@
 
 TEST_CASE("Http2Frame", "[http2][Http2Frame]")
 {
-  MIOBuffer *miob        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  MIOBuffer      *miob   = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   IOBufferReader *miob_r = miob->alloc_reader();
 
   SECTION("PUSH_PROMISE")
   {
-    Http2StreamId id = 1;
-    uint8_t flags    = HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS;
+    Http2StreamId    id    = 1;
+    uint8_t          flags = HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS;
     Http2PushPromise pp{0, 2};
-    uint8_t hdr_block[]   = {0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef};
-    uint8_t hdr_block_len = sizeof(hdr_block);
+    uint8_t          hdr_block[]   = {0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef};
+    uint8_t          hdr_block_len = sizeof(hdr_block);
 
     Http2PushPromiseFrame frame(id, flags, pp, hdr_block, hdr_block_len);
-    int64_t written = frame.write_to(miob);
+    int64_t               written = frame.write_to(miob);
 
     CHECK(written == static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN + sizeof(Http2StreamId) + hdr_block_len));
     CHECK(written == miob_r->read_avail());
@@ -68,7 +68,7 @@ TEST_CASE("HTTP/2 Frame Flags", "[http2]")
   const static struct {
     uint8_t ftype;
     uint8_t fflags;
-    bool valid;
+    bool    valid;
   } http2_frame_flags_test_case[] = {
     {HTTP2_FRAME_TYPE_DATA,          0x00, true },
     {HTTP2_FRAME_TYPE_DATA,          0x01, true },

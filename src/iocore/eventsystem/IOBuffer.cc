@@ -34,13 +34,13 @@
 //
 // General Buffer Allocator
 //
-FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
-ClassAllocator<MIOBuffer> ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
-ClassAllocator<IOBufferData> ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
+FreelistAllocator             ioBufAllocator[DEFAULT_BUFFER_SIZES];
+ClassAllocator<MIOBuffer>     ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
+ClassAllocator<IOBufferData>  ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
-int64_t default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
-int64_t default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
-int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
+int64_t                       default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
+int64_t                       default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
+int64_t                       max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 
 //
 // Initialization
@@ -51,7 +51,7 @@ init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * ((static_cast<int64_t>(1)) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
-    int n     = chunk_sizes[i];
+    int     n = chunk_sizes[i];
     if (n == 0) {
       n = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
     }
@@ -112,8 +112,8 @@ parse_buffer_chunk_sizes(const char *chunk_sizes_string, int chunk_sizes[DEFAULT
   const swoc::TextView delimiters(", ");
   if (chunk_sizes_string != nullptr) {
     swoc::TextView src(chunk_sizes_string, swoc::TextView::npos);
-    auto parser = make_buffer_size_parser();
-    int n       = 0;
+    auto           parser = make_buffer_size_parser();
+    int            n      = 0;
     while (!src.empty()) {
       swoc::TextView token{src.take_prefix_at(delimiters)};
 
@@ -158,7 +158,7 @@ int64_t
 MIOBuffer::write(const void *abuf, int64_t alen)
 {
   const char *buf = static_cast<const char *>(abuf);
-  int64_t len     = alen;
+  int64_t     len = alen;
   while (len) {
     if (!_writer) {
       add_block();
@@ -251,7 +251,7 @@ MIOBuffer::is_max_read_avail_more_than(int64_t size)
 int64_t
 IOBufferReader::read(void *ab, int64_t len)
 {
-  char *b       = static_cast<char *>(ab);
+  char   *b     = static_cast<char *>(ab);
   int64_t n     = len;
   int64_t l     = block_read_avail();
   int64_t bytes = 0;
@@ -309,7 +309,7 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
 char *
 IOBufferReader::memcpy(void *ap, int64_t len, int64_t offset)
 {
-  char *p           = static_cast<char *>(ap);
+  char          *p  = static_cast<char *>(ap);
   IOBufferBlock *b  = block.get();
   offset           += start_offset;
 
@@ -350,8 +350,8 @@ IOBufferChain::write(IOBufferBlock *blocks, int64_t length, int64_t offset)
     if (block_bytes <= offset) { // skip the entire block
       offset -= block_bytes;
     } else {
-      int64_t bytes     = std::min(n, block_bytes - offset);
-      IOBufferBlock *bb = blocks->clone();
+      int64_t        bytes = std::min(n, block_bytes - offset);
+      IOBufferBlock *bb    = blocks->clone();
       if (offset) {
         bb->consume(offset);
         block_bytes -= offset; // bytes really available to use.
@@ -375,8 +375,8 @@ IOBufferChain::write(IOBufferBlock *blocks, int64_t length, int64_t offset)
 int64_t
 IOBufferChain::write(IOBufferData *data, int64_t length, int64_t offset)
 {
-  int64_t zret     = 0;
-  IOBufferBlock *b = new_IOBufferBlock();
+  int64_t        zret = 0;
+  IOBufferBlock *b    = new_IOBufferBlock();
 
   if (length < 0) {
     length = 0;

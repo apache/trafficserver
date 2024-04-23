@@ -82,8 +82,8 @@ public:
    * This is stored in the directive factory.
    */
   struct FactoryInfo {
-    unsigned _idx;                          ///< Index for doing config time type info lookup.
-    HookMask _hook_mask;                    ///< Valid hooks for this directive.
+    unsigned                  _idx;         ///< Index for doing config time type info lookup.
+    HookMask                  _hook_mask;   ///< Valid hooks for this directive.
     Directive::InstanceLoader _load_cb;     ///< Functor to load the directive from YAML data.
     Directive::CfgInitializer _cfg_init_cb; ///< Configuration init callback.
   };
@@ -93,8 +93,8 @@ public:
    * provide the equivalent of run time type information. Instances are stored in the @c Config.
    */
   struct CfgStaticData {
-    FactoryInfo const *_static; ///< Related static information.
-    unsigned _count = 0;        ///< Number of instances.
+    FactoryInfo const *_static;    ///< Related static information.
+    unsigned           _count = 0; ///< Number of instances.
   };
 
   virtual ~Directive() = default;
@@ -159,7 +159,7 @@ class When : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   swoc::Errata invoke(Context &ctx) override;
 
@@ -179,7 +179,7 @@ public:
                                swoc::TextView const &arg, YAML::Node key_value);
 
 protected:
-  Hook _hook{Hook::INVALID};
+  Hook   _hook{Hook::INVALID};
   Handle _directive; /// Directive to invoke in the specified hook.
 
   /** Construct from hook and a directive.

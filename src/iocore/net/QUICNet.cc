@@ -64,7 +64,7 @@ QUICPollCont::~QUICPollCont() {}
 void
 QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacket *p           = e->packet;
+  UDPPacket          *p  = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;
@@ -86,8 +86,8 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
   UDPPacket *p = e->packet;
   // FIXME: VC is nullptr ?
-  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
-  uint8_t *buf           = reinterpret_cast<uint8_t *>(p->getIOBlockChain()->buf());
+  QUICNetVConnection *vc  = static_cast<QUICNetVConnection *>(e->con);
+  uint8_t            *buf = reinterpret_cast<uint8_t *>(p->getIOBlockChain()->buf());
 
   QUICPacketType ptype;
   QUICLongHeaderPacketR::type(ptype, buf, 1);
@@ -124,7 +124,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacket *p           = e->packet;
+  UDPPacket          *p  = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;
@@ -151,14 +151,14 @@ QUICPollCont::pollEvent(int, Event *)
 {
   ink_assert(this->mutex->thread_holding == this_thread());
   QUICPollEvent *e;
-  NetHandler *nh = get_NetHandler(this->mutex->thread_holding);
+  NetHandler    *nh = get_NetHandler(this->mutex->thread_holding);
 
   // Process the ASLL
   SList(QUICPollEvent, alink) aq(inQueue.popall());
   Queue<QUICPollEvent> result;
   while ((e = aq.pop())) {
     QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(e->con);
-    UDPPacket *p            = e->packet;
+    UDPPacket          *p   = e->packet;
     if (qvc != nullptr && qvc->in_closed_queue) {
       p->free();
       e->free();
@@ -189,7 +189,7 @@ QUICPollCont::pollEvent(int, Event *)
 void
 initialize_thread_for_quic_net(EThread *thread)
 {
-  NetHandler *nh       = get_NetHandler(thread);
+  NetHandler   *nh     = get_NetHandler(thread);
   QUICPollCont *quicpc = get_QUICPollCont(thread);
 
   new (reinterpret_cast<ink_dummy_for_new *>(quicpc)) QUICPollCont(thread->mutex, nh);

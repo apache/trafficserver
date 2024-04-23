@@ -303,7 +303,7 @@ class Mp4Meta;
 using Mp4AtomHandler = int (Mp4Meta::*)(int64_t, int64_t);
 
 struct mp4_atom_handler {
-  const char *name;
+  const char    *name;
   Mp4AtomHandler handler;
 };
 
@@ -326,7 +326,7 @@ public:
   }
 
 public:
-  TSIOBuffer buffer       = nullptr;
+  TSIOBuffer       buffer = nullptr;
   TSIOBufferReader reader = nullptr;
 };
 
@@ -339,7 +339,7 @@ public:
 
 public:
   uint32_t timescale = 0;
-  int64_t duration   = 0;
+  int64_t  duration  = 0;
 
   uint32_t time_to_sample_entries     = 0; // stsc
   uint32_t sample_to_chunk_entries    = 0; // stsc
@@ -352,7 +352,7 @@ public:
   uint32_t start_chunk        = 0;
   uint32_t chunk_samples      = 0;
   uint64_t chunk_samples_size = 0;
-  off_t start_offset          = 0;
+  off_t    start_offset       = 0;
 
   size_t tkhd_size = 0;
   size_t mdhd_size = 0;
@@ -399,9 +399,9 @@ public:
 
   int parse_meta(bool body_complete);
 
-  int post_process_meta();
+  int  post_process_meta();
   void mp4_meta_consume(int64_t size);
-  int mp4_atom_next(int64_t atom_size, bool wait = false);
+  int  mp4_atom_next(int64_t atom_size, bool wait = false);
 
   int mp4_read_atom(mp4_atom_handler *atom, int64_t size);
   int parse_root_atoms();
@@ -448,13 +448,13 @@ public:
   int mp4_update_trak_atom(Mp4Trak *trak);
 
   int64_t mp4_update_mdat_atom(int64_t start_offset);
-  int mp4_adjust_co64_atom(Mp4Trak *trak, off_t adjustment);
-  int mp4_adjust_stco_atom(Mp4Trak *trak, int32_t adjustment);
+  int     mp4_adjust_co64_atom(Mp4Trak *trak, off_t adjustment);
+  int     mp4_adjust_stco_atom(Mp4Trak *trak, int32_t adjustment);
 
   uint32_t mp4_find_key_sample(uint32_t start_sample, Mp4Trak *trak);
-  void mp4_update_mvhd_duration();
-  void mp4_update_tkhd_duration(Mp4Trak *trak);
-  void mp4_update_mdhd_duration(Mp4Trak *trak);
+  void     mp4_update_mvhd_duration();
+  void     mp4_update_tkhd_duration(Mp4Trak *trak);
+  void     mp4_update_mdhd_duration(Mp4Trak *trak);
 
 public:
   int64_t start          = 0; // requested start time, measured in milliseconds.
@@ -462,7 +462,7 @@ public:
   int64_t content_length = 0; // the size of the new mp4 file
   int64_t meta_atom_size = 0;
 
-  TSIOBuffer meta_buffer; // meta data to be parsed
+  TSIOBuffer       meta_buffer; // meta data to be parsed
   TSIOBufferReader meta_reader;
 
   int64_t meta_avail = 0;
@@ -482,13 +482,13 @@ public:
   double rs   = 0;
   double rate = 0;
 
-  int64_t ftyp_size  = 0;
-  int64_t moov_size  = 0;
-  int64_t start_pos  = 0; // start position of the new mp4 file
+  int64_t  ftyp_size = 0;
+  int64_t  moov_size = 0;
+  int64_t  start_pos = 0; // start position of the new mp4 file
   uint32_t timescale = 0;
   uint32_t trak_num  = 0;
-  int64_t passed     = 0;
+  int64_t  passed    = 0;
 
   u_char mdat_atom_header[16];
-  bool meta_complete = false;
+  bool   meta_complete = false;
 };

@@ -87,7 +87,7 @@ loadRegionMap(StringMap &m, const String &filename)
   String path(makeConfigPath(filename));
 
   std::ifstream ifstr;
-  String line;
+  String        line;
 
   ifstr.open(path.c_str());
   if (!ifstr) {
@@ -165,7 +165,7 @@ private:
     // if config is read after load_time, the load time will
     // never indicate config is fresh when it isn't.
     std::atomic<S3Config *> config;
-    std::atomic<time_t> load_time;
+    std::atomic<time_t>     load_time;
 
     _ConfigData() {}
 
@@ -180,7 +180,7 @@ private:
   };
 
   std::unordered_map<std::string, _ConfigData> _cache;
-  static const int _ttl = 60;
+  static const int                             _ttl = 60;
 };
 
 ConfigCache gConfCache;
@@ -509,28 +509,28 @@ public:
   ts::shared_mutex reload_mutex;
 
 private:
-  char *_secret            = nullptr;
-  size_t _secret_len       = 0;
-  char *_keyid             = nullptr;
-  size_t _keyid_len        = 0;
-  char *_token             = nullptr;
-  size_t _token_len        = 0;
-  bool _virt_host          = false;
-  int _version             = 2;
-  bool _version_modified   = false;
-  bool _virt_host_modified = false;
-  TSCont _cont             = nullptr;
-  TSCont _conf_rld         = nullptr;
-  TSAction _conf_rld_act   = nullptr;
+  char     *_secret             = nullptr;
+  size_t    _secret_len         = 0;
+  char     *_keyid              = nullptr;
+  size_t    _keyid_len          = 0;
+  char     *_token              = nullptr;
+  size_t    _token_len          = 0;
+  bool      _virt_host          = false;
+  int       _version            = 2;
+  bool      _version_modified   = false;
+  bool      _virt_host_modified = false;
+  TSCont    _cont               = nullptr;
+  TSCont    _conf_rld           = nullptr;
+  TSAction  _conf_rld_act       = nullptr;
   StringSet _v4includeHeaders;
-  bool _v4includeHeaders_modified = false;
+  bool      _v4includeHeaders_modified = false;
   StringSet _v4excludeHeaders;
-  bool _v4excludeHeaders_modified = false;
+  bool      _v4excludeHeaders_modified = false;
   StringMap _region_map;
-  bool _region_map_modified = false;
-  long _expiration          = 0;
-  char *_conf_fname         = nullptr;
-  int _conf_reload_count    = 0;
+  bool      _region_map_modified = false;
+  long      _expiration          = 0;
+  char     *_conf_fname          = nullptr;
+  int       _conf_reload_count   = 0;
 };
 
 bool
@@ -693,12 +693,12 @@ public:
   TSHttpStatus authorizeV2(S3Config *s3);
   TSHttpStatus authorizeV4(S3Config *s3);
   TSHttpStatus authorize(S3Config *s3);
-  bool set_header(const char *header, int header_len, const char *val, int val_len);
+  bool         set_header(const char *header, int header_len, const char *val, int val_len);
 
 private:
   TSHttpTxn _txnp;
   TSMBuffer _bufp;
-  TSMLoc _hdr_loc, _url_loc;
+  TSMLoc    _hdr_loc, _url_loc;
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -712,7 +712,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
     return false;
   }
 
-  bool ret         = false;
+  bool   ret       = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, header, header_len);
 
   if (!field_loc) {
@@ -725,8 +725,8 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
       TSHandleMLocRelease(_bufp, _hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = nullptr;
-    bool first = true;
+    TSMLoc tmp   = nullptr;
+    bool   first = true;
 
     while (field_loc) {
       tmp = TSMimeHdrFieldNextDup(_bufp, _hdr_loc, field_loc);
@@ -784,19 +784,19 @@ S3Request::authorize(S3Config *s3)
 TSHttpStatus
 S3Request::authorizeV4(S3Config *s3)
 {
-  TsApi api(_bufp, _hdr_loc, _url_loc);
+  TsApi  api(_bufp, _hdr_loc, _url_loc);
   time_t now = time(nullptr);
 
   AwsAuthV4 util(api, &now, /* signPayload */ false, s3->keyid(), s3->keyid_len(), s3->secret(), s3->secret_len(), "s3", 2,
                  s3->v4includeHeaders(), s3->v4excludeHeaders(), s3->v4RegionMap());
-  String payloadHash = util.getPayloadHash();
+  String    payloadHash = util.getPayloadHash();
   if (!set_header(X_AMZ_CONTENT_SHA256.c_str(), X_AMZ_CONTENT_SHA256.length(), payloadHash.c_str(), payloadHash.length())) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
 
   /* set x-amz-date header */
-  size_t dateTimeLen   = 0;
-  const char *dateTime = util.getDateTime(&dateTimeLen);
+  size_t      dateTimeLen = 0;
+  const char *dateTime    = util.getDateTime(&dateTimeLen);
   if (!set_header(X_AMX_DATE.c_str(), X_AMX_DATE.length(), dateTime, dateTimeLen)) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
@@ -839,13 +839,13 @@ S3Request::authorizeV4(S3Config *s3)
 TSHttpStatus
 S3Request::authorizeV2(S3Config *s3)
 {
-  TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
-  TSMLoc host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
-  int method_len = 0, path_len = 0, param_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
-  const char *method = nullptr, *path = nullptr, *param = nullptr, *host = nullptr, *con_md5 = nullptr, *con_type = nullptr,
+  TSHttpStatus status   = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  TSMLoc       host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
+  int          method_len = 0, path_len = 0, param_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
+  const char  *method = nullptr, *path = nullptr, *param = nullptr, *host = nullptr, *con_md5 = nullptr, *con_type = nullptr,
              *host_endp = nullptr;
-  char date[128]; // Plenty of space for a Date value
-  time_t now = time(nullptr);
+  char      date[128]; // Plenty of space for a Date value
+  time_t    now = time(nullptr);
   struct tm now_tm;
 
   // Start with some request resources we need
@@ -910,9 +910,9 @@ S3Request::authorizeV2(S3Config *s3)
 
     Dbg(dbg_ctl, "%.*s", date_len, date);
 
-    const size_t left_size   = 1024;
-    char left[left_size + 1] = "/";
-    size_t loff              = 1;
+    const size_t left_size           = 1024;
+    char         left[left_size + 1] = "/";
+    size_t       loff                = 1;
 
     // ToDo: What to do with the CanonicalizedAmzHeaders ...
     if (host && host_endp) {
@@ -936,10 +936,10 @@ S3Request::authorizeV2(S3Config *s3)
 #else
   HMAC_CTX *ctx;
 #endif
-  unsigned int hmac_len;
-  size_t hmac_b64_len;
+  unsigned int  hmac_len;
+  size_t        hmac_b64_len;
   unsigned char hmac[SHA_DIGEST_LENGTH];
-  char hmac_b64[SHA_DIGEST_LENGTH * 2];
+  char          hmac_b64[SHA_DIGEST_LENGTH * 2];
 
 #ifndef HAVE_HMAC_CTX_NEW
   HMAC_CTX_init(ctx);
@@ -977,7 +977,7 @@ S3Request::authorizeV2(S3Config *s3)
   // Do the Base64 encoding and set the Authorization header.
   if (TS_SUCCESS == TSBase64Encode(reinterpret_cast<const char *>(hmac), hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
     char auth[256]; // This is way bigger than any string we can think of.
-    int auth_len = snprintf(auth, sizeof(auth), "AWS %s:%.*s", s3->keyid(), static_cast<int>(hmac_b64_len), hmac_b64);
+    int  auth_len = snprintf(auth, sizeof(auth), "AWS %s:%.*s", s3->keyid(), static_cast<int>(hmac_b64_len), hmac_b64);
 
     if ((auth_len > 0) && (auth_len < static_cast<int>(sizeof(auth)))) {
       set_header(TS_MIME_FIELD_AUTHORIZATION, TS_MIME_LEN_AUTHORIZATION, auth, auth_len);
@@ -998,12 +998,12 @@ S3Request::authorizeV2(S3Config *s3)
 int
 event_handler(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp       = static_cast<TSHttpTxn>(edata);
-  S3Config *s3         = static_cast<S3Config *>(TSContDataGet(cont));
-  TSEvent enable_event = TS_EVENT_HTTP_CONTINUE;
+  TSHttpTxn txnp         = static_cast<TSHttpTxn>(edata);
+  S3Config *s3           = static_cast<S3Config *>(TSContDataGet(cont));
+  TSEvent   enable_event = TS_EVENT_HTTP_CONTINUE;
 
   {
-    S3Request request(txnp);
+    S3Request    request(txnp);
     TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
     switch (event) {

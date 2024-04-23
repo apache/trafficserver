@@ -61,9 +61,9 @@ StrList::dump(FILE *fp)
 Str *
 StrList::_new_cell(const char *s, int len_not_counting_nul)
 {
-  Str *cell;
+  Str  *cell;
   char *p;
-  int l = len_not_counting_nul;
+  int   l = len_not_counting_nul;
 
   // allocate a cell from the array or heap
   if (cells_allocated < STRLIST_BASE_CELLS) {

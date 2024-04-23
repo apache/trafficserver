@@ -30,15 +30,15 @@
 #include <ostream>
 
 // Required by main.h
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 struct AddWriterBranchTest {
-  int initial_buffer_size{};
-  int agg_len{};
-  int header_len{};
-  int write_len{};
-  int readers{};
+  int  initial_buffer_size{};
+  int  agg_len{};
+  int  header_len{};
+  int  write_len{};
+  int  readers{};
   bool result{};
 };
 
@@ -149,7 +149,7 @@ public:
 
 private:
   EventNotify _notifier;
-  bool _got_callback{false};
+  bool        _got_callback{false};
 };
 
 /* Catch test helper to provide a Stripe with a valid file descriptor.
@@ -262,9 +262,9 @@ TEST_CASE("The behavior of Stripe::add_writer.")
 // tmpfile for the Stripe to write to.
 TEST_CASE("aggWrite behavior")
 {
-  Stripe stripe;
+  Stripe              stripe;
   StripteHeaderFooter header;
-  CacheVol cache_vol;
+  CacheVol            cache_vol;
   init_stripe_for_writing(stripe, header, cache_vol);
   WaitingVC vc{&stripe};
   vc.set_write_len(1);

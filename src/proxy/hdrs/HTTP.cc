@@ -328,8 +328,8 @@ void
 http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs)
 {
   MIMEHdrImpl *s_mh, *d_mh;
-  URLImpl *s_url, *d_url;
-  HTTPType d_polarity;
+  URLImpl     *s_url, *d_url;
+  HTTPType     d_polarity;
 
   s_mh       = s_hh->m_fields_impl;
   s_url      = s_hh->u.req.m_url_impl;
@@ -429,8 +429,8 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
   if (!x)      \
   return 0
 
-  int tmplen, hdrstat;
-  char tmpbuf[32];
+  int   tmplen, hdrstat;
+  char  tmpbuf[32];
   char *p;
 
   ink_assert((hdr->m_polarity == HTTP_TYPE_REQUEST) || (hdr->m_polarity == HTTP_TYPE_RESPONSE));
@@ -908,10 +908,10 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 {
   if (parser->m_parsing_http) {
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;
-    URLImpl *url;
+    URLImpl     *url;
 
     ParseResult err;
-    bool line_is_real;
+    bool        line_is_real;
     const char *cur;
     const char *line_start;
     const char *real_end;
@@ -1174,11 +1174,11 @@ ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
   ParseResult ret = PARSE_RESULT_DONE;
-  int host_len;
+  int         host_len;
   url->get_host(&host_len);
-  int path_len;
+  int         path_len;
   const char *path = url->get_path(&path_len);
-  int scheme_len;
+  int         scheme_len;
   url->get_scheme(&scheme_len);
 
   if (host_len == 0) {
@@ -1204,14 +1204,14 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
-  ParseResult ret       = PARSE_RESULT_DONE;
-  MIMEField *host_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST, MIME_LEN_HOST);
+  ParseResult ret        = PARSE_RESULT_DONE;
+  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST, MIME_LEN_HOST);
   if (host_field) {
     if (host_field->has_dups()) {
       ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
     } else {
-      int host_len         = 0;
-      const char *host_val = host_field->value_get(&host_len);
+      int              host_len = 0;
+      const char      *host_val = host_field->value_get(&host_len);
       std::string_view addr, port, rest, host(host_val, host_len);
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
         if (!port.empty()) {
@@ -1308,7 +1308,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;
 
     ParseResult err;
-    bool line_is_real;
+    bool        line_is_real;
     const char *cur;
     const char *line_start;
     const char *real_end;
@@ -1368,7 +1368,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       }
 
       HTTPVersion version(cur[5] - '0', cur[7] - '0');
-      HTTPStatus status = static_cast<HTTPStatus>((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
+      HTTPStatus  status = static_cast<HTTPStatus>((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
@@ -1568,7 +1568,7 @@ static char *
 http_str_store(Arena *arena, const char *str, int length)
 {
   const char *wks;
-  int idx = hdrtoken_tokenize(str, length, &wks);
+  int         idx = hdrtoken_tokenize(str, length, &wks);
   if (idx < 0) {
     return arena->str_store(str, length);
   } else {
@@ -1613,7 +1613,7 @@ http_parse_qvalue(const char *&buf, int &len)
 
       if (*buf == '=') {
         double n;
-        int f;
+        int    f;
 
         buf += 1;
         len -= 1;
@@ -1669,7 +1669,7 @@ http_parse_qvalue(const char *&buf, int &len)
 HTTPValTE *
 http_parse_te(const char *buf, int len, Arena *arena)
 {
-  HTTPValTE *val;
+  HTTPValTE  *val;
   const char *s;
 
   http_skip_ws(buf, len);
@@ -1691,9 +1691,9 @@ http_parse_te(const char *buf, int len, Arena *arena)
 void
 HTTPHdr::_fill_target_cache() const
 {
-  URL *url = this->url_get();
+  URL        *url = this->url_get();
   const char *port_ptr;
-  int port_len;
+  int         port_len;
 
   m_target_in_url  = false;
   m_port_in_header = false;
@@ -1735,8 +1735,8 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
       m_target_in_url = true; // it's there now.
     }
   } else {
-    int host_len     = 0;
-    const char *host = host_get(&host_len);
+    int         host_len = 0;
+    const char *host     = host_get(&host_len);
 
     url->host_set(host, host_len);
     if (m_port_in_header) {
@@ -1827,9 +1827,9 @@ class UrlPrintHack
 
   /// Saved values.
   ///@{
-  bool m_host_modified_p = false;
-  bool m_port_modified_p = false;
-  HTTPHdr *m_hdr         = nullptr;
+  bool     m_host_modified_p = false;
+  bool     m_port_modified_p = false;
+  HTTPHdr *m_hdr             = nullptr;
   ///@}
   /// Temporary buffer for port data.
   char m_port_buff[32];
@@ -1838,7 +1838,7 @@ class UrlPrintHack
 char *
 HTTPHdr::url_string_get(Arena *arena, int *length)
 {
-  char *zret = nullptr;
+  char        *zret = nullptr;
   UrlPrintHack hack(this);
 
   if (hack.is_valid()) {
@@ -1857,7 +1857,7 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, unsigned norm
   ink_release_assert(offset);
   ink_release_assert(skip);
 
-  int zret = 0;
+  int          zret = 0;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {
     zret = m_url_cached.print(buff, length, offset, skip, normalization_flags);
@@ -1868,7 +1868,7 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, unsigned norm
 int
 HTTPHdr::url_printed_length(unsigned normalization_flags)
 {
-  int zret = -1;
+  int          zret = -1;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {
     zret = m_url_cached.length_get(normalization_flags);
@@ -1883,11 +1883,11 @@ HTTPHdr::url_printed_length(unsigned normalization_flags)
 bool
 HTTPHdr::check_hdr_implements()
 {
-  bool retval = true;
+  bool       retval = true;
   MIMEField *transfer_encode =
     mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   if (transfer_encode) {
-    int len;
+    int         len;
     const char *val;
     do {
       val = transfer_encode->value_get(&len);
@@ -2120,8 +2120,8 @@ HTTPInfo::marshal_length()
 int
 HTTPInfo::marshal(char *buf, int len)
 {
-  int tmp;
-  int used                  = 0;
+  int           tmp;
+  int           used        = 0;
   HTTPCacheAlt *marshal_alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
@@ -2185,8 +2185,8 @@ HTTPInfo::marshal(char *buf, int len)
 int
 HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
-  int orig_len      = len;
+  HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
+  int           orig_len = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
     // Already unmarshaled, must be a ram cache
@@ -2216,7 +2216,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
-  int tmp;
+  int          tmp;
   if (heap != nullptr) {
     tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
@@ -2252,8 +2252,8 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 int
 HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
-  int orig_len      = len;
+  HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
+  int           orig_len = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
     // Already unmarshaled, must be a ram cache
@@ -2273,7 +2273,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
     // stuff that didn't fit in the integral slots.
-    int extra       = sizeof(FragOffset) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
+    int   extra     = sizeof(FragOffset) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
     char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
     // Actual buffer size, which must be a power of two.
     // Well, technically not, because we never modify an unmarshalled fragment
@@ -2297,7 +2297,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 
   HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
-  int tmp;
+  int          tmp;
   if (heap != nullptr) {
     tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {

@@ -32,9 +32,9 @@ class APIHook
 {
 public:
   INKContInternal *m_cont;
-  int invoke(int event, void *edata) const;
-  APIHook *next() const;
-  APIHook *prev() const;
+  int              invoke(int event, void *edata) const;
+  APIHook         *next() const;
+  APIHook         *prev() const;
   LINK(APIHook, m_link);
 
   // This is like invoke(), but allows for blocking on continuation mutexes.  It is a hack, calling it can block

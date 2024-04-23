@@ -149,7 +149,7 @@ DebugCapabilities(const char *tag)
 static void
 impersonate(const struct passwd *pwd, ImpersonationLevel level)
 {
-  int deathsig  = death_signal();
+  int  deathsig = death_signal();
   bool dumpable = false;
 
   DEBUG_CREDENTIALS("privileges");
@@ -203,8 +203,8 @@ void
 ImpersonateUserID(uid_t uid, ImpersonationLevel level)
 {
   struct passwd *pwd;
-  struct passwd pbuf;
-  char buf[max_passwd_size()];
+  struct passwd  pbuf;
+  char           buf[max_passwd_size()];
 
   if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
     Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
@@ -222,8 +222,8 @@ void
 ImpersonateUser(const char *user, ImpersonationLevel level)
 {
   struct passwd *pwd;
-  struct passwd pbuf;
-  char buf[max_passwd_size()];
+  struct passwd  pbuf;
+  char           buf[max_passwd_size()];
 
   if (*user == '#') {
     // Numeric user notation.
@@ -266,9 +266,9 @@ RestrictCapabilities()
   cap_t caps_orig = cap_get_proc();
 
   // Capabilities we need.
-  cap_value_t perm_list[]         = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
+  cap_value_t      perm_list[]    = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
-  cap_value_t eff_list[]          = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
+  cap_value_t      eff_list[]     = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
   static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
 
   // Request capabilities one at a time.  If one capability fails
@@ -282,8 +282,7 @@ RestrictCapabilities()
       if (cap_set_proc(caps) == -1) { // it failed, back out
         Debug("privileges", "CAP_PERMITTED failed for option %d", i);
       } else {
-        if (cap_set_flag(caps_good, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
-        }
+        if (cap_set_flag(caps_good, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {}
       }
     }
     if (cap_set_proc(caps_orig) < 0) {
@@ -298,8 +297,7 @@ RestrictCapabilities()
       if (cap_set_proc(caps) == -1) { // it failed, back out
         Debug("privileges", "CAP_EFFECTIVE failed for option %d", i);
       } else {
-        if (cap_set_flag(caps_good, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
-        }
+        if (cap_set_flag(caps_good, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {}
       }
     }
     if (cap_set_proc(caps_orig) < 0) {
@@ -427,9 +425,9 @@ elevating_stat(const char *path, struct stat *buff)
 void
 ElevateAccess::acquirePrivilege(unsigned priv_mask)
 {
-  unsigned cap_count = 0;
+  unsigned    cap_count = 0;
   cap_value_t cap_list[3];
-  cap_t new_cap_state;
+  cap_t       new_cap_state;
 
   Debug("privileges", "[acquirePrivilege] level= %x", level);
 

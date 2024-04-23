@@ -50,18 +50,9 @@ handle_ssn_close(TSHttpSsn ssn)
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[9], 9);
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[10], TS_SSN_INFO_RECEIVED_FRAME_COUNT_H2_UNKNOWN);
 
-    logFile << "H2 Frames Received:"
-            << "D" << count[0] << ","
-            << "H" << count[1] << ","
-            << "PR" << count[2] << ","
-            << "RS" << count[3] << ","
-            << "S" << count[4] << ","
-            << "PP" << count[5] << ","
-            << "P" << count[6] << ","
-            << "G" << count[7] << ","
-            << "WU" << count[8] << ","
-            << "C" << count[9] << ","
-            << "U" << count[10] << std::endl;
+    logFile << "H2 Frames Received:" << "D" << count[0] << "," << "H" << count[1] << "," << "PR" << count[2] << "," << "RS"
+            << count[3] << "," << "S" << count[4] << "," << "PP" << count[5] << "," << "P" << count[6] << "," << "G" << count[7]
+            << "," << "WU" << count[8] << "," << "C" << count[9] << "," << "U" << count[10] << std::endl;
   } else {
     TSMgmtInt count[15];
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[0], 0);
@@ -80,22 +71,10 @@ handle_ssn_close(TSHttpSsn ssn)
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[13], 13);
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[14], TS_SSN_INFO_RECEIVED_FRAME_COUNT_H2_UNKNOWN);
 
-    logFile << "H3 Frames Received:"
-            << "D" << count[0] << ","
-            << "H" << count[1] << ","
-            << "Ra" << count[2] << ","
-            << "CP" << count[3] << ","
-            << "S" << count[4] << ","
-            << "PP" << count[5] << ","
-            << "Rb" << count[6] << ","
-            << "G" << count[7] << ","
-            << "Rc" << count[8] << ","
-            << "Rd" << count[9] << ","
-            << "UND" << count[10] << ","
-            << "UND" << count[11] << ","
-            << "UND" << count[12] << ","
-            << "MPI" << count[13] << ","
-            << "U" << count[14] << std::endl;
+    logFile << "H3 Frames Received:" << "D" << count[0] << "," << "H" << count[1] << "," << "Ra" << count[2] << "," << "CP"
+            << count[3] << "," << "S" << count[4] << "," << "PP" << count[5] << "," << "Rb" << count[6] << "," << "G" << count[7]
+            << "," << "Rc" << count[8] << "," << "Rd" << count[9] << "," << "UND" << count[10] << "," << "UND" << count[11] << ","
+            << "UND" << count[12] << "," << "MPI" << count[13] << "," << "U" << count[14] << std::endl;
   }
 
   TSHttpSsnReenable(ssn, TS_EVENT_HTTP_CONTINUE);

@@ -38,12 +38,12 @@
 
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
-using swoc::MemArena;
-using swoc::Errata;
-using swoc::Rv;
 using swoc::BufferWriter;
+using swoc::Errata;
+using swoc::MemArena;
 using swoc::MemSpan;
+using swoc::Rv;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -72,8 +72,8 @@ const swoc::Lexicon<TSRecordDataType> TSRecordDataTypeNames{
 };
 
 HttpTxn::TxnConfigVarTable ts::HttpTxn::_var_table;
-std::mutex HttpTxn::_var_table_lock;
-int HttpTxn::_arg_idx = -1;
+std::mutex                 HttpTxn::_var_table_lock;
+int                        HttpTxn::_arg_idx = -1;
 
 /* ------------------------------------------------------------------------------------ */
 // API changes.
@@ -127,8 +127,8 @@ namespace compat
   // New for ATS 9, prefer this if available.
   template <typename S = void>
   auto
-  status_set(ts::HttpTxn &txn, TSHttpStatus status, swoc::meta::CaseTag<1>)
-    -> decltype(TSHttpTxnStatusSet(txn, eraser<S>(status)), bool())
+  status_set(ts::HttpTxn &txn, TSHttpStatus status, swoc::meta::CaseTag<1>) -> decltype(TSHttpTxnStatusSet(txn, eraser<S>(status)),
+                                                                                        bool())
   {
     TSHttpTxnStatusSet(txn, eraser<S>(status)); // no error return, sigh.
     return true;
@@ -191,32 +191,32 @@ namespace compat
 
   template <typename A = void>
   auto
-  user_arg_index_reserve(const char *name, const char *description, int *arg_idx)
-    -> std::enable_if_t<!has_TS_USER_ARGS<A>::value, TSReturnCode>
+  user_arg_index_reserve(const char *name, const char *description,
+                         int *arg_idx) -> std::enable_if_t<!has_TS_USER_ARGS<A>::value, TSReturnCode>
   {
     return TSHttpTxnArgIndexReserve(name, description, eraser<A>(arg_idx));
   }
 
   template <typename A = void>
   auto
-  user_arg_index_reserve(const char *name, const char *description, int *arg_idx)
-    -> std::enable_if_t<has_TS_USER_ARGS<A>::value, TSReturnCode>
+  user_arg_index_reserve(const char *name, const char *description,
+                         int *arg_idx) -> std::enable_if_t<has_TS_USER_ARGS<A>::value, TSReturnCode>
   {
     return TSUserArgIndexReserve(TS_USER_ARGS_TXN, name, description, eraser<A>(arg_idx));
   }
 
   template <typename A>
   auto
-  user_arg_index_name_lookup(char const *name, A *arg_idx, char const **description)
-    -> std::enable_if_t<!has_TS_USER_ARGS<A>::value, TSReturnCode>
+  user_arg_index_name_lookup(char const *name, A *arg_idx,
+                             char const **description) -> std::enable_if_t<!has_TS_USER_ARGS<A>::value, TSReturnCode>
   {
     return TSHttpTxnArgIndexNameLookup(name, arg_idx, description);
   }
 
   template <typename A>
   auto
-  user_arg_index_name_lookup(char const *name, A *arg_idx, char const **description)
-    -> std::enable_if_t<has_TS_USER_ARGS<A>::value, TSReturnCode>
+  user_arg_index_name_lookup(char const *name, A *arg_idx,
+                             char const **description) -> std::enable_if_t<has_TS_USER_ARGS<A>::value, TSReturnCode>
   {
     return TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, name, arg_idx, description);
   }
@@ -252,8 +252,8 @@ namespace compat
 
   template <typename T>
   auto
-  diag_note(T const &text, swoc::meta::CaseTag<1>)
-    -> decltype(TSNote(diag_fmt, int(text.size()), text.data()), std::declval<void>())
+  diag_note(T const &text, swoc::meta::CaseTag<1>) -> decltype(TSNote(diag_fmt, int(text.size()), text.data()),
+                                                               std::declval<void>())
   {
     TSNote(diag_fmt, int(text.size()), text.data());
   }
@@ -267,8 +267,8 @@ namespace compat
 
   template <typename T>
   auto
-  diag_warning(T const &text, swoc::meta::CaseTag<1>)
-    -> decltype(TSWarning(diag_fmt, int(text.size()), text.data()), std::declval<void>())
+  diag_warning(T const &text, swoc::meta::CaseTag<1>) -> decltype(TSWarning(diag_fmt, int(text.size()), text.data()),
+                                                                  std::declval<void>())
   {
     TSWarning(diag_fmt, int(text.size()), text.data());
   }
@@ -284,8 +284,8 @@ ts::URL::write_full(BufferWriter &w) const
   // it doesn't need to be tracked - it will get cleaned up when the IOBuffer is destroyed.
   // 32K should be large enough to hold the longest valid URL for ATS.
   IOBuffer iob{TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)};
-  auto reader   = TSIOBufferReaderAlloc(iob.get());
-  int64_t avail = 0;
+  auto     reader = TSIOBufferReaderAlloc(iob.get());
+  int64_t  avail  = 0;
 
   TSUrlPrint(_buff, _loc, iob.get());
   auto block = TSIOBufferReaderStart(reader);
@@ -299,7 +299,7 @@ ts::URL::scheme() const
 {
   if (this->is_valid()) {
     char const *text;
-    int size;
+    int         size;
     if (nullptr != (text = TSUrlSchemeGet(_buff, _loc, &size))) {
       return {text, static_cast<size_t>(size)};
     }
@@ -311,7 +311,7 @@ TextView
 URL::host() const
 {
   char const *text;
-  int size;
+  int         size;
   if (this->is_valid() && nullptr != (text = TSUrlHostGet(_buff, _loc, &size))) {
     return {text, static_cast<size_t>(size)};
   }
@@ -366,7 +366,7 @@ ts::HttpField::~HttpField()
 TextView
 ts::HttpField::name() const
 {
-  int size;
+  int         size;
   char const *text;
   if (this->is_valid() && nullptr != (text = TSMimeHdrFieldNameGet(_buff, _hdr, _loc, &size))) {
     return {text, static_cast<size_t>(size)};
@@ -377,7 +377,7 @@ ts::HttpField::name() const
 TextView
 ts::HttpField::value() const
 {
-  int size;
+  int         size;
   char const *text;
   if (this->is_valid() && nullptr != (text = TSMimeHdrFieldValueStringGet(_buff, _hdr, _loc, -1, &size))) {
     return {text, static_cast<size_t>(size)};
@@ -447,7 +447,7 @@ ts::HttpRequest::host() const
     return host;
   }
   if (auto field = this->field(HTTP_FIELD_HOST); field.is_valid()) {
-    auto value = field.value();
+    auto     value = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(value, &host_token, &port_token)) {
       return host_token;
@@ -464,7 +464,7 @@ ts::HttpRequest::port() const
     return port;
   }
   if (auto field = this->field(HTTP_FIELD_HOST); field.is_valid()) {
-    auto value = field.value();
+    auto     value = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(value, &host_token, &port_token)) {
       return swoc::svtoi(port_token);
@@ -479,7 +479,7 @@ ts::HttpRequest::loc() const
   auto loc{url().loc()};
   if (std::get<0>(loc).empty()) {
     if (auto field = this->field(HTTP_FIELD_HOST); field.is_valid()) {
-      auto value = field.value();
+      auto     value = field.value();
       TextView host_token, port_token;
       if (swoc::IPEndpoint::tokenize(value, &host_token, &port_token)) {
         return {host_token, swoc::svtoi(port_token)};
@@ -500,10 +500,10 @@ ts::HttpRequest::host_set(swoc::TextView const &host)
   }
   auto field{this->field(HTTP_FIELD_HOST)};
   if (field.is_valid()) {
-    auto text = field.value();
+    auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t n = host.size() + 1 + port_token.size();
+      size_t                  n = host.size() + 1 + port_token.size();
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
       if (port_token.size()) {
         w.print("{}:{}", host, port_token);
@@ -529,10 +529,10 @@ ts::HttpRequest::port_set(in_port_t port)
   }
   auto field{this->field(HTTP_FIELD_HOST)};
   if (field.is_valid()) {
-    auto text = field.value();
+    auto     text = field.value();
     TextView host_token, port_token;
     if (swoc::IPEndpoint::tokenize(text, &host_token, &port_token)) {
-      size_t n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
+      size_t                  n = host_token.size() + 1 + std::numeric_limits<in_port_t>::max_digits10;
       swoc::FixedBufferWriter w{static_cast<char *>(alloca(n)), n};
       w.write(host_token);
       if (port > 0) {
@@ -548,7 +548,7 @@ ts::HttpRequest::port_set(in_port_t port)
 swoc::TextView
 ts::HttpRequest::method() const
 {
-  int length;
+  int         length;
   char const *text;
   text = TSHttpHdrMethodGet(_buff, _loc, &length);
   return {text, static_cast<size_t>(length)};
@@ -558,7 +558,7 @@ ts::URL
 ts::HttpTxn::pristine_url_get() const
 {
   TSMBuffer buff;
-  TSMLoc loc;
+  TSMLoc    loc;
   if (_txn != nullptr && TS_SUCCESS == TSHttpTxnPristineUrlGet(_txn, &buff, &loc)) {
     return {buff, loc};
   }
@@ -569,7 +569,7 @@ ts::HttpRequest
 ts::HttpTxn::ua_req_hdr()
 {
   TSMBuffer buff;
-  TSMLoc loc;
+  TSMLoc    loc;
   if (_txn != nullptr && TS_SUCCESS == TSHttpTxnClientReqGet(_txn, &buff, &loc)) {
     return {buff, loc};
   }
@@ -580,7 +580,7 @@ ts::HttpRequest
 ts::HttpTxn::preq_hdr()
 {
   TSMBuffer buff;
-  TSMLoc loc;
+  TSMLoc    loc;
   if (_txn != nullptr && TS_SUCCESS == TSHttpTxnServerReqGet(_txn, &buff, &loc)) {
     return {buff, loc};
   }
@@ -591,7 +591,7 @@ ts::HttpResponse
 ts::HttpTxn::ursp_hdr()
 {
   TSMBuffer buff;
-  TSMLoc loc;
+  TSMLoc    loc;
   if (_txn != nullptr && TS_SUCCESS == TSHttpTxnServerRespGet(_txn, &buff, &loc)) {
     return {buff, loc};
   }
@@ -602,7 +602,7 @@ ts::HttpResponse
 ts::HttpTxn::prsp_hdr()
 {
   TSMBuffer buff;
-  TSMLoc loc;
+  TSMLoc    loc;
   if (_txn != nullptr && TS_SUCCESS == TSHttpTxnClientRespGet(_txn, &buff, &loc)) {
     return {buff, loc};
   }
@@ -666,8 +666,8 @@ ts::HttpResponse::status_set(TSHttpStatus status) const
 TextView
 ts::HttpResponse::reason() const
 {
-  int length       = 0;
-  char const *text = TSHttpHdrReasonGet(_buff, _loc, &length);
+  int         length = 0;
+  char const *text   = TSHttpHdrReasonGet(_buff, _loc, &length);
   return length > 0 ? TextView{text, size_t(length)} : TextView{};
 }
 
@@ -720,7 +720,7 @@ ts::HttpTxn::status_set(int status)
 ts::String
 ts::HttpTxn::effective_url_get() const
 {
-  int size;
+  int  size;
   auto s = TSHttpTxnEffectiveUrlStringGet(_txn, &size);
   return {s, size};
 }
@@ -785,7 +785,7 @@ ts::HttpSsn::addr_local() const
 int
 ts::HttpTxn::inbound_fd() const
 {
-  int fd      = -1;
+  int  fd     = -1;
   auto result = TSHttpTxnClientFdGet(_txn, &fd);
   return result != TS_SUCCESS ? -1 : fd;
 }
@@ -856,7 +856,7 @@ TxnConfigVar *
 HttpTxn::find_override(swoc::TextView const &name)
 {
   TSOverridableConfigKey key;
-  TSRecordDataType type;
+  TSRecordDataType       type;
 
   std::lock_guard lock{_var_table_lock};
 
@@ -930,7 +930,7 @@ HttpTxn::override_fetch(const TxnConfigVar &var)
   }
   case TS_RECORDDATATYPE_STRING: {
     char const *text;
-    int len;
+    int         len;
     if (TS_SUCCESS == TSHttpTxnConfigStringGet(_txn, var.key(), &text, &len)) {
       return ConfVarData{
         TextView{text, size_t(len)}
@@ -1014,8 +1014,8 @@ void
 TaskHandle::cancel()
 {
   if (_action != nullptr) {
-    TSMutex m = TSContMutexGet(_cont);
-    auto data = static_cast<Data *>(TSContDataGet(_cont));
+    TSMutex m    = TSContMutexGet(_cont);
+    auto    data = static_cast<Data *>(TSContDataGet(_cont));
     // Work around for TS shutdown - if this is cleaned up during shutdown, it's done on TS_MAIN
     // which should have cleared its @c EThread data. If that's the case, though, there's
     // no point in worrying about locks because the ET_NET threads aren't running. The

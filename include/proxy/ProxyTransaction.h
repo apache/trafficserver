@@ -41,7 +41,7 @@ public:
   virtual void new_transaction(bool from_early_data = false);
   virtual void attach_transaction(HttpSM *attach_sm);
   virtual bool attach_server_session(PoolableSession *ssession, bool transaction_done = true);
-  Action *adjust_thread(Continuation *cont, int event, void *data);
+  Action      *adjust_thread(Continuation *cont, int event, void *data);
   virtual void release()          = 0;
   virtual void transaction_done() = 0;
 
@@ -66,23 +66,23 @@ public:
 
   /// Virtual Accessors
   //
-  virtual int get_transaction_id() const = 0;
-  virtual int get_transaction_priority_weight() const;
-  virtual int get_transaction_priority_dependence() const;
+  virtual int  get_transaction_id() const = 0;
+  virtual int  get_transaction_priority_weight() const;
+  virtual int  get_transaction_priority_dependence() const;
   virtual bool allow_half_open() const;
 
   virtual void increment_transactions_stat() = 0;
   virtual void decrement_transactions_stat() = 0;
 
   virtual NetVConnection *get_netvc() const;
-  virtual bool is_first_transaction() const;
-  virtual in_port_t get_outbound_port() const;
-  virtual IpAddr get_outbound_ip4() const;
-  virtual IpAddr get_outbound_ip6() const;
-  virtual void set_outbound_port(in_port_t port);
-  virtual void set_outbound_ip(swoc::IPAddr const &addr);
-  virtual bool is_outbound_transparent() const;
-  virtual void set_outbound_transparent(bool flag);
+  virtual bool            is_first_transaction() const;
+  virtual in_port_t       get_outbound_port() const;
+  virtual IpAddr          get_outbound_ip4() const;
+  virtual IpAddr          get_outbound_ip6() const;
+  virtual void            set_outbound_port(in_port_t port);
+  virtual void            set_outbound_ip(swoc::IPAddr const &addr);
+  virtual bool            is_outbound_transparent() const;
+  virtual void            set_outbound_transparent(bool flag);
 
   virtual void set_session_active();
   virtual void clear_session_active();
@@ -104,7 +104,7 @@ public:
   /// Non-Virtual Methods
   //
   const char *get_protocol_string();
-  int populate_protocol(std::string_view *result, int size) const;
+  int         populate_protocol(std::string_view *result, int size) const;
   const char *protocol_contains(std::string_view tag_prefix) const;
 
   /// Non-Virtual Accessors
@@ -114,19 +114,19 @@ public:
 
   bool debug() const;
 
-  APIHook *hook_get(TSHttpHookID id) const;
+  APIHook            *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
-  bool has_hooks() const;
+  bool                has_hooks() const;
 
   HostResStyle get_host_res_style() const;
-  void set_host_res_style(HostResStyle style);
+  void         set_host_res_style(HostResStyle style);
 
   const IpAllow::ACL &get_acl() const;
 
-  ProxySession *get_proxy_ssn();
+  ProxySession       *get_proxy_ssn();
   ProxySession const *get_proxy_ssn() const;
-  PoolableSession *get_server_session() const;
-  HttpSM *get_sm() const;
+  PoolableSession    *get_server_session() const;
+  HttpSM             *get_sm() const;
 
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
@@ -145,9 +145,9 @@ public:
   IOBufferReader *get_remote_reader();
 
 protected:
-  ProxySession *_proxy_ssn = nullptr;
-  HttpSM *_sm              = nullptr;
-  IOBufferReader *_reader  = nullptr;
+  ProxySession   *_proxy_ssn = nullptr;
+  HttpSM         *_sm        = nullptr;
+  IOBufferReader *_reader    = nullptr;
 
 private:
 };
@@ -298,8 +298,8 @@ ProxyTransaction::cancel_active_timeout()
 inline Action *
 ProxyTransaction::adjust_thread(Continuation *cont, int event, void *data)
 {
-  NetVConnection *vc   = this->get_netvc();
-  EThread *this_thread = this_ethread();
+  NetVConnection *vc          = this->get_netvc();
+  EThread        *this_thread = this_ethread();
   if (vc && vc->thread != this_thread) {
     if (vc->thread->is_event_type(ET_NET)) {
       return vc->thread->schedule_imm(cont, event, data);

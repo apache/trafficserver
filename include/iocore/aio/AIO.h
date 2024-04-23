@@ -48,10 +48,10 @@ enum AIOBackend {
 };
 
 struct ink_aiocb {
-  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
-  void *aio_buf     = nullptr; /* buffer location */
+  int    aio_fildes = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+  void  *aio_buf    = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
-  off_t aio_offset  = 0;       /* file offset */
+  off_t  aio_offset = 0;       /* file offset */
 
   int aio_lio_opcode = 0; /* listio operation */
   int aio_state      = 0; /* state flag for List I/O */
@@ -65,10 +65,10 @@ bool ink_aio_thread_num_set(int thread_num);
 
 struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write
-  ink_aiocb aiocb;
-  Action action;
-  EThread *thread   = AIO_CALLBACK_THREAD_ANY;
-  AIOCallback *then = nullptr;
+  ink_aiocb    aiocb;
+  Action       action;
+  EThread     *thread = AIO_CALLBACK_THREAD_ANY;
+  AIOCallback *then   = nullptr;
   // set on return from aio_read/aio_write
   int64_t aio_result = 0;
 
@@ -79,7 +79,7 @@ struct AIOCallback : public Continuation {
 void ink_aio_init(ts::ModuleVersion version, AIOBackend backend = AIO_BACKEND_AUTO);
 void ink_aio_set_err_callback(Continuation *error_callback);
 
-int ink_aio_read(AIOCallback *op,
-                 int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
-int ink_aio_write(AIOCallback *op, int fromAPI = 0);
+int          ink_aio_read(AIOCallback *op,
+                          int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
+int          ink_aio_write(AIOCallback *op, int fromAPI = 0);
 AIOCallback *new_AIOCallback();

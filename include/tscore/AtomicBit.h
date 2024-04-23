@@ -39,7 +39,7 @@
 class AtomicBit
 {
   std::atomic<uint8_t> *_byte_ptr; ///< pointer to the byte
-  uint8_t const _mask;             ///< bitmask of which bit you are using
+  uint8_t const         _mask;     ///< bitmask of which bit you are using
 
 public:
   // define a bit to perform atomic operations
@@ -83,7 +83,7 @@ public:
   compare_exchange(bool val)
   {
     while (true) {
-      uint8_t byte_val            = *_byte_ptr;
+      uint8_t       byte_val      = *_byte_ptr;
       const uint8_t next_byte_val = val ? (byte_val | _mask) : (byte_val & ~_mask);
       if (byte_val == next_byte_val) {
         return false;

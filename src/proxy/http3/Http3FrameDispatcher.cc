@@ -44,14 +44,14 @@ Http3ErrorUPtr
 Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stream_type, IOBufferReader &reader, uint64_t &nread)
 {
   std::shared_ptr<const Http3Frame> frame(nullptr);
-  Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
-  nread                = 0;
-  uint32_t frame_count = 0;
+  Http3ErrorUPtr                    error = Http3ErrorUPtr(nullptr);
+  nread                                   = 0;
+  uint32_t frame_count                    = 0;
 
   while (true) {
     // Read a length of Type field and hopefully a length of Length field too
     uint8_t head[16];
-    auto p           = reader.memcpy(head, 16);
+    auto    p        = reader.memcpy(head, 16);
     int64_t read_len = p - reinterpret_cast<char *>(head);
     Debug("v_http3", "reading H3 frame: state=%d read_len=%" PRId64, this->_reading_state, read_len);
 
@@ -89,9 +89,9 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
     if (this->_reading_state == READING_PAYLOAD) {
       // Create a frame
       // Type field length + Length field length + Payload length
-      size_t frame_len   = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
-      auto cloned_reader = reader.clone();
-      frame              = this->_frame_factory.fast_create(*cloned_reader, frame_len);
+      size_t frame_len     = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
+      auto   cloned_reader = reader.clone();
+      frame                = this->_frame_factory.fast_create(*cloned_reader, frame_len);
       cloned_reader->dealloc();
       if (frame == nullptr) {
         break;

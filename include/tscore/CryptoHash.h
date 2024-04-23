@@ -43,7 +43,7 @@ union CryptoHash {
   uint64_t b[CRYPTO_HASH_SIZE / sizeof(uint64_t)]; // Legacy placeholder
   uint64_t u64[CRYPTO_HASH_SIZE / sizeof(uint64_t)];
   uint32_t u32[CRYPTO_HASH_SIZE / sizeof(uint32_t)];
-  uint8_t u8[CRYPTO_HASH_SIZE / sizeof(uint8_t)];
+  uint8_t  u8[CRYPTO_HASH_SIZE / sizeof(uint8_t)];
 
   /// Default constructor - init to zero.
   CryptoHash() { memset(this, 0, sizeof(*this)); }
@@ -211,5 +211,5 @@ swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec,
 
 } // namespace ts
 
-using ts::CryptoHash;
 using ts::CryptoContext;
+using ts::CryptoHash;

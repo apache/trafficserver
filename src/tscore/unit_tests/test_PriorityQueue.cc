@@ -39,7 +39,7 @@ public:
   }
 
   uint32_t weight;
-  string content;
+  string   content;
 };
 
 using Entry = PriorityQueueEntry<N *>;
@@ -48,8 +48,8 @@ using PQ    = PriorityQueue<N *>;
 // Push, top, and pop a entry
 TEST_CASE("PriorityQueue1", "[libts][PriorityQueue]")
 {
-  PQ *pq         = new PQ();
-  N *a           = new N(6, "A");
+  PQ    *pq      = new PQ();
+  N     *a       = new N(6, "A");
   Entry *entry_a = new Entry(a);
 
   pq->push(entry_a);

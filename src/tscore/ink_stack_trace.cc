@@ -74,8 +74,8 @@ ink_backtrace(const int n)
   }
 
   const int m = n + 1;
-  void *callstack[m];
-  int frames = backtrace(callstack, m);
+  void     *callstack[m];
+  int       frames = backtrace(callstack, m);
 
   const void *symbol = nullptr;
   if (frames == m && callstack[n] != nullptr) {

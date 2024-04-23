@@ -71,8 +71,8 @@ uint64_t
 ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
   const char *url_string_ref = nullptr;
-  int len;
-  URL *ps_url = nullptr;
+  int         len;
+  URL        *ps_url = nullptr;
 
   // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
   if (hrdata->cache_info_parent_selection_url) {
@@ -138,18 +138,18 @@ void
 ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
                                    unsigned int retry_time)
 {
-  ATSHash64Sip24 hash;
+  ATSHash64Sip24     hash;
   ATSConsistentHash *fhash;
-  HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
-  bool firstCall                = first_call;
-  bool parentRetry              = false;
-  bool wrap_around[2]           = {false, false};
-  int lookups                   = 0;
-  uint64_t path_hash            = 0;
-  uint32_t last_lookup;
-  pRecord *prtmp = nullptr, *pRec = nullptr;
-  HostStatus &pStatus    = HostStatus::instance();
-  TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
+  HttpRequestData   *request_info   = static_cast<HttpRequestData *>(rdata);
+  bool               firstCall      = first_call;
+  bool               parentRetry    = false;
+  bool               wrap_around[2] = {false, false};
+  int                lookups        = 0;
+  uint64_t           path_hash      = 0;
+  uint32_t           last_lookup;
+  pRecord           *prtmp = nullptr, *pRec = nullptr;
+  HostStatus        &pStatus   = HostStatus::instance();
+  TSHostStatus       host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
 
   Dbg(dbg_ctl_parent_select, "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);

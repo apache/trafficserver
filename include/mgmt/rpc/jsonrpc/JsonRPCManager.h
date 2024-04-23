@@ -157,7 +157,7 @@ protected: // For unit test.
   /// @return true If all is good.
   /// @return false If we could not remove it.
   ///
-  bool remove_handler(std::string_view name);
+  bool        remove_handler(std::string_view name);
   friend bool test_remove_handler(std::string_view name);
 
 private:
@@ -244,8 +244,8 @@ private:
       InternalHandler(const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt) : _regInfo(info), _options(opt) {}
       /// Sets the handler.
       template <class T, class F> void set_callback(F &&t);
-      explicit operator bool() const;
-      bool operator!() const;
+      explicit                         operator bool() const;
+      bool                             operator!() const;
       /// Invoke the actual handler callback.
       swoc::Rv<YAML::Node> invoke(specs::RPCRequestInfo const &request) const;
       /// Check if the handler was registered as method.
@@ -271,15 +271,15 @@ private:
       // We support these three for now. This can easily be extended to support other signatures.
       // that's one of the main points of the InternalHandler
       std::variant<std::monostate, Notification, Method, PluginMethod> _func;
-      const RPCRegistryInfo *_regInfo =
+      const RPCRegistryInfo                                           *_regInfo =
         nullptr; ///< Can hold internal information about the handler, this could be null as it is optional.
                  ///< This pointer can eventually holds important information about the call.
       TSRPCHandlerOptions _options;
     };
     // We will keep all the handlers wrapped inside the InternalHandler class, this will help us
     // to have a single container for all the types(method, notification & plugin method(cond var)).
-    InternalHandlers _handlers; ///< Registered handler container.
-    mutable std::mutex _mutex;  ///< insert/find/delete mutex.
+    InternalHandlers   _handlers; ///< Registered handler container.
+    mutable std::mutex _mutex;    ///< insert/find/delete mutex.
   };
 
   Dispatcher _dispatcher; ///< Internal handler container and dispatcher logic object.
@@ -333,7 +333,7 @@ JsonRPCManager::Dispatcher::add_handler(std::string_view name, Handler &&handler
                                         TSRPCHandlerOptions const &opt)
 {
   std::lock_guard<std::mutex> lock(_mutex);
-  InternalHandler call{info, opt};
+  InternalHandler             call{info, opt};
   call.set_callback<FunctionWrapperType>(std::forward<Handler>(handler));
   return _handlers.emplace(name, std::move(call)).second;
 }

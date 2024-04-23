@@ -243,7 +243,7 @@ TEST_CASE("esi parser test")
   SECTION("clear()")
   {
     DocNodeList node_list;
-    string input_data = "foo <esi:remove> </esi:remove> bar <esi:include src=blah />";
+    string      input_data = "foo <esi:remove> </esi:remove> bar <esi:include src=blah />";
 
     REQUIRE(parser.parseChunk(input_data, node_list) == true);
     REQUIRE(parser.completeParse(node_list) == true);
@@ -293,11 +293,11 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <esi:include src=url1/> bar1\n";
-    char line2[] = "foo2 <esi:include src=url2/> bar2\n";
-    char line3[] = "<esi:include src=\"blah bleh\"/>";
-    char line4[] = "<esi:comment text=\"bleh\"/>";
-    char line5[] = "<esi:remove> <a href=> </esi:remove>";
+    char        line1[] = "foo1 <esi:include src=url1/> bar1\n";
+    char        line2[] = "foo2 <esi:include src=url2/> bar2\n";
+    char        line3[] = "<esi:include src=\"blah bleh\"/>";
+    char        line4[] = "<esi:comment text=\"bleh\"/>";
+    char        line5[] = "<esi:remove> <a href=> </esi:remove>";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 2);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -315,9 +315,9 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 1")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <esi:include";
-    char line2[] = "src=url2/>";
-    char line3[] = "bar3";
+    char        line1[] = "foo1 <esi:include";
+    char        line2[] = "src=url2/>";
+    char        line3[] = "bar3";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 1);
     REQUIRE(parser.parseChunk(line2, node_list) == false);
@@ -331,9 +331,9 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 3")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <esi:include ";
-    char line2[] = "src=url2/>";
-    char line3[] = "bar3";
+    char        line1[] = "foo1 <esi:include ";
+    char        line2[] = "src=url2/>";
+    char        line3[] = "bar3";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 1);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -347,9 +347,9 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 4")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <e";
-    char line2[] = "si:include src=url2/>";
-    char line3[] = "bar3";
+    char        line1[] = "foo1 <e";
+    char        line2[] = "si:include src=url2/>";
+    char        line3[] = "bar3";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 0);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -363,9 +363,9 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 5")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <e";
-    char line2[] = "xsi:include src=url2/>";
-    char line3[] = "bar3";
+    char        line1[] = "foo1 <e";
+    char        line2[] = "xsi:include src=url2/>";
+    char        line3[] = "bar3";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 0);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -379,9 +379,9 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 6")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <e";
-    char line2[] = "si:include src=ur";
-    char line3[] = "l2/>bar3";
+    char        line1[] = "foo1 <e";
+    char        line2[] = "si:include src=ur";
+    char        line3[] = "l2/>bar3";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 0);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -409,11 +409,11 @@ TEST_CASE("esi parser test")
   SECTION("multi-chunk 7")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <e";
-    char line2[] = "si:include src=ur";
-    char line3[] = "l2/>bar3";
-    char line4[] = "<esi:remove>blah</esi:remove> <esi:comment";
-    char line5[] = " text=\"foo\"/>";
+    char        line1[] = "foo1 <e";
+    char        line2[] = "si:include src=ur";
+    char        line3[] = "l2/>bar3";
+    char        line4[] = "<esi:remove>blah</esi:remove> <esi:comment";
+    char        line5[] = " text=\"foo\"/>";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 0);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -478,11 +478,11 @@ TEST_CASE("esi parser test")
   SECTION("final chunk")
   {
     DocNodeList node_list;
-    char line1[] = "foo1 <e";
-    char line2[] = "si:include src=ur";
-    char line3[] = "l2/>bar3";
-    char line4[] = "<esi:remove>blah</esi:remove> <esi:comment";
-    char line5[] = " bar/>";
+    char        line1[] = "foo1 <e";
+    char        line2[] = "si:include src=ur";
+    char        line3[] = "l2/>bar3";
+    char        line4[] = "<esi:remove>blah</esi:remove> <esi:comment";
+    char        line5[] = " bar/>";
     REQUIRE(parser.parseChunk(line1, node_list) == true);
     REQUIRE(node_list.size() == 0);
     REQUIRE(parser.parseChunk(line2, node_list) == true);
@@ -945,7 +945,7 @@ TEST_CASE("esi parser test")
 
   SECTION("opening tag corner cases")
   {
-    DocNodeList node_list;
+    DocNodeList           node_list;
     DocNodeList::iterator list_iter;
 
     REQUIRE(parser.parse(node_list, "<<esi:include src=url/>") == true);
@@ -1074,18 +1074,18 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid choose; non when-otherwise node")
   {
-    string input_data("<esi:choose>"
-                      "<esi:comment text=\"blah\" />"
-                      "<esi:when test=foo>"
-                      "<esi:include src=foo />"
-                      "</esi:when>"
-                      "<esi:when test=bar>"
-                      "<esi:include src=bar />"
-                      "</esi:when>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:comment text=\"blah\" />"
+                                "<esi:when test=foo>"
+                                "<esi:include src=foo />"
+                                "</esi:when>"
+                                "<esi:when test=bar>"
+                                "<esi:include src=bar />"
+                                "</esi:when>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "</esi:choose>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1117,11 +1117,11 @@ TEST_CASE("esi parser test")
 
   SECTION("choose-when 2")
   {
-    string input_data("<esi:choose>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "</esi:choose>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == true);
     REQUIRE(parser.completeParse(node_list) == true);
@@ -1140,11 +1140,11 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block")
   {
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1153,11 +1153,11 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block 2")
   {
-    string input_data("<esi:try>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1166,15 +1166,15 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block 3")
   {
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "<esi:comment text=blah/>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "<esi:comment text=blah/>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1183,17 +1183,17 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block 4")
   {
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "<esi:attempt>"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "<esi:attempt>"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1202,17 +1202,17 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block 5")
   {
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1221,19 +1221,19 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block 6")
   {
-    string input_data("<esi:include src=pre />"
-                      "foo"
-                      "<esi:try>"
-                      "foo"
-                      "<esi:attempt>"
-                      "bar"
-                      "<esi:include src=attempt />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:include src=except />"
-                      "</esi:except>"
-                      "</esi:try>"
-                      "bar");
+    string      input_data("<esi:include src=pre />"
+                                "foo"
+                                "<esi:try>"
+                                "foo"
+                                "<esi:attempt>"
+                                "bar"
+                                "<esi:include src=attempt />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:include src=except />"
+                                "</esi:except>"
+                                "</esi:try>"
+                                "bar");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1324,17 +1324,17 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid choose-when")
   {
-    string input_data("<esi:choose>"
-                      "<esi:when test=foo>"
-                      "<esi:include src=foo />"
-                      "</esi:when>"
-                      "<esi:when test=bar>"
-                      "<esi:include src=bar />"
-                      "</esi:when>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>foo"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:when test=foo>"
+                                "<esi:include src=foo />"
+                                "</esi:when>"
+                                "<esi:when test=bar>"
+                                "<esi:include src=bar />"
+                                "</esi:when>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>foo"
+                                "</esi:choose>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1343,20 +1343,20 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid choose; multiple otherwise")
   {
-    string input_data("<esi:choose>\n"
-                      "\t<esi:when test=foo>"
-                      "<esi:include src=foo />"
-                      "</esi:when>\n"
-                      "\t<esi:when test=bar>"
-                      "<esi:include src=bar />"
-                      "</esi:when>\n"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>\n"
+                                "\t<esi:when test=foo>"
+                                "<esi:include src=foo />"
+                                "</esi:when>\n"
+                                "\t<esi:when test=bar>"
+                                "<esi:include src=bar />"
+                                "</esi:when>\n"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "</esi:choose>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1365,8 +1365,8 @@ TEST_CASE("esi parser test")
 
   SECTION("invalid try block")
   {
-    string input_data("<esi:try>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "</esi:try>");
     DocNodeList node_list;
     REQUIRE(parser.parseChunk(input_data, node_list) == false);
     REQUIRE(parser.completeParse(node_list) == false);
@@ -1482,13 +1482,13 @@ TEST_CASE("esi parser test")
 
   SECTION("'>' and '>=' operators")
   {
-    string input_data("<esi:choose>"
-                      "<esi:when test=\"a>b\">foo</esi:when>"
-                      "<esi:when test=\"c >= d\">bar</esi:when>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:when test=\"a>b\">foo</esi:when>"
+                                "<esi:when test=\"c >= d\">bar</esi:when>"
+                                "</esi:choose>");
     DocNodeList node_list;
     REQUIRE(parser.completeParse(node_list, input_data) == true);
-    DocNodeList::iterator list_iter   = node_list.begin()->child_nodes.begin();
+    DocNodeList::iterator   list_iter = node_list.begin()->child_nodes.begin();
     AttributeList::iterator attr_iter = list_iter->attr_list.begin();
     REQUIRE(attr_iter->value_len == 3);
     REQUIRE(strncmp(attr_iter->value, "a>b", attr_iter->value_len) == 0);

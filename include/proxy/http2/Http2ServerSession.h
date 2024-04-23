@@ -46,14 +46,14 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   // Implement ProxySession interface
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
-  void start() override;
-  void destroy() override;
-  void release(ProxyTransaction *trans) override;
-  void free() override;
+  void              new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void              start() override;
+  void              destroy() override;
+  void              release(ProxyTransaction *trans) override;
+  void              free() override;
   ProxyTransaction *new_transaction() override;
-  bool is_protocol_framed() const override;
-  uint64_t get_received_frame_count(uint64_t type) const override;
+  bool              is_protocol_framed() const override;
+  uint64_t          get_received_frame_count(uint64_t type) const override;
 
   void add_session() override;
   void remove_session();
@@ -62,11 +62,11 @@ public:
   // Accessors
   sockaddr const *get_remote_addr() const override;
   sockaddr const *get_local_addr() override;
-  int get_transact_count() const override;
-  const char *get_protocol_string() const override;
-  int populate_protocol(std::string_view *result, int size) const override;
-  const char *protocol_contains(std::string_view prefix) const override;
-  HTTPVersion get_version(HTTPHdr &hdr) const override;
+  int             get_transact_count() const override;
+  const char     *get_protocol_string() const override;
+  int             populate_protocol(std::string_view *result, int size) const override;
+  const char     *protocol_contains(std::string_view prefix) const override;
+  HTTPVersion     get_version(HTTPHdr &hdr) const override;
   IOBufferReader *get_remote_reader() override;
 
   ProxySession *get_proxy_session() override;

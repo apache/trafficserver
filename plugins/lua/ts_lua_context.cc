@@ -52,7 +52,7 @@ static int
 ts_lua_context_get(lua_State *L)
 {
   const char *key;
-  size_t key_len;
+  size_t      key_len;
 
   key = luaL_checklstring(L, 2, &key_len);
 
@@ -73,7 +73,7 @@ static int
 ts_lua_context_set(lua_State *L)
 {
   const char *key;
-  size_t key_len;
+  size_t      key_len;
 
   key = luaL_checklstring(L, 2, &key_len);
 

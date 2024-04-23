@@ -33,7 +33,7 @@ public:
   explicit ExampleContext(uint32_t id, RootContext *root) : Context(id, root) {}
 
   FilterHeadersStatus onRequestHeaders(uint32_t headers, bool end_of_stream) override;
-  FilterDataStatus onResponseBody(size_t body_buffer_length, bool end_of_stream) override;
+  FilterDataStatus    onResponseBody(size_t body_buffer_length, bool end_of_stream) override;
 };
 static RegisterContextFactory register_ExampleContext(CONTEXT_FACTORY(ExampleContext), ROOT_FACTORY(ExampleRootContext),
                                                       "myproject");
@@ -60,7 +60,7 @@ ExampleContext::onResponseBody(size_t body_buffer_length, bool end_of_stream)
 {
   logInfo(std::string("inside onResponseBody"));
 
-  size_t buffered_size;
+  size_t   buffered_size;
   uint32_t flags;
   getBufferStatus(WasmBufferType::HttpResponseBody, &buffered_size, &flags);
   auto body = getBufferBytes(WasmBufferType::HttpResponseBody, 0, buffered_size);

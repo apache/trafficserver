@@ -43,7 +43,7 @@ ParseHostLine(swoc::TextView line, HostAddrMap &map, AddrHostMap &rmap)
 {
   // Elements should be the address then a list of host names.
   swoc::TextView addr_text = line.take_prefix_if(&isspace);
-  IpAddr addr;
+  IpAddr         addr;
 
   // Don't use RecHttpLoadIp because the address *must* be literal.
   if (TS_SUCCESS != addr.load(addr_text)) {
@@ -91,10 +91,10 @@ ParseHostFile(swoc::file::path const &path, ts_seconds interval)
 
   if (!path.empty()) {
     std::error_code ec;
-    std::string content = swoc::file::load(path, ec);
+    std::string     content = swoc::file::load(path, ec);
     if (!ec) {
-      HostAddrMap addr_map;
-      AddrHostMap host_map;
+      HostAddrMap    addr_map;
+      AddrHostMap    host_map;
       swoc::TextView text{content};
       while (text) {
         auto line = text.take_prefix_at('\n').ltrim_if(&isspace);

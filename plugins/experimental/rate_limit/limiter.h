@@ -130,7 +130,7 @@ public:
 
     for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {
       size_t const metricsz = metric_prefix.length() + strlen(suffixes[i]) + 2; // padding for dot+terminator
-      char *const metric    = static_cast<char *>(TSmalloc(metricsz));
+      char *const  metric   = static_cast<char *>(TSmalloc(metricsz));
       snprintf(metric, metricsz, "%s.%s", metric_prefix.data(), suffixes[i]);
 
       _metrics[i] = TS_ERROR;
@@ -201,7 +201,7 @@ public:
   void
   push(T elem, TSCont cont)
   {
-    QueueTime now = std::chrono::system_clock::now();
+    QueueTime                   now = std::chrono::system_clock::now();
     std::lock_guard<std::mutex> lock(_queue_lock);
 
     _queue.push_front(std::make_tuple(elem, cont, now));
@@ -211,7 +211,7 @@ public:
   QueueItem
   pop()
   {
-    QueueItem item;
+    QueueItem                   item;
     std::lock_guard<std::mutex> lock(_queue_lock);
 
     if (!_queue.empty()) {
@@ -278,17 +278,17 @@ public:
   }
 
 protected:
-  std::string _name                  = "_limiter_";                       // The name/descr (e.g. SNI name) of this limiter
-  uint32_t _limit                    = UINT32_MAX;                        // No limit unless specified ...
-  uint32_t _max_queue                = 0;                                 // No queue by default
-  std::chrono::milliseconds _max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
+  std::string               _name      = "_limiter_";                       // The name/descr (e.g. SNI name) of this limiter
+  uint32_t                  _limit     = UINT32_MAX;                        // No limit unless specified ...
+  uint32_t                  _max_queue = 0;                                 // No queue by default
+  std::chrono::milliseconds _max_age   = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
 
 private:
   std::atomic<uint32_t> _active = 0; // Current active number of txns. This has to always stay <= limit above
   std::atomic<uint32_t> _size   = 0; // Current size of the pending queue of txns. This should aim to be < _max_queue
 
-  std::mutex _queue_lock, _active_lock; // Resource locks
-  std::deque<QueueItem> _queue;         // Queue for the pending TXN's. ToDo: Should also move (see below)
+  std::mutex            _queue_lock, _active_lock; // Resource locks
+  std::deque<QueueItem> _queue;                    // Queue for the pending TXN's. ToDo: Should also move (see below)
 
   int _metrics[RATE_LIMITER_METRIC_MAX];
 };

@@ -78,7 +78,7 @@ using init_func_t = void (*)(int, char **);
 //      global pointer
 //
 DLL<PluginRegInfo> plugin_reg_list;
-PluginRegInfo *plugin_reg_current = nullptr;
+PluginRegInfo     *plugin_reg_current = nullptr;
 
 PluginRegInfo::PluginRegInfo() = default;
 
@@ -124,7 +124,7 @@ plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error
 static bool
 single_plugin_init(int argc, char *argv[], bool validateOnly)
 {
-  char path[PATH_NAME_MAX];
+  char        path[PATH_NAME_MAX];
   init_func_t init;
 
   if (argc < 1) {
@@ -149,10 +149,10 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    void *handle, *initptr = nullptr;
+    void       *handle, *initptr = nullptr;
     std::string error;
-    bool loaded = plugin_dso_load(path, handle, initptr, error);
-    init        = reinterpret_cast<init_func_t>(initptr);
+    bool        loaded = plugin_dso_load(path, handle, initptr, error);
+    init               = reinterpret_cast<init_func_t>(initptr);
 
     if (!loaded) {
       if (validateOnly) {
@@ -198,7 +198,7 @@ static char *
 plugin_expand(char *arg)
 {
   RecDataT data_type;
-  char *str = nullptr;
+  char    *str = nullptr;
 
   if (*arg != '$') {
     return (char *)nullptr;
@@ -263,14 +263,14 @@ bool
 plugin_init(bool validateOnly)
 {
   ats_scoped_str path;
-  char line[1024], *p;
-  char *argv[MAX_PLUGIN_ARGS];
-  char *vars[MAX_PLUGIN_ARGS];
-  int argc;
-  int fd;
-  int i;
-  bool retVal           = true;
-  static bool INIT_ONCE = true;
+  char           line[1024], *p;
+  char          *argv[MAX_PLUGIN_ARGS];
+  char          *vars[MAX_PLUGIN_ARGS];
+  int            argc;
+  int            fd;
+  int            i;
+  bool           retVal    = true;
+  static bool    INIT_ONCE = true;
 
   if (INIT_ONCE) {
     plugin_dir = ats_stringdup(RecConfigReadPluginDir());

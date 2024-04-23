@@ -40,8 +40,8 @@ public:
   int operator>=(const HTTPVersion &hv) const;
   int operator<=(const HTTPVersion &hv) const;
 
-  uint8_t get_major() const;
-  uint8_t get_minor() const;
+  uint8_t  get_major() const;
+  uint8_t  get_minor() const;
   uint32_t get_flat_version() const;
 
 private:

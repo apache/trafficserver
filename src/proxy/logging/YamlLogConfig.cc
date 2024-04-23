@@ -152,7 +152,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   std::string filename = node["filename"].as<std::string>();
-  LogFormat *fmt       = cfg->format_list.find_by_name(format.c_str());
+  LogFormat  *fmt      = cfg->format_list.find_by_name(format.c_str());
   if (!fmt) {
     Error("Format %s is not a known format; cannot create LogObject", format.c_str());
     return nullptr;
@@ -259,7 +259,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
 
   for (auto const &filter : filters) {
     std::string filter_name = filter.as<std::string>().c_str();
-    LogFilter *f            = cfg->filter_list.find_by_name(filter_name.c_str());
+    LogFilter  *f           = cfg->filter_list.find_by_name(filter_name.c_str());
     if (!f) {
       Warning("Filter %s is not a known filter; cannot add to this LogObject", filter_name.c_str());
     } else {

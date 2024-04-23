@@ -30,8 +30,8 @@
 class QUICApplicationMap
 {
 public:
-  void set(QUICStreamId id, QUICApplication *app);
-  void set_default(QUICApplication *app);
+  void             set(QUICStreamId id, QUICApplication *app);
+  void             set_default(QUICApplication *app);
   QUICApplication *get(QUICStreamId id);
   ~QUICApplicationMap()
   {
@@ -43,5 +43,5 @@ public:
 
 private:
   std::map<QUICStreamId, QUICApplication *> _map;
-  QUICApplication *_default_app = nullptr;
+  QUICApplication                          *_default_app = nullptr;
 };

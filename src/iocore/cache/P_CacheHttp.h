@@ -53,11 +53,11 @@ struct CacheHTTPInfoVector {
   {
     return xcount;
   }
-  int insert(CacheHTTPInfo *info, int id = -1);
+  int            insert(CacheHTTPInfo *info, int id = -1);
   CacheHTTPInfo *get(int idx);
-  void detach(int idx, CacheHTTPInfo *r);
-  void remove(int idx, bool destroy);
-  void clear(bool destroy = true);
+  void           detach(int idx, CacheHTTPInfo *r);
+  void           remove(int idx, bool destroy);
+  void           clear(bool destroy = true);
   void
   reset()
   {
@@ -66,14 +66,14 @@ struct CacheHTTPInfoVector {
   }
   void print(char *buffer, size_t buf_size, bool temps = true);
 
-  int marshal_length();
-  int marshal(char *buf, int length);
+  int      marshal_length();
+  int      marshal(char *buf, int length);
   uint32_t get_handles(const char *buf, int length, RefCountObj *block_ptr = nullptr);
-  int unmarshal(const char *buf, int length, RefCountObj *block_ptr);
+  int      unmarshal(const char *buf, int length, RefCountObj *block_ptr);
 
   CacheArray<vec_info> data;
-  int xcount = 0;
-  Ptr<RefCountObj> vector_buf;
+  int                  xcount = 0;
+  Ptr<RefCountObj>     vector_buf;
 };
 
 inline CacheHTTPInfo *

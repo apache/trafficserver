@@ -44,8 +44,8 @@ public:
   bool stream_finish();
 
 private:
-  int _downstream_length;
-  int _total_data_length;
+  int      _downstream_length;
+  int      _total_data_length;
   z_stream _zstrm;
 
   bool _init;

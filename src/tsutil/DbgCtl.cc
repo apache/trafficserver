@@ -229,7 +229,7 @@ void
 DbgCtl::print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
 {
   DebugInterface *p = DebugInterface::get_instance();
-  SourceLocation src_loc{file, function, line};
+  SourceLocation  src_loc{file, function, line};
   if (p) {
     va_list args;
     va_start(args, fmt_str);
@@ -340,7 +340,7 @@ struct DiagTimestamp {
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
 {
-  auto epoch = std::chrono::system_clock::to_time_t(ts.ts);
+  auto                        epoch = std::chrono::system_clock::to_time_t(ts.ts);
   swoc::LocalBufferWriter<48> lw;
 
   ctime_r(&epoch, lw.aux_data());

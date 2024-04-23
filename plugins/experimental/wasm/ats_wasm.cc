@@ -109,7 +109,7 @@ Wasm::start(const std::shared_ptr<PluginBase> &plugin, TSCont contp)
     c->onStart(plugin);
     return c;
   }
-  auto context      = std::unique_ptr<Context>(static_cast<Context *>(createRootContext(plugin)));
+  auto  context     = std::unique_ptr<Context>(static_cast<Context *>(createRootContext(plugin)));
   auto *context_ptr = context.get();
   context_ptr->initialize(contp);
   root_contexts_[plugin->key()] = std::move(context);

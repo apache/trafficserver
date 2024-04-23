@@ -94,7 +94,7 @@ void *ats_malloc(size_t size);
 void *ats_calloc(size_t nelem, size_t elsize);
 void *ats_realloc(void *ptr, size_t size);
 void *ats_memalign(size_t alignment, size_t size);
-void ats_free(void *ptr);
+void  ats_free(void *ptr);
 void *ats_free_null(void *ptr);
 
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
@@ -103,9 +103,10 @@ int ats_mlock(caddr_t addr, size_t len);
 
 void *ats_track_malloc(size_t size, uint64_t *stat);
 void *ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat);
-void ats_track_free(void *ptr, uint64_t *stat);
+void  ats_track_free(void *ptr, uint64_t *stat);
 
-static inline size_t __attribute__((const)) ats_pagesize()
+static inline size_t __attribute__((const))
+ats_pagesize()
 {
   static size_t page_size;
 
@@ -586,8 +587,8 @@ public:
 inline char *
 path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 {
-  size_t ln        = strlen(lhs);
-  size_t rn        = strlen(rhs);
+  size_t      ln   = strlen(lhs);
+  size_t      rn   = strlen(rhs);
   const char *rptr = rhs; // May need to be modified.
 
   if (ln && lhs[ln - 1] == '/') {

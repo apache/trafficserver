@@ -54,9 +54,9 @@ SSLSessionCache::~SSLSessionCache()
 int
 SSLSessionCache::getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const
 {
-  uint64_t hash            = sid.hash();
-  uint64_t target_bucket   = hash % nbuckets;
-  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+  uint64_t          hash          = sid.hash();
+  uint64_t          target_bucket = hash % nbuckets;
+  SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
   return bucket->getSessionBuffer(sid, buffer, len);
 }
@@ -64,9 +64,9 @@ SSLSessionCache::getSessionBuffer(const SSLSessionID &sid, char *buffer, int &le
 bool
 SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data) const
 {
-  uint64_t hash            = sid.hash();
-  uint64_t target_bucket   = hash % nbuckets;
-  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+  uint64_t          hash          = sid.hash();
+  uint64_t          target_bucket = hash % nbuckets;
+  SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
     char buf[sid.len * 2 + 1];
@@ -81,9 +81,9 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_ses
 void
 SSLSessionCache::removeSession(const SSLSessionID &sid)
 {
-  uint64_t hash            = sid.hash();
-  uint64_t target_bucket   = hash % nbuckets;
-  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+  uint64_t          hash          = sid.hash();
+  uint64_t          target_bucket = hash % nbuckets;
+  SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
     char buf[sid.len * 2 + 1];
@@ -99,9 +99,9 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
 void
 SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl)
 {
-  uint64_t hash            = sid.hash();
-  uint64_t target_bucket   = hash % nbuckets;
-  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+  uint64_t          hash          = sid.hash();
+  uint64_t          target_bucket = hash % nbuckets;
+  SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
     char buf[sid.len * 2 + 1];
@@ -147,8 +147,8 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
 
   Ptr<IOBufferData> buf;
   Ptr<IOBufferData> buf_exdata;
-  size_t len_exdata = sizeof(ssl_session_cache_exdata);
-  buf               = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  size_t            len_exdata = sizeof(ssl_session_cache_exdata);
+  buf                          = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
   unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
   i2d_SSL_SESSION(sess, &loc);
@@ -186,7 +186,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
 int
 SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &len)
 {
-  int true_len = 0;
+  int              true_len = 0;
   std::shared_lock lock(mutex, std::try_to_lock);
   if (!lock.owns_lock()) {
     Metrics::Counter::increment(ssl_rsb.session_cache_lock_contention);
@@ -339,13 +339,13 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
   }
 
   // Create the shared pointer to the session, with the custom deleter
-  std::shared_ptr<SSL_SESSION> shared_sess(sess_ptr, SSLSessDeleter);
-  ssl_curve_id curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+  std::shared_ptr<SSL_SESSION>      shared_sess(sess_ptr, SSLSessDeleter);
+  ssl_curve_id                      curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
   std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
-  auto new_node = ssl_orig_session.release();
+  auto                              new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     if (is_debug_tag_set("ssl.origin_session_cache")) {
@@ -374,7 +374,7 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
   }
 
   std::shared_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry == orig_sess_map.end()) {
     return nullptr;
   }
@@ -407,7 +407,7 @@ SSLOriginSessionCache::remove_session(const std::string &lookup_key)
 {
   // We can't bail on contention here because this session MUST be removed.
   std::unique_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     if (is_debug_tag_set("ssl.origin_session_cache")) {

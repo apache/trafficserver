@@ -78,7 +78,7 @@ ink_max_out_rlimit(int which)
 rlim_t
 ink_get_max_files()
 {
-  FILE *fd;
+  FILE         *fd;
   struct rlimit lim;
 
   // Linux-only ...

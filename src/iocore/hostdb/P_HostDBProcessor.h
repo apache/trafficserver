@@ -140,7 +140,7 @@ struct HostDBCache {
   int start(int flags = 0);
   // Map to contain all of the host file overrides, initialize it to empty
   std::shared_ptr<HostFile> host_file;
-  ts::shared_mutex host_file_mutex;
+  ts::shared_mutex          host_file_mutex;
 
   // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
   RefCountCache<HostDBRecord> *refcountcache = nullptr;
@@ -153,7 +153,7 @@ struct HostDBCache {
   bool is_pending_dns_for_hash(const CryptoHash &hash);
 
   std::shared_ptr<HostFile> acquire_host_file();
-  bool remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c);
+  bool                      remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c);
 };
 
 //
@@ -172,13 +172,13 @@ struct HostDBHash {
   CryptoHash hash; ///< The hash value.
 
   swoc::TextView host_name; ///< Name of the host for the query.
-  IpAddr ip;                ///< IP address.
-  in_port_t port = 0;       ///< IP port (host order).
+  IpAddr         ip;        ///< IP address.
+  in_port_t      port = 0;  ///< IP port (host order).
   /// DNS server. Not strictly part of the hash data but
   /// it's both used by @c HostDBContinuation and provides access to
   /// hash data. It's just handier to store it here for both uses.
   DNSServer *dns_server = nullptr;
-  SplitDNS *pSD         = nullptr;             ///< Hold the container for @a dns_server.
+  SplitDNS  *pSD        = nullptr;             ///< Hold the container for @a dns_server.
   HostDBMark db_mark    = HOSTDB_MARK_GENERIC; ///< Mark / type of record.
 
   /// Default constructor.
@@ -204,19 +204,19 @@ struct HostDBHash {
 using HostDBContHandler = int (HostDBContinuation::*)(int, void *);
 
 struct HostDBContinuation : public Continuation {
-  Action action;
+  Action     action;
   HostDBHash hash;
   ts_seconds ttl{0};
   //  HostDBMark db_mark; ///< Target type.
   /// Original IP address family style. Note this will disagree with
   /// @a hash.db_mark when doing a retry on an alternate family. The retry
   /// logic depends on it to avoid looping.
-  HostResStyle host_res_style = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
-  int dns_lookup_timeout      = DEFAULT_OPTIONS.timeout;
-  Event *timeout              = nullptr;
-  Continuation *from_cont     = nullptr;
-  int probe_depth             = 0;
-  size_t current_iterate_pos  = 0;
+  HostResStyle  host_res_style      = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
+  int           dns_lookup_timeout  = DEFAULT_OPTIONS.timeout;
+  Event        *timeout             = nullptr;
+  Continuation *from_cont           = nullptr;
+  int           probe_depth         = 0;
+  size_t        current_iterate_pos = 0;
   //  char name[MAXDNAME];
   //  int namelen;
   char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
@@ -264,24 +264,24 @@ struct HostDBContinuation : public Continuation {
   Ptr<HostDBRecord> lookup_done(swoc::TextView query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr,
                                 Ptr<HostDBRecord> record = Ptr<HostDBRecord>{});
 
-  int key_partition();
+  int  key_partition();
   void remove_and_trigger_pending_dns();
-  int set_check_pending_dns();
+  int  set_check_pending_dns();
 
   /** Optional values for @c init.
    */
   struct Options {
-    int timeout                 = 0;             ///< Timeout value. Default 0
-    HostResStyle host_res_style = HOST_RES_NONE; ///< IP address family fallback. Default @c HOST_RES_NONE
-    bool force_dns              = false;         ///< Force DNS lookup. Default @c false
-    Continuation *cont          = nullptr;       ///< Continuation / action. Default @c nullptr (none)
+    int           timeout        = 0;             ///< Timeout value. Default 0
+    HostResStyle  host_res_style = HOST_RES_NONE; ///< IP address family fallback. Default @c HOST_RES_NONE
+    bool          force_dns      = false;         ///< Force DNS lookup. Default @c false
+    Continuation *cont           = nullptr;       ///< Continuation / action. Default @c nullptr (none)
 
     Options() {}
   };
   static const Options DEFAULT_OPTIONS; ///< Default defaults.
-  void init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);
-  int make_get_message(char *buf, int len);
-  int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
+  void                 init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);
+  int                  make_get_message(char *buf, int len);
+  int                  make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
   HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns)
   {

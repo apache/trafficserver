@@ -127,7 +127,7 @@ private:
 
 public:
   PrefetchConfig _config;
-  BgFetchState *_state = nullptr;
+  BgFetchState  *_state = nullptr;
 };
 
 /**
@@ -171,10 +171,10 @@ public:
   bool _firstPass; /* first vs second pass */
 
   /* saves state between hooks */
-  String _cachekey;     /* cache key */
-  bool _fetchable;      /* saves the result of the attempt to fetch */
-  TSHttpStatus _status; /* status to return to the UA */
-  String _body;         /* body to return to the UA */
+  String       _cachekey;  /* cache key */
+  bool         _fetchable; /* saves the result of the attempt to fetch */
+  TSHttpStatus _status;    /* status to return to the UA */
+  String       _body;      /* body to return to the UA */
 };
 
 /**
@@ -211,12 +211,12 @@ expand(String &s, const EvalPolicy oflow)
 bool
 appendCacheKey(const TSHttpTxn txnp, const TSMBuffer reqBuffer, String &key)
 {
-  bool ret      = false;
+  bool   ret    = false;
   TSMLoc keyLoc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSUrlCreate(reqBuffer, &keyLoc)) {
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, reqBuffer, keyLoc)) {
-      int urlLen = 0;
-      char *url  = TSUrlStringGet(reqBuffer, keyLoc, &urlLen);
+      int   urlLen = 0;
+      char *url    = TSUrlStringGet(reqBuffer, keyLoc, &urlLen);
       if (nullptr != url) {
         key.append(url, urlLen);
         PrefetchDebug("cache key: %s", key.c_str());
@@ -248,7 +248,7 @@ static bool
 foundFresh(TSHttpTxn txnp)
 {
   bool fresh = false;
-  int lookupStatus;
+  int  lookupStatus;
   if (TS_SUCCESS == TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus)) {
     PrefetchDebug("lookup status: %s", getCacheLookupResultName((TSCacheLookupResult)lookupStatus));
     if (TS_CACHE_LOOKUP_HIT_FRESH == lookupStatus) {
@@ -273,9 +273,9 @@ foundFresh(TSHttpTxn txnp)
 bool
 isResponseGood(TSHttpTxn txnp)
 {
-  bool good = false;
+  bool      good = false;
   TSMBuffer respBuffer;
-  TSMLoc respHdrLoc;
+  TSMLoc    respHdrLoc;
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &respBuffer, &respHdrLoc)) {
     TSHttpStatus status = TSHttpHdrStatusGet(respBuffer, respHdrLoc);
     PrefetchDebug("origin response code: %d", status);
@@ -301,13 +301,13 @@ isResponseGood(TSHttpTxn txnp)
 static String
 getPristineUrlPath(TSHttpTxn txnp)
 {
-  String pristinePath;
-  TSMLoc pristineUrlLoc;
+  String    pristinePath;
+  TSMLoc    pristineUrlLoc;
   TSMBuffer reqBuffer;
 
   if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &reqBuffer, &pristineUrlLoc)) {
-    int pathLen      = 0;
-    const char *path = TSUrlPathGet(reqBuffer, pristineUrlLoc, &pathLen);
+    int         pathLen = 0;
+    const char *path    = TSUrlPathGet(reqBuffer, pristineUrlLoc, &pathLen);
     if (nullptr != path) {
       PrefetchDebug("path: '%.*s'", pathLen, path);
       pristinePath.assign(path, pathLen);
@@ -330,13 +330,13 @@ getPristineUrlPath(TSHttpTxn txnp)
 static String
 getPristineUrlQuery(TSHttpTxn txnp)
 {
-  String pristineQuery;
-  TSMLoc pristineUrlLoc;
+  String    pristineQuery;
+  TSMLoc    pristineUrlLoc;
   TSMBuffer reqBuffer;
 
   if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &reqBuffer, &pristineUrlLoc)) {
-    int queryLen      = 0;
-    const char *query = TSUrlHttpQueryGet(reqBuffer, pristineUrlLoc, &queryLen);
+    int         queryLen = 0;
+    const char *query    = TSUrlHttpQueryGet(reqBuffer, pristineUrlLoc, &queryLen);
     if (nullptr != query) {
       PrefetchDebug("query: '%.*s'", queryLen, query);
       pristineQuery.assign(query, queryLen);
@@ -369,14 +369,14 @@ static String
 getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
 {
   String relpath;
-  bool hasnrr = false; // don't prefetch if range request
+  bool   hasnrr = false; // don't prefetch if range request
 
   const TSMLoc cmcdloc = TSMimeHdrFieldFind(buffer, hdrloc, CmcdHeader.data(), CmcdHeader.length());
   if (TS_NULL_MLOC != cmcdloc) {
     // iterate through the fields
     const int cnt = TSMimeHdrFieldValuesCount(buffer, hdrloc, cmcdloc);
     for (int ind = 0; ind < cnt; ++ind) {
-      int flen               = 0;
+      int               flen = 0;
       const char *const fval = TSMimeHdrFieldValueStringGet(buffer, hdrloc, cmcdloc, ind, &flen);
 
       StringView fv(fval, flen);
@@ -399,7 +399,7 @@ getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
         PrefetchDebug("Extracted nor field: '%.*s'", (int)fv.length(), fv.data());
 
         // Undo any percent encoding
-        char buf[8192];
+        char   buf[8192];
         size_t blen = sizeof(buf);
         if (TS_SUCCESS == TSStringPercentDecode(fv.data(), fv.length(), buf, blen, &blen)) {
           relpath.assign(buf, blen);
@@ -443,8 +443,8 @@ shortcutResponse(PrefetchTxnData *data, TSHttpStatus status, const char *body, T
 static bool
 isFetchable(TSHttpTxn txnp, PrefetchTxnData *data)
 {
-  bool fetchable      = false;
-  BgFetchState *state = data->_inst->_state;
+  bool          fetchable = false;
+  BgFetchState *state     = data->_inst->_state;
   if (!foundFresh(txnp)) {
     /* Schedule fetch only if not in cache */
     PrefetchDebug("object to be fetched");
@@ -494,12 +494,12 @@ respToTriggerPrefetch(TSHttpTxn txnp)
 int
 contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 {
-  PrefetchTxnData *data  = static_cast<PrefetchTxnData *>(TSContDataGet(contp));
-  TSHttpTxn txnp         = static_cast<TSHttpTxn>(edata);
-  PrefetchConfig &config = data->_inst->_config;
-  BgFetchState *state    = data->_inst->_state;
-  TSMBuffer reqBuffer    = nullptr;
-  TSMLoc reqHdrLoc       = TS_NULL_MLOC;
+  PrefetchTxnData *data      = static_cast<PrefetchTxnData *>(TSContDataGet(contp));
+  TSHttpTxn        txnp      = static_cast<TSHttpTxn>(edata);
+  PrefetchConfig  &config    = data->_inst->_config;
+  BgFetchState    *state     = data->_inst->_state;
+  TSMBuffer        reqBuffer = nullptr;
+  TSMLoc           reqHdrLoc = TS_NULL_MLOC;
 
   PrefetchDebug("event: %s (%d)", getEventName(event), event);
 
@@ -586,9 +586,9 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
     if (data->frontend()) {
       /* front-end instance */
 
-      const String currentPath  = getPristineUrlPath(txnp);
-      const String currentQuery = getPristineUrlQuery(txnp);
-      bool hasValidQuery        = false;
+      const String currentPath   = getPristineUrlPath(txnp);
+      const String currentQuery  = getPristineUrlQuery(txnp);
+      bool         hasValidQuery = false;
 
       // If there is a --fetch-query defined in the config, and that string is found in the querystring, assume it is
       // valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
@@ -611,8 +611,8 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
             PrefetchDebug("Current path: '%s'", currentPath.c_str());
             PrefetchDebug("Parsed cmcd nor relpath: '%s'", relpath.c_str());
 
-            const String::size_type lsi = currentPath.find_last_of("/");
-            const String nextPath       = currentPath.substr(0, lsi + 1) + relpath;
+            const String::size_type lsi      = currentPath.find_last_of("/");
+            const String            nextPath = currentPath.substr(0, lsi + 1) + relpath;
 
             PrefetchDebug("Next cmcd nor path: '%s'", nextPath.c_str());
 
@@ -627,8 +627,8 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           /* Trigger all necessary background fetches based on the next path pattern */
 
           if (!currentPath.empty()) {
-            const unsigned total = config.getFetchCount();
-            String workingPath   = currentPath;
+            const unsigned total       = config.getFetchCount();
+            String         workingPath = currentPath;
             for (unsigned i = 0; i < total; ++i) {
               PrefetchDebug("generating prefetch request %d/%d", i + 1, total);
               String expandedPath;
@@ -656,11 +656,11 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           /* Trigger all necessary background fetches based on the query string(s) */
 
           PrefetchDebug("currentQuery: %s", currentQuery.c_str());
-          const size_t lastSlashIndex = currentPath.find_last_of("/");
-          const size_t keyLen         = config.getQueryKeyName().size();
-          unsigned done               = 1;
+          const size_t       lastSlashIndex = currentPath.find_last_of("/");
+          const size_t       keyLen         = config.getQueryKeyName().size();
+          unsigned           done           = 1;
           std::istringstream cStringStream(currentQuery);
-          String param;
+          String             param;
 
           while (getline(cStringStream, param, '&')) {
             if (param.find(config.getQueryKeyName()) != 0) {
@@ -682,17 +682,17 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
     if ((data->backend() && data->firstPass()) || (data->frontend() && data->secondPass() && !data->_body.empty())) {
       TSMBuffer bufp;
-      TSMLoc hdrLoc;
+      TSMLoc    hdrLoc;
 
       if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdrLoc)) {
-        const char *reason = TSHttpHdrReasonLookup(data->_status);
-        int reasonLen      = strlen(reason);
+        const char *reason    = TSHttpHdrReasonLookup(data->_status);
+        int         reasonLen = strlen(reason);
         TSHttpHdrStatusSet(bufp, hdrLoc, data->_status);
         TSHttpHdrReasonSet(bufp, hdrLoc, reason, reasonLen);
         PrefetchDebug("set response: %d %.*s '%s'", data->_status, reasonLen, reason, data->_body.c_str());
 
         size_t bufsize = data->_body.length() + 1;
-        char *buf      = static_cast<char *>(TSmalloc(bufsize));
+        char  *buf     = static_cast<char *>(TSmalloc(bufsize));
         memcpy(buf, data->_body.c_str(), bufsize);
         TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
@@ -810,9 +810,9 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (nullptr != inst) {
     PrefetchConfig &config = inst->_config;
 
-    int methodLen        = 0;
-    const char *method   = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &methodLen);
-    const String &header = config.getApiHeader();
+    int           methodLen = 0;
+    const char   *method    = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &methodLen);
+    const String &header    = config.getApiHeader();
     if (nullptr != method && methodLen == TS_HTTP_LEN_GET && 0 == memcmp(TS_HTTP_METHOD_GET, method, TS_HTTP_LEN_GET)) {
       bool front     = config.isFront();
       bool firstPass = false;

@@ -35,7 +35,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t Size)
   std::string alpn_input((char *)input_data, Size);
 
   unsigned char alpn_wire_format[MAX_ALPN_STRING] = {0xab};
-  int alpn_wire_format_len                        = MAX_ALPN_STRING;
+  int           alpn_wire_format_len              = MAX_ALPN_STRING;
 
   DiagsPtr::set(new Diags("fuzzing", "", "", nullptr));
   ts_session_protocol_well_known_name_indices_init();

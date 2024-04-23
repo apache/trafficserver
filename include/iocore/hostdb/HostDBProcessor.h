@@ -186,7 +186,7 @@ struct HostDBInfo {
   /// A target is either an IP address or an SRV record.
   /// The type should be indicated by @c flags.f.is_srv;
   union {
-    IpAddr ip;   ///< IP address / port data.
+    IpAddr  ip;  ///< IP address / port data.
     SRVInfo srv; ///< SRV record.
   } data{IpAddr{}};
 
@@ -573,7 +573,7 @@ struct ResolveInfo {
 
   /// Keep a reference to the base HostDB object, so it doesn't get GC'd.
   Ptr<HostDBRecord> record;
-  HostDBInfo *active = nullptr; ///< Active host record.
+  HostDBInfo       *active = nullptr; ///< Active host record.
 
   /// Working address. The meaning / source of the value depends on other elements.
   /// This is the "resolved" address if @a resolved_p is @c true.
@@ -581,14 +581,14 @@ struct ResolveInfo {
 
   int attempts = 0; ///< Number of connection attempts.
 
-  char const *lookup_name             = nullptr;
-  char srv_hostname[MAXDNAME]         = {0};
-  const sockaddr *inbound_remote_addr = nullptr; ///< Remote address of inbound client - used for hashing.
-  in_port_t srv_port                  = 0;       ///< Port from SRV lookup or API call.
+  char const     *lookup_name            = nullptr;
+  char            srv_hostname[MAXDNAME] = {0};
+  const sockaddr *inbound_remote_addr    = nullptr; ///< Remote address of inbound client - used for hashing.
+  in_port_t       srv_port               = 0;       ///< Port from SRV lookup or API call.
 
-  OS_Addr os_addr_style           = OS_Addr::TRY_DEFAULT;
-  HostResStyle host_res_style     = HOST_RES_IPV4;
-  UpstreamResolveStyle looking_up = UNDEFINED_LOOKUP;
+  OS_Addr              os_addr_style  = OS_Addr::TRY_DEFAULT;
+  HostResStyle         host_res_style = HOST_RES_IPV4;
+  UpstreamResolveStyle looking_up     = UNDEFINED_LOOKUP;
 
   HTTPVersion http_version = HTTP_INVALID;
 
@@ -674,9 +674,9 @@ struct HostDBProcessor : public Processor {
   /// Optional parameters for getby...
   struct Options {
     using self                  = Options;                 ///< Self reference type.
-    int port                    = 0;                       ///< Target service port (default 0 -> don't care)
-    int flags                   = HOSTDB_DO_NOT_FORCE_DNS; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
-    int timeout                 = 0;                       ///< Timeout value (default 0 -> default timeout)
+    int          port           = 0;                       ///< Target service port (default 0 -> don't care)
+    int          flags          = HOSTDB_DO_NOT_FORCE_DNS; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
+    int          timeout        = 0;                       ///< Timeout value (default 0 -> default timeout)
     HostResStyle host_res_style = HOST_RES_IPV4;           ///< How to query host (default HOST_RES_IPV4)
 
     Options() {}

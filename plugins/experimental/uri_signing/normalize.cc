@@ -39,11 +39,11 @@ remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct
   memset(inBuff, 0, path_ct + 1);
   strcpy(inBuff, path);
 
-  const char *path_end = inBuff + path_ct;
-  char *seg_start      = inBuff;
-  char *seg_end;
-  char *write_buffer = ret_buffer;
-  int seg_len;
+  const char *path_end  = inBuff + path_ct;
+  char       *seg_start = inBuff;
+  char       *seg_end;
+  char       *write_buffer = ret_buffer;
+  int         seg_len;
 
   for (;;) {
     if (seg_start == path_end) {
@@ -148,7 +148,7 @@ percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower)
         goto decode_failure;
       }
       char encodedVal[2] = {0};
-      int j;
+      int  j;
       for (j = 0; j < 2; j++) {
         if (isxdigit(uri[i + j + 1])) {
           encodedVal[j] = uri[i + j + 1];
@@ -156,7 +156,7 @@ percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower)
           goto decode_failure;
         }
       }
-      int hexVal = 0;
+      int  hexVal = 0;
       char decodeChar;
       sscanf(encodedVal, "%2x", &hexVal);
       decodeChar = static_cast<char>(hexVal);
@@ -230,10 +230,10 @@ normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct)
   /* Comp variables store starting/ending indexes for each uri component as uri is parsed.
    * Write buffer traverses the normalized uri buffer as we build the normalized string.
    */
-  const char *comp_start = uri;
-  const char *comp_end   = uri;
-  char *write_buffer     = normal_uri;
-  bool https             = false;
+  const char *comp_start   = uri;
+  const char *comp_end     = uri;
+  char       *write_buffer = normal_uri;
+  bool        https        = false;
 
   /* Parse the protocol which will end with a colon */
   while (*comp_end != ':' && comp_end != uri_end) {

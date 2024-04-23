@@ -29,10 +29,10 @@
 #include <strings.h>
 #include <cstdio>
 
-const char *ECHO_HEADER_PREFIX        = "Echo-";
-const int ECHO_HEADER_PREFIX_LEN      = 5;
-const char *SERVER_INTERCEPT_HEADER   = "Esi-Internal";
-const int SERVER_INTERCEPT_HEADER_LEN = 12;
+const char *ECHO_HEADER_PREFIX          = "Echo-";
+const int   ECHO_HEADER_PREFIX_LEN      = 5;
+const char *SERVER_INTERCEPT_HEADER     = "Esi-Internal";
+const int   SERVER_INTERCEPT_HEADER_LEN = 12;
 
 using std::string;
 
@@ -40,11 +40,11 @@ static DbgCtl dbg_ctl{"plugin_esi_intercept"};
 
 struct SContData {
   TSVConn net_vc;
-  TSCont contp;
+  TSCont  contp;
 
   struct IoHandle {
-    TSVIO vio               = nullptr;
-    TSIOBuffer buffer       = nullptr;
+    TSVIO            vio    = nullptr;
+    TSIOBuffer       buffer = nullptr;
     TSIOBufferReader reader = nullptr;
     IoHandle()              = default;
     ;
@@ -63,12 +63,12 @@ struct SContData {
   IoHandle output;
 
   TSHttpParser http_parser;
-  string body;
-  int req_content_len;
-  TSMBuffer req_hdr_bufp;
-  TSMLoc req_hdr_loc;
-  bool req_hdr_parsed;
-  bool initialized;
+  string       body;
+  int          req_content_len;
+  TSMBuffer    req_hdr_bufp;
+  TSMLoc       req_hdr_loc;
+  bool         req_hdr_parsed;
+  bool         initialized;
 
   SContData(TSCont cont)
     : net_vc(nullptr),
@@ -147,8 +147,8 @@ handleRead(SContData *cont_data, bool &read_complete)
 
   int consumed = 0;
   if (avail > 0) {
-    int64_t data_len;
-    const char *data;
+    int64_t         data_len;
+    const char     *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(cont_data->input.reader);
     while (block != nullptr) {
       data = TSIOBufferBlockReadStart(block, cont_data->input.reader, &data_len);
@@ -213,9 +213,9 @@ processRequest(SContData *cont_data)
 
   TSMLoc field_loc = TSMimeHdrFieldGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, 0);
   while (field_loc) {
-    TSMLoc next_field_loc;
+    TSMLoc      next_field_loc;
     const char *name;
-    int name_len;
+    int         name_len;
     name = TSMimeHdrFieldNameGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, field_loc, &name_len);
     if (name) {
       bool echo_header = false;
@@ -231,7 +231,7 @@ processRequest(SContData *cont_data)
         int n_field_values = TSMimeHdrFieldValuesCount(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, field_loc);
         for (int i = 0; i < n_field_values; ++i) {
           const char *value;
-          int value_len;
+          int         value_len;
           value = TSMimeHdrFieldValueStringGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, field_loc, i, &value_len);
           if (!value_len) {
             Dbg(dbg_ctl, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, i, name_len, name);
@@ -284,9 +284,9 @@ serverIntercept(TSCont contp, TSEvent event, void *edata)
 {
   Dbg(dbg_ctl, "[%s] Received event: %d", __FUNCTION__, static_cast<int>(event));
 
-  SContData *cont_data = static_cast<SContData *>(TSContDataGet(contp));
-  bool read_complete   = false;
-  bool shutdown        = false;
+  SContData *cont_data     = static_cast<SContData *>(TSContDataGet(contp));
+  bool       read_complete = false;
+  bool       shutdown      = false;
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
     Dbg(dbg_ctl, "[%s] Received net accept event", __FUNCTION__);

@@ -137,17 +137,17 @@ public:
   }
 
 private:
-  unsigned _buckets  = 1000;
-  unsigned _hits     = 10;
-  int64_t _bytes     = 0;
-  std::string _label = "";
+  unsigned    _buckets = 1000;
+  unsigned    _hits    = 10;
+  int64_t     _bytes   = 0;
+  std::string _label   = "";
 
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
   // implementations of size(), making them obsessively slow on calling ::size().
   TSMutex _lock;
-  LRUMap _map;
+  LRUMap  _map;
   LRUList _list, _freelist;
-  size_t _list_size = 0, _freelist_size = 0;
+  size_t  _list_size = 0, _freelist_size = 0;
 
   // internal stats ids
   int _freelist_size_id = -1;

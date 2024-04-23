@@ -39,9 +39,9 @@
 #include "records/RecYAMLDefs.h"
 #include "records/RecYAMLDecoder.h"
 
-const char *g_rec_config_fpath = nullptr;
+const char                     *g_rec_config_fpath = nullptr;
 std::unordered_set<std::string> g_rec_config_contents_ht;
-ink_mutex g_rec_config_lock;
+ink_mutex                       g_rec_config_lock;
 
 //-------------------------------------------------------------------------
 // RecConfigFileInit
@@ -58,9 +58,9 @@ RecConfigFileInit()
 static int
 RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 {
-  int err = REC_ERR_FAIL;
+  int       err = REC_ERR_FAIL;
   RecHandle h_file;
-  int bytes_read;
+  int       bytes_read;
 
   if (file && file_buf && file_size) {
     *file_buf  = nullptr;
@@ -105,7 +105,7 @@ const char *
 RecConfigOverrideFromEnvironment(const char *name, const char *value)
 {
   ats_scoped_str envname(ats_strdup(name));
-  const char *envval = nullptr;
+  const char    *envval = nullptr;
 
   // Munge foo.bar.config into FOO_BAR_CONFIG.
   for (char *c = envname; *c != '\0'; ++c) {
@@ -136,17 +136,17 @@ int
 RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
 {
   char *fbuf;
-  int fsize;
+  int   fsize;
 
   const char *line;
-  int line_num;
+  int         line_num;
 
-  char *rec_type_str, *name_str, *data_type_str, *data_str;
+  char       *rec_type_str, *name_str, *data_type_str, *data_str;
   const char *value_str;
-  RecT rec_type;
-  RecDataT data_type;
+  RecT        rec_type;
+  RecDataT    data_type;
 
-  Tokenizer line_tok("\r\n");
+  Tokenizer      line_tok("\r\n");
   tok_iter_state line_tok_state;
 
   RecDebug(DL_Note, "Reading '%s'", path);

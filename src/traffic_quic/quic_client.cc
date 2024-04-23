@@ -114,7 +114,7 @@ QUICClient::state_http_server_open(int event, void *data)
       app->start();
     } else if (this->_config->http3) {
       // TODO: see what server session is doing with IpAllow::ACL
-      IpAllow::ACL session_acl;
+      IpAllow::ACL    session_acl;
       Http3ClientApp *app = new Http3ClientApp(conn, std::move(session_acl), options, this->_config);
       SCOPED_MUTEX_LOCK(lock, app->mutex, this_ethread());
       app->start();
@@ -155,7 +155,7 @@ Http09ClientApp::Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig
 void
 Http09ClientApp::on_new_stream(QUICStream &stream)
 {
-  auto ret   = this->_streams.emplace(stream.id(), stream);
+  auto  ret  = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
 
   switch (stream.direction()) {
@@ -195,7 +195,7 @@ Http09ClientApp::start()
 void
 Http09ClientApp::_do_http_request()
 {
-  QUICStreamId stream_id;
+  QUICStreamId            stream_id;
   QUICConnectionErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
 
   if (error != nullptr) {
@@ -205,7 +205,7 @@ Http09ClientApp::_do_http_request()
 
   // TODO: move to transaction
   char request[1024] = {0};
-  int request_len    = snprintf(request, sizeof(request), "GET %s\r\n", this->_config->path);
+  int  request_len   = snprintf(request, sizeof(request), "GET %s\r\n", this->_config->path);
 
   Http09ClientAppDebug("\n%s", request);
 
@@ -221,7 +221,7 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 {
   Http09ClientAppVDebug("%s (%d)", get_vc_event_name(event), event);
 
-  VIO *vio                     = reinterpret_cast<VIO *>(data->cookie);
+  VIO                 *vio     = reinterpret_cast<VIO *>(data->cookie);
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
   if (adapter == nullptr) {
@@ -233,7 +233,7 @@ Http09ClientApp::main_event_handler(int event, Event *data)
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     std::streambuf *default_stream = nullptr;
-    std::ofstream f_stream;
+    std::ofstream   f_stream;
 
     if (this->_filename) {
       default_stream = std::cout.rdbuf();
@@ -243,7 +243,7 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 
     uint8_t buf[8192] = {0};
     int64_t nread;
-    auto reader = vio->get_reader();
+    auto    reader = vio->get_reader();
     while ((nread = reader->read(buf, sizeof(buf))) > 0) {
       std::cout.write(reinterpret_cast<char *>(buf), nread);
       vio->ndone += nread;
@@ -326,7 +326,7 @@ void
 Http3ClientApp::_do_http_request()
 {
   QUICConnectionErrorUPtr error;
-  QUICStreamId stream_id;
+  QUICStreamId            stream_id;
   error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
   if (error != nullptr) {
     Error("%s", error->msg);
@@ -345,7 +345,7 @@ Http3ClientApp::_do_http_request()
   this->_resp_handler->set_read_vio(read_vio);
 
   // Write HTTP Request to write_vio
-  char request[1024] = {0};
+  char        request[1024] = {0};
   std::string format;
   if (this->_config->path[0] == '/') {
     format = "GET https://%s%s HTTP/1.1\r\n\r\n";
@@ -364,7 +364,7 @@ Http3ClientApp::_do_http_request()
   Http09ClientAppDebug("\n%s", request);
 
   // TODO: check write avail size
-  int64_t nbytes            = this->_req_buf->write(request, request_len);
+  int64_t         nbytes    = this->_req_buf->write(request, request_len);
   IOBufferReader *buf_start = this->_req_buf->alloc_reader();
   txn->do_io_write(this->_req_generator, nbytes, buf_start);
 }
@@ -401,7 +401,7 @@ RespHandler::main_event_handler(int event, Event *data)
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     std::streambuf *default_stream = nullptr;
-    std::ofstream f_stream;
+    std::ofstream   f_stream;
 
     if (this->_filename) {
       default_stream = std::cout.rdbuf();

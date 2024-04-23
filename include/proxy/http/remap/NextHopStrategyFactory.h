@@ -51,7 +51,7 @@ public:
 
 private:
   std::string fn;
-  void loadConfigFile(const std::string &file, std::stringstream &doc, std::unordered_set<std::string> &include_once);
-  void createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node);
+  void        loadConfigFile(const std::string &file, std::stringstream &doc, std::unordered_set<std::string> &include_once);
+  void        createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node);
   std::unordered_map<std::string, std::shared_ptr<NextHopSelectionStrategy>> _strategies;
 };

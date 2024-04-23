@@ -123,21 +123,21 @@ struct SocksProxy : public Continuation {
   void free();
 
 private:
-  NetVConnection *clientVC = nullptr;
-  VIO *clientVIO           = nullptr;
+  NetVConnection *clientVC  = nullptr;
+  VIO            *clientVIO = nullptr;
 
-  MIOBuffer *buf         = nullptr;
-  IOBufferReader *reader = nullptr;
-  Event *timeout         = nullptr;
+  MIOBuffer      *buf     = nullptr;
+  IOBufferReader *reader  = nullptr;
+  Event          *timeout = nullptr;
 
-  SocksAuthHandler auth_handler = nullptr;
-  SocksProxyHandler vc_handler  = nullptr;
-  Action *pending_action        = nullptr;
+  SocksAuthHandler  auth_handler   = nullptr;
+  SocksProxyHandler vc_handler     = nullptr;
+  Action           *pending_action = nullptr;
 
-  unsigned char version = 0;
-  int port              = 0;
-  int state             = SOCKS_INIT;
-  int recursion         = 0;
+  unsigned char version   = 0;
+  int           port      = 0;
+  int           state     = SOCKS_INIT;
+  int           recursion = 0;
 };
 
 ClassAllocator<SocksProxy> socksProxyAllocator("socksProxyAllocator");
@@ -340,7 +340,7 @@ SocksProxy::state_read_socks4_client_request(int event, void *data)
   }
 
   unsigned char *p = (unsigned char *)reader->start();
-  int i;
+  int            i;
   // Skip UserID
   for (i = 8; i < n && p[i] != 0; i++) {
     ;
@@ -362,7 +362,7 @@ SocksProxy::state_read_socks4_client_request(int event, void *data)
 int
 SocksProxy::state_read_socks5_client_auth_methods(int event, void *data)
 {
-  int64_t n;
+  int64_t        n;
   unsigned char *p;
 
   ink_assert(state == SOCKS_ACCEPT);
@@ -437,7 +437,7 @@ SocksProxy::state_send_socks5_auth_method(int event, void *data)
 int
 SocksProxy::state_read_socks5_client_request(int event, void *data)
 {
-  int64_t n;
+  int64_t        n;
   unsigned char *p;
 
   ink_assert(state == AUTH_DONE);
@@ -516,7 +516,7 @@ SocksProxy::parse_socks_client_request(unsigned char *p)
       // if this is a hostname we could do host look up here
       ret = mainEvent(NET_EVENT_OPEN_FAILED, nullptr);
     } else {
-      uint32_t ip;
+      uint32_t           ip;
       struct sockaddr_in addr;
 
       memcpy(&ip, &p[4], 4);

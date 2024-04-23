@@ -71,7 +71,7 @@ LogMessage::message_helper(std::chrono::microseconds current_configured_interval
   // If we get here, the message should not be suppressed.
   if (number_of_suppressions > 0) {
     // We use no format parameters, so we just need an empty va_list.
-    va_list empty_args{};
+    va_list     empty_args{};
     std::string message =
       std::string("The following message was suppressed ") + std::to_string(number_of_suppressions) + std::string(" times.");
     log_function(message.c_str(), empty_args);

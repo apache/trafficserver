@@ -56,9 +56,9 @@ static int
 ts_lua_vconn_get_remote_addr(lua_State *L)
 {
   ts_lua_vconn_ctx *vconn_ctx;
-  int port;
-  int family;
-  char sip[128];
+  int               port;
+  int               family;
+  char              sip[128];
 
   GET_VCONN_CONTEXT(vconn_ctx, L);
 
@@ -90,7 +90,7 @@ ts_lua_vconn_get_remote_addr(lua_State *L)
 static int
 ts_lua_vconn_get_fd(lua_State *L)
 {
-  int fd = 0;
+  int               fd = 0;
   ts_lua_vconn_ctx *vconn_ctx;
 
   GET_VCONN_CONTEXT(vconn_ctx, L);

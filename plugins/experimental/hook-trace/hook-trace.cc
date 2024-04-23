@@ -38,10 +38,10 @@ static int
 HttpHookTracer(TSCont contp, TSEvent event, void *edata)
 {
   union {
-    TSHttpTxn txn;
-    TSHttpSsn ssn;
+    TSHttpTxn     txn;
+    TSHttpSsn     ssn;
     TSHttpAltInfo alt;
-    void *ptr;
+    void         *ptr;
   } ev;
 
   ev.ptr = edata;

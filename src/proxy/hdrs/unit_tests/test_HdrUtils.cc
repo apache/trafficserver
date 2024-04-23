@@ -47,11 +47,11 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   static constexpr std::string_view FOUR_TAG{"Four"};
   static constexpr std::string_view FIVE_TAG{"Five"};
 
-  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
-  MIMEParser parser;
+  HdrHeap    *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser  parser;
   char const *real_s = text.data();
   char const *real_e = text.data_end();
-  MIMEHdr mime;
+  MIMEHdr     mime;
 
   mime.create(heap);
   mime_parser_init(&parser);
@@ -136,11 +136,11 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
 
   char buff[text.size() + 1];
 
-  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
-  MIMEParser parser;
+  HdrHeap    *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser  parser;
   char const *real_s = text.data();
   char const *real_e = text.data_end();
-  MIMEHdr mime;
+  MIMEHdr     mime;
 
   mime.create(heap);
   mime_parser_init(&parser);
@@ -156,8 +156,8 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   field = mime.field_find(after_tag.data(), static_cast<int>(after_tag.size()));
   REQUIRE(field != nullptr);
 
-  int idx    = 0;
-  int skip   = 0;
+  int  idx   = 0;
+  int  skip  = 0;
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
   REQUIRE(idx == static_cast<int>(text.size()));
@@ -179,11 +179,11 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
 
   char buff[text.size() + 1];
 
-  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
-  MIMEParser parser;
+  HdrHeap    *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser  parser;
   char const *real_s = text.data();
   char const *real_e = text.data_end();
-  MIMEHdr mime;
+  MIMEHdr     mime;
 
   mime.create(heap);
   mime_parser_init(&parser);
@@ -199,8 +199,8 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   field = mime.field_find(before_tag.data(), static_cast<int>(before_tag.size()));
   REQUIRE(field != nullptr);
 
-  int idx    = 0;
-  int skip   = 0;
+  int  idx   = 0;
+  int  skip  = 0;
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
   REQUIRE(idx == static_cast<int>(text.size()));

@@ -39,17 +39,17 @@ static const int FETCHER_STATIC_DATA_SIZE = 30;
 TEST_CASE("esi processor test")
 {
   Utils::HeaderValueList allowlistCookies;
-  int dummy;
-  Variables esi_vars(&dummy, allowlistCookies);
-  HandlerManager handler_mgr;
-  TestHttpDataFetcher data_fetcher;
-  EsiProcessor esi_proc(&dummy, data_fetcher, esi_vars, handler_mgr, 1024 * 1024);
+  int                    dummy;
+  Variables              esi_vars(&dummy, allowlistCookies);
+  HandlerManager         handler_mgr;
+  TestHttpDataFetcher    data_fetcher;
+  EsiProcessor           esi_proc(&dummy, data_fetcher, esi_vars, handler_mgr, 1024 * 1024);
 
   SECTION("call sequence")
   {
-    string input_data("");
+    string      input_data("");
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     SECTION("Negative test - process()ing without completeParse()ing")
     {
@@ -113,7 +113,7 @@ TEST_CASE("esi processor test")
     string input_data("foo<esi:blah/>bar");
 
     const char *output_data;
-    int output_data_len = 10;
+    int         output_data_len = 10;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::FAILURE);
@@ -125,7 +125,7 @@ TEST_CASE("esi processor test")
     string input_data("foo<esi:comment text=\"bleh\"/>bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -139,7 +139,7 @@ TEST_CASE("esi processor test")
     string input_data("<esi:comment text=\"bleh\"/>bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -153,7 +153,7 @@ TEST_CASE("esi processor test")
     string input_data("foo<esi:comment text=\"bleh\"/>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -167,7 +167,7 @@ TEST_CASE("esi processor test")
     string input_data("foo\n<esi:comment text=\"\nbleh\"/>\nbar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -181,7 +181,7 @@ TEST_CASE("esi processor test")
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -196,7 +196,7 @@ TEST_CASE("esi processor test")
                       "foo2\n<esi:comment text=\"bleh\"/>\nbar2");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -207,14 +207,14 @@ TEST_CASE("esi processor test")
 
   SECTION("multiple remove and comment tags")
   {
-    string input_data("foo1<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar1\n"
-                      "foo1<esi:comment text=\"bleh\"/>bar1\n"
-                      "foo2<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar2\n"
-                      "foo2<esi:comment text=\"bleh\"/>bar2\n"
-                      "foo3<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar3\n"
-                      "foo3<esi:comment text=\"bleh\"/>bar3\n");
+    string      input_data("foo1<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar1\n"
+                                "foo1<esi:comment text=\"bleh\"/>bar1\n"
+                                "foo2<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar2\n"
+                                "foo2<esi:comment text=\"bleh\"/>bar2\n"
+                                "foo3<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar3\n"
+                                "foo3<esi:comment text=\"bleh\"/>bar3\n");
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -228,7 +228,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -256,7 +256,7 @@ TEST_CASE("esi processor test")
                       "<esi:include src=\"blah bleh\"/>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -279,7 +279,7 @@ TEST_CASE("esi processor test")
                       "<esi:remove> <a href=> </esi:remove>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -303,7 +303,7 @@ TEST_CASE("esi processor test")
     char line6[] = "</esi:remove>";
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(line1, sizeof(line1) - 1) == true);
     REQUIRE(esi_proc.addParseData(line2, sizeof(line2) - 1) == true);
@@ -331,7 +331,7 @@ TEST_CASE("esi processor test")
                       "<esi:remove> <a href=> </esi:remove>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.completeParse(input_data.data(), input_data.size()) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -354,7 +354,7 @@ TEST_CASE("esi processor test")
     char line6[] = "</esi:remove>";
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(line1, sizeof(line1) - 1) == true);
     REQUIRE(esi_proc.addParseData(line2, sizeof(line2) - 1) == true);
@@ -377,7 +377,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -391,7 +391,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -409,7 +409,7 @@ TEST_CASE("esi processor test")
                       "<esi:remove> <a href=> </esi:remove>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -427,7 +427,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:include src=$(HTTP_HOST) /> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -440,7 +440,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:vars>HTTP_HOST</esi:vars> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -454,7 +454,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:vars>$(HTTP_HOST)</esi:vars> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -468,7 +468,7 @@ TEST_CASE("esi processor test")
     string input_data("foo <esi:vars>$(HTTP_HOST</esi:vars> bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -479,19 +479,19 @@ TEST_CASE("esi processor test")
 
   SECTION("choose-when")
   {
-    string input_data("<esi:choose>"
-                      "<esi:when test=foo>"
-                      "<esi:include src=foo />"
-                      "</esi:when>"
-                      "<esi:when test=bar>"
-                      "<esi:include src=bar />"
-                      "</esi:when>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:when test=foo>"
+                                "<esi:include src=foo />"
+                                "</esi:when>"
+                                "<esi:when test=bar>"
+                                "<esi:include src=bar />"
+                                "</esi:when>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "</esi:choose>");
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -501,13 +501,13 @@ TEST_CASE("esi processor test")
 
   SECTION("choose-when")
   {
-    string input_data("<esi:choose>"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>"
+                                "</esi:choose>");
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -527,7 +527,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == FETCHER_STATIC_DATA_SIZE + 7);
@@ -546,7 +546,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -567,7 +567,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -589,7 +589,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -613,7 +613,7 @@ TEST_CASE("esi processor test")
                       "bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -632,7 +632,7 @@ TEST_CASE("esi processor test")
                       "bar");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == FETCHER_STATIC_DATA_SIZE + 10 + 3 + 4 + 3);
@@ -651,19 +651,19 @@ TEST_CASE("esi processor test")
 
   SECTION("choose-when")
   {
-    string input_data("<esi:choose>\n\t"
-                      "<esi:when test=foo>"
-                      "\t<esi:include src=foo />"
-                      "</esi:when>\n"
-                      "<esi:when test=bar>"
-                      "<esi:include src=bar />"
-                      "</esi:when>\n"
-                      "<esi:otherwise>"
-                      "<esi:include src=otherwise />"
-                      "</esi:otherwise>\n"
-                      "</esi:choose>");
+    string      input_data("<esi:choose>\n\t"
+                                "<esi:when test=foo>"
+                                "\t<esi:include src=foo />"
+                                "</esi:when>\n"
+                                "<esi:when test=bar>"
+                                "<esi:include src=bar />"
+                                "</esi:when>\n"
+                                "<esi:otherwise>"
+                                "<esi:include src=otherwise />"
+                                "</esi:otherwise>\n"
+                                "</esi:choose>");
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -684,7 +684,7 @@ TEST_CASE("esi processor test")
     REQUIRE(handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == StubIncludeHandler::DATA_PREFIX_SIZE + 1);
     REQUIRE(strncmp(output_data, "Special data for include id 1", output_data_len) == 0);
@@ -703,7 +703,7 @@ TEST_CASE("esi processor test")
     REQUIRE(handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == (4 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 1 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 4));
     REQUIRE(strncmp(output_data, "foo Special data for include id 1 Special data for include id 2 bar", output_data_len) == 0);
@@ -726,7 +726,7 @@ TEST_CASE("esi processor test")
     REQUIRE(udb_handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == (4 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 1 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 4));
     REQUIRE(strncmp(output_data, "foo Special data for include id 1 Special data for include id 1 bar", output_data_len) == 0);
@@ -755,7 +755,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     REQUIRE(output_data_len == StubIncludeHandler::DATA_PREFIX_SIZE + 1);
@@ -774,7 +774,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -795,7 +795,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -817,7 +817,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     REQUIRE(esi_proc.completeParse(input_data) == true);
 
     // this is to make the StubHandler return failure
@@ -837,7 +837,7 @@ TEST_CASE("esi processor test")
     string input_data("<esi:comment text=\"bleh\"/>");
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.completeParse() == true);
@@ -847,23 +847,23 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 1")
   {
-    EsiParser parser{1024 * 1024};
+    EsiParser   parser{1024 * 1024};
     DocNodeList node_list;
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:except>"
+                                "</esi:try>");
     REQUIRE(parser.parse(node_list, input_data) == true);
 
     string packedNodeList = node_list.pack();
 
     REQUIRE(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_SUCCESS);
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
     data_fetcher.setReturnData(false);
     REQUIRE(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
     data_fetcher.setReturnData(true);
@@ -896,22 +896,22 @@ TEST_CASE("esi processor test")
   {
     string input_data("<esi:comment text=\"bleh\"/>");
 
-    EsiParser parser{1024 * 1024};
+    EsiParser   parser{1024 * 1024};
     DocNodeList node_list;
-    string input_data2("<esi:try>"
-                       "<esi:attempt>"
-                       "<esi:special-include handler=stub />"
-                       "</esi:attempt>"
-                       "<esi:except>"
-                       "<esi:special-include handler=stub />"
-                       "</esi:except>"
-                       "</esi:try>");
+    string      input_data2("<esi:try>"
+                                 "<esi:attempt>"
+                                 "<esi:special-include handler=stub />"
+                                 "</esi:attempt>"
+                                 "<esi:except>"
+                                 "<esi:special-include handler=stub />"
+                                 "</esi:except>"
+                                 "</esi:try>");
     REQUIRE(parser.parse(node_list, input_data2) == true);
 
     string packedNodeList = node_list.pack();
 
     const char *output_data;
-    int output_data_len = 0;
+    int         output_data_len = 0;
 
     REQUIRE(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     REQUIRE(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_IN_PROGRESS);
@@ -933,7 +933,7 @@ TEST_CASE("esi processor test")
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len             = 0;
+    int         output_data_len     = 0;
     StubIncludeHandler::FOOTER      = "<!--footer-->";
     StubIncludeHandler::FOOTER_SIZE = strlen(StubIncludeHandler::FOOTER);
     REQUIRE(esi_proc.completeParse(input_data) == true);
@@ -951,16 +951,16 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 3")
   {
-    EsiParser parser{1024 * 1024};
+    EsiParser   parser{1024 * 1024};
     DocNodeList node_list;
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:except>"
+                                "</esi:try>");
     REQUIRE(parser.parse(node_list, input_data) == true);
 
     string packedNodeList = node_list.pack();
@@ -970,16 +970,16 @@ TEST_CASE("esi processor test")
 
   SECTION("using packed node list 4")
   {
-    EsiParser parser{1024 * 1024};
+    EsiParser   parser{1024 * 1024};
     DocNodeList node_list;
-    string input_data("<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:special-include handler=stub />"
-                      "</esi:except>"
-                      "</esi:try>");
+    string      input_data("<esi:try>"
+                                "<esi:attempt>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:attempt>"
+                                "<esi:except>"
+                                "<esi:special-include handler=stub />"
+                                "</esi:except>"
+                                "</esi:try>");
     REQUIRE(parser.parse(node_list, input_data) == true);
 
     string packedNodeList = node_list.pack();

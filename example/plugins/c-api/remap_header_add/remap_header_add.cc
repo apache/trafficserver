@@ -35,10 +35,10 @@
 #include "ts/remap.h"
 
 struct remap_line {
-  int argc;
+  int    argc;
   char **argv; // store the originals
 
-  int nvc;     // the number of name value pairs, should be argc - 2.
+  int    nvc;  // the number of name value pairs, should be argc - 2.
   char **name; // at load we will parse out the name and values.
   char **val;
 };
@@ -152,7 +152,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txn, TSRemapRequestInfo *rri)
   Dbg(dbg_ctl, "TSRemapDoRemap:");
 
   TSMBuffer req_bufp;
-  TSMLoc req_loc;
+  TSMLoc    req_loc;
   if (TSHttpTxnClientReqGet(txn, &req_bufp, &req_loc) != TS_SUCCESS) {
     TSError("[%s] Error while retrieving client request header", PLUGIN_NAME);
     return TSREMAP_NO_REMAP;

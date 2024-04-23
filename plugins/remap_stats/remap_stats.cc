@@ -40,10 +40,10 @@ enum UriType {
 };
 
 struct config_t {
-  TSMutex stat_creation_mutex{nullptr};
-  UriType uri_type{PRISTINE};
+  TSMutex           stat_creation_mutex{nullptr};
+  UriType           uri_type{PRISTINE};
   TSStatPersistence persist_type{TS_STAT_NON_PERSISTENT};
-  int txn_slot{-1};
+  int               txn_slot{-1};
 };
 
 namespace
@@ -54,7 +54,7 @@ void
 stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
   static thread_local std::unordered_map<std::string, int> hash;
-  int stat_id = -1;
+  int                                                      stat_id = -1;
 
   if (unlikely(hash.find(name) == hash.cend())) {
     // This is an unlikely path because we most likely have the stat cached
@@ -94,9 +94,9 @@ get_hostname(TSHttpTxn txnp, UriType uriType)
   switch (uriType) {
   case PRISTINE: {
     TSMBuffer hbuf;
-    TSMLoc hloc;
+    TSMLoc    hloc;
     if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &hbuf, &hloc)) {
-      int tlen                = 0;
+      int               tlen  = 0;
       char const *const thost = TSUrlHostGet(hbuf, hloc, &tlen);
       if (nullptr != thost && 0 < tlen) {
         hostname.assign(thost, tlen);
@@ -106,11 +106,11 @@ get_hostname(TSHttpTxn txnp, UriType uriType)
   } break;
   case REMAP: {
     TSMBuffer hbuf;
-    TSMLoc hloc;
+    TSMLoc    hloc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hbuf, &hloc)) {
       TSMLoc url_loc;
       if (TS_SUCCESS == TSHttpHdrUrlGet(hbuf, hloc, &url_loc)) {
-        int tlen                = 0;
+        int               tlen  = 0;
         char const *const thost = TSUrlHostGet(hbuf, url_loc, &tlen);
         if (nullptr != thost && 0 < tlen) {
           hostname.assign(thost, tlen);
@@ -130,9 +130,9 @@ get_hostname(TSHttpTxn txnp, UriType uriType)
 int
 handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn          = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn       txn    = static_cast<TSHttpTxn>(edata);
   config_t *const config = static_cast<config_t *>(TSContDataGet(cont));
-  void *const txnd       = reinterpret_cast<void *>(0x01);
+  void *const     txnd   = reinterpret_cast<void *>(0x01);
   TSUserArgSet(txn, config->txn_slot, txnd);
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   Dbg(dbg_ctl, "Post Remap Handler Finished");
@@ -150,9 +150,9 @@ create_stat_name(swoc::FixedBufferWriter &stat_name, std::string_view const h, s
 int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn const txn          = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn const       txn    = static_cast<TSHttpTxn>(edata);
   config_t const *const config = static_cast<config_t *>(TSContDataGet(cont));
-  void const *const txnd       = TSUserArgGet(txn, config->txn_slot);
+  void const *const     txnd   = TSUserArgGet(txn, config->txn_slot);
 
   static std::string_view const unknown = "unknown";
 
@@ -181,8 +181,8 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     create_stat_name(stat_name, hostsv, "out_bytes");
     stat_add(stat_name.data(), static_cast<TSMgmtInt>(out_bytes), config->persist_type, config->stat_creation_mutex);
 
-    TSMBuffer buf  = nullptr;
-    TSMLoc hdr_loc = nullptr;
+    TSMBuffer buf     = nullptr;
+    TSMLoc    hdr_loc = nullptr;
     if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
       int const status_code = static_cast<int>(TSHttpHdrStatusGet(buf, hdr_loc));
       TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);

@@ -33,7 +33,7 @@ x509_expand_none(X509 *, BIO *)
 static void
 x509_expand_certificate(X509 *x509, BIO *bio)
 {
-  long remain;
+  long  remain;
   char *ptr;
 
   PEM_write_bio_X509(bio, x509);

@@ -34,8 +34,8 @@ namespace
 DbgCtl dbg_ctl{"plugin_esi_vars"};
 }
 
-const string Expression::EMPTY_STRING("");
-const string Expression::TRUE_STRING("true");
+const string                     Expression::EMPTY_STRING("");
+const string                     Expression::TRUE_STRING("true");
 const Expression::OperatorString Expression::OPERATOR_STRINGS[N_OPERATORS] = {
   Expression::OperatorString("==", 2), Expression::OperatorString("!=", 2), Expression::OperatorString("<=", 2),
   Expression::OperatorString(">=", 2), Expression::OperatorString("<", 1),  Expression::OperatorString(">", 1),
@@ -109,8 +109,8 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
           Dbg(dbg_ctl, "[%s] Expression [%.*s] has unterminated variable (with default value)", __FUNCTION__, expr_len, expr);
           goto lFail;
         }
-        const char *default_value = expr + default_value_start;
-        int default_value_len     = i - default_value_start;
+        const char *default_value     = expr + default_value_start;
+        int         default_value_len = i - default_value_start;
         if (!_stripQuotes(default_value, default_value_len)) {
           goto lFail;
         }
@@ -170,12 +170,12 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
     Dbg(dbg_ctl, "[%s] Returning false for empty expression", __FUNCTION__);
     return false;
   }
-  Operator op = OP_EQ; // stupid initialized checking, make gcc happy
+  Operator    op = OP_EQ; // stupid initialized checking, make gcc happy
   const char *subexpr;
-  int subexpr_len;
-  string lhs, rhs;
-  bool retval = false;
-  int sep     = _findOperator(expr, expr_len, op);
+  int         subexpr_len;
+  string      lhs, rhs;
+  bool        retval = false;
+  int         sep    = _findOperator(expr, expr_len, op);
 
   if (sep == -1) {
     retval = _evalSimpleExpr(expr, expr_len);
@@ -190,7 +190,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
     Dbg(dbg_ctl, "[%s] RHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, int(rhs.size()), rhs.data());
     double lhs_numerical = 0;
     double rhs_numerical = 0;
-    bool are_numerical   = _convert(lhs, lhs_numerical);
+    bool   are_numerical = _convert(lhs, lhs_numerical);
     are_numerical        = are_numerical ? _convert(rhs, rhs_numerical) : false;
     switch (op) {
     case OP_EQ:

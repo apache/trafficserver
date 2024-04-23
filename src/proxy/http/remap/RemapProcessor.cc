@@ -41,14 +41,14 @@ bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 {
   Dbg(dbg_ctl_url_rewrite, "setting up for remap: %p", s);
-  URL *request_url        = nullptr;
-  bool mapping_found      = false;
-  HTTPHdr *request_header = &s->hdr_info.client_request;
-  char **redirect_url     = &s->remap_redirect;
+  URL        *request_url    = nullptr;
+  bool        mapping_found  = false;
+  HTTPHdr    *request_header = &s->hdr_info.client_request;
+  char      **redirect_url   = &s->remap_redirect;
   const char *request_host;
-  int request_host_len;
-  int request_port;
-  bool proxy_request = false;
+  int         request_host_len;
+  int         request_port;
+  bool        proxy_request = false;
 
   s->reverse_proxy = table->reverse_proxy;
   s->url_map.set(s->hdr_info.client_request.m_heap);
@@ -135,14 +135,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 bool
 RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 {
-  url_mapping *map        = nullptr;
-  HTTPHdr *request_header = &s->hdr_info.client_request;
-  URL *request_url        = request_header->url_get();
-  char **redirect_url     = &s->remap_redirect;
-  char tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
-  const char *remapped_host;
-  int remapped_host_len, tmp;
-  int from_len;
+  url_mapping  *map            = nullptr;
+  HTTPHdr      *request_header = &s->hdr_info.client_request;
+  URL          *request_url    = request_header->url_get();
+  char        **redirect_url   = &s->remap_redirect;
+  char          tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
+  const char   *remapped_host;
+  int           remapped_host_len, tmp;
+  int           from_len;
   referer_info *ri;
 
   map = s->url_map.getMapping();
@@ -159,9 +159,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // Check referer filtering rules
   if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && (ri = map->referer_list) != nullptr) {
-    const char *referer_hdr = nullptr;
-    int referer_len         = 0;
-    bool enabled_flag       = map->optional_referer ? true : false;
+    const char *referer_hdr  = nullptr;
+    int         referer_len  = 0;
+    bool        enabled_flag = map->optional_referer ? true : false;
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
         (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != nullptr) {
@@ -235,12 +235,12 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // We also need to rewrite the "Host:" header if it exists and
   //   pristine host hdr is not enabled
-  int host_len;
+  int         host_len;
   const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
   if (request_url && host_hdr != nullptr && s->txn_conf->maintain_pristine_host_hdr == 0) {
     if (dbg_ctl_url_rewrite.on()) {
-      int old_host_hdr_len;
+      int   old_host_hdr_len;
       char *old_host_hdr = const_cast<char *>(request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len));
       if (old_host_hdr) {
         Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
@@ -287,10 +287,10 @@ Action *
 RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 {
   Dbg(dbg_ctl_url_rewrite, "Beginning RemapProcessor::perform_remap");
-  HTTPHdr *request_header = &s->hdr_info.client_request;
-  URL *request_url        = request_header->url_get();
-  url_mapping *map        = s->url_map.getMapping();
-  host_hdr_info *hh_info  = &(s->hh_info);
+  HTTPHdr       *request_header = &s->hdr_info.client_request;
+  URL           *request_url    = request_header->url_get();
+  url_mapping   *map            = s->url_map.getMapping();
+  host_hdr_info *hh_info        = &(s->hh_info);
 
   if (!map) {
     Error("Could not find corresponding url_mapping for this transaction %p", s);

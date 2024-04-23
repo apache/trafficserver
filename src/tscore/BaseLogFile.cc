@@ -127,9 +127,9 @@ BaseLogFile::roll(long interval_start, long interval_end)
   // format is something like:
   //
   //    "squid.log.mymachine.19980712.12h00m00s-19980713.12h00m00s.old"
-  char roll_name[LOGFILE_ROLL_MAXPATHLEN];
-  char start_time_ext[64];
-  char end_time_ext[64];
+  char   roll_name[LOGFILE_ROLL_MAXPATHLEN];
+  char   start_time_ext[64];
+  char   end_time_ext[64];
   time_t start, end;
 
   // Start with conservative values for the start and end bounds, then
@@ -238,7 +238,7 @@ bool
 BaseLogFile::rolled_logfile(char *path)
 {
   const int target_len = static_cast<int>(strlen(LOGFILE_ROLLED_EXTENSION));
-  int len              = static_cast<int>(strlen(path));
+  int       len        = static_cast<int>(strlen(path));
   if (len > target_len) {
     char *str = &path[len - target_len];
     if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
@@ -401,7 +401,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
   va_list args;
 
   const char *priority_name = nullptr;
-  FILE *output              = stdout;
+  FILE       *output        = stdout;
   switch (priority) {
   case LL_Debug:
     priority_name = "DEBUG";
@@ -427,7 +427,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
 
   va_start(args, format);
   struct timeval now;
-  double now_f;
+  double         now_f;
 
   gettimeofday(&now, nullptr);
   now_f = now.tv_sec + now.tv_usec / 1000000.0f;
@@ -453,7 +453,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
 void
 BaseMetaInfo::_build_name(const char *filename)
 {
-  int i = -1, l = 0;
+  int  i = -1, l = 0;
   char c;
   while (c = filename[l], c != 0) {
     if (c == '/') {
@@ -487,7 +487,7 @@ BaseMetaInfo::_read_from_file()
   } else {
     _flags |= FILE_OPEN_SUCCESSFUL;
     SimpleTokenizer tok('=', SimpleTokenizer::OVERWRITE_INPUT_STRING);
-    int line_number = 1;
+    int             line_number = 1;
     while (ink_file_fd_readline(fd, BUF_SIZE, _buffer) > 0) {
       tok.setString(_buffer);
       char *t = tok.getNext();
@@ -576,8 +576,8 @@ int
 BaseLogFile::timestamp_to_str(long timestamp, char *buf, int size)
 {
   static const char *format_str = "%Y%m%d.%Hh%Mm%Ss";
-  struct tm res;
-  struct tm *tms;
+  struct tm          res;
+  struct tm         *tms;
   tms = ink_localtime_r((const time_t *)&timestamp, &res);
   return strftime(buf, size, format_str, tms);
 }

@@ -47,7 +47,7 @@
 inline void
 check_valid_sockaddr(sockaddr *sa, char *file, int line)
 {
-  sockaddr_in *si     = (sockaddr_in *)sa;
+  sockaddr_in   *si   = (sockaddr_in *)sa;
   unsigned short port = ntohs(si->sin_port);
   unsigned short addr = ntohl(si->sin_addr.s_addr);
 
@@ -243,7 +243,7 @@ char
 fd_read_char(int fd)
 {
   char c;
-  int r;
+  int  r;
   do {
     r = read(fd, &c, 1);
     if (r > 0) {
@@ -259,7 +259,7 @@ int
 fd_read_line(int fd, char *s, int len)
 {
   char c;
-  int numread = 0, r;
+  int  numread = 0, r;
   do {
     do {
       r = read(fd, &c, 1);
@@ -305,9 +305,9 @@ read_socket(int s, char *buffer, int length)
 int
 bind_unix_domain_socket(const char *path, mode_t mode)
 {
-  int sockfd;
+  int                sockfd;
   struct sockaddr_un sockaddr;
-  socklen_t socklen;
+  socklen_t          socklen;
 
   (void)unlink(path);
 

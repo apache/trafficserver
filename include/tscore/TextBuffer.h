@@ -60,9 +60,9 @@ public:
   TextBuffer(int size);
   ~TextBuffer();
 
-  int rawReadFromFile(int fd);
-  int readFromFD(int fd);
-  int copyFrom(const void *, unsigned num_bytes);
+  int  rawReadFromFile(int fd);
+  int  readFromFD(int fd);
+  int  copyFrom(const void *, unsigned num_bytes);
   void reUse();
   void chomp();
   void slurp(int);
@@ -113,6 +113,6 @@ private:
 
   size_t currentSize = 0;
   size_t spaceLeft   = 0;
-  char *bufferStart  = nullptr;
-  char *nextAdd      = nullptr;
+  char  *bufferStart = nullptr;
+  char  *nextAdd     = nullptr;
 };

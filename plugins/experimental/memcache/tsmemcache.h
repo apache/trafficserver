@@ -114,30 +114,30 @@ struct MCAccept : public Continuation {
 #define STRCMP(_s, _const_string)      strncmp(_s, _const_string "", sizeof(_const_string) - 1)
 
 struct MC : Continuation {
-  Action *pending_action;
-  int ihandler_stack;
-  int swallow_bytes;
-  int64_t exptime;
-  ContinuationHandler handler_stack[2];
-  VConnection *nvc;
-  MIOBuffer *rbuf, *wbuf, *cbuf;
-  VIO *rvio, *wvio;
-  IOBufferReader *reader, *writer, *creader;
-  CacheVConnection *crvc, *cwvc;
-  VIO *crvio, *cwvio;
-  CacheKey cache_key;
-  MCCacheHeader *rcache_header, *wcache_header;
-  MCCacheHeader header;
-  char tmp_cache_header_key[256];
+  Action                        *pending_action;
+  int                            ihandler_stack;
+  int                            swallow_bytes;
+  int64_t                        exptime;
+  ContinuationHandler            handler_stack[2];
+  VConnection                   *nvc;
+  MIOBuffer                     *rbuf, *wbuf, *cbuf;
+  VIO                           *rvio, *wvio;
+  IOBufferReader                *reader, *writer, *creader;
+  CacheVConnection              *crvc, *cwvc;
+  VIO                           *crvio, *cwvio;
+  CacheKey                       cache_key;
+  MCCacheHeader                 *rcache_header, *wcache_header;
+  MCCacheHeader                  header;
+  char                           tmp_cache_header_key[256];
   protocol_binary_request_header binary_header;
   union res {
     protocol_binary_response_get get;
   };
   char *key, *tbuf;
-  int read_offset;
-  int end_of_cmd; // -1 means that it is already consumed
-  int ngets;
-  char tmp_cmd_buffer[TSMEMCACHE_TMP_CMD_BUFFER_SIZE];
+  int   read_offset;
+  int   end_of_cmd; // -1 means that it is already consumed
+  int   ngets;
+  char  tmp_cmd_buffer[TSMEMCACHE_TMP_CMD_BUFFER_SIZE];
   union {
     struct {
       unsigned int noreply     : 1;
@@ -183,27 +183,27 @@ struct MC : Continuation {
   int tunnel_event(int event, void *data); // cache <=> cache
 
   char *get_ascii_input(int n, int *end);
-  int get_ascii_key(char *s, char *e);
-  int ascii_response(const char *s, int len);
-  int ascii_get(char *s, char *e);
-  int ascii_gets();
-  int ascii_set(char *s, char *e);
-  int ascii_delete(char *s, char *e);
-  int ascii_incr_decr(char *s, char *e);
-  int ascii_get_event(int event, void *data);
-  int ascii_set_event(int event, void *data);
-  int ascii_delete_event(int event, void *data);
-  int ascii_incr_decr_event(int event, void *data);
+  int   get_ascii_key(char *s, char *e);
+  int   ascii_response(const char *s, int len);
+  int   ascii_get(char *s, char *e);
+  int   ascii_gets();
+  int   ascii_set(char *s, char *e);
+  int   ascii_delete(char *s, char *e);
+  int   ascii_incr_decr(char *s, char *e);
+  int   ascii_get_event(int event, void *data);
+  int   ascii_set_event(int event, void *data);
+  int   ascii_delete_event(int event, void *data);
+  int   ascii_incr_decr_event(int event, void *data);
 
-  int write_binary_error(protocol_binary_response_status err, int swallow);
+  int  write_binary_error(protocol_binary_response_status err, int swallow);
   void add_binary_header(uint16_t err, uint8_t hdr_len, uint16_t key_len, uint32_t body_len);
-  int write_binary_response(const void *d, int hlen, int keylen, int dlen);
-  int protocol_error();
-  int bin_read_key();
+  int  write_binary_response(const void *d, int hlen, int keylen, int dlen);
+  int  protocol_error();
+  int  bin_read_key();
 
   void new_connection(NetVConnection *netvc, EThread *thread);
-  int unexpected_event();
-  int die();
+  int  unexpected_event();
+  int  die();
 };
 
 int init_tsmemcache(int port = 11211);

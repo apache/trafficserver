@@ -42,7 +42,7 @@ ClassAllocator<MC> theMCAllocator("MC");
 static time_t base_day_time;
 
 // These should be persistent.
-int32_t MC::verbosity     = 0;
+int32_t    MC::verbosity  = 0;
 ink_hrtime MC::last_flush = 0;
 
 static void
@@ -95,12 +95,12 @@ mc_string(const char *s, int len)
 static uint64_t
 ink_hton64(uint64_t in)
 {
-  int32_t val = 1;
-  uint8_t *c  = reinterpret_cast<uint8_t *>(&val);
+  int32_t  val = 1;
+  uint8_t *c   = reinterpret_cast<uint8_t *>(&val);
   if (*c == 1) {
     union {
       uint64_t rv;
-      uint8_t b[8];
+      uint8_t  b[8];
     } x;
 #define SWP1B(_x, _y) \
   do {                \
@@ -126,7 +126,7 @@ MCAccept::main_event(int event, void *data)
 {
   if (event == NET_EVENT_ACCEPT) {
     NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    MC *mc                = theMCAllocator.alloc();
+    MC             *mc    = theMCAllocator.alloc();
     if (!mutex->thread_holding) {
       mc->new_connection(netvc, netvc->thread);
     } else {
@@ -677,7 +677,7 @@ MC::get_ascii_input(int n, int *end)
     goto Lblock;
   }
   char *c = tmp_cmd_buffer;
-  int e   = read_avail;
+  int   e = read_avail;
   if (e > n) {
     e = n;
   }
@@ -698,7 +698,7 @@ MC::ascii_get_event(int event, void *data)
     wbuf->WRITE("VALUE ");
     wbuf->write(key, header.nkey);
     wbuf->WRITE(" ");
-    char t[32], *te = t + 32;
+    char  t[32], *te = t + 32;
     char *flags = xutoa(rcache_header->flags, te);
     wbuf->write(flags, te - flags);
     wbuf->WRITE(" ");
@@ -937,7 +937,7 @@ MC::ascii_incr_decr_event(int event, void *data)
     header.cas = next_cas++;
     {
       char *localdata = nullptr;
-      int len         = 0;
+      int   len       = 0;
       // must be huge, why convert to a counter ??
       if (cwvc->get_single_data((void **)&localdata, &len) < 0) {
         goto Lfail;
@@ -1043,8 +1043,8 @@ MC::ascii_get(char *as, char *e)
 int
 MC::ascii_gets()
 {
-  int len = 0;
-  char *c = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len);
+  int   len = 0;
+  char *c   = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len);
   return ascii_get(c, c + len);
 }
 
@@ -1256,7 +1256,7 @@ is_noreply(char **pt, char *e)
 int
 MC::read_ascii_from_client_event(int event, void *data)
 {
-  int len = 0;
+  int   len = 0;
   char *c = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len), *s = c;
   MCDebugBuf("tsmemcache_ascii_cmd", c, len);
   char *e = c + len - 5; // at least 6 chars

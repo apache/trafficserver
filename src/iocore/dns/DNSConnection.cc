@@ -103,11 +103,11 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   this->opt = opt;
   this->tcp_data.reset();
 
-  int res = 0;
-  short Proto;
-  uint8_t af = addr->sa_family;
+  int        res = 0;
+  short      Proto;
+  uint8_t    af = addr->sa_family;
   IpEndpoint bind_addr;
-  size_t bind_size = 0;
+  size_t     bind_size = 0;
 
   if (opt._use_tcp) {
     Proto = IPPROTO_TCP;
@@ -148,7 +148,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
     int retries = 0;
     while (retries++ < 10000) {
       ip_port_text_buffer b;
-      uint32_t p                      = generator.random();
+      uint32_t            p           = generator.random();
       p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
       Dbg(dbg_ctl_dns, "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));

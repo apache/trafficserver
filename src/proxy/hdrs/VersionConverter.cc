@@ -71,7 +71,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 {
   // :method
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()); field != nullptr) {
-    int value_len;
+    int         value_len;
     const char *value = header.method_get(&value_len);
 
     field->value_set(header.m_heap, header.m_mime, value, value_len);
@@ -82,7 +82,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :scheme
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()); field != nullptr) {
-    int value_len;
+    int         value_len;
     const char *value = header.scheme_get(&value_len);
 
     if (value != nullptr) {
@@ -97,14 +97,14 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()); field != nullptr) {
-    int value_len;
+    int         value_len;
     const char *value = header.host_get(&value_len);
 
     if (header.is_port_in_header()) {
-      int port = header.port_get();
+      int                   port = header.port_get();
       ts::LocalBuffer<char> buf(value_len + 8);
-      char *host_and_port = buf.data();
-      value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
+      char                 *host_and_port = buf.data();
+      value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
 
       field->value_set(header.m_heap, header.m_mime, host_and_port, value_len);
     } else {
@@ -120,17 +120,17 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :path
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()); field != nullptr) {
-    int value_len     = 0;
-    const char *value = header.path_get(&value_len);
-    int param_len     = 0;
-    const char *param = header.params_get(&param_len);
-    int query_len     = 0;
-    const char *query = header.query_get(&query_len);
-    int path_len      = value_len + 1;
+    int         value_len = 0;
+    const char *value     = header.path_get(&value_len);
+    int         param_len = 0;
+    const char *param     = header.params_get(&param_len);
+    int         query_len = 0;
+    const char *query     = header.query_get(&query_len);
+    int         path_len  = value_len + 1;
 
     ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len + param_len);
-    char *path = buf.data();
-    path[0]    = '/';
+    char                 *path = buf.data();
+    path[0]                    = '/';
     memcpy(path + 1, value, value_len);
     if (param_len > 0) {
       path[path_len] = ';';
@@ -168,7 +168,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :method
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int method_len;
+    int         method_len;
     const char *method = field->value_get(&method_len);
     if (method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method, HTTP_LEN_CONNECT) == 0) {
       is_connect_method = true;
@@ -184,7 +184,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     // :scheme
     if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int scheme_len;
+      int         scheme_len;
       const char *scheme = field->value_get(&scheme_len);
       const char *scheme_wks;
 
@@ -208,7 +208,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int authority_len;
+    int         authority_len;
     const char *authority = field->value_get(&authority_len);
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, authority_len, true);
 
@@ -238,7 +238,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     // :path
     if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int path_len;
+      int         path_len;
       const char *path = field->value_get(&path_len);
 
       // cut first '/' if there, because `url_print()` add '/' before printing path
@@ -293,7 +293,7 @@ VersionConverter::_convert_res_from_2_to_1(HTTPHdr &header) const
 
   // Set status from :status
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()); field != nullptr) {
-    int status_len;
+    int         status_len;
     const char *status = field->value_get(&status_len);
 
     header.status_set(http_parse_status(status, status + status_len));

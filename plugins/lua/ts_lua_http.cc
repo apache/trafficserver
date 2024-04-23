@@ -117,16 +117,16 @@ static int ts_lua_http_get_ssn_remote_addr(lua_State *L);
 static void ts_lua_inject_server_state_variables(lua_State *L);
 
 static void ts_lua_inject_http_resp_transform_api(lua_State *L);
-static int ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L);
-static int ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L);
-static int ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L);
-static int ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L);
+static int  ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L);
+static int  ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L);
+static int  ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L);
+static int  ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L);
 
 static void ts_lua_inject_http_req_transform_api(lua_State *L);
-static int ts_lua_http_req_transform_get_downstream_bytes(lua_State *L);
-static int ts_lua_http_req_transform_get_downstream_watermark_bytes(lua_State *L);
-static int ts_lua_http_req_transform_set_downstream_watermark_bytes(lua_State *L);
-static int ts_lua_http_req_transform_set_upstream_bytes(lua_State *L);
+static int  ts_lua_http_req_transform_get_downstream_bytes(lua_State *L);
+static int  ts_lua_http_req_transform_get_downstream_watermark_bytes(lua_State *L);
+static int  ts_lua_http_req_transform_set_downstream_watermark_bytes(lua_State *L);
+static int  ts_lua_http_req_transform_set_upstream_bytes(lua_State *L);
 
 void
 ts_lua_inject_http_api(lua_State *L)
@@ -350,7 +350,7 @@ ts_lua_inject_server_state_variables(lua_State *L)
 static int
 ts_lua_http_set_retstatus(lua_State *L)
 {
-  int status;
+  int              status;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -363,8 +363,8 @@ ts_lua_http_set_retstatus(lua_State *L)
 static int
 ts_lua_http_set_retbody(lua_State *L)
 {
-  const char *body;
-  size_t body_len;
+  const char      *body;
+  size_t           body_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -377,9 +377,9 @@ ts_lua_http_set_retbody(lua_State *L)
 static int
 ts_lua_http_set_resp(lua_State *L)
 {
-  int n, status;
-  const char *body;
-  size_t body_len;
+  int              n, status;
+  const char      *body;
+  size_t           body_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -435,8 +435,8 @@ static int
 ts_lua_http_get_cache_lookup_url(lua_State *L)
 {
   TSMLoc url = TS_NULL_MLOC;
-  char *str  = nullptr;
-  int len;
+  char  *str = nullptr;
+  int    len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -472,7 +472,7 @@ static int
 ts_lua_http_set_cache_lookup_url(lua_State *L)
 {
   const char *url;
-  size_t url_len;
+  size_t      url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -483,7 +483,7 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
   if (url && url_len) {
     const char *start = url;
     const char *end   = url + url_len;
-    TSMLoc new_url_loc;
+    TSMLoc      new_url_loc;
     if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
         TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
         TSHttpTxnCacheLookupUrlSet(http_ctx->txnp, http_ctx->client_request_bufp, new_url_loc) == TS_SUCCESS) {
@@ -500,7 +500,7 @@ static int
 ts_lua_http_redo_cache_lookup(lua_State *L)
 {
   const char *url;
-  size_t url_len;
+  size_t      url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -520,8 +520,8 @@ ts_lua_http_redo_cache_lookup(lua_State *L)
 static int
 ts_lua_http_get_parent_proxy(lua_State *L)
 {
-  const char *hostname = nullptr;
-  int port             = 0;
+  const char      *hostname = nullptr;
+  int              port     = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -551,8 +551,8 @@ ts_lua_http_set_parent_proxy(lua_State *L)
 
   if (n == 2) {
     const char *hostname;
-    size_t hostname_len;
-    int port = 0;
+    size_t      hostname_len;
+    int         port = 0;
 
     hostname = luaL_checklstring(L, 1, &hostname_len);
     port     = luaL_checkinteger(L, 2);
@@ -568,8 +568,8 @@ static int
 ts_lua_http_get_parent_selection_url(lua_State *L)
 {
   TSMLoc url = TS_NULL_MLOC;
-  char *str  = nullptr;
-  int len;
+  char  *str = nullptr;
+  int    len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -605,7 +605,7 @@ static int
 ts_lua_http_set_parent_selection_url(lua_State *L)
 {
   const char *url;
-  size_t url_len;
+  size_t      url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -616,7 +616,7 @@ ts_lua_http_set_parent_selection_url(lua_State *L)
   if (url && url_len) {
     const char *start = url;
     const char *end   = url + url_len;
-    TSMLoc new_url_loc;
+    TSMLoc      new_url_loc;
     if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
         TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
         TSHttpTxnParentSelectionUrlSet(http_ctx->txnp, http_ctx->client_request_bufp, new_url_loc) == TS_SUCCESS) {
@@ -633,7 +633,7 @@ static int
 ts_lua_http_set_cache_url(lua_State *L)
 {
   const char *url;
-  size_t url_len;
+  size_t      url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -669,7 +669,7 @@ ts_lua_http_set_server_resp_no_store(lua_State *L)
 static int
 ts_lua_http_resp_cache_transformed(lua_State *L)
 {
-  int action;
+  int              action;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -684,7 +684,7 @@ ts_lua_http_resp_cache_transformed(lua_State *L)
 static int
 ts_lua_http_resp_cache_untransformed(lua_State *L)
 {
-  int action;
+  int              action;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -699,8 +699,8 @@ ts_lua_http_resp_cache_untransformed(lua_State *L)
 static int
 ts_lua_http_get_client_protocol_stack(lua_State *L)
 {
-  char const *results[10];
-  int count = 0;
+  char const      *results[10];
+  int              count = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -716,8 +716,8 @@ ts_lua_http_get_client_protocol_stack(lua_State *L)
 static int
 ts_lua_http_get_server_protocol_stack(lua_State *L)
 {
-  char const *results[10];
-  int count = 0;
+  char const      *results[10];
+  int              count = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -733,8 +733,8 @@ ts_lua_http_get_server_protocol_stack(lua_State *L)
 static int
 ts_lua_http_server_push(lua_State *L)
 {
-  const char *url;
-  size_t url_len;
+  const char      *url;
+  size_t           url_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -831,7 +831,7 @@ ts_lua_http_is_aborted(lua_State *L)
 static int
 ts_lua_http_skip_remapping_set(lua_State *L)
 {
-  int action;
+  int              action;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -877,9 +877,9 @@ ts_lua_http_server_transaction_count(lua_State *L)
 static int
 ts_lua_http_redirect_url_set(lua_State *L)
 {
-  const char *url;
-  const char *redirect_url;
-  size_t url_len;
+  const char      *url;
+  const char      *redirect_url;
+  size_t           url_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -907,9 +907,9 @@ ts_lua_http_get_server_state(lua_State *L)
 static int
 ts_lua_http_get_remap_from_url(lua_State *L)
 {
-  TSMLoc url = TS_NULL_MLOC;
-  char *str  = nullptr;
-  int len;
+  TSMLoc           url = TS_NULL_MLOC;
+  char            *str = nullptr;
+  int              len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -934,9 +934,9 @@ done:
 static int
 ts_lua_http_get_remap_to_url(lua_State *L)
 {
-  TSMLoc url = TS_NULL_MLOC;
-  char *str  = nullptr;
-  int len;
+  TSMLoc           url = TS_NULL_MLOC;
+  char            *str = nullptr;
+  int              len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -961,7 +961,7 @@ done:
 static int
 ts_lua_http_get_server_fd(lua_State *L)
 {
-  int fd;
+  int              fd;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -978,7 +978,7 @@ ts_lua_http_get_server_fd(lua_State *L)
 static int
 ts_lua_http_get_client_fd(lua_State *L)
 {
-  int fd;
+  int              fd;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -995,8 +995,8 @@ ts_lua_http_get_client_fd(lua_State *L)
 static int
 ts_lua_http_get_client_received_error(lua_State *L)
 {
-  uint32_t cls  = 0;
-  uint64_t code = 0;
+  uint32_t         cls  = 0;
+  uint64_t         code = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -1011,8 +1011,8 @@ ts_lua_http_get_client_received_error(lua_State *L)
 static int
 ts_lua_http_get_client_sent_error(lua_State *L)
 {
-  uint32_t cls  = 0;
-  uint64_t code = 0;
+  uint32_t         cls  = 0;
+  uint64_t         code = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -1027,8 +1027,8 @@ ts_lua_http_get_client_sent_error(lua_State *L)
 static int
 ts_lua_http_get_server_received_error(lua_State *L)
 {
-  uint32_t cls  = 0;
-  uint64_t code = 0;
+  uint32_t         cls  = 0;
+  uint64_t         code = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -1043,8 +1043,8 @@ ts_lua_http_get_server_received_error(lua_State *L)
 static int
 ts_lua_http_get_server_sent_error(lua_State *L)
 {
-  uint32_t cls  = 0;
-  uint64_t code = 0;
+  uint32_t         cls  = 0;
+  uint64_t         code = 0;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -1060,16 +1060,16 @@ static int
 ts_lua_http_get_ssn_remote_addr(lua_State *L)
 {
   struct sockaddr const *client_ip;
-  ts_lua_http_ctx *http_ctx;
-  int port;
-  int family;
-  char cip[128];
+  ts_lua_http_ctx       *http_ctx;
+  int                    port;
+  int                    family;
+  char                   cip[128];
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  TSHttpSsn ssn = TSHttpTxnSsnGet(http_ctx->txnp);
-  TSVConn vconn = TSHttpSsnClientVConnGet(ssn);
-  client_ip     = TSNetVConnRemoteAddrGet(vconn);
+  TSHttpSsn ssn   = TSHttpTxnSsnGet(http_ctx->txnp);
+  TSVConn   vconn = TSHttpSsnClientVConnGet(ssn);
+  client_ip       = TSNetVConnRemoteAddrGet(vconn);
 
   if (client_ip == nullptr) {
     lua_pushnil(L);
@@ -1132,7 +1132,7 @@ ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L)
 static int
 ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L)
 {
-  int64_t n;
+  int64_t                    n;
   ts_lua_http_transform_ctx *transform_ctx;
 
   transform_ctx = ts_lua_get_http_transform_ctx(L);
@@ -1152,7 +1152,7 @@ ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L)
 static int
 ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L)
 {
-  int64_t n;
+  int64_t                    n;
   ts_lua_http_transform_ctx *transform_ctx;
 
   transform_ctx = ts_lua_get_http_transform_ctx(L);

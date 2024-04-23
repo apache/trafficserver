@@ -30,5 +30,5 @@ class Http3FrameGenerator
 public:
   virtual ~Http3FrameGenerator(){};
   virtual Http3FrameUPtr generate_frame() = 0;
-  virtual bool is_done() const            = 0;
+  virtual bool           is_done() const  = 0;
 };

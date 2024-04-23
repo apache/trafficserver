@@ -32,8 +32,8 @@
 static bool
 proto_is_http2(IOBufferReader *reader)
 {
-  char buf[HTTP2_CONNECTION_PREFACE_LEN];
-  char *end;
+  char      buf[HTTP2_CONNECTION_PREFACE_LEN];
+  char     *end;
   ptrdiff_t nbytes;
 
   end    = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
@@ -49,9 +49,9 @@ proto_is_http2(IOBufferReader *reader)
 }
 
 struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
-  static const size_t minimum_read_size   = 1;
+  static const size_t   minimum_read_size = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  IOBufferReader *reader;
+  IOBufferReader       *reader;
 
   explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, Ptr<ProxyMutex> &mutex, MIOBuffer *buffer,
                                    IOBufferReader *reader)
@@ -65,10 +65,10 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   int
   ioCompletionEvent(int event, void *edata)
   {
-    VIO *vio;
+    VIO            *vio;
     NetVConnection *netvc;
-    SessionAccept *acceptor = nullptr;
-    ProtoGroupKey key       = N_PROTO_GROUPS; // use this as an invalid value.
+    SessionAccept  *acceptor = nullptr;
+    ProtoGroupKey   key      = N_PROTO_GROUPS; // use this as an invalid value.
 
     vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -159,7 +159,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     return EVENT_CONT;
   }
 
-  MIOBuffer *iobuf;
+  MIOBuffer                        *iobuf;
   const ProtocolProbeSessionAccept *probeParent;
 };
 
@@ -169,10 +169,10 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
   if (event == NET_EVENT_ACCEPT) {
     ink_assert(data);
 
-    VIO *vio;
-    NetVConnection *netvc = static_cast<NetVConnection *>(data);
+    VIO                     *vio;
+    NetVConnection          *netvc = static_cast<NetVConnection *>(data);
     ProtocolProbeTrampoline *probe;
-    UnixNetVConnection *unix_netvc = dynamic_cast<UnixNetVConnection *>(netvc);
+    UnixNetVConnection      *unix_netvc = dynamic_cast<UnixNetVConnection *>(netvc);
     if (unix_netvc != nullptr && unix_netvc->read.vio.get_writer() != nullptr) {
       probe = new ProtocolProbeTrampoline(this, netvc->mutex, unix_netvc->read.vio.get_writer(), unix_netvc->read.vio.get_reader());
     } else {

@@ -347,8 +347,8 @@ PluginDso::LoadedPlugins::remove(PluginDso *plugin)
 PluginDso *
 PluginDso::LoadedPlugins::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
 {
-  std::error_code ec;
-  auto fs = fs::status(path, ec);
+  std::error_code      ec;
+  auto                 fs = fs::status(path, ec);
   ts_clock::time_point mtime;
   if (!ec) {
     mtime = fs::last_write_time(fs);
@@ -398,7 +398,7 @@ bool
 PluginDso::LoadedPlugins::addPluginPathToDsoOptOutTable(std::string_view pluginPath)
 {
   std::error_code ec;
-  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+  auto            effectivePath = fs::canonical(fs::path{pluginPath}, ec);
 
   if (ec) {
     PluginError("Error getting the canonical path: %s", ec.message().c_str());
@@ -417,7 +417,7 @@ void
 PluginDso::LoadedPlugins::removePluginPathFromDsoOptOutTable(std::string_view pluginPath)
 {
   std::error_code ec;
-  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+  auto            effectivePath = fs::canonical(fs::path{pluginPath}, ec);
 
   if (ec) {
     PluginError("Error getting the canonical path: %s", ec.message().c_str());

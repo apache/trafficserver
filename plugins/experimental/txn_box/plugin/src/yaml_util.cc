@@ -76,7 +76,7 @@ yaml_load(swoc::file::path const &path)
 {
   //  static_assert(sizeof(YAML::Node) == sizeof(static_cast<Rv<YAML::Node>*>(nullptr)->_r));
   std::error_code ec;
-  std::string content = swoc::file::load(path, ec);
+  std::string     content = swoc::file::load(path, ec);
 
   if (ec) {
     return Errata(S_ERROR, R"(Unable to load file "{}" - {}.)", path, ec);

@@ -33,11 +33,11 @@
 #include "tscore/runroot.h"
 #include "iocore/eventsystem/RecProcess.h"
 
-static int syslog_mode    = false;
-static int debug_mode     = false;
-static int wait_mode      = false;
+static int   syslog_mode  = false;
+static int   debug_mode   = false;
+static int   wait_mode    = false;
 static char *host_triplet = nullptr;
-static int target_pid     = getppid();
+static int   target_pid   = getppid();
 static char *user         = nullptr;
 
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
@@ -58,7 +58,7 @@ static const ArgumentDescription argument_descriptions[] = {
 static struct tm
 timestamp()
 {
-  time_t now = time(nullptr);
+  time_t    now = time(nullptr);
   struct tm tm;
 
   localtime_r(&now, &tm);
@@ -68,9 +68,9 @@ timestamp()
 static char *
 crashlog_name()
 {
-  char filename[64];
-  struct tm now = timestamp();
-  std::string logdir(RecConfigReadLogDir());
+  char           filename[64];
+  struct tm      now = timestamp();
+  std::string    logdir(RecConfigReadLogDir());
   ats_scoped_str pathname;
 
   strftime(filename, sizeof(filename), "crash-%Y-%m-%d-%H%M%S.log", &now);
@@ -94,7 +94,7 @@ bool
 crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
 {
   char *trace = nullptr;
-  int mgmterr;
+  int   mgmterr;
 
   // NOTE: sometimes we can't get a backtrace because the ptrace attach will fail with
   // EPERM. I've seen this happen when a debugger is attached, which makes sense, but it
@@ -114,10 +114,10 @@ crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
-  FILE *fp;
-  char *logname;
+  FILE           *fp;
+  char           *logname;
   crashlog_target target;
-  pid_t parent = getppid();
+  pid_t           parent = getppid();
 
   DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
 
@@ -144,7 +144,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   if (syslog_mode) {
     RecString name;
-    int facility = -1;
+    int       facility = -1;
 
     if (REC_ReadConfigStringAlloc(name, "proxy.config.syslog_facility") == REC_ERR_OKAY) {
       facility = facility_string_to_int(name);

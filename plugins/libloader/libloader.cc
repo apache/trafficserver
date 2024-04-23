@@ -33,7 +33,7 @@
 #include <ts/ts.h>
 
 typedef struct link_handle_s {
-  void *handle;
+  void          *handle;
   link_handle_s *next;
 } link_handle;
 
@@ -55,7 +55,7 @@ unloadlibs(void)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  int i;
+  int                      i;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = (char *)"libloader";
@@ -72,8 +72,8 @@ TSPluginInit(int argc, const char *argv[])
   static DbgCtl dbg_ctl{"libloader"};
 
   for (i = 1; i < argc; ++i) {
-    const char *lib = argv[i];
-    void *handle    = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
+    const char *lib    = argv[i];
+    void       *handle = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
     if (handle) {
       auto l    = TSRalloc<link_handle>();
       l->handle = handle;

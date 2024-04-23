@@ -31,8 +31,8 @@ struct PreWarmConfigParams : public ConfigInfo {
   PreWarmConfigParams &operator=(const HttpConfigParams &) = delete;
 
   // Config Params
-  int8_t enabled       = 0;
-  int8_t algorithm     = 0;
+  int8_t  enabled      = 0;
+  int8_t  algorithm    = 0;
   int64_t event_period = 0;
 };
 
@@ -48,9 +48,9 @@ public:
 
   // ConfigProcessor::scoped_config interface
   static PreWarmConfigParams *acquire();
-  static void release(PreWarmConfigParams *params);
+  static void                 release(PreWarmConfigParams *params);
 
 private:
-  inline static int _config_id = 0;
+  inline static int                                                 _config_id = 0;
   inline static std::unique_ptr<ConfigUpdateHandler<PreWarmConfig>> _config_update_handler;
 };

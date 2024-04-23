@@ -31,7 +31,7 @@ public:
   static void init();
 
   // SSL callbacks
-  static int ssl_client_new_session(SSL *ssl, SSL_SESSION *session);
+  static int  ssl_client_new_session(SSL *ssl, SSL_SESSION *session);
   static void ssl_client_keylog_cb(const SSL *ssl, const char *line);
 
   static int ssl_quic_qc_index;

@@ -33,11 +33,11 @@ class ReadWriteEventIO : public EventIO
 {
 public:
   ReadWriteEventIO() : EventIO() {}
-  int start(EventLoop l, NetEvent *ne, NetHandler *nh, int events);
-  int start(EventLoop l, int afd, NetEvent *ne, NetHandler *nh, int events);
+  int  start(EventLoop l, NetEvent *ne, NetHandler *nh, int events);
+  int  start(EventLoop l, int afd, NetEvent *ne, NetHandler *nh, int events);
   void process_event(int flags) override;
 
 private:
-  NetEvent *_ne   = nullptr;
+  NetEvent   *_ne = nullptr;
   NetHandler *_nh = nullptr;
 };

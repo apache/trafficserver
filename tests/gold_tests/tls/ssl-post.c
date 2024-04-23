@@ -44,7 +44,7 @@ pthread_mutex_t *mutex_buf = NULL;
 
 struct thread_info {
   struct addrinfo *result, *rp;
-  SSL_SESSION *session;
+  SSL_SESSION     *session;
 };
 
 void
@@ -96,7 +96,7 @@ spawn_same_session_send(void *arg)
   setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
-  SSL *ssl            = SSL_new(client_ctx);
+  SSL     *ssl        = SSL_new(client_ctx);
   SSL_set_max_proto_version(ssl, TLS1_2_VERSION);
 
   SSL_set_session(ssl, tinfo->session);
@@ -107,7 +107,7 @@ spawn_same_session_send(void *arg)
   int post_write_ret = -1;
 
   while (ret < 0) {
-    int error = SSL_get_error(ssl, ret);
+    int    error = SSL_get_error(ssl, ret);
     fd_set reads;
     fd_set writes;
     FD_ZERO(&reads);
@@ -154,7 +154,7 @@ spawn_same_session_send(void *arg)
   shutdown(sfd, SHUT_WR);
 
   char input_buf[1024];
-  int read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
+  int  read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
   while (read_bytes != 0) {
     fd_set reads;
     fd_set writes;
@@ -214,16 +214,16 @@ spawn_same_session_send(void *arg)
 int
 main(int argc, char *argv[])
 {
-  struct addrinfo hints;
+  struct addrinfo  hints;
   struct addrinfo *result, *rp;
-  int sfd = -1, s;
+  int              sfd = -1, s;
 
   if (argc < 4) {
     fprintf(stderr, "Usage: %s host thread-count header-count [port]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  char *host       = argv[1];
-  int header_count = atoi(argv[3]);
+  char *host         = argv[1];
+  int   header_count = atoi(argv[3]);
   snprintf(req_buf, sizeof(req_buf), "POST /post HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-length:%zu\r\n", host,
            sizeof(post_buf));
   int i;
@@ -292,7 +292,7 @@ main(int argc, char *argv[])
 #endif
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
-  SSL *ssl            = SSL_new(client_ctx);
+  SSL     *ssl        = SSL_new(client_ctx);
   SSL_set_max_proto_version(ssl, TLS1_2_VERSION);
 
   SSL_set_fd(ssl, sfd);
@@ -313,7 +313,7 @@ main(int argc, char *argv[])
   SSL_write(ssl, post_buf, sizeof(post_buf));
 
   char input_buf[1024];
-  int read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
+  int  read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
   if (read_bytes > 0 && read_bytes < 1024) {
     input_buf[read_bytes] = '\0';
   } else {

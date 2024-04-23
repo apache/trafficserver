@@ -45,21 +45,21 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 class remap_entry
 {
 public:
-  static remap_entry *active_list;
+  static remap_entry    *active_list;
   static pthread_mutex_t mutex;
-  remap_entry *next;
-  int argc;
-  char **argv;
+  remap_entry           *next;
+  int                    argc;
+  char                 **argv;
   remap_entry(int _argc, char *_argv[]);
   ~remap_entry();
   static void add_to_list(remap_entry *re);
   static void remove_from_list(remap_entry *re);
 };
 
-static int plugin_init_counter = 0;               /* remap plugin initialization counter */
+static int             plugin_init_counter = 0;   /* remap plugin initialization counter */
 static pthread_mutex_t remap_plugin_global_mutex; /* remap plugin global mutex */
-remap_entry *remap_entry::active_list = nullptr;
-pthread_mutex_t remap_entry::mutex; /* remap_entry class mutex */
+remap_entry           *remap_entry::active_list = nullptr;
+pthread_mutex_t        remap_entry::mutex; /* remap_entry class mutex */
 
 /* ----------------------- remap_entry::remap_entry ------------------------ */
 remap_entry::remap_entry(int _argc, char *_argv[]) : next(nullptr), argc(0), argv(nullptr)
@@ -167,7 +167,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   remap_entry *ri;
-  int i;
+  int          i;
 
   Dbg(dbg_ctl, "enter"); // Debug output automatically includes the file, line #, and function.
 
@@ -208,7 +208,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 static std::atomic<uint64_t> processing_counter; // sequential counter
-static int arg_index;
+static int                   arg_index;
 
 /* -------------------------- TSRemapDoRemap -------------------------------- */
 TSRemapStatus
@@ -216,9 +216,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   const char *temp;
   const char *temp2;
-  int len, len2, port;
-  TSMLoc cfield;
-  uint64_t _processing_counter = processing_counter++;
+  int         len, len2, port;
+  TSMLoc      cfield;
+  uint64_t    _processing_counter = processing_counter++;
 
   remap_entry *ri = static_cast<remap_entry *>(ih);
   Dbg(dbg_ctl, "enter");
@@ -273,7 +273,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // How to cancel request processing and return error message to the client
   // We will do it every other request
   if (_processing_counter & 1) {
-    char *tmp                   = static_cast<char *>(TSmalloc(256));
+    char      *tmp              = static_cast<char *>(TSmalloc(256));
     static int my_local_counter = 0;
 
     len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n", my_local_counter,
@@ -320,8 +320,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 void
 TSRemapOSResponse(void *ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
 {
-  void *data     = TSUserArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
-  int request_id = data ? static_cast<int *>(data)[0] : -1;
+  void *data       = TSUserArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
+  int   request_id = data ? static_cast<int *>(data)[0] : -1;
 
   Dbg(dbg_ctl, "Read processing counter %d from request processing block\n", request_id);
   Dbg(dbg_ctl, "OS response status: %d\n", os_response_type);

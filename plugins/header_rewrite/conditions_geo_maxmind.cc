@@ -60,7 +60,7 @@ std::string
 MMConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   std::string ret = "(unknown)";
-  int mmdb_error;
+  int         mmdb_error;
 
   if (gMaxMindDB == nullptr) {
     Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");
@@ -125,7 +125,7 @@ int64_t
 MMConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   int64_t ret = -1;
-  int mmdb_error;
+  int     mmdb_error;
 
   if (gMaxMindDB == nullptr) {
     Dbg(pi_dbg_ctl, "MaxMind not initialized; using default value");

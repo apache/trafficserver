@@ -71,10 +71,10 @@ using namespace inliner_ns;
 namespace ats
 {
 struct HttpParser {
-  bool parsed_ = false;
+  bool         parsed_ = false;
   TSHttpParser parser_;
-  TSMBuffer buffer_;
-  TSMLoc location_;
+  TSMBuffer    buffer_;
+  TSMLoc       location_;
 
   void destroyParser();
 
@@ -102,16 +102,16 @@ struct HttpParser {
 template <class T> struct HttpTransaction {
   using Self = HttpTransaction<T>;
 
-  bool parsingHeaders_;
-  bool abort_;
-  bool timeout_;
-  io::IO *in_;
+  bool                    parsingHeaders_;
+  bool                    abort_;
+  bool                    timeout_;
+  io::IO                 *in_;
   std::unique_ptr<io::IO> out_;
-  TSVConn vconnection_;
-  TSCont continuation_;
-  T t_;
-  HttpParser parser_;
-  ChunkDecoder *chunkDecoder_;
+  TSVConn                 vconnection_;
+  TSCont                  continuation_;
+  T                       t_;
+  HttpParser              parser_;
+  ChunkDecoder           *chunkDecoder_;
 
   ~HttpTransaction()
   {
@@ -184,10 +184,10 @@ template <class T> struct HttpTransaction {
   {
     assert(b != nullptr);
     assert(l != nullptr);
-    bool result        = false;
-    const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
+    bool         result = false;
+    const TSMLoc field  = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
     if (field != nullptr) {
-      int length;
+      int               length;
       const char *const value = TSMimeHdrFieldValueStringGet(b, l, field, -1, &length);
       if (value != nullptr && length == TS_HTTP_LEN_CHUNKED) {
         result = strncasecmp(value, TS_HTTP_VALUE_CHUNKED, TS_HTTP_LEN_CHUNKED) == 0;

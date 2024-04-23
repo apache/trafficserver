@@ -55,15 +55,15 @@ struct RemapPlugins : public Continuation {
     _request_header = h;
   }
 
-  bool run_single_remap();
+  bool          run_single_remap();
   TSRemapStatus run_plugin(RemapPluginInst *plugin);
 
   Action action;
 
 private:
-  unsigned _cur            = 0;
-  unsigned _rewritten      = 0;
-  HttpTransact::State *_s  = nullptr;
-  URL *_request_url        = nullptr;
-  HTTPHdr *_request_header = nullptr;
+  unsigned             _cur            = 0;
+  unsigned             _rewritten      = 0;
+  HttpTransact::State *_s              = nullptr;
+  URL                 *_request_url    = nullptr;
+  HTTPHdr             *_request_header = nullptr;
 };

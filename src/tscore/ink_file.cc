@@ -39,7 +39,7 @@
 using ioctl_arg_t = union {
   uint64_t u64;
   uint32_t u32;
-  off_t off;
+  off_t    off;
 };
 
 int
@@ -79,7 +79,7 @@ int
 ink_file_fd_readline(int fd, int bufsz, char *buf)
 {
   char c;
-  int i = 0;
+  int  i = 0;
 
   if (bufsz < 2) {
     return (-EINVAL); /* bufsz must by >= 2 */
@@ -124,7 +124,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   size_t keptlen; // is the length of the retained rootpath
   size_t pathlen; // is the length of the result path
   size_t seglen;  // is the end of the current segment
-  char curdir[PATH_NAME_MAX];
+  char   curdir[PATH_NAME_MAX];
 
   /* Treat null as an empty path.
    */
@@ -497,8 +497,8 @@ int
 ink_fileperm_parse(const char *perms)
 {
   if (perms && strlen(perms) == 9) {
-    int re        = 0;
-    const char *c = perms;
+    int         re = 0;
+    const char *c  = perms;
     if (*c == 'r') {
       re |= S_IRUSR;
     }

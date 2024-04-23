@@ -161,9 +161,9 @@ create_lua_vms()
 
   // Initialize the GC numbers, no need to lock here
   for (int index = 0; index < ts_lua_max_state_count; ++index) {
-    ts_lua_main_ctx *const main_ctx = (ctx_array + index);
-    lua_State *const lstate         = main_ctx->lua;
-    ts_lua_ctx_stats *const stats   = main_ctx->stats;
+    ts_lua_main_ctx *const  main_ctx = (ctx_array + index);
+    lua_State *const        lstate   = main_ctx->lua;
+    ts_lua_ctx_stats *const stats    = main_ctx->stats;
 
     stats->gc_kb = stats->gc_kb_max = lua_getgccount(lstate);
   }
@@ -224,9 +224,9 @@ static void
 get_time_now_str(char *const buf, size_t const buflen)
 {
   TSHRTime const timenowusec = TShrtime();
-  int64_t const timemsec     = (int64_t)(timenowusec / 1000000);
-  time_t const timesec       = (time_t)(timemsec / 1000);
-  int const ms               = (int)(timemsec % 1000);
+  int64_t const  timemsec    = (int64_t)(timenowusec / 1000000);
+  time_t const   timesec     = (time_t)(timemsec / 1000);
+  int const      ms          = (int)(timemsec % 1000);
 
   struct tm tm;
   gmtime_r(&timesec, &tm);
@@ -341,14 +341,14 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  int ret;
-  char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH] = "";
-  char const *inline_script                   = "";
-  int fn                                      = 0;
-  int states                                  = ts_lua_max_state_count;
-  int ljgc                                    = 0;
-  int jit                                     = 1;
-  static const struct option longopt[]        = {
+  int                        ret;
+  char                       script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH] = "";
+  char const                *inline_script                          = "";
+  int                        fn                                     = 0;
+  int                        states                                 = ts_lua_max_state_count;
+  int                        ljgc                                   = 0;
+  int                        jit                                    = 1;
+  static const struct option longopt[]                              = {
     {"states", required_argument, 0, 's'},
     {"jit",    required_argument, 0, 'j'},
     {"inline", required_argument, 0, 'i'},
@@ -375,7 +375,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         Dbg(dbg_ctl, "[%s] disable JIT mode for remap plugin", __FUNCTION__);
         for (int index = 0; index < ts_lua_max_state_count; ++index) {
           ts_lua_main_ctx *const main_ctx = (ts_lua_main_ctx_array + index);
-          lua_State *const lstate         = main_ctx->lua;
+          lua_State *const       lstate   = main_ctx->lua;
           if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF) == 0) {
             TSError("[ts_lua][%s] Failed to disable JIT mode for remap plugin", __FUNCTION__);
           }
@@ -503,14 +503,14 @@ TSRemapDeleteInstance(void *ih)
 static TSRemapStatus
 ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  int ret;
+  int      ret;
   uint64_t req_id;
 
-  TSCont contp;
+  TSCont     contp;
   lua_State *L;
 
-  ts_lua_main_ctx *main_ctx;
-  ts_lua_http_ctx *http_ctx;
+  ts_lua_main_ctx  *main_ctx;
+  ts_lua_http_ctx  *http_ctx;
   ts_lua_cont_info *ci;
 
   ts_lua_instance_conf *instance_conf;
@@ -607,12 +607,12 @@ vconnHookHandler(TSCont contp, TSEvent event, void *edata)
 {
   TSVConn vconn = (TSVConn)edata;
 
-  int ret;
+  int      ret;
   uint64_t req_id;
 
   lua_State *l;
 
-  ts_lua_main_ctx *main_ctx;
+  ts_lua_main_ctx  *main_ctx;
   ts_lua_vconn_ctx *vconn_ctx;
 
   ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
@@ -677,17 +677,17 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
+  TSMLoc    hdr_loc;
+  TSMLoc    url_loc;
 
-  int ret;
+  int      ret;
   uint64_t req_id;
-  TSCont txn_contp;
+  TSCont   txn_contp;
 
   lua_State *l;
 
-  ts_lua_main_ctx *main_ctx;
-  ts_lua_http_ctx *http_ctx;
+  ts_lua_main_ctx  *main_ctx;
+  ts_lua_http_ctx  *http_ctx;
   ts_lua_cont_info *ci;
 
   ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
@@ -863,8 +863,8 @@ TSPluginInit(int argc, const char *argv[])
 
   int states = ts_lua_max_state_count;
 
-  int jit                              = 1;
-  int reload                           = 0;
+  int                        jit       = 1;
+  int                        reload    = 0;
   static const struct option longopt[] = {
     {"states",        required_argument, 0, 's'},
     {"jit",           required_argument, 0, 'j'},
@@ -887,7 +887,7 @@ TSPluginInit(int argc, const char *argv[])
         Dbg(dbg_ctl, "[%s] disable JIT mode", __FUNCTION__);
         for (int index = 0; index < ts_lua_max_state_count; ++index) {
           ts_lua_main_ctx *const main_ctx = (ts_lua_g_main_ctx_array + index);
-          lua_State *const lstate         = main_ctx->lua;
+          lua_State *const       lstate   = main_ctx->lua;
           if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF) == 0) {
             TSError("[ts_lua][%s] Failed to disable JIT mode", __FUNCTION__);
           }
@@ -937,7 +937,7 @@ TSPluginInit(int argc, const char *argv[])
 
   ts_lua_init_instance(conf);
 
-  char errbuf[TS_LUA_MAX_STR_LENGTH];
+  char      errbuf[TS_LUA_MAX_STR_LENGTH];
   int const errbuf_len = sizeof(errbuf);
   int const ret =
     ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
@@ -958,7 +958,7 @@ TSPluginInit(int argc, const char *argv[])
   // adding hook based on whether the lua global function exists.
   ts_lua_main_ctx *main_ctx = &ts_lua_g_main_ctx_array[0];
   ts_lua_http_ctx *http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  lua_State *l              = http_ctx->cinfo.routine.lua;
+  lua_State       *l        = http_ctx->cinfo.routine.lua;
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
   if (lua_type(l, -1) == LUA_TFUNCTION) {
@@ -1048,7 +1048,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // adding hook based on whther the lua global vconn function exists
   ts_lua_vconn_ctx *vconn_ctx = ts_lua_create_vconn_ctx(main_ctx, conf);
-  lua_State *vl               = vconn_ctx->lua;
+  lua_State        *vl        = vconn_ctx->lua;
 
   lua_getglobal(vl, TS_LUA_FUNCTION_G_VCONN_START);
   if (lua_type(vl, -1) == LUA_TFUNCTION) {

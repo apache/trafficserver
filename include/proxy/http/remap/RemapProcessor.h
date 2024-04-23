@@ -44,7 +44,7 @@ public:
   bool finish_remap(HttpTransact::State *s, UrlRewrite *table);
 
   Action *perform_remap(Continuation *cont, HttpTransact::State *s);
-  bool LessThan(HttpTransact::State *, HttpTransact::State *);
+  bool    LessThan(HttpTransact::State *, HttpTransact::State *);
 };
 
 /**
