@@ -20,7 +20,7 @@ if(maxminddb_FOUND)
   add_atsplugin(maxmind_acl maxmind_acl.cc mmdb.cc)
 
   target_link_libraries(
-    maxmind_acl PRIVATE libswoc::libswoc ts::tsapi ts::tsutil yaml-cpp::yaml-cpp maxminddb::maxminddb PCRE::PCRE
+    maxmind_acl PRIVATE libswoc::libswoc ts::tsapi yaml-cpp::yaml-cpp maxminddb::maxminddb PCRE::PCRE
   )
 
 else()
