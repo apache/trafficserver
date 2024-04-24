@@ -278,7 +278,7 @@ TEST_CASE("aggWrite behavior")
     header.agg_pos = 0;
     {
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
-      stripe.aggWrite(0, 0);
+      stripe.aggWrite(EVENT_NONE, 0);
     }
     vc.wait_for_callback();
     CHECK(0 == header.agg_pos);
@@ -294,7 +294,7 @@ TEST_CASE("aggWrite behavior")
     header.write_serial = 10;
     {
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
-      stripe.aggWrite(0, 0);
+      stripe.aggWrite(EVENT_NONE, 0);
     }
     vc.wait_for_callback();
     // We don't check here what bytes were written. In fact according
