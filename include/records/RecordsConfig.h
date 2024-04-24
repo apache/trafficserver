@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include "../../src/records/P_RecCore.h"
+#include <string_view>
+#include "RecDefs.h"
 
 // This is to manage the librecords table sizes. Not awesome, but better than the earlier recompiling of ATS requirement...
 extern int max_records_entries;

@@ -28,7 +28,7 @@
 
 #include "mgmt/config/FileManager.h"
 
-#include "mgmt/rpc/handlers/common/RecordsUtils.h"
+#include "../common/RecordsUtils.h"
 #include "tsutil/Metrics.h"
 
 namespace utils = rpc::handlers::records::utils;

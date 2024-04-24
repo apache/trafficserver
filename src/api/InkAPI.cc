@@ -55,6 +55,8 @@
 #include "../iocore/hostdb/P_HostDB.h"
 #include "../iocore/cache/P_Cache.h"
 #include "records/RecCore.h"
+#include "../records/P_RecCore.h"
+#include "../records/P_RecDefs.h"
 #include "../iocore/net/P_SSLConfig.h"
 #include "../iocore/net/P_SSLClientUtils.h"
 #include "iocore/net/ConnectionTracker.h"
