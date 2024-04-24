@@ -217,7 +217,7 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 XpackDynamicTable::XpackDynamicTable(uint32_t size) : _maximum_size(size), _available(size), _max_entries(size), _storage(size)
 {
   XPACKDebug("Dynamic table size: %u", size);
-  this->_entries      = static_cast<struct XpackDynamicTableEntry *>(ats_malloc(sizeof(struct XpackDynamicTableEntry) * size));
+  this->_entries = static_cast<struct XpackDynamicTableEntry *>(ats_malloc(sizeof(struct XpackDynamicTableEntry) * size));
   memset(this->_entries, 0, sizeof(struct XpackDynamicTableEntry) * size);
   this->_entries_head = size - 1;
   this->_entries_tail = size - 1;
