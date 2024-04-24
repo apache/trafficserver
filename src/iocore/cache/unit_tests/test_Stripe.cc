@@ -26,8 +26,11 @@
 #include "tscore/EventNotify.h"
 
 #include <array>
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <ostream>
+#include <stdexcept>
 
 // Required by main.h
 int  cache_vols           = 1;
@@ -84,8 +87,21 @@ class FakeVC : public CacheVC
 public:
   FakeVC()
   {
-    this->buf = new_IOBufferData(iobuffer_size_to_index(1024, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+    this->buf    = new_IOBufferData(iobuffer_size_to_index(1024, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+    this->blocks = new_IOBufferBlock();
+    this->blocks->set(this->buf.get());
     SET_HANDLER(&FakeVC::handle_call);
+  }
+
+  void
+  set_test_data(char const *source, int len)
+  {
+    this->blocks->reset();
+    if (len > 1024) {
+      throw std::runtime_error{"data length exceeds internal buffer"};
+    }
+    std::memcpy(this->buf->data(), source, len);
+    this->blocks->fill(len);
   }
 
   void
@@ -104,6 +120,7 @@ public:
   set_write_len(int write_len)
   {
     this->write_len = write_len;
+    this->total_len = static_cast<std::uint64_t>(write_len);
   }
 
   void
@@ -175,7 +192,7 @@ attach_tmpfile_to_stripe(Stripe &stripe)
 
 // We can't return a stripe from this function because the copy
 // and move constructors are deleted.
-static void
+static std::FILE *
 init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
 {
   stripe.cache_vol                                = &cache_vol;
@@ -199,8 +216,9 @@ init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &c
 
   header.write_pos = 50000;
   header.agg_pos   = 1;
+  header.phase     = 0;
   stripe.header    = &header;
-  attach_tmpfile_to_stripe(stripe);
+  return attach_tmpfile_to_stripe(stripe);
 }
 
 TEST_CASE("The behavior of Stripe::add_writer.")
@@ -265,9 +283,11 @@ TEST_CASE("aggWrite behavior")
   Stripe              stripe;
   StripteHeaderFooter header;
   CacheVol            cache_vol;
-  init_stripe_for_writing(stripe, header, cache_vol);
-  WaitingVC vc{&stripe};
-  vc.set_write_len(1);
+  auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
+  WaitingVC           vc{&stripe};
+  char const         *source = "yay";
+  vc.set_test_data(source, 4);
+  vc.set_write_len(4);
   vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
   stripe.add_writer(&vc);
 
@@ -284,24 +304,76 @@ TEST_CASE("aggWrite behavior")
     CHECK(0 == header.agg_pos);
   }
 
-  SECTION("Given the aggregation buffer is partially full and sync is set, "
-          "when we schedule aggWrite, "
-          "then some bytes should be written to disk.")
+  SECTION("Given the aggregation buffer is partially full, sync is set, "
+          "and checksums are enabled, "
+          "when we schedule aggWrite with a VC buffer containing 'yay', ")
   {
-    vc.f.sync           = 1;
-    vc.f.use_first_key  = 1;
-    vc.write_serial     = 1;
-    header.write_serial = 10;
+    cache_config_enable_checksum = true;
+    vc.f.sync                    = 1;
+    vc.f.use_first_key           = 1;
+    vc.write_serial              = 1;
+    header.write_serial          = 10;
+    int document_offset          = header.write_pos;
     {
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.aggWrite(EVENT_NONE, 0);
     }
     vc.wait_for_callback();
-    // We don't check here what bytes were written. In fact according
-    // to valgrind it's writing uninitialized parts of the aggregation
-    // buffer, but that's OK because in this SECTION we only care that
-    // something was written successfully without anything blowing up.
-    CHECK(0 < header.agg_pos);
+
+    SECTION("then some bytes should be written to disk")
+    {
+      CHECK(0 < header.agg_pos);
+    }
+
+    Doc doc;
+
+    {
+      // Other threads are still alive and may interact with the
+      // cache periodically, so we should always grab the lock
+      // whenever we interact with the underlying file.
+      SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
+      fseek(file, document_offset, SEEK_SET);
+      fread(&doc, sizeof(Doc), 1, file);
+    }
+
+    // An incorrect magic value would indicate that the document is corrupt.
+    REQUIRE(DOC_MAGIC == doc.magic);
+
+    SECTION("then the document should be single fragment.")
+    {
+      CHECK(doc.single_fragment());
+    }
+
+    SECTION("then the document header length should be 0.")
+    {
+      CHECK(0 == doc.hlen);
+    }
+
+    SECTION("then the document length should be sizeof(Doc) + 4.")
+    {
+      CHECK(sizeof(Doc) + 4 == doc.len);
+    }
+
+    SECTION("then the document checksum should be correct.")
+    {
+      std::uint32_t expected = 'y' + 'a' + 'y' + '\0';
+      CHECK(expected == doc.checksum);
+    }
+
+    SECTION("then the document data should contain 'yay'.")
+    {
+      char *data = new char[doc.data_len()];
+      {
+        SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
+        fseek(file, document_offset + doc.prefix_len(), SEEK_SET);
+        fread(data, doc.data_len(), 1, file);
+      }
+      INFO("buffer content is \"" << data << "\"");
+      CHECK(0 == strncmp("yay", data, 3));
+      delete[] data;
+    }
+
+    cache_config_enable_checksum = false;
   }
 
   ats_free(stripe.raw_dir);
