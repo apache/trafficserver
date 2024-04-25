@@ -51,12 +51,13 @@ static inline constexpr TextView ARG_NOCASE = "nc";
 static inline constexpr TextView ARG_REVERSE = "rev";
 
 struct QPair {
-  using self_type = QPair;
+  static constexpr char Sep = '=';
+  using self_type           = QPair;
 
   TextView name;
   TextView value;
   char elt_sep     = 0;   ///< Separator before name.
-  char kv_sep      = '='; ///< Separator for name/value - always '=' if not null.
+  char kv_sep      = Sep; ///< Separator for name/value - always '=' if not null.
   self_type *_next = nullptr;
   self_type *_prev = nullptr;
   using Linkage    = swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
@@ -70,7 +71,6 @@ struct QPair {
     return TextView(name.data(), value.data_end());
   }
 };
-
 QPair
 query_take_qpair(TextView &qs)
 {
@@ -88,12 +88,9 @@ query_take_qpair(TextView &qs)
   // If there's anything left, look for kv pair.
   if (qs) {
     auto v{qs.clip_prefix_of([](char c) { return c != '&' && c != ';'; })};
-    auto k = v.take_prefix_at('=');
+    auto k = v.take_prefix_at(QPair::Sep);
     QPair zret{k, v};
     zret.elt_sep = elt_sep;
-    if (v.begin() > k.end()) {
-      zret.kv_sep = v[-1];
-    }
     return zret;
   }
   return {};
