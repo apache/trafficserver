@@ -124,7 +124,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
@@ -134,7 +134,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("rsa.com only in rsa cert")
@@ -144,7 +144,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 
 # Should receive a EC cert
 tr = Test.AddTestRun("ec.com only in ec cert")
@@ -154,4 +154,4 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
