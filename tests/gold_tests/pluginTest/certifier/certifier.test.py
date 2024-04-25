@@ -81,7 +81,7 @@ class DynamicCertTest:
         tr.Processes.Default.ReturnCode = 0
         # Verify certificate content
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            "Subject: CN = www.tls.com", "Subject should match the host in the request")
+            "Subject: CN ?= ?www.tls.com", "Subject should match the host in the request")
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             r"X509v3 extensions:\n.*X509v3 Subject Alternative Name:.*\n.*DNS:www.tls.com",
             "Should contain the SAN extension",
