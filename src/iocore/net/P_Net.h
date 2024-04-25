@@ -109,7 +109,3 @@ static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM
 #else
 #define NetDbg(dbg_ctl, fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #endif
-
-/// Default amount of buffer space to use for the initial read on an incoming connection.
-/// This is an IOBufferBlock index, not the size in bytes.
-static size_t const CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;

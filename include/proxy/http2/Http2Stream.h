@@ -210,7 +210,7 @@ private:
   int64_t _http_sm_id     = -1;
 
   HTTPHdr _receive_header;
-  MIOBuffer _receive_buffer = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  MIOBuffer _receive_buffer = BUFFER_SIZE_INDEX_4K;
   VIO read_vio;
   VIO write_vio;
 
