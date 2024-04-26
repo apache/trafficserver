@@ -200,9 +200,9 @@ private:
     return false;
   }
 
-  T _data;
+  T           _data;
   regexHelper _reHelper;
-  bool _nocase = false;
+  bool        _nocase = false;
 };
 
 // Specializations for the strings, since they can be both strings and regexes

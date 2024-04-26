@@ -102,7 +102,7 @@ MIOBufferWriter::operator>>(std::ostream &stream) const
 ssize_t
 MIOBufferWriter::operator>>(int fd) const
 {
-  ssize_t zret           = 0;
+  ssize_t         zret   = 0;
   IOBufferReader *reader = _miob->alloc_reader();
   if (reader) {
     IOBufferBlock *b;

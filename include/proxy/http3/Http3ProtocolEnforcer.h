@@ -33,6 +33,6 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
-                              Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
+  Http3ErrorUPtr              handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
+                                           Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 };

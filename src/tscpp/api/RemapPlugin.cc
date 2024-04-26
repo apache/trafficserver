@@ -30,9 +30,9 @@ using namespace atscppapi;
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  RemapPlugin *remap_plugin  = static_cast<RemapPlugin *>(ih);
-  Transaction &transaction   = utils::internal::getTransaction(rh);
-  RemapPlugin::Result result = remap_plugin->remapTransaction(transaction, rri);
+  RemapPlugin        *remap_plugin = static_cast<RemapPlugin *>(ih);
+  Transaction        &transaction  = utils::internal::getTransaction(rh);
+  RemapPlugin::Result result       = remap_plugin->remapTransaction(transaction, rri);
   switch (result) {
   case RemapPlugin::RESULT_ERROR:
     return TSREMAP_ERROR;

@@ -44,20 +44,20 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 PluginThreads plugin_threads;
 
-static STEKShareServer stek_share_server;
+static STEKShareServer                               stek_share_server;
 static const nuraft::raft_params::return_method_type CALL_TYPE = nuraft::raft_params::blocking;
 // static const nuraft::raft_params::return_method_type CALL_TYPE = nuraft::raft_params::async_handler;
 
 static std::string conf_file_path;
 
 std::shared_ptr<PluginConfig> plugin_config;
-std::shared_mutex plugin_config_mutex;
+std::shared_mutex             plugin_config_mutex;
 
 std::shared_ptr<PluginConfig> plugin_config_old;
-std::shared_mutex plugin_config_old_mutex;
+std::shared_mutex             plugin_config_old_mutex;
 
-int load_config_from_file();
-int init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config);
+int          load_config_from_file();
+int          init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config);
 static void *stek_updater(void *arg);
 
 std::shared_ptr<PluginConfig>
@@ -65,11 +65,11 @@ get_scoped_config(bool backup = false)
 {
   if (backup) {
     std::shared_lock lock(plugin_config_old_mutex);
-    auto config = plugin_config_old;
+    auto             config = plugin_config_old;
     return config;
   } else {
     std::shared_lock lock(plugin_config_mutex);
-    auto config = plugin_config;
+    auto             config = plugin_config;
     return config;
   }
 }
@@ -304,9 +304,9 @@ load_config_from_file()
     for (auto it = server_list.begin(); it != server_list.end(); ++it) {
       YAML::Node server_info = it->as<YAML::Node>();
       if (server_info["server_id"] && server_info["address"] && server_info["port"]) {
-        int server_id                       = server_info["server_id"].as<int>();
+        int         server_id               = server_info["server_id"].as<int>();
         std::string address                 = server_info["address"].as<std::string>();
-        int port                            = server_info["port"].as<int>();
+        int         port                    = server_info["port"].as<int>();
         std::string endpoint                = address + ":" + std::to_string(port);
         new_config->server_list[server_id]  = endpoint;
         cluster_list_str                   += "\n  " + std::to_string(server_id) + ", " + endpoint;
@@ -370,11 +370,11 @@ append_log(const void *data, int data_len)
 {
   // Create a new log which will contain 4-byte length and string data.
   nuraft::ptr<nuraft::buffer> new_log = nuraft::buffer::alloc(sizeof(int) + data_len);
-  nuraft::buffer_serializer bs(new_log);
+  nuraft::buffer_serializer   bs(new_log);
   bs.put_bytes(data, data_len);
 
   // Do append.
-  std::shared_lock lock(stek_share_server.raft_mutex);
+  std::shared_lock         lock(stek_share_server.raft_mutex);
   nuraft::ptr<raft_result> ret = stek_share_server.raft_instance->append_entries({new_log});
 
   if (!ret->get_accepted()) {
@@ -404,12 +404,12 @@ print_status()
 {
   auto config = get_scoped_config();
   // For debugging
-  std::shared_lock smgr_lock(stek_share_server.smgr_mutex);
-  std::shared_lock raft_lock(stek_share_server.raft_mutex);
-  nuraft::ptr<nuraft::log_store> ls  = stek_share_server.smgr_instance->load_log_store();
-  std::string status_str             = "";
-  status_str                        += "\n  Server ID: " + std::to_string(config->server_id);
-  status_str                        += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance->get_leader());
+  std::shared_lock               smgr_lock(stek_share_server.smgr_mutex);
+  std::shared_lock               raft_lock(stek_share_server.raft_mutex);
+  nuraft::ptr<nuraft::log_store> ls          = stek_share_server.smgr_instance->load_log_store();
+  std::string                    status_str  = "";
+  status_str                                += "\n  Server ID: " + std::to_string(config->server_id);
+  status_str                                += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance->get_leader());
   status_str += "\n  Raft log range: " + std::to_string(ls->start_index()) + " - " + std::to_string((ls->next_slot() - 1));
   status_str += "\n  Last committed index: " + std::to_string(stek_share_server.raft_instance->get_committed_log_idx());
   Dbg(dbg_ctl, "%s", status_str.c_str());
@@ -425,7 +425,7 @@ stek_updater(void *arg)
   Dbg(dbg_ctl, "Starting STEK updater thread");
 
   while (!plugin_threads.is_shut_down()) {
-    ssl_ticket_key_t curr_stek;
+    ssl_ticket_key_t                                   curr_stek;
     std::chrono::time_point<std::chrono::system_clock> init_key_time;
 
     // Initial key to use before syncing up.
@@ -503,7 +503,7 @@ stek_updater(void *arg)
         init_key_time = std::chrono::time_point<std::chrono::system_clock>();
 
         std::shared_lock sm_lock(stek_share_server.sm_mutex);
-        auto sm = dynamic_cast<STEKShareSM *>(stek_share_server.sm_instance.get());
+        auto             sm = dynamic_cast<STEKShareSM *>(stek_share_server.sm_instance.get());
 
         // Check whether we received a new key.
         // TODO: retry updating STEK when failed

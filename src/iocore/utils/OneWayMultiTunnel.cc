@@ -47,8 +47,8 @@ OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel()
 void
 OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vcTargets, Continuation *aCont, int size_estimate,
                         int64_t nbytes, bool asingle_buffer, /* = true */
-                        bool aclose_source,                  /* = false */
-                        bool aclose_targets,                 /* = false */
+                        bool         aclose_source,          /* = false */
+                        bool         aclose_targets,         /* = false */
                         Transform_fn aManipulate_fn, int water_mark)
 {
   mutex                            = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
@@ -137,9 +137,9 @@ OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, i
 int
 OneWayMultiTunnel::startEvent(int event, void *data)
 {
-  VIO *vio   = static_cast<VIO *>(data);
-  int ret    = VC_EVENT_DONE;
-  int result = 0;
+  VIO *vio    = static_cast<VIO *>(data);
+  int  ret    = VC_EVENT_DONE;
+  int  result = 0;
 
 #ifdef TEST
   const char *event_origin = (vio == vioSource ? "source" : "target"), *event_name = get_vc_event_name(event);

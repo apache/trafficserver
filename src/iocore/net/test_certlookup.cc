@@ -27,14 +27,14 @@
 
 REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  TestBox box(t, pstatus);
+  TestBox       box(t, pstatus);
   SSLCertLookup lookup;
 
-  SSL_CTX *wild      = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *notwild   = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *b_notwild = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *foo       = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *all_com   = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *wild      = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *notwild   = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *b_notwild = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *foo       = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *all_com   = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext wild_cc(wild);
   SSLCertContext notwild_cc(notwild);
   SSLCertContext b_notwild_cc(b_notwild);
@@ -92,7 +92,7 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  TestBox box(t, pstatus);
+  TestBox       box(t, pstatus);
   SSLCertLookup lookup;
 
   struct {
@@ -154,13 +154,13 @@ static unsigned
 load_hostnames_csv(const char *fname, SSLCertLookup &lookup)
 {
   std::fstream infile(fname, std::ios_base::in);
-  unsigned count = 0;
+  unsigned     count = 0;
 
   // SSLCertLookup correctly handles indexing the same certificate
   // with multiple names, an it's way faster to load a lot of names
   // if we don't need a new context every time.
 
-  SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX       *ctx = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext ctx_cc(ctx);
 
   // The input should have 2 comma-separated fields; this is the format that you get when
@@ -174,7 +174,7 @@ load_hostnames_csv(const char *fname, SSLCertLookup &lookup)
   //    5,baidu.com
 
   while (!infile.eof()) {
-    std::string line;
+    std::string            line;
     std::string::size_type pos;
 
     infile >> line;
@@ -218,7 +218,7 @@ main(int argc, const char **argv)
 
   if (argc > 1) {
     SSLCertLookup lookup;
-    unsigned count = 0;
+    unsigned      count = 0;
 
     for (int i = 1; i < argc; ++i) {
       count += load_hostnames_csv(argv[i], lookup);

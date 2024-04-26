@@ -31,16 +31,16 @@ Cript::string_view
 Cript::IP::getSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (is_ip4()) {
-    auto addr    = this->_addr._ip4.network_order();
-    in_addr_t ip = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
+    auto      addr = this->_addr._ip4.network_order();
+    in_addr_t ip   = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
 
     if (inet_ntop(AF_INET, &ip, _str, INET_ADDRSTRLEN)) {
       return {_str, strlen(_str)};
     }
   } else if (is_ip6()) {
     unsigned int v6_zero_bytes = (128 - ipv6_cidr) / 8;
-    int v6_mask                = 0xff >> ((128 - ipv6_cidr) % 8);
-    auto addr                  = this->_addr._ip6.network_order();
+    int          v6_mask       = 0xff >> ((128 - ipv6_cidr) % 8);
+    auto         addr          = this->_addr._ip6.network_order();
 
     // For later:
     //   swoc::FixedBuffer w(buff, buff_size);
@@ -67,14 +67,14 @@ Cript::IP::hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (_hash == 0) {
     if (is_ip4()) {
-      auto addr    = this->_addr._ip4.network_order();
-      in_addr_t ip = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
+      auto      addr = this->_addr._ip4.network_order();
+      in_addr_t ip   = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
 
       _hash = (0xffffffff00000000 | ip);
     } else if (is_ip6()) {
       unsigned int v6_zero_bytes = (128 - ipv6_cidr) / 8;
-      int v6_mask                = 0xff >> ((128 - ipv6_cidr) % 8);
-      auto addr                  = this->_addr._ip6.network_order();
+      int          v6_mask       = 0xff >> ((128 - ipv6_cidr) % 8);
+      auto         addr          = this->_addr._ip6.network_order();
 
       if (v6_zero_bytes > 0) {
         memset(&addr.s6_addr[16 - v6_zero_bytes], 0, v6_zero_bytes);
@@ -103,15 +103,15 @@ Cript::IP::sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_
     uint32_t now = (Time::Local::now().epoch() / NORMALIZED_TIME_QUANTUM) * NORMALIZED_TIME_QUANTUM;
 
     if (is_ip4()) {
-      auto addr    = this->_addr._ip4.network_order();
-      in_addr_t ip = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
+      auto      addr = this->_addr._ip4.network_order();
+      in_addr_t ip   = addr & htonl(UINT32_MAX << (32 - ipv4_cidr));
 
       _sampler = (ip >> 16) ^ (ip & 0x00ff); // Fold them to 16 bits, mixing net and host
 
     } else if (is_ip6()) {
       unsigned int v6_zero_bytes = (128 - ipv6_cidr) / 8;
-      int v6_mask                = 0xff >> ((128 - ipv6_cidr) % 8);
-      auto addr                  = this->_addr._ip6.network_order();
+      int          v6_mask       = 0xff >> ((128 - ipv6_cidr) % 8);
+      auto         addr          = this->_addr._ip6.network_order();
 
       if (v6_zero_bytes > 0) {
         memset(&addr.s6_addr[16 - v6_zero_bytes], 0, v6_zero_bytes);

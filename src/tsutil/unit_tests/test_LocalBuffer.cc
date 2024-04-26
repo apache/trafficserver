@@ -32,9 +32,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
   {
     SECTION("size = 0")
     {
-      const size_t len = 0;
+      const size_t    len = 0;
       ts::LocalBuffer local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t        *buf = local_buffer.data();
 
       CHECK(buf == nullptr);
       CHECK(local_buffer.size() == 0);
@@ -42,9 +42,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
 
     SECTION("size = 1024")
     {
-      const size_t len = 1024;
+      const size_t    len = 1024;
       ts::LocalBuffer local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t        *buf = local_buffer.data();
 
       memset(buf, 0xAA, len);
 
@@ -55,9 +55,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
 
     SECTION("size = 2048")
     {
-      const size_t len = 2048;
+      const size_t    len = 2048;
       ts::LocalBuffer local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t        *buf = local_buffer.data();
 
       memset(buf, 0xAA, len);
 
@@ -71,9 +71,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
   {
     SECTION("size = 1024")
     {
-      const size_t len = 1024;
+      const size_t                   len = 1024;
       ts::LocalBuffer<uint8_t, 2048> local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t                       *buf = local_buffer.data();
 
       memset(buf, 0xAA, len);
 
@@ -84,9 +84,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
 
     SECTION("size = 2048")
     {
-      const size_t len = 2048;
+      const size_t                   len = 2048;
       ts::LocalBuffer<uint8_t, 2048> local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t                       *buf = local_buffer.data();
 
       memset(buf, 0xAA, len);
 
@@ -97,9 +97,9 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
 
     SECTION("size = 4096")
     {
-      const size_t len = 4096;
+      const size_t                   len = 4096;
       ts::LocalBuffer<uint8_t, 2048> local_buffer(len);
-      uint8_t *buf = local_buffer.data();
+      uint8_t                       *buf = local_buffer.data();
 
       memset(buf, 0xAA, len);
 

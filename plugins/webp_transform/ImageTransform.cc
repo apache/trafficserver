@@ -105,8 +105,8 @@ public:
   handleInputComplete() override
   {
     std::string input_data = _img.str();
-    Blob input_blob(input_data.data(), input_data.length());
-    Image image;
+    Blob        input_blob(input_data.data(), input_data.length());
+    Image       image;
 
     try {
       image.read(input_blob);
@@ -141,8 +141,8 @@ public:
 
 private:
   std::stringstream _img;
-  ImageEncoding _input_image_type;
-  ImageEncoding _transform_image_type;
+  ImageEncoding     _input_image_type;
+  ImageEncoding     _transform_image_type;
 };
 
 class GlobalHookPlugin : public GlobalPlugin
@@ -186,8 +186,8 @@ public:
 
     // If we might need to convert check to see if what the browser supports
     if (transaction_convert_to_webp == true || transaction_convert_to_jpeg == true) {
-      std::string accept  = transaction.getServerRequest().getHeaders().values("Accept");
-      bool webp_supported = accept.find("image/webp") != std::string::npos;
+      std::string accept         = transaction.getServerRequest().getHeaders().values("Accept");
+      bool        webp_supported = accept.find("image/webp") != std::string::npos;
       Dbg(webp_dbg_ctl, "Accept: %s webp_suppported: %d", accept.c_str(), webp_supported);
 
       if (webp_supported == true && transaction_convert_to_webp == true) {

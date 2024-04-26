@@ -78,8 +78,8 @@ using FailureData = std::map<std::string, class FailureInfo *>;
 void
 registerSuccFail(string URL, FailureData &data, bool isSuccess)
 {
-  struct timeval currTime, result, startTime;
-  int marker;
+  struct timeval        currTime, result, startTime;
+  int                   marker;
   FailureData::iterator it;
   it                                     = data.find(URL);
   vector<pair<double, double>> &passFail = it->second->_passFail;
@@ -122,7 +122,7 @@ isAttemptReq(string URL, FailureData &data)
   FailureData::iterator it;
   it = data.find(URL);
   if (it != data.end()) {
-    double avg                             = 0;
+    double                        avg      = 0;
     vector<pair<double, double>> &passFail = it->second->_passFail;
 
     for (int i = 0; i < it->second->_totalSlot; i++) {
@@ -174,7 +174,7 @@ main(int argc, char **argv)
 {
   // Simulate the scenario
   FailureData data;
-  int noOfAttempt = 0, noOfExcept = 0;
+  int         noOfAttempt = 0, noOfExcept = 0;
 
   int count = atoi(argv[1]);
   while (count--) {

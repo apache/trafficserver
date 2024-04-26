@@ -42,13 +42,13 @@ static const char *DEFAULT_DIR = "var/trafficserver"; /* Not perfect, but no bet
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 typedef struct PurgeInstance_t {
-  char *id;
-  char *secret;
-  int secret_len;
-  char *header;
-  int header_len;
-  char *state_file;
-  bool allow_get;
+  char   *id;
+  char   *secret;
+  int     secret_len;
+  char   *header;
+  int     header_len;
+  char   *state_file;
+  bool    allow_get;
   int64_t gen_id;
   TSMutex lock;
 } PurgeInstance;
@@ -59,7 +59,7 @@ make_state_path(const char *filename)
   if ('/' == *filename) {
     return TSstrdup(filename);
   } else {
-    char buf[8192];
+    char        buf[8192];
     const char *dir = TSInstallDirGet();
 
     snprintf(buf, sizeof(buf), "%s/%s/%s", dir, DEFAULT_DIR, PLUGIN_NAME);
@@ -136,12 +136,12 @@ static TSReturnCode
 on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   Dbg(dbg_ctl, "Fixing up the response on the successful PURGE");
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
     char response[1024];
-    int len = snprintf(response, sizeof(response), "PURGED %s\r\n\r\n", purge->id);
+    int  len = snprintf(response, sizeof(response), "PURGED %s\r\n\r\n", purge->id);
 
     TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_OK);
     TSHttpHdrReasonSet(bufp, hdr_loc, "OK", 2);
@@ -162,7 +162,7 @@ on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
 static int
 purge_cont(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp       = (TSHttpTxn)edata;
+  TSHttpTxn      txnp  = (TSHttpTxn)edata;
   PurgeInstance *purge = (PurgeInstance *)TSContDataGet(contp);
 
   switch (event) {
@@ -182,12 +182,12 @@ static void
 handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
 {
   TSMBuffer reqp;
-  TSMLoc hdr_loc = nullptr, url_loc = nullptr;
-  bool should_purge = false;
+  TSMLoc    hdr_loc = nullptr, url_loc = nullptr;
+  bool      should_purge = false;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) {
-    int method_len     = 0;
-    const char *method = TSHttpHdrMethodGet(reqp, hdr_loc, &method_len);
+    int         method_len = 0;
+    const char *method     = TSHttpHdrMethodGet(reqp, hdr_loc, &method_len);
 
     if ((TS_HTTP_METHOD_PURGE == method) || ((TS_HTTP_METHOD_GET == method) && purge->allow_get)) {
       /* First see if we require the "secret" to be passed in a header, and then use that */
@@ -196,7 +196,7 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
 
         if (field_loc) {
           const char *header;
-          int header_len;
+          int         header_len;
 
           header = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &header_len);
           Dbg(dbg_ctl, "Checking for %.*s == %s ?", header_len, header, purge->secret);
@@ -208,8 +208,8 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
       } else {
         /* We are matching on the path component instead of a header */
         if (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc)) {
-          int path_len     = 0;
-          const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
+          int         path_len = 0;
+          const char *path     = TSUrlPathGet(reqp, url_loc, &path_len);
 
           Dbg(dbg_ctl, "Checking PATH = %.*s", path_len, path);
           if (path && (path_len >= purge->secret_len)) {
@@ -256,8 +256,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  char *id                             = argv[0]; /* The ID is default to the "from" URL, so save it */
-  auto purge                           = TSRalloc<PurgeInstance>();
+  char                      *id        = argv[0]; /* The ID is default to the "from" URL, so save it */
+  auto                       purge     = TSRalloc<PurgeInstance>();
   static const struct option longopt[] = {
     {(char *)"id",         required_argument, nullptr, 'i' },
     {(char *)"secret",     required_argument, nullptr, 's' },

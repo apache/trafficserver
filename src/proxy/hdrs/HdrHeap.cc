@@ -39,7 +39,7 @@
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/eventsystem/Thread.h"
 
-static constexpr size_t MAX_LOST_STR_SPACE        = 1024;
+static constexpr size_t   MAX_LOST_STR_SPACE      = 1024;
 static constexpr uint32_t MAX_HDR_HEAP_OBJ_LENGTH = (1 << 20) - 1; ///< m_length is 20 bit
 
 Allocator hdrHeapAllocator("hdrHeap", HdrHeap::DEFAULT_SIZE);
@@ -179,7 +179,7 @@ HdrHeap::destroy()
 HdrHeapObjImpl *
 HdrHeap::allocate_obj(int nbytes, int type)
 {
-  char *new_space;
+  char           *new_space;
   HdrHeapObjImpl *obj;
 
   ink_assert(m_writeable);
@@ -313,7 +313,7 @@ char *
 HdrHeap::duplicate_str(const char *str, int nbytes)
 {
   HeapGuard guard(this, str); // Don't let the source get de-allocated.
-  char *new_str = allocate_str(nbytes);
+  char     *new_str = allocate_str(nbytes);
 
   memcpy(new_str, str, nbytes);
   return (new_str);
@@ -440,10 +440,10 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap *new_heap)
 size_t
 HdrHeap::required_space_for_evacuation()
 {
-  size_t ret = 0;
-  HdrHeap *h = this;
+  size_t   ret = 0;
+  HdrHeap *h   = this;
   while (h) {
-    char *data               = h->m_data_start;
+    char           *data     = h->m_data_start;
     HdrHeapObjImpl *prev_obj = nullptr;
 
     while (data < h->m_free_start) {
@@ -495,7 +495,7 @@ HdrHeap::required_space_for_evacuation()
 void
 HdrHeap::sanity_check_strs()
 {
-  int num_heaps = 0;
+  int              num_heaps = 0;
   struct HeapCheck heaps[HDR_BUF_RONLY_HEAPS + 1];
 
   // Build up a string check table
@@ -633,11 +633,11 @@ HdrHeap::marshal(char *buf, int len)
   ink_assert((((uintptr_t)buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
   HdrHeap *marshal_hdr = reinterpret_cast<HdrHeap *>(buf);
-  char *b              = buf + HDR_HEAP_HDR_SIZE;
+  char    *b           = buf + HDR_HEAP_HDR_SIZE;
 
   // Variables for the ptr translation table
-  int ptr_xl_size = 2;
-  MarshalXlate static_table[2];
+  int           ptr_xl_size = 2;
+  MarshalXlate  static_table[2];
   MarshalXlate *ptr_xlation = static_table;
   // need to initialize it here because of those gotos
   MarshalXlate str_xlation[HDR_BUF_RONLY_HEAPS + 1];
@@ -717,7 +717,7 @@ HdrHeap::marshal(char *buf, int len)
 
   if (m_read_write_heap) {
     char *copy_start = (reinterpret_cast<char *>(m_read_write_heap.get())) + sizeof(HdrStrHeap);
-    int nto_copy     = m_read_write_heap->total_size() - (sizeof(HdrStrHeap) + m_read_write_heap->space_avail());
+    int   nto_copy   = m_read_write_heap->total_size() - (sizeof(HdrStrHeap) + m_read_write_heap->space_avail());
 
     if (nto_copy > len) {
       goto Failed;
@@ -901,7 +901,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
   if (m_free_start != NULL) {
     uint32_t stored_sum = (uint32_t)m_free_start;
     m_free_start        = NULL;
-    int sum_len         = ROUND(unmarshal_size, HDR_PTR_SIZE);
+    int      sum_len    = ROUND(unmarshal_size, HDR_PTR_SIZE);
     uint32_t new_sum    = compute_checksum((void *)this, sum_len);
 
     if (stored_sum != new_sum) {
@@ -945,8 +945,8 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
 
   // Loop over objects and swizzle there pointer to
   //  live offsets
-  char *obj_data  = m_data_start;
-  intptr_t offset = (intptr_t)this;
+  char    *obj_data = m_data_start;
+  intptr_t offset   = (intptr_t)this;
 
   while (obj_data < m_free_start) {
     HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
@@ -1107,9 +1107,9 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
 void
 HdrHeap::dump_heap(int len)
 {
-  int count = 0;
-  char *tmp = reinterpret_cast<char *>(this);
-  char *end;
+  int      count = 0;
+  char    *tmp   = reinterpret_cast<char *>(this);
+  char    *end;
   uint32_t content;
 
   if (len < 0) {
@@ -1145,8 +1145,8 @@ HdrHeap::dump_heap(int len)
 uint64_t
 HdrHeap::total_used_size() const
 {
-  uint64_t size    = 0;
-  const HdrHeap *h = this;
+  uint64_t       size = 0;
+  const HdrHeap *h    = this;
 
   while (h) {
     size += (h->m_free_start - h->m_data_start);

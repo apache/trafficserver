@@ -42,17 +42,17 @@
 #define PLUGIN_NAME "add_header"
 
 static TSMBuffer hdr_bufp;
-static TSMLoc hdr_loc;
+static TSMLoc    hdr_loc;
 
 static void
 add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer req_bufp;
-  TSMLoc req_loc;
-  TSMLoc field_loc;
-  TSMLoc next_field_loc;
-  TSMLoc new_field_loc;
-  int retval;
+  TSMLoc    req_loc;
+  TSMLoc    field_loc;
+  TSMLoc    next_field_loc;
+  TSMLoc    new_field_loc;
+  int       retval;
 
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
     TSError("[%s] Unable to retrieve client request header", PLUGIN_NAME);
@@ -123,9 +123,9 @@ add_header_plugin(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSMLoc field_loc;
-  const char *p;
-  int i, retval;
+  TSMLoc                   field_loc;
+  const char              *p;
+  int                      i, retval;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

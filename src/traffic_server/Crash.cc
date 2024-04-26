@@ -37,13 +37,13 @@
 static constexpr int NO_FD = swoc::file::NO_FD;
 
 static pid_t crash_logger_pid = -1;
-static int crash_logger_fd    = NO_FD;
+static int   crash_logger_fd  = NO_FD;
 
 static char *
 create_logger_path()
 {
-  RecString name;
-  std::string bindir;
+  RecString      name;
+  std::string    bindir;
   ats_scoped_str fullpath;
 
   if (RecGetRecordString_Xmalloc("proxy.config.crash_log_helper", &name) != REC_ERR_OKAY) {
@@ -85,11 +85,11 @@ void
 crash_logger_init(const char *user)
 {
   ats_scoped_str logger(create_logger_path());
-  const char *basename;
+  const char    *basename;
 
   pid_t child;
-  int status;
-  int pipe[2];
+  int   status;
+  int   pipe[2];
 
   // Do nothing the log helper was set to NULL, or we can't find it.
   if (!logger || !check_logger_path(logger)) {

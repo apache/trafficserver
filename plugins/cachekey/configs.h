@@ -108,7 +108,7 @@ public:
   bool finalize() override;
 
 private:
-  const String &name() const override;
+  const String       &name() const override;
   static const String _NAME;
 };
 
@@ -123,7 +123,7 @@ public:
   const StringSet &getInclude() const;
 
 private:
-  const String &name() const override;
+  const String       &name() const override;
   static const String _NAME;
 };
 
@@ -136,7 +136,7 @@ public:
   bool finalize() override;
 
 private:
-  const String &name() const override;
+  const String       &name() const override;
   static const String _NAME;
 };
 
@@ -208,16 +208,16 @@ public:
   CacheKeyKeyTypeSet &getKeyType();
 
   /* Make the following members public to avoid unnecessary accessors */
-  ConfigQuery _query;        /**< @brief query parameter related configuration */
-  ConfigHeaders _headers;    /**< @brief headers related configuration */
-  ConfigCookies _cookies;    /**< @brief cookies related configuration */
-  Pattern _uaCapture;        /**< @brief the capture groups and the replacement string used for the User-Agent header capture */
-  String _prefix;            /**< @brief cache key prefix string */
-  Pattern _prefixCapture;    /**< @brief cache key prefix captured from the URI host:port */
-  Pattern _prefixCaptureUri; /**< @brief cache key prefix captured from the URI as a whole */
-  Pattern _pathCapture;      /**< @brief cache key element captured from the URI path */
-  Pattern _pathCaptureUri;   /**< @brief cache key element captured from the URI as a whole */
-  Classifier _classifier;    /**< @brief denylist and allow-list classifier used to classify User-Agent header */
+  ConfigQuery   _query;         /**< @brief query parameter related configuration */
+  ConfigHeaders _headers;       /**< @brief headers related configuration */
+  ConfigCookies _cookies;       /**< @brief cookies related configuration */
+  Pattern       _uaCapture;     /**< @brief the capture groups and the replacement string used for the User-Agent header capture */
+  String        _prefix;        /**< @brief cache key prefix string */
+  Pattern       _prefixCapture; /**< @brief cache key prefix captured from the URI host:port */
+  Pattern       _prefixCaptureUri; /**< @brief cache key prefix captured from the URI as a whole */
+  Pattern       _pathCapture;      /**< @brief cache key element captured from the URI path */
+  Pattern       _pathCaptureUri;   /**< @brief cache key element captured from the URI as a whole */
+  Classifier    _classifier;       /**< @brief denylist and allow-list classifier used to classify User-Agent header */
 
 private:
   /**
@@ -228,10 +228,10 @@ private:
    */
   bool loadClassifiers(const String &args, bool denylist = true);
 
-  bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
-  bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
-  bool _canonicalPrefix    = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
-  String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
-  CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
-  CacheKeyKeyTypeSet _keyTypes;     /**< @brief target URI to be modified, cache key or paren selection */
+  bool   _prefixToBeRemoved = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
+  bool   _pathToBeRemoved   = false; /**< @brief instructs the path not to added to the cache key */
+  bool   _canonicalPrefix   = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
+  String _separator         = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  CacheKeyUriType    _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
+  CacheKeyKeyTypeSet _keyTypes;        /**< @brief target URI to be modified, cache key or paren selection */
 };

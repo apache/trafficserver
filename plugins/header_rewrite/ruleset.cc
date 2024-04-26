@@ -106,7 +106,7 @@ ResourceIDs
 RuleSet::get_all_resource_ids() const
 {
   ResourceIDs ids = _ids;
-  RuleSet *tmp    = this->next;
+  RuleSet    *tmp = this->next;
 
   while (tmp) {
     ids = static_cast<ResourceIDs>(ids | tmp->get_resource_ids());

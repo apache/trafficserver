@@ -149,9 +149,9 @@ public:
   self_type operator-(raw_type t);
 
   self_type &operator++();
-  self_type operator++(int);
+  self_type  operator++(int);
   self_type &operator--();
-  self_type operator--(int);
+  self_type  operator--(int);
 
 private:
   raw_type _t;

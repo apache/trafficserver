@@ -36,26 +36,26 @@
 using namespace std;
 
 // unique url parameter that shoud never leave ATS
-static const char ASYNC_PARM[]  = "swrasync=asyncmrl";
-static const int ASYNC_PARM_LEN = sizeof(ASYNC_PARM) - 1;
+static const char ASYNC_PARM[]   = "swrasync=asyncmrl";
+static const int  ASYNC_PARM_LEN = sizeof(ASYNC_PARM) - 1;
 // unique header that should never leave ATS
-const char SERVER_INTERCEPT_HEADER[]  = "X-CCExtensions-Intercept";
-const int SERVER_INTERCEPT_HEADER_LEN = sizeof(SERVER_INTERCEPT_HEADER) - 1;
+const char SERVER_INTERCEPT_HEADER[]   = "X-CCExtensions-Intercept";
+const int  SERVER_INTERCEPT_HEADER_LEN = sizeof(SERVER_INTERCEPT_HEADER) - 1;
 
 /*-----------------------------------------------------------------------------------------------*/
 static char *
 convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  TSIOBuffer output_buffer;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
-  int64_t total_avail;
+  int64_t          total_avail;
 
   TSIOBufferBlock block;
-  const char *block_start;
-  int64_t block_avail;
+  const char     *block_start;
+  int64_t         block_avail;
 
   char *output_string;
-  int output_len;
+  int   output_len;
 
   output_buffer = TSIOBufferCreate();
 
@@ -129,7 +129,7 @@ has_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
   // create the new url
   UrlComponents reqUrl;
   reqUrl.populate(hdr_url_buf, url_loc);
-  string newQuery = reqUrl.getQuery();
+  string            newQuery = reqUrl.getQuery();
   string::size_type idx;
   idx = newQuery.find(ASYNC_PARM);
   if ((idx != string::npos) && (idx + ASYNC_PARM_LEN) == newQuery.length()) {
@@ -173,13 +173,13 @@ add_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 bool
 strip_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 {
-  bool stripped = false;
+  bool   stripped = false;
   TSMLoc url_loc;
   TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc);
   // create the new url
   UrlComponents reqUrl;
   reqUrl.populate(hdr_url_buf, url_loc);
-  string newQuery = reqUrl.getQuery();
+  string            newQuery = reqUrl.getQuery();
   string::size_type idx;
   idx = newQuery.find(ASYNC_PARM);
   if ((idx != string::npos) && (idx + ASYNC_PARM_LEN) == newQuery.length()) {
@@ -230,10 +230,10 @@ get_pristine_url(StateInfo *state)
 {
   TSHttpTxn txnp = state->txnp;
   TSMBuffer hdr_url_buf;
-  TSMLoc url_loc;
+  TSMLoc    url_loc;
   // get the pristine url only works after remap state
   if (TSHttpTxnPristineUrlGet(txnp, &hdr_url_buf, &url_loc) == TS_SUCCESS) {
-    int url_length;
+    int   url_length;
     char *url           = TSUrlStringGet(hdr_url_buf, url_loc, &url_length);
     state->pristine_url = TSstrndup(url, url_length);
     TSfree(url);
@@ -249,10 +249,10 @@ get_pristine_url(StateInfo *state)
 bool
 intercept_get_key(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, string &key)
 {
-  bool retval      = false;
+  bool   retval    = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
   if (field_loc) {
-    int value_len;
+    int         value_len;
     const char *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value_len);
     key.append(value, value_len);
     retval = true;
@@ -266,10 +266,10 @@ intercept_get_key(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len
 BodyData *
 intercept_check_request(StateInfo *state)
 {
-  uint32_t newKey      = 0;
+  uint32_t  newKey     = 0;
   BodyData *pBodyFound = nullptr;
   TSHttpTxn txnp       = state->txnp;
-  uint32_t oldKey      = state->req_info->key_hash;
+  uint32_t  oldKey     = state->req_info->key_hash;
 
   if (!TSHttpTxnIsInternal(txnp)) {
     TSDebug(PLUGIN_TAG, "[%s] Skipping external request", __FUNCTION__);
@@ -277,14 +277,14 @@ intercept_check_request(StateInfo *state)
   }
 
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(PLUGIN_TAG_BAD, "[%s] TSHttpTxnClientReqGet failed!", __FUNCTION__);
     return pBodyFound;
   }
 
-  bool valid_request = false;
-  int method_len;
+  bool        valid_request = false;
+  int         method_len;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
   if (!method) {
     TSDebug(PLUGIN_TAG_BAD, "[%s] TSHttpHdrMethodGet failed!", __FUNCTION__);

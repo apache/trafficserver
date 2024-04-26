@@ -35,26 +35,26 @@ class ConnectingEntry : public Continuation
 public:
   ConnectingEntry() = default;
   ~ConnectingEntry() override;
-  void remove_entry();
-  int state_http_server_open(int event, void *data);
+  void                    remove_entry();
+  int                     state_http_server_open(int event, void *data);
   static PoolableSession *create_server_session(HttpSM *root_sm, NetVConnection *netvc, MIOBuffer *netvc_read_buffer,
                                                 IOBufferReader *netvc_reader);
 
 public:
-  std::string sni;
-  std::string cert_name;
-  IpEndpoint ipaddr;
-  std::string hostname;
+  std::string        sni;
+  std::string        cert_name;
+  IpEndpoint         ipaddr;
+  std::string        hostname;
   std::set<HttpSM *> connect_sms;
-  ProxyTransaction *ua_txn = nullptr;
-  NetVConnection *netvc    = nullptr;
-  bool is_no_plugin_tunnel = false;
+  ProxyTransaction  *ua_txn              = nullptr;
+  NetVConnection    *netvc               = nullptr;
+  bool               is_no_plugin_tunnel = false;
 
 private:
-  MIOBuffer *_netvc_read_buffer = nullptr;
-  IOBufferReader *_netvc_reader = nullptr;
-  Action *_pending_action       = nullptr;
-  NetVCOptions opt;
+  MIOBuffer      *_netvc_read_buffer = nullptr;
+  IOBufferReader *_netvc_reader      = nullptr;
+  Action         *_pending_action    = nullptr;
+  NetVCOptions    opt;
 };
 
 struct IpHelper {

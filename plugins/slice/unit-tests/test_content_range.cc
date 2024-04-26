@@ -42,7 +42,7 @@ TEST_CASE("content_range to/from string - valid", "[AWS][slice][utility]")
   std::string const expstr("bytes 1023-1048575/307232768");
 
   char gotbuf[1024];
-  int gotlen = sizeof(gotbuf);
+  int  gotlen = sizeof(gotbuf);
 
   bool const strstat(exprange.toStringClosed(gotbuf, &gotlen));
 
@@ -51,7 +51,7 @@ TEST_CASE("content_range to/from string - valid", "[AWS][slice][utility]")
   CHECK(expstr == std::string(gotbuf));
 
   ContentRange gotrange;
-  bool const gotstat(gotrange.fromStringClosed(expstr.c_str()));
+  bool const   gotstat(gotrange.fromStringClosed(expstr.c_str()));
 
   CHECK(gotstat);
   CHECK(gotrange.m_beg == exprange.m_beg);

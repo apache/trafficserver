@@ -84,7 +84,7 @@ cont_check_cacheable(TSHttpTxn txnp)
     Dbg(dbg_ctl, "is nostore set %d", nostore);
     if (!nostore) {
       TSMBuffer request;
-      TSMLoc req_hdr;
+      TSMLoc    req_hdr;
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
         BgFetchData *data = new BgFetchData();
         // Initialize the data structure (can fail) and acquire a privileged lock on the URL

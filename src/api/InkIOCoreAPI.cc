@@ -101,19 +101,19 @@ struct INKThreadInternal : public EThread {
   }
 
   TSThreadFunc func = nullptr;
-  void *data        = nullptr;
+  void        *data = nullptr;
 
   struct {
     ink_mutex lock;
-    ink_cond signal;
-    bool done = false;
+    ink_cond  signal;
+    bool      done = false;
   } completion;
 };
 
 static void *
 ink_thread_trampoline(void *data)
 {
-  void *retval;
+  void              *retval;
   INKThreadInternal *ithread = static_cast<INKThreadInternal *>(data);
 
   ithread->set_specific();
@@ -135,7 +135,7 @@ TSThread
 TSThreadCreate(TSThreadFunc func, void *data)
 {
   INKThreadInternal *thread;
-  ink_thread tid = 0;
+  ink_thread         tid = 0;
 
   thread = new INKThreadInternal;
 
@@ -458,7 +458,7 @@ TSIOBufferStart(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b       = (MIOBuffer *)bufp;
+  MIOBuffer     *b   = (MIOBuffer *)bufp;
   IOBufferBlock *blk = b->get_current_block();
 
   if (!blk || (blk->write_avail() == 0)) {
@@ -479,7 +479,7 @@ TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert((length >= 0) && (offset >= 0));
 
-  MIOBuffer *b      = (MIOBuffer *)bufp;
+  MIOBuffer      *b = (MIOBuffer *)bufp;
   IOBufferReader *r = (IOBufferReader *)readerp;
 
   return b->write(r, length, offset);
@@ -499,7 +499,7 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
 int64_t
 TSIOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
 {
-  auto r{reinterpret_cast<IOBufferReader *>(readerp)};
+  auto  r{reinterpret_cast<IOBufferReader *>(readerp)};
   char *limit = r->memcpy(buf, length, 0);
   return limit - static_cast<char *>(buf);
 }
@@ -549,9 +549,9 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
+  IOBufferBlock  *blk    = (IOBufferBlock *)blockp;
   IOBufferReader *reader = (IOBufferReader *)readerp;
-  char *p;
+  char           *p;
 
   p = blk->start();
   if (avail) {
@@ -577,9 +577,9 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
+  IOBufferBlock  *blk    = (IOBufferBlock *)blockp;
   IOBufferReader *reader = (IOBufferReader *)readerp;
-  int64_t avail;
+  int64_t         avail;
 
   avail = blk->read_avail();
 
@@ -639,7 +639,7 @@ TSIOBufferReaderAlloc(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b             = (MIOBuffer *)bufp;
+  MIOBuffer       *b       = (MIOBuffer *)bufp;
   TSIOBufferReader readerp = (TSIOBufferReader)b->alloc_reader();
 
   // TODO: Should remove this when memory allocation can't fail.

@@ -44,8 +44,8 @@ DEF_DBG_CTL(PLUGIN_TAG_SERV)
 /*-----------------------------------------------------------------------------------------------*/
 struct SContData {
   struct IoHandle {
-    TSVIO vio;
-    TSIOBuffer buffer;
+    TSVIO            vio;
+    TSIOBuffer       buffer;
     TSIOBufferReader reader;
     IoHandle() : vio(0), buffer(0), reader(0){};
     ~IoHandle()
@@ -60,21 +60,21 @@ struct SContData {
   };
 
   TSVConn net_vc;
-  TSCont contp;
+  TSCont  contp;
 
-  IoHandle input;
-  IoHandle output;
+  IoHandle     input;
+  IoHandle     output;
   TSHttpParser http_parser;
-  TSMBuffer req_hdr_bufp;
-  TSMLoc req_hdr_loc;
-  bool req_hdr_parsed;
+  TSMBuffer    req_hdr_bufp;
+  TSMLoc       req_hdr_loc;
+  bool         req_hdr_parsed;
 
   bool conn_setup;
   bool write_setup;
 
   ConfigInfo *plugin_config;
-  BodyData *pBody;
-  uint32_t next_chunk_written;
+  BodyData   *pBody;
+  uint32_t    next_chunk_written;
 
   SContData(TSCont cont)
     : net_vc(0),
@@ -154,11 +154,11 @@ connShutdownDataDestory(SContData *cont_data)
 static bool
 writeOutData(SContData *cont_data)
 {
-  int64_t total_current_write = 0;
-  uint32_t max_chunk_count    = cont_data->pBody->getChunkCount();
+  int64_t  total_current_write = 0;
+  uint32_t max_chunk_count     = cont_data->pBody->getChunkCount();
   for (uint32_t chunk_index = cont_data->next_chunk_written; chunk_index < max_chunk_count; chunk_index++) {
     const char *start;
-    int64_t avail;
+    int64_t     avail;
     if (!cont_data->pBody->getChunk(chunk_index, &start, &avail)) {
       TSDebug(PLUGIN_TAG_BAD, "[%s] Error while getting chunk_index %d", __FUNCTION__, chunk_index);
       TSError("[%s] Error while getting chunk_index %d", __FUNCTION__, chunk_index);
@@ -212,8 +212,8 @@ handleRead(SContData *cont_data)
 
   int consumed = 0;
   if (avail > 0) {
-    int64_t data_len;
-    const char *data;
+    int64_t         data_len;
+    const char     *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(cont_data->input.reader);
     while (block != nullptr) {
       data = TSIOBufferBlockReadStart(block, cont_data->input.reader, &data_len);
@@ -251,7 +251,7 @@ static int
 serverIntercept(TSCont contp, TSEvent event, void *edata)
 {
   SContData *cont_data = static_cast<SContData *>(TSContDataGet(contp));
-  bool shutdown        = false;
+  bool       shutdown  = false;
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT:

@@ -44,8 +44,8 @@ verify_rolled_log_behavior(RolledLogDeleter &deleter, fs::path rolled_log1, fs::
 {
   SECTION("Verify we can add a single rolled file")
   {
-    constexpr int64_t file_size    = 100;
-    constexpr time_t last_modified = 30;
+    constexpr int64_t file_size     = 100;
+    constexpr time_t  last_modified = 30;
 
     REQUIRE(deleter.consider_for_candidacy(rolled_log1.string(), file_size, last_modified));
 
@@ -61,9 +61,9 @@ verify_rolled_log_behavior(RolledLogDeleter &deleter, fs::path rolled_log1, fs::
 
   SECTION("Verify we can add two rolled log files")
   {
-    constexpr int64_t file_size         = 100;
-    constexpr time_t oldest_timestamp   = 30;
-    constexpr time_t youngest_timestamp = 60;
+    constexpr int64_t file_size          = 100;
+    constexpr time_t  oldest_timestamp   = 30;
+    constexpr time_t  youngest_timestamp = 60;
 
     // Intentionally insert them out of order (that is, the first one to delete
     // is the second added).
@@ -130,7 +130,7 @@ verify_rolled_log_behavior(RolledLogDeleter &deleter, fs::path rolled_log1, fs::
 TEST_CASE("Rotated diags logs can be added and removed", "[RolledLogDeleter]")
 {
   RolledLogDeleter deleter;
-  constexpr auto min_count = 0;
+  constexpr auto   min_count = 0;
   deleter.register_log_type_for_deletion("diags.log", min_count);
 
   const fs::path rolled_log1 = log_dir / "diags.log.20191117.16h43m15s-20191118.16h43m15s.old";
@@ -144,7 +144,7 @@ TEST_CASE("Rotated diags logs can be added and removed", "[RolledLogDeleter]")
 TEST_CASE("Rotated squid logs can be added and removed", "[RolledLogDeleter]")
 {
   RolledLogDeleter deleter;
-  constexpr auto min_count = 0;
+  constexpr auto   min_count = 0;
   deleter.register_log_type_for_deletion("squid.log", min_count);
   const fs::path rolled_log1 = log_dir / "squid.log_some.hostname.com.20191125.19h00m04s-20191125.19h15m04s.old";
   const fs::path rolled_log2 = log_dir / "squid.log_some.hostname.com.20191125.19h15m04s-20191125.19h30m04s.old";
@@ -157,11 +157,11 @@ TEST_CASE("Rotated squid logs can be added and removed", "[RolledLogDeleter]")
 TEST_CASE("clear removes all candidates", "[RolledLogDeleter]")
 {
   RolledLogDeleter deleter;
-  constexpr auto min_count = 0;
+  constexpr auto   min_count = 0;
   deleter.register_log_type_for_deletion("squid.log", min_count);
   deleter.register_log_type_for_deletion("diags.log", min_count);
 
-  constexpr auto size         = 10;
+  constexpr auto   size       = 10;
   constexpr time_t time_stamp = 20;
 
   // Add some candidates.
@@ -189,7 +189,7 @@ TEST_CASE("verify priority enforcement", "[RolledLogDeleter]")
   constexpr auto highest_min_count = 0;
 
   constexpr int64_t a_size = 10;
-  constexpr time_t a_time  = 30;
+  constexpr time_t  a_time = 30;
 
   deleter.register_log_type_for_deletion("squid.log", low_min_count);
   deleter.register_log_type_for_deletion("traffic.out", medium_min_count);

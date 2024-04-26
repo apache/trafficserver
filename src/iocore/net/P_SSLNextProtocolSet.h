@@ -38,7 +38,7 @@ public:
   bool registerEndpoint(const char *, Continuation *);
 
   Continuation *findEndpoint(const unsigned char *, unsigned) const;
-  bool create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const;
+  bool          create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const;
 
   struct NextProtocolEndpoint {
     // NOTE: the protocol and endpoint are NOT copied. The caller is
@@ -46,7 +46,7 @@ public:
     NextProtocolEndpoint(const char *protocol, Continuation *endpoint);
     ~NextProtocolEndpoint();
 
-    const char *protocol;
+    const char   *protocol;
     Continuation *endpoint;
     LINK(NextProtocolEndpoint, link);
 

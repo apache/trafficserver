@@ -38,11 +38,11 @@ TEST_CASE("uriEncode(): encode empty input", "[AWS][auth][utility]")
 
 TEST_CASE("uriEncode(): encode unreserved chars", "[s3_auth]")
 {
-  const String in = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                    "abcdefghijklmnopqrstuvwxyz"
-                    "0123456789"
-                    "-._~";
-  String encoded  = uriEncode(in, /* isObjectName */ false);
+  const String in      = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "abcdefghijklmnopqrstuvwxyz"
+                         "0123456789"
+                         "-._~";
+  String       encoded = uriEncode(in, /* isObjectName */ false);
 
   CHECK(in.length() == encoded.length());
   CHECK_FALSE(encoded.compare("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -53,8 +53,8 @@ TEST_CASE("uriEncode(): encode unreserved chars", "[s3_auth]")
 
 TEST_CASE("uriEncode(): encode reserved chars in a name which is not object name", "[AWS][auth][utility]")
 {
-  const String in = " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"; /* some printable but reserved chars */
-  String encoded  = uriEncode(in, /* isObjectName */ false);
+  const String in      = " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"; /* some printable but reserved chars */
+  String       encoded = uriEncode(in, /* isObjectName */ false);
 
   CHECK(3 * in.length() == encoded.length()); /* size of "%NN" = 3 */
   CHECK_FALSE(encoded.compare("%20%2F%21%22%23%24%25%26%27%28%29%2A%20%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
@@ -62,8 +62,8 @@ TEST_CASE("uriEncode(): encode reserved chars in a name which is not object name
 
 TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][utility]")
 {
-  const String in = " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"; /* some printable but reserved chars */
-  String encoded  = uriEncode(in, /* isObjectName */ true);
+  const String in      = " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"; /* some printable but reserved chars */
+  String       encoded = uriEncode(in, /* isObjectName */ true);
 
   CHECK(3 * in.length() - 2 == encoded.length()); /* size of "%NN" = 3, '/' is not encoded */
   CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%20%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
@@ -147,9 +147,9 @@ TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")
 
 TEST_CASE("base16Encode(): base16 encode empty string", "[utility]")
 {
-  const char *in = nullptr;
-  size_t inLen   = 0;
-  String encoded = base16Encode(in, inLen);
+  const char *in      = nullptr;
+  size_t      inLen   = 0;
+  String      encoded = base16Encode(in, inLen);
 
   CHECK(0 == encoded.length());
 }
@@ -161,9 +161,9 @@ TEST_CASE("base16Encode(): base16 encode RFC4648 test vectors", "[utility]")
                          "666f6f", "foob", "666f6f62", "fooba", "666f6f6261", "foobar", "666f6f626172"};
 
   for (size_t i = 0; i < sizeof(bench) / sizeof(char *); i += 2) {
-    const char *in = bench[i];
-    size_t inLen   = strlen(in);
-    String encoded = base16Encode(in, inLen);
+    const char *in      = bench[i];
+    size_t      inLen   = strlen(in);
+    String      encoded = base16Encode(in, inLen);
 
     CHECK(inLen * 2 == encoded.length());
     CHECK_FALSE(encoded.compare(bench[i + 1]));
@@ -174,8 +174,8 @@ TEST_CASE("base16Encode(): base16 encode RFC4648 test vectors", "[utility]")
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim invalid arguments, check string", "[utility]")
 {
-  const char *in = nullptr;
-  size_t inLen   = 0;
+  const char *in    = nullptr;
+  size_t      inLen = 0;
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -185,8 +185,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim invalid arguments, check
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim empty input, check string", "[utility]")
 {
-  const char *in = "";
-  size_t inLen   = 0;
+  const char *in    = "";
+  size_t      inLen = 0;
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -196,8 +196,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim empty input, check strin
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim nothing to trim, check string", "[utility]")
 {
-  const char in[] = "Important Message";
-  size_t inLen    = strlen(in);
+  const char in[]  = "Important Message";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -207,8 +207,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim nothing to trim, check s
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim beginning, check string", "[utility]")
 {
-  const char in[] = " \t\nImportant Message";
-  size_t inLen    = strlen(in);
+  const char in[]  = " \t\nImportant Message";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -218,8 +218,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim beginning, check string"
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim end, check string", "[utility]")
 {
-  const char in[] = "Important Message \t\n";
-  size_t inLen    = strlen(in);
+  const char in[]  = "Important Message \t\n";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -229,8 +229,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim end, check string", "[ut
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends, check string", "[utility]")
 {
-  const char in[] = "\v\t\n Important Message \t\n";
-  size_t inLen    = strlen(in);
+  const char in[]  = "\v\t\n Important Message \t\n";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -240,8 +240,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends, check string"
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends and squeeze middle spaces, check string", "[utility]")
 {
-  const char in[] = "\v\t\n Important     Message \t\n";
-  size_t inLen    = strlen(in);
+  const char in[]  = "\v\t\n Important     Message \t\n";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -251,8 +251,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends and squeeze mi
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle spaces multiple groups, check string", "[utility]")
 {
-  const char in[] = "Very   Important     Message";
-  size_t inLen    = strlen(in);
+  const char in[]  = "Very   Important     Message";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -262,8 +262,8 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle spaces multipl
 
 TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle whitespaces, check string", "[utility]")
 {
-  const char in[] = "Very \t\nImportant \v\f\rMessage";
-  size_t inLen    = strlen(in);
+  const char in[]  = "Very \t\nImportant \v\f\rMessage";
+  size_t     inLen = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
@@ -312,28 +312,28 @@ TEST_CASE("trimWhiteSpaces(): trim empty, check string", "[utility]")
 TEST_CASE("AWSRegions: get region empty input", "[AWS][auth][utility]")
 {
   const char *host = "";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("us-east-1"));
 }
 
 TEST_CASE("AWSRegions: get region by providing no bucket name", "[AWS][auth][utility]")
 {
   const char *host = "s3.eu-west-2.amazonaws.com";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("eu-west-2"));
 }
 
 TEST_CASE("AWSRegions: get region by providing bucket name having single label", "[AWS][auth][utility]")
 {
   const char *host = "label1.label2.s3.eu-west-2.amazonaws.com";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("eu-west-2"));
 }
 
 TEST_CASE("AWSRegions: get region by providing bucket name having multiple labels", "[AWS][auth][utility]")
 {
   const char *host = "label1.label2.s3.eu-west-2.amazonaws.com";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("eu-west-2"));
 }
 
@@ -341,7 +341,7 @@ TEST_CASE("AWSRegions: get region by providing bucket name having single label n
           "[AWS][auth][utility]")
 {
   const char *host = "THIS_NEVER_MATCHES.eu-west-2.amazonaws.com";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("us-east-1"));
 }
 
@@ -349,7 +349,7 @@ TEST_CASE("AWSRegions: get region by providing bucket name having multiple label
           "[AWS][auth][utility]")
 {
   const char *host = "label1.label2.THIS_NEVER_MATCHES.eu-west-2.amazonaws.com";
-  String s         = getRegion(defaultDefaultRegionMap, host, strlen(host));
+  String      s    = getRegion(defaultDefaultRegionMap, host, strlen(host));
   CHECK_FALSE(s.compare("us-east-1"));
 }
 
@@ -368,7 +368,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   /* Test the main entry point for calculation of the Authorization header content */
   AwsAuthV4 util(api, now, signPayload, awsAccessKeyId, strlen(awsAccessKeyId), awsSecretAccessKey, strlen(awsSecretAccessKey),
                  awsService, strlen(awsService), includedHeaders, excludedHeaders, defaultDefaultRegionMap);
-  String authorizationHeader = util.getAuthorizationHeader();
+  String    authorizationHeader = util.getAuthorizationHeader();
   CAPTURE(authorizationHeader);
   CHECK_FALSE(authorizationHeader.compare(bench[0]));
 
@@ -378,8 +378,8 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   CHECK_FALSE(payloadHash.compare(bench[5]));
 
   /* Test the date time header content */
-  size_t dateLen   = 0;
-  const char *date = util.getDateTime(&dateLen);
+  size_t      dateLen = 0;
+  const char *date    = util.getDateTime(&dateLen);
   CAPTURE(String(date, dateLen));
   CHECK_FALSE(String(date, dateLen).compare(bench[2]));
 
@@ -394,15 +394,15 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   CHECK_FALSE(signedHeaders.compare(bench[6]));
 
   /* Test the formatting of the date and time */
-  char dateTime[sizeof("20170428T010203Z")];
+  char   dateTime[sizeof("20170428T010203Z")];
   size_t dateTimeLen = getIso8601Time(now, dateTime, sizeof(dateTime));
   CAPTURE(String(dateTime, dateTimeLen));
   CHECK_FALSE(String(dateTime, dateTimeLen).compare(bench[2]));
 
   /* Test the region name */
-  int hostLen      = 0;
-  const char *host = api.getHost(&hostLen);
-  String awsRegion = getRegion(defaultDefaultRegionMap, host, hostLen);
+  int         hostLen   = 0;
+  const char *host      = api.getHost(&hostLen);
+  String      awsRegion = getRegion(defaultDefaultRegionMap, host, hostLen);
 
   /* Test string to sign calculation */
   String stringToSign = getStringToSign(host, hostLen, dateTime, dateTimeLen, awsRegion.c_str(), awsRegion.length(), awsService,
@@ -411,7 +411,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   CHECK_FALSE(stringToSign.compare(bench[3]));
 
   /* Test the signature calculation */
-  char signature[EVP_MAX_MD_SIZE] = {};
+  char   signature[EVP_MAX_MD_SIZE] = {};
   size_t signatureLen =
     getSignature(awsSecretAccessKey, strlen(awsSecretAccessKey), awsRegion.c_str(), awsRegion.length(), awsService,
                  strlen(awsService), dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);

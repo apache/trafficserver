@@ -26,7 +26,7 @@
 namespace
 {
 struct _f {
-  const char *name;
+  const char    *name;
   ExpansionField field;
 };
 const std::array<_f, SSL_HEADERS_FIELD_MAX - 1> fields = {

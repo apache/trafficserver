@@ -48,11 +48,11 @@ public:
     self_type *_next = nullptr;
     self_type *_prev = nullptr;
 
-    static self_type *&next_ptr(self_type *);
-    static self_type *&prev_ptr(self_type *);
-    static uint32_t hash_of(sockaddr const *key);
+    static self_type     *&next_ptr(self_type *);
+    static self_type     *&prev_ptr(self_type *);
+    static uint32_t        hash_of(sockaddr const *key);
     static sockaddr const *key_of(self_type const *ssn);
-    static bool equal(sockaddr const *lhs, sockaddr const *rhs);
+    static bool            equal(sockaddr const *lhs, sockaddr const *rhs);
     // Add a couple overloads for internal convenience.
     static bool equal(sockaddr const *lhs, PoolableSession const *rhs);
     static bool equal(PoolableSession const *lhs, sockaddr const *rhs);
@@ -63,19 +63,19 @@ public:
     self_type *_next = nullptr;
     self_type *_prev = nullptr;
 
-    static self_type *&next_ptr(self_type *);
-    static self_type *&prev_ptr(self_type *);
-    static uint64_t hash_of(CryptoHash const &key);
+    static self_type       *&next_ptr(self_type *);
+    static self_type       *&prev_ptr(self_type *);
+    static uint64_t          hash_of(CryptoHash const &key);
     static CryptoHash const &key_of(self_type *ssn);
-    static bool equal(CryptoHash const &lhs, CryptoHash const &rhs);
+    static bool              equal(CryptoHash const &lhs, CryptoHash const &rhs);
   } _fqdn_link;
 
-  CryptoHash hostname_hash;
+  CryptoHash  hostname_hash;
   PooledState state = INIT;
 
   // Copy of the owning SM's server session sharing settings
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
-  TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
+  TSServerSessionSharingPoolType  sharing_pool  = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
 
   void enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group);
   void release_outbound_connection_tracking();

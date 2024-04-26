@@ -276,10 +276,10 @@ QUICTypeUtil::write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len)
 
 QUICStatelessResetToken::QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id)
 {
-  uint64_t data = conn_id ^ instance_id;
-  CryptoHash _hash;
+  uint64_t              data = conn_id ^ instance_id;
+  CryptoHash            _hash;
   static constexpr char STATELESS_RESET_TOKEN_KEY[] = "stateless_token_reset_key";
-  CryptoContext ctx;
+  CryptoContext         ctx;
   ctx.update(STATELESS_RESET_TOKEN_KEY, strlen(STATELESS_RESET_TOKEN_KEY));
   ctx.update(reinterpret_cast<void *>(&data), 8);
   ctx.finalize(_hash);
@@ -314,10 +314,10 @@ QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig
   static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
-  size_t dummy;
+  size_t                dummy;
 
   uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH + 4] = {0};
-  size_t data_len                                                           = 0;
+  size_t  data_len                                                          = 0;
   ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
   data_len = strlen(reinterpret_cast<char *>(data));
 
@@ -367,7 +367,7 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
 
   uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH] = {0};
-  size_t data_len                                                       = 0;
+  size_t  data_len                                                      = 0;
   ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
   data_len = strlen(reinterpret_cast<char *>(data));
 
@@ -521,7 +521,7 @@ QUICPreferredAddress::token() const
 void
 QUICPreferredAddress::store(uint8_t *buf, uint16_t &len) const
 {
-  size_t dummy;
+  size_t   dummy;
   uint8_t *p = buf;
 
   if (this->_endpoint_ipv4.isValid()) {
@@ -661,7 +661,7 @@ void
 QUICConnectionId::randomize()
 {
   std::random_device rnd;
-  uint32_t x = rnd();
+  uint32_t           x = rnd();
   for (int i = QUICConnectionId::SCID_LEN - 1; i >= 0; --i) {
     if (i % 4 == 0) {
       x = rnd();

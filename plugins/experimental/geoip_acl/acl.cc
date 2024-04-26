@@ -127,8 +127,8 @@ Acl::read_html(const char *fn)
 bool
 RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, int &tokens)
 {
-  static const char _SEPARATOR[] = " \t\n";
-  std::string regex, tmp;
+  static const char      _SEPARATOR[] = " \t\n";
+  std::string            regex, tmp;
   std::string::size_type pos1, pos2;
 
   if (line.empty()) {
@@ -176,7 +176,7 @@ bool
 RegexAcl::compile(const std::string &str, const char *filename, int lineno)
 {
   const char *error;
-  int erroffset;
+  int         erroffset;
 
   _regex_s = str;
   _rex     = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, nullptr);
@@ -230,12 +230,12 @@ void
 CountryAcl::read_regex(const char *fn, int &tokens)
 {
   std::ifstream f;
-  int lineno = 0;
+  int           lineno = 0;
 
   f.open(fn, std::ios::in);
   if (f.is_open()) {
     std::string line;
-    RegexAcl *acl = nullptr;
+    RegexAcl   *acl = nullptr;
 
     while (!f.eof()) {
       getline(f, line);
@@ -269,8 +269,8 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
   if (nullptr != _regexes) {
-    RegexAcl *acl = _regexes;
-    int path_len;
+    RegexAcl   *acl = _regexes;
+    int         path_len;
     const char *path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
 
     do {

@@ -60,9 +60,9 @@ struct Doc {
 
   uint32_t data_len() const;
   uint32_t prefix_len() const;
-  int single_fragment() const;
-  char *hdr();
-  char *data();
+  int      single_fragment() const;
+  char    *hdr();
+  char    *data();
 
   using self_type = Doc;
 };

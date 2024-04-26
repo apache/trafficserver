@@ -67,11 +67,11 @@ request_block(TSCont contp, Data *const data)
   }
 
   int64_t const blockbeg = (data->m_config->m_blockbytes * data->m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
+  Range         blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
 
-  char rangestr[1024];
-  int rangelen      = sizeof(rangestr);
-  bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
+  char       rangestr[1024];
+  int        rangelen = sizeof(rangestr);
+  bool const rpstat   = blockbe.toStringClosed(rangestr, &rangelen);
   TSAssert(rpstat);
 
   DEBUG_LOG("requestBlock: %s", rangestr);

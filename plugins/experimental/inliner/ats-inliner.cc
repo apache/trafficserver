@@ -136,9 +136,9 @@ inliner_transform(TSCont c, TSEvent e, void *)
 bool
 transformable(TSHttpTxn txnp)
 {
-  bool returnValue;
+  bool      returnValue;
   TSMBuffer buffer;
-  TSMLoc location;
+  TSMLoc    location;
   CHECK(TSHttpTxnServerRespGet(txnp, &buffer, &location));
   assert(buffer != nullptr);
   assert(location != nullptr);
@@ -150,7 +150,7 @@ transformable(TSHttpTxn txnp)
     const TSMLoc field = TSMimeHdrFieldFind(buffer, location, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
 
     if (field != TS_NULL_MLOC) {
-      int length                = 0;
+      int               length  = 0;
       const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, 0, &length);
 
       if (content != nullptr && length > 0) {

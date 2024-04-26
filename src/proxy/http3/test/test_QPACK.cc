@@ -35,9 +35,9 @@
 extern char qifdir[256];
 extern char encdir[256];
 extern char decdir[256];
-extern int tablesize;
-extern int streams;
-extern int ackmode;
+extern int  tablesize;
+extern int  streams;
+extern int  ackmode;
 extern char appname[256];
 extern char pattern[256];
 
@@ -82,7 +82,7 @@ public:
   read(uint8_t *buf, size_t buf_len)
   {
     this->_adapter->encourge_read();
-    auto ibb = this->_adapter->read(buf_len);
+    auto           ibb = this->_adapter->read(buf_len);
     IOBufferReader reader;
     reader.block = ibb;
     return reader.read(buf, buf_len);
@@ -114,10 +114,10 @@ private:
 static int
 load_qif_file(const char *filename, HTTPHdr **headers)
 {
-  HTTPHdr *hdr = nullptr;
-  int n        = 0;
+  HTTPHdr      *hdr = nullptr;
+  int           n   = 0;
   std::ifstream ifs(filename);
-  std::string line;
+  std::string   line;
 
   while (std::getline(ifs, line)) {
     if (line.empty()) {
@@ -222,11 +222,11 @@ output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
     fprintf(fd, "# stream %" PRIu64 "\n", i + 1);
     MIMEFieldIter field_iter;
     for (auto const &field : *header_set) {
-      int name_len  = 0;
-      int value_len = 0;
-      Arena arena;
-      const char *name   = field.name_get(&name_len);
-      char *lowered_name = arena.str_store(name, name_len);
+      int         name_len  = 0;
+      int         value_len = 0;
+      Arena       arena;
+      const char *name         = field.name_get(&name_len);
+      char       *lowered_name = arena.str_store(name, name_len);
       for (int i = 0; i < name_len; i++) {
         lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
       }
@@ -290,20 +290,20 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   }
 
   HTTPHdr *requests[MAX_SEQUENCE] = {nullptr};
-  int n_requests                  = load_qif_file(qif_file, requests);
+  int      n_requests             = load_qif_file(qif_file, requests);
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
-  TestQUICStream *encoder_stream = new TestQUICStream(0);
-  TestQUICStream *decoder_stream = new TestQUICStream(10);
+  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
+  TestQUICStream       *encoder_stream = new TestQUICStream(0);
+  TestQUICStream       *decoder_stream = new TestQUICStream(10);
   qpack->on_stream_open(*encoder_stream);
   qpack->on_stream_open(*decoder_stream);
   qpack->set_encoder_stream(encoder_stream->id());
   qpack->set_decoder_stream(decoder_stream->id());
 
-  uint64_t stream_id                  = 1;
-  MIOBuffer *header_block             = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  uint64_t header_block_len           = 0;
+  uint64_t        stream_id           = 1;
+  MIOBuffer      *header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  uint64_t        header_block_len    = 0;
   IOBufferReader *header_block_reader = header_block->alloc_reader();
   for (int i = 0; i < n_requests; ++i) {
     HTTPHdr *hdr = requests[i];
@@ -354,18 +354,18 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
-  TestQUICStream *encoder_stream = new TestQUICStream(0);
+  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
+  TestQUICStream       *encoder_stream = new TestQUICStream(0);
   qpack->on_stream_open(*encoder_stream);
 
-  int offset     = 0;
-  uint8_t *block = nullptr;
+  int      offset = 0;
+  uint8_t *block  = nullptr;
   uint32_t block_len;
-  int read_len = 0;
+  int      read_len = 0;
 
   uint64_t stream_id                 = 1;
   HTTPHdr *header_sets[MAX_SEQUENCE] = {nullptr};
-  int n_headers                      = 0;
+  int      n_headers                 = 0;
   while ((read_len = read_block(fd_in, stream_id, &block, block_len)) >= 0) {
     if (stream_id == encoder_stream->id()) {
       encoder_stream->write(block, block_len, offset, false);
@@ -408,7 +408,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
 TEST_CASE("Encoding", "[qpack-encode]")
 {
   struct dirent *d;
-  DIR *dir = opendir(qifdir);
+  DIR           *dir = opendir(qifdir);
 
   if (dir == nullptr) {
     std::cerr << "couldn't open dir: " << qifdir << std::endl;
@@ -416,8 +416,8 @@ TEST_CASE("Encoding", "[qpack-encode]")
   }
 
   struct stat st;
-  char qif_file[PATH_MAX + 1] = "";
-  char out_file[PATH_MAX + 1] = "";
+  char        qif_file[PATH_MAX + 1] = "";
+  char        out_file[PATH_MAX + 1] = "";
   strcat(qif_file, qifdir);
   strcat(out_file, encdir);
 
@@ -444,7 +444,7 @@ TEST_CASE("Decoding", "[qpack-decode]")
   char app_dir[PATH_MAX + 1] = "";
   snprintf(app_dir, sizeof(app_dir), "%s/%s", encdir, appname);
   struct dirent *d;
-  DIR *dir = opendir(app_dir);
+  DIR           *dir = opendir(app_dir);
 
   if (dir == nullptr) {
     std::cerr << "couldn't open dir: " << app_dir << std::endl;
@@ -452,8 +452,8 @@ TEST_CASE("Decoding", "[qpack-decode]")
   }
 
   struct stat st;
-  char enc_file[PATH_MAX + 1] = "";
-  char out_file[PATH_MAX + 1] = "";
+  char        enc_file[PATH_MAX + 1] = "";
+  char        out_file[PATH_MAX + 1] = "";
   strcat(enc_file, encdir);
   strcat(out_file, decdir);
 

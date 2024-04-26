@@ -48,5 +48,5 @@ public:
 
 private:
   std::string _client_sni_server_name;
-  bool _client_provided_cert = false;
+  bool        _client_provided_cert = false;
 };

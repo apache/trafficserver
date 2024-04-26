@@ -86,7 +86,7 @@ inline void
 make_comma_separated_header_field_value(HttpHeader *header, const char *fieldname, char *full_str)
 {
   MIMEHeaderFieldValue *hfv;
-  const char *str;
+  const char           *str;
 
   hfv = header->mime().get(fieldname, strlen(fieldname));
 
@@ -108,9 +108,9 @@ void
 test_headers()
 {
   HttpHeader *req;
-  char str1[MAX_FIELD_VALUE_SIZE];
-  char str2[MAX_FIELD_VALUE_SIZE];
-  char str3[MAX_FIELD_VALUE_SIZE];
+  char        str1[MAX_FIELD_VALUE_SIZE];
+  char        str2[MAX_FIELD_VALUE_SIZE];
+  char        str3[MAX_FIELD_VALUE_SIZE];
 
   req = new (HttpHeaderAllocator.alloc()) HttpHeader();
 

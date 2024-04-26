@@ -322,7 +322,7 @@ Http2ServerSession::new_transaction()
   this->set_session_active();
 
   // Create a new stream/transaction
-  Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+  Http2Error   error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   Http2Stream *stream = connection_state.create_initiating_stream(error);
 
   if (!stream || connection_state.is_peer_concurrent_stream_ub()) {
@@ -343,8 +343,8 @@ Http2ServerSession::add_session()
     return;
   }
   Http2SsnDebug("Add session to pool");
-  EThread *ethread        = this_ethread();
-  ServerSessionPool *pool = ethread->server_session_pool;
+  EThread           *ethread = this_ethread();
+  ServerSessionPool *pool    = ethread->server_session_pool;
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->addSession(this);
@@ -359,8 +359,8 @@ Http2ServerSession::remove_session()
     return;
   }
   Http2SsnDebug("Remove session from pool");
-  EThread *ethread        = this_ethread();
-  ServerSessionPool *pool = ethread->server_session_pool;
+  EThread           *ethread = this_ethread();
+  ServerSessionPool *pool    = ethread->server_session_pool;
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->removeSession(this);

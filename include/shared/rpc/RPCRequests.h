@@ -37,7 +37,7 @@ struct JSONRPCRequest {
   std::string jsonrpc{"2.0"}; //!< Always 2.0 as this is the only version that the server supports.
   std::string method;         //!< remote method name.
   std::string id;             //!< optional, only needed for method calls.
-  YAML::Node params;          //!< This is defined by each remote API.
+  YAML::Node  params;         //!< This is defined by each remote API.
 
   virtual ~JSONRPCRequest() {} ///< Virtual destructor required because virtual methods present.
 
@@ -51,9 +51,9 @@ struct JSONRPCRequest {
 struct JSONRPCResponse {
   std::string id;      //!< Always 2.0 as this is the only version that the server supports.
   std::string jsonrpc; //!< Always 2.0
-  YAML::Node result; //!< Server's response, this could be decoded by using the YAML::convert mechanism. This depends solely on the
-                     //!< server's data. Check docs and schemas.
-  YAML::Node error;  //!<  Server's error.
+  YAML::Node  result; //!< Server's response, this could be decoded by using the YAML::convert mechanism. This depends solely on the
+                      //!< server's data. Check docs and schemas.
+  YAML::Node error;   //!<  Server's error.
 
   /// Handy function to check if the server sent any error
   bool
@@ -66,11 +66,11 @@ struct JSONRPCResponse {
 };
 
 struct JSONRPCError {
-  int32_t code;        //!< High level error code.
+  int32_t     code;    //!< High level error code.
   std::string message; //!< High level message
   // the following data is defined by TS, it will be a key/value pair.
   std::vector<std::pair<int32_t, std::string>> data;
-  friend std::ostream &operator<<(std::ostream &os, const JSONRPCError &err);
+  friend std::ostream                         &operator<<(std::ostream &os, const JSONRPCError &err);
 };
 
 /**
@@ -117,8 +117,8 @@ struct ClientRequestNotification : JSONRPCRequest {
 // handy definitions.
 static const std::vector<int> CONFIG_REC_TYPES = {1, 16};
 static const std::vector<int> METRIC_REC_TYPES = {2, 4, 32};
-static constexpr bool NOT_REGEX{false};
-static constexpr bool REGEX{true};
+static constexpr bool         NOT_REGEX{false};
+static constexpr bool         REGEX{true};
 
 ///
 /// @brief Record lookup API helper class.
@@ -130,8 +130,8 @@ static constexpr bool REGEX{true};
 struct RecordLookupRequest : ClientRequest {
   using super = ClientRequest;
   struct Params {
-    std::string recName;
-    bool isRegex{false};
+    std::string      recName;
+    bool             isRegex{false};
     std::vector<int> recTypes;
   };
   std::string
@@ -152,23 +152,23 @@ struct RecordLookUpResponse {
   /// This utility class is used to hold the decoded response.
   struct RecordParamInfo {
     std::string name;
-    int32_t type;
-    int32_t version;
-    bool registered;
-    int32_t rsb;
-    int32_t order;
-    int32_t rclass;
-    bool overridable;
+    int32_t     type;
+    int32_t     version;
+    bool        registered;
+    int32_t     rsb;
+    int32_t     order;
+    int32_t     rclass;
+    bool        overridable;
     std::string dataType;
     std::string currentValue;
     std::string defaultValue;
 
     struct ConfigMeta {
-      int32_t accessType;
-      int32_t updateStatus;
-      int32_t updateType;
-      int32_t checkType;
-      int32_t source;
+      int32_t     accessType;
+      int32_t     updateStatus;
+      int32_t     updateType;
+      int32_t     checkType;
+      int32_t     source;
       std::string checkExpr;
     };
     struct StatMeta {
@@ -178,14 +178,14 @@ struct RecordLookUpResponse {
   };
   /// Record request error mapping class.
   struct RecordError {
-    std::string code;
-    std::string recordName;
-    std::string message; //!< optional.
+    std::string          code;
+    std::string          recordName;
+    std::string          message; //!< optional.
     friend std::ostream &operator<<(std::ostream &os, const RecordError &re);
   };
 
   std::vector<RecordParamInfo> recordList;
-  std::vector<RecordError> errorList;
+  std::vector<RecordError>     errorList;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------

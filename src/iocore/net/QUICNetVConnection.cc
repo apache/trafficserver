@@ -236,7 +236,7 @@ QUICNetVConnection::_start_application()
     this->_application_started = true;
 
     const uint8_t *app_name;
-    size_t app_name_len = 0;
+    size_t         app_name_len = 0;
     quiche_conn_application_proto(this->_quiche_con, &app_name, &app_name_len);
     if (app_name == nullptr) {
       app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
@@ -296,7 +296,7 @@ QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 int
 QUICNetVConnection::acceptEvent(int event, Event *e)
 {
-  EThread *t    = (e == nullptr) ? this_ethread() : e->ethread;
+  EThread    *t = (e == nullptr) ? this_ethread() : e->ethread;
   NetHandler *h = get_NetHandler(t);
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);
@@ -377,7 +377,7 @@ QUICNetVConnection::reset_quic_connection()
 void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
-  size_t buf_len{0};
+  size_t   buf_len{0};
   uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
   net_activity(this, this_ethread());
   quiche_recv_info recv_info = {
@@ -469,7 +469,7 @@ std::string_view
 QUICNetVConnection::negotiated_application_name() const
 {
   const uint8_t *name;
-  size_t name_len = 0;
+  size_t         name_len = 0;
   quiche_conn_application_proto(this->_quiche_con, &name, &name_len);
 
   return std::string_view(reinterpret_cast<const char *>(name), name_len);
@@ -598,7 +598,7 @@ void
 QUICNetVConnection::_handle_read_ready()
 {
   quiche_stream_iter *readable = quiche_conn_readable(this->_quiche_con);
-  uint64_t s                   = 0;
+  uint64_t            s        = 0;
   while (quiche_stream_iter_next(readable, &s)) {
     QUICConVDebug("stream %" PRIu64 " is readable\n", s);
     QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
@@ -616,7 +616,7 @@ QUICNetVConnection::_handle_write_ready()
 {
   if (quiche_conn_is_established(this->_quiche_con)) {
     quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
-    uint64_t s                   = 0;
+    uint64_t            s        = 0;
     while (quiche_stream_iter_next(writable, &s)) {
       QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
       if (stream == nullptr) {
@@ -629,9 +629,9 @@ QUICNetVConnection::_handle_write_ready()
   }
 
   Ptr<IOBufferBlock> udp_payload;
-  quiche_send_info send_info;
-  ssize_t res;
-  ssize_t written = 0;
+  quiche_send_info   send_info;
+  ssize_t            res;
+  ssize_t            written = 0;
 
   size_t quantum              = quiche_conn_send_quantum(this->_quiche_con);
   size_t max_udp_payload_size = quiche_conn_max_send_udp_payload_size(this->_quiche_con);
@@ -673,11 +673,11 @@ QUICNetVConnection::_handle_interval()
       return;
     }
 
-    bool is_app;
-    uint64_t error_code;
+    bool           is_app;
+    uint64_t       error_code;
     const uint8_t *reason;
-    size_t reason_len;
-    bool has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
+    size_t         reason_len;
+    bool           has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
                      quiche_conn_local_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len);
     if (has_error && error_code != static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR)) {
       QUICConDebug("is_app=%d error_code=%" PRId64 " reason=%.*s", is_app, error_code, static_cast<int>(reason_len), reason);
@@ -787,9 +787,9 @@ QUICNetVConnection::_isTryingRenegotiation() const
 shared_SSL_CTX
 QUICNetVConnection::_lookupContextByName(const std::string &servername, SSLCertContextType ctxType)
 {
-  shared_SSL_CTX ctx = nullptr;
+  shared_SSL_CTX                ctx = nullptr;
   QUICCertConfig::scoped_config lookup;
-  SSLCertContext *cc = lookup->find(servername, ctxType);
+  SSLCertContext               *cc = lookup->find(servername, ctxType);
 
   if (cc && cc->getCtx()) {
     ctx = cc->getCtx();
@@ -801,11 +801,11 @@ QUICNetVConnection::_lookupContextByName(const std::string &servername, SSLCertC
 shared_SSL_CTX
 QUICNetVConnection::_lookupContextByIP()
 {
-  shared_SSL_CTX ctx = nullptr;
+  shared_SSL_CTX                ctx = nullptr;
   QUICCertConfig::scoped_config lookup;
-  QUICFiveTuple five_tuple = this->five_tuple();
-  IpEndpoint ip            = five_tuple.destination();
-  SSLCertContext *cc       = lookup->find(ip);
+  QUICFiveTuple                 five_tuple = this->five_tuple();
+  IpEndpoint                    ip         = five_tuple.destination();
+  SSLCertContext               *cc         = lookup->find(ip);
 
   if (cc && cc->getCtx()) {
     ctx = cc->getCtx();

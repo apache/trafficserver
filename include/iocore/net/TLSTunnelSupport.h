@@ -37,24 +37,24 @@ class TLSTunnelSupport
 public:
   virtual ~TLSTunnelSupport() = default;
 
-  static void initialize();
+  static void              initialize();
   static TLSTunnelSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, TLSTunnelSupport *srs);
-  static void unbind(SSL *ssl);
+  static void              bind(SSL *ssl, TLSTunnelSupport *srs);
+  static void              unbind(SSL *ssl);
 
   bool is_decryption_needed() const;
   bool is_upstream_tls() const;
 
-  SNIRoutingType get_tunnel_type() const;
+  SNIRoutingType   get_tunnel_type() const;
   std::string_view get_tunnel_host() const;
-  ushort get_tunnel_port() const;
-  bool tunnel_port_is_dynamic() const;
+  ushort           get_tunnel_port() const;
+  bool             tunnel_port_is_dynamic() const;
 
   bool has_tunnel_destination() const;
 
   static constexpr bool PORT_IS_DYNAMIC = true;
-  void set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
-                              YamlSNIConfig::TunnelPreWarm prewarm);
+  void                  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
+                                               YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
   PreWarm::SPtrConstDst create_dst(int pid) const;
@@ -65,9 +65,9 @@ protected:
 private:
   static int _ex_data_index;
 
-  std::string _tunnel_host;
-  in_port_t _tunnel_port                       = 0;
-  SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
+  std::string                  _tunnel_host;
+  in_port_t                    _tunnel_port    = 0;
+  SNIRoutingType               _tunnel_type    = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
 
   /** Whether the tunnel destination port is statically configured or

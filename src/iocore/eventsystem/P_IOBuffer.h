@@ -77,8 +77,8 @@ iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
   IOBufferBlock *current_buf = nullptr;
 
   while (src && len >= 0) {
-    char *start       = src->_start;
-    char *end         = src->_end;
+    char   *start     = src->_start;
+    char   *end       = src->_end;
     int64_t max_bytes = end - start;
 
     max_bytes -= offset;
@@ -502,8 +502,8 @@ IOBufferReader::block_read_view()
 TS_INLINE int
 IOBufferReader::block_count()
 {
-  int count        = 0;
-  IOBufferBlock *b = block.get();
+  int            count = 0;
+  IOBufferBlock *b     = block.get();
 
   while (b) {
     count++;
@@ -516,7 +516,7 @@ IOBufferReader::block_count()
 TS_INLINE int64_t
 IOBufferReader::read_avail()
 {
-  int64_t t        = 0;
+  int64_t        t = 0;
   IOBufferBlock *b = block.get();
 
   while (b) {
@@ -535,7 +535,7 @@ IOBufferReader::read_avail()
 TS_INLINE bool
 IOBufferReader::is_read_avail_more_than(int64_t size)
 {
-  int64_t t        = -start_offset;
+  int64_t        t = -start_offset;
   IOBufferBlock *b = block.get();
 
   while (b) {
@@ -574,8 +574,8 @@ IOBufferReader::consume(int64_t n)
 TS_INLINE char &
 IOBufferReader::operator[](int64_t i)
 {
-  static char default_ret = '\0'; // This is just to avoid compiler warnings...
-  IOBufferBlock *b        = block.get();
+  static char    default_ret = '\0'; // This is just to avoid compiler warnings...
+  IOBufferBlock *b           = block.get();
 
   i += start_offset;
   while (b) {
@@ -875,7 +875,7 @@ MIOBuffer::get_current_block()
 TS_INLINE int64_t
 MIOBuffer::current_write_avail()
 {
-  int64_t t        = 0;
+  int64_t        t = 0;
   IOBufferBlock *b = _writer.get();
   while (b) {
     t += b->write_avail();
@@ -933,8 +933,8 @@ MIOBuffer::max_block_count()
 TS_INLINE int64_t
 MIOBuffer::max_read_avail()
 {
-  int64_t s = 0;
-  int found = 0;
+  int64_t s     = 0;
+  int     found = 0;
   for (auto &reader : readers) {
     if (reader.allocated()) {
       int64_t ss = reader.read_avail();

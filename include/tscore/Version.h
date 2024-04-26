@@ -104,7 +104,7 @@ struct ModuleVersion {
    */
   bool check(ModuleVersion const &that);
 
-  Type _type           = PUBLIC; ///< The numeric value of the module version.
+  Type          _type  = PUBLIC; ///< The numeric value of the module version.
   unsigned char _major = 0;      ///< Major version.
   unsigned char _minor = 0;
 };
@@ -136,7 +136,7 @@ ModuleVersion::check(ModuleVersion const &that)
 class AppVersionInfo
 {
 private:
-  int defined;
+  int  defined;
   char PkgStr[128];
   char AppStr[128];
   char VersionStr[128];
@@ -202,5 +202,5 @@ public:
 
   static const AppVersionInfo &get_version();
   static const AppVersionInfo &setup_version(const char *name);
-  static void print_version();
+  static void                  print_version();
 };

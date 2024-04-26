@@ -26,7 +26,7 @@
 
 #include "main.h"
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 class CacheUpdateReadAgain : public CacheTestHandler
@@ -136,10 +136,10 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h        = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
-    CacheUpdate_S_to_L *update = new CacheUpdate_S_to_L(SMALL_FILE, LARGE_FILE, "http://www.scw11.com");
-    CacheUpdateReadAgain *read = new CacheUpdateReadAgain(LARGE_FILE, "http://www.scw11.com");
-    TerminalTest *tt           = new TerminalTest;
+    CacheTestHandler     *h      = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
+    CacheUpdate_S_to_L   *update = new CacheUpdate_S_to_L(SMALL_FILE, LARGE_FILE, "http://www.scw11.com");
+    CacheUpdateReadAgain *read   = new CacheUpdateReadAgain(LARGE_FILE, "http://www.scw11.com");
+    TerminalTest         *tt     = new TerminalTest;
 
     h->add(update);
     h->add(read); // read again

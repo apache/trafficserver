@@ -47,22 +47,22 @@
 
 #include <vector>
 
-HttpSessionAccept *plugin_http_accept             = nullptr;
-HttpSessionAccept *plugin_http_transparent_accept = nullptr;
-extern std::function<PoolableSession *()> create_h1_server_session;
-extern std::function<PoolableSession *()> create_h2_server_session;
+HttpSessionAccept                                    *plugin_http_accept             = nullptr;
+HttpSessionAccept                                    *plugin_http_transparent_accept = nullptr;
+extern std::function<PoolableSession *()>             create_h1_server_session;
+extern std::function<PoolableSession *()>             create_h2_server_session;
 extern std::map<int, std::function<ProxySession *()>> ProtocolSessionCreateMap;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
-static Ptr<ProxyMutex> ssl_plugin_mutex;
+static Ptr<ProxyMutex>            ssl_plugin_mutex;
 
-std::mutex proxyServerMutex;
+std::mutex              proxyServerMutex;
 std::condition_variable proxyServerCheck;
-bool et_net_threads_ready = false;
+bool                    et_net_threads_ready = false;
 
-std::mutex etUdpMutex;
+std::mutex              etUdpMutex;
 std::condition_variable etUdpCheck;
-bool et_udp_threads_ready = false;
+bool                    et_udp_threads_ready = false;
 
 // File / process scope initializations
 static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
@@ -167,7 +167,7 @@ static void
 MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions &net_opt = acceptor._net_opt;
-  HttpSessionAccept::Options accept_opt;
+  HttpSessionAccept::Options   accept_opt;
 
   net_opt = make_net_accept_options(&port, nthreads);
 
@@ -188,7 +188,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   // XXX the protocol probe should be a configuration option.
 
   ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
-  HttpSessionAccept *http           = nullptr; // don't allocate this unless it will be used.
+  HttpSessionAccept          *http  = nullptr; // don't allocate this unless it will be used.
   probe->proxyPort                  = &port;
   probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
 
@@ -327,7 +327,7 @@ init_HttpProxyServer()
 void
 start_HttpProxyServer()
 {
-  static bool called_once           = false;
+  static bool           called_once = false;
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
 
   ///////////////////////////////////
@@ -339,7 +339,7 @@ start_HttpProxyServer()
 
   for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
-    HttpProxyPort &port         = proxy_ports[i];
+    HttpProxyPort     &port     = proxy_ports[i];
     if (port.isSSL()) {
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;

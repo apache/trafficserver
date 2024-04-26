@@ -26,7 +26,7 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 class CacheCommInit : public CacheInit
@@ -38,7 +38,7 @@ public:
   {
     CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
     CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
-    TerminalTest *tt     = new TerminalTest;
+    TerminalTest     *tt = new TerminalTest;
     h->add(h2);
     h->add(tt);
     this_ethread()->schedule_imm(h);

@@ -46,11 +46,11 @@ char *
 int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
   const unsigned int local_buf_size = 32;
-  char local_buf[local_buf_size];
-  bool using_local_buffer = false;
-  bool negative           = false;
-  char *out_buf           = buf;
-  char *working_buf;
+  char               local_buf[local_buf_size];
+  bool               using_local_buffer = false;
+  bool               negative           = false;
+  char              *out_buf            = buf;
+  char              *working_buf;
 
   if (buf_size < 22) {
     // int64_t may not fit in provided buffer, use the local one
@@ -151,19 +151,19 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
 int
 squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec)
 {
-  int res;
+  int                res;
   const unsigned int tmp_buf_size = 32;
-  char tmp_buf[tmp_buf_size];
+  char               tmp_buf[tmp_buf_size];
 
   unsigned int num_chars_s;
-  char *ts_s = int64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
+  char        *ts_s = int64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
   ink_assert(ts_s);
 
   // convert milliseconds
   //
   tmp_buf[tmp_buf_size - 5] = '.';
-  int ms                    = timestamp_usec / 1000;
-  unsigned int num_chars_ms;
+  int              ms       = timestamp_usec / 1000;
+  unsigned int     num_chars_ms;
   char ATS_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
   ink_assert(ts_ms && num_chars_ms == 4);
 

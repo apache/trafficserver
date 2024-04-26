@@ -40,25 +40,25 @@ struct QUICClientConfig {
   char path[1018]       = "/";
   char server_name[128] = "";
   char debug_tags[1024] = "quic|vv_quic_crypto|http3|qpack";
-  int close             = false;
-  int reset             = false;
-  int http0_9           = true;
-  int http3             = false;
+  int  close            = false;
+  int  reset            = false;
+  int  http0_9          = true;
+  int  http3            = false;
 };
 
 class RespHandler : public Continuation
 {
 public:
   RespHandler(const QUICClientConfig *config, IOBufferReader *reader, std::function<void()> on_complete);
-  int main_event_handler(int event, Event *data);
+  int  main_event_handler(int event, Event *data);
   void set_read_vio(VIO *vio);
 
 private:
-  const QUICClientConfig *_config = nullptr;
-  const char *_filename           = nullptr;
-  IOBufferReader *_reader         = nullptr;
-  VIO *_read_vio                  = nullptr;
-  std::function<void()> _on_complete;
+  const QUICClientConfig *_config   = nullptr;
+  const char             *_filename = nullptr;
+  IOBufferReader         *_reader   = nullptr;
+  VIO                    *_read_vio = nullptr;
+  std::function<void()>   _on_complete;
 };
 
 class ReqGenerator : public Continuation
@@ -78,8 +78,8 @@ public:
   int state_http_server_open(int event, void *data);
 
 private:
-  const QUICClientConfig *_config    = nullptr;
-  struct addrinfo *_remote_addr_info = nullptr;
+  const QUICClientConfig    *_config           = nullptr;
+  struct addrinfo           *_remote_addr_info = nullptr;
   HttpSessionAccept::Options options;
 };
 
@@ -91,13 +91,13 @@ public:
   void on_new_stream(QUICStream &stream) override;
 
   void start();
-  int main_event_handler(int event, Event *data);
+  int  main_event_handler(int event, Event *data);
 
 private:
   void _do_http_request();
 
-  const QUICClientConfig *_config = nullptr;
-  const char *_filename           = nullptr;
+  const QUICClientConfig                                       *_config   = nullptr;
+  const char                                                   *_filename = nullptr;
   std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 };
 
@@ -115,9 +115,9 @@ public:
 private:
   void _do_http_request();
 
-  RespHandler *_resp_handler      = nullptr;
-  ReqGenerator *_req_generator    = nullptr;
-  const QUICClientConfig *_config = nullptr;
+  RespHandler            *_resp_handler  = nullptr;
+  ReqGenerator           *_req_generator = nullptr;
+  const QUICClientConfig *_config        = nullptr;
 
   MIOBuffer *_req_buf  = nullptr;
   MIOBuffer *_resp_buf = nullptr;

@@ -56,7 +56,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
     return false;
   }
 
-  bool ret         = false;
+  bool   ret       = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
 
   if (!field_loc) {
@@ -69,8 +69,8 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = nullptr;
-    bool first = true;
+    TSMLoc tmp   = nullptr;
+    bool   first = true;
 
     while (field_loc) {
       tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
@@ -95,10 +95,10 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 static void
 dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  TSIOBuffer output_buffer;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
-  TSIOBufferBlock block;
-  int64_t block_avail;
+  TSIOBufferBlock  block;
+  int64_t          block_avail;
 
   output_buffer = TSIOBufferCreate();
   reader        = TSIOBufferReaderAlloc(output_buffer);
@@ -125,8 +125,8 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 {
-  struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
-  bool ret                  = false;
+  struct sockaddr const *ip  = TSHttpTxnClientAddrGet(txnp);
+  bool                   ret = false;
 
   TSAssert(TS_NULL_MLOC == hdr_loc);
   TSAssert(TS_NULL_MLOC == url_loc);
@@ -152,8 +152,8 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
     if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &request, &p_url)) {
       if (TS_SUCCESS == TSUrlClone(mbuf, request, p_url, &url_loc)) {
         TSMLoc c_url = TS_NULL_MLOC;
-        int len;
-        char *url = nullptr;
+        int    len;
+        char  *url = nullptr;
 
         // Get the cache key URL (for now), since this has better lookup behavior when using
         // e.g. the cachekey plugin.
@@ -217,14 +217,14 @@ static int
 cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   BgFetchData *data = static_cast<BgFetchData *>(TSContDataGet(contp));
-  int64_t avail;
+  int64_t      avail;
 
   switch (event) {
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
     if (dbg_ctl.on()) {
-      char buf[INET6_ADDRSTRLEN];
+      char            buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {

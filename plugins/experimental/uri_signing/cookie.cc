@@ -71,8 +71,8 @@ get_cookie_value(const char **cookie, size_t *cookie_ct, const char *key, size_t
 {
   PluginDebug("Parsing cookie %.*s looking for %s", (int)*cookie_ct, *cookie, key);
   const char *k, *v;
-  size_t k_ct, v_ct;
-  size_t key_ct = strlen(key);
+  size_t      k_ct, v_ct;
+  size_t      key_ct = strlen(key);
   while ((*cookie = next_cookie(*cookie, cookie_ct, &k, &k_ct, &v, &v_ct))) {
     PluginDebug("Checking cookie '%.*s' '%.*s'", (int)k_ct, k, (int)v_ct, v);
     if (key_ct == k_ct && (k_ct == 0 || !strncmp(k, key, k_ct))) {

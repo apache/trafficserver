@@ -288,8 +288,8 @@ BgFetchState::release(const String &url)
 bool
 BgFetchState::uniqueAcquire(const String &url)
 {
-  bool permitted       = true;
-  bool throttled       = false;
+  bool   permitted     = true;
+  bool   throttled     = false;
   size_t cachedCounter = 0;
 
   TSMutexLock(_lock);
@@ -322,7 +322,7 @@ BgFetchState::uniqueAcquire(const String &url)
 bool
 BgFetchState::uniqueRelease(const String &url)
 {
-  bool permitted        = true;
+  bool    permitted     = true;
   ssize_t cachedCounter = 0;
 
   TSMutexLock(_lock);
@@ -417,7 +417,7 @@ BgFetch::schedule(BgFetchState *state, const PrefetchConfig &config, bool askPer
                   TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *path, size_t pathLen, const String &cachekey,
                   bool removeQuery)
 {
-  bool ret       = false;
+  bool     ret   = false;
   BgFetch *fetch = new BgFetch(state, config, askPermission);
   if (fetch->init(requestBuffer, requestHeaderLoc, txnp, path, pathLen, cachekey, removeQuery)) {
     fetch->schedule();
@@ -505,7 +505,7 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
   }
 
   /* Save the path before changing */
-  int pathLen;
+  int         pathLen;
   const char *path = TSUrlPathGet(_mbuf, _urlLoc, &pathLen);
   if (nullptr == path) {
     PrefetchError("failed to get a URL path");
@@ -549,8 +549,8 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
   }
 
   /* Come up with the host name to be used in the fetch request */
-  const char *hostName = nullptr;
-  int hostNameLen      = 0;
+  const char *hostName    = nullptr;
+  int         hostNameLen = 0;
   if (_config.getReplaceHost().empty()) {
     hostName = TSUrlHostGet(_mbuf, _urlLoc, &hostNameLen);
   } else {
@@ -574,8 +574,8 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
 
   /* Save the URL to be fetched with this fetch for debugging purposes, expensive TSUrlStringGet()
    * but really helpful when debugging multi-remap / host-replacement use cases */
-  int urlLen = 0;
-  char *url  = TSUrlStringGet(_mbuf, _urlLoc, &urlLen);
+  int   urlLen = 0;
+  char *url    = TSUrlStringGet(_mbuf, _urlLoc, &urlLen);
   if (nullptr != url) {
     _url.assign(url, urlLen);
     TSfree(static_cast<void *>(url));
@@ -643,8 +643,8 @@ BgFetch::logAndMetricUpdate(TSEvent event) const
   }
 
   if (dbg_ctl_log.on()) {
-    TSHRTime now   = TShrtime();
-    double elapsed = static_cast<double>(now - _startTime) / 1000000.0;
+    TSHRTime now     = TShrtime();
+    double   elapsed = static_cast<double>(now - _startTime) / 1000000.0;
 
     PrefetchDebug("ns=%s bytes=%" PRId64 " time=%1.3lf status=%s url=%s key=%s", _config.getNameSpace().c_str(), _bytes, elapsed,
                   status, _url.c_str(), _cachekey.c_str());
@@ -664,7 +664,7 @@ int
 BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   BgFetch *fetch = static_cast<BgFetch *>(TSContDataGet(contp));
-  int64_t avail;
+  int64_t  avail;
 
   PrefetchDebug("event: %s (%d)", TSHttpEventNameLookup(event), event);
 
@@ -673,7 +673,7 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
     if (dbg_ctl.on()) {
-      char buf[INET6_ADDRSTRLEN];
+      char            buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&fetch->client_ip);
 
       switch (sockaddress->sa_family) {

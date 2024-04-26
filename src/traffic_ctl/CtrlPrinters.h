@@ -107,12 +107,12 @@ public:
 
   /// OutputFormat getters.
   Options::OutputFormat get_format() const;
-  bool print_rpc_message() const;
-  bool is_json_format() const;
-  bool is_records_format() const;
+  bool                  print_rpc_message() const;
+  bool                  is_json_format() const;
+  bool                  is_records_format() const;
 
 protected:
-  void write_output_json(YAML::Node const &node) const;
+  void    write_output_json(YAML::Node const &node) const;
   Options _printOpt;
 };
 

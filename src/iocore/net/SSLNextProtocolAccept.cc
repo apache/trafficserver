@@ -39,7 +39,7 @@ static SSLNetVConnection *
 ssl_netvc_cast(int event, void *edata)
 {
   union {
-    VIO *vio;
+    VIO            *vio;
     NetVConnection *vc;
   } ptr;
 

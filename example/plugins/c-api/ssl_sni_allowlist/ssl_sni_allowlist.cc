@@ -41,10 +41,10 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 int
 CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
-  TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  TSVConn         ssl_vc     = reinterpret_cast<TSVConn>(edata);
+  TSSslConnection sslobj     = TSVConnSslConnectionGet(ssl_vc);
+  SSL            *ssl        = reinterpret_cast<SSL *>(sslobj);
+  const char     *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   bool do_blind_tunnel = true;
   if (servername != nullptr) {
@@ -74,9 +74,9 @@ CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  bool success = false;
+  bool                     success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_sni = nullptr; // sni callback continuation
+  TSCont                   cb_sni = nullptr; // sni callback continuation
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

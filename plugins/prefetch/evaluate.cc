@@ -44,7 +44,7 @@ tochar(int8_t ch)
   return ch + '0';
 }
 
-constexpr StringView const svzero{"0"};
+constexpr StringView const  svzero{"0"};
 constexpr char const *const digits = "0123456789";
 
 inline bool
@@ -177,8 +177,8 @@ evaluateBignum(const StringView view)
 
   StringView v = view;
 
-  uint32_t fwide            = 0;
-  StringView::size_type pos = v.find_first_of(':');
+  uint32_t              fwide = 0;
+  StringView::size_type pos   = v.find_first_of(':');
   if (v.npos != pos) {
     std::from_chars(v.begin(), v.begin() + pos, fwide);
     PrefetchDebug("statement: '%.*s', formatting length: %" PRIu32, (int)pos, v.data(), fwide);
@@ -243,8 +243,8 @@ evaluate(const StringView view, const EvalPolicy policy)
   StringView v = view;
 
   /* Find out if width is specified (hence leading zeros are required if the width is bigger then the result width) */
-  String stmt;
-  uint32_t len              = 0;
+  String                stmt;
+  uint32_t              len = 0;
   StringView::size_type pos = v.find_first_of(':');
   if (v.npos != pos) {
     stmt.assign(v.substr(0, pos));
@@ -271,9 +271,9 @@ evaluate(const StringView view, const EvalPolicy policy)
 
     PrefetchDebug("Single-operand expression: %s -> %" PRIu64, stmt.c_str(), result);
   } else {
-    const String leftOperand(v.substr(0, pos));
+    const String       leftOperand(v.substr(0, pos));
     std::istringstream liss(leftOperand);
-    uint64_t a64 = 0;
+    uint64_t           a64 = 0;
 
     if (policy == EvalPolicy::Overflow64) {
       liss >> a64;
@@ -284,9 +284,9 @@ evaluate(const StringView view, const EvalPolicy policy)
     }
     PrefetchDebug("Left-operand expression: %s -> %" PRIu64, leftOperand.c_str(), a64);
 
-    const String rightOperand(v.substr(pos + 1));
+    const String       rightOperand(v.substr(pos + 1));
     std::istringstream riss(rightOperand);
-    uint64_t b64 = 0;
+    uint64_t           b64 = 0;
 
     if (policy == EvalPolicy::Overflow64) {
       riss >> b64;

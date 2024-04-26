@@ -55,9 +55,9 @@ void
 Http3StreamDataVIOAdaptor::finalize()
 {
   SCOPED_MUTEX_LOCK(lock, this->_sink_vio->mutex, this_ethread());
-  MIOBuffer *writer      = this->_sink_vio->get_writer();
+  MIOBuffer      *writer = this->_sink_vio->get_writer();
   IOBufferReader *reader = this->_buffer->alloc_reader();
-  IOBufferBlock *block;
+  IOBufferBlock  *block;
   while (reader->read_avail() > 0 && (block = reader->get_current_block()) != nullptr) {
     writer->append_block(block);
     reader->consume(block->size());

@@ -48,7 +48,7 @@ private:
   using FunctionHandleMap = std::map<std::string, SpecialIncludeHandlerCreator>;
 
   struct ModuleHandles {
-    void *object;
+    void                        *object;
     SpecialIncludeHandlerCreator function;
     ModuleHandles(void *o = nullptr, SpecialIncludeHandlerCreator f = nullptr) : object(o), function(f){};
   };
@@ -56,7 +56,7 @@ private:
   using ModuleHandleMap = std::map<std::string, ModuleHandles>;
 
   FunctionHandleMap _id_to_function_map;
-  ModuleHandleMap _path_to_module_map;
+  ModuleHandleMap   _path_to_module_map;
 
   static const char *const FACTORY_FUNCTION_NAME;
 };

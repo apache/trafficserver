@@ -72,8 +72,8 @@ TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
 TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
 {
   IpEndpoint ep;
-  IpAddr addr;
-  IpAddr lower, upper;
+  IpAddr     addr;
+  IpAddr     lower, upper;
 
   REQUIRE(0 == ats_ip_pton("76.14.64.156", &ep.sa));
   REQUIRE(0 == addr.load("76.14.64.156"));
@@ -154,15 +154,15 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
 
 TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
 {
-  IpEndpoint ep;
-  std::string_view addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
-  std::string_view addr_2{"172.17.99.231:23995"};
-  std::string_view addr_3{"[1337:ded:BEEF::]:53874"};
-  std::string_view addr_4{"[1337::ded:BEEF]:53874"};
-  std::string_view addr_5{"[1337:0:0:ded:BEEF:0:0:956]:53874"};
-  std::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
-  std::string_view addr_7{"172.19.3.105:4951"};
-  std::string_view addr_null{"[::]:53874"};
+  IpEndpoint                    ep;
+  std::string_view              addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
+  std::string_view              addr_2{"172.17.99.231:23995"};
+  std::string_view              addr_3{"[1337:ded:BEEF::]:53874"};
+  std::string_view              addr_4{"[1337::ded:BEEF]:53874"};
+  std::string_view              addr_5{"[1337:0:0:ded:BEEF:0:0:956]:53874"};
+  std::string_view              addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
+  std::string_view              addr_7{"172.19.3.105:4951"};
+  std::string_view              addr_null{"[::]:53874"};
   swoc::LocalBufferWriter<1024> w;
 
   REQUIRE(0 == ats_ip_pton(addr_1, &ep.sa));

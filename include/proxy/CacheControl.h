@@ -69,14 +69,14 @@ public:
   //
   //   Describes the cache-control for a specific URL
   //
-  int revalidate_after;
-  int pin_in_cache_for;
-  int ttl_in_cache;
-  bool never_cache               = false;
-  bool ignore_client_no_cache    = false;
-  bool ignore_server_no_cache    = false;
-  bool ignore_client_cc_max_age  = true;
-  int cache_responses_to_cookies = -1; ///< Override for caching cookied responses.
+  int  revalidate_after;
+  int  pin_in_cache_for;
+  int  ttl_in_cache;
+  bool never_cache                = false;
+  bool ignore_client_no_cache     = false;
+  bool ignore_server_no_cache     = false;
+  bool ignore_client_cc_max_age   = true;
+  int  cache_responses_to_cookies = -1; ///< Override for caching cookied responses.
 
   // Data for internal use only
   //
@@ -104,12 +104,12 @@ class CacheControlRecord : public ControlBase
 {
 public:
   CacheControlRecord();
-  CacheControlType directive     = CC_INVALID;
-  int time_arg                   = 0;
-  int cache_responses_to_cookies = -1;
-  Result Init(matcher_line *line_info);
-  void UpdateMatch(CacheControlResult *result, RequestData *rdata);
-  void Print() const;
+  CacheControlType directive                  = CC_INVALID;
+  int              time_arg                   = 0;
+  int              cache_responses_to_cookies = -1;
+  Result           Init(matcher_line *line_info);
+  void             UpdateMatch(CacheControlResult *result, RequestData *rdata);
+  void             Print() const;
 };
 
 inline CacheControlRecord::CacheControlRecord() : ControlBase() {}

@@ -56,7 +56,7 @@ private:
   bool failed(const String &subject) const;
   void pcreFree();
 
-  pcre *_re          = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
+  pcre       *_re    = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
   pcre_extra *_extra = nullptr; /**< @brief PCRE study data block, computed during initialization */
 
   String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
@@ -76,15 +76,15 @@ public:
   MultiPattern(const String &name = "") : _name(name) {}
   virtual ~MultiPattern();
 
-  bool empty() const;
-  void add(Pattern *pattern);
-  virtual bool match(const String &subject) const;
-  virtual bool replace(const String &subject, String &result) const;
+  bool          empty() const;
+  void          add(Pattern *pattern);
+  virtual bool  match(const String &subject) const;
+  virtual bool  replace(const String &subject, String &result) const;
   const String &name() const;
 
 protected:
   std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
-  String _name;                 /**< @brief multi-pattern name */
+  String                 _name; /**< @brief multi-pattern name */
 
 private:
   MultiPattern(const MultiPattern &);            // disallow

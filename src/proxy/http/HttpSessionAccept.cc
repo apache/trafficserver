@@ -35,8 +35,8 @@ DbgCtl dbg_ctl_http_seq{"http_seq"};
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip = netvc->get_remote_addr();
-  IpAllow::ACL acl;
+  sockaddr const     *client_ip = netvc->get_remote_addr();
+  IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
   acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);

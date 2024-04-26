@@ -35,7 +35,7 @@
 #define TOKEN        "Hugepagesize:"
 #define TOKEN_SIZE   (strlen(TOKEN))
 
-static int hugepage_size = -1;
+static int  hugepage_size = -1;
 static bool hugepage_enabled;
 #endif
 
@@ -65,7 +65,7 @@ ats_hugepage_init(int enabled)
 {
 #ifdef MAP_HUGETLB
   FILE *fp;
-  char line[LINE_SIZE];
+  char  line[LINE_SIZE];
   char *p, *ep;
 
   hugepage_size = 0;
@@ -114,7 +114,7 @@ ats_alloc_hugepage(size_t s)
 {
 #ifdef MAP_HUGETLB
   size_t size;
-  void *mem;
+  void  *mem;
 
   size = INK_ALIGN(s, ats_hugepage_size());
 

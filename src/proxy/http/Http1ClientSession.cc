@@ -210,7 +210,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
   // have already been deallocated.
-  EThread *ethis         = this_ethread();
+  EThread        *ethis  = this_ethread();
   Ptr<ProxyMutex> lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -412,7 +412,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
 {
   // When release is called from start() to read the first transaction, get_sm()
   // will return null.
-  HttpSM *sm                = trans->get_sm();
+  HttpSM           *sm      = trans->get_sm();
   Http1Transaction *h1trans = static_cast<Http1Transaction *>(trans);
   if (sm) {
     MgmtInt ka_in = trans->get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in;

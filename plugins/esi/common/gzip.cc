@@ -57,7 +57,7 @@ inline int
 runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
 {
   char buf[BUF_SIZE];
-  int deflate_result = Z_OK;
+  int  deflate_result = Z_OK;
   do {
     zstrm.next_out  = reinterpret_cast<Bytef *>(buf);
     zstrm.avail_out = BUF_SIZE;
@@ -87,10 +87,10 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
     return false;
   }
 
-  int total_data_len = 0;
-  uLong crc          = crc32(0, Z_NULL, 0);
-  int deflate_result = Z_OK;
-  int in_data_size   = 0;
+  int   total_data_len = 0;
+  uLong crc            = crc32(0, Z_NULL, 0);
+  int   deflate_result = Z_OK;
+  int   in_data_size   = 0;
   for (auto block : blocks) {
     if (block.data && (block.data_len > 0)) {
       zstrm.next_in   = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
@@ -154,11 +154,11 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   }
   zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
   zstrm.avail_in = data_len;
-  char raw_buf[BUF_SIZE];
-  int inflate_result;
+  char    raw_buf[BUF_SIZE];
+  int     inflate_result;
   int32_t unzipped_data_size = 0;
   int32_t curr_buf_size;
-  uLong crc = crc32(0, Z_NULL, 0);
+  uLong   crc = crc32(0, Z_NULL, 0);
   do {
     zstrm.next_out  = reinterpret_cast<Bytef *>(raw_buf);
     zstrm.avail_out = BUF_SIZE;
@@ -195,7 +195,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
     TSError("[%s] Failure while inflating; error code %d", __FUNCTION__, inflate_result);
     return false;
   }
-  int32_t orig_size;
+  int32_t  orig_size;
   uint32_t orig_crc;
   extract(data + data_len, orig_crc);
   extract(data + data_len + 4, orig_size);

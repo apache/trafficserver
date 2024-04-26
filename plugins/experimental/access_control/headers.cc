@@ -40,7 +40,7 @@ int
 removeHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
 {
   TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
-  int cnt         = 0;
+  int    cnt      = 0;
 
   while (fieldLoc) {
     TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
@@ -87,21 +87,21 @@ char *
 getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char *value, int *valuelen)
 {
   TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
-  char *dst       = value;
+  char  *dst      = value;
   while (fieldLoc) {
     TSMLoc next = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
 
     int count = TSMimeHdrFieldValuesCount(bufp, hdrLoc, fieldLoc);
     for (int i = 0; i < count; ++i) {
-      const char *v = nullptr;
-      int vlen      = 0;
-      v             = TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, i, &vlen);
+      const char *v    = nullptr;
+      int         vlen = 0;
+      v                = TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, i, &vlen);
       if (v == nullptr || vlen == 0) {
         continue;
       }
       /* append the field content to the output buffer if enough space, plus space for ", " */
-      bool first      = (dst == value);
-      int neededSpace = ((dst - value) + vlen + (dst == value ? 0 : 2));
+      bool first       = (dst == value);
+      int  neededSpace = ((dst - value) + vlen + (dst == value ? 0 : 2));
       if (neededSpace < *valuelen) {
         if (!first) {
           memcpy(dst, ", ", 2);
@@ -139,7 +139,7 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
     return false;
   }
 
-  bool ret        = false;
+  bool   ret      = false;
   TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
 
   if (!fieldLoc || duplicateOk) {
@@ -152,8 +152,8 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
       TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
     }
   } else {
-    TSMLoc tmp = nullptr;
-    bool first = true;
+    TSMLoc tmp   = nullptr;
+    bool   first = true;
 
     while (fieldLoc) {
       tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
@@ -184,11 +184,11 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
 void
 dumpHeaders(TSMBuffer bufp, TSMLoc hdrLoc)
 {
-  TSIOBuffer output_buffer;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
-  TSIOBufferBlock block;
-  const char *block_start;
-  int64_t block_avail;
+  TSIOBufferBlock  block;
+  const char      *block_start;
+  int64_t          block_avail;
 
   output_buffer = TSIOBufferCreate();
   reader        = TSIOBufferReaderAlloc(output_buffer);

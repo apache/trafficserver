@@ -71,7 +71,7 @@ TEST_CASE("EventSystem", "[iocore]")
     }
   };
 
-  alarm_printer alrm{new_ProxyMutex()};
+  alarm_printer  alrm{new_ProxyMutex()};
   process_killer killer{new_ProxyMutex()};
   eventProcessor.schedule_in(&killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(&alrm, HRTIME_SECONDS(1));

@@ -84,7 +84,7 @@ class IPCSocketServer : public BaseCommInterface
     /// Wait for data to be ready for reading.
     /// @return true if the data is ready, false otherwise.
     bool poll_for_data(std::chrono::milliseconds timeout) const;
-    int _fd; ///< connected peer's socket.
+    int  _fd; ///< connected peer's socket.
   };
 
 public:
@@ -118,8 +118,8 @@ protected: // unit test access
     std::string sockPathName;
     std::string lockPathName;
 
-    int backlog{5};
-    int maxRetriesOnTransientErrors{64};
+    int  backlog{5};
+    int  maxRetriesOnTransientErrors{64};
     bool restrictedAccessApi{
       NON_RESTRICTED_API}; // This config value will drive the permissions of the jsonrpc socket(either 0700(default) or 0777).
   };
@@ -129,10 +129,10 @@ protected: // unit test access
 
 private:
   inline static const std::string _name = "Local Socket";
-  bool poll_for_new_client(std::chrono::milliseconds timeout = std::chrono::milliseconds(1000)) const;
-  void create_socket(std::error_code &ec);
+  bool                            poll_for_new_client(std::chrono::milliseconds timeout = std::chrono::milliseconds(1000)) const;
+  void                            create_socket(std::error_code &ec);
 
-  int accept(std::error_code &ec) const;
+  int  accept(std::error_code &ec) const;
   void bind(std::error_code &ec);
   void listen(std::error_code &ec);
   void close();
@@ -141,6 +141,6 @@ private:
   std::atomic_bool _running;
 
   struct sockaddr_un _serverAddr;
-  int _socket{-1};
+  int                _socket{-1};
 };
 } // namespace rpc::comm

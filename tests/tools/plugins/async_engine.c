@@ -52,7 +52,7 @@ static const char *engine_name = "Asynchronous test engine";
 static int async_destroy(ENGINE *e);
 static int engine_async_init(ENGINE *e);
 static int async_finish(ENGINE *e);
-void engine_load_async_int(void);
+void       engine_load_async_int(void);
 
 static void async_pause_job(void);
 
@@ -184,11 +184,11 @@ wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key, OSSL_ASYNC_FD readfd, void *p
 static void
 async_pause_job(void)
 {
-  ASYNC_JOB *job;
+  ASYNC_JOB      *job;
   ASYNC_WAIT_CTX *waitctx;
-  OSSL_ASYNC_FD pipefds[2] = {0, 0};
-  OSSL_ASYNC_FD *writefd;
-  char buf = DUMMY_CHAR;
+  OSSL_ASYNC_FD   pipefds[2] = {0, 0};
+  OSSL_ASYNC_FD  *writefd;
+  char            buf = DUMMY_CHAR;
 
   if ((job = ASYNC_get_current_job()) == NULL) {
     fprintf(stderr, "No job\n");
@@ -243,7 +243,7 @@ delay_method(void *arg)
 void
 spawn_delay_thread()
 {
-  pthread_t thread_id;
+  pthread_t  thread_id;
   ASYNC_JOB *job;
   if ((job = ASYNC_get_current_job()) == NULL) {
     fprintf(stderr, "Spawn no job\n");
@@ -256,9 +256,9 @@ spawn_delay_thread()
   if (ASYNC_WAIT_CTX_get_all_fds(waitctx, NULL, &numfds) && numfds > 0) {
     fprintf(stderr, "Spawn, wait_ctx exists.  Go away, something else is using this job\n");
   } else {
-    OSSL_ASYNC_FD signal_fd;
-    OSSL_ASYNC_FD pipefds[2] = {0, 0};
-    OSSL_ASYNC_FD *writefd   = OPENSSL_malloc(sizeof(*writefd));
+    OSSL_ASYNC_FD  signal_fd;
+    OSSL_ASYNC_FD  pipefds[2] = {0, 0};
+    OSSL_ASYNC_FD *writefd    = OPENSSL_malloc(sizeof(*writefd));
     if (pipe(pipefds) < 0) {
       fprintf(stderr, "Spawn, failed to create pipe errno=%d\n", errno);
       return;

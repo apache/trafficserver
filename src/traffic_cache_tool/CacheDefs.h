@@ -51,7 +51,7 @@ using swoc::round_up;
 namespace ts
 {
 /* INK_ALIGN() is only to be used to align on a power of 2 boundary */
-#define INK_ALIGN(size, boundary) (((size) + ((boundary)-1)) & ~((boundary)-1))
+#define INK_ALIGN(size, boundary) (((size) + ((boundary) - 1)) & ~((boundary) - 1))
 #define ROUND_TO_STORE_BLOCK(_x)  INK_ALIGN((_x), 8192)
 #define dir_clear(_e) \
   do {                \
@@ -112,11 +112,11 @@ public:
     @internal nee @c DiskStripeBlock
  */
 struct CacheStripeDescriptor {
-  Bytes offset;         // offset of start of stripe from start of span.
-  CacheStoreBlocks len; // length of block.
-  uint32_t vol_idx;     ///< If in use, the volume index.
-  unsigned int type : 3;
-  unsigned int free : 1;
+  Bytes            offset;  // offset of start of stripe from start of span.
+  CacheStoreBlocks len;     // length of block.
+  uint32_t         vol_idx; ///< If in use, the volume index.
+  unsigned int     type : 3;
+  unsigned int     free : 1;
 };
 
 /** Header data for a span.
@@ -127,12 +127,12 @@ struct CacheStripeDescriptor {
  */
 struct SpanHeader {
   static constexpr uint32_t MAGIC = 0xABCD1237;
-  uint32_t magic;
-  uint32_t num_volumes;      /* number of discrete volumes (DiskStripe) */
-  uint32_t num_free;         /* number of disk volume blocks free */
-  uint32_t num_used;         /* number of disk volume blocks in use */
-  uint32_t num_diskvol_blks; /* number of disk volume blocks */
-  CacheStoreBlocks num_blocks;
+  uint32_t                  magic;
+  uint32_t                  num_volumes;      /* number of discrete volumes (DiskStripe) */
+  uint32_t                  num_free;         /* number of disk volume blocks free */
+  uint32_t                  num_used;         /* number of disk volume blocks in use */
+  uint32_t                  num_diskvol_blks; /* number of disk volume blocks */
+  CacheStoreBlocks          num_blocks;
   /// Serialized stripe descriptors. This is treated as a variable sized array.
   CacheStripeDescriptor stripes[1];
 };
@@ -147,21 +147,21 @@ class StripeMeta
 public:
   static constexpr uint32_t MAGIC = 0xF1D0F00D;
 
-  uint32_t magic;
+  uint32_t      magic;
   VersionNumber version;
-  time_t create_time;
-  off_t write_pos;
-  off_t last_write_pos;
-  off_t agg_pos;
-  uint32_t generation; // token generation (vary), this cannot be 0
-  uint32_t phase;
-  uint32_t cycle;
-  uint32_t sync_serial;
-  uint32_t write_serial;
-  uint32_t dirty;
-  uint32_t sector_size;
-  uint32_t unused; // pad out to 8 byte boundary
-  uint16_t freelist[1];
+  time_t        create_time;
+  off_t         write_pos;
+  off_t         last_write_pos;
+  off_t         agg_pos;
+  uint32_t      generation; // token generation (vary), this cannot be 0
+  uint32_t      phase;
+  uint32_t      cycle;
+  uint32_t      sync_serial;
+  uint32_t      write_serial;
+  uint32_t      dirty;
+  uint32_t      sector_size;
+  uint32_t      unused; // pad out to 8 byte boundary
+  uint16_t      freelist[1];
 };
 
 struct Doc {
@@ -191,9 +191,9 @@ struct Doc {
 #endif
   uint32_t data_len();
   uint32_t prefix_len();
-  int single_fragment();
-  char *hdr();
-  char *data();
+  int      single_fragment();
+  char    *hdr();
+  char    *data();
 };
 
 /*
@@ -227,9 +227,9 @@ class CacheVolume
 class URLparser
 {
 public:
-  bool verifyURL(std::string &url1);
+  bool         verifyURL(std::string &url1);
   swoc::Errata parseURL(swoc::TextView URI);
-  int getPort(std::string &fullURL, int &port_ptr, int &port_len);
+  int          getPort(std::string &fullURL, int &port_ptr, int &port_len);
 
 private:
   //   DFA regex;
@@ -238,7 +238,7 @@ private:
 class CacheURL
 {
 public:
-  in_port_t port;
+  in_port_t   port;
   std::string scheme;
   std::string url;
   std::string hostname;
@@ -281,15 +281,15 @@ struct url_matcher {
   url_matcher(swoc::file::path const &path) // file contains a list of regex
   {
     std::error_code ec;
-    std::string load_content = swoc::file::load(path, ec);
-    swoc::TextView fileContent(load_content);
+    std::string     load_content = swoc::file::load(path, ec);
+    swoc::TextView  fileContent(load_content);
     if (ec.value() == 0) {
-      const char **patterns;
+      const char             **patterns;
       std::vector<std::string> str_vec;
-      int count = 0;
+      int                      count = 0;
       while (fileContent) {
         swoc::TextView line = fileContent.take_prefix_at('\n');
-        std::string reg_str(line.data(), line.size());
+        std::string    reg_str(line.data(), line.size());
         str_vec.push_back(reg_str);
         count++;
       }
@@ -348,26 +348,26 @@ using swoc::Errata;
 using swoc::MemSpan;
 
 using ts::Bytes;
-using ts::Megabytes;
+using ts::CacheDirEntry;
 using ts::CacheStoreBlocks;
 using ts::CacheStripeBlocks;
-using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
-using ts::CacheDirEntry;
 using ts::Doc;
+using ts::Megabytes;
+using ts::StripeMeta;
 
-constexpr int ESTIMATED_OBJECT_SIZE        = 8000;
-constexpr int DEFAULT_HW_SECTOR_SIZE       = 512;
-constexpr int STRIPE_HASH_TABLE_SIZE       = 32707;
-constexpr unsigned short STRIPE_HASH_EMPTY = 65535;
-constexpr int DIR_TAG_WIDTH                = 12;
-constexpr int DIR_DEPTH                    = 4;
-constexpr int SIZEOF_DIR                   = 10;
-constexpr int MAX_ENTRIES_PER_SEGMENT      = (1 << 16);
-constexpr int DIR_SIZE_WIDTH               = 6;
-constexpr int DIR_BLOCK_SIZES              = 4;
-constexpr int CACHE_BLOCK_SHIFT            = 9;
-constexpr int CACHE_BLOCK_SIZE             = (1 << CACHE_BLOCK_SHIFT); // 512, smallest sector size
+constexpr int            ESTIMATED_OBJECT_SIZE   = 8000;
+constexpr int            DEFAULT_HW_SECTOR_SIZE  = 512;
+constexpr int            STRIPE_HASH_TABLE_SIZE  = 32707;
+constexpr unsigned short STRIPE_HASH_EMPTY       = 65535;
+constexpr int            DIR_TAG_WIDTH           = 12;
+constexpr int            DIR_DEPTH               = 4;
+constexpr int            SIZEOF_DIR              = 10;
+constexpr int            MAX_ENTRIES_PER_SEGMENT = (1 << 16);
+constexpr int            DIR_SIZE_WIDTH          = 6;
+constexpr int            DIR_BLOCK_SIZES         = 4;
+constexpr int            CACHE_BLOCK_SHIFT       = 9;
+constexpr int            CACHE_BLOCK_SIZE        = (1 << CACHE_BLOCK_SHIFT); // 512, smallest sector size
 
 namespace ct
 {
@@ -446,8 +446,8 @@ struct Span {
   Span(swoc::file::path const &path) : _path(path) {}
   Errata load();
   Errata loadDevice();
-  bool isEmpty() const;
-  int header_len = 0;
+  bool   isEmpty() const;
+  int    header_len = 0;
 
   /// Replace all existing stripes with a single unallocated stripe covering the span.
   Errata clear();
@@ -456,16 +456,16 @@ struct Span {
   void clearPermanently();
 
   swoc::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
-  Errata updateHeader(); ///< Update serialized header and write to disk.
+  Errata             updateHeader(); ///< Update serialized header and write to disk.
 
-  swoc::file::path _path;   ///< File system location of span.
-  ats_scoped_fd _fd;        ///< Open file descriptor for span.
-  int _vol_idx = 0;         ///< Forced volume.
-  CacheStoreBlocks _base;   ///< Offset to first usable byte.
-  CacheStoreBlocks _offset; ///< Offset to first content byte.
+  swoc::file::path _path;        ///< File system location of span.
+  ats_scoped_fd    _fd;          ///< Open file descriptor for span.
+  int              _vol_idx = 0; ///< Forced volume.
+  CacheStoreBlocks _base;        ///< Offset to first usable byte.
+  CacheStoreBlocks _offset;      ///< Offset to first content byte.
   // The space between _base and _offset is where the span information is stored.
-  CacheStoreBlocks _len;                                 ///< Total length of span.
-  CacheStoreBlocks _free_space;                          ///< Total size of free stripes.
+  CacheStoreBlocks    _len;                              ///< Total length of span.
+  CacheStoreBlocks    _free_space;                       ///< Total size of free stripes.
   ink_device_geometry _geometry = ink_device_geometry(); ///< Geometry of span.
   uint64_t num_usable_blocks    = 0; // number of usable blocks for stripes i.e., after subtracting the skip and the disk header.
   /// Local copy of serialized header data stored on in the span.
@@ -518,23 +518,23 @@ struct Stripe {
   /// Load metadata for this stripe.
   Errata loadMeta();
   Errata loadDir();
-  int check_loop(int s);
-  void dir_check();
-  bool walk_bucket_chain(int s); // returns true if there is a loop
-  void walk_all_buckets();
+  int    check_loop(int s);
+  void   dir_check();
+  bool   walk_bucket_chain(int s); // returns true if there is a loop
+  void   walk_all_buckets();
 
   /// Initialize the live data from the loaded serialized data.
   void updateLiveData(enum Copy c);
 
-  Span *_span;           ///< Hosting span.
-  CryptoHash hash_id;    /// hash_id
-  Bytes _start;          ///< Offset of first byte of stripe metadata.
-  Bytes _content;        ///< Start of content.
-  CacheStoreBlocks _len; ///< Length of stripe.
-  uint8_t _vol_idx = 0;  ///< Volume index.
-  uint8_t _type    = 0;  ///< Stripe type.
-  int8_t _idx      = -1; ///< Stripe index in span.
-  int agg_buf_pos  = 0;
+  Span            *_span;            ///< Hosting span.
+  CryptoHash       hash_id;          /// hash_id
+  Bytes            _start;           ///< Offset of first byte of stripe metadata.
+  Bytes            _content;         ///< Start of content.
+  CacheStoreBlocks _len;             ///< Length of stripe.
+  uint8_t          _vol_idx    = 0;  ///< Volume index.
+  uint8_t          _type       = 0;  ///< Stripe type.
+  int8_t           _idx        = -1; ///< Stripe index in span.
+  int              agg_buf_pos = 0;
 
   int64_t _buckets  = 0; ///< Number of buckets per segment.
   int64_t _segments = 0; ///< Number of segments.
@@ -546,10 +546,10 @@ struct Stripe {
   /// Locations for the meta data.
   CacheStoreBlocks _meta_pos[2][2];
   /// Directory.
-  Chunk _directory;
-  CacheDirEntry const *dir = nullptr; // the big buffer that will hold the whole directory of stripe header.
-  uint16_t *freelist       = nullptr; // using this freelist instead of the one in StripeMeta.
-                                      // This is because the freelist is not being copied to _metap[2][2] correctly.
+  Chunk                _directory;
+  CacheDirEntry const *dir      = nullptr; // the big buffer that will hold the whole directory of stripe header.
+  uint16_t            *freelist = nullptr; // using this freelist instead of the one in StripeMeta.
+                                           // This is because the freelist is not being copied to _metap[2][2] correctly.
   // need to do something about it .. hmmm :-?
   int dir_freelist_length(int s);
   inline CacheDirEntry *
@@ -563,25 +563,25 @@ struct Stripe {
     return vol_dir_segment(s);
   }
 
-  Bytes stripe_offset(CacheDirEntry *e); // offset w.r.t the stripe content
+  Bytes  stripe_offset(CacheDirEntry *e); // offset w.r.t the stripe content
   size_t vol_dirlen();
   inline int
   vol_headerlen()
   {
     return ROUND_TO_STORE_BLOCK(sizeof(StripeMeta) + sizeof(uint16_t) * (this->_segments - 1));
   }
-  void vol_init_data_internal();
-  void vol_init_data();
-  void dir_init_segment(int s);
-  void dir_free_entry(CacheDirEntry *e, int s);
+  void           vol_init_data_internal();
+  void           vol_init_data();
+  void           dir_init_segment(int s);
+  void           dir_free_entry(CacheDirEntry *e, int s);
   CacheDirEntry *dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s);
   //  int dir_bucket_length(CacheDirEntry *b, int s);
-  int dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision);
-  bool dir_valid(CacheDirEntry *e);
-  bool validate_sync_serial();
+  int    dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision);
+  bool   dir_valid(CacheDirEntry *e);
+  bool   validate_sync_serial();
   Errata updateHeaderFooter();
   Errata InitializeMeta();
-  void init_dir();
+  void   init_dir();
   Errata clear(); // clears striped headers and footers
 };
 } // namespace ct

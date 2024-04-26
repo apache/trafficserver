@@ -26,7 +26,7 @@
 
 #include "main.h"
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 class CacheUpdateReadAgain : public CacheTestHandler
@@ -83,7 +83,7 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "application/x-javascript", len) == 0);
   }
@@ -163,10 +163,10 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h        = new CacheTestHandler(LARGE_FILE, "http://www.scw11.com");
-    CacheUpdateHeader *update  = new CacheUpdateHeader(LARGE_FILE, "http://www.scw11.com");
-    CacheUpdateReadAgain *read = new CacheUpdateReadAgain(LARGE_FILE, "http://www.scw11.com");
-    TerminalTest *tt           = new TerminalTest;
+    CacheTestHandler     *h      = new CacheTestHandler(LARGE_FILE, "http://www.scw11.com");
+    CacheUpdateHeader    *update = new CacheUpdateHeader(LARGE_FILE, "http://www.scw11.com");
+    CacheUpdateReadAgain *read   = new CacheUpdateReadAgain(LARGE_FILE, "http://www.scw11.com");
+    TerminalTest         *tt     = new TerminalTest;
 
     h->add(update);
     h->add(read); // read again

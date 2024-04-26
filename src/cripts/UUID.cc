@@ -23,7 +23,7 @@ Cript::string
 UUID::Unique::_get(Cript::Context *context)
 {
   Cript::string ret;
-  char uuid[TS_CRUUID_STRING_LEN + 1];
+  char          uuid[TS_CRUUID_STRING_LEN + 1];
 
   if (TS_SUCCESS == TSClientRequestUuidGet(context->state.txnp, uuid)) {
     ret = uuid;
@@ -34,8 +34,8 @@ UUID::Unique::_get(Cript::Context *context)
 Cript::string
 UUID::Request::_get(Cript::Context *context)
 {
-  uint64_t uuid     = TSHttpTxnIdGet(context->state.txnp);
-  Cript::string ret = std::to_string(uuid);
+  uint64_t      uuid = TSHttpTxnIdGet(context->state.txnp);
+  Cript::string ret  = std::to_string(uuid);
 
   return ret;
 }

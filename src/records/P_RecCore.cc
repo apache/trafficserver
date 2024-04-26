@@ -43,7 +43,7 @@
 #define REC_REGISTER_STAT_XXX(A, B)                                                                                           \
   ink_assert((rec_type == RECT_NODE) || (rec_type == RECT_PROCESS) || (rec_type == RECT_LOCAL) || (rec_type == RECT_PLUGIN)); \
   RecRecord *r;                                                                                                               \
-  RecData my_data_default;                                                                                                    \
+  RecData    my_data_default;                                                                                                 \
   my_data_default.A = data_default;                                                                                           \
   if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                   \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                 \
@@ -86,7 +86,7 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
 //-------------------------------------------------------------------------
 #define REC_REGISTER_CONFIG_XXX(A, B)                                                                                           \
   RecRecord *r;                                                                                                                 \
-  RecData my_data_default;                                                                                                      \
+  RecData    my_data_default;                                                                                                   \
   my_data_default.A = data_default;                                                                                             \
   if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) != \
       nullptr) {                                                                                                                \
@@ -137,7 +137,7 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
 RecErrT
 RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock)
 {
-  RecErrT err = REC_ERR_OKAY;
+  RecErrT    err = REC_ERR_OKAY;
   RecRecord *r1;
 
   // FIXME: Most of the time we set, we don't actually need to wrlock
@@ -268,10 +268,10 @@ CheckSnapFileVersion(const char *path)
 RecErrT
 RecReadStatsFile()
 {
-  RecRecord *r;
-  RecMessage *m;
-  RecMessageItr itr;
-  RecPersistT persist_type = RECP_NULL;
+  RecRecord     *r;
+  RecMessage    *m;
+  RecMessageItr  itr;
+  RecPersistT    persist_type = RECP_NULL;
   ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
@@ -326,10 +326,10 @@ RecReadStatsFile()
 RecErrT
 RecSyncStatsFile()
 {
-  RecRecord *r;
-  RecMessage *m;
-  int i, num_records;
-  bool sync_to_disk;
+  RecRecord     *r;
+  RecMessage    *m;
+  int            i, num_records;
+  bool           sync_to_disk;
   ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   m            = RecMessageAlloc(RECG_NULL);
@@ -409,7 +409,7 @@ RecUpdateT
 RecExecConfigUpdateCbs(unsigned int update_required_type)
 {
   RecRecord *r;
-  int i, num_records;
+  int        i, num_records;
   RecUpdateT update_type = RECU_NULL;
 
   ink_rwlock_rdlock(&g_records_rwlock);
@@ -487,7 +487,7 @@ RecResetStatRecord(const char *name)
 RecErrT
 RecResetStatRecord(RecT type, bool all)
 {
-  int i, num_records;
+  int     i, num_records;
   RecErrT err = REC_ERR_OKAY;
 
   RecDebug(DL_Note, "Reset Statistics Records");
@@ -517,7 +517,7 @@ RecResetStatRecord(RecT type, bool all)
 RecErrT
 RecSetSyncRequired(char *name, bool lock)
 {
-  RecErrT err = REC_ERR_FAIL;
+  RecErrT    err = REC_ERR_FAIL;
   RecRecord *r1;
 
   // FIXME: Most of the time we set, we don't actually need to wrlock

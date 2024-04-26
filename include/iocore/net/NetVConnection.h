@@ -293,14 +293,14 @@ public:
   virtual void trapWriteBufferEmpty(int event = VC_EVENT_WRITE_READY);
 
   /** Returns local sockaddr storage. */
-  sockaddr const *get_local_addr();
+  sockaddr const   *get_local_addr();
   IpEndpoint const &get_local_endpoint();
 
   /** Returns local port. */
   uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
-  sockaddr const *get_remote_addr();
+  sockaddr const   *get_remote_addr();
   IpEndpoint const &get_remote_endpoint();
 
   /** Returns remote port. */
@@ -370,7 +370,7 @@ public:
   SocksAddrType socks_addr;
 
   unsigned int attributes = 0;
-  EThread *thread         = nullptr;
+  EThread     *thread     = nullptr;
 
   /// PRIVATE: The public interface is VIO::reenable()
   void reenable(VIO *vio) override = 0;
@@ -513,7 +513,7 @@ public:
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
   };
 
-  void set_proxy_protocol_info(const ProxyProtocol &src);
+  void                 set_proxy_protocol_info(const ProxyProtocol &src);
   const ProxyProtocol &get_proxy_protocol_info() const;
 
   bool has_proxy_protocol(IOBufferReader *);
@@ -534,8 +534,8 @@ protected:
     N_SERVICES,
   };
 
-  IpEndpoint local_addr;
-  IpEndpoint remote_addr;
+  IpEndpoint    local_addr;
+  IpEndpoint    remote_addr;
   ProxyProtocol pp_info;
 
   bool got_local_addr  = false;
@@ -562,7 +562,7 @@ private:
   };
 
   void *_get_service(enum Service mixin_index) const;
-  void _set_service(enum Service mixin_index, void *instance);
+  void  _set_service(enum Service mixin_index, void *instance);
 };
 
 inline NetVConnection::NetVConnection() : VConnection(nullptr)

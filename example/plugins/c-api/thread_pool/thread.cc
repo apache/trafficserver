@@ -33,7 +33,7 @@ struct timespec tp2;
 
 Queue job_queue;
 
-static pthread_cond_t cond;
+static pthread_cond_t  cond;
 static pthread_mutex_t cond_mutex;
 
 void

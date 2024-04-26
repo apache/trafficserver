@@ -172,7 +172,7 @@ public:
     return head == nullptr;
   }
   void push(C *e);
-  C *pop();
+  C   *pop();
   void
   clear()
   {
@@ -227,7 +227,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
     return head == nullptr;
   }
   void push(C *e);
-  C *pop();
+  C   *pop();
   void remove(C *e);
   void insert(C *e, C *after);
   bool
@@ -542,12 +542,12 @@ template <class C, class L = typename C::Link_link> class Queue : public DLL<C, 
 {
 public:
   using DLL<C, L>::head;
-  C *tail;
+  C   *tail;
   void push(C *e);
-  C *pop();
+  C   *pop();
   void enqueue(C *e);
   void in_or_enqueue(C *e);
-  C *dequeue();
+  C   *dequeue();
   void remove(C *e);
   void insert(C *e, C *after);
   void append(Queue<C, L> q);
@@ -742,9 +742,9 @@ template <class C, class L = typename C::Link_link> struct CountQueue : public Q
   int size = 0;
   inline CountQueue() {}
   inline void push(C *e);
-  inline C *pop();
+  inline C   *pop();
   inline void enqueue(C *e);
-  inline C *dequeue();
+  inline C   *dequeue();
   inline void remove(C *e);
   inline void insert(C *e, C *after);
   inline void append(CountQueue<C, L> &q);
@@ -825,7 +825,7 @@ CountQueue<C, L>::append_clear(CountQueue<C, L> &q)
 //
 
 template <class C, class A = DefaultAlloc> struct ConsCell {
-  C car;
+  C         car;
   ConsCell *cdr;
   ConsCell(C acar, ConsCell *acdr) : car(acar), cdr(acdr) {}
   ConsCell(C acar) : car(acar), cdr(nullptr) {}

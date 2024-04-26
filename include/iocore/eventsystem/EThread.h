@@ -328,22 +328,22 @@ public:
   /** Private Data for AIO. */
   Que(Continuation, link) aio_ops;
 
-  ProtectedQueue EventQueueExternal;
+  ProtectedQueue     EventQueueExternal;
   PriorityEventQueue EventQueue;
 
   static constexpr int NO_ETHREAD_ID = -1;
-  int id                             = NO_ETHREAD_ID;
-  unsigned int event_types           = 0;
-  bool is_event_type(EventType et);
-  void set_event_type(EventType et);
+  int                  id            = NO_ETHREAD_ID;
+  unsigned int         event_types   = 0;
+  bool                 is_event_type(EventType et);
+  void                 set_event_type(EventType et);
 
   // Private Interface
 
-  void execute() override;
-  void execute_regular();
-  void process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count);
-  void process_event(Event *e, int calling_code);
-  void free_event(Event *e);
+  void             execute() override;
+  void             execute_regular();
+  void             process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count);
+  void             process_event(Event *e, int calling_code);
+  void             free_event(Event *e);
   LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
 
 #if HAVE_EVENTFD
@@ -365,8 +365,8 @@ public:
   Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
-  PreWarmQueue *prewarm_queue            = nullptr;
-  ConnectingPool *connecting_pool        = nullptr;
+  PreWarmQueue      *prewarm_queue       = nullptr;
+  ConnectingPool    *connecting_pool     = nullptr;
 
   /** Default handler used until it is overridden.
 
@@ -530,7 +530,7 @@ public:
     static constexpr swoc::TextView API_HISTOGRAM_STAT_STEM = "proxy.process.api.time.";
     /// Base bucket size in milliseconds for plugin API timings.
     static constexpr ts_milliseconds API_HISTOGRAM_BUCKET_SIZE{1};
-    Graph _api_timing; ///< Plugin API callout timings.
+    Graph                            _api_timing; ///< Plugin API callout timings.
 
     /// Data in the histogram needs to decay over time. To avoid races and locks the
     /// summarizing thread bumps this to indicate a decay is needed and doesn't update if

@@ -105,7 +105,7 @@ uint64_t
 QUICIntUtil::read_QUICVariableInt(const uint8_t *buf, size_t buf_len)
 {
   uint64_t dst = 0;
-  size_t len   = 0;
+  size_t   len = 0;
   QUICVariableInt::decode(dst, len, buf, buf_len);
   return dst;
 }

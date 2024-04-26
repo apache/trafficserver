@@ -64,7 +64,7 @@ protected:
   /// Allocate a hugepage stack.
   /// If huge pages are not enable, allocate a basic stack.
   void *do_alloc_stack(size_t stacksize);
-  void setup_stack_guard(void *stack, int stackguard_pages);
+  void  setup_stack_guard(void *stack, int stackguard_pages);
 
 #if TS_USE_HWLOC
 
@@ -72,9 +72,9 @@ protected:
   void *alloc_numa_stack(EThread *t, size_t stacksize);
 
 private:
-  hwloc_obj_type_t obj_type = HWLOC_OBJ_MACHINE;
-  int obj_count             = 0;
-  char const *obj_name      = nullptr;
+  hwloc_obj_type_t obj_type  = HWLOC_OBJ_MACHINE;
+  int              obj_count = 0;
+  char const      *obj_name  = nullptr;
 #endif
 };
 
@@ -87,7 +87,7 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
 {
   using Graph = EThread::Metrics::Graph;
 
-  int id = 0;
+  int              id = 0;
   EThread::Metrics summary;
 
   // scan the thread local values
@@ -180,7 +180,7 @@ ThreadAffinityInitializer::setup_stack_guard(void *stack, int stackguard_pages)
 
   size_t pagesize  = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
   size_t guardsize = stackguard_pages * pagesize;
-  int ret          = mprotect(stack, guardsize, 0);
+  int    ret       = mprotect(stack, guardsize, 0);
   if (ret != 0) {
     Fatal("Failed to set up stack guard pages: %s (%d)", strerror(errno), errno);
   }
@@ -190,12 +190,12 @@ void *
 ThreadAffinityInitializer::do_alloc_stack(size_t stacksize)
 {
   size_t pagesize = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
-  int stackguard_pages;
+  int    stackguard_pages;
   REC_ReadConfigInteger(stackguard_pages, "proxy.config.thread.default.stackguard_pages");
   ink_release_assert(stackguard_pages >= 0);
 
-  size_t size    = INK_ALIGN(stacksize + stackguard_pages * pagesize, pagesize);
-  int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+  size_t size       = INK_ALIGN(stacksize + stackguard_pages * pagesize, pagesize);
+  int    mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
 #ifdef MAP_HUGETLB
   if (ats_hugepage_enabled()) {
     mmap_flags |= MAP_HUGETLB;
@@ -267,8 +267,8 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
     // Get our `obj` instance with index based on the thread number we are on.
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
-    int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-    char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
+    int   cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
+    char *cpu_mask     = static_cast<char *>(alloca(cpu_mask_len));
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
     Dbg(dbg_ctl_iocore_thread, "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
 #else
@@ -285,10 +285,10 @@ void *
 ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
 {
   hwloc_membind_policy_t mem_policy = HWLOC_MEMBIND_DEFAULT;
-  hwloc_nodeset_t nodeset           = hwloc_bitmap_alloc();
-  int num_nodes                     = 0;
-  void *stack                       = nullptr;
-  hwloc_obj_t obj                   = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
+  hwloc_nodeset_t        nodeset    = hwloc_bitmap_alloc();
+  int                    num_nodes  = 0;
+  void                  *stack      = nullptr;
+  hwloc_obj_t            obj        = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
 
   // Find the NUMA node set that correlates to our next thread CPU set
   hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
@@ -427,8 +427,8 @@ EventProcessor::spawn_event_threads(char const *name, int n_threads, size_t stac
 EventType
 EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t stacksize)
 {
-  char thr_name[MAX_THREAD_NAME_LENGTH];
-  int i;
+  char                   thr_name[MAX_THREAD_NAME_LENGTH];
+  int                    i;
   ThreadGroupDescriptor *tg = &(thread_group[ev_type]);
 
   ink_release_assert(n_threads > 0);
@@ -515,9 +515,9 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   thread_group[ET_CALL]._spawnQueue.push(make_event_for_scheduling(&Thread_Affinity_Initializer, EVENT_IMMEDIATE, nullptr));
 
   // Get our statistics set up
-  RecRawStatBlock *rsb = RecAllocateRawStatBlock(EThread::Metrics::N_STATS);
-  unsigned stat_idx    = 0;
-  char name[256];
+  RecRawStatBlock *rsb      = RecAllocateRawStatBlock(EThread::Metrics::N_STATS);
+  unsigned         stat_idx = 0;
+  char             name[256];
 
   // Enumerated statistics, one set per time scale.
   for (unsigned ts_idx = 0; ts_idx < EThread::Metrics::N_TIMESCALES; ++ts_idx) {

@@ -88,8 +88,8 @@ enum Scenario_t {
 
 struct State {
   State_t state;
-  int tasks_count;
-  Task_t tasks[100];
+  int     tasks_count;
+  Task_t  tasks[100];
   int64_t nbytes_write; // number of bytes to write
   intte_t nbytes_read;  // number of bytes to read
 
@@ -97,36 +97,36 @@ struct State {
 };
 
 struct Conn {
-  Connection_t connection_type;
-  int listen_s;
-  int s;
+  Connection_t       connection_type;
+  int                listen_s;
+  int                s;
   struct sockaddr_in addr;
-  State state;
+  State              state;
   // State_t            state;
   int state_delay_ms;
 };
 
-Conn client, server;
-int port_number;
+Conn   client, server;
+int    port_number;
 Task_t server_set_next_client_task[TASK_COUNT];
 Task_t client_set_next_server_task[TASK_COUNT];
-char write_buf[10];
-char read_buf[10];
-int state_delay_ms = 0;
+char   write_buf[10];
+char   read_buf[10];
+int    state_delay_ms = 0;
 
 #define IS_DONE(c) (c.state.state == STATE_DONE || c.state.state == STATE_ERROR)
 
 void main_loop();
 void state_act(Conn *c);
 void state_act_task(Conn *c);
-int do_connect(Conn *from, Conn *to);
-int do_listen_setup(Conn *c, int port_number);
-int do_accept(Conn *c);
-int create_nonblocking_socket();
-int set_nonblocking_socket(int s);
-int do_shutdown(int s, Task_t task);
-int do_try_read(int s, char *buf, int length);
-int do_try_write(int s, char *buf, int length);
+int  do_connect(Conn *from, Conn *to);
+int  do_listen_setup(Conn *c, int port_number);
+int  do_accept(Conn *c);
+int  create_nonblocking_socket();
+int  set_nonblocking_socket(int s);
+int  do_shutdown(int s, Task_t task);
+int  do_try_read(int s, char *buf, int length);
+int  do_try_write(int s, char *buf, int length);
 void setup_scenario(Scenario_t scenario);
 void dequeue_task(Conn *c);
 ///////////////////////////////////////////////////////////
@@ -242,7 +242,7 @@ void
 state_act_task(Conn *c)
 {
   char write_ch = 'T', read_ch;
-  int r;
+  int  r;
 
   Task_t saved_task = c->state.tasks[0];
 
@@ -407,9 +407,9 @@ do_accept(Conn *c)
   assert(c->listen_s > 0);
 
   // check if socket is ready for read
-  fd_set readfds;
+  fd_set         readfds;
   struct timeval timeout;
-  int addrlen;
+  int            addrlen;
 
   FD_ZERO(&readfds);
   FD_SET(c->listen_s, &readfds);

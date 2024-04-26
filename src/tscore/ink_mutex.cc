@@ -48,7 +48,7 @@ public:
 void
 ink_mutex_init(ink_mutex *m)
 {
-  int error;
+  int                          error;
   static x_pthread_mutexattr_t attr;
 
   error = pthread_mutex_init(m, &attr.attr);

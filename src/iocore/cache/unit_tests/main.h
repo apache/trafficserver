@@ -64,7 +64,7 @@ void build_hdrs(HTTPInfo &info, const char *url, const char *content_type = "tex
 
 HttpCacheKey generate_key(HTTPInfo &info);
 
-extern const char *GLOBAL_DATA;
+extern const char  *GLOBAL_DATA;
 extern size_t const WRITE_LIMIT;
 
 class CacheInit : public Continuation
@@ -174,9 +174,9 @@ public:
     REQUIRE(!"should not be called");
   }
 
-  Event *terminal                = nullptr;
-  CacheVC *vc                    = nullptr;
-  VIO *vio                       = nullptr;
+  Event            *terminal     = nullptr;
+  CacheVC          *vc           = nullptr;
+  VIO              *vio          = nullptr;
   CacheTestHandler *test_handler = nullptr;
 };
 
@@ -202,8 +202,8 @@ public:
     old_info.destroy();
   }
 
-  int start_test(int event, void *e) override;
-  int write_event(int event, void *e);
+  int  start_test(int event, void *e) override;
+  int  write_event(int event, void *e);
   void fill_data();
   void do_io_write(size_t size = 0) override;
 
@@ -211,8 +211,8 @@ public:
   HTTPInfo old_info;
 
 private:
-  size_t _size             = 0;
-  char *_cursor            = nullptr;
+  size_t     _size         = 0;
+  char      *_cursor       = nullptr;
   MIOBuffer *_write_buffer = nullptr;
 };
 
@@ -268,21 +268,21 @@ public:
     info.destroy();
   }
 
-  int start_test(int event, void *e) override;
-  int read_event(int event, void *e);
+  int  start_test(int event, void *e) override;
+  int  read_event(int event, void *e);
   void do_io_read(size_t size = 0) override;
 
-  HTTPInfo info;
+  HTTPInfo  info;
   HTTPInfo *read_http_info = nullptr;
 
 private:
-  size_t _size            = 0;
-  char *_cursor           = nullptr;
-  MIOBuffer *_read_buffer = nullptr;
-  IOBufferReader *_reader = nullptr;
+  size_t                 _size        = 0;
+  char                  *_cursor      = nullptr;
+  MIOBuffer             *_read_buffer = nullptr;
+  IOBufferReader        *_reader      = nullptr;
   MockHttpConfigAccessor params;
 };
 
 // Does the test use stored cache files, or initialize new files?
-extern int cache_vols;
+extern int  cache_vols;
 extern bool reuse_existing_cache;

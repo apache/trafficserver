@@ -54,7 +54,7 @@ std::string
 GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   std::string ret = "(unknown)";
-  int v           = 4;
+  int         v   = 4;
 
   if (addr) {
     switch (_geo_qual) {
@@ -117,7 +117,7 @@ int64_t
 GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   int64_t ret = -1;
-  int v       = 4;
+  int     v   = 4;
 
   if (!addr) {
     return 0;

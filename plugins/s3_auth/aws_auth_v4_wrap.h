@@ -82,8 +82,8 @@ public:
     return TSMimeHdrFieldValueStringGet(_bufp, _hdrs, _field, -1, len);
   }
   TSMBuffer _bufp = nullptr;
-  TSMLoc _hdrs;
-  TSMLoc _field;
+  TSMLoc    _hdrs;
+  TSMLoc    _field;
 };
 
 /* Define a API to be used in the plugin using ATS API */
@@ -128,6 +128,6 @@ public:
     return HeaderIterator(_bufp, _hdrs, TS_NULL_MLOC);
   }
   TSMBuffer _bufp;
-  TSMLoc _hdrs;
-  TSMLoc _url;
+  TSMLoc    _hdrs;
+  TSMLoc    _url;
 };

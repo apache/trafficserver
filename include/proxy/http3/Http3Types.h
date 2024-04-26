@@ -100,9 +100,9 @@ class Http3Error
 public:
   virtual ~Http3Error() {}
 
-  Http3ErrorClass cls = Http3ErrorClass::UNDEFINED;
-  Http3ErrorCode code = Http3ErrorCode::H3_NO_ERROR;
-  const char *msg     = nullptr;
+  Http3ErrorClass cls  = Http3ErrorClass::UNDEFINED;
+  Http3ErrorCode  code = Http3ErrorCode::H3_NO_ERROR;
+  const char     *msg  = nullptr;
 
   uint16_t
   get_code()

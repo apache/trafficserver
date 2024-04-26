@@ -83,7 +83,7 @@ namespace
 {
 struct Context {
   using CbType = std::function<bool(RecT, std::error_code &)>;
-  YAML::Node yaml;
+  YAML::Node      yaml;
   std::error_code ec;
   // regex do not need to set the callback.
   CbType checkCb;

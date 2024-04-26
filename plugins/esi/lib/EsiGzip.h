@@ -69,7 +69,7 @@ private:
   /** The cumulative total number of uncompressed bytes that have been
    * compressed.
    */
-  int _total_data_length;
+  int      _total_data_length;
   z_stream _zstrm;
-  uLong _crc;
+  uLong    _crc;
 };

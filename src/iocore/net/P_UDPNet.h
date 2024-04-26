@@ -48,9 +48,9 @@ class UDPNetProcessorInternal : public UDPNetProcessor
 {
 public:
   EventType register_event_type() override;
-  int start(int n_udp_threads, size_t stacksize) override;
-  void udp_read_from_net(UDPNetHandler *nh, UDPConnection *uc);
-  int udp_callback(UDPNetHandler *nh, UDPConnection *uc, EThread *thread);
+  int       start(int n_udp_threads, size_t stacksize) override;
+  void      udp_read_from_net(UDPNetHandler *nh, UDPConnection *uc);
+  int       udp_callback(UDPNetHandler *nh, UDPConnection *uc, EThread *thread);
 
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
@@ -76,20 +76,20 @@ public:
   PacketQueue() { init(); }
 
   virtual ~PacketQueue() {}
-  int nPackets                 = 0;
-  ink_hrtime lastPullLongTermQ = 0;
+  int              nPackets          = 0;
+  ink_hrtime       lastPullLongTermQ = 0;
   Queue<UDPPacket> longTermQ;
   Queue<UDPPacket> bucket[N_SLOTS];
-  ink_hrtime delivery_time[N_SLOTS];
-  int now_slot = 0;
+  ink_hrtime       delivery_time[N_SLOTS];
+  int              now_slot = 0;
 
   void
   init()
   {
     now_slot       = 0;
     ink_hrtime now = ink_get_hrtime();
-    int i          = now_slot;
-    int j          = 0;
+    int        i   = now_slot;
+    int        j   = 0;
     while (j < N_SLOTS) {
       delivery_time[i] = now + j * SLOT_TIME;
       i                = (i + 1) % N_SLOTS;
@@ -177,10 +177,10 @@ public:
   FreeCancelledPackets(int numSlots)
   {
     Queue<UDPPacket> tempQ;
-    int i;
+    int              i;
 
     for (i = 0; i < numSlots; i++) {
-      int s = (now_slot + i) % N_SLOTS;
+      int        s = (now_slot + i) % N_SLOTS;
       UDPPacket *p;
       while (nullptr != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
@@ -203,7 +203,7 @@ public:
 
     if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
       Queue<UDPPacket> tempQ;
-      UDPPacket *p;
+      UDPPacket       *p;
       // pull in all the stuff from long-term slot
       lastPullLongTermQ = t;
       // this is to handle weirdness where someone is trying to queue a
@@ -287,10 +287,10 @@ public:
 class UDPQueue
 {
   PacketQueue pipeInfo{};
-  ink_hrtime last_report  = 0;
-  ink_hrtime last_service = 0;
-  int packets             = 0;
-  int added               = 0;
+  ink_hrtime  last_report  = 0;
+  ink_hrtime  last_service = 0;
+  int         packets      = 0;
+  int         added        = 0;
 #ifdef SOL_UDP
   bool use_udp_gso = false;
 #endif
@@ -303,7 +303,7 @@ public:
 
   void SendPackets();
   void SendUDPPacket(UDPPacket *p);
-  int SendMultipleUDPPackets(UDPPacket **p, uint16_t n);
+  int  SendMultipleUDPPackets(UDPPacket **p, uint16_t n);
 
   // Interface exported to the outside world
   void send(UDPPacket *p);
@@ -334,15 +334,15 @@ public:
   // to be called back with data
   Que(UnixUDPConnection, callback_link) udp_callbacks;
 
-  Event *trigger_event = nullptr;
-  EThread *thread      = nullptr;
+  Event     *trigger_event = nullptr;
+  EThread   *thread        = nullptr;
   ink_hrtime nextCheck;
   ink_hrtime lastCheck;
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
 
-  int waitForActivity(ink_hrtime timeout) override;
+  int  waitForActivity(ink_hrtime timeout) override;
   void signalActivity() override;
 
   UDPNetHandler(Cfg &&cfg);

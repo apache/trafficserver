@@ -33,21 +33,21 @@ A simple linked list queue.
 
 struct LLQrec {
   struct LLQrec *next;
-  void *data;
+  void          *data;
 };
 
 struct LLQ {
-  LLQrec *head, *tail, *free;
-  uint64_t len, highwater;
-  ink_mutex mux;
+  LLQrec       *head, *tail, *free;
+  uint64_t      len, highwater;
+  ink_mutex     mux;
   ink_semaphore sema;
 };
 
-LLQ *create_queue();
-int enqueue(LLQ *q, void *data);
-void *dequeue(LLQ *q);
-bool queue_is_empty(LLQ *q);
+LLQ     *create_queue();
+int      enqueue(LLQ *q, void *data);
+void    *dequeue(LLQ *q);
+bool     queue_is_empty(LLQ *q);
 uint64_t queue_len(LLQ *Q);
 uint64_t queue_highwater(LLQ *Q);
-void delete_queue(LLQ *Q); /* only deletes an empty queue but
-                              provides symmetry. */
+void     delete_queue(LLQ *Q); /* only deletes an empty queue but
+                                  provides symmetry. */

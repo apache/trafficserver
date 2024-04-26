@@ -35,10 +35,10 @@ class UrlMappingPathIndex
 public:
   UrlMappingPathIndex() {}
   virtual ~UrlMappingPathIndex();
-  bool Insert(url_mapping *mapping);
+  bool         Insert(url_mapping *mapping);
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
-  void Print() const;
-  std::string PrintUrlMappingPathIndex() const;
+  void         Print() const;
+  std::string  PrintUrlMappingPathIndex() const;
 
 private:
   using UrlMappingTrie = Trie<url_mapping>;

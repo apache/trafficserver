@@ -271,7 +271,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 #endif
 
   if (config.outputs[diags_level].to_syslog) {
-    int priority;
+    int  priority;
     char syslog_buffer[2048];
 
     switch (diags_level) {
@@ -715,9 +715,9 @@ Diags::should_roll_outputlog()
 bool
 Diags::set_std_output(StdStream stream, const char *file)
 {
-  const char *target_stream;
+  const char   *target_stream;
   BaseLogFile **current;
-  BaseLogFile *old_log, *new_log;
+  BaseLogFile  *old_log, *new_log;
 
   // If the caller is stupid, we give up
   if (strcmp(file, "") == 0) {
@@ -782,7 +782,7 @@ bool
 Diags::rebind_std_stream(StdStream stream, int new_fd)
 {
   const char *target_stream;
-  int stream_fd;
+  int         stream_fd;
 
   // Figure out which stream to dup2
   if (stream == StdStream::STDOUT) {

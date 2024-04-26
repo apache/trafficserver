@@ -19,16 +19,16 @@
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
 
-static int ts_lua_http_intercept(lua_State *L);
-static int ts_lua_http_server_intercept(lua_State *L);
-static int ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata);
+static int  ts_lua_http_intercept(lua_State *L);
+static int  ts_lua_http_server_intercept(lua_State *L);
+static int  ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata);
 static void ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSCont contp, TSVConn conn);
 static void ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx *ictx);
 static void ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx *ictx);
-static int ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata);
-static int ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n);
-static int ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx *ictx);
-static int ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx *ictx);
+static int  ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata);
+static int  ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n);
+static int  ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx *ictx);
+static int  ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx *ictx);
 
 static int ts_lua_say(lua_State *L);
 static int ts_lua_flush(lua_State *L);
@@ -63,9 +63,9 @@ ts_lua_inject_intercept_api(lua_State *L)
 static int
 ts_lua_http_intercept(lua_State *L)
 {
-  TSCont contp;
-  int type, n;
-  ts_lua_http_ctx *http_ctx;
+  TSCont                     contp;
+  int                        type, n;
+  ts_lua_http_ctx           *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -96,9 +96,9 @@ ts_lua_http_intercept(lua_State *L)
 static int
 ts_lua_http_server_intercept(lua_State *L)
 {
-  TSCont contp;
-  int type, n;
-  ts_lua_http_ctx *http_ctx;
+  TSCont                     contp;
+  int                        type, n;
+  ts_lua_http_ctx           *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -158,9 +158,9 @@ ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
 static void
 ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSCont contp, TSVConn conn)
 {
-  int n;
-  lua_State *L;
-  TSMutex mtxp;
+  int               n;
+  lua_State        *L;
+  TSMutex           mtxp;
   ts_lua_cont_info *ci;
 
   ci   = &ictx->cinfo;
@@ -209,8 +209,8 @@ ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx *ictx)
 static int
 ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
 {
-  int ret, n;
-  TSMutex mtxp;
+  int                        ret, n;
+  TSMutex                    mtxp;
   ts_lua_http_intercept_ctx *ictx;
 
   ictx = (ts_lua_http_intercept_ctx *)TSContDataGet(contp);
@@ -241,11 +241,11 @@ ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
 static int
 ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n)
 {
-  int ret;
-  int64_t avail;
-  int64_t done;
+  int               ret;
+  int64_t           avail;
+  int64_t           done;
   ts_lua_cont_info *ci;
-  lua_State *L;
+  lua_State        *L;
 
   ci = &ictx->cinfo;
   L  = ci->routine.lua;
@@ -349,8 +349,8 @@ ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx *ic
 static int
 ts_lua_say(lua_State *L)
 {
-  const char *data;
-  size_t len;
+  const char                *data;
+  size_t                     len;
   ts_lua_http_intercept_ctx *ictx;
 
   ictx = ts_lua_get_http_intercept_ctx(L);
@@ -373,7 +373,7 @@ ts_lua_say(lua_State *L)
 static int
 ts_lua_flush(lua_State *L)
 {
-  int64_t avail;
+  int64_t                    avail;
   ts_lua_http_intercept_ctx *ictx;
 
   ictx = ts_lua_get_http_intercept_ctx(L);
@@ -399,9 +399,9 @@ static int
 ts_lua_flush_wakeup(ts_lua_http_intercept_ctx *ictx)
 {
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
-  TSAction action;
-  TSCont contp;
+  ts_lua_cont_info  *ci;
+  TSAction           action;
+  TSCont             contp;
 
   ci = &ictx->cinfo;
 
@@ -418,7 +418,7 @@ static int
 ts_lua_flush_wakeup_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
+  ts_lua_cont_info  *ci;
 
   ai = static_cast<decltype(ai)>(TSContDataGet(contp));
   ci = ai->cinfo;

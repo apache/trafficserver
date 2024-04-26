@@ -85,8 +85,8 @@ obj_is_aligned(HdrHeapObjImpl *obj)
 inline void
 obj_clear_data(HdrHeapObjImpl *obj)
 {
-  char *ptr      = (char *)obj;
-  int hdr_length = sizeof(HdrHeapObjImpl);
+  char *ptr        = (char *)obj;
+  int   hdr_length = sizeof(HdrHeapObjImpl);
   memset(ptr + hdr_length, '\0', obj->m_length - hdr_length);
 }
 
@@ -155,7 +155,7 @@ private:
   HdrStrHeap(uint32_t total_size) : _total_size{total_size} {}
 
   uint32_t const _total_size;
-  uint32_t _avail_size;
+  uint32_t       _avail_size;
 };
 
 inline bool
@@ -168,9 +168,9 @@ struct StrHeapDesc {
   StrHeapDesc() = default;
 
   Ptr<RefCountObj> m_ref_count_ptr;
-  char const *m_heap_start = nullptr;
-  int32_t m_heap_len       = 0;
-  bool m_locked            = false;
+  char const      *m_heap_start = nullptr;
+  int32_t          m_heap_len   = 0;
+  bool             m_locked     = false;
 
   bool
   contains(const char *str) const
@@ -189,13 +189,13 @@ public:
 
   // PtrHeap allocation
   HdrHeapObjImpl *allocate_obj(int nbytes, int type);
-  void deallocate_obj(HdrHeapObjImpl *obj);
+  void            deallocate_obj(HdrHeapObjImpl *obj);
 
   // StrHeap allocation
   char *allocate_str(int nbytes);
   char *expand_str(const char *old_str, int old_len, int new_len);
   char *duplicate_str(const char *str, int nbytes);
-  void free_string(const char *s, int len);
+  void  free_string(const char *s, int len);
 
   // Marshalling
   int marshal_length();
@@ -207,7 +207,7 @@ public:
   // One option - overload marshal_length to return this value if @a magic is HDR_BUF_MAGIC_MARSHALED.
 
   void inherit_string_heaps(const HdrHeap *inherit_from);
-  int attach_block(IOBufferBlock *b, const char *use_start);
+  int  attach_block(IOBufferBlock *b, const char *use_start);
   void set_ronly_str_heap_end(int slot, const char *end);
 
   // Lock read only str heaps so that can't be moved around
@@ -271,8 +271,8 @@ public:
   void dump_heap(int len = -1);
 
   uint32_t m_magic;
-  char *m_free_start;
-  char *m_data_start;
+  char    *m_free_start;
+  char    *m_data_start;
   uint32_t m_size;
 
   bool m_writeable;
@@ -289,11 +289,11 @@ public:
   // HdrBuf heap pointers
   uint32_t m_free_size;
 
-  int demote_rw_str_heap();
-  void coalesce_str_heaps(int incoming_size = 0);
-  void evacuate_from_str_heaps(HdrStrHeap *new_heap);
+  int    demote_rw_str_heap();
+  void   coalesce_str_heaps(int incoming_size = 0);
+  void   evacuate_from_str_heaps(HdrStrHeap *new_heap);
   size_t required_space_for_evacuation();
-  bool attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
+  bool   attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
   uint64_t total_used_size() const;
 
@@ -331,12 +331,12 @@ public:
 
   // String Heap access
   Ptr<HdrStrHeap> m_read_write_heap;
-  StrHeapDesc m_ronly_heap[HDR_BUF_RONLY_HEAPS];
-  int m_lost_string_space;
+  StrHeapDesc     m_ronly_heap[HDR_BUF_RONLY_HEAPS];
+  int             m_lost_string_space;
 };
 
 static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{swoc::round_up(sizeof(HdrHeap))};
-static constexpr size_t HDR_MAX_ALLOC_SIZE = HdrHeap::DEFAULT_SIZE - HDR_HEAP_HDR_SIZE;
+static constexpr size_t               HDR_MAX_ALLOC_SIZE = HdrHeap::DEFAULT_SIZE - HDR_HEAP_HDR_SIZE;
 
 inline void
 HdrHeap::free_string(const char *s, int len)
@@ -481,7 +481,7 @@ public:
   //    SDK return values
   void destroy();
 
-  void set(const HdrHeapSDKHandle *from);
+  void        set(const HdrHeapSDKHandle *from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
   HdrHeap *m_heap = nullptr;

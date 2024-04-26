@@ -46,7 +46,7 @@ RecAllocateRawStatBlockImpl(int num_stats)
 {
   static RecRawStatBlockOpsImpl ops;
 
-  off_t ethr_stat_offset;
+  off_t            ethr_stat_offset;
   RecRawStatBlock *rsb;
 
   // allocate thread-local raw-stat memory

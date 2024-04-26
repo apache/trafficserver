@@ -60,8 +60,8 @@ struct LogsStatsBlock {
   Metrics::Counter::AtomicType *bytes_lost_before_flush_to_disk;
   Metrics::Counter::AtomicType *bytes_written_to_disk;
   Metrics::Counter::AtomicType *bytes_lost_before_written_to_disk;
-  Metrics::Gauge::AtomicType *log_files_open;
-  Metrics::Gauge::AtomicType *log_files_space_used;
+  Metrics::Gauge::AtomicType   *log_files_open;
+  Metrics::Gauge::AtomicType   *log_files_space_used;
 };
 
 extern LogsStatsBlock log_rsb;
@@ -158,35 +158,35 @@ public:
    */
   void register_rolled_log_auto_delete(std::string_view logname, int rolling_min_count);
 
-  bool initialized             = false;
-  bool reconfiguration_needed  = false;
-  bool logging_space_exhausted = false;
-  int64_t m_space_used         = 0;
+  bool    initialized             = false;
+  bool    reconfiguration_needed  = false;
+  bool    logging_space_exhausted = false;
+  int64_t m_space_used            = 0;
   int64_t m_partition_space_left;
-  bool roll_log_files_now; // signal that files must be rolled
+  bool    roll_log_files_now; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
 
   LogFilterList filter_list;
   LogFormatList format_list;
 
-  uint32_t log_buffer_size  = 10 * LOG_KILOBYTE;
-  bool log_fast_buffer      = false;
-  int max_secs_per_buffer   = 5;
-  int max_space_mb_for_logs = 100;
-  int max_space_mb_headroom = 10;
-  int logfile_perm          = 0644;
+  uint32_t log_buffer_size       = 10 * LOG_KILOBYTE;
+  bool     log_fast_buffer       = false;
+  int      max_secs_per_buffer   = 5;
+  int      max_space_mb_for_logs = 100;
+  int      max_space_mb_headroom = 10;
+  int      logfile_perm          = 0644;
 
   int preproc_threads = 1;
 
-  Log::RollingEnabledValues rolling_enabled = Log::NO_ROLLING;
-  int rolling_interval_sec                  = 86400;
-  int rolling_offset_hr                     = 0;
-  int rolling_size_mb                       = 10;
-  int rolling_min_count                     = 0;
-  int rolling_max_count                     = 0;
-  bool rolling_allow_empty                  = false;
-  bool auto_delete_rolled_files             = false;
+  Log::RollingEnabledValues rolling_enabled          = Log::NO_ROLLING;
+  int                       rolling_interval_sec     = 86400;
+  int                       rolling_offset_hr        = 0;
+  int                       rolling_size_mb          = 10;
+  int                       rolling_min_count        = 0;
+  int                       rolling_max_count        = 0;
+  bool                      rolling_allow_empty      = false;
+  bool                      auto_delete_rolled_files = false;
 
   int sampling_frequency   = 1;
   int file_stat_frequency  = 16;

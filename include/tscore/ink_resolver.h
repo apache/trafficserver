@@ -188,8 +188,8 @@ extern HostResStyle ats_host_res_from(int family,                    ///< Connec
 
 /** Parse a host resolution configuration string.
  */
-extern void parse_host_res_preference(const char *value,            ///< [in] Configuration string.
-                                      HostResPreferenceOrder &order /// [out] Order to update.
+extern void parse_host_res_preference(const char             *value, ///< [in] Configuration string.
+                                      HostResPreferenceOrder &order  /// [out] Order to update.
 );
 
 /// Configure the preference order to hold only what's from the client address.
@@ -223,26 +223,26 @@ struct HostResData {
 #endif
 
 #ifndef NS_PUT16
-#define NS_PUT16(s, cp)             \
-  do {                              \
-    uint16_t t_s  = (uint16_t)(s);  \
-    u_char *t_cp  = (u_char *)(cp); \
-    *t_cp++       = t_s >> 8;       \
-    *t_cp         = t_s;            \
-    (cp)         += NS_INT16SZ;     \
+#define NS_PUT16(s, cp)              \
+  do {                               \
+    uint16_t t_s   = (uint16_t)(s);  \
+    u_char  *t_cp  = (u_char *)(cp); \
+    *t_cp++        = t_s >> 8;       \
+    *t_cp          = t_s;            \
+    (cp)          += NS_INT16SZ;     \
   } while (0)
 #endif
 
 #ifndef NS_PUT32
-#define NS_PUT32(l, cp)             \
-  do {                              \
-    uint32_t t_l  = (uint32_t)(l);  \
-    u_char *t_cp  = (u_char *)(cp); \
-    *t_cp++       = t_l >> 24;      \
-    *t_cp++       = t_l >> 16;      \
-    *t_cp++       = t_l >> 8;       \
-    *t_cp         = t_l;            \
-    (cp)         += NS_INT32SZ;     \
+#define NS_PUT32(l, cp)              \
+  do {                               \
+    uint32_t t_l   = (uint32_t)(l);  \
+    u_char  *t_cp  = (u_char *)(cp); \
+    *t_cp++        = t_l >> 24;      \
+    *t_cp++        = t_l >> 16;      \
+    *t_cp++        = t_l >> 8;       \
+    *t_cp          = t_l;            \
+    (cp)          += NS_INT32SZ;     \
   } while (0)
 #endif
 
@@ -255,11 +255,11 @@ struct ts_imp_res_state {
 #else
   u_long options; /*%< option flags - see below. */
 #endif
-  int nscount;                       /*%< number of name servers */
+  int        nscount;                /*%< number of name servers */
   IpEndpoint nsaddr_list[INK_MAXNS]; /*%< address of name server */
-  u_short id;                        /*%< current message id */
-  char *dnsrch[MAXDNSRCH + 1];       /*%< components of domain to search */
-  char defdname[256];                /*%< default domain (deprecated) */
+  u_short    id;                     /*%< current message id */
+  char      *dnsrch[MAXDNSRCH + 1];  /*%< components of domain to search */
+  char       defdname[256];          /*%< default domain (deprecated) */
 #ifdef sun
   unsigned pfcode; /*%< RES_PRF_ flags - see below. */
 #else
@@ -267,9 +267,9 @@ struct ts_imp_res_state {
 #endif
   unsigned ndots : 4; /*%< threshold for initial abs. query */
   unsigned nsort : 4; /*%< number of elements in sort_list[] */
-  char unused[3];
-  int res_h_errno;              /*%< last one set for this context */
-  int _vcsock;                  /*%< PRIVATE: for res_send VC i/o */
+  char     unused[3];
+  int      res_h_errno;         /*%< last one set for this context */
+  int      _vcsock;             /*%< PRIVATE: for res_send VC i/o */
   unsigned _flags;              /*%< PRIVATE: see below */
   unsigned _pad;                /*%< make _u 64 bit aligned */
   uint16_t _nstimes[INK_MAXNS]; /*%< ms. */
@@ -292,6 +292,6 @@ void ts_host_res_global_init();
     @return The length of the string.
  */
 int ts_host_res_order_to_string(HostResPreferenceOrder const &order, ///< order to print
-                                char *out,                           ///< Target buffer for string.
-                                int size                             ///< Size of buffer.
+                                char                         *out,   ///< Target buffer for string.
+                                int                           size   ///< Size of buffer.
 );

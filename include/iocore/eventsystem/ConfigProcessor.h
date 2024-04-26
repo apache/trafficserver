@@ -60,12 +60,12 @@ public:
   };
 
   unsigned int set(unsigned int id, ConfigInfo *info, unsigned timeout_secs = CONFIG_PROCESSOR_RELEASE_SECS);
-  ConfigInfo *get(unsigned int id);
-  void release(unsigned int id, ConfigInfo *data);
+  ConfigInfo  *get(unsigned int id);
+  void         release(unsigned int id, ConfigInfo *data);
 
 public:
   std::atomic<ConfigInfo *> infos[MAX_CONFIGS] = {nullptr};
-  std::atomic<int> ninfos{0};
+  std::atomic<int>          ninfos{0};
 };
 
 // A Continuation wrapper that calls the static reconfigure() method of the given class.

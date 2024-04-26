@@ -54,9 +54,9 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 {
 #if TS_HAS_QUICHE
 #else
-  QUICTLS *qtls            = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+  QUICTLS    *qtls         = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
   const char *session_file = qtls->session_file();
-  auto file                = BIO_new_file(session_file, "w");
+  auto        file         = BIO_new_file(session_file, "w");
 
   if (file == nullptr) {
     QUICGlobalDebug("Could not write TLS session in %s", session_file);

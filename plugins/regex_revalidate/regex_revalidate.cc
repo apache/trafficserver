@@ -52,9 +52,9 @@ static char const *const RESULT_MISS    = "MISS";
 static char const *const RESULT_STALE   = "STALE";
 static char const *const RESULT_UNKNOWN = "UNKNOWN";
 
-static int stat_id_stale                 = TS_ERROR;
+static int               stat_id_stale   = TS_ERROR;
 static char const *const stat_name_stale = "plugin.regex_revalidate.stale";
-static int stat_id_miss                  = TS_ERROR;
+static int               stat_id_miss    = TS_ERROR;
 static char const *const stat_name_miss  = "plugin.regex_revalidate.miss";
 
 static DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -115,22 +115,22 @@ strForResult(TSCacheLookupResult const result)
 }
 
 typedef struct invalidate_t {
-  const char *regex_text;
-  pcre *regex;
-  pcre_extra *regex_extra;
-  time_t epoch;
-  time_t expiry;
-  TSCacheLookupResult new_result;
+  const char          *regex_text;
+  pcre                *regex;
+  pcre_extra          *regex_extra;
+  time_t               epoch;
+  time_t               expiry;
+  TSCacheLookupResult  new_result;
   struct invalidate_t *next;
 } invalidate_t;
 
 typedef struct {
-  invalidate_t *invalidate_list;
-  char *config_path;
-  char *match_header;
-  time_t last_load;
+  invalidate_t   *invalidate_list;
+  char           *config_path;
+  char           *match_header;
+  time_t          last_load;
   TSTextLogObject log;
-  char *state_path;
+  char           *state_path;
 } plugin_state_t;
 
 static invalidate_t *
@@ -212,8 +212,8 @@ static invalidate_t *
 copy_invalidate_t(invalidate_t *i)
 {
   invalidate_t *iptr;
-  const char *errptr;
-  int erroffset;
+  const char   *errptr;
+  int           erroffset;
 
   iptr              = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
   iptr->regex_text  = TSstrdup(i->regex_text);
@@ -250,8 +250,8 @@ static bool
 prune_config(invalidate_t **i)
 {
   invalidate_t *iptr, *ilast;
-  time_t now;
-  bool pruned = false;
+  time_t        now;
+  bool          pruned = false;
 
   now = time(nullptr);
 
@@ -297,13 +297,13 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
   time_t const now = time(nullptr);
 
   const char *errptr;
-  int erroffset;
-  int ovector[OVECTOR_SIZE];
+  int         erroffset;
+  int         ovector[OVECTOR_SIZE];
   pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, nullptr);
   TSReleaseAssert(nullptr != config_re);
 
   char line[LINE_MAX];
-  int ln = 0;
+  int  ln = 0;
   while (fgets(line, LINE_MAX, fs) != nullptr) {
     Dbg(dbg_ctl, "state: processing: %d %s", ln, line);
     ++ln;
@@ -323,7 +323,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
         continue;
       }
 
-      int const len          = ovector[9] - ovector[8];
+      int const         len  = ovector[9] - ovector[8];
       char const *const type = line + ovector[8];
 
       if (0 == strncasecmp(type, RESULT_STALE, len)) {
@@ -367,7 +367,7 @@ static bool
 load_config(plugin_state_t *pstate, invalidate_t **ilist)
 {
   size_t path_len;
-  char *path;
+  char  *path;
 
   if (pstate->config_path[0] != '/') {
     path_len = strlen(TSConfigDirGet()) + strlen(pstate->config_path) + 2;
@@ -403,13 +403,13 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
     Dbg(dbg_ctl, "Attempting to load rules from: '%s'", path);
     const char *errptr;
-    int erroffset;
-    int ovector[OVECTOR_SIZE];
+    int         erroffset;
+    int         ovector[OVECTOR_SIZE];
     pcre *const config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, nullptr);
     TSReleaseAssert(nullptr != config_re);
 
-    char line[LINE_MAX];
-    int ln = 0;
+    char          line[LINE_MAX];
+    int           ln = 0;
     invalidate_t *iptr, *i;
 
     while (fgets(line, LINE_MAX, fs) != nullptr) {
@@ -427,7 +427,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         i->expiry = atoi(line + ovector[4]);
 
         if (5 == rc) {
-          int const len          = ovector[9] - ovector[8];
+          int const         len  = ovector[9] - ovector[8];
           char const *const type = line + ovector[8];
           if (0 == strncasecmp(type, RESULT_MISS, len)) {
             Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
@@ -558,10 +558,10 @@ static int
 config_handler(TSCont cont, TSEvent event, void *edata)
 {
   plugin_state_t *pstate;
-  invalidate_t *i, *iptr;
-  TSCont free_cont;
-  bool updated;
-  TSMutex mutex;
+  invalidate_t   *i, *iptr;
+  TSCont          free_cont;
+  bool            updated;
+  TSMutex         mutex;
 
   Dbg(dbg_ctl, "In config_handler");
 
@@ -603,8 +603,8 @@ static time_t
 get_date_from_cached_hdr(TSHttpTxn txn)
 {
   TSMBuffer buf;
-  TSMLoc hdr_loc, date_loc;
-  time_t date = 0;
+  TSMLoc    hdr_loc, date_loc;
+  time_t    date = 0;
 
   if (TSHttpTxnCachedRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
     date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE);
@@ -621,13 +621,13 @@ get_date_from_cached_hdr(TSHttpTxn txn)
 static void
 add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
 {
-  TSMBuffer bufp  = NULL;
-  TSMLoc lochdr   = TS_NULL_MLOC;
-  TSMLoc locfield = TS_NULL_MLOC;
-  char rulestr[LINE_MAX];
-  int rulelen = 0;
-  char encstr[LINE_MAX];
-  size_t enclen = 0;
+  TSMBuffer bufp     = NULL;
+  TSMLoc    lochdr   = TS_NULL_MLOC;
+  TSMLoc    locfield = TS_NULL_MLOC;
+  char      rulestr[LINE_MAX];
+  int       rulelen = 0;
+  char      encstr[LINE_MAX];
+  size_t    enclen = 0;
 
   TSReleaseAssert(header && rule);
 
@@ -673,14 +673,14 @@ add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
 static int
 main_handler(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
-  int status;
-  invalidate_t *iptr     = NULL;
+  TSHttpTxn       txn = (TSHttpTxn)edata;
+  int             status;
+  invalidate_t   *iptr   = NULL;
   plugin_state_t *pstate = NULL;
 
   time_t date = 0, now = 0;
-  char *url   = nullptr;
-  int url_len = 0;
+  char  *url     = nullptr;
+  int    url_len = 0;
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -735,7 +735,7 @@ make_state_path(const char *filename)
   if ('/' == *filename) {
     return TSstrdup(filename);
   } else {
-    char buf[8192];
+    char        buf[8192];
     const char *dir = TSInstallDirGet();
     snprintf(buf, sizeof(buf), "%s/%s/%s", dir, DEFAULT_DIR, filename);
     return TSstrdup(buf);
@@ -748,17 +748,17 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont main_cont, config_cont;
-  plugin_state_t *pstate;
-  invalidate_t *iptr        = nullptr;
-  bool disable_timed_reload = false;
+  TSCont                   main_cont, config_cont;
+  plugin_state_t          *pstate;
+  invalidate_t            *iptr                 = nullptr;
+  bool                     disable_timed_reload = false;
 
   Dbg(dbg_ctl, "Starting plugin init");
 
   pstate = (plugin_state_t *)TSmalloc(sizeof(plugin_state_t));
   init_plugin_state_t(pstate);
 
-  int c;
+  int                        c;
   static const struct option longopts[] = {
     {"config",               required_argument, nullptr, 'c'},
     {"log",                  required_argument, nullptr, 'l'},

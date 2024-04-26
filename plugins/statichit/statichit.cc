@@ -94,12 +94,12 @@ struct StaticHitConfig {
 
     if (!dirPath.empty()) {
       TSMBuffer reqp;
-      TSMLoc hdr_loc = nullptr, url_loc = nullptr;
+      TSMLoc    hdr_loc = nullptr, url_loc = nullptr;
 
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) {
         if (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc)) {
-          int path_len = 0;
-          auto path    = TSUrlPathGet(reqp, url_loc, &path_len);
+          int  path_len = 0;
+          auto path     = TSUrlPathGet(reqp, url_loc, &path_len);
 
           std::filesystem::path requested_file_path(
             std::filesystem::weakly_canonical(dirPath / std::string_view{path, static_cast<size_t>(path_len)}));
@@ -124,12 +124,12 @@ struct StaticHitConfig {
   }
 
   std::filesystem::path dirPath;
-  std::string filePath;
+  std::string           filePath;
 
-  std::string mimeType = "";
-  int successCode      = 200;
-  int failureCode      = 404;
-  int maxAge           = 0;
+  std::string mimeType    = "";
+  int         successCode = 200;
+  int         failureCode = 404;
+  int         maxAge      = 0;
 
   bool disableExact = false;
   bool isDirectory  = false;
@@ -140,11 +140,11 @@ struct StaticHitConfig {
 struct StaticHitRequest;
 
 union argument_type {
-  void *ptr;
-  intptr_t ecode;
-  TSVConn vc;
-  TSVIO vio;
-  TSHttpTxn txn;
+  void             *ptr;
+  intptr_t          ecode;
+  TSVConn           vc;
+  TSVIO             vio;
+  TSHttpTxn         txn;
   StaticHitRequest *trq;
 
   argument_type(void *_p) : ptr(_p) {}
@@ -155,8 +155,8 @@ union argument_type {
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
 struct IOChannel {
-  TSVIO vio = nullptr;
-  TSIOBuffer iobuf;
+  TSVIO            vio = nullptr;
+  TSIOBuffer       iobuf;
   TSIOBufferReader reader;
 
   IOChannel() : iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
@@ -185,8 +185,8 @@ struct IOChannel {
 };
 
 struct StaticHitHttpHeader {
-  TSMBuffer buffer;
-  TSMLoc header;
+  TSMBuffer    buffer;
+  TSMLoc       header;
   TSHttpParser parser;
 
   StaticHitHttpHeader()
@@ -211,11 +211,11 @@ struct StaticHitHttpHeader {
 struct StaticHitRequest {
   StaticHitRequest() {}
 
-  off_t nbytes        = 0; // Number of bytes to generate.
-  unsigned maxAge     = 0; // Max age for cache responses.
-  unsigned statusCode = 200;
-  IOChannel readio;
-  IOChannel writeio;
+  off_t               nbytes     = 0; // Number of bytes to generate.
+  unsigned            maxAge     = 0; // Max age for cache responses.
+  unsigned            statusCode = 200;
+  IOChannel           readio;
+  IOChannel           writeio;
   StaticHitHttpHeader rqheader;
 
   std::string body;
@@ -225,9 +225,9 @@ struct StaticHitRequest {
   createStaticHitRequest(StaticHitConfig *tc, TSHttpTxn txn)
   {
     StaticHitRequest *shr = new StaticHitRequest;
-    std::ifstream ifstr;
-    std::string output;
-    std::string_view filePath = tc->makePath(txn, output);
+    std::ifstream     ifstr;
+    std::string       output;
+    std::string_view  filePath = tc->makePath(txn, output);
 
     VDEBUG("Requested file path: %s", filePath.data());
 
@@ -357,7 +357,7 @@ static bool
 StaticHitParseRequest(StaticHitRequest *trq)
 {
   const char *path;
-  int pathsz;
+  int         pathsz;
 
   // Make sure this is a GET request
   path = TSHttpHdrMethodGet(trq->rqheader.buffer, trq->rqheader.header, &pathsz);
@@ -420,18 +420,18 @@ StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata)
   }
 
   case TS_EVENT_VCONN_READ_READY: {
-    argument_type cdata           = TSContDataGet(contp);
+    argument_type        cdata    = TSContDataGet(contp);
     StaticHitHttpHeader &rqheader = cdata.trq->rqheader;
 
     VDEBUG("reading vio=%p vc=%p, trq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.trq);
 
     TSIOBufferBlock blk;
-    TSParseResult result = TS_PARSE_CONT;
+    TSParseResult   result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.trq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-      const char *ptr;
-      const char *end;
-      int64_t nbytes;
+      const char  *ptr;
+      const char  *end;
+      int64_t      nbytes;
       TSHttpStatus status = static_cast<TSHttpStatus>(cdata.trq->statusCode);
 
       ptr = TSIOBufferBlockReadStart(blk, cdata.trq->readio.reader, &nbytes);
@@ -569,9 +569,9 @@ StaticHitTxnHook(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    int method_length, status;
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    int         method_length, status;
+    TSMBuffer   bufp;
+    TSMLoc      hdr_loc;
     const char *method;
 
     if (TSHttpTxnCacheLookupStatusGet(arg.txn, &status) != TS_SUCCESS) {
@@ -674,8 +674,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   std::string filePath;
   std::string mimeType = "text/plain";
-  int maxAge = 0, failureCode = 0, successCode = 0;
-  bool disableExact = false;
+  int         maxAge = 0, failureCode = 0, successCode = 0;
+  bool        disableExact = false;
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.

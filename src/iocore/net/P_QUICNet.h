@@ -39,16 +39,16 @@ void initialize_thread_for_quic_net(EThread *thread);
 
 struct QUICPollEvent {
   QUICConnection *con;
-  UDPPacket *packet;
-  void init(QUICConnection *con, UDPPacket *packet);
-  void free();
+  UDPPacket      *packet;
+  void            init(QUICConnection *con, UDPPacket *packet);
+  void            free();
 
   SLINK(QUICPollEvent, alink);
   LINK(QUICPollEvent, link);
 };
 
 struct QUICPollCont : public Continuation {
-  NetHandler *net_handler;
+  NetHandler     *net_handler;
   PollDescriptor *pollDescriptor;
 
   QUICPollCont(Ptr<ProxyMutex> &m);

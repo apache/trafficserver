@@ -33,9 +33,9 @@
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {
-  YAML::Node config;
-  YAML::Node strategies;
-  std::stringstream doc;
+  YAML::Node                      config;
+  YAML::Node                      strategies;
+  std::stringstream               doc;
   std::unordered_set<std::string> include_once;
 
   // strategy policies.
@@ -78,14 +78,14 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
     // loop through the strategies document.
     for (auto &&strategie : strategies) {
       ts::Yaml::Map strategy{strategie};
-      auto name   = strategy["strategy"].as<std::string>();
-      auto policy = strategy["policy"];
+      auto          name   = strategy["strategy"].as<std::string>();
+      auto          policy = strategy["policy"];
       if (!policy) {
         NH_Error("No policy is defined for the strategy named '%s', this strategy will be ignored.", name.c_str());
         continue;
       }
-      const auto &policy_value = policy.Scalar();
-      NHPolicyType policy_type = NH_UNDEFINED;
+      const auto  &policy_value = policy.Scalar();
+      NHPolicyType policy_type  = NH_UNDEFINED;
 
       if (policy_value == consistent_hash) {
         policy_type = NH_CONSISTENT_HASH;
@@ -130,8 +130,8 @@ void
 NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node)
 {
   std::shared_ptr<NextHopSelectionStrategy> strat;
-  std::shared_ptr<NextHopRoundRobin> strat_rr;
-  std::shared_ptr<NextHopConsistentHash> strat_chash;
+  std::shared_ptr<NextHopRoundRobin>        strat_rr;
+  std::shared_ptr<NextHopConsistentHash>    strat_chash;
 
   strat = strategyInstance(name.c_str());
   if (strat != nullptr) {
@@ -194,7 +194,7 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
                                        std::unordered_set<std::string> &include_once)
 {
   const char *sep = " \t";
-  char *tok, *last;
+  char       *tok, *last;
   struct stat buf;
   std::string line;
 
@@ -206,8 +206,8 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
   // if fileName is a directory, concatenate all '.yaml' files alphanumerically
   // into a single document stream.  No #include is supported.
   if (S_ISDIR(buf.st_mode)) {
-    DIR *dir               = nullptr;
-    struct dirent *dir_ent = nullptr;
+    DIR                          *dir     = nullptr;
+    struct dirent                *dir_ent = nullptr;
     std::vector<std::string_view> files;
 
     NH_Note("loading strategy YAML files from the directory %s", fileName.c_str());

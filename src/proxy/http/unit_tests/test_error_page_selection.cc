@@ -50,9 +50,9 @@ TEST_CASE("error page selection test", "[http]")
     const char *accept_language;
     const char *accept_charset;
     const char *expected_set;
-    float expected_Q;
-    int expected_La;
-    int expected_I;
+    float       expected_Q;
+    int         expected_La;
+    int         expected_I;
   };
 
   std::array<Tests, 26> tests = {
@@ -103,11 +103,11 @@ TEST_CASE("error page selection test", "[http]")
   // (2) for each test, parse accept headers into lists, and test matching
   int count = 0;
   for (const auto &test : tests) {
-    float Q_best;
-    int La_best, Lc_best, I_best;
+    float       Q_best;
+    int         La_best, Lc_best, I_best;
     const char *set_best;
-    StrList accept_language_list;
-    StrList accept_charset_list;
+    StrList     accept_language_list;
+    StrList     accept_charset_list;
     HttpCompat::parse_comma_list(&accept_language_list, test.accept_language);
     HttpCompat::parse_comma_list(&accept_charset_list, test.accept_charset);
     printf("         test #%d: (Accept-Language='%s', Accept-Charset='%s')\n", ++count,

@@ -67,7 +67,7 @@ struct FlatYAMLAccessor {
   }
 
 protected:
-  std::vector<YAML::Node> _docs;
+  std::vector<YAML::Node>      _docs;
   std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
 };
 

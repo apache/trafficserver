@@ -55,9 +55,9 @@
 
 // Properties for the next hop server
 struct NextHopProperty {
-  std::string client_cert_file;                                                      // full path to client cert file for lookup
-  std::string client_key_file;                                                       // full path to client key file for lookup
-  YamlSNIConfig::Policy verify_server_policy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
+  std::string             client_cert_file;                                          // full path to client cert file for lookup
+  std::string             client_key_file;                                           // full path to client key file for lookup
+  YamlSNIConfig::Policy   verify_server_policy     = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
 };
 
@@ -105,18 +105,18 @@ public:
   ~SNIConfigParams() override;
 
   const NextHopProperty *get_property_config(const std::string &servername) const;
-  bool initialize();
-  bool initialize(const std::string &sni_filename);
+  bool                   initialize();
+  bool                   initialize(const std::string &sni_filename);
   /** Walk sni.yaml config and populate sni_action_list
       @return 0 for success, 1 is failure
    */
-  bool load_sni_config();
+  bool                                                 load_sni_config();
   std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, uint16_t dest_incoming_port) const;
 
-  std::unordered_multimap<std::string, ActionElement> sni_action_map; ///< for exact fqdn matching
-  std::vector<ActionElement> sni_action_list;                         ///< for regex fqdn matching
-  std::vector<NextHopItem> next_hop_list;
-  YamlSNIConfig yaml_sni;
+  std::unordered_multimap<std::string, ActionElement> sni_action_map;  ///< for exact fqdn matching
+  std::vector<ActionElement>                          sni_action_list; ///< for regex fqdn matching
+  std::vector<NextHopItem>                            next_hop_list;
+  YamlSNIConfig                                       yaml_sni;
 
 private:
   bool set_next_hop_properties(YamlSNIConfig::Item const &item);
@@ -132,9 +132,9 @@ public:
   /** Loads sni.yaml and swap into place if successful
       @return 0 for success, 1 is failure
    */
-  static int reconfigure();
+  static int              reconfigure();
   static SNIConfigParams *acquire();
-  static void release(SNIConfigParams *params);
+  static void             release(SNIConfigParams *params);
 
   /**
    * Sets a callback to be invoked when the SNIConfig is reconfigured.
@@ -144,6 +144,6 @@ public:
   static void set_on_reconfigure_callback(std::function<void()> cb);
 
 private:
-  static int _configid;
+  static int                   _configid;
   static std::function<void()> on_reconfigure;
 };

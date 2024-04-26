@@ -133,9 +133,9 @@ struct SSLSessionID : public TSSslSessionID {
 class SSLSession
 {
 public:
-  SSLSessionID session_id;
+  SSLSessionID      session_id;
   Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
-  size_t len_asn1_data;
+  size_t            len_asn1_data;
   Ptr<IOBufferData> extra_data;
 
   SSLSession(const SSLSessionID &id, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1, Ptr<IOBufferData> &exdata)
@@ -153,7 +153,7 @@ public:
   ~SSLSessionBucket();
   void insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl);
   bool getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data);
-  int getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len);
+  int  getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len);
   void removeSession(const SSLSessionID &sid);
 
 private:
@@ -161,8 +161,8 @@ private:
   void print(const char *) const;
   void removeOldestSession(const std::unique_lock<ts::shared_mutex> &lock);
 
-  mutable ts::shared_mutex mutex;
-  CountQueue<SSLSession> bucket_que;
+  mutable ts::shared_mutex             mutex;
+  CountQueue<SSLSession>               bucket_que;
   std::map<SSLSessionID, SSLSession *> bucket_map;
 };
 
@@ -170,7 +170,7 @@ class SSLSessionCache
 {
 public:
   bool getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data) const;
-  int getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const;
+  int  getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const;
   void insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl);
   void removeSession(const SSLSessionID &sid);
   SSLSessionCache();
@@ -181,14 +181,14 @@ public:
 
 private:
   SSLSessionBucket *session_bucket = nullptr;
-  size_t nbuckets;
+  size_t            nbuckets;
 };
 
 class SSLOriginSession
 {
 public:
-  std::string key;
-  ssl_curve_id curve_id;
+  std::string                  key;
+  ssl_curve_id                 curve_id;
   std::shared_ptr<SSL_SESSION> shared_sess = nullptr;
 
   SSLOriginSession(const std::string &lookup_key, ssl_curve_id curve, std::shared_ptr<SSL_SESSION> session)
@@ -205,14 +205,14 @@ public:
   SSLOriginSessionCache();
   ~SSLOriginSessionCache();
 
-  void insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
+  void                         insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
   std::shared_ptr<SSL_SESSION> get_session(const std::string &lookup_key, ssl_curve_id *curve);
-  void remove_session(const std::string &lookup_key);
+  void                         remove_session(const std::string &lookup_key);
 
 private:
   void remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock);
 
-  mutable ts::shared_mutex mutex;
-  CountQueue<SSLOriginSession> orig_sess_que;
+  mutable ts::shared_mutex                  mutex;
+  CountQueue<SSLOriginSession>              orig_sess_que;
   std::map<std::string, SSLOriginSession *> orig_sess_map;
 };

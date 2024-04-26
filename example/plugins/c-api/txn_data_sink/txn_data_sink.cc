@@ -117,7 +117,7 @@ body_reader_helper(TSCont contp, TSEvent event, bool sync_response_body)
     // Look for data and if we find any, consume it.
     if (TSVIOBufferGet(input_vio)) {
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
-      size_t const n          = TSIOBufferReaderAvail(reader);
+      size_t const     n      = TSIOBufferReaderAvail(reader);
       if (n > 0) {
         auto const offset = body_bytes.size();
         body_bytes.resize(offset + n);
@@ -165,9 +165,9 @@ request_body_reader(TSCont contp, TSEvent event, void *edata)
 bool
 sink_requested_helper(TSHttpTxn txnp, std::string_view header)
 {
-  TSMLoc field      = nullptr;
+  TSMLoc    field   = nullptr;
   TSMBuffer req_buf = nullptr;
-  TSMLoc req_loc    = nullptr;
+  TSMLoc    req_loc = nullptr;
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
     field = TSMimeHdrFieldFind(req_buf, req_loc, header.data(), header.length());
   }

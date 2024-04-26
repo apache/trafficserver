@@ -73,5 +73,5 @@ using namespace access_control_ns;
 
 #endif /* ACCESS_CONTROL_UNIT_TEST */
 
-int string2int(const StringView &s);
+int    string2int(const StringView &s);
 time_t string2time(const StringView &s);

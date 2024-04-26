@@ -55,8 +55,8 @@
       fprintf(stderr, "+++++++++ %s +++++++++\n", S);           \
       fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
       char b[4096];                                             \
-      int used, tmp, offset;                                    \
-      int done;                                                 \
+      int  used, tmp, offset;                                   \
+      int  done;                                                \
       offset = 0;                                               \
       if ((H)->valid()) {                                       \
         do {                                                    \
@@ -196,12 +196,12 @@ enum ViaString_t {
 };
 
 struct HttpApiInfo {
-  char *parent_proxy_name       = nullptr;
-  int parent_proxy_port         = -1;
-  bool cache_untransformed      = false;
-  bool cache_transformed        = true;
-  bool logging_enabled          = true;
-  bool retry_intercept_failures = false;
+  char *parent_proxy_name        = nullptr;
+  int   parent_proxy_port        = -1;
+  bool  cache_untransformed      = false;
+  bool  cache_transformed        = true;
+  bool  logging_enabled          = true;
+  bool  retry_intercept_failures = false;
 
   HttpApiInfo() {}
 };
@@ -490,33 +490,33 @@ public:
     HttpTransact::CacheWriteStatus_t write_status           = NO_CACHE_WRITE;
     HttpTransact::CacheWriteStatus_t transform_write_status = NO_CACHE_WRITE;
 
-    URL *lookup_url = nullptr;
-    URL lookup_url_storage;
-    URL original_url;
-    HTTPInfo object_store;
-    HTTPInfo transform_store;
-    CacheDirectives directives;
-    HTTPInfo *object_read             = nullptr;
-    int open_read_retries             = 0;
-    int open_write_retries            = 0;
-    CacheWriteLock_t write_lock_state = CACHE_WL_INIT;
-    int lookup_count                  = 0;
-    SquidHitMissCode hit_miss_code    = SQUID_MISS_NONE;
-    URL *parent_selection_url         = nullptr;
-    URL parent_selection_url_storage;
+    URL             *lookup_url = nullptr;
+    URL              lookup_url_storage;
+    URL              original_url;
+    HTTPInfo         object_store;
+    HTTPInfo         transform_store;
+    CacheDirectives  directives;
+    HTTPInfo        *object_read          = nullptr;
+    int              open_read_retries    = 0;
+    int              open_write_retries   = 0;
+    CacheWriteLock_t write_lock_state     = CACHE_WL_INIT;
+    int              lookup_count         = 0;
+    SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
+    URL             *parent_selection_url = nullptr;
+    URL              parent_selection_url_storage;
 
     _CacheLookupInfo() {}
   };
 
   using RedirectInfo = struct _RedirectInfo {
     bool redirect_in_process = false;
-    URL original_url;
+    URL  original_url;
 
     _RedirectInfo() {}
   };
 
   struct ConnectionAttributes {
-    HTTPVersion http_version;
+    HTTPVersion   http_version;
     HTTPKeepAlive keep_alive = HTTP_KEEPALIVE_UNDEFINED;
 
     // The following variable is true if the client expects to
@@ -525,9 +525,9 @@ public:
     bool proxy_connect_hdr        = false;
     /// @c errno from the most recent attempt to connect.
     /// zero means no failure (not attempted, succeeded).
-    int connect_result = 0;
-    char *name         = nullptr;
-    swoc::IPAddr name_addr;
+    int                connect_result = 0;
+    char              *name           = nullptr;
+    swoc::IPAddr       name_addr;
     TransferEncoding_t transfer_encoding = NO_TRANSFER_ENCODING;
 
     /** This is the source address of the connection from the point of view of the transaction.
@@ -539,12 +539,12 @@ public:
     */
     IpEndpoint dst_addr;
 
-    ServerState_t state                         = STATE_UNDEFINED;
-    AbortState_t abort                          = ABORT_UNDEFINED;
+    ServerState_t                state          = STATE_UNDEFINED;
+    AbortState_t                 abort          = ABORT_UNDEFINED;
     HttpProxyPort::TransportType port_attribute = HttpProxyPort::TRANSPORT_DEFAULT;
 
     /// @c true if the connection is transparent.
-    bool is_transparent = false;
+    bool       is_transparent = false;
     ProxyError rx_error_code;
     ProxyError tx_error_code;
 
@@ -570,11 +570,11 @@ public:
   };
 
   using CurrentInfo = struct _CurrentInfo {
-    ProxyMode_t mode                             = UNDEFINED_MODE;
+    ProxyMode_t                       mode       = UNDEFINED_MODE;
     ResolveInfo::UpstreamResolveStyle request_to = ResolveInfo::UNDEFINED_LOOKUP;
-    ConnectionAttributes *server                 = nullptr;
-    ink_time_t now                               = 0;
-    ServerState_t state                          = STATE_UNDEFINED;
+    ConnectionAttributes             *server     = nullptr;
+    ink_time_t                        now        = 0;
+    ServerState_t                     state      = STATE_UNDEFINED;
     class Attempts
     {
     public:
@@ -620,10 +620,10 @@ public:
     private:
       unsigned _v{0}, _saved_v{0};
     };
-    Attempts retry_attempts;
-    unsigned simple_retry_attempts             = 0;
-    unsigned unavailable_server_retry_attempts = 0;
-    ParentRetry_t retry_type                   = PARENT_RETRY_NONE;
+    Attempts      retry_attempts;
+    unsigned      simple_retry_attempts             = 0;
+    unsigned      unavailable_server_retry_attempts = 0;
+    ParentRetry_t retry_type                        = PARENT_RETRY_NONE;
 
     _CurrentInfo()                     = default;
     _CurrentInfo(_CurrentInfo const &) = delete;
@@ -633,35 +633,35 @@ public:
   static const MgmtConverter HOST_RES_CONV;
 
   using HeaderInfo = struct _HeaderInfo {
-    HTTPHdr client_request;
-    HTTPHdr client_response;
-    HTTPHdr server_request;
-    HTTPHdr server_response;
-    HTTPHdr transform_response;
-    HTTPHdr cache_response;
-    int64_t request_content_length  = HTTP_UNDEFINED_CL;
-    int64_t response_content_length = HTTP_UNDEFINED_CL;
-    int64_t transform_request_cl    = HTTP_UNDEFINED_CL;
-    int64_t transform_response_cl   = HTTP_UNDEFINED_CL;
-    bool client_req_is_server_style = false;
-    bool trust_response_cl          = false;
-    ResponseError_t response_error  = NO_RESPONSE_HEADER_ERROR;
-    bool extension_method           = false;
+    HTTPHdr         client_request;
+    HTTPHdr         client_response;
+    HTTPHdr         server_request;
+    HTTPHdr         server_response;
+    HTTPHdr         transform_response;
+    HTTPHdr         cache_response;
+    int64_t         request_content_length     = HTTP_UNDEFINED_CL;
+    int64_t         response_content_length    = HTTP_UNDEFINED_CL;
+    int64_t         transform_request_cl       = HTTP_UNDEFINED_CL;
+    int64_t         transform_response_cl      = HTTP_UNDEFINED_CL;
+    bool            client_req_is_server_style = false;
+    bool            trust_response_cl          = false;
+    ResponseError_t response_error             = NO_RESPONSE_HEADER_ERROR;
+    bool            extension_method           = false;
 
     _HeaderInfo() {}
   };
 
   using SquidLogInfo = struct _SquidLogInfo {
-    SquidLogCode log_code          = SQUID_LOG_ERR_UNKNOWN;
-    SquidSubcode subcode           = SQUID_SUBCODE_EMPTY;
-    SquidHierarchyCode hier_code   = SQUID_HIER_EMPTY;
-    SquidHitMissCode hit_miss_code = SQUID_MISS_NONE;
+    SquidLogCode       log_code      = SQUID_LOG_ERR_UNKNOWN;
+    SquidSubcode       subcode       = SQUID_SUBCODE_EMPTY;
+    SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+    SquidHitMissCode   hit_miss_code = SQUID_MISS_NONE;
 
     _SquidLogInfo() {}
   };
 
   using ResponseAction = struct _ResponseAction {
-    bool handled = false;
+    bool             handled = false;
     TSResponseAction action;
 
     _ResponseAction() {}
@@ -670,11 +670,11 @@ public:
   struct State {
     HttpSM *state_machine = nullptr;
 
-    HttpTransactMagic_t m_magic             = HTTP_TRANSACT_MAGIC_ALIVE;
-    HTTPVersion updated_server_version      = HTTP_INVALID;
-    CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
-    HTTPStatus http_return_code             = HTTP_STATUS_NONE;
-    CacheAuth_t www_auth_content            = CACHE_AUTH_NONE;
+    HttpTransactMagic_t m_magic                = HTTP_TRANSACT_MAGIC_ALIVE;
+    HTTPVersion         updated_server_version = HTTP_INVALID;
+    CacheLookupResult_t cache_lookup_result    = CACHE_LOOKUP_NONE;
+    HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
+    CacheAuth_t         www_auth_content       = CACHE_AUTH_NONE;
 
     Arena arena;
 
@@ -712,32 +712,32 @@ public:
 
     MgmtByte cache_open_write_fail_action = 0;
 
-    HttpConfigParams *http_config_param = nullptr;
-    CacheLookupInfo cache_info;
-    ResolveInfo dns_info;
-    RedirectInfo redirect_info;
+    HttpConfigParams           *http_config_param = nullptr;
+    CacheLookupInfo             cache_info;
+    ResolveInfo                 dns_info;
+    RedirectInfo                redirect_info;
     ConnectionTracker::TxnState outbound_conn_track_state;
-    ConnectionAttributes client_info;
-    ConnectionAttributes parent_info;
-    ConnectionAttributes server_info;
+    ConnectionAttributes        client_info;
+    ConnectionAttributes        parent_info;
+    ConnectionAttributes        server_info;
 
-    Source_t source                = SOURCE_NONE;
-    Source_t pre_transform_source  = SOURCE_NONE;
-    HttpRequestFlavor_t req_flavor = REQ_FLAVOR_FWDPROXY;
+    Source_t            source               = SOURCE_NONE;
+    Source_t            pre_transform_source = SOURCE_NONE;
+    HttpRequestFlavor_t req_flavor           = REQ_FLAVOR_FWDPROXY;
 
-    CurrentInfo current;
-    HeaderInfo hdr_info;
+    CurrentInfo  current;
+    HeaderInfo   hdr_info;
     SquidLogInfo squid_codes;
-    HttpApiInfo api_info;
+    HttpApiInfo  api_info;
     // To handle parent proxy case, we need to be
     //  able to defer some work in building the request
     TransactFunc_t pending_work = nullptr;
 
-    HttpRequestData request_data;
-    ParentConfigParams *parent_params                           = nullptr;
+    HttpRequestData                           request_data;
+    ParentConfigParams                       *parent_params     = nullptr;
     std::shared_ptr<NextHopSelectionStrategy> next_hop_strategy = nullptr;
-    ParentResult parent_result;
-    CacheControlResult cache_control;
+    ParentResult                              parent_result;
+    CacheControlResult                        cache_control;
 
     StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
     StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
@@ -747,15 +747,15 @@ public:
     void (*post_remap_upgrade_return_point)(HttpTransact::State *s) = nullptr; // out
     const char *upgrade_token_wks                                   = nullptr;
 
-    char *internal_msg_buffer                       = nullptr; // out
-    char *internal_msg_buffer_type                  = nullptr; // out
+    char   *internal_msg_buffer                     = nullptr; // out
+    char   *internal_msg_buffer_type                = nullptr; // out
     int64_t internal_msg_buffer_size                = 0;       // out
     int64_t internal_msg_buffer_fast_allocator_size = -1;
 
-    int scheme                     = -1;     // out
-    int next_hop_scheme            = scheme; // out
-    int orig_scheme                = scheme; // pre-mapped scheme
-    int method                     = 0;
+    int  scheme                    = -1;     // out
+    int  next_hop_scheme           = scheme; // out
+    int  orig_scheme               = scheme; // pre-mapped scheme
+    int  method                    = 0;
     bool method_metric_incremented = false;
 
     /// The errno associated with a failed connect attempt.
@@ -764,12 +764,12 @@ public:
     /// response reason phrases.
     int cause_of_death_errno = -UNKNOWN_INTERNAL_ERROR; // in
 
-    int api_txn_active_timeout_value      = -1;
-    int api_txn_connect_timeout_value     = -1;
-    int api_txn_dns_timeout_value         = -1;
-    int api_txn_no_activity_timeout_value = -1;
-    int congestion_control_crat           = 0; // Client retry after
-    unsigned int filter_mask              = 0;
+    int          api_txn_active_timeout_value      = -1;
+    int          api_txn_connect_timeout_value     = -1;
+    int          api_txn_dns_timeout_value         = -1;
+    int          api_txn_no_activity_timeout_value = -1;
+    int          congestion_control_crat           = 0; // Client retry after
+    unsigned int filter_mask                       = 0;
 
     ink_time_t client_request_time    = UNDEFINED_TIME; // internal
     ink_time_t request_sent_time      = UNDEFINED_TIME; // internal
@@ -783,24 +783,24 @@ public:
     // to copy part of HdrHeap (only the writable portion) for cached response headers
     // and request headers
     // These ptrs are deallocate when transaction is over.
-    HdrHeapSDKHandle *cache_req_hdr_heap_handle   = nullptr;
-    HdrHeapSDKHandle *cache_resp_hdr_heap_handle  = nullptr;
-    UpdateCachedObject_t api_update_cached_object = UPDATE_CACHED_OBJECT_NONE;
-    StateMachineAction_t saved_update_next_action = SM_ACTION_UNDEFINED;
-    CacheAction_t saved_update_cache_action       = CACHE_DO_UNDEFINED;
+    HdrHeapSDKHandle    *cache_req_hdr_heap_handle  = nullptr;
+    HdrHeapSDKHandle    *cache_resp_hdr_heap_handle = nullptr;
+    UpdateCachedObject_t api_update_cached_object   = UPDATE_CACHED_OBJECT_NONE;
+    StateMachineAction_t saved_update_next_action   = SM_ACTION_UNDEFINED;
+    CacheAction_t        saved_update_cache_action  = CACHE_DO_UNDEFINED;
 
     // Remap plugin processor support
     UrlMappingContainer url_map;
-    host_hdr_info hh_info = {nullptr, 0, 0};
+    host_hdr_info       hh_info = {nullptr, 0, 0};
 
     char *remap_redirect = nullptr;
-    URL unmapped_url; // unmapped url is the effective url before remap
+    URL   unmapped_url; // unmapped url is the effective url before remap
 
     // Http Range: related variables
-    RangeSetup_t range_setup = RANGE_NONE;
-    int64_t num_range_fields = 0;
-    int64_t range_output_cl  = 0;
-    RangeRecord *ranges      = nullptr;
+    RangeSetup_t range_setup      = RANGE_NONE;
+    int64_t      num_range_fields = 0;
+    int64_t      range_output_cl  = 0;
+    RangeRecord *ranges           = nullptr;
 
     OverridableHttpConfigParams const *txn_conf = nullptr;
     OverridableHttpConfigParams &
@@ -834,7 +834,7 @@ public:
     // Constructor
     State()
     {
-      int i;
+      int   i;
       char *via_ptr = via_string;
 
       for (i = 0; i < MAX_VIA_INDICES; i++) {
@@ -1035,16 +1035,16 @@ public:
   static void HandleBadPushRespHdr(State *s);
 
   // Utility Methods
-  static void issue_revalidate(State *s);
-  static bool get_ka_info_from_config(State *s, ConnectionAttributes *server_info);
-  static void get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
-                                       HostDBInfo *host_db_info);
-  static void setup_plugin_request_intercept(State *s);
-  static void add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
-  static RequestError_t check_request_validity(State *s, HTTPHdr *incoming_hdr);
+  static void            issue_revalidate(State *s);
+  static bool            get_ka_info_from_config(State *s, ConnectionAttributes *server_info);
+  static void            get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
+                                                  HostDBInfo *host_db_info);
+  static void            setup_plugin_request_intercept(State *s);
+  static void            add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
+  static RequestError_t  check_request_validity(State *s, HTTPHdr *incoming_hdr);
   static ResponseError_t check_response_validity(State *s, HTTPHdr *incoming_hdr);
-  static void set_client_request_state(State *s, HTTPHdr *incoming_hdr);
-  static bool delete_all_document_alternates_and_return(State *s, bool cache_hit);
+  static void            set_client_request_state(State *s, HTTPHdr *incoming_hdr);
+  static bool            delete_all_document_alternates_and_return(State *s, bool cache_hit);
   static bool does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c, HTTPHdr *h,
                                                          char *via_string);
   static bool does_client_request_permit_dns_caching(CacheControlResult *c, HTTPHdr *h);
@@ -1086,19 +1086,19 @@ public:
   static void handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *base);
   static void change_response_header_because_of_range_request(State *s, HTTPHdr *header);
 
-  static void handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
-  static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
-  static int get_max_age(HTTPHdr *response);
-  static int calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
-  static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
+  static void             handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
+  static void             handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
+  static int              get_max_age(HTTPHdr *response);
+  static int              calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
+  static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,
                                                HTTPHdr *obj_response);
-  static void handle_parent_down(State *s);
-  static void handle_server_down(State *s);
-  static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
-                                   const char *error_body_type);
-  static void build_redirect_response(State *s);
-  static const char *get_error_string(int erno);
+  static void             handle_parent_down(State *s);
+  static void             handle_server_down(State *s);
+  static void             build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
+                                               const char *error_body_type);
+  static void             build_redirect_response(State *s);
+  static const char      *get_error_string(int erno);
 
   // the stat functions
   static void update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,

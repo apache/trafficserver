@@ -32,7 +32,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   // The amount of space we will need to overflow the StrHdrHeap is HdrStrHeap::DEFAULT_SIZE - sizeof(HdrStrHeap)
   size_t next_rw_heap_size           = HdrStrHeap::DEFAULT_SIZE;
   size_t next_required_overflow_size = next_rw_heap_size - sizeof(HdrStrHeap);
-  char buf[next_required_overflow_size];
+  char   buf[next_required_overflow_size];
   for (unsigned int i = 0; i < sizeof(buf); ++i) {
     buf[i] = ('a' + (i % 26));
   }

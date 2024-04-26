@@ -54,18 +54,18 @@ struct Data {
 
   // for pristine/effective url coming in
   TSMBuffer m_urlbuf{nullptr};
-  TSMLoc m_urlloc{nullptr};
+  TSMLoc    m_urlloc{nullptr};
 
   char m_hostname[8192];
-  int m_hostlen{0};
+  int  m_hostlen{0};
 
   // read from slice block 0
   char m_date[33];
-  int m_datelen{0};
+  int  m_datelen{0};
   char m_etag[8192];
-  int m_etaglen{0};
+  int  m_etaglen{0};
   char m_lastmodified[33];
-  int m_lastmodifiedlen{0};
+  int  m_lastmodifiedlen{0};
 
   int64_t m_contentlen{-1};
 

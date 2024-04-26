@@ -104,8 +104,8 @@ public:
 private:
   bool add_rule(RuleSet *rule);
 
-  TSCont _cont;
-  RuleSet *_rules[TS_HTTP_LAST_HOOK + 1];
+  TSCont      _cont;
+  RuleSet    *_rules[TS_HTTP_LAST_HOOK + 1];
   ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
 };
 
@@ -135,10 +135,10 @@ RulesConfig::add_rule(RuleSet *rule)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
 {
-  RuleSet *rule = nullptr;
-  std::string filename;
+  RuleSet      *rule = nullptr;
+  std::string   filename;
   std::ifstream f;
-  int lineno = 0;
+  int           lineno = 0;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -194,8 +194,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       rule = nullptr;
     }
 
-    TSHttpHookID hook = default_hook;
-    bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
+    TSHttpHookID hook    = default_hook;
+    bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
     if (nullptr == rule) {
       rule = new RuleSet();
@@ -258,7 +258,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
 static int
 cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp    = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn    txnp = static_cast<TSHttpTxn>(edata);
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
   RulesConfig *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
 
@@ -292,7 +292,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 
   if (hook != TS_HTTP_LAST_HOOK) {
     const RuleSet *rule = conf->rule(hook);
-    Resources res(txnp, contp);
+    Resources      res(txnp, contp);
 
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
@@ -360,8 +360,8 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  RulesConfig *conf = new RulesConfig;
-  bool got_config   = false;
+  RulesConfig *conf       = new RulesConfig;
+  bool         got_config = false;
 
   for (int i = optind; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
@@ -489,7 +489,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   TSRemapStatus rval = TSREMAP_NO_REMAP;
-  RulesConfig *conf  = static_cast<RulesConfig *>(ih);
+  RulesConfig  *conf = static_cast<RulesConfig *>(ih);
 
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
@@ -502,7 +502,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // Now handle the remap specific rules for the "remap hook" (which is not a real hook).
   // This is sufficiently different than the normal cont_rewrite_headers() callback, and
   // we can't (shouldn't) schedule this as a TXN hook.
-  RuleSet *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
+  RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
 
   res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);

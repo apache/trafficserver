@@ -31,7 +31,7 @@ class IOUringEventIO : public EventIO
 {
 public:
   IOUringEventIO() : EventIO() {}
-  int start(EventLoop l, IOUringContext *h);
+  int  start(EventLoop l, IOUringContext *h);
   void process_event(int flags) override;
 
 private:

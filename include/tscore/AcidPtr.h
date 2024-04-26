@@ -162,7 +162,7 @@ template <typename T> class AcidCommitPtr : public std::unique_ptr<T>
 {
 private:
   AcidCommitLock commit_lock; // block other writers from starting
-  AcidPtr<T> &data;           // data location
+  AcidPtr<T>    &data;        // data location
 
 public:
   AcidCommitPtr()                                    = delete;

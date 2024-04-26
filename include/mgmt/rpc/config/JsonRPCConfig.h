@@ -85,8 +85,8 @@ public:
   void load(YAML::Node const &params);
 
 private:
-  YAML::Node _commConfig;                     //!< "comm_config" section of the configuration file.
-  CommType _selectedCommType{CommType::UNIX}; //!< The selected (by configuration) communication type. 1 by default.
-  bool _rpcEnabled{true};                     //!< holds the configuration toggle value for "rpc_enable" node. Enabled by default.
+  YAML::Node _commConfig;                       //!< "comm_config" section of the configuration file.
+  CommType   _selectedCommType{CommType::UNIX}; //!< The selected (by configuration) communication type. 1 by default.
+  bool       _rpcEnabled{true};                 //!< holds the configuration toggle value for "rpc_enable" node. Enabled by default.
 };
 } // namespace rpc::config

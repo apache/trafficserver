@@ -63,9 +63,9 @@ FetchSM::cleanUp()
 void
 FetchSM::httpConnect()
 {
-  PluginIdentity *pi = dynamic_cast<PluginIdentity *>(contp);
-  const char *tag    = pi ? pi->getPluginTag() : "fetchSM";
-  int64_t id         = pi ? pi->getPluginId() : 0;
+  PluginIdentity *pi  = dynamic_cast<PluginIdentity *>(contp);
+  const char     *tag = pi ? pi->getPluginTag() : "fetchSM";
+  int64_t         id  = pi ? pi->getPluginId() : 0;
 
   Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
   TSHttpConnectOptions options{.connect_type      = TS_CONNECT_PLUGIN,
@@ -131,7 +131,7 @@ FetchSM::InvokePlugin(int event, void *data)
 bool
 FetchSM::has_body()
 {
-  int status_code;
+  int      status_code;
   HTTPHdr *hdr;
 
   if (!header_done) {
@@ -189,10 +189,10 @@ FetchSM::check_body_done()
 bool
 FetchSM::check_for_field_value(const char *name, size_t name_len, char const *value, size_t value_len)
 {
-  bool zret = false; // not found.
-  StrList slist;
+  bool     zret = false; // not found.
+  StrList  slist;
   HTTPHdr *hdr = &client_response_hdr;
-  int ret      = hdr->value_get_comma_list(name, name_len, &slist);
+  int      ret = hdr->value_get_comma_list(name, name_len, &slist);
 
   ink_release_assert(header_done);
 
@@ -212,8 +212,8 @@ FetchSM::check_for_field_value(const char *name, size_t name_len, char const *va
 bool
 FetchSM::check_chunked()
 {
-  static const char CHUNKED_TEXT[] = "chunked";
-  static size_t const CHUNKED_LEN  = sizeof(CHUNKED_TEXT) - 1;
+  static const char   CHUNKED_TEXT[] = "chunked";
+  static size_t const CHUNKED_LEN    = sizeof(CHUNKED_TEXT) - 1;
 
   if (resp_is_chunked < 0) {
     resp_is_chunked = static_cast<int>(
@@ -233,8 +233,8 @@ FetchSM::check_chunked()
 bool
 FetchSM::check_connection_close()
 {
-  static const char CLOSE_TEXT[] = "close";
-  static size_t const CLOSE_LEN  = sizeof(CLOSE_TEXT) - 1;
+  static const char   CLOSE_TEXT[] = "close";
+  static size_t const CLOSE_LEN    = sizeof(CLOSE_TEXT) - 1;
 
   if (resp_received_close < 0) {
     resp_received_close =
@@ -267,9 +267,9 @@ FetchSM::dechunk_body()
 void
 FetchSM::InvokePluginExt(int fetch_event)
 {
-  int event;
-  EThread *mythread        = this_ethread();
-  bool read_complete_event = (fetch_event == TS_EVENT_VCONN_READ_COMPLETE) || (fetch_event == TS_EVENT_VCONN_EOS);
+  int      event;
+  EThread *mythread            = this_ethread();
+  bool     read_complete_event = (fetch_event == TS_EVENT_VCONN_READ_COMPLETE) || (fetch_event == TS_EVENT_VCONN_EOS);
 
   //
   // Increasing *recursion* to prevent
@@ -382,9 +382,9 @@ out:
 void
 FetchSM::get_info_from_buffer(IOBufferReader *reader)
 {
-  char *buf, *info;
+  char          *buf, *info;
   IOBufferBlock *blk;
-  int64_t read_avail, read_done;
+  int64_t        read_avail, read_done;
 
   if (!reader) {
     client_bytes = 0;
@@ -496,7 +496,7 @@ FetchSM::process_fetch_read(int event)
 {
   Debug(DEBUG_TAG, "[%s] I am here read", __FUNCTION__);
   int64_t bytes;
-  int bytes_used;
+  int     bytes_used;
   int64_t total_bytes_copied = 0;
 
   switch (event) {
@@ -692,10 +692,10 @@ FetchSM::ext_write_data(const void *data, size_t len)
 ssize_t
 FetchSM::ext_read_data(char *buf, size_t len)
 {
-  const char *start;
+  const char     *start;
   IOBufferReader *reader;
-  IOBufferBlock *blk, *next_blk;
-  int64_t already, blk_len, need, wavail;
+  IOBufferBlock  *blk, *next_blk;
+  int64_t         already, blk_len, need, wavail;
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
     MUTEX_TRY_LOCK(lock, mutex, this_ethread());

@@ -32,7 +32,7 @@ using std::string;
  */
 struct atscppapi::UrlState : noncopyable {
   TSMBuffer hdr_buf_;
-  TSMLoc url_loc_;
+  TSMLoc    url_loc_;
   UrlState(TSMBuffer hdr_buf, TSMLoc url_loc) : hdr_buf_(hdr_buf), url_loc_(url_loc) {}
 };
 
@@ -68,7 +68,7 @@ Url::getUrlString() const
 {
   std::string ret_str;
   if (isInitialized()) {
-    int length;
+    int   length;
     char *memptr = TSUrlStringGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
       ret_str.assign(memptr, length);
@@ -87,7 +87,7 @@ Url::getPath() const
 {
   std::string ret_str;
   if (isInitialized()) {
-    int length;
+    int         length;
     const char *memptr = TSUrlPathGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
       ret_str.assign(memptr, length);
@@ -102,7 +102,7 @@ Url::getQuery() const
 {
   std::string ret_str;
   if (isInitialized()) {
-    int length;
+    int         length;
     const char *memptr = TSUrlHttpQueryGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
       ret_str.assign(memptr, length);
@@ -117,7 +117,7 @@ Url::getScheme() const
 {
   std::string ret_str;
   if (isInitialized()) {
-    int length;
+    int         length;
     const char *memptr = TSUrlSchemeGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
       ret_str.assign(memptr, length);
@@ -132,7 +132,7 @@ Url::getHost() const
 {
   std::string ret_str;
   if (isInitialized()) {
-    int length;
+    int         length;
     const char *memptr = TSUrlHostGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
       ret_str.assign(memptr, length);

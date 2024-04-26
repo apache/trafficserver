@@ -31,13 +31,13 @@ class TLSEarlyDataSupport
 public:
   virtual ~TLSEarlyDataSupport() = default;
 
-  static void initialize();
+  static void                 initialize();
   static TLSEarlyDataSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, TLSEarlyDataSupport *srs);
-  static void unbind(SSL *ssl);
+  static void                 bind(SSL *ssl, TLSEarlyDataSupport *srs);
+  static void                 unbind(SSL *ssl);
 
   size_t get_early_data_len() const;
-  void update_early_data_config(SSL *ssl, uint32_t max_early_data, uint32_t recv_max_early_data);
+  void   update_early_data_config(SSL *ssl, uint32_t max_early_data, uint32_t recv_max_early_data);
 
 protected:
   void clear();

@@ -41,8 +41,8 @@ namespace
 {
 struct join_visitor {
   swoc::BufferWriter &_w;
-  TextView _glue;
-  unsigned _recurse = 0;
+  TextView            _glue;
+  unsigned            _recurse = 0;
 
   swoc::BufferWriter &
   glue() const
@@ -167,8 +167,8 @@ public:
   }
 
 protected:
-  bool _unit_required_p = true; ///< Whether unitless values are allowed.
-  const unit_type _units;       ///< Unit definitions.
+  bool            _unit_required_p = true; ///< Whether unitless values are allowed.
+  const unit_type _units;                  ///< Unit definitions.
 };
 
 template <typename E> UnitParser<E>::UnitParser(UnitParser::unit_type &&units) noexcept : UnitParser(std::move(units), true) {}
@@ -192,7 +192,7 @@ auto
 UnitParser<E>::operator()(swoc::TextView const &src) const noexcept -> Rv<value_type>
 {
   value_type zret{0};
-  TextView text = src; // Keep @a src around to report error offsets.
+  TextView   text = src; // Keep @a src around to report error offsets.
 
   while (text.ltrim_if(&isspace)) {
     // Get a count first.
@@ -311,7 +311,7 @@ struct integer_visitor {
   operator()(feature_type_for<STRING> const &s)
   {
     TextView parsed;
-    ftype zret = swoc::svtoi(s, &parsed);
+    ftype    zret = swoc::svtoi(s, &parsed);
     if (parsed.size() != s.size()) {
       return {_invalid, Errata(S_ERROR, "Invalid format for integer at offset {}", parsed.size() + 1)};
     }
@@ -385,7 +385,7 @@ UnitParser<system_clock::duration> DurationParser{
 std::vector<decltype(DurationParser)::unit_type::iterator> DurationOrder{[]() {
   using I             = decltype(DurationParser)::unit_type::iterator;
   auto const &lexicon = DurationParser.units();
-  auto n              = lexicon.count();
+  auto        n       = lexicon.count();
 
   std::vector<I> zret;
   zret.reserve(n);
@@ -449,7 +449,7 @@ duration_visitor::operator()(feature_type_for<STRING> const &s)
 duration_visitor::ret_type
 duration_visitor::operator()(feature_type_for<TUPLE> t)
 {
-  ftype zret{0};
+  ftype    zret{0};
   unsigned idx = 0; // Just for error reporting.
   for (auto const &item : t) {
     auto &&[value, errata]{std::visit(duration_visitor{_invalid}, item)};

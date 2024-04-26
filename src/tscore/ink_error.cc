@@ -37,7 +37,7 @@
 static void
 fatal_va(const char *hdr, const char *fmt, va_list ap)
 {
-  char msg[1024];
+  char         msg[1024];
   const size_t len = strlen(hdr);
 
   strncpy(msg, hdr, sizeof(msg));
@@ -108,7 +108,7 @@ void
 ink_warning(const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
+  char    extended_format[4096], message[4096];
   va_start(ap, message_format);
   snprintf(extended_format, sizeof(extended_format), "WARNING: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;
@@ -129,8 +129,8 @@ void
 ink_pwarning(const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
-  char *errno_string;
+  char    extended_format[4096], message[4096];
+  char   *errno_string;
 
   va_start(ap, message_format);
   errno_string = strerror(errno);
@@ -153,7 +153,7 @@ void
 ink_notice(const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
+  char    extended_format[4096], message[4096];
   va_start(ap, message_format);
   snprintf(extended_format, sizeof(extended_format), "NOTE: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;
@@ -173,7 +173,7 @@ void
 ink_eprintf(const char *message_format, ...)
 {
   va_list ap;
-  char message[4096];
+  char    message[4096];
   va_start(ap, message_format);
   vsnprintf(message, sizeof(message), message_format, ap);
   message[sizeof(message) - 1] = 0;
@@ -190,7 +190,7 @@ void
 ink_error(const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[2048], message[4096];
+  char    extended_format[2048], message[4096];
   va_start(ap, message_format);
   snprintf(extended_format, sizeof(extended_format), "ERROR: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;

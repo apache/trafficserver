@@ -264,7 +264,7 @@ SCENARIO("loading plugins", "[plugin][core]")
 
   GIVEN("a plugin instance initialized with an empty effective path")
   {
-    std::string error;
+    std::string       error;
     PluginDsoUnitTest plugin(configPath, /* effectivePath */ fs::path(), runtimePath);
 
     WHEN("loading the plugin")
@@ -295,7 +295,7 @@ SCENARIO("loading plugins", "[plugin][core]")
     CHECK(fs::exists(effectivePath));
 
     /* Instantiate and initialize a plugin DSO instance. */
-    std::string error;
+    std::string       error;
     PluginDsoUnitTest plugin(configPath, effectivePath, runtimePath);
 
     WHEN("loading an invalid plugin")

@@ -50,7 +50,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
   NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[policy]);
 
   std::string self_host;
-  bool self_host_used = false;
+  bool        self_host_used = false;
 
   try {
     // scheme is optional, and strategies with no scheme will match hosts with no scheme
@@ -187,9 +187,9 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
       if (groups_node.Type() != YAML::NodeType::Sequence) {
         throw std::invalid_argument("Invalid groups definition, expected a sequence, '" + strategy_name + "' cannot be loaded.");
       } else {
-        Machine *mach      = Machine::instance();
-        HostStatus &h_stat = HostStatus::instance();
-        uint32_t grp_size  = groups_node.size();
+        Machine    *mach     = Machine::instance();
+        HostStatus &h_stat   = HostStatus::instance();
+        uint32_t    grp_size = groups_node.size();
         if (grp_size > MAX_GROUP_RINGS) {
           NH_Note("the groups list exceeds the maximum of %d for the strategy '%s'. Only the first %d groups will be configured.",
                   MAX_GROUP_RINGS, strategy_name.c_str(), MAX_GROUP_RINGS);
@@ -325,8 +325,8 @@ template <> struct convert<HostRecordCfg> {
   static bool
   decode(const Node &node, HostRecordCfg &nh)
   {
-    ts::Yaml::Map map{node};
-    ts::Yaml::Map *mmap{&map};
+    ts::Yaml::Map                map{node};
+    ts::Yaml::Map               *mmap{&map};
     std::optional<ts::Yaml::Map> mergeable_map;
 
     // check for YAML merge tag.
@@ -350,8 +350,8 @@ template <> struct convert<HostRecordCfg> {
       throw std::invalid_argument("Invalid host protocol definition, expected a sequence.");
     } else {
       for (auto &&ii : proto) {
-        const YAML::Node &protocol_node = ii;
-        std::shared_ptr<NHProtocol> pr  = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
+        const YAML::Node           &protocol_node = ii;
+        std::shared_ptr<NHProtocol> pr            = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
         nh.protocols.push_back(std::move(pr));
       }
     }

@@ -31,7 +31,7 @@ struct Thing : public ts::IntrusivePtrCounter {
   Thing() { ++_count; }
   virtual ~Thing() { --_count; }
   std::string _name;
-  static int _count; // instance count.
+  static int  _count; // instance count.
 };
 
 struct Stuff : public Thing {

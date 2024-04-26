@@ -29,7 +29,7 @@
 class NextHopRoundRobin : public NextHopSelectionStrategy
 {
   std::mutex _mutex;
-  uint32_t latched_index = 0;
+  uint32_t   latched_index = 0;
 
 public:
   NextHopRoundRobin() = delete;

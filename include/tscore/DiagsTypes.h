@@ -115,9 +115,9 @@ public:
   BaseLogFile *stderr_log;
 
   const unsigned int magic;
-  DiagsConfigState config;
-  DiagsShowLocation show_location;
-  DiagsCleanupFunc cleanup_func;
+  DiagsConfigState   config;
+  DiagsShowLocation  show_location;
+  DiagsCleanupFunc   cleanup_func;
 
   ///////////////////////////
   // conditional debugging //
@@ -244,8 +244,8 @@ public:
 
 private:
   const std::string prefix_str;
-  mutable ink_mutex tag_table_lock; // prevents reconfig/read races
-  DFA *activated_tags[2];           // 1 table for debug, 1 for action
+  mutable ink_mutex tag_table_lock;    // prevents reconfig/read races
+  DFA              *activated_tags[2]; // 1 table for debug, 1 for action
 
   // These are the default logfile permissions
   int diags_logfile_perm  = -1;
@@ -253,13 +253,13 @@ private:
 
   // log rotation variables
   RollingEnabledValues outputlog_rolling_enabled;
-  int outputlog_rolling_size;
-  int outputlog_rolling_interval;
+  int                  outputlog_rolling_size;
+  int                  outputlog_rolling_interval;
   RollingEnabledValues diagslog_rolling_enabled;
-  int diagslog_rolling_interval;
-  int diagslog_rolling_size;
-  time_t outputlog_time_last_roll;
-  time_t diagslog_time_last_roll;
+  int                  diagslog_rolling_interval;
+  int                  diagslog_rolling_size;
+  time_t               outputlog_time_last_roll;
+  time_t               diagslog_time_last_roll;
 
   bool rebind_std_stream(StdStream stream, int new_fd);
 

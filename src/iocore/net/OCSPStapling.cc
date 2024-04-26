@@ -262,17 +262,17 @@ constexpr int TS_OCSP_CERTSTATUS_UNKNOWN = 2;
 
 // Cached info stored in SSL_CTX ex_info
 struct certinfo {
-  unsigned char idx[20]; // Index in session cache SHA1 hash of certificate
-  TS_OCSP_CERTID *cid;   // Certificate ID for OCSP requests or nullptr if ID cannot be determined
-  char *uri;             // Responder details
-  char *certname;
-  char *user_agent;
-  ink_mutex stapling_mutex;
-  unsigned char resp_der[MAX_STAPLING_DER];
-  unsigned int resp_derlen;
-  bool is_prefetched;
-  bool is_expire;
-  time_t expire_time;
+  unsigned char   idx[20]; // Index in session cache SHA1 hash of certificate
+  TS_OCSP_CERTID *cid;     // Certificate ID for OCSP requests or nullptr if ID cannot be determined
+  char           *uri;     // Responder details
+  char           *certname;
+  char           *user_agent;
+  ink_mutex       stapling_mutex;
+  unsigned char   resp_der[MAX_STAPLING_DER];
+  unsigned int    resp_derlen;
+  bool            is_prefetched;
+  bool            is_expire;
+  time_t          expire_time;
 };
 
 class HTTPRequest : public Continuation
@@ -336,7 +336,7 @@ public:
     }
     this->add_header("Content-Type", content_type);
     char req_body_len_str[10];
-    int req_body_len_str_len;
+    int  req_body_len_str_len;
     req_body_len_str_len = ink_fast_itoa(this->_req_body_len, req_body_len_str, sizeof(req_body_len_str));
     this->add_header("Content-Length", 14, req_body_len_str, req_body_len_str_len);
 
@@ -386,10 +386,10 @@ public:
   }
 
 private:
-  FetchSM *_fsm            = nullptr;
-  unsigned char *_req_body = nullptr;
-  int _req_body_len        = 0;
-  int _result              = INT_MAX;
+  FetchSM       *_fsm          = nullptr;
+  unsigned char *_req_body     = nullptr;
+  int            _req_body_len = 0;
+  int            _result       = INT_MAX;
 
   void
   fetch()
@@ -419,11 +419,11 @@ TS_OCSP_CERTID *
 TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_BIT_STRING *issuerKey,
                     const ASN1_INTEGER *serialNumber)
 {
-  int nid;
-  unsigned int i;
-  X509_ALGOR *alg;
+  int             nid;
+  unsigned int    i;
+  X509_ALGOR     *alg;
   TS_OCSP_CERTID *cid = nullptr;
-  unsigned char md[EVP_MAX_MD_SIZE];
+  unsigned char   md[EVP_MAX_MD_SIZE];
 
   if ((cid = TS_OCSP_CERTID_new()) == nullptr)
     goto err;
@@ -467,9 +467,9 @@ err:
 TS_OCSP_CERTID *
 TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 {
-  const X509_NAME *iname;
+  const X509_NAME    *iname;
   const ASN1_INTEGER *serial;
-  ASN1_BIT_STRING *ikey;
+  ASN1_BIT_STRING    *ikey;
 
   if (!dgst)
     dgst = EVP_sha1();
@@ -487,7 +487,7 @@ TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 int
 TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *nextupd, long nsec, long maxsec)
 {
-  int ret = 1;
+  int    ret = 1;
   time_t t_now, t_tmp;
 
   time(&t_now);
@@ -630,7 +630,7 @@ int
 TS_OCSP_single_get0_status(TS_OCSP_SINGLERESP *single, int *reason, ASN1_GENERALIZEDTIME **revtime, ASN1_GENERALIZEDTIME **thisupd,
                            ASN1_GENERALIZEDTIME **nextupd)
 {
-  int ret;
+  int                 ret;
   TS_OCSP_CERTSTATUS *cst;
 
   if (single == nullptr)
@@ -660,7 +660,7 @@ int
 TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status, int *reason, ASN1_GENERALIZEDTIME **revtime,
                          ASN1_GENERALIZEDTIME **thisupd, ASN1_GENERALIZEDTIME **nextupd)
 {
-  int i = TS_OCSP_resp_find(bs, id, -1);
+  int                 i = TS_OCSP_resp_find(bs, id, -1);
   TS_OCSP_SINGLERESP *single;
 
   /* Maybe check for multiple responses and give an error? */
@@ -722,7 +722,7 @@ ssl_stapling_ex_init()
 static X509 *
 stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 {
-  X509 *issuer                = nullptr;
+  X509       *issuer          = nullptr;
   X509_STORE *st              = SSL_CTX_get_cert_store(ssl_ctx);
   STACK_OF(X509) *extra_certs = nullptr;
   X509_STORE_CTX *inctx       = X509_STORE_CTX_new();
@@ -772,9 +772,9 @@ end:
 static bool
 stapling_cache_response(TS_OCSP_RESPONSE *rsp, certinfo *cinf)
 {
-  unsigned char resp_der[MAX_STAPLING_DER];
+  unsigned char  resp_der[MAX_STAPLING_DER];
   unsigned char *p;
-  unsigned int resp_derlen;
+  unsigned int   resp_derlen;
 
   p           = resp_der;
   resp_derlen = i2d_TS_OCSP_RESPONSE(rsp, &p);
@@ -849,8 +849,8 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
       long rsp_buf_len = ftell(fp);
       if (rsp_buf_len >= 0) {
         rewind(fp);
-        unsigned char *rsp_buf = static_cast<unsigned char *>(malloc(rsp_buf_len));
-        auto read_len          = fread(rsp_buf, 1, rsp_buf_len, fp);
+        unsigned char *rsp_buf  = static_cast<unsigned char *>(malloc(rsp_buf_len));
+        auto           read_len = fread(rsp_buf, 1, rsp_buf_len, fp);
         if (read_len == static_cast<size_t>(rsp_buf_len)) {
           const unsigned char *p = rsp_buf;
           rsp                    = d2i_TS_OCSP_RESPONSE(nullptr, &p, rsp_buf_len);
@@ -952,10 +952,10 @@ stapling_get_cert_info(SSL_CTX *ctx)
 static int
 stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 {
-  int status            = TS_OCSP_CERTSTATUS_UNKNOWN, reason;
-  TS_OCSP_BASICRESP *bs = nullptr;
+  int                   status = TS_OCSP_CERTSTATUS_UNKNOWN, reason;
+  TS_OCSP_BASICRESP    *bs     = nullptr;
   ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
-  int response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
+  int                   response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
 
   // Check to see if response is an error.
   // If so we automatically accept it because it would have expired from the cache if it was time to retry.
@@ -1000,7 +1000,7 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 static TS_OCSP_RESPONSE *
 query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, int req_timeout, bool use_get)
 {
-  ink_hrtime start, end;
+  ink_hrtime        start, end;
   TS_OCSP_RESPONSE *resp = nullptr;
 
   start = ink_get_hrtime();
@@ -1050,9 +1050,9 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
 
   if (httpreq.is_success()) {
     // Parse the response
-    int len;
-    unsigned char *res     = httpreq.get_response_body(&len);
-    const unsigned char *p = res;
+    int                  len;
+    unsigned char       *res = httpreq.get_response_body(&len);
+    const unsigned char *p   = res;
     resp = reinterpret_cast<TS_OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(TS_OCSP_RESPONSE)));
 
     if (resp) {
@@ -1100,13 +1100,13 @@ static const unsigned char encoding_map[32] = {
 static IOBufferBlock *
 make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 {
-  unsigned char *ocsp_der = nullptr;
-  int ocsp_der_len        = -1;
-  char ocsp_encoded_der[MAX_OCSP_GET_ENCODED_LENGTH]; // Stores base64 encoded data
-  size_t ocsp_encoded_der_len = 0;
-  char ocsp_escaped[MAX_OCSP_GET_ENCODED_LENGTH];
-  int ocsp_escaped_len = -1;
-  IOBufferBlock *url   = nullptr;
+  unsigned char *ocsp_der     = nullptr;
+  int            ocsp_der_len = -1;
+  char           ocsp_encoded_der[MAX_OCSP_GET_ENCODED_LENGTH]; // Stores base64 encoded data
+  size_t         ocsp_encoded_der_len = 0;
+  char           ocsp_escaped[MAX_OCSP_GET_ENCODED_LENGTH];
+  int            ocsp_escaped_len = -1;
+  IOBufferBlock *url              = nullptr;
 
   ocsp_der_len = i2d_TS_OCSP_REQUEST(req, &ocsp_der);
 
@@ -1177,13 +1177,13 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 static bool
 stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 {
-  bool rv                    = true;
-  TS_OCSP_REQUEST *req       = nullptr;
-  TS_OCSP_CERTID *id         = nullptr;
-  int response_status        = 0;
-  IOBufferBlock *url_for_get = nullptr;
-  const char *url            = nullptr; // Final URL to use
-  bool use_get               = false;
+  bool             rv              = true;
+  TS_OCSP_REQUEST *req             = nullptr;
+  TS_OCSP_CERTID  *id              = nullptr;
+  int              response_status = 0;
+  IOBufferBlock   *url_for_get     = nullptr;
+  const char      *url             = nullptr; // Final URL to use
+  bool             use_get         = false;
 
   *prsp = nullptr;
 
@@ -1254,9 +1254,9 @@ done:
 void
 ocsp_update()
 {
-  shared_SSL_CTX ctx;
+  shared_SSL_CTX    ctx;
   TS_OCSP_RESPONSE *resp = nullptr;
-  time_t current_time;
+  time_t            current_time;
 
   SSLCertificateConfig::scoped_config certLookup;
 
@@ -1273,8 +1273,8 @@ ocsp_update()
       if (cc) {
         ctx = cc->getCtx();
         if (ctx) {
-          certinfo *cinf    = nullptr;
-          certinfo_map *map = stapling_get_cert_info(ctx.get());
+          certinfo     *cinf = nullptr;
+          certinfo_map *map  = stapling_get_cert_info(ctx.get());
           if (map) {
             // Walk over all certs associated with this CTX
             for (auto &iter : *map) {

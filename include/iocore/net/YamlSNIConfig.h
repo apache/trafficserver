@@ -90,39 +90,39 @@ struct YamlSNIConfig {
 
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!
-    uint8_t verify_client_level = 255;
-    std::string verify_client_ca_file;
-    std::string verify_client_ca_dir;
-    uint8_t host_sni_policy    = 255;
-    SNIRoutingType tunnel_type = SNIRoutingType::NONE;
-    std::string tunnel_destination;
-    Policy verify_server_policy       = Policy::UNSET;
-    Property verify_server_properties = Property::UNSET;
-    std::string client_cert;
-    std::string client_key;
-    std::string client_sni_policy;
-    std::string ip_allow;
-    bool protocol_unset = true;
-    unsigned long protocol_mask;
-    int valid_tls_version_min_in = -1;
-    int valid_tls_version_max_in = -1;
-    std::vector<int> tunnel_alpn{};
-    std::optional<int> http2_buffer_water_mark;
-    std::optional<int> http2_max_settings_frames_per_minute;
-    std::optional<int> http2_max_ping_frames_per_minute;
-    std::optional<int> http2_max_priority_frames_per_minute;
-    std::optional<int> http2_max_rst_stream_frames_per_minute;
-    std::optional<int> http2_max_continuation_frames_per_minute;
-    uint32_t server_max_early_data = 0;
-    std::optional<int> http2_initial_window_size_in;
+    uint8_t             verify_client_level = 255;
+    std::string         verify_client_ca_file;
+    std::string         verify_client_ca_dir;
+    uint8_t             host_sni_policy = 255;
+    SNIRoutingType      tunnel_type     = SNIRoutingType::NONE;
+    std::string         tunnel_destination;
+    Policy              verify_server_policy     = Policy::UNSET;
+    Property            verify_server_properties = Property::UNSET;
+    std::string         client_cert;
+    std::string         client_key;
+    std::string         client_sni_policy;
+    std::string         ip_allow;
+    bool                protocol_unset = true;
+    unsigned long       protocol_mask;
+    int                 valid_tls_version_min_in = -1;
+    int                 valid_tls_version_max_in = -1;
+    std::vector<int>    tunnel_alpn{};
+    std::optional<int>  http2_buffer_water_mark;
+    std::optional<int>  http2_max_settings_frames_per_minute;
+    std::optional<int>  http2_max_ping_frames_per_minute;
+    std::optional<int>  http2_max_priority_frames_per_minute;
+    std::optional<int>  http2_max_rst_stream_frames_per_minute;
+    std::optional<int>  http2_max_continuation_frames_per_minute;
+    uint32_t            server_max_early_data = 0;
+    std::optional<int>  http2_initial_window_size_in;
 
-    bool tunnel_prewarm_srv                  = false;
-    uint32_t tunnel_prewarm_min              = 0;
-    int32_t tunnel_prewarm_max               = -1;
-    double tunnel_prewarm_rate               = 1.0;
-    uint32_t tunnel_prewarm_connect_timeout  = 0;
-    uint32_t tunnel_prewarm_inactive_timeout = 0;
-    TunnelPreWarm tunnel_prewarm             = TunnelPreWarm::UNSET;
+    bool          tunnel_prewarm_srv              = false;
+    uint32_t      tunnel_prewarm_min              = 0;
+    int32_t       tunnel_prewarm_max              = -1;
+    double        tunnel_prewarm_rate             = 1.0;
+    uint32_t      tunnel_prewarm_connect_timeout  = 0;
+    uint32_t      tunnel_prewarm_inactive_timeout = 0;
+    TunnelPreWarm tunnel_prewarm                  = TunnelPreWarm::UNSET;
 
     using action_vector_t = std::vector<std::unique_ptr<ActionItem>>;
 

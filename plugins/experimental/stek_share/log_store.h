@@ -71,6 +71,6 @@ private:
   static nuraft::ptr<nuraft::log_entry> make_clone(const nuraft::ptr<nuraft::log_entry> &entry);
 
   std::map<uint64_t, nuraft::ptr<nuraft::log_entry>> logs_;
-  mutable std::mutex logs_lock_;
-  std::atomic<uint64_t> start_idx_;
+  mutable std::mutex                                 logs_lock_;
+  std::atomic<uint64_t>                              start_idx_;
 };

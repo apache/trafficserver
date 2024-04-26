@@ -78,7 +78,7 @@ load_file(const std::string &newname, struct stat *statdata, std::string &data_i
   size_t total_size = statdata->st_size;
   data_item.resize(total_size);
   size_t offset = 0;
-  char *data    = data_item.data();
+  char  *data   = data_item.data();
   while (offset < total_size) {
     int num_read = read(fd, data + offset, total_size - offset);
     if (num_read < 0) {

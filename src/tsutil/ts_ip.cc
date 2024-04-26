@@ -69,8 +69,8 @@ getbestaddrinfo(swoc::TextView name)
     GL  // Global.
   } spot_type = NA,
     ip4_type = NA, ip6_type = NA;
-  addrinfo ai_hints{};
-  addrinfo *ai_result;
+  addrinfo   ai_hints{};
+  addrinfo  *ai_result;
   IPAddrPair zret;
 
   // Do the resolution

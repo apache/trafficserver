@@ -31,8 +31,8 @@
 #endif
 #include "iocore/aio/AIO_fault_injection.h"
 
-int cache_vols            = 1;
-bool reuse_existing_cache = false;
+int        cache_vols           = 1;
+bool       reuse_existing_cache = false;
 extern int gndisks;
 
 class CacheCommInit : public CacheInit

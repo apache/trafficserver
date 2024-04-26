@@ -102,25 +102,25 @@ struct HealthChecks {
 
 struct NHProtocol {
   NHSchemeType scheme = NH_SCHEME_NONE;
-  uint32_t port       = 0;
-  std::string health_check_url;
+  uint32_t     port   = 0;
+  std::string  health_check_url;
 };
 
 struct HostRecordCfg {
-  std::string hostname;
+  std::string                              hostname;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
-  float weight{0};
-  std::string hash_string;
+  float                                    weight{0};
+  std::string                              hash_string;
 };
 
 struct HostRecord : public ATSConsistentHashNode, public HostRecordCfg {
-  std::mutex _mutex;
-  std::atomic<time_t> failedAt{0};
+  std::mutex            _mutex;
+  std::atomic<time_t>   failedAt{0};
   std::atomic<uint32_t> failCount{0};
-  std::atomic<time_t> upAt{0};
-  int host_index{-1};
-  int group_index{-1};
-  bool self{false};
+  std::atomic<time_t>   upAt{0};
+  int                   host_index{-1};
+  int                   group_index{-1};
+  bool                  self{false};
 
   explicit HostRecord(HostRecordCfg &&o) : HostRecordCfg(std::move(o)) {}
 
@@ -198,9 +198,9 @@ public:
   NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type, ts::Yaml::Map &n);
   virtual ~NextHopSelectionStrategy(){};
   virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
-  void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
-                   const time_t now = 0);
-  bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
+  void         markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+                           const time_t now = 0);
+  bool         nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
 
   void setHostHeader(TSHttpTxn txnp, const char *hostname);
 
@@ -208,26 +208,26 @@ public:
 
   void retryComplete(TSHttpTxn txn, const char *hostname, const int port);
 
-  std::string strategy_name;
-  bool go_direct           = true;
-  bool parent_is_proxy     = true;
-  bool ignore_self_detect  = false;
-  bool cache_peer_result   = true;
-  bool host_override       = false;
-  bool use_pristine        = false;
-  NHPolicyType policy_type = NH_UNDEFINED;
-  NHSchemeType scheme      = NH_SCHEME_NONE;
-  NHRingMode ring_mode     = NH_ALTERNATE_RING;
-  ResponseCodes resp_codes;     // simple retry codes
-  ResponseCodes markdown_codes; // unavailable server retry and markdown codes
-  HealthChecks health_checks;
-  NextHopHealthStatus passive_health;
+  std::string                                           strategy_name;
+  bool                                                  go_direct          = true;
+  bool                                                  parent_is_proxy    = true;
+  bool                                                  ignore_self_detect = false;
+  bool                                                  cache_peer_result  = true;
+  bool                                                  host_override      = false;
+  bool                                                  use_pristine       = false;
+  NHPolicyType                                          policy_type        = NH_UNDEFINED;
+  NHSchemeType                                          scheme             = NH_SCHEME_NONE;
+  NHRingMode                                            ring_mode          = NH_ALTERNATE_RING;
+  ResponseCodes                                         resp_codes;     // simple retry codes
+  ResponseCodes                                         markdown_codes; // unavailable server retry and markdown codes
+  HealthChecks                                          health_checks;
+  NextHopHealthStatus                                   passive_health;
   std::vector<std::vector<std::shared_ptr<HostRecord>>> host_groups;
-  uint32_t max_simple_retries      = 1;
-  uint32_t max_unavailable_retries = 1;
-  uint32_t groups                  = 0;
-  uint32_t grp_index               = 0;
-  uint32_t hst_index               = 0;
-  uint32_t num_parents             = 0;
-  uint32_t distance                = 0; // index into the strategies list.
+  uint32_t                                              max_simple_retries      = 1;
+  uint32_t                                              max_unavailable_retries = 1;
+  uint32_t                                              groups                  = 0;
+  uint32_t                                              grp_index               = 0;
+  uint32_t                                              hst_index               = 0;
+  uint32_t                                              num_parents             = 0;
+  uint32_t                                              distance                = 0; // index into the strategies list.
 };

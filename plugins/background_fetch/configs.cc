@@ -99,7 +99,7 @@ BgFetchConfig::readConfig(const char *config_file)
   Dbg(Bg_dbg_ctl, "chosen config file is at: %s", path.c_str());
 
   std::error_code ec;
-  auto content = swoc::file::load(path, ec);
+  auto            content = swoc::file::load(path, ec);
   if (ec) {
     swoc::bwprint(ts::bw_dbg, "[{}] invalid config file: {} {}", PLUGIN_NAME, path, ec);
     TSError("%s", ts::bw_dbg.c_str());
@@ -159,7 +159,7 @@ BgFetchConfig::readConfig(const char *config_file)
           }
           ++cfg_value; // Drop leading character.
           swoc::TextView parsed;
-          auto n = swoc::svtou(cfg_value, &parsed);
+          auto           n = swoc::svtou(cfg_value, &parsed);
           if (parsed.size() != cfg_value.size()) {
             TSError("[%s] invalid Content-Length size value %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
                     cfg_value.data());

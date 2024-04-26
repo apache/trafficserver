@@ -75,7 +75,7 @@ LogFilter::~LogFilter()
 LogFilter *
 LogFilter::parse(const char *name, Action action, const char *condition)
 {
-  SimpleTokenizer tok(condition);
+  SimpleTokenizer           tok(condition);
   std::unique_ptr<LogField> logfield;
 
   ink_release_assert(action != N_ACTIONS);
@@ -160,7 +160,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   // now create the correct LogFilter
   LogField::Type field_type = logfield->type();
-  LogFilter *filter;
+  LogFilter     *filter;
 
   switch (field_type) {
   case LogField::sINT:
@@ -225,10 +225,10 @@ LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::A
 {
   // parse the comma-separated list of values and construct array
   //
-  char **val_array = nullptr;
-  size_t i         = 0;
+  char          **val_array = nullptr;
+  size_t          i         = 0;
   SimpleTokenizer tok(values, ',');
-  size_t n = tok.getNumTokensRemaining();
+  size_t          n = tok.getNumTokensRemaining();
   if (n) {
     val_array = new char *[n];
     char *t;
@@ -319,13 +319,13 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
   }
 
   static const unsigned BUFSIZE = 1024;
-  char small_buf[BUFSIZE];
-  char small_buf_upper[BUFSIZE];
-  char *big_buf       = nullptr;
-  char *big_buf_upper = nullptr;
-  char *buf           = small_buf;
-  char *buf_upper     = small_buf_upper;
-  size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
+  char                  small_buf[BUFSIZE];
+  char                  small_buf_upper[BUFSIZE];
+  char                 *big_buf       = nullptr;
+  char                 *big_buf_upper = nullptr;
+  char                 *buf           = small_buf;
+  char                 *buf_upper     = small_buf_upper;
+  size_t                marsh_len     = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = static_cast<char *>(ats_malloc(marsh_len));
@@ -402,13 +402,13 @@ LogFilterString::toss_this_entry(LogAccess *lad)
   }
 
   static const unsigned BUFSIZE = 1024;
-  char small_buf[BUFSIZE];
-  char small_buf_upper[BUFSIZE];
-  char *big_buf       = nullptr;
-  char *big_buf_upper = nullptr;
-  char *buf           = small_buf;
-  char *buf_upper     = small_buf_upper;
-  size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
+  char                  small_buf[BUFSIZE];
+  char                  small_buf_upper[BUFSIZE];
+  char                 *big_buf       = nullptr;
+  char                 *big_buf_upper = nullptr;
+  char                 *buf           = small_buf;
+  char                 *buf_upper     = small_buf_upper;
+  size_t                marsh_len     = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = static_cast<char *>(ats_malloc(static_cast<unsigned int>(marsh_len)));
@@ -541,13 +541,13 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
 {
   // parse the comma-separated list of values and construct array
   //
-  int64_t *val_array = nullptr;
-  size_t i           = 0;
+  int64_t        *val_array = nullptr;
+  size_t          i         = 0;
   SimpleTokenizer tok(values, ',');
-  size_t n = tok.getNumTokensRemaining();
-  auto field_map{field->map()}; // because clang-analyzer freaks out if this is inlined.
-                                // It doesn't realize the value is held in place by the smart
-                                // pointer in @c field.
+  size_t          n = tok.getNumTokensRemaining();
+  auto            field_map{field->map()}; // because clang-analyzer freaks out if this is inlined.
+                                           // It doesn't realize the value is held in place by the smart
+                                           // pointer in @c field.
 
   if (n) {
     val_array = new int64_t[n];
@@ -628,7 +628,7 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
     return false;
   }
 
-  bool cond_satisfied = false;
+  bool    cond_satisfied = false;
   int64_t value;
 
   m_field->marshal(lad, reinterpret_cast<char *>(&value));
@@ -666,7 +666,7 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
     return false;
   }
 
-  bool cond_satisfied = false;
+  bool    cond_satisfied = false;
   int64_t value;
 
   m_field->marshal(lad, reinterpret_cast<char *>(&value));
@@ -737,8 +737,8 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
   : LogFilter(name, field, action, oper)
 {
   swoc::TextView text(swoc::TextView(values).ltrim_if(&isspace));
-  swoc::Errata errata;
-  unsigned n = 0; // # of valid specifications.
+  swoc::Errata   errata;
+  unsigned       n = 0; // # of valid specifications.
 
   if (text.empty()) {
     Warning("No values in the definition of filter %s.", name);
@@ -864,7 +864,7 @@ LogFilterIP::display(FILE *fd)
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
     std::string s;
-    bool comma_p = false;
+    bool        comma_p = false;
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
     for (auto r : m_addrs) {
       swoc::bwprint(s, "{}{::c}", swoc::bwf::If(comma_p, ","), r);

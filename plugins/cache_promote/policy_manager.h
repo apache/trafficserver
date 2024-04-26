@@ -38,7 +38,7 @@ public:
 
   // This is the main entry point.
   PromotionPolicy *coalescePolicy(PromotionPolicy *policy);
-  void releasePolicy(PromotionPolicy *policy);
+  void             releasePolicy(PromotionPolicy *policy);
 
   // Don't allow copy-constructors.
   PolicyManager(PolicyManager const &)  = delete;

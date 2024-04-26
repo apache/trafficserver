@@ -74,10 +74,10 @@ namespace inliner
   Handler::parse()
   {
     assert(reader_ != nullptr);
-    TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
-    int64_t offset        = 0;
+    TSIOBufferBlock block  = TSIOBufferReaderStart(reader_);
+    int64_t         offset = 0;
     while (block != nullptr) {
-      int64_t length           = 0;
+      int64_t           length = 0;
       const char *const buffer = TSIOBufferBlockReadStart(block, reader_, &length);
       assert(buffer != nullptr);
       if (length > 0) {

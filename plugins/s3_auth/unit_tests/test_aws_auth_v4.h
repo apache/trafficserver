@@ -117,18 +117,18 @@ public:
     return HeaderIterator(_headers.end());
   }
 
-  String _method;
-  String _host;
-  String _path;
-  String _params;
-  String _query;
+  String         _method;
+  String         _host;
+  String         _path;
+  String         _params;
+  String         _query;
   HeaderMultiMap _headers;
 };
 
 /* Expose the following methods only to the unit tests */
 String base16Encode(const char *in, size_t inLen);
 String uriEncode(const String &in, bool isObjectName = false);
-bool isUriEncoded(const String &in, bool isObjectName = false);
+bool   isUriEncoded(const String &in, bool isObjectName = false);
 String lowercase(const char *in, size_t inLen);
 String trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen);
 

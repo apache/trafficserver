@@ -53,10 +53,10 @@ ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1) : k0(key0), k1(key1
 void
 ATSHash64Sip24::update(const void *data, size_t len)
 {
-  size_t i, blocks;
+  size_t         i, blocks;
   unsigned char *m;
-  uint64_t mi;
-  uint8_t block_off = 0;
+  uint64_t       mi;
+  uint8_t        block_off = 0;
 
   if (!finalized) {
     m          = (unsigned char *)data;
@@ -95,7 +95,7 @@ void
 ATSHash64Sip24::final()
 {
   uint64_t last7;
-  int i;
+  int      i;
 
   if (!finalized) {
     last7 = static_cast<uint64_t>(total_len & 0xff) << 56;

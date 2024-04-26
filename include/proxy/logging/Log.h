@@ -78,9 +78,9 @@ class LogFlushData
 public:
   LINK(LogFlushData, link);
   Ptr<LogFile> m_logfile;
-  LogBuffer *logbuffer = nullptr;
-  void *m_data;
-  int m_len;
+  LogBuffer   *logbuffer = nullptr;
+  void        *m_data;
+  int          m_len;
 
   LogFlushData(LogFile *logfile, void *data, int len = -1) : m_logfile(logfile), m_data(data), m_len(len) {}
   ~LogFlushData()
@@ -180,17 +180,17 @@ public:
    * This is the safe, fully initialed LogConfig object to query against when
    * performing logging operations.
    */
-  static LogConfig *config;
-  static LogFieldList global_field_list;
+  static LogConfig                                  *config;
+  static LogFieldList                                global_field_list;
   static std::unordered_map<std::string, LogField *> field_symbol_hash;
-  static LoggingMode logging_mode;
+  static LoggingMode                                 logging_mode;
 
   // logging thread stuff
-  static EventNotify *preproc_notify;
-  static void *preproc_thread_main(void *args);
-  static EventNotify *flush_notify;
+  static EventNotify   *preproc_notify;
+  static void          *preproc_thread_main(void *args);
+  static EventNotify   *flush_notify;
   static InkAtomicList *flush_data_list;
-  static void *flush_thread_main(void *args);
+  static void          *flush_thread_main(void *args);
 
   static int preproc_threads;
 
@@ -215,10 +215,10 @@ private:
   static void create_threads();
   static void init_when_enabled();
 
-  static int init_status;
-  static int config_flags;
-  static bool logging_mode_changed;
-  static bool log_rotate_signal_received;
+  static int      init_status;
+  static int      config_flags;
+  static bool     logging_mode_changed;
+  static bool     log_rotate_signal_received;
   static uint32_t periodic_tasks_interval;
 };
 

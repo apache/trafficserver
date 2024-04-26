@@ -26,12 +26,12 @@
 #include "tscore/ink_resource.h"
 #include <execinfo.h>
 
-int res_track_memory          = 0; // Disabled by default
+int      res_track_memory     = 0; // Disabled by default
 uint64_t ssl_memory_allocated = 0;
 uint64_t ssl_memory_freed     = 0;
 
 std::map<const char *, Resource *> ResourceTracker::_resourceMap;
-ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
+ink_mutex                          ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Individual resource to keep track of.  A map of these are in the ResourceTracker.
@@ -86,11 +86,11 @@ public:
   }
 
 private:
-  int64_t _incrementCount = 0;
-  int64_t _decrementCount = 0;
-  int64_t _value          = 0;
-  const void *_symbol     = nullptr;
-  char _name[128];
+  int64_t     _incrementCount = 0;
+  int64_t     _decrementCount = 0;
+  int64_t     _value          = 0;
+  const void *_symbol         = nullptr;
+  char        _name[128];
 };
 
 void
@@ -107,7 +107,7 @@ Resource::increment(const int64_t size)
 void
 ResourceTracker::increment(const char *name, const int64_t size)
 {
-  Resource &resource      = lookup(name);
+  Resource   &resource    = lookup(name);
   const char *lookup_name = resource.getName();
   if (lookup_name[0] == '\0') {
     resource.setName(name);
@@ -158,8 +158,8 @@ ResourceTracker::dump(FILE *fd)
     fprintf(fd, "-----------|------------|----------------------|------------|"
                 "--------------------------------------------------------------------\n");
     for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
-      const Resource &resource = *it->second;
-      int64_t average_size     = 0;
+      const Resource &resource     = *it->second;
+      int64_t         average_size = 0;
       if (resource.getIncrement() - resource.getDecrement() > 0) {
         average_size = resource.getValue() / (resource.getIncrement() - resource.getDecrement());
       }

@@ -35,8 +35,8 @@ procfd_open(pid_t pid, const char *fname)
 static char *
 procfd_readlink(pid_t pid, const char *fname)
 {
-  char path[128];
-  ssize_t nbytes;
+  char           path[128];
+  ssize_t        nbytes;
   ats_scoped_str resolved(static_cast<char *>(ats_malloc(MAXPATHLEN + 1)));
 
   snprintf(path, sizeof(path), "/proc/%ld/%s", static_cast<long>(pid), fname);
@@ -55,7 +55,7 @@ static bool
 write_procfd_file(const char *filename, const char *label, FILE *fp, const crashlog_target &target)
 {
   ats_scoped_fd fd;
-  TextBuffer text(0);
+  TextBuffer    text(0);
   fd = procfd_open(target.pid, filename);
   if (fd != -1) {
     text.slurp(fd);
@@ -115,9 +115,9 @@ crashlog_write_exename(FILE *fp, const crashlog_target &target)
 bool
 crashlog_write_procname(FILE *fp, const crashlog_target &target)
 {
-  ats_scoped_fd fd;
+  ats_scoped_fd  fd;
   ats_scoped_str str;
-  TextBuffer text(0);
+  TextBuffer     text(0);
 
   fd = procfd_open(target.pid, "comm");
   if (fd != -1) {

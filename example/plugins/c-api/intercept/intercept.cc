@@ -71,8 +71,8 @@ static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
 // a write). We need two of these for each TSVConn; one to push
 // data into the TSVConn and one to pull data out.
 struct InterceptIOChannel {
-  TSVIO vio               = nullptr;
-  TSIOBuffer iobuf        = nullptr;
+  TSVIO            vio    = nullptr;
+  TSIOBuffer       iobuf  = nullptr;
   TSIOBufferReader reader = nullptr;
 
   InterceptIOChannel() {}
@@ -116,7 +116,7 @@ struct InterceptIOChannel {
 // A simple encapsulation of the IO state of a TSVConn. We need the TSVConn itself, and the
 // IO metadata for the read side and the write side.
 struct InterceptIO {
-  TSVConn vc = nullptr;
+  TSVConn            vc = nullptr;
   InterceptIOChannel readio;
   InterceptIOChannel writeio;
 
@@ -191,17 +191,17 @@ InterceptAttemptDestroy(InterceptState *istate, TSCont contp)
 
 union socket_type {
   struct sockaddr_storage storage;
-  struct sockaddr sa;
-  struct sockaddr_in sin;
-  struct sockaddr_in6 sin6;
+  struct sockaddr         sa;
+  struct sockaddr_in      sin;
+  struct sockaddr_in6     sin6;
 };
 
 union argument_type {
-  void *ptr;
-  intptr_t ecode;
-  TSVConn vc;
-  TSVIO vio;
-  TSHttpTxn txn;
+  void           *ptr;
+  intptr_t        ecode;
+  TSVConn         vc;
+  TSVIO           vio;
+  TSHttpTxn       txn;
   InterceptState *istate;
 
   argument_type(void *_p) : ptr(_p) {}
@@ -237,11 +237,11 @@ static int64_t
 InterceptTransferData(InterceptIO *from, InterceptIO *to)
 {
   TSIOBufferBlock block;
-  int64_t consumed = 0;
+  int64_t         consumed = 0;
 
   // Walk the list of buffer blocks in from the read VIO.
   for (block = TSIOBufferReaderStart(from->readio.reader); block; block = TSIOBufferBlockNext(block)) {
-    int64_t remain = 0;
+    int64_t     remain = 0;
     const char *ptr;
 
     VDEBUG("attempting to transfer %" PRId64 " available bytes", TSIOBufferBlockReadAvail(block, from->readio.reader));
@@ -285,11 +285,11 @@ InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
     // Set up the server intercept. We have the original
     // TSHttpTxn from the continuation. We need to connect to the
     // real origin and get ready to shuffle data around.
-    char buf[INET_ADDRSTRLEN];
-    socket_type addr;
-    argument_type cdata(TSContDataGet(contp));
+    char            buf[INET_ADDRSTRLEN];
+    socket_type     addr;
+    argument_type   cdata(TSContDataGet(contp));
     InterceptState *istate = new InterceptState();
-    int fd                 = -1;
+    int             fd     = -1;
 
     // This event is delivered by the continuation that we
     // attached in InterceptTxnHook, so the continuation data is
@@ -386,10 +386,10 @@ InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_VCONN_READ_READY: {
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc          = TSVIOVConnGet(arg.vio);
-    InterceptIO *from   = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *to     = InterceptGetOtherSide(cdata.istate, vc);
-    int64_t nbytes;
+    TSVConn       vc    = TSVIOVConnGet(arg.vio);
+    InterceptIO  *from  = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO  *to    = InterceptGetOtherSide(cdata.istate, vc);
+    int64_t       nbytes;
 
     VIODEBUG(arg.vio, "ndone=%" PRId64 " ntodo=%" PRId64, TSVIONDoneGet(arg.vio), TSVIONTodoGet(arg.vio));
     VDEBUG("reading vio=%p vc=%p, istate=%p is bound to client vc=%p and server vc=%p", arg.vio, TSVIOVConnGet(arg.vio),
@@ -432,9 +432,9 @@ InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
     // The exception is where one side of the proxied connection
     // has been closed. Then we want to close the other side.
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc          = TSVIOVConnGet(arg.vio);
-    InterceptIO *to     = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *from   = InterceptGetOtherSide(cdata.istate, vc);
+    TSVConn       vc    = TSVIOVConnGet(arg.vio);
+    InterceptIO  *to    = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO  *from  = InterceptGetOtherSide(cdata.istate, vc);
 
     // If the other side is closed, close this side too, but only if there
     // we have drained the write buffer.
@@ -460,7 +460,7 @@ InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
     // to receiving EOS from the intercepted origin server, and
     // when handling errors.
 
-    TSVConn vc          = TSVIOVConnGet(arg.vio);
+    TSVConn       vc    = TSVIOVConnGet(arg.vio);
     argument_type cdata = TSContDataGet(contp);
 
     InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);

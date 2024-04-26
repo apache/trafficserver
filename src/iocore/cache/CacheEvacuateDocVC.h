@@ -53,7 +53,7 @@ extern ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator;
 inline CacheEvacuateDocVC *
 new_CacheEvacuateDocVC(Continuation *cont)
 {
-  EThread *t            = cont->mutex->thread_holding;
+  EThread            *t = cont->mutex->thread_holding;
   CacheEvacuateDocVC *c = THREAD_ALLOC(cacheEvacuateDocVConnectionAllocator, t);
   c->vector.data.data   = &c->vector.data.fast_data[0];
   c->_action            = cont;

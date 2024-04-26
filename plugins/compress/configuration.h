@@ -136,16 +136,16 @@ public:
   bool is_content_type_compressible(const char *content_type, int content_type_length);
   bool is_status_code_compressible(const TSHttpStatus status_code) const;
   void add_compression_algorithms(std::string &algorithms);
-  int compression_algorithms();
+  int  compression_algorithms();
 
 private:
-  std::string host_;
-  bool enabled_;
-  bool cache_;
-  bool range_request_;
-  bool remove_accept_encoding_;
-  bool flush_;
-  int compression_algorithms_;
+  std::string  host_;
+  bool         enabled_;
+  bool         cache_;
+  bool         range_request_;
+  bool         remove_accept_encoding_;
+  bool         flush_;
+  int          compression_algorithms_;
   unsigned int minimum_content_length_;
 
   StringContainer compressible_content_types_;
@@ -163,7 +163,7 @@ class Configuration : private atscppapi::noncopyable
 
 public:
   static Configuration *Parse(const char *path);
-  HostConfiguration *find(const char *host, int host_length);
+  HostConfiguration    *find(const char *host, int host_length);
 
 private:
   explicit Configuration() {}

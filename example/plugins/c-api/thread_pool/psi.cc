@@ -70,25 +70,25 @@ enum ParseState {
 };
 
 struct ContData {
-  unsigned int magic;
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  unsigned int     magic;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
 
-  TSIOBuffer psi_buffer;
+  TSIOBuffer       psi_buffer;
   TSIOBufferReader psi_reader;
-  char psi_filename[PSI_FILENAME_MAX_SIZE + 128];
-  int psi_filename_len;
-  int psi_success;
+  char             psi_filename[PSI_FILENAME_MAX_SIZE + 128];
+  int              psi_filename_len;
+  int              psi_success;
 
   ParseState parse_state;
 
   PluginState state;
-  int transform_bytes;
+  int         transform_bytes;
 };
 
 struct TryLockData {
-  TSCont contp;
+  TSCont  contp;
   TSEvent event;
 };
 
@@ -101,7 +101,7 @@ enum StrOperationResult {
 extern Queue job_queue;
 
 static TSTextLogObject ts_log;
-static char psi_directory[PSI_PATH_MAX_SIZE];
+static char            psi_directory[PSI_PATH_MAX_SIZE];
 
 static int trylock_handler(TSCont contp, TSEvent event, void *edata);
 
@@ -204,9 +204,9 @@ contDataGet(TSCont cont)
 static StrOperationResult
 strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 {
-  int index             = 0;
+  int             index = 0;
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);
-  int slen              = strlen(pattern);
+  int             slen  = strlen(pattern);
 
   if (slen <= 0) {
     return STR_FAIL;
@@ -216,7 +216,7 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 
   /* Loop thru each block while we've not yet found the pattern */
   while ((block != nullptr) && (index < slen)) {
-    int64_t blocklen;
+    int64_t     blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
     const char *ptr;
 
@@ -270,11 +270,11 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 static int
 strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern, char *buffer, int *buflen)
 {
-  int buf_idx       = 0;
-  int p_idx         = 0;
-  int nbytes_so_far = 0;
-  int plen          = strlen(end_pattern);
-  const char *ptr;
+  int             buf_idx       = 0;
+  int             p_idx         = 0;
+  int             nbytes_so_far = 0;
+  int             plen          = strlen(end_pattern);
+  const char     *ptr;
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);
 
   if (plen <= 0) {
@@ -283,7 +283,7 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
 
   /* Now start extraction */
   while ((block != nullptr) && (p_idx < plen) && (buf_idx < PSI_FILENAME_MAX_SIZE)) {
-    int64_t blocklen;
+    int64_t     blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
 
     for (ptr = blockptr; ptr < blockptr + blocklen; ptr++, nbytes_so_far++) {
@@ -354,8 +354,8 @@ static int
 parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsume, int *towrite)
 {
   ContData *data;
-  int nparse = 0;
-  int status;
+  int       nparse = 0;
+  int       status;
 
   data = contDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
@@ -459,8 +459,8 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
 {
 #define BUFFER_SIZE 1024
   ContData *data;
-  TSFile filep;
-  char inc_file[PSI_PATH_MAX_SIZE + PSI_FILENAME_MAX_SIZE];
+  TSFile    filep;
+  char      inc_file[PSI_PATH_MAX_SIZE + PSI_FILENAME_MAX_SIZE];
 
   /* We manipulate plugin continuation data from a separate thread.
      Grab mutex to avoid concurrent access */
@@ -492,9 +492,9 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
       while (ntodo > 0) {
         /* TSIOBufferStart allocates more blocks if required */
         TSIOBufferBlock block = TSIOBufferStart(data->psi_buffer);
-        int64_t avail;
-        char *ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-        int64_t towrite = MIN(ntodo, avail);
+        int64_t         avail;
+        char           *ptr_block = TSIOBufferBlockWriteStart(block, &avail);
+        int64_t         towrite   = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
         TSIOBufferProduce(data->psi_buffer, towrite);
@@ -545,9 +545,9 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
 static int
 wake_up_streams(TSCont contp)
 {
-  TSVIO input_vio;
+  TSVIO     input_vio;
   ContData *data;
-  int ntodo;
+  int       ntodo;
 
   data = contDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
@@ -586,10 +586,10 @@ wake_up_streams(TSCont contp)
 static int
 handle_transform(TSCont contp)
 {
-  TSVConn output_conn;
-  TSVIO input_vio;
+  TSVConn   output_conn;
+  TSVIO     input_vio;
   ContData *data;
-  int toread, toconsume = 0, towrite = 0;
+  int       toread, toconsume = 0, towrite = 0;
 
   /* Get the output (downstream) vconnection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
@@ -620,7 +620,7 @@ handle_transform(TSCont contp)
 
   if (toread > 0) {
     TSIOBufferReader input_reader = TSVIOReaderGet(input_vio);
-    int avail                     = TSIOBufferReaderAvail(input_reader);
+    int              avail        = TSIOBufferReaderAvail(input_reader);
 
     /* There are some data available for reading. Let's parse it */
     if (avail > 0) {
@@ -737,7 +737,7 @@ static int
 transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   ContData *data;
-  int state, retval;
+  int       state, retval;
 
   /* This section will be called by both TS internal
      and the thread. Protect it with a mutex to avoid
@@ -746,7 +746,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
   /* Handle TryLock result */
   if (TSMutexLockTry(TSContMutexGet(contp)) != TS_SUCCESS) {
     TSCont c = TSContCreate(trylock_handler, nullptr);
-    auto d   = TSRalloc<TryLockData>();
+    auto   d = TSRalloc<TryLockData>();
 
     d->contp = contp;
     d->event = event;
@@ -855,8 +855,8 @@ transformable(TSHttpTxn txnp)
 {
   /*  We are only interested in transforming "200 OK" responses
      with a Content-Type: text/ header and with X-Psi header */
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpStatus resp_status;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
@@ -906,7 +906,7 @@ transformable(TSHttpTxn txnp)
 static int
 transform_add(TSHttpTxn txnp)
 {
-  TSCont contp;
+  TSCont    contp;
   ContData *data;
 
   contp = TSTransformCreate(transform_handler, txnp);
@@ -962,8 +962,8 @@ void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
-  int i;
-  TSReturnCode retval;
+  int                      i;
+  TSReturnCode             retval;
 
   info.plugin_name   = "psi";
   info.vendor_name   = "Apache";

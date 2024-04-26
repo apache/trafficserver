@@ -66,7 +66,7 @@ main(int argc, char **argv)
   /* Test getting a list of variables */
   printf("\nTest getting variables list\n");
   printf("----------------------------------------------------------------\n");
-  int count = 0;
+  int    count = 0;
   char **variable_list;
   new_rec_tree->rec_tree_get_list("proxy.process", &variable_list, &count);
   for (int i = 0; i < count; i++) {

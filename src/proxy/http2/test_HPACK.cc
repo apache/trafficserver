@@ -38,9 +38,9 @@ const static int MAX_TABLE_SIZE          = 4096;
 
 using namespace std;
 
-static int cmd_disable_freelist = 0;
-static char cmd_input_dir[512]  = "";
-static char cmd_output_dir[512] = "";
+static int  cmd_disable_freelist = 0;
+static char cmd_input_dir[512]   = "";
+static char cmd_output_dir[512]  = "";
 
 static const ArgumentDescription argument_descriptions[] = {
   {"disable_freelist",  'f', "Disable the freelist memory allocator",                   "T",    &cmd_disable_freelist,  nullptr, nullptr},
@@ -58,10 +58,10 @@ string input_dir  = "./hpack-tests/";
 string output_dir = "./hpack-tests/results/";
 string filename_in;
 string filename_out;
-int offset_in  = input_dir.length() + 6;
-int offset_out = output_dir.length() + 6;
-int first      = 0;
-int last       = 0;
+int    offset_in  = input_dir.length() + 6;
+int    offset_out = output_dir.length() + 6;
+int    first      = 0;
+int    last       = 0;
 
 int
 unpack(string &packed, uint8_t *unpacked)
@@ -168,17 +168,17 @@ int
 test_decoding(const string &filename)
 {
   HpackIndexingTable indexing_table(INITIAL_TABLE_SIZE);
-  string line, name, value;
-  uint8_t unpacked[8192];
-  size_t unpacked_len;
-  int result = -1;
-  HTTPHdr original, decoded;
-  MIMEField *field;
+  string             line, name, value;
+  uint8_t            unpacked[8192];
+  size_t             unpacked_len;
+  int                result = -1;
+  HTTPHdr            original, decoded;
+  MIMEField         *field;
 
   decoded.create(HTTP_TYPE_REQUEST);
   original.create(HTTP_TYPE_REQUEST);
 
-  int seqnum = -1;
+  int      seqnum = -1;
   ifstream ifs(filename);
   while (ifs && getline(ifs, line) && result == -1) {
     switch (line.find_first_of('"')) {
@@ -221,14 +221,14 @@ int
 test_encoding(const string &filename_in, const string &filename_out)
 {
   HpackIndexingTable indexing_table_for_encoding(INITIAL_TABLE_SIZE), indexing_table_for_decoding(INITIAL_TABLE_SIZE);
-  string line, name, value;
-  uint8_t encoded[8192];
-  const uint64_t encoded_len = sizeof(encoded);
-  string packed;
-  int64_t written;
-  int result = -1;
-  HTTPHdr original, decoded;
-  MIMEField *field;
+  string             line, name, value;
+  uint8_t            encoded[8192];
+  const uint64_t     encoded_len = sizeof(encoded);
+  string             packed;
+  int64_t            written;
+  int                result = -1;
+  HTTPHdr            original, decoded;
+  MIMEField         *field;
 
   decoded.create(HTTP_TYPE_REQUEST);
   original.create(HTTP_TYPE_REQUEST);
@@ -237,7 +237,7 @@ test_encoding(const string &filename_in, const string &filename_out)
   ofs << "{" << endl;
   ofs << "  \"cases\": [" << endl;
 
-  int seqnum = -1;
+  int      seqnum = -1;
   ifstream ifs(filename_in);
   while (ifs && getline(ifs, line) && result == -1) {
     switch (line.find_first_of('"')) {
@@ -327,14 +327,14 @@ prepare()
   offset_out   = output_dir.length() + 6;
 
   struct dirent *d;
-  DIR *dir = opendir(input_dir.c_str());
+  DIR           *dir = opendir(input_dir.c_str());
 
   if (dir == nullptr) {
     cerr << "Cannot open " << input_dir << endl;
     return 1;
   }
   struct stat st;
-  char name[PATH_MAX + 1] = "";
+  char        name[PATH_MAX + 1] = "";
   strcat(name, input_dir.c_str());
   while ((d = readdir(dir)) != nullptr) {
     name[input_dir.length()] = '\0';

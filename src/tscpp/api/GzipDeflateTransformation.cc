@@ -33,19 +33,19 @@ using std::vector;
 
 namespace
 {
-const int GZIP_MEM_LEVEL  = 8;
-const int WINDOW_BITS     = 31; // Always use 31 for gzip.
-const unsigned int ONE_KB = 1024;
+const int          GZIP_MEM_LEVEL = 8;
+const int          WINDOW_BITS    = 31; // Always use 31 for gzip.
+const unsigned int ONE_KB         = 1024;
 } // namespace
 
 /**
  * @private
  */
 struct atscppapi::transformations::GzipDeflateTransformationState : noncopyable {
-  z_stream z_stream_;
-  bool z_stream_initialized_;
+  z_stream                   z_stream_;
+  bool                       z_stream_initialized_;
   TransformationPlugin::Type transformation_type_;
-  int64_t bytes_produced_;
+  int64_t                    bytes_produced_;
 
   GzipDeflateTransformationState(TransformationPlugin::Type type)
     : z_stream_initialized_(false), transformation_type_(type), bytes_produced_(0)
@@ -98,7 +98,7 @@ GzipDeflateTransformation::consume(std::string_view data)
 
   // For small payloads the size can actually be greater than the original input
   // so we'll use twice the original size to avoid needless repeated calls to deflate.
-  unsigned long buffer_size = (data.length() < ONE_KB) ? 2 * ONE_KB : data.length();
+  unsigned long         buffer_size = (data.length() < ONE_KB) ? 2 * ONE_KB : data.length();
   vector<unsigned char> buffer(buffer_size);
 
   do {
@@ -134,9 +134,9 @@ void
 GzipDeflateTransformation::handleInputComplete()
 {
   // We will flush out anything that's remaining in the gzip buffer
-  int status            = Z_OK;
-  int iteration         = 0;
-  const int buffer_size = 1024; // 1024 bytes is usually more than enough for the epilogue
+  int           status      = Z_OK;
+  int           iteration   = 0;
+  const int     buffer_size = 1024; // 1024 bytes is usually more than enough for the epilogue
   unsigned char buffer[buffer_size];
 
   /* Deflate remaining data */

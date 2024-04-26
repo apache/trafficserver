@@ -55,7 +55,7 @@ struct CmdConfigs {
 std::tuple<int32_t, int32_t, int32_t>
 splitArg(std::string str)
 {
-  int32_t start = 0, end = 0, incr = 1;
+  int32_t                  start = 0, end = 0, incr = 1;
   std::vector<std::string> results;
 
   boost::split(results, str, [](char c) { return c == '-' || c == '/'; });
@@ -80,8 +80,8 @@ splitArg(std::string str)
 CmdConfigs
 parseArgs(int argc, char **argv)
 {
-  CmdConfigs options;
-  int c;
+  CmdConfigs              options;
+  int                     c;
   constexpr struct option long_options[] = {
     {"help",      no_argument,       nullptr, 'h'},
     {"buckets",   required_argument, nullptr, 'b'},
@@ -148,9 +148,9 @@ loadFile(const std::string &fname, IpMap &all_ips, IpList &ips)
 {
   std::ifstream infile(fname);
 
-  float timestamp; // The timestamp from the request(relative)
-  std::string ip;  // The IP
-  bool status;     // Bad (false) or Good (true) request?
+  float       timestamp; // The timestamp from the request(relative)
+  std::string ip;        // The IP
+  bool        status;    // Bad (false) or Good (true) request?
 
   uint32_t good_ips      = 0;
   uint32_t bad_ips       = 0;
@@ -200,12 +200,12 @@ loadFile(const std::string &fname, IpMap &all_ips, IpList &ips)
 int
 main(int argc, char *argv[])
 {
-  std::string name = "simulator";
-  auto options     = parseArgs(argc, argv);
+  std::string name    = "simulator";
+  auto        options = parseArgs(argc, argv);
 
   // All remaining arguments should be files, so lets process them one by one
   for (int file_num = optind; file_num < argc; ++file_num) {
-    IpMap all_ips;
+    IpMap  all_ips;
     IpList ips;
 
     // Load the data from file
@@ -284,8 +284,7 @@ main(int argc, char *argv[])
             std::cout << "Allowed requests: " << total_allowed << "\n";
             std::cout << "\tGood requests allowed: " << good_allowed << " (" << 100.0 * good_allowed / good_requests << "%)"
                       << "\n";
-            std::cout << "\tBad requests allowed: " << bad_allowed << " (" << 100.0 * bad_allowed / bad_requests << "%)"
-                      << "\n";
+            std::cout << "\tBad requests allowed: " << bad_allowed << " (" << 100.0 * bad_allowed / bad_requests << "%)" << "\n";
             if (permablock) {
               std::cout << "Permanently blocked IPs: " << ipt->bucketSize(ipt->blockBucket()) << "\n";
               std::cout << "\tGood requests permanently denied: " << good_perm_blocked << " ("

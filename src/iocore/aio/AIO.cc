@@ -74,9 +74,9 @@ static AIOTestData *data;
 int
 AIOTestData::ink_aio_stats(int event, void *d)
 {
-  ink_hrtime now   = ink_get_hrtime();
-  double time_msec = (double)(now - start) / (double)HRTIME_MSECOND;
-  int i            = (aio_reqs[0] == nullptr) ? 1 : 0;
+  ink_hrtime now       = ink_get_hrtime();
+  double     time_msec = (double)(now - start) / (double)HRTIME_MSECOND;
+  int        i         = (aio_reqs[0] == nullptr) ? 1 : 0;
   for (; i < num_filedes; ++i) {
     printf("%0.2f\t%i\t%i\t%i\n", time_msec, aio_reqs[i]->filedes, aio_reqs[i]->pending, aio_reqs[i]->queued);
   }
@@ -171,8 +171,8 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 
 struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
-  int sleep_wait;
-  void *aio_thread_main(AIOThreadInfo *thr_info);
+  int       sleep_wait;
+  void     *aio_thread_main(AIOThreadInfo *thr_info);
 
   int
   start(int event, Event *e)
@@ -210,8 +210,8 @@ struct AIOThreadInfo : public Continuation {
 static AIO_Reqs *
 aio_init_fildes(int fildes, int fromAPI = 0)
 {
-  char thr_name[MAX_THREAD_NAME_LENGTH];
-  int i;
+  char      thr_name[MAX_THREAD_NAME_LENGTH];
+  int       i;
   AIO_Reqs *request = new AIO_Reqs;
 
   INK_WRITE_MEMORY_BARRIER;
@@ -236,7 +236,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 
   /* create the main thread */
   AIOThreadInfo *thr_info;
-  size_t stacksize;
+  size_t         stacksize;
 
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   for (i = 0; i < thread_num; i++) {
@@ -295,10 +295,10 @@ aio_move(AIO_Reqs *req)
 static void
 aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 {
-  int thread_ndx = 1;
-  AIO_Reqs *req  = op->aio_req;
-  op->link.next  = nullptr;
-  op->link.prev  = nullptr;
+  int       thread_ndx = 1;
+  AIO_Reqs *req        = op->aio_req;
+  op->link.next        = nullptr;
+  op->link.prev        = nullptr;
 #ifdef AIO_STATS
   ink_atomic_increment(&data->num_req, 1);
 #endif
@@ -370,7 +370,7 @@ cache_op(AIOCallbackInternal *op)
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
   for (; op; op = (AIOCallbackInternal *)op->then) {
     ink_aiocb *a = &op->aiocb;
-    ssize_t err, res = 0;
+    ssize_t    err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
       do {
@@ -417,8 +417,8 @@ ink_aio_thread_num_set(int thread_num)
 void *
 AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 {
-  AIO_Reqs *my_aio_req = thr_info->req;
-  AIOCallback *op      = nullptr;
+  AIO_Reqs    *my_aio_req = thr_info->req;
+  AIOCallback *op         = nullptr;
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
@@ -528,7 +528,7 @@ setup_prep_ops(IOUringContext *ur)
 void
 io_uring_prep_ops_internal(AIOCallbackInternal *op_in, int op_type)
 {
-  IOUringContext *ur      = IOUringContext::local_context();
+  IOUringContext      *ur = IOUringContext::local_context();
   AIOCallbackInternal *op = op_in;
   while (op) {
     op->this_op       = op;

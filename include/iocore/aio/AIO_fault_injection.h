@@ -43,7 +43,7 @@ static constexpr auto TAG{"fault"};
 class AIOFaultInjection
 {
   struct IOFault {
-    int err_no;
+    int  err_no;
     bool skip_io;
   };
   using IOFaults = std::unordered_map<int, IOFault>;
@@ -53,10 +53,10 @@ class AIOFaultInjection
   };
 
   std::unordered_map<std::string, IOFaults> _faults_by_regex;
-  std::unordered_map<int, IOFaults &> _faults_by_fd;
-  std::unordered_map<int, IOFaultState> _state_by_fd;
+  std::unordered_map<int, IOFaults &>       _faults_by_fd;
+  std::unordered_map<int, IOFaultState>     _state_by_fd;
 
-  void _decrement_op_count(int fd);
+  void    _decrement_op_count(int fd);
   IOFault _op_result(int fd);
 
   std::mutex _mutex;
@@ -64,7 +64,7 @@ class AIOFaultInjection
 public:
   void inject_fault(const char *path_regex, int op_index, IOFault fault);
 
-  int open(const char *pathname, int flags, mode_t mode);
+  int     open(const char *pathname, int flags, mode_t mode);
   ssize_t pread(int fd, void *buf, size_t nbytes, off_t offset);
   ssize_t pwrite(int fd, const void *buf, size_t n, off_t offset);
 };

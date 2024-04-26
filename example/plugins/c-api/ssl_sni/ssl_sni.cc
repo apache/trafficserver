@@ -50,10 +50,10 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 int
 CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
-  TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  TSVConn         ssl_vc     = reinterpret_cast<TSVConn>(edata);
+  TSSslConnection sslobj     = TSVConnSslConnectionGet(ssl_vc);
+  SSL            *ssl        = reinterpret_cast<SSL *>(sslobj);
+  const char     *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername != nullptr) {
     int servername_len    = strlen(servername);
     int facebook_name_len = strlen("facebook.com");
@@ -93,9 +93,9 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  bool success = false;
+  bool                     success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_cert = nullptr; // Certificate callback continuation
+  TSCont                   cb_cert = nullptr; // Certificate callback continuation
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

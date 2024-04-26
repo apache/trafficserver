@@ -43,7 +43,7 @@
 
 #include "iocore/eventsystem/RecProcess.h"
 
-static const long MAX_LOGIN        = ink_login_name_max();
+static const long    MAX_LOGIN     = ink_login_name_max();
 static constexpr int MAX_GROUP_NUM = 32;
 
 // Personally I don't really like the way that nftw needs global variables. Right now there is no other options.
@@ -96,7 +96,7 @@ static std::string
 path_handler(const std::string &path, bool run_flag, const std::string &command)
 {
   std::string cur_working_dir = "";
-  char cwd[PATH_MAX];
+  char        cwd[PATH_MAX];
   if (!getcwd(cwd, sizeof(cwd))) {
     ink_warning("unexpected failure from getcwd() - %s", strerror(errno));
   } else {
@@ -181,8 +181,8 @@ LayoutEngine::create_runroot()
     status_code = EX_SOFTWARE;
     return;
   }
-  bool force_flag         = arguments.get("force");
-  bool abs_flag           = arguments.get("absolute");
+  bool        force_flag  = arguments.get("force");
+  bool        abs_flag    = arguments.get("absolute");
   std::string layout_file = arguments.get("layout").value();
   if (layout_file.find("runroot.yaml") != std::string::npos) {
     ink_error(
@@ -191,8 +191,8 @@ LayoutEngine::create_runroot()
     return;
   }
   // deal with the copy style
-  CopyStyle copy_style = HARD;
-  std::string style    = arguments.get("copy-style").value();
+  CopyStyle   copy_style = HARD;
+  std::string style      = arguments.get("copy-style").value();
   if (!style.empty()) {
     transform(style.begin(), style.end(), style.begin(), ::tolower);
     if (style == "full") {
@@ -207,8 +207,8 @@ LayoutEngine::create_runroot()
       return;
     }
   }
-  std::string original_root     = Layout::get()->prefix;
-  const std::string &ts_runroot = path;
+  std::string        original_root = Layout::get()->prefix;
+  const std::string &ts_runroot    = path;
   // check for existing runroot to use rather than create new one
   if (!force_flag && exists(Layout::relative_to(ts_runroot, "runroot.yaml"))) {
     std::cout << "Using existing runroot...\n"
@@ -274,7 +274,7 @@ LayoutEngine::create_runroot()
       for (const auto &it : yamlfile) {
         std::string key   = it.first.as<std::string>();
         std::string value = it.second.as<std::string>();
-        auto iter         = new_map.find(key);
+        auto        iter  = new_map.find(key);
         if (iter != new_map.end()) {
           iter->second = value;
         } else {
@@ -378,7 +378,7 @@ LayoutEngine::remove_runroot()
     map.erase(LAYOUT_EXEC_PREFIX);
     // get current working directory
     std::string cur_working_dir = "";
-    char cwd[PATH_MAX];
+    char        cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) == nullptr) {
       ink_warning("unexpected failure from getcwd() - %s", strerror(errno));
     } else {
@@ -558,7 +558,7 @@ using gid_type = gid_t;
 static bool
 from_group(const char *user, gid_type group_id, gid_type path_gid)
 {
-  int ngroups = MAX_GROUP_NUM;
+  int      ngroups = MAX_GROUP_NUM;
   gid_type groups[ngroups];
   if (getgrouplist(user, group_id, groups, &ngroups) == -1) {
     ink_warning("Unable to get group list as user '%s'\n", user);
@@ -576,9 +576,9 @@ from_group(const char *user, gid_type group_id, gid_type path_gid)
 static void
 set_permission(PermissionMapType &permission_map, const struct passwd *pwd)
 {
-  gid_t ts_gid  = pwd->pw_gid;
-  uid_t ts_uid  = pwd->pw_uid;
-  bool new_line = false;
+  gid_t ts_gid   = pwd->pw_gid;
+  uid_t ts_uid   = pwd->pw_uid;
+  bool  new_line = false;
 
   // set up permission map for all permissions
   for (auto &it : permission_map) {
@@ -659,7 +659,7 @@ LayoutEngine::verify_runroot()
   // retrieve information
   std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
   std::string user;
-  char user_buf[MAX_LOGIN + 1];
+  char        user_buf[MAX_LOGIN + 1];
   if (arguments.get("with-user")) {
     user = arguments.get("with-user").value();
   } else {

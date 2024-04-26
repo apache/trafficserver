@@ -97,46 +97,46 @@ public:
   void free_thread(EThread *t) override;
 
   // UnixNetVConnection
-  void reenable(VIO *vio) override;
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
-  int connectUp(EThread *t, int fd) override;
+  void    reenable(VIO *vio) override;
+  VIO    *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO    *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  int     connectUp(EThread *t, int fd) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  bool getSSLHandShakeComplete() const override;
+  bool    getSSLHandShakeComplete() const override;
 
   // NetEvent
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
 
   // NetVConnection
-  int populate_protocol(std::string_view *results, int n) const override;
+  int         populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
   const char *get_server_name() const override;
-  bool support_sni() const override;
+  bool        support_sni() const override;
 
   // QUICConnection
   QUICStreamManager *stream_manager() override;
-  void close_quic_connection(QUICConnectionErrorUPtr error) override;
-  void reset_quic_connection() override;
-  void handle_received_packet(UDPPacket *packet) override;
-  void ping() override;
+  void               close_quic_connection(QUICConnectionErrorUPtr error) override;
+  void               reset_quic_connection() override;
+  void               handle_received_packet(UDPPacket *packet) override;
+  void               ping() override;
 
   // QUICConnection (QUICConnectionInfoProvider)
-  QUICConnectionId peer_connection_id() const override;
-  QUICConnectionId original_connection_id() const override;
-  QUICConnectionId first_connection_id() const override;
-  QUICConnectionId retry_source_connection_id() const override;
-  QUICConnectionId initial_source_connection_id() const override;
-  QUICConnectionId connection_id() const override;
-  std::string_view cids() const override;
-  const QUICFiveTuple five_tuple() const override;
-  uint32_t pmtu() const override;
+  QUICConnectionId        peer_connection_id() const override;
+  QUICConnectionId        original_connection_id() const override;
+  QUICConnectionId        first_connection_id() const override;
+  QUICConnectionId        retry_source_connection_id() const override;
+  QUICConnectionId        initial_source_connection_id() const override;
+  QUICConnectionId        connection_id() const override;
+  std::string_view        cids() const override;
+  const QUICFiveTuple     five_tuple() const override;
+  uint32_t                pmtu() const override;
   NetVConnectionContext_t direction() const override;
-  QUICVersion negotiated_version() const override;
-  std::string_view negotiated_application_name() const override;
-  bool is_closed() const override;
-  bool is_at_anti_amplification_limit() const override;
-  bool is_address_validation_completed() const override;
-  bool is_handshake_completed() const override;
+  QUICVersion             negotiated_version() const override;
+  std::string_view        negotiated_application_name() const override;
+  bool                    is_closed() const override;
+  bool                    is_at_anti_amplification_limit() const override;
+  bool                    is_address_validation_completed() const override;
+  bool                    is_handshake_completed() const override;
 
   // QUICSupport
   QUICConnection *get_quic_connection() override;
@@ -153,26 +153,26 @@ public:
 
 protected:
   std::unique_ptr<QUICContext> _context;
-  QUICPacketHandler *_packet_handler = nullptr;
+  QUICPacketHandler           *_packet_handler = nullptr;
 
   // TLSBasicSupport
-  SSL *_get_ssl_object() const override;
+  SSL         *_get_ssl_object() const override;
   ssl_curve_id _get_tls_curve() const override;
 
   // TLSSNISupport
-  void _fire_ssl_servername_event() override;
+  void      _fire_ssl_servername_event() override;
   in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &_getLocalEndpoint() override;
 
   // TLSCertSwitchSupport
-  bool _isTryingRenegotiation() const override;
+  bool           _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
   shared_SSL_CTX _lookupContextByIP() override;
 
 private:
-  SSL *_ssl;
+  SSL                      *_ssl;
   QUICConfig::scoped_config _quic_config;
 
   QUICConnectionId _peer_quic_connection_id;      // dst cid in local
@@ -183,21 +183,21 @@ private:
   QUICConnectionId _initial_source_connection_id; // src cid used for Initial packet
   QUICConnectionId _quic_connection_id;           // src cid in local
 
-  UDPConnection *_udp_con      = nullptr;
-  quiche_conn *_quiche_con     = nullptr;
-  QUICConnectionTable *_ctable = nullptr;
+  UDPConnection       *_udp_con    = nullptr;
+  quiche_conn         *_quiche_con = nullptr;
+  QUICConnectionTable *_ctable     = nullptr;
 
   void _bindSSLObject();
   void _unbindSSLObject();
 
-  void _schedule_packet_write_ready(bool delay = false);
-  void _unschedule_packet_write_ready();
-  void _close_packet_write_ready(Event *data);
+  void   _schedule_packet_write_ready(bool delay = false);
+  void   _unschedule_packet_write_ready();
+  void   _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
-  void _schedule_quiche_timeout();
-  void _unschedule_quiche_timeout();
-  void _close_quiche_timeout(Event *data);
+  void   _schedule_quiche_timeout();
+  void   _unschedule_quiche_timeout();
+  void   _close_quiche_timeout(Event *data);
   Event *_quiche_timeout = nullptr;
 
   void _handle_read_ready();
@@ -212,7 +212,7 @@ private:
   bool _application_started = false;
   void _start_application();
 
-  QUICStreamManager *_stream_manager   = nullptr;
+  QUICStreamManager  *_stream_manager  = nullptr;
   QUICApplicationMap *_application_map = nullptr;
 };
 

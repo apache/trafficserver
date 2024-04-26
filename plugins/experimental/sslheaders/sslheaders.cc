@@ -34,14 +34,14 @@ static int
 SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
 {
   const SslHdrInstance *hdr;
-  TSHttpTxn txn;
-  TSMBuffer mbuf;
-  TSMLoc mhdr;
+  TSHttpTxn             txn;
+  TSMBuffer             mbuf;
+  TSMLoc                mhdr;
 
-  txn                 = static_cast<TSHttpTxn>(edata);
-  hdr                 = static_cast<const SslHdrInstance *>(TSContDataGet(cont));
-  TSVConn vconn       = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
-  TSSslConnection ssl = TSVConnSslConnectionGet(vconn);
+  txn                   = static_cast<TSHttpTxn>(edata);
+  hdr                   = static_cast<const SslHdrInstance *>(TSContDataGet(cont));
+  TSVConn         vconn = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
+  TSSslConnection ssl   = TSVConnSslConnectionGet(vconn);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -92,8 +92,8 @@ static void
 SslHdrSetHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name, BIO *value)
 {
   TSMLoc field;
-  long vlen;
-  char *vptr;
+  long   vlen;
+  char  *vptr;
 
   vlen = BIO_get_mem_data(value, &vptr);
 
@@ -146,7 +146,7 @@ public:
   }
 
 private:
-  SSL *_ssl;
+  SSL  *_ssl;
   X509 *_x509;
 
   // The address of this object can not be a valid X509 structure address.
@@ -179,9 +179,9 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
       SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
     }
   } else {
-    WrapX509<true> clientX509(ssl);
+    WrapX509<true>  clientX509(ssl);
     WrapX509<false> serverX509(ssl);
-    X509 *x509;
+    X509           *x509;
 
     BIO *exp = BIO_new(BIO_s_mem());
 
@@ -267,7 +267,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  SslHdrInstance *hdr;
+  SslHdrInstance          *hdr;
 
   info.plugin_name   = (char *)"sslheaders";
   info.vendor_name   = (char *)"Apache Software Foundation";

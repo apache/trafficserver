@@ -33,8 +33,8 @@
 class ExampleStruct : public RefCountObj
 {
 public:
-  int idx;
-  int name_offset; // pointer addr to name
+  int                              idx;
+  int                              name_offset; // pointer addr to name
   static std::set<ExampleStruct *> items_freed;
 
   // Return the char* to the name (TODO: cleaner interface??)
@@ -87,8 +87,8 @@ void
 fillCache(RefCountCache<ExampleStruct> *cache, int start, int end)
 {
   // TODO: name per?
-  std::string name = "foobar";
-  int allocSize    = name.size() + 1;
+  std::string name      = "foobar";
+  int         allocSize = name.size() + 1;
 
   for (int i = start; i < end; i++) {
     ExampleStruct *tmp = ExampleStruct::alloc(allocSize);
@@ -112,7 +112,7 @@ verifyCache(RefCountCache<ExampleStruct> *cache, int start, int end)
   // Re-query all the structs to make sure they are there and accurate
   for (int i = start; i < end; i++) {
     Ptr<ExampleStruct> ccitem = cache->get(i);
-    ExampleStruct *tmp        = ccitem.get();
+    ExampleStruct     *tmp    = ccitem.get();
     if (tmp == nullptr) {
       // printf("ExampleStruct %d missing, skipping\n", i);
       continue;
@@ -215,8 +215,8 @@ test()
   printf("refcount ret %d\n", ret);
 
   // Initialize our cache
-  int cachePartitions                 = 4;
-  RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(cachePartitions);
+  int                           cachePartitions = 4;
+  RefCountCache<ExampleStruct> *cache           = new RefCountCache<ExampleStruct>(cachePartitions);
   printf("Created...\n");
 
   LoadRefCountCacheFromPath<ExampleStruct>(*cache, "/tmp/hostdb_cache", ExampleStruct::unmarshall);

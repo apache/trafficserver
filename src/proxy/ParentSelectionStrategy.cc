@@ -26,9 +26,9 @@
 void
 ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
 {
-  time_t now;
+  time_t   now;
   pRecord *pRec, *parents = result->rec->selection_strategy->getParents(result);
-  int new_fail_count = 0;
+  int      new_fail_count = 0;
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
@@ -100,7 +100,7 @@ void
 ParentSelectionStrategy::markParentUp(ParentResult *result)
 {
   pRecord *pRec, *parents = result->rec->selection_strategy->getParents(result);
-  int num_parents = result->rec->selection_strategy->numParents(result);
+  int      num_parents = result->rec->selection_strategy->numParents(result);
 
   //  Make sure that we are being called back with a
   //   result structure with a parent that is being retried

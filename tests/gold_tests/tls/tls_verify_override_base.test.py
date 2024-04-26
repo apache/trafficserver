@@ -206,7 +206,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not conn
 
 # Should fail
 tr = Test.AddTestRun("foo-to-bar-sni-policy-servername")
-tr.Processes.Default.Command = "curl -k --resolv foo.com:{0}:127.0.0.1 https://foo.com:{0}/snipolicybarservername".format(
+tr.Processes.Default.Command = "curl -k --resolve foo.com:{0}:127.0.0.1 https://foo.com:{0}/snipolicybarservername".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
@@ -231,7 +231,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not conn
 
 # Should succeed
 tr = Test.AddTestRun("bar-to-foo-sni-policy-servername")
-tr.Processes.Default.Command = "curl -k --resolv bar.com:{0}:127.0.0.1 https://bar.com:{0}/snipolicyfooservername".format(
+tr.Processes.Default.Command = "curl -k --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}/snipolicyfooservername".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server

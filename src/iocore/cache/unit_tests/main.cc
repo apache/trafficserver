@@ -47,9 +47,9 @@ DbgCtl dbg_ctl_cache_test{"cache test"};
 std::string
 temp_prefix()
 {
-  char buffer[PATH_MAX];
+  char            buffer[PATH_MAX];
   std::error_code err;
-  const char *tmpdir = getenv("TMPDIR");
+  const char     *tmpdir = getenv("TMPDIR");
   if (tmpdir == nullptr) {
     tmpdir = "/tmp";
   }
@@ -77,7 +77,7 @@ static void
 populate_cache(const swoc::file::path &prefix)
 {
   swoc::file::path src_path{TS_ABS_TOP_SRCDIR};
-  std::error_code ec;
+  std::error_code  ec;
   ink_assert(cache_vols == 2);
   swoc::file::copy(src_path / "src/iocore/cache/unit_tests/var/trafficserver/cache.db", prefix / "var/trafficserver/", ec);
   swoc::file::copy(src_path / "src/iocore/cache/unit_tests/var/trafficserver2/cache.db", prefix / "var/trafficserver2/", ec);
@@ -171,13 +171,13 @@ init_cache(size_t size, const char *name)
 void
 build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
 {
-  HTTPHdr req;
-  HTTPHdr resp;
-  HTTPParser parser;
-  int err           = -1;
-  char buf[1024]    = {0};
-  const char *start = buf;
-  char *p           = buf;
+  HTTPHdr     req;
+  HTTPHdr     resp;
+  HTTPParser  parser;
+  int         err       = -1;
+  char        buf[1024] = {0};
+  const char *start     = buf;
+  char       *p         = buf;
 
   REQUIRE(url != nullptr);
 
@@ -243,7 +243,7 @@ void
 CacheWriteTest::fill_data()
 {
   size_t size    = std::min(WRITE_LIMIT, this->_size);
-  auto n         = this->_write_buffer->write(this->_cursor, size);
+  auto   n       = this->_write_buffer->write(this->_cursor, size);
   this->_size   -= n;
   this->_cursor += n;
 }

@@ -47,7 +47,7 @@
 namespace
 {
 constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
-constexpr auto logTag = "rpc.net";
+constexpr auto   logTag = "rpc.net";
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();
@@ -106,7 +106,7 @@ get_peereid(int fd, uid_t *euid, gid_t *egid)
   return 0;
 #elif TS_HAS_SO_PEERCRED
   struct ucred cred;
-  socklen_t credsz = sizeof(cred);
+  socklen_t    credsz = sizeof(cred);
   if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &credsz) == -1) {
     return -1;
   }
@@ -222,7 +222,7 @@ IPCSocketServer::run()
       Client client{fd};
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
-        const auto json = std::string{bw.data(), bw.size()};
+        const auto   json = std::string{bw.data(), bw.size()};
         rpc::Context ctx;
         // we want to make sure the peer's credentials are ok.
         ctx.get_auth().add_checker(

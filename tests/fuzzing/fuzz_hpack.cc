@@ -33,7 +33,7 @@
 #define MAX_TABLE_SIZE          4096
 
 extern int cmd_disable_pfreelist;
-int net_config_poll_timeout = 10;
+int        net_config_poll_timeout = 10;
 
 extern "C" int
 LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
@@ -47,7 +47,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
 
   hpack_huffman_init();
 
-  HpackIndexingTable indexing_table(INITIAL_TABLE_SIZE);
+  HpackIndexingTable       indexing_table(INITIAL_TABLE_SIZE);
   std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
   headers->create(HTTP_TYPE_REQUEST);
 
