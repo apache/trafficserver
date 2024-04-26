@@ -220,8 +220,10 @@ namespace details
     {
       auto &instance = Metrics::instance();
       std::lock_guard l(metrics_lock);
+
       for (auto &m : metrics) {
         int64_t sum = 0;
+
         for (auto d : m.derived_from) {
           sum += d->load();
         }

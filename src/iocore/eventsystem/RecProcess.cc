@@ -91,6 +91,7 @@ struct raw_stat_sync_cont : public Continuation {
     RecExecRawStatSyncCbs();
     Dbg(dbg_ctl_statsproc, "raw_stat_sync_cont() processed");
 
+    // This needs to be called periodically even after the old metrics sync is removed
     ts::Metrics::Derived::update_derived();
 
     return EVENT_CONT;
