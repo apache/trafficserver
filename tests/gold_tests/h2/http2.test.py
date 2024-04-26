@@ -158,7 +158,7 @@ ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 # ----
 
 # Test Case 1:  basic H2 interaction
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("basic H2 interaction")
 tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} / --verify_default_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
@@ -167,14 +167,14 @@ tr.Processes.Default.Streams.stdout = "gold/remap-200.gold"
 tr.StillRunningAfter = server
 
 # Test Case 2: Make sure all the big file gets back.  Regression test for issue 1646
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("big file download")
 tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /bigfile --repeat 2 --verify_default_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
 tr.StillRunningAfter = server
 
 # Test Case 3: Chunked content
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("chunked content")
 tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /test2 --print_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
@@ -183,7 +183,7 @@ tr.StillRunningAfter = server
 # NOTE: Skipping this test run because traffic-replay doesn't currently support H2
 # Test Case 4: Multiple request
 # client_path = os.path.join(Test.Variables.AtsTestToolsDir, 'traffic-replay/')
-# tr = Test.AddTestRun()
+# tr = Test.AddTestRun("multiple request")
 # tr.Processes.Default.Command = \
 #     (f"{sys.executable} {client_path} -type h2 -log_dir {server.Variables.DataDir} "
 #      f"-port {ts.Variables.port} -host '127.0.0.1' -s_port {ts.Variables.ssl_port} -v -colorize False")
@@ -192,7 +192,7 @@ tr.StillRunningAfter = server
 # tr.StillRunningAfter = server
 
 # Test Case 5: h2_active_timeout
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("h2_active_timeout")
 tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py {ts.Variables.ssl_port} / 4'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
@@ -201,7 +201,7 @@ tr.StillRunningAfter = server
 # Test Case 6: Post with chunked body
 # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("post with chunked body")
 tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(
     post_body, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
@@ -211,7 +211,7 @@ tr.StillRunningAfter = server
 # Test Case 7: Post with big chunked body
 # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("post with big chunked body")
 tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
@@ -219,7 +219,7 @@ tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
 
 # Test Case 8: Huge response header
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("huge response header")
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_8_stdout.gold"
@@ -228,7 +228,7 @@ tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_8_stderr.gold
 tr.StillRunningAfter = server
 
 # Test Case 9: Header Only Response - e.g. 204
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("header only response")
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/status/204'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
