@@ -213,7 +213,9 @@ class Decoder:
     def decode(self, data):
         temp_data = data
         frames = []
-        while len(temp_data) >= 9:
+        loop_limiter_count = 0
+        while len(temp_data) >= 9 and loop_limiter_count < 1000:
+            loop_limiter_count += 1
             frame_header = temp_data[0:9]
             frame = self.read_frame_header(frame_header)
             if frame.length > len(temp_data[9:]):
