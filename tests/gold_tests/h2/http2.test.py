@@ -220,11 +220,13 @@ tr.StillRunningAfter = server
 
 # Test Case 8: Huge response header
 tr = Test.AddTestRun("huge response header")
-tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
+# Different versions of curl have "bytes data" at various places in the output.
+# Normalize them by simply filtering out those lines since they are not
+# important to this test.
+tr.Processes.Default.Command = f'curl -vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs |& grep -v "bytes data"'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/http2_8_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
-tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_8_stderr.gold", case_insensitive=True)
+tr.Processes.Default.Streams.stdout = Testers.GoldFile("gold/http2_8_stdout.gold", case_insensitive=True)
 tr.StillRunningAfter = server
 
 # Test Case 9: Header Only Response - e.g. 204
