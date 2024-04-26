@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <variant>
 
 #include "swoc/MemSpan.h"
 
@@ -505,6 +506,18 @@ public:
     }
 
   }; // class Counter
+
+  class Derived
+  {
+  public:
+    struct DerivedMetricSpec {
+      std::string_view derived_name;
+      std::initializer_list<std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>> derived_from;
+    };
+
+    static void derive(const std::initializer_list<DerivedMetricSpec> &metrics);
+    static void update_derived();
+  };
 
 }; // class Metrics
 

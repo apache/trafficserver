@@ -98,4 +98,38 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 
     REQUIRE(mid == fmid);
   }
+
+  SECTION("derived")
+  {
+    auto a = Metrics::Counter::createPtr("m-a");
+    auto b = Metrics::Counter::createPtr("m-b");
+    auto c = Metrics::Counter::createPtr("m-c");
+    auto d = Metrics::Counter::createPtr("m-d");
+    auto e = Metrics::Counter::createPtr("m-e");
+    ts::Metrics::Derived::derive({
+      {"derived-a-c", {a, b, c}               }, // test using ptr
+      {"derived-cd",  {m.lookup("m-c"), "m-d"}}, // using IdType and string
+      {"derived-ce",  {"derived-cd", "m-e"}   }  // using another derived
+    });
+
+    auto derived   = m.lookup("derived-a-c");
+    auto derivedcd = m.lookup("derived-cd");
+    auto derivedce = m.lookup("derived-ce");
+    REQUIRE(derived != ts::Metrics::NOT_FOUND);
+
+    REQUIRE(m[derived].load() == 0);
+
+    a->increment(1);
+    b->increment(1);
+    b->increment(1);
+    c->increment(1);
+    d->increment(4);
+    e->increment(5);
+
+    ts::Metrics::Derived::update_derived();
+
+    REQUIRE(m[derived].load() == 4);
+    REQUIRE(m[derivedcd].load() == 5);
+    REQUIRE(m[derivedce].load() == 10);
+  }
 }

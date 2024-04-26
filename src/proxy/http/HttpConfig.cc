@@ -544,6 +544,48 @@ register_stat_callbacks()
     Metrics::Counter::createPtr("proxy.process.http.user_agent_response_header_total_size");
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
+
+  Metrics::Derived::derive({
+  // Total bytes of client request body + headers
+    {"proxy.process.http.user_agent_total_request_bytes",
+     {http_rsb.user_agent_request_document_total_size, http_rsb.user_agent_request_header_total_size}                                           },
+ // Total bytes of client response body + headers
+    {"proxy.process.http.user_agent_total_response_bytes",
+     {http_rsb.user_agent_response_document_total_size, http_rsb.user_agent_response_header_total_size}                                         },
+ // Total bytes of origin server request body + headers
+    {"proxy.process.http.origin_server_total_request_bytes",
+     {http_rsb.origin_server_request_document_total_size, http_rsb.origin_server_request_header_total_size}                                     },
+ // Total bytes of origin server response body + headers
+    {"proxy.process.http.origin_server_total_response_bytes",
+     {http_rsb.origin_server_response_document_total_size, http_rsb.origin_server_response_header_total_size}                                   },
+ // Total bytes of client request and response (total traffic to and from clients)
+    {"proxy.process.user_agent_total_bytes",
+     {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}                                },
+ // Total bytes of origin/parent request and response
+    {"proxy.process.origin_server_total_bytes",
+     {"proxy.process.http.origin_server_total_request_bytes", "proxy.process.http.origin_server_total_response_bytes",
+      http_rsb.parent_proxy_request_total_bytes, http_rsb.parent_proxy_response_total_bytes}                                                    },
+ // Total requests which are cache hits
+    {"proxy.process.cache_total_hits",
+     {http_rsb.cache_hit_fresh, http_rsb.cache_hit_reval, http_rsb.cache_hit_ims, http_rsb.cache_hit_stale_served}                              },
+ // Total requests which are cache misses
+    {"proxy.process.cache_total_misses",
+     {http_rsb.cache_miss_cold, http_rsb.cache_miss_changed, http_rsb.cache_miss_client_no_cache, http_rsb.cache_miss_ims,
+      http_rsb.cache_miss_uncacheable}                                                                                                          },
+ // Total of all server connections (sum of origins and parent connections)
+    {"proxy.process.current_server_connections",              {http_rsb.current_server_connections, http_rsb.current_parent_proxy_connections}  },
+ // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
+    {"proxy.process.cache_total_requests",                    {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}            },
+ // Total cache requests bytes which are cache hits
+    {"proxy.process.cache_total_hits_bytes",
+     {http_rsb.tcp_hit_user_agent_bytes, http_rsb.tcp_refresh_hit_user_agent_bytes, http_rsb.tcp_ims_hit_user_agent_bytes}                      },
+ // Total cache requests bytes which are cache misses
+    {"proxy.process.cache_total_misses_bytes",
+     {http_rsb.tcp_miss_user_agent_bytes, http_rsb.tcp_expired_miss_user_agent_bytes, http_rsb.tcp_refresh_miss_user_agent_bytes,
+      http_rsb.tcp_ims_miss_user_agent_bytes}                                                                                                   },
+ // Total request bytes, both hits and misses
+    {"proxy.process.cache_total_bytes",                       {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}}
+  });
 }
 
 static bool

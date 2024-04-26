@@ -23,6 +23,9 @@
 
 #include "tsutil/Assert.h"
 #include <memory>
+#include <mutex>
+#include <variant>
+#include <vector>
 #include "tsutil/Metrics.h"
 
 namespace ts
@@ -199,6 +202,75 @@ Metrics::iterator::next()
   }
 
   _it = _makeId(blob, offset);
+}
+
+namespace details
+{
+  struct DerivedMetric {
+    Metrics::IdType metric;
+    std::vector<Metrics::AtomicType *> derived_from;
+  };
+
+  struct DerivativeMetrics {
+    std::vector<DerivedMetric> metrics;
+    std::mutex metrics_lock;
+
+    void
+    update()
+    {
+      auto &instance = Metrics::instance();
+      for (auto &m : metrics) {
+        int64_t sum = 0;
+        for (auto d : m.derived_from) {
+          sum += d->load();
+        }
+        instance[m.metric].store(sum);
+      }
+    }
+
+    void
+    push_back(const DerivedMetric &m)
+    {
+      std::lock_guard l(metrics_lock);
+      metrics.push_back(std::move(m));
+    }
+
+    static DerivativeMetrics &
+    instance()
+    {
+      static DerivativeMetrics theDerivedMetrics;
+      return theDerivedMetrics;
+    }
+  };
+
+} // namespace details
+
+void
+Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMetricSpec> &metrics)
+{
+  auto &instance = Metrics::instance();
+
+  for (auto &m : metrics) {
+    details::DerivedMetric dm{};
+    dm.metric = instance._create(m.derived_name);
+
+    for (auto &d : m.derived_from) {
+      if (std::holds_alternative<Metrics::AtomicType *>(d)) {
+        dm.derived_from.push_back(std::get<Metrics::AtomicType *>(d));
+      } else if (std::holds_alternative<Metrics::IdType>(d)) {
+        dm.derived_from.push_back(instance.lookup(std::get<Metrics::IdType>(d)));
+      } else if (std::holds_alternative<std::string_view>(d)) {
+        dm.derived_from.push_back(instance.lookup(instance.lookup(std::get<std::string_view>(d))));
+      }
+    }
+    details::DerivativeMetrics::instance().push_back(dm);
+  }
+}
+
+void
+Metrics::Derived::update_derived()
+{
+  details::DerivativeMetrics::instance().update();
 }
 
 } // namespace ts

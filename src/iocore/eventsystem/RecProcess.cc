@@ -23,6 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
+#include "tsutil/Metrics.h"
 
 #include "iocore/eventsystem/Tasks.h"
 
@@ -89,6 +90,8 @@ struct raw_stat_sync_cont : public Continuation {
   {
     RecExecRawStatSyncCbs();
     Dbg(dbg_ctl_statsproc, "raw_stat_sync_cont() processed");
+
+    ts::Metrics::Derived::update_derived();
 
     return EVENT_CONT;
   }
