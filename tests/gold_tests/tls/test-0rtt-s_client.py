@@ -69,7 +69,8 @@ def main():
         data = b''
         for line in lines:
             line += b'\n'
-            if line.startswith(bytes('SSL_connect:', 'utf-8')) or \
+            if line.startswith(bytes('Connecting to', 'utf-8')) or \
+                    line.startswith(bytes('SSL_connect:', 'utf-8')) or \
                     line.startswith(bytes('SSL3 alert', 'utf-8')) or \
                     bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
                 continue
