@@ -49,60 +49,60 @@ static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk
 
 // Configuration
 
-int64_t cache_config_ram_cache_size            = AUTO_SIZE_RAM_CACHE;
-int cache_config_ram_cache_algorithm           = 1;
-int cache_config_ram_cache_compress            = 0;
-int cache_config_ram_cache_compress_percent    = 90;
-int cache_config_ram_cache_use_seen_filter     = 1;
-int cache_config_http_max_alts                 = 3;
-int cache_config_log_alternate_eviction        = 0;
-int cache_config_dir_sync_frequency            = 60;
-int cache_config_permit_pinning                = 0;
-int cache_config_select_alternate              = 1;
-int cache_config_max_doc_size                  = 0;
-int cache_config_min_average_object_size       = ESTIMATED_OBJECT_SIZE;
-int64_t cache_config_ram_cache_cutoff          = AGG_SIZE;
-int cache_config_max_disk_errors               = 5;
-int cache_config_hit_evacuate_percent          = 10;
-int cache_config_hit_evacuate_size_limit       = 0;
-int cache_config_force_sector_size             = 0;
-int cache_config_target_fragment_size          = DEFAULT_TARGET_FRAGMENT_SIZE;
-int cache_config_agg_write_backlog             = AGG_SIZE * 2;
-int cache_config_enable_checksum               = 0;
-int cache_config_alt_rewrite_max_size          = 4096;
-int cache_config_read_while_writer             = 0;
-int cache_config_mutex_retry_delay             = 2;
-int cache_read_while_writer_retry_delay        = 50;
-int cache_config_read_while_writer_max_retries = 10;
-int cache_config_persist_bad_disks             = false;
+int64_t cache_config_ram_cache_size                = AUTO_SIZE_RAM_CACHE;
+int     cache_config_ram_cache_algorithm           = 1;
+int     cache_config_ram_cache_compress            = 0;
+int     cache_config_ram_cache_compress_percent    = 90;
+int     cache_config_ram_cache_use_seen_filter     = 1;
+int     cache_config_http_max_alts                 = 3;
+int     cache_config_log_alternate_eviction        = 0;
+int     cache_config_dir_sync_frequency            = 60;
+int     cache_config_permit_pinning                = 0;
+int     cache_config_select_alternate              = 1;
+int     cache_config_max_doc_size                  = 0;
+int     cache_config_min_average_object_size       = ESTIMATED_OBJECT_SIZE;
+int64_t cache_config_ram_cache_cutoff              = AGG_SIZE;
+int     cache_config_max_disk_errors               = 5;
+int     cache_config_hit_evacuate_percent          = 10;
+int     cache_config_hit_evacuate_size_limit       = 0;
+int     cache_config_force_sector_size             = 0;
+int     cache_config_target_fragment_size          = DEFAULT_TARGET_FRAGMENT_SIZE;
+int     cache_config_agg_write_backlog             = AGG_SIZE * 2;
+int     cache_config_enable_checksum               = 0;
+int     cache_config_alt_rewrite_max_size          = 4096;
+int     cache_config_read_while_writer             = 0;
+int     cache_config_mutex_retry_delay             = 2;
+int     cache_read_while_writer_retry_delay        = 50;
+int     cache_config_read_while_writer_max_retries = 10;
+int     cache_config_persist_bad_disks             = false;
 
 // Globals
 
-CacheStatsBlock cache_rsb;
-Cache *theCache                         = nullptr;
-CacheDisk **gdisks                      = nullptr;
-int gndisks                             = 0;
-static std::atomic<int> initialize_disk = 0;
-Cache *caches[NUM_CACHE_FRAG_TYPES]     = {nullptr};
-CacheSync *cacheDirSync                 = nullptr;
-static Store theCacheStore;
-int CacheProcessor::initialized          = CACHE_INITIALIZING;
-uint32_t CacheProcessor::cache_ready     = 0;
-int CacheProcessor::start_done           = 0;
-bool CacheProcessor::clear               = false;
-bool CacheProcessor::fix                 = false;
-bool CacheProcessor::check               = false;
-int CacheProcessor::start_internal_flags = 0;
-int CacheProcessor::auto_clear_flag      = 0;
-CacheProcessor cacheProcessor;
-Stripe **gstripes          = nullptr;
-std::atomic<int> gnstripes = 0;
-ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
+CacheStatsBlock                    cache_rsb;
+Cache                             *theCache                     = nullptr;
+CacheDisk                        **gdisks                       = nullptr;
+int                                gndisks                      = 0;
+static std::atomic<int>            initialize_disk              = 0;
+Cache                             *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
+CacheSync                         *cacheDirSync                 = nullptr;
+static Store                       theCacheStore;
+int                                CacheProcessor::initialized          = CACHE_INITIALIZING;
+uint32_t                           CacheProcessor::cache_ready          = 0;
+int                                CacheProcessor::start_done           = 0;
+bool                               CacheProcessor::clear                = false;
+bool                               CacheProcessor::fix                  = false;
+bool                               CacheProcessor::check                = false;
+int                                CacheProcessor::start_internal_flags = 0;
+int                                CacheProcessor::auto_clear_flag      = 0;
+CacheProcessor                     cacheProcessor;
+Stripe                           **gstripes  = nullptr;
+std::atomic<int>                   gnstripes = 0;
+ClassAllocator<CacheVC>            cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
-ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
-ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
-ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
-std::unordered_set<std::string> known_bad_disks;
+ClassAllocator<EvacuationBlock>    evacuationBlockAllocator("evacuationBlock");
+ClassAllocator<CacheRemoveCont>    cacheRemoveContAllocator("cacheRemoveCont");
+ClassAllocator<EvacuationKey>      evacuationKeyAllocator("evacuationKey");
+std::unordered_set<std::string>    known_bad_disks;
 
 namespace
 {
@@ -114,16 +114,16 @@ DbgCtl dbg_ctl_ram_cache{"ram_cache"};
 
 } // end anonymous namespace
 
-void cplist_init();
+void        cplist_init();
 static void cplist_update();
-int cplist_reconfigure();
-static int create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp);
+int         cplist_reconfigure();
+static int  create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp);
 static void rebuild_host_table(Cache *cache);
 
 // Global list of the volumes created
 Queue<CacheVol> cp_list;
-int cp_list_len = 0;
-ConfigVolumes config_volumes;
+int             cp_list_len = 0;
+ConfigVolumes   config_volumes;
 
 #if TS_HAS_TESTS
 void
@@ -334,7 +334,7 @@ CacheProcessor::start_internal(int flags)
    */
   for (unsigned i = 0; i < theCacheStore.n_spans; i++) {
     Span *span = theCacheStore.spans[i];
-    int opts   = DEFAULT_CACHE_OPTIONS;
+    int   opts = DEFAULT_CACHE_OPTIONS;
 
     if (!paths[gndisks]) {
       paths[gndisks] = static_cast<char *>(alloca(PATH_NAME_MAX));
@@ -475,7 +475,7 @@ CacheProcessor::start_internal(int flags)
   for (int j = 0; j < gndisks; j++) {
     Span *sd = spans[j];
     ink_release_assert(spans[j] != nullptr); // Defeat clang-analyzer
-    off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
+    off_t   skip   = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
     gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
 
@@ -871,16 +871,16 @@ cmprtable(const void *aa, const void *bb)
 void
 build_vol_hash_table(CacheHostRecord *cp)
 {
-  int num_vols          = cp->num_vols;
-  unsigned int *mapping = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  Stripe **p            = static_cast<Stripe **>(ats_malloc(sizeof(Stripe *) * num_vols));
+  int           num_vols = cp->num_vols;
+  unsigned int *mapping  = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
+  Stripe      **p        = static_cast<Stripe **>(ats_malloc(sizeof(Stripe *) * num_vols));
 
   memset(mapping, 0, num_vols * sizeof(unsigned int));
   memset(p, 0, num_vols * sizeof(Stripe *));
-  uint64_t total = 0;
-  int bad_vols   = 0;
-  int map        = 0;
-  uint64_t used  = 0;
+  uint64_t total    = 0;
+  int      bad_vols = 0;
+  int      map      = 0;
+  uint64_t used     = 0;
   // initialize number of elements per vol
   for (int i = 0; i < num_vols; i++) {
     if (DISK_BAD(cp->stripes[i]->disk)) {
@@ -905,13 +905,13 @@ build_vol_hash_table(CacheHostRecord *cp)
     return;
   }
 
-  unsigned int *forvol   = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  unsigned int *gotvol   = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  unsigned int *rnd      = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
+  unsigned int   *forvol = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
+  unsigned int   *gotvol = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
+  unsigned int   *rnd    = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
   unsigned short *ttable = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * STRIPE_HASH_TABLE_SIZE));
   unsigned short *old_table;
-  unsigned int *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  unsigned int rtable_size     = 0;
+  unsigned int   *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
+  unsigned int    rtable_size    = 0;
 
   // estimate allocation
   for (int i = 0; i < num_vols; i++) {
@@ -937,7 +937,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   }
   // generate random numbers proportional to allocation
   rtable_pair *rtable = static_cast<rtable_pair *>(ats_malloc(sizeof(rtable_pair) * rtable_size));
-  int rindex          = 0;
+  int          rindex = 0;
   for (int i = 0; i < num_vols; i++) {
     for (int j = 0; j < static_cast<int>(rtable_entries[i]); j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
@@ -992,7 +992,7 @@ persist_bad_disks()
 {
   std::filesystem::path localstatedir{Layout::get()->localstatedir};
   std::filesystem::path bad_disks_path{localstatedir / ts::filename::BAD_DISKS};
-  std::error_code ec;
+  std::error_code       ec;
   std::filesystem::create_directories(bad_disks_path.parent_path(), ec);
   if (ec) {
     Error("Error creating directory for bad disks file: %s (%s)", bad_disks_path.c_str(), ec.message().c_str());
@@ -1017,10 +1017,10 @@ persist_bad_disks()
  */
 bool
 CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
-                                     bool admin)
+                                     bool       admin)
 {
-  bool zret; // indicates whether there's any online storage left.
-  int p;
+  bool     zret; // indicates whether there's any online storage left.
+  int      p;
   uint64_t total_bytes_delete = 0;
   uint64_t total_dir_delete   = 0;
   uint64_t used_dir_delete    = 0;
@@ -1102,8 +1102,8 @@ AIO_failure_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data)
   if (!CacheProcessor::cache_ready) {
     return EVENT_DONE;
   }
-  int disk_no     = 0;
-  AIOCallback *cb = static_cast<AIOCallback *>(data);
+  int          disk_no = 0;
+  AIOCallback *cb      = static_cast<AIOCallback *>(data);
 
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
@@ -1167,7 +1167,7 @@ Cache::open_done()
 int
 Cache::open(bool clear, bool /* fix ATS_UNUSED */)
 {
-  int i;
+  int   i;
   off_t blocks          = 0;
   cache_read_done       = 0;
   total_initialized_vol = 0;
@@ -1226,8 +1226,8 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  Stripe *stripe = key_to_stripe(key, hostname, host_len);
-  CacheVC *c     = new_CacheVC(cont);
+  Stripe  *stripe = key_to_stripe(key, hostname, host_len);
+  CacheVC *c      = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);
@@ -1337,7 +1337,7 @@ void
 cplist_update()
 {
   /* go through cplist and delete volumes that are not in the volume.config */
-  CacheVol *cp = cp_list.head;
+  CacheVol  *cp = cp_list.head;
   ConfigVol *config_vol;
 
   while (cp) {
@@ -1464,7 +1464,7 @@ fillExclusiveDisks(CacheVol *cp)
 
     /* Now, volumes have been either deleted or did not exist to begin with so we need to create them. */
 
-    int64_t size_diff = gdisks[i]->num_usable_blocks;
+    int64_t          size_diff = gdisks[i]->num_usable_blocks;
     DiskStripeBlock *dpb;
     do {
       dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
@@ -1489,9 +1489,9 @@ fillExclusiveDisks(CacheVol *cp)
 int
 cplist_reconfigure()
 {
-  int64_t size;
-  int volume_number;
-  off_t size_in_blocks;
+  int64_t    size;
+  int        volume_number;
+  off_t      size_in_blocks;
   ConfigVol *config_vol;
 
   gnstripes = 0;
@@ -1513,7 +1513,7 @@ cplist_reconfigure()
       }
       if (gdisks[i]->cleared) {
         uint64_t free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
-        int vols            = (free_space / MAX_STRIPE_SIZE) + 1;
+        int      vols       = (free_space / MAX_STRIPE_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
           Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
@@ -1653,7 +1653,7 @@ cplist_reconfigure()
         int smallest     = sorted_vols[i];
         int smallest_ndx = i;
         for (int j = i + 1; j < gndisks; j++) {
-          int curr                = sorted_vols[j];
+          int         curr        = sorted_vols[j];
           DiskStripe *disk_stripe = cp->disk_stripes[curr];
           if (gdisks[curr]->cleared) {
             ink_assert(!disk_stripe);
@@ -1728,10 +1728,10 @@ cplist_reconfigure()
 int
 create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
 {
-  static int curr_vol  = 0; // FIXME: this will not reinitialize correctly
-  off_t to_create      = size_in_blocks;
-  off_t blocks_per_vol = STRIPE_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
-  int full_disks       = 0;
+  static int curr_vol       = 0; // FIXME: this will not reinitialize correctly
+  off_t      to_create      = size_in_blocks;
+  off_t      blocks_per_vol = STRIPE_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
+  int        full_disks     = 0;
 
   cp->vol_number = volume_number;
   cp->scheme     = scheme;
@@ -1796,10 +1796,10 @@ rebuild_host_table(Cache *cache)
   ReplaceablePtr<CacheHostTable>::ScopedWriter hosttable(&cache->hosttable);
   build_vol_hash_table(&hosttable->gen_host_rec);
   if (hosttable->m_numEntries != 0) {
-    CacheHostMatcher *hm   = hosttable->getHostMatcher();
-    CacheHostRecord *h_rec = hm->getDataArray();
-    int h_rec_len          = hm->getNumElements();
-    int i;
+    CacheHostMatcher *hm        = hosttable->getHostMatcher();
+    CacheHostRecord  *h_rec     = hm->getDataArray();
+    int               h_rec_len = hm->getNumElements();
+    int               i;
     for (i = 0; i < h_rec_len; i++) {
       build_vol_hash_table(&h_rec[i]);
     }
@@ -1812,9 +1812,9 @@ Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 
-  uint32_t h                      = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
-  unsigned short *hash_table      = hosttable->gen_host_rec.vol_hash_table;
-  const CacheHostRecord *host_rec = &hosttable->gen_host_rec;
+  uint32_t               h          = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
+  unsigned short        *hash_table = hosttable->gen_host_rec.vol_hash_table;
+  const CacheHostRecord *host_rec   = &hosttable->gen_host_rec;
 
   if (hosttable->m_numEntries > 0 && host_len) {
     CacheHostResult res;
@@ -1943,7 +1943,7 @@ ink_cache_init(ts::ModuleVersion v)
   if (cache_config_persist_bad_disks) {
     std::filesystem::path localstatedir{Layout::get()->localstatedir};
     std::filesystem::path bad_disks_path{localstatedir / ts::filename::BAD_DISKS};
-    std::fstream bad_disks_file{bad_disks_path.c_str(), bad_disks_file.in};
+    std::fstream          bad_disks_file{bad_disks_path.c_str(), bad_disks_file.in};
     if (bad_disks_file.good()) {
       for (std::string line; std::getline(bad_disks_file, line);) {
         if (bad_disks_file.fail()) {

@@ -40,7 +40,7 @@
 #define PreWarmSMVDbg(fmt, ...) Dbg(dbg_ctl_v_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
 
 ClassAllocator<PreWarmSM> preWarmSMAllocator("preWarmSMAllocator");
-PreWarmManager prewarmManager;
+PreWarmManager            prewarmManager;
 
 namespace
 {
@@ -55,7 +55,7 @@ DbgCtl dbg_ctl_v_prewarm_init{"v_prewarm_init"};
 using namespace std::literals;
 
 constexpr ts_seconds DOWN_SERVER_TIMEOUT = 300s;
-constexpr size_t STAT_NAME_BUF_LEN       = 1024;
+constexpr size_t     STAT_NAME_BUF_LEN   = 1024;
 
 constexpr std::string_view SRV_TUNNEL_TCP                = "_tunnel._tcp."sv;
 constexpr std::string_view CLIENT_SNI_POLICY_SERVER_NAME = "server_name"sv;
@@ -240,7 +240,7 @@ PreWarmSM::state_init(int event, void *data)
                  _dst->port, (int)_dst->type, _dst->alpn_index, _retry_counter);
 
     if (_conf->srv_enabled) {
-      char target[MAXDNAME];
+      char   target[MAXDNAME];
       size_t target_len = 0;
 
       memcpy(target, SRV_TUNNEL_TCP.data(), SRV_TUNNEL_TCP.size());
@@ -320,8 +320,8 @@ PreWarmSM::state_dns_lookup(int event, void *data)
     break;
   }
   case EVENT_SRV_LOOKUP: {
-    _pending_action             = nullptr;
-    char srv_hostname[MAXDNAME] = {}; // Needs to have the same scope as hostname
+    _pending_action                         = nullptr;
+    char             srv_hostname[MAXDNAME] = {}; // Needs to have the same scope as hostname
     std::string_view hostname;
 
     if (record == nullptr || !record->is_srv()) {
@@ -380,7 +380,7 @@ PreWarmSM::state_net_open(int event, void *data)
   case VC_EVENT_READ_READY:
     [[fallthrough]];
   case VC_EVENT_WRITE_READY: {
-    VIO *vio              = static_cast<VIO *>(data);
+    VIO            *vio   = static_cast<VIO *>(data);
     NetVConnection *netvc = static_cast<NetVConnection *>(vio->vc_server);
 
     ink_release_assert(netvc == _netvc);
@@ -436,7 +436,7 @@ PreWarmSM::state_open(int event, void *data)
     // When the origin server sends something, keep it in the buffer. Forward it to the UA when a tunnel is setup
     // (HttpSM::setup_blind_tunnel)
     // - e.g. some HTTP/2 implementations send SETTINGS frame & WINDOW_UPDATE frame immediately when TLS handshake is done.
-    VIO *vio              = static_cast<VIO *>(data);
+    VIO            *vio   = static_cast<VIO *>(data);
     NetVConnection *netvc = static_cast<NetVConnection *>(vio->vc_server);
 
     ink_release_assert(netvc == _netvc);
@@ -782,8 +782,8 @@ PreWarmQueue::dequeue(const PreWarm::SPtrConstDst &target)
     return nullptr;
   }
 
-  const PreWarm::SPtrConstDst &dst = res->first;
-  Info &info                       = res->second;
+  const PreWarm::SPtrConstDst &dst  = res->first;
+  Info                        &info = res->second;
 
   Queue *q = info.open_list;
   while (!q->empty()) {
@@ -850,7 +850,7 @@ void
 PreWarmQueue::_prewarm_on_event_interval(const PreWarm::SPtrConstDst &dst, const Info &info)
 {
   const uint32_t current_size = info.init_list->size() + info.open_list->size();
-  uint32_t n                  = 0;
+  uint32_t       n            = 0;
 
   switch (_algorithm) {
   case PreWarm::Algorithm::V2: {
@@ -911,13 +911,13 @@ PreWarmQueue::_reconfigure()
   }
 
   // build new map based on new SNIConfig
-  const PreWarm::ParsedSNIConf &new_conf_list = prewarmManager.get_parsed_conf();
-  const PreWarm::StatsIdMap &new_stats_id_map = prewarmManager.get_stats_id_map();
+  const PreWarm::ParsedSNIConf &new_conf_list    = prewarmManager.get_parsed_conf();
+  const PreWarm::StatsIdMap    &new_stats_id_map = prewarmManager.get_stats_id_map();
 
   Map new_map;
   for (auto &entry : new_conf_list) {
-    const PreWarm::SPtrConstDst &dst = entry.first;
-    PreWarm::SPtrConstConf conf      = entry.second;
+    const PreWarm::SPtrConstDst &dst  = entry.first;
+    PreWarm::SPtrConstConf       conf = entry.second;
 
     if (const auto &res = _map.find(dst); res != _map.end()) {
       // copy from old info
@@ -1033,7 +1033,7 @@ PreWarmManager::reconfigure()
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
 
   PreWarmConfig::scoped_config prewarm_conf;
-  bool is_prewarm_enabled = prewarm_conf->enabled;
+  bool                         is_prewarm_enabled = prewarm_conf->enabled;
 
   SNIConfig::scoped_config sni_conf;
   for (const auto &item : sni_conf->yaml_sni.items) {
@@ -1104,7 +1104,7 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
           (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
 
       std::string dst_fqdn;
-      int32_t port;
+      int32_t     port;
       parse_authority(dst_fqdn, port, item.tunnel_destination);
 
       if (port < 0) {
@@ -1163,7 +1163,7 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
 
   for (auto &entry : parsed_conf) {
     const PreWarm::SPtrConstDst &dst = entry.first;
-    PreWarm::StatsIds ids;
+    PreWarm::StatsIds            ids;
     auto &[counters, gauges] = ids;
 
     // First the Counters

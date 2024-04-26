@@ -37,17 +37,17 @@
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Event.h"
 struct ProtectedQueue {
-  void enqueue(Event *e);
-  void signal();
-  int try_signal();             // Use non blocking lock and if acquired, signal
-  void enqueue_local(Event *e); // Safe when called from the same thread
+  void   enqueue(Event *e);
+  void   signal();
+  int    try_signal();            // Use non blocking lock and if acquired, signal
+  void   enqueue_local(Event *e); // Safe when called from the same thread
   Event *dequeue_local();
-  void dequeue_external();       // Dequeue any external events.
-  void wait(ink_hrtime timeout); // Wait for @a timeout nanoseconds on a condition variable if there are no events.
+  void   dequeue_external();       // Dequeue any external events.
+  void   wait(ink_hrtime timeout); // Wait for @a timeout nanoseconds on a condition variable if there are no events.
 
   InkAtomicList al;
-  ink_mutex lock;
-  ink_cond might_have_data;
+  ink_mutex     lock;
+  ink_cond      might_have_data;
   Que(Event, link) localQueue;
 
   ProtectedQueue();

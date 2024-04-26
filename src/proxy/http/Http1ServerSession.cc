@@ -108,7 +108,7 @@ Http1ServerSession::do_io_close(int alerrno)
   // Only do the close bookkeeping 1 time
   if (state != SSN_CLOSED) {
     swoc::LocalBufferWriter<256> w;
-    bool debug_p = dbg_ctl_http_ss.on();
+    bool                         debug_p = dbg_ctl_http_ss.on();
 
     state = SSN_CLOSED;
 

@@ -121,11 +121,11 @@ private:
 void
 print_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
 {
-  TSIOBuffer output_buffer;
-  TSIOBufferReader reader;
-  TSIOBufferBlock block;
-  const char *block_start;
-  int64_t block_avail;
+  TSIOBuffer        output_buffer;
+  TSIOBufferReader  reader;
+  TSIOBufferBlock   block;
+  const char       *block_start;
+  int64_t           block_avail;
   EscapeCharForJson escape_char_for_json;
   output_buffer = TSIOBufferCreate();
   reader        = TSIOBufferReaderAlloc(output_buffer);
@@ -169,7 +169,7 @@ void
 print_request_headers(TSHttpTxn txn, std::stringstream &output)
 {
   TSMBuffer buf_c, buf_s;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
   if (TSHttpTxnClientReqGet(txn, &buf_c, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'request', 'side':'client', 'headers': {\n";
     print_headers(txn, buf_c, hdr_loc, output);
@@ -188,7 +188,7 @@ void
 print_response_headers(TSHttpTxn txn, std::stringstream &output)
 {
   TSMBuffer buf_c, buf_s;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
   if (TSHttpTxnServerRespGet(txn, &buf_s, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'response', 'side':'server', 'headers': {\n";
     print_headers(txn, buf_s, hdr_loc, output);

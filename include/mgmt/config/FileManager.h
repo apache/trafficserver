@@ -112,13 +112,13 @@ public:
   private:
     int statFile(struct stat *buf);
 
-    ink_mutex fileAccessLock;
-    std::string fileName;
-    std::string configName;
-    bool root_access_needed;
-    bool isRequired;
+    ink_mutex      fileAccessLock;
+    std::string    fileName;
+    std::string    configName;
+    bool           root_access_needed;
+    bool           isRequired;
     ConfigManager *parentConfig;
-    time_t fileLastModified = 0;
+    time_t         fileLastModified = 0;
   };
 
   using CallbackType = std::function<swoc::Errata(std::string const &, std::string const &)>;
@@ -141,8 +141,8 @@ public:
 
   swoc::Errata fileChanged(std::string const &fileName, std::string const &configName);
   swoc::Errata rereadConfig();
-  bool isConfigStale();
-  void configFileChild(const char *parent, const char *child);
+  bool         isConfigStale();
+  void         configFileChild(const char *parent, const char *child);
 
   void registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist);
   void invokeConfigPluginCallbacks();
@@ -157,7 +157,7 @@ public:
 private:
   FileManager();
 
-  ink_mutex accessLock; // Protects bindings hashtable
+  ink_mutex            accessLock; // Protects bindings hashtable
   ConfigUpdateCbTable *_pluginCallbackList{nullptr};
 
   std::mutex _callbacksMutex;

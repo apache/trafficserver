@@ -49,11 +49,11 @@
 char *
 readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
 {
-  int fd;
+  int         fd;
   struct stat file_info;
-  char *file_buf, *buf;
-  int read_size = 0;
-  int file_size;
+  char       *file_buf, *buf;
+  int         read_size = 0;
+  int         file_size;
 
   if (read_size_ptr != nullptr) {
     *read_size_ptr = 0;
@@ -137,7 +137,7 @@ unescapifyStr(char *buffer)
 {
   char *read  = buffer;
   char *write = buffer;
-  char subStr[3];
+  char  subStr[3];
 
   subStr[2] = '\0';
   while (*read != '\0') {
@@ -165,7 +165,7 @@ unescapifyStr(char *buffer)
 const char *
 ExtractIpRange(char *match_str, in_addr_t *min, in_addr_t *max)
 {
-  IpEndpoint ip_min, ip_max;
+  IpEndpoint  ip_min, ip_max;
   const char *zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (nullptr == zret) { // success
     if (ats_is_ip4(&ip_min) && ats_is_ip4(&ip_max)) {
@@ -199,11 +199,11 @@ ExtractIpRange(char *match_str, in_addr_t *min, in_addr_t *max)
 const char *
 ExtractIpRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
 {
-  Tokenizer rangeTok("-/");
-  bool mask = strchr(match_str, '/') != nullptr;
-  int mask_bits;
-  int mask_val;
-  int numToks;
+  Tokenizer  rangeTok("-/");
+  bool       mask = strchr(match_str, '/') != nullptr;
+  int        mask_bits;
+  int        mask_val;
+  int        numToks;
   IpEndpoint la1, la2;
 
   // Extract the IP addresses from match data
@@ -328,11 +328,11 @@ processDurationString(char *str, int *seconds)
 {
   char *s       = str;
   char *current = str;
-  char unit;
-  int tmp;
-  int multiplier;
-  int result = 0;
-  int len;
+  char  unit;
+  int   tmp;
+  int   multiplier;
+  int   result = 0;
+  int   len;
 
   if (str == nullptr) {
     return "Missing time";
@@ -435,15 +435,15 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
     CONSUME,
   };
 
-  pState state      = FIND_LABEL;
-  bool inQuote      = false;
-  char *copyForward = nullptr;
-  char *copyFrom    = nullptr;
-  char *s           = line;
-  char *label       = nullptr;
-  char *val         = nullptr;
-  int num_el        = 0;
-  matcher_type type = MATCH_NONE;
+  pState       state       = FIND_LABEL;
+  bool         inQuote     = false;
+  char        *copyForward = nullptr;
+  char        *copyFrom    = nullptr;
+  char        *s           = line;
+  char        *label       = nullptr;
+  char        *val         = nullptr;
+  int          num_el      = 0;
+  matcher_type type        = MATCH_NONE;
 
   // Zero out the parsed line structure
   memset(p_line, 0, sizeof(matcher_line));

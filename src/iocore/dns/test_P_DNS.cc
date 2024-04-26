@@ -25,10 +25,10 @@
 
 Diags *diags;
 struct NetTesterSM : public Continuation {
-  VIO *read_vio;
+  VIO            *read_vio;
   IOBufferReader *reader;
   NetVConnection *vc;
-  MIOBuffer *buf;
+  MIOBuffer      *buf;
 
   NetTesterSM(ProxyMutex *_mutex, NetVConnection *_vc) : Continuation(_mutex)
   {
@@ -44,7 +44,7 @@ struct NetTesterSM : public Continuation {
   int
   handle_read(int event, void *data)
   {
-    int r;
+    int   r;
     char *str = nullptr;
     switch (event) {
     case VC_EVENT_READ_READY:

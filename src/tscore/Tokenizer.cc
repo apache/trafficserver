@@ -59,8 +59,8 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
 
 Tokenizer::~Tokenizer()
 {
-  bool root     = true;
-  tok_node *cur = &start_node;
+  bool      root = true;
+  tok_node *cur  = &start_node;
   ;
   tok_node *next = nullptr;
 
@@ -117,11 +117,11 @@ Tokenizer::isDelimiter(char c)
 unsigned
 Tokenizer::Initialize(char *str, unsigned opt)
 {
-  char *strStart;
-  int priorCharWasDelimit = 1;
-  char *tokStart          = nullptr;
-  unsigned tok_count      = 0;
-  bool max_limit_hit      = false;
+  char    *strStart;
+  int      priorCharWasDelimit = 1;
+  char    *tokStart            = nullptr;
+  unsigned tok_count           = 0;
+  bool     max_limit_hit       = false;
 
   // We can't depend on ReUse() being called so just do it
   //   if the object needs it
@@ -277,8 +277,8 @@ Tokenizer::addToken(char *startAddr, int length)
 const char *
 Tokenizer::operator[](unsigned index) const
 {
-  const tok_node *cur_node = &start_node;
-  unsigned cur_start       = 0;
+  const tok_node *cur_node  = &start_node;
+  unsigned        cur_start = 0;
 
   if (index >= numValidTokens) {
     return nullptr;
@@ -335,9 +335,9 @@ Tokenizer::iterNext(tok_iter_state *state)
 void
 Tokenizer::Print() const
 {
-  const tok_node *cur_node = &start_node;
-  int node_index           = 0;
-  int count                = 0;
+  const tok_node *cur_node   = &start_node;
+  int             node_index = 0;
+  int             count      = 0;
 
   while (cur_node != nullptr) {
     if (cur_node->el[node_index] != nullptr) {

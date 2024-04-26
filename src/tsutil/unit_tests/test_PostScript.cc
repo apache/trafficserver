@@ -63,7 +63,7 @@ f3(int a, double b)
 TEST_CASE("PostScript", "[PSC]")
 {
   {
-    int *p = &dummy;
+    int           *p = &dummy;
     ts::PostScript g1([&]() -> void { f1(1, 2.0, p, dummy); });
     ts::PostScript g2([=]() -> void { f2(4); });
     ts::PostScript g3([=]() -> void { f3(5, 6.0); });

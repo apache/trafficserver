@@ -35,13 +35,13 @@ static void
 test_url()
 {
   static const char *strs[] = {"http://npdev:19080/1.6664000000/4000", "http://npdev:19080/1.8666000000/4000"};
-  static int nstrs          = sizeof(strs) / sizeof(strs[0]);
+  static int         nstrs  = sizeof(strs) / sizeof(strs[0]);
 
-  int err, failed;
-  URL url;
+  int         err, failed;
+  URL         url;
   const char *start;
   const char *end;
-  int i, old_length, new_length;
+  int         i, old_length, new_length;
 
   failed = 0;
   for (i = 0; i < nstrs; i++) {

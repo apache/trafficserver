@@ -201,7 +201,7 @@ public:
   // virtual void cancel(Continuation * c = nullptr);
 
 #ifdef ENABLE_EVENT_TRACKER
-  void set_location();
+  void        set_location();
   const void *get_location() const;
 #endif
 
@@ -214,7 +214,7 @@ public:
   unsigned int immediate             : 1;
   unsigned int globally_allocated    : 1;
   unsigned int in_heap               : 4;
-  int callback_event = 0;
+  int          callback_event = 0;
 
   ink_hrtime timeout_at = 0;
   ink_hrtime period     = 0;

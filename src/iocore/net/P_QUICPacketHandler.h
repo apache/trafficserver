@@ -44,7 +44,7 @@ public:
   void close_connection(QUICNetVConnection *conn);
 
 protected:
-  Event *_collector_event                       = nullptr;
+  Event                  *_collector_event      = nullptr;
   QUICClosedConCollector *_closed_con_collector = nullptr;
 
   virtual Continuation *_get_continuation() = 0;
@@ -60,9 +60,9 @@ public:
 
   // NetAccept
   virtual NetProcessor *getNetProcessor() const override;
-  virtual NetAccept *clone() const override;
-  virtual int acceptEvent(int event, void *e) override;
-  void init_accept(EThread *t) override;
+  virtual NetAccept    *clone() const override;
+  virtual int           acceptEvent(int event, void *e) override;
+  void                  init_accept(EThread *t) override;
 
 protected:
   // QUICPacketHandler
@@ -70,7 +70,7 @@ protected:
 
 private:
   QUICConnectionTable &_ctable;
-  quiche_config &_quiche_config;
+  quiche_config       &_quiche_config;
 
   void _recv_packet(int event, UDPPacket *udpPacket) override;
 };

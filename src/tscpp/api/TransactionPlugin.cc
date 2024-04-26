@@ -36,8 +36,8 @@ using atscppapi::TransactionPlugin;
  * @private
  */
 struct atscppapi::TransactionPluginState : noncopyable {
-  TSCont cont_ = nullptr;
-  TSHttpTxn ats_txn_handle_;
+  TSCont                 cont_ = nullptr;
+  TSHttpTxn              ats_txn_handle_;
   std::shared_ptr<Mutex> mutex_;
   TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle), mutex_(new Mutex) {}
 };
@@ -47,7 +47,7 @@ namespace
 static int
 handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn             = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn          txn    = static_cast<TSHttpTxn>(edata);
   TransactionPlugin *plugin = static_cast<TransactionPlugin *>(TSContDataGet(cont));
   LOG_DEBUG("cont=%p, event=%d, tshttptxn=%p, plugin=%p", cont, event, edata, plugin);
   atscppapi::utils::internal::invokePluginForEvent(plugin, txn, event);

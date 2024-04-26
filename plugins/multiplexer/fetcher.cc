@@ -43,9 +43,9 @@ HttpParser::parse(io::IO &io)
   }
   TSIOBufferBlock block = TSIOBufferReaderStart(io.reader);
   while (block != nullptr) {
-    int64_t size            = 0;
-    const char *const begin = TSIOBufferBlockReadStart(block, io.reader, &size);
-    const char *iterator    = begin;
+    int64_t           size     = 0;
+    const char *const begin    = TSIOBufferBlockReadStart(block, io.reader, &size);
+    const char       *iterator = begin;
 
     parsed_ = (TSHttpHdrParseResp(parser_, buffer_, location_, &iterator, iterator + size) == TS_PARSE_DONE);
     TSIOBufferReaderConsume(io.reader, iterator - begin);

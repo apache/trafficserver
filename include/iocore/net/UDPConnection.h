@@ -47,12 +47,12 @@ public:
   ~UDPConnection() override{};
 
   SOCKET getFd();
-  void setBinding(struct sockaddr const *);
-  void setBinding(const IpAddr &, in_port_t);
-  bool getBinding(struct sockaddr *);
+  void   setBinding(struct sockaddr const *);
+  void   setBinding(const IpAddr &, in_port_t);
+  bool   getBinding(struct sockaddr *);
 
   void destroy();
-  int shouldDestroy();
+  int  shouldDestroy();
   /**
      <p>
      <b>Callbacks:</b><br>
@@ -81,11 +81,11 @@ public:
 
   void Release();
   void AddRef();
-  int GetRefCount();
+  int  GetRefCount();
 
   int getPortNum();
 
-  int GetSendGenerationNumber(); // const
+  int  GetSendGenerationNumber(); // const
   void setContinuation(Continuation *c);
 
   /**

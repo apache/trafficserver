@@ -40,7 +40,7 @@ class TsEnumDescriptor
 public:
   struct Pair {
     std::string_view key;
-    int value;
+    int              value;
   };
   TsEnumDescriptor(std::initializer_list<Pair> pairs) : values{pairs.size(), &TsLuaConfigSVHash}, keys{pairs.size()}
   {
@@ -50,7 +50,7 @@ public:
     }
   }
   std::unordered_map<std::string_view, int, size_t (*)(std::string_view const &)> values;
-  std::unordered_map<int, std::string_view> keys;
+  std::unordered_map<int, std::string_view>                                       keys;
   int
   get(std::string_view key)
   {

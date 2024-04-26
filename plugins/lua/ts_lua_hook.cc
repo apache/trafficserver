@@ -60,7 +60,7 @@ char const *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
                                        "TS_LUA_HOOK_VCONN_START",
                                        "TS_LUA_HOOK_LAST"};
 
-static int ts_lua_add_hook(lua_State *L);
+static int  ts_lua_add_hook(lua_State *L);
 static void ts_lua_inject_hook_variables(lua_State *L);
 
 void
@@ -89,7 +89,7 @@ ts_lua_add_hook(lua_State *L)
   int type;
   int entry;
 
-  TSVConn connp;
+  TSVConn          connp;
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);

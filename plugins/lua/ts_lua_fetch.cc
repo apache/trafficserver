@@ -25,12 +25,12 @@
 #define TS_LUA_FETCH_CLIENT_ADDRPORT_LEN 15
 #define TS_LUA_FETCH_USER_AGENT          "TS Fetcher/1.0"
 
-static int ts_lua_fetch(lua_State *L);
-static int ts_lua_fetch_multi(lua_State *L);
-static int ts_lua_fetch_handler(TSCont contp, TSEvent event, void *edata);
-static int ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai);
-static int ts_lua_fetch_multi_handler(TSCont contp, TSEvent event, void *edata);
-static int ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi);
+static int         ts_lua_fetch(lua_State *L);
+static int         ts_lua_fetch_multi(lua_State *L);
+static int         ts_lua_fetch_handler(TSCont contp, TSEvent event, void *edata);
+static int         ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai);
+static int         ts_lua_fetch_multi_handler(TSCont contp, TSEvent event, void *edata);
+static int         ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi);
 static inline void ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi);
 
 void
@@ -48,14 +48,14 @@ ts_lua_inject_fetch_api(lua_State *L)
 static int
 ts_lua_fetch(lua_State *L)
 {
-  int sz;
-  size_t n;
-  const char *url;
-  size_t url_len;
-  TSCont contp;
-  ts_lua_cont_info *ci;
-  ts_lua_async_item *ai;
-  ts_lua_fetch_info *fi;
+  int                      sz;
+  size_t                   n;
+  const char              *url;
+  size_t                   url_len;
+  TSCont                   contp;
+  ts_lua_cont_info        *ci;
+  ts_lua_async_item       *ai;
+  ts_lua_fetch_info       *fi;
   ts_lua_fetch_multi_info *fmi;
 
   ci = ts_lua_get_cont_info(L);
@@ -114,14 +114,14 @@ ts_lua_fetch(lua_State *L)
 static int
 ts_lua_fetch_multi(lua_State *L)
 {
-  int type, sz;
-  size_t i, n;
-  const char *url;
-  size_t url_len;
-  TSCont contp;
-  ts_lua_cont_info *ci;
-  ts_lua_async_item *ai;
-  ts_lua_fetch_info *fi;
+  int                      type, sz;
+  size_t                   i, n;
+  const char              *url;
+  size_t                   url_len;
+  TSCont                   contp;
+  ts_lua_cont_info        *ci;
+  ts_lua_async_item       *ai;
+  ts_lua_fetch_info       *fi;
   ts_lua_fetch_multi_info *fmi;
 
   ci = ts_lua_get_cont_info(L);
@@ -202,16 +202,16 @@ ts_lua_fetch_multi(lua_State *L)
 static int
 ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi)
 {
-  TSCont contp;
-  int tb, flags, host_len, n;
-  int cl, ht, ua;
-  const char *method, *key, *value, *body, *opt;
-  const char *addr, *ptr, *host;
-  size_t method_len, key_len, value_len, body_len;
-  size_t addr_len, opt_len, i, left;
-  char c;
+  TSCont          contp;
+  int             tb, flags, host_len, n;
+  int             cl, ht, ua;
+  const char     *method, *key, *value, *body, *opt;
+  const char     *addr, *ptr, *host;
+  size_t          method_len, key_len, value_len, body_len;
+  size_t          addr_len, opt_len, i, left;
+  char            c;
   struct sockaddr clientaddr;
-  char buf[32];
+  char            buf[32];
 
   tb = lua_istable(L, -1);
 
@@ -395,12 +395,12 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 static int
 ts_lua_fetch_handler(TSCont contp, TSEvent ev, void *edata ATS_UNUSED)
 {
-  int event;
-  char *from;
-  int64_t n, wavail;
+  int             event;
+  char           *from;
+  int64_t         n, wavail;
   TSIOBufferBlock blk;
 
-  ts_lua_fetch_info *fi;
+  ts_lua_fetch_info       *fi;
   ts_lua_fetch_multi_info *fmi;
 
   event = (int)ev;
@@ -444,13 +444,13 @@ ts_lua_fetch_handler(TSCont contp, TSEvent ev, void *edata ATS_UNUSED)
 static int
 ts_lua_fill_one_result(lua_State *L, ts_lua_fetch_info *fi)
 {
-  const char *name, *value;
-  int name_len, value_len;
-  char *dst;
-  int64_t ravail;
-  TSMBuffer bufp;
-  TSMLoc hdrp;
-  TSMLoc field_loc, next_field_loc;
+  const char  *name, *value;
+  int          name_len, value_len;
+  char        *dst;
+  int64_t      ravail;
+  TSMBuffer    bufp;
+  TSMLoc       hdrp;
+  TSMLoc       field_loc, next_field_loc;
   TSHttpStatus status;
 
   bufp = TSFetchRespHdrMBufGet(fi->fch);
@@ -514,13 +514,13 @@ ts_lua_fill_one_result(lua_State *L, ts_lua_fetch_info *fi)
 static int
 ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 {
-  int i;
+  int        i;
   lua_State *L;
-  TSMutex lmutex;
+  TSMutex    lmutex;
 
-  ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
-  ts_lua_fetch_info *fi;
+  ts_lua_async_item       *ai;
+  ts_lua_cont_info        *ci;
+  ts_lua_fetch_info       *fi;
   ts_lua_fetch_multi_info *fmi;
 
   ai = static_cast<decltype(ai)>(TSContDataGet(contp));
@@ -563,7 +563,7 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 static inline void
 ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi)
 {
-  int i;
+  int                i;
   ts_lua_fetch_info *fi;
 
   if (fmi == nullptr) {

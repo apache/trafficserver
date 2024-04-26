@@ -43,8 +43,8 @@
 #include "proxy/http/remap/UrlMapping.h"
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table                             = nullptr;
+static Ptr<ProxyMutex>            reconfig_mutex;
+UrlRewrite                       *rewrite_table       = nullptr;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 // Tokens for the Callback function

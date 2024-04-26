@@ -578,7 +578,7 @@ Http3Transaction::_process_read_vio()
   SCOPED_MUTEX_LOCK(lock, this->_info.read_vio->mutex, this_ethread());
 
   uint64_t nread = 0;
-  auto error     = this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
+  auto     error = this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
                                                          *this->_info.read_vio->get_reader(), nread);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
     Http3TransDebug("Error occured while processing read vio: %hu, %s", error->get_code(), error->msg);
@@ -599,8 +599,8 @@ Http3Transaction::_process_write_vio()
   SCOPED_MUTEX_LOCK(lock, this->_info.write_vio->mutex, this_ethread());
 
   size_t nwritten = 0;
-  bool all_done   = false;
-  auto error      = this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(),
+  bool   all_done = false;
+  auto   error    = this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(),
                                                           nwritten, all_done);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
     Http3TransDebug("Error occured while processing write vio: %hu, %s", error->get_code(), error->msg);
@@ -776,12 +776,12 @@ Http09Transaction::_process_read_vio()
   }
 
   if (this->_legacy_request) {
-    uint64_t nread    = 0;
+    uint64_t   nread  = 0;
     MIOBuffer *writer = this->_read_vio.get_writer();
     // Nuke this branch when we drop 0.9 support
     if (!this->_client_req_header_complete) {
       uint8_t buf[4096];
-      int len = reader->read(buf, 4096);
+      int     len = reader->read(buf, 4096);
       // Check client request is complete or not
       if (len < 2 || buf[len - 1] != '\n') {
         return 0;
@@ -801,7 +801,7 @@ Http09Transaction::_process_read_vio()
       writer->write(version, sizeof(version));
     } else {
       uint8_t buf[4096];
-      int len;
+      int     len;
       while ((len = reader->read(buf, 4096)) > 0) {
         nread += len;
         writer->write(buf, len);
@@ -812,8 +812,8 @@ Http09Transaction::_process_read_vio()
     // End of code for HTTP/0.9
   } else {
     // Ignore malformed data
-    uint8_t buf[4096];
-    int len;
+    uint8_t  buf[4096];
+    int      len;
     uint64_t nread = 0;
 
     while ((len = reader->read(buf, 4096)) > 0) {
@@ -850,8 +850,8 @@ Http09Transaction::_process_write_vio()
     if (reader->is_read_avail_more_than(http_1_1_version_len) &&
         memcmp(reader->start(), http_1_1_version, http_1_1_version_len) == 0) {
       // Skip HTTP/1.1 response headers
-      IOBufferBlock *headers = reader->get_current_block();
-      int64_t headers_size   = headers->read_avail();
+      IOBufferBlock *headers      = reader->get_current_block();
+      int64_t        headers_size = headers->read_avail();
       reader->consume(headers_size);
       this->_write_vio.ndone += headers_size;
     }

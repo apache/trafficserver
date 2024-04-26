@@ -54,7 +54,7 @@ SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
 enum class SSLCertContextType;
 
 struct SSLLoadingContext {
-  SSL_CTX *ctx;
+  SSL_CTX           *ctx;
   SSLCertContextType ctx_type;
 
   explicit SSLLoadingContext(SSL_CTX *c, SSLCertContextType ctx_type) : ctx(c), ctx_type(ctx_type) {}

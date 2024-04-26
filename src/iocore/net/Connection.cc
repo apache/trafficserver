@@ -74,8 +74,8 @@ Connection::~Connection()
 int
 Server::accept(Connection *c)
 {
-  int res      = 0;
-  socklen_t sz = sizeof(c->addr);
+  int       res = 0;
+  socklen_t sz  = sizeof(c->addr);
 
   res = SocketManager::accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
   if (res < 0) {

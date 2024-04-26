@@ -52,10 +52,10 @@ private:
 class Http3Config
 {
 public:
-  static void startup();
-  static void reconfigure();
+  static void               startup();
+  static void               reconfigure();
   static Http3ConfigParams *acquire();
-  static void release(Http3ConfigParams *params);
+  static void               release(Http3ConfigParams *params);
 
   using scoped_config = ConfigProcessor::scoped_config<Http3Config, Http3ConfigParams>;
 

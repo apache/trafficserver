@@ -221,12 +221,12 @@ Span::~Span()
 Result
 Store::read_config()
 {
-  int n_dsstore   = 0;
-  int i           = 0;
-  const char *err = nullptr;
-  Span *sd = nullptr, *cur = nullptr;
-  Span *ns;
-  ats_scoped_fd fd;
+  int            n_dsstore = 0;
+  int            i         = 0;
+  const char    *err       = nullptr;
+  Span          *sd = nullptr, *cur = nullptr;
+  Span          *ns;
+  ats_scoped_fd  fd;
   ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
   Note("%s loading ...", ts::filename::STORAGE);
@@ -240,7 +240,7 @@ Store::read_config()
   // For each line
 
   char line[1024];
-  int len;
+  int  len;
   while ((len = ink_file_fd_readline(fd, sizeof(line), line)) > 0) {
     const char *path;
     const char *seed = nullptr;
@@ -262,8 +262,8 @@ Store::read_config()
     Dbg(dbg_ctl_cache_init, "Store::read_config: \"%s\"", path);
     ++n_spans_in_config;
 
-    int64_t size   = -1;
-    int volume_num = -1;
+    int64_t     size       = -1;
+    int         volume_num = -1;
     const char *e;
     while (nullptr != (e = tokens.getNext())) {
       if (ParseRules::is_digit(*e)) {
@@ -362,9 +362,9 @@ Store::write_config_data(int fd) const
 const char *
 Span::init(const char *path, int64_t size)
 {
-  struct stat sbuf;
-  struct statvfs vbuf;
-  span_error_t serr;
+  struct stat         sbuf;
+  struct statvfs      vbuf;
+  span_error_t        serr;
   ink_device_geometry geometry;
 
   ats_scoped_fd fd(SocketManager::open(path, O_RDONLY));

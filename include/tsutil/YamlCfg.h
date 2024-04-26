@@ -75,9 +75,9 @@ namespace Yaml
     Map &operator=(Map const &) = delete;
 
   private:
-    YAML::Node _map;
+    YAML::Node                    _map;
     std::vector<std::string_view> _used_key;
-    bool _bad{false};
+    bool                          _bad{false};
   };
 
 } // end namespace Yaml

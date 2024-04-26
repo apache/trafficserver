@@ -36,8 +36,8 @@ TEST_CASE("XPACK_Integer", "[xpack]")
   static const struct {
     uint32_t raw_integer;
     uint8_t *encoded_field;
-    int encoded_field_len;
-    int prefix;
+    int      encoded_field_len;
+    int      prefix;
   } integer_test_case[] = {
     {10,   (uint8_t *)"\x0a",         1, 5},
     {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5},
@@ -61,7 +61,7 @@ TEST_CASE("XPACK_Integer", "[xpack]")
   {
     for (const auto &i : integer_test_case) {
       uint64_t actual = 0;
-      int len         = xpack_decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
+      int      len    = xpack_decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual == i.raw_integer);
@@ -73,10 +73,10 @@ TEST_CASE("XPACK_String", "[xpack]")
 {
   // Example: custom-key: custom-header
   const static struct {
-    char *raw_string;
+    char    *raw_string;
     uint32_t raw_string_len;
     uint8_t *encoded_field;
-    int encoded_field_len;
+    int      encoded_field_len;
   } string_test_case[] = {
     {(char *)"",                        0,
      (uint8_t *)"\x0"
@@ -115,10 +115,10 @@ TEST_CASE("XPACK_String", "[xpack]")
     hpack_huffman_init();
 
     for (const auto &i : string_test_case) {
-      Arena arena;
-      char *actual        = nullptr;
+      Arena    arena;
+      char    *actual     = nullptr;
       uint64_t actual_len = 0;
-      int len             = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
+      int      len        = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
@@ -142,12 +142,12 @@ TEST_CASE("XPACK_String", "[xpack]")
   SECTION("Dynamic Table")
   {
     constexpr uint16_t MAX_SIZE = 128;
-    XpackDynamicTable dt(MAX_SIZE);
-    XpackLookupResult result;
-    const char *name  = nullptr;
-    size_t name_len   = 0;
-    const char *value = nullptr;
-    size_t value_len  = 0;
+    XpackDynamicTable  dt(MAX_SIZE);
+    XpackLookupResult  result;
+    const char        *name      = nullptr;
+    size_t             name_len  = 0;
+    const char        *value     = nullptr;
+    size_t             value_len = 0;
 
     // Check the initial state
     REQUIRE(dt.size() == 0);

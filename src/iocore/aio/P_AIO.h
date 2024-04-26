@@ -61,11 +61,11 @@ struct AIOCallbackInternal : public AIOCallback, public IOUringCompletionHandler
 #else
 struct AIOCallbackInternal : public AIOCallback {
 #endif
-  AIO_Reqs *aio_req     = nullptr;
+  AIO_Reqs  *aio_req    = nullptr;
   ink_hrtime sleep_time = 0;
   SLINK(AIOCallbackInternal, alink); /* for AIO_Reqs::aio_temp_list */
 #if TS_USE_LINUX_IO_URING
-  iovec iov                    = {}; // this is to support older kernels that only support readv/writev
+  iovec                iov     = {}; // this is to support older kernels that only support readv/writev
   AIOCallbackInternal *this_op = nullptr;
   AIOCallbackInternal *aio_op  = nullptr;
 
@@ -83,12 +83,12 @@ struct AIO_Reqs {
                                       lock for a particular queue cannot be acquired */
   ASLL(AIOCallbackInternal, alink) aio_temp_list;
   ink_mutex aio_mutex;
-  ink_cond aio_cond;
-  int index           = 0;  /* position of this struct in the aio_reqs array */
-  int pending         = 0;  /* number of outstanding requests on the disk */
-  int queued          = 0;  /* total number of aio_todo requests */
-  int filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
-  int requests_queued = 0;
+  ink_cond  aio_cond;
+  int       index           = 0;  /* position of this struct in the aio_reqs array */
+  int       pending         = 0;  /* number of outstanding requests on the disk */
+  int       queued          = 0;  /* total number of aio_todo requests */
+  int       filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
+  int       requests_queued = 0;
 };
 
 TS_INLINE int
@@ -117,9 +117,9 @@ AIOCallbackInternal::io_complete(int event, void *data)
 class AIOTestData : public Continuation
 {
 public:
-  int num_req;
-  int num_temp;
-  int num_queue;
+  int        num_req;
+  int        num_temp;
+  int        num_queue;
   ink_hrtime start;
 
   int ink_aio_stats(int event, void *data);

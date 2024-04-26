@@ -37,7 +37,7 @@ get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *st
 
   /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
    * '='. */
-  char termination_symbol;
+  char   termination_symbol;
   size_t termination_ct;
   size_t param_ct = strlen(paramName);
 
@@ -131,7 +131,7 @@ cjose_jws_t *
 get_jws_from_cookie(const char **cookie, size_t *cookie_ct, const char *paramName)
 {
   PluginDebug("Parsing JWS from cookie: %.*s", (int)*cookie_ct, *cookie);
-  size_t value_ct;
+  size_t      value_ct;
   const char *value = get_cookie_value(cookie, cookie_ct, paramName, &value_ct);
   PluginDebug("Got jws string: (%p) %.*s", value, (int)value_ct, value);
   if (!value || !value_ct) {
@@ -152,7 +152,7 @@ struct jwt *
 validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_ct)
 {
   struct timer t;
-  int64_t last_mark = 0;
+  int64_t      last_mark = 0;
   start_timer(&t);
 
 #define TimerDebug(msg)                                             \
@@ -165,7 +165,7 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
   PluginDebug("Validating JWS for %16p", jws);
   cjose_err cerr;
   memset(&cerr, 0, sizeof(cjose_err));
-  size_t pt_ct;
+  size_t      pt_ct;
   char const *pt;
   if (!cjose_jws_get_plaintext(jws, (uint8_t **)&pt, &pt_ct, &cerr)) {
     PluginDebug("Cannot get plaintext for %16p", jws);

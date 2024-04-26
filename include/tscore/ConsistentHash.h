@@ -33,7 +33,7 @@
 
 struct ATSConsistentHashNode {
   std::atomic<bool> available{true};
-  char *name{nullptr};
+  char             *name{nullptr};
 };
 
 std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing);
@@ -48,7 +48,7 @@ using ATSConsistentHashIter = std::map<uint64_t, ATSConsistentHashNode *>::itera
 
 struct ATSConsistentHash {
   ATSConsistentHash(int r = 1024, ATSHash64 *h = nullptr);
-  void insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = nullptr);
+  void                   insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = nullptr);
   ATSConsistentHashNode *lookup(const char *url = nullptr, ATSConsistentHashIter *i = nullptr, bool *w = nullptr,
                                 ATSHash64 *h = nullptr);
   ATSConsistentHashNode *lookup_available(const char *url = nullptr, ATSConsistentHashIter *i = nullptr, bool *w = nullptr,
@@ -57,7 +57,7 @@ struct ATSConsistentHash {
   ~ATSConsistentHash();
 
 private:
-  int replicas;
-  ATSHash64 *hash;
+  int                                         replicas;
+  ATSHash64                                  *hash;
   std::map<uint64_t, ATSConsistentHashNode *> NodeMap;
 };

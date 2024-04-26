@@ -42,8 +42,8 @@ Process arguments
 
 const char *file_arguments[MAX_FILE_ARGUMENTS] = {nullptr};
 const char *program_name                       = (char *)"Traffic Server";
-unsigned n_file_arguments                      = 0;
-int cmd_disable_pfreelist                      = 0;
+unsigned    n_file_arguments                   = 0;
+int         cmd_disable_pfreelist              = 0;
 
 //
 //  Local variables
@@ -181,8 +181,8 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
   //
   for (i = 0; i < n_argument_descriptions; i++) {
     if (argument_descriptions[i].env) {
-      char type = argument_descriptions[i].type[0];
-      char *env = getenv(argument_descriptions[i].env);
+      char  type = argument_descriptions[i].type[0];
+      char *env  = getenv(argument_descriptions[i].env);
       if (!env) {
         continue;
       }

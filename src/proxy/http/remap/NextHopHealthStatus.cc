@@ -49,7 +49,7 @@ NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, con
   int64_t sm_id = sm->sm_id;
 
   const std::string host_port = HostRecord::makeHostPort(hostname, port);
-  auto iter                   = host_map.find(host_port);
+  auto              iter      = host_map.find(host_port);
 
   if (iter == host_map.end()) {
     NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
@@ -70,13 +70,13 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   time_t _now;
   now == 0 ? _now = time(nullptr) : _now = now;
 
-  HttpSM *sm              = reinterpret_cast<HttpSM *>(txn);
-  ParentResult result     = sm->t_state.parent_result;
-  int64_t sm_id           = sm->sm_id;
-  int64_t fail_threshold  = sm->t_state.txn_conf->parent_fail_threshold;
-  int64_t retry_time      = sm->t_state.txn_conf->parent_retry_time;
-  uint32_t new_fail_count = 0;
-  const char *host        = sm->t_state.request_data.get_host();
+  HttpSM      *sm             = reinterpret_cast<HttpSM *>(txn);
+  ParentResult result         = sm->t_state.parent_result;
+  int64_t      sm_id          = sm->sm_id;
+  int64_t      fail_threshold = sm->t_state.txn_conf->parent_fail_threshold;
+  int64_t      retry_time     = sm->t_state.txn_conf->parent_retry_time;
+  uint32_t     new_fail_count = 0;
+  const char  *host           = sm->t_state.request_data.get_host();
 
   // make sure we're called back with a result structure for a parent
   // that is being retried.
@@ -93,7 +93,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   }
 
   const std::string host_port = HostRecord::makeHostPort(hostname, port);
-  auto iter                   = host_map.find(host_port);
+  auto              iter      = host_map.find(host_port);
   if (iter == host_map.end()) {
     NH_Dbg(NH_DBG_CTL, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
     return;

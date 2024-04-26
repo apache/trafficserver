@@ -45,9 +45,9 @@ inline static const char *
 find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
 {
   const char *quote;
-  int etag_length        = 0;
-  const char *etag_start = raw_tag_field;
-  const char *etag_end   = raw_tag_field + raw_tag_field_len;
+  int         etag_length = 0;
+  const char *etag_start  = raw_tag_field;
+  const char *etag_end    = raw_tag_field + raw_tag_field_len;
 
   if ((raw_tag_field_len >= 2) && (etag_start[0] == 'W' && etag_start[1] == '/')) {
     etag_start += 2;
@@ -76,9 +76,9 @@ inline static bool
 do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
                           int comma_sep_tag_list_len)
 {
-  StrList tag_list;
+  StrList     tag_list;
   const char *etag_start;
-  int n, etag_length;
+  int         n, etag_length;
 
   // Can never match a weak tag with a strong compare
   if ((raw_tag_field_len >= 2) && (raw_tag_field[0] == 'W' && raw_tag_field[1] == '/')) {
@@ -116,10 +116,10 @@ inline static bool
 do_strings_match_weakly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
                         int comma_sep_tag_list_len)
 {
-  StrList tag_list;
+  StrList     tag_list;
   const char *etag_start;
   const char *cur_tag;
-  int etag_length, cur_tag_len;
+  int         etag_length, cur_tag_len;
 
   // Find the unalterated tag
   etag_start = find_etag(raw_tag_field, raw_tag_field_len, &etag_length);
@@ -172,10 +172,10 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
                                         const HttpConfigAccessor *http_config_params)
 {
   time_t current_age, best_age = CacheHighAgeWatermark;
-  time_t t_now         = 0;
-  int best_index       = -1;
-  float best_Q         = -1.0;
-  float unacceptable_Q = 0.0;
+  time_t t_now          = 0;
+  int    best_index     = -1;
+  float  best_Q         = -1.0;
+  float  unacceptable_Q = 0.0;
 
   int alt_count = cache_vector->count();
   if (alt_count == 0) {
@@ -195,10 +195,10 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
   }
 
   for (int i = 0; i < alt_count; i++) {
-    float Q;
-    CacheHTTPInfo *obj       = cache_vector->get(i);
-    HTTPHdr *cached_request  = obj->request_get();
-    HTTPHdr *cached_response = obj->response_get();
+    float          Q;
+    CacheHTTPInfo *obj             = cache_vector->get(i);
+    HTTPHdr       *cached_request  = obj->request_get();
+    HTTPHdr       *cached_response = obj->response_get();
 
     if (!(obj->object_key_get().is_zero())) {
       ink_assert(cached_request->valid());
@@ -223,8 +223,8 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
       if (is_debug_tag_set("http_alts")) {
         fprintf(stderr, "[alts] ---- alternate #%d (Q = %g) has these request/response hdrs:\n", i + 1, Q);
         char b[4096];
-        int used, tmp, offset;
-        int done;
+        int  used, tmp, offset;
+        int  done;
 
         offset = 0;
         do {
@@ -298,7 +298,7 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
   }
 
   // Now calculate a quality based on all sorts of logic
-  float q[4], Q;
+  float      q[4], Q;
   MIMEField *accept_field;
   MIMEField *cached_accept_field;
   MIMEField *content_field;
@@ -420,9 +420,9 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
   int force_alt = 0;
 
   if (Q > 0.0) {
-    APIHook *hook;
+    APIHook    *hook;
     HttpAltInfo info;
-    float qvalue;
+    float       qvalue;
 
     hook = http_global_hooks->get(TS_HTTP_SELECT_ALT_HOOK);
     if (hook) {
@@ -494,16 +494,16 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
 float
 HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field)
 {
-  float q = -1.0;
+  float       q = -1.0;
   const char *c_raw, *a_raw;
-  int c_raw_len, a_raw_len;
-  char c_type[32], c_subtype[32];
-  Str *a_value;
-  StrList c_param_list, a_values_list;
-  bool wildcard_type_present    = false;
-  bool wildcard_subtype_present = false;
-  float wildcard_type_q         = 1.0;
-  float wildcard_subtype_q      = 1.0;
+  int         c_raw_len, a_raw_len;
+  char        c_type[32], c_subtype[32];
+  Str        *a_value;
+  StrList     c_param_list, a_values_list;
+  bool        wildcard_type_present    = false;
+  bool        wildcard_subtype_present = false;
+  float       wildcard_type_q          = 1.0;
+  float       wildcard_subtype_q       = 1.0;
 
   ink_assert((accept_field != nullptr) && (content_field != nullptr));
 
@@ -688,17 +688,17 @@ float
 HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_field, MIMEField *content_field,
                                                              MIMEField *cached_accept_field)
 {
-  float q = -1.0;
+  float       q = -1.0;
   const char *c_raw, *a_raw, *ca_raw;
-  int c_raw_len, a_raw_len, ca_raw_len;
-  StrList a_values_list;
-  Str *a_value;
-  char c_charset[128];
-  char *a_charset;
-  int a_charset_len;
-  const char *default_charset = "utf-8";
-  bool wildcard_present       = false;
-  float wildcard_q            = 1.0;
+  int         c_raw_len, a_raw_len, ca_raw_len;
+  StrList     a_values_list;
+  Str        *a_value;
+  char        c_charset[128];
+  char       *a_charset;
+  int         a_charset_len;
+  const char *default_charset  = "utf-8";
+  bool        wildcard_present = false;
+  float       wildcard_q       = 1.0;
 
   // prefer exact matches
   if (accept_field && cached_accept_field) {
@@ -821,9 +821,9 @@ does_encoding_match(char *enc1, const char *enc2)
 bool
 HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *encoding_identifier)
 {
-  Str *a_value;
+  Str        *a_value;
   const char *a_raw;
-  StrList a_values_list;
+  StrList     a_values_list;
   if (!accept_field) {
     return false;
   }
@@ -831,7 +831,7 @@ HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *e
   accept_field->value_get_comma_list(&a_values_list);
 
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
-    char *a_encoding = nullptr;
+    char   *a_encoding = nullptr;
     StrList a_param_list;
     a_raw = a_value->str;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
@@ -853,9 +853,9 @@ HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *e
 static inline bool
 match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *wildcard_present, float *wildcard_q, float *q)
 {
-  Str *a_value;
+  Str        *a_value;
   const char *a_raw;
-  StrList a_values_list;
+  StrList     a_values_list;
 
   if (!accept_field) {
     return false;
@@ -865,7 +865,7 @@ match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *
   accept_field->value_get_comma_list(&a_values_list);
 
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
-    char *a_encoding = nullptr;
+    char   *a_encoding = nullptr;
     StrList a_param_list;
 
     // Get the raw string to the current comma-sep Accept-Charset field value
@@ -901,16 +901,16 @@ float
 HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_field, MIMEField *content_field,
                                                               MIMEField *cached_accept_field)
 {
-  float q                   = -1.0;
-  bool is_identity_encoding = false;
+  float       q                    = -1.0;
+  bool        is_identity_encoding = false;
   const char *c_encoding;
-  int c_encoding_len;
-  bool wildcard_present = false;
-  float wildcard_q      = 1.0;
-  StrList c_values_list;
-  Str *c_value;
+  int         c_encoding_len;
+  bool        wildcard_present = false;
+  float       wildcard_q       = 1.0;
+  StrList     c_values_list;
+  Str        *c_value;
   const char *a_raw, *ca_raw;
-  int a_raw_len, ca_raw_len;
+  int         a_raw_len, ca_raw_len;
 
   // prefer exact matches
   if (accept_field && cached_accept_field) {
@@ -1070,9 +1070,9 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
                               int *a_range_length)
 {
   const char *a_raw;
-  int a_raw_len;
-  StrList a_values_list;
-  Str *a_value;
+  int         a_raw_len;
+  StrList     a_values_list;
+  Str        *a_value;
 
   ink_assert(accept_field != nullptr);
 
@@ -1084,7 +1084,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
     a_raw     = a_value->str;
     a_raw_len = a_value->len;
 
-    char *a_range;
+    char   *a_range;
     StrList a_param_list;
 
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw, a_raw_len);
@@ -1127,16 +1127,16 @@ float
 HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_field, MIMEField *content_field,
                                                               MIMEField *cached_accept_field)
 {
-  float q = -1.0;
-  int a_range_length;
-  bool wildcard_present = false;
-  float wildcard_q      = 1.0;
-  float min_q           = 1.0;
-  bool match_found      = false;
-  StrList c_values_list;
-  Str *c_value;
+  float       q = -1.0;
+  int         a_range_length;
+  bool        wildcard_present = false;
+  float       wildcard_q       = 1.0;
+  float       min_q            = 1.0;
+  bool        match_found      = false;
+  StrList     c_values_list;
+  Str        *c_value;
   const char *c_raw, *a_raw, *ca_raw;
-  int a_raw_len, ca_raw_len;
+  int         a_raw_len, ca_raw_len;
 
   // Bug 2393700 prefer exact matches
   if (accept_field && cached_accept_field) {
@@ -1326,7 +1326,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-None-Match: may match weakly //
   if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
+    int         raw_etags_len, comma_sep_tag_list_len;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
     const char *comma_sep_tag_list = nullptr;
 
@@ -1388,10 +1388,10 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    int raw_etags_len              = 0;
-    int comma_sep_tag_list_len     = 0;
-    const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = nullptr;
+    int         raw_etags_len          = 0;
+    int         comma_sep_tag_list_len = 0;
+    const char *raw_etags              = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
+    const char *comma_sep_tag_list     = nullptr;
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH, &comma_sep_tag_list_len);

@@ -26,9 +26,9 @@
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
 
-ClassAllocator<Http3Frame> http3FrameAllocator("http3FrameAllocator");
-ClassAllocator<Http3DataFrame> http3DataFrameAllocator("http3DataFrameAllocator");
-ClassAllocator<Http3HeadersFrame> http3HeadersFrameAllocator("http3HeadersFrameAllocator");
+ClassAllocator<Http3Frame>         http3FrameAllocator("http3FrameAllocator");
+ClassAllocator<Http3DataFrame>     http3DataFrameAllocator("http3DataFrameAllocator");
+ClassAllocator<Http3HeadersFrame>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
 ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator("http3SettingsFrameAllocator");
 
 constexpr int HEADER_OVERHEAD = 10; // This should work as long as a payload length is less than 64 bits
@@ -47,9 +47,9 @@ Http3Frame::length(const uint8_t *buf, size_t buf_len, uint64_t &length)
 Http3FrameType
 Http3Frame::type(const uint8_t *buf, size_t buf_len)
 {
-  uint64_t type            = 0;
-  size_t type_field_length = 0;
-  int ret                  = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
+  uint64_t type              = 0;
+  size_t   type_field_length = 0;
+  int      ret               = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
   ink_assert(ret != 1);
   if (type <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
     return static_cast<Http3FrameType>(type);
@@ -65,8 +65,8 @@ Http3Frame::type(const uint8_t *buf, size_t buf_len)
 Http3Frame::Http3Frame(const uint8_t *buf, size_t buf_len)
 {
   // Type
-  size_t type_field_length = 0;
-  uint64_t type            = 0;
+  size_t   type_field_length = 0;
+  uint64_t type              = 0;
   // Ideally we'd simply pass this->_type to decode, but arm compilers complain with:
   // error: dereferencing type-punned pointer will break strict-aliasing rules
   int ret     = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
@@ -129,7 +129,7 @@ Ptr<IOBufferBlock>
 Http3UnknownFrame::to_io_buffer_block() const
 {
   Ptr<IOBufferBlock> block;
-  size_t n = 0;
+  size_t             n = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
@@ -161,8 +161,8 @@ Ptr<IOBufferBlock>
 Http3DataFrame::to_io_buffer_block() const
 {
   Ptr<IOBufferBlock> block;
-  size_t n       = 0;
-  size_t written = 0;
+  size_t             n       = 0;
+  size_t             written = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
@@ -218,8 +218,8 @@ Ptr<IOBufferBlock>
 Http3HeadersFrame::to_io_buffer_block() const
 {
   Ptr<IOBufferBlock> block;
-  size_t n       = 0;
-  size_t written = 0;
+  size_t             n       = 0;
+  size_t             written = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
@@ -261,7 +261,7 @@ Http3HeadersFrame::header_block_length() const
 
 Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint32_t max_settings) : Http3Frame(buf, buf_len)
 {
-  size_t len         = this->_payload_offset;
+  size_t   len       = this->_payload_offset;
   uint32_t nsettings = 0;
 
   while (len < buf_len) {
@@ -271,13 +271,13 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint3
       break;
     }
 
-    size_t id_len  = QUICVariableInt::size(buf + len);
-    uint16_t id    = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len           += id_len;
+    size_t   id_len  = QUICVariableInt::size(buf + len);
+    uint16_t id      = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    len             += id_len;
 
-    size_t value_len  = QUICVariableInt::size(buf + len);
-    uint64_t value    = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len              += value_len;
+    size_t   value_len  = QUICVariableInt::size(buf + len);
+    uint64_t value      = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    len                += value_len;
 
     // Ignore any SETTINGS identifier it does not understand.
     bool ignore = true;
@@ -306,8 +306,8 @@ Http3SettingsFrame::to_io_buffer_block() const
 {
   Ptr<IOBufferBlock> header_block;
   Ptr<IOBufferBlock> payload_block;
-  size_t n       = 0;
-  size_t written = 0;
+  size_t             n       = 0;
+  size_t             written = 0;
 
   payload_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   payload_block->alloc(iobuffer_size_to_index(Http3SettingsFrame::MAX_PAYLOAD_SIZE, BUFFER_SIZE_INDEX_32K));
@@ -401,8 +401,8 @@ Http3FrameUPtr
 Http3FrameFactory::create(const uint8_t *buf, size_t len)
 {
   ts::Http3Config::scoped_config params;
-  Http3Frame *frame   = nullptr;
-  Http3FrameType type = Http3Frame::type(buf, len);
+  Http3Frame                    *frame = nullptr;
+  Http3FrameType                 type  = Http3Frame::type(buf, len);
 
   switch (type) {
   case Http3FrameType::HEADERS:
@@ -509,8 +509,8 @@ Http3FrameFactory::create_data_frame(const uint8_t *payload, size_t payload_len)
 Http3DataFrameUPtr
 Http3FrameFactory::create_data_frame(IOBufferReader *reader, size_t payload_len)
 {
-  ats_unique_buf buf = ats_unique_malloc(payload_len);
-  size_t written     = 0;
+  ats_unique_buf buf     = ats_unique_malloc(payload_len);
+  size_t         written = 0;
 
   while (written < payload_len) {
     int64_t len = reader->block_read_avail();

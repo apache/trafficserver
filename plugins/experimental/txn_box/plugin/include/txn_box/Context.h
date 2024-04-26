@@ -286,9 +286,9 @@ public:
    */
   template <typename T> swoc::MemSpan<T> initialized_storage_for(ReservedSpan const &span);
 
-  Hook _cur_hook   = Hook::INVALID;
-  TSCont _cont     = nullptr;
-  ts::HttpTxn _txn = nullptr;
+  Hook        _cur_hook = Hook::INVALID;
+  TSCont      _cont     = nullptr;
+  ts::HttpTxn _txn      = nullptr;
 
   /// Current extracted feature.
   Feature _active;
@@ -389,8 +389,8 @@ public:
   /// State of each global config hook for this transaction / context.
   std::array<HookInfo, std::tuple_size<Hook>::value> _hooks;
 
-  ts::HttpRequest ua_req_hdr();        ///< @return user agent (client) request.
-  ts::HttpRequest proxy_req_hdr();     ///< @return proxy request.
+  ts::HttpRequest  ua_req_hdr();       ///< @return user agent (client) request.
+  ts::HttpRequest  proxy_req_hdr();    ///< @return proxy request.
   ts::HttpResponse upstream_rsp_hdr(); ///< @return upstream request.
   ts::HttpResponse proxy_rsp_hdr();    ///< @return proxy response.
 
@@ -558,12 +558,12 @@ protected:
   /// This is a pointer so that the arena can be inverted to minimize allocations.
   std::unique_ptr<swoc::MemArena, ArenaDestructor> _arena;
 
-  size_t _transient                                      = 0; ///< Current amount of reserved / temporary space in the arena.
+  size_t                                _transient       = 0; ///< Current amount of reserved / temporary space in the arena.
   static constexpr decltype(_transient) TRANSIENT_ACTIVE = std::numeric_limits<decltype(_transient)>::max();
 
   // HTTP header objects for the transaction.
-  ts::HttpRequest _ua_req;        ///< Client request header.
-  ts::HttpRequest _proxy_req;     ///< Proxy request header.
+  ts::HttpRequest  _ua_req;       ///< Client request header.
+  ts::HttpRequest  _proxy_req;    ///< Proxy request header.
   ts::HttpResponse _upstream_rsp; ///< Upstream response header.
   ts::HttpResponse _proxy_rsp;    ///< Proxy response header.
 
@@ -598,10 +598,10 @@ protected:
     using self_type = TxnVar; ///< Self reference type.
     static constexpr std::hash<std::string_view> Hash_Func{};
 
-    swoc::TextView _name;       ///< Name of variable.
-    Feature _value;             ///< Value of variable.
-    self_type *_next = nullptr; ///< Intrusive link.
-    self_type *_prev = nullptr; ///< Intrusive link.
+    swoc::TextView _name;           ///< Name of variable.
+    Feature        _value;          ///< Value of variable.
+    self_type     *_next = nullptr; ///< Intrusive link.
+    self_type     *_prev = nullptr; ///< Intrusive link.
 
     /// Linkage for @c IntrusiveHashMap.
     struct Linkage : public swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev> {
@@ -633,10 +633,10 @@ protected:
     using self_type = NamedObject; ///< Self reference type.
     static constexpr std::hash<std::string_view> Hash_Func{};
 
-    swoc::TextView _name;       ///< Name of variable.
-    swoc::MemSpan<void> _span;  ///< Object memroy.
-    self_type *_next = nullptr; ///< Intrusive link.
-    self_type *_prev = nullptr; ///< Intrusive link.
+    swoc::TextView      _name;           ///< Name of variable.
+    swoc::MemSpan<void> _span;           ///< Object memroy.
+    self_type          *_next = nullptr; ///< Intrusive link.
+    self_type          *_prev = nullptr; ///< Intrusive link.
 
     /// Linkage for @c IntrusiveHashMap.
     struct Linkage : public swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev> {
@@ -732,7 +732,7 @@ template <typename T>
 swoc::MemSpan<T>
 Context::initialized_storage_for(ReservedSpan const &span)
 {
-  auto mem               = this->storage_for(span).rebind<T>();
+  auto            mem    = this->storage_for(span).rebind<T>();
   ReservedStatus &status = *reinterpret_cast<ReservedStatus *>(reinterpret_cast<std::byte *>(mem.data()) -
                                                                swoc::Scalar<8>(swoc::round_up(sizeof(ReservedStatus))));
   if (!status._initialized_p) {
@@ -787,8 +787,8 @@ template <typename F>
 FeatureView
 Context::render_transient(F const &f)
 {
-  size_t base  = 0;     // rendered size.
-  bool outer_p = false; // outermost / top level render.
+  size_t base    = 0;     // rendered size.
+  bool   outer_p = false; // outermost / top level render.
   // Tricksy - if there's no extant writer, then this is the outer most render and needs to both
   // create the writer and clean it up. Also, the outer is responsible for finalizing the
   // transient buffer used.

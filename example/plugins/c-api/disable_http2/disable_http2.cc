@@ -46,10 +46,10 @@ DomainSet Domains;
 int
 CB_SNI(TSCont contp, TSEvent, void *cb_data)
 {
-  auto vc                  = static_cast<TSVConn>(cb_data);
+  auto            vc       = static_cast<TSVConn>(cb_data);
   TSSslConnection ssl_conn = TSVConnSslConnectionGet(vc);
-  auto *ssl                = reinterpret_cast<SSL *>(ssl_conn);
-  char const *sni          = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  auto           *ssl      = reinterpret_cast<SSL *>(ssl_conn);
+  char const     *sni      = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni) {
     if (Domains.find(sni) != Domains.end()) {
       Dbg(dbg_ctl, "Disable H2 for SNI=%s", sni);
@@ -64,7 +64,7 @@ CB_SNI(TSCont contp, TSEvent, void *cb_data)
 void
 TSPluginInit(int argc, char const *argv[])
 {
-  int ret;
+  int                      ret;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

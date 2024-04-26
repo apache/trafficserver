@@ -57,7 +57,7 @@ enum class HpackMatch {
 
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
-  uint32_t index        = 0;
+  uint32_t   index      = 0;
   HpackIndex index_type = HpackIndex::NONE;
   HpackMatch match_type = HpackMatch::NONE;
 };
@@ -102,8 +102,8 @@ public:
   }
 
 private:
-  MIMEField *_field;
-  HdrHeap *_heap;
+  MIMEField   *_field;
+  HdrHeap     *_heap;
   MIMEHdrImpl *_mh;
 };
 
@@ -119,12 +119,12 @@ public:
   HpackIndexingTable &operator=(const HpackIndexingTable &) = delete;
 
   HpackLookupResult lookup(const HpackHeaderField &header) const;
-  int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
+  int               get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
 
-  void add_header_field(const HpackHeaderField &header);
+  void     add_header_field(const HpackHeaderField &header);
   uint32_t maximum_size() const;
   uint32_t size() const;
-  void update_maximum_size(uint32_t new_size);
+  void     update_maximum_size(uint32_t new_size);
 
   // Temporal buffer for internal use but it has to be public because many functions are not members of this class.
   Arena arena;

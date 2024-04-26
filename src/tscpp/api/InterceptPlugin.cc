@@ -42,12 +42,12 @@ using std::string;
  * @private
  */
 struct InterceptPlugin::State {
-  TSCont cont_;
+  TSCont  cont_;
   TSVConn net_vc_ = nullptr;
 
   struct IoHandle {
-    TSVIO vio_               = nullptr;
-    TSIOBuffer buffer_       = nullptr;
+    TSVIO            vio_    = nullptr;
+    TSIOBuffer       buffer_ = nullptr;
     TSIOBufferReader reader_ = nullptr;
     IoHandle()               = default;
     ;
@@ -68,23 +68,23 @@ struct InterceptPlugin::State {
   /** the API doesn't recognize end of input; so we have to explicitly
    * figure out when to continue reading and when to stop */
   TSHttpParser http_parser_;
-  int expected_body_size_  = 0;
-  int num_body_bytes_read_ = 0;
-  bool hdr_parsed_         = false;
+  int          expected_body_size_  = 0;
+  int          num_body_bytes_read_ = 0;
+  bool         hdr_parsed_          = false;
 
-  TSMBuffer hdr_buf_     = nullptr;
-  TSMLoc hdr_loc_        = nullptr;
-  int num_bytes_written_ = 0;
+  TSMBuffer              hdr_buf_           = nullptr;
+  TSMLoc                 hdr_loc_           = nullptr;
+  int                    num_bytes_written_ = 0;
   std::shared_ptr<Mutex> plugin_mutex_;
-  InterceptPlugin *plugin_ = nullptr;
-  Headers request_headers_;
+  InterceptPlugin       *plugin_ = nullptr;
+  Headers                request_headers_;
 
   /** these two fields to be used by the continuation callback only */
   TSEvent saved_event_ = TS_EVENT_NONE;
-  void *saved_edata_   = nullptr;
+  void   *saved_edata_ = nullptr;
 
   TSAction timeout_action_ = nullptr;
-  bool plugin_io_done_     = false;
+  bool     plugin_io_done_ = false;
 
   State(TSCont cont, InterceptPlugin *plugin) : cont_(cont), plugin_(plugin)
   {
@@ -106,7 +106,7 @@ struct InterceptPlugin::State {
 
 namespace
 {
-int handleEvents(TSCont cont, TSEvent event, void *edata);
+int  handleEvents(TSCont cont, TSEvent event, void *edata);
 void destroyCont(InterceptPlugin::State *state);
 } // namespace
 
@@ -205,9 +205,9 @@ InterceptPlugin::doRead()
 
   int consumed = 0; // consumed is used to update the input buffers
   if (avail > 0) {
-    int64_t num_body_bytes_in_block;
-    int64_t data_len; // size of all data (header + body) in a block
-    const char *data, *startptr;
+    int64_t         num_body_bytes_in_block;
+    int64_t         data_len; // size of all data (header + body) in a block
+    const char     *data, *startptr;
     TSIOBufferBlock block = TSIOBufferReaderStart(state_->input_.reader_);
     while (block != nullptr) {
       startptr = data         = TSIOBufferBlockReadStart(block, state_->input_.reader_, &data_len);
@@ -219,8 +219,8 @@ InterceptPlugin::doRead()
           string content_length_str = state_->request_headers_.value("Content-Length");
           if (!content_length_str.empty()) {
             const char *start_ptr = content_length_str.data();
-            char *end_ptr;
-            int content_length = strtol(start_ptr, &end_ptr, 10 /* base */);
+            char       *end_ptr;
+            int         content_length = strtol(start_ptr, &end_ptr, 10 /* base */);
             if ((errno != ERANGE) && (end_ptr != start_ptr) && (*end_ptr == '\0')) {
               LOG_DEBUG("Got content length: %d", content_length);
               state_->expected_body_size_ = content_length;
@@ -350,7 +350,7 @@ public:
 
 private:
   std::recursive_mutex &_m;
-  const bool _isLocked;
+  const bool            _isLocked;
 };
 
 int
@@ -358,7 +358,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
 {
   // Separating pristine and mutable data helps debugging
   TSEvent event = pristine_event;
-  void *edata   = pristine_edata;
+  void   *edata = pristine_edata;
 
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
   if (!state) { // plugin is done, return.

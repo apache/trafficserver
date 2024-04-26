@@ -70,8 +70,8 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 static int
 txn_queue_cont(TSCont cont, TSEvent event, void *edata)
 {
-  auto *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
-  QueueTime now = std::chrono::system_clock::now(); // Only do this once per "loop"
+  auto     *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
+  QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {
@@ -123,7 +123,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     {const_cast<char *>("prefix"),    required_argument, nullptr, 'p' },
     {const_cast<char *>("tag"),       required_argument, nullptr, 't' },
     {const_cast<char *>("conntrack"), no_argument,       nullptr, 'c' },
- // EOF
+    // EOF
     {nullptr,                         no_argument,       nullptr, '\0'},
   };
   optind             = 1;

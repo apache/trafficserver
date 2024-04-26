@@ -32,8 +32,8 @@
 #include "tscpp/api/noncopyable.h"
 #include "logging_internal.h"
 
-using std::vector;
 using std::string;
+using std::vector;
 
 DbgCtl atscppapi::dbg_ctl{"atscppapi"};
 
@@ -43,14 +43,14 @@ using atscppapi::Logger;
  * @private
  */
 struct atscppapi::LoggerState : noncopyable {
-  std::string filename_;
-  bool add_timestamp_           = false;
-  bool rename_file_             = false;
-  Logger::LogLevel level_       = Logger::LOG_LEVEL_NO_LOG;
-  bool rolling_enabled_         = false;
-  int rolling_interval_seconds_ = -1;
-  TSTextLogObject text_log_obj_ = nullptr;
-  bool initialized_             = false;
+  std::string      filename_;
+  bool             add_timestamp_            = false;
+  bool             rename_file_              = false;
+  Logger::LogLevel level_                    = Logger::LOG_LEVEL_NO_LOG;
+  bool             rolling_enabled_          = false;
+  int              rolling_interval_seconds_ = -1;
+  TSTextLogObject  text_log_obj_             = nullptr;
+  bool             initialized_              = false;
 
   LoggerState()
 
@@ -204,8 +204,8 @@ const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8 * 1024;
 // We use a macro here because varargs would be a pain to forward via a helper
 // function
 #define TS_TEXT_LOG_OBJECT_WRITE(level)                                                                               \
-  char buffer[DEFAULT_BUFFER_SIZE_FOR_VARARGS];                                                                       \
-  int n;                                                                                                              \
+  char    buffer[DEFAULT_BUFFER_SIZE_FOR_VARARGS];                                                                    \
+  int     n;                                                                                                          \
   va_list ap;                                                                                                         \
   while (true) {                                                                                                      \
     va_start(ap, fmt);                                                                                                \

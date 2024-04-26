@@ -153,7 +153,7 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) c
 {
   void *opaque_ptr;
   Data *data_ptr;
-  bool r;
+  bool  r;
 
   // Check to see if there is any work to do before making
   //   the string copy
@@ -188,9 +188,9 @@ template <class Data, class MatchResult>
 Result
 HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
-  Data *cur_d;
+  Data  *cur_d;
   Result error = Result::ok();
-  char *match_data;
+  char  *match_data;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -289,8 +289,8 @@ template <class Data, class MatchResult>
 Result
 UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
-  Data *cur_d;
-  char *pattern;
+  Data  *cur_d;
+  char  *pattern;
   Result error = Result::ok();
 
   // Make sure space has been allocated
@@ -426,11 +426,11 @@ template <class Data, class MatchResult>
 Result
 RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
-  Data *cur_d;
-  char *pattern;
+  Data       *cur_d;
+  char       *pattern;
   const char *errptr;
-  int erroffset;
-  Result error = Result::ok();
+  int         erroffset;
+  Result      error = Result::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -484,7 +484,7 @@ void
 RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   char *url_str;
-  int r;
+  int   r;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -537,7 +537,7 @@ void
 HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   const char *url_str;
-  int r;
+  int         r;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -603,10 +603,10 @@ template <class Data, class MatchResult>
 Result
 IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
-  Data *cur_d;
-  char *match_data;
+  Data         *cur_d;
+  char         *match_data;
   swoc::IPRange addrs;
-  Result error = Result::ok();
+  Result        error = Result::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -769,15 +769,15 @@ int
 ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
 {
   // Table build locals
-  Tokenizer bufTok("\n");
+  Tokenizer      bufTok("\n");
   tok_iter_state i_state;
-  const char *tmp;
-  matcher_line *first = nullptr;
-  matcher_line *current;
-  matcher_line *last = nullptr;
-  int line_num       = 0;
-  int second_pass    = 0;
-  int numEntries     = 0;
+  const char    *tmp;
+  matcher_line  *first = nullptr;
+  matcher_line  *current;
+  matcher_line  *last        = nullptr;
+  int            line_num    = 0;
+  int            second_pass = 0;
+  int            numEntries  = 0;
 
   // type counts
   int hostDomain = 0;
@@ -931,7 +931,7 @@ int
 ControlMatcher<Data, MatchResult>::BuildTable()
 {
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
   if (ec) {
     switch (ec.value()) {
     case ENOENT:

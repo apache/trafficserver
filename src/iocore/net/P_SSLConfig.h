@@ -78,43 +78,43 @@ struct SSLConfigParams : public ConfigInfo {
   char *dhparamsFile;
   char *cipherSuite;
   char *client_cipherSuite;
-  int configExitOnLoadError;
-  int clientCertLevel;
-  int verify_depth;
-  int ssl_origin_session_cache;
-  int ssl_origin_session_cache_size;
-  int ssl_session_cache; // SSL_SESSION_CACHE_MODE
-  int ssl_session_cache_size;
-  int ssl_session_cache_num_buckets;
-  int ssl_session_cache_skip_on_contention;
-  int ssl_session_cache_timeout;
-  int ssl_session_cache_auto_clear;
+  int   configExitOnLoadError;
+  int   clientCertLevel;
+  int   verify_depth;
+  int   ssl_origin_session_cache;
+  int   ssl_origin_session_cache_size;
+  int   ssl_session_cache; // SSL_SESSION_CACHE_MODE
+  int   ssl_session_cache_size;
+  int   ssl_session_cache_num_buckets;
+  int   ssl_session_cache_skip_on_contention;
+  int   ssl_session_cache_timeout;
+  int   ssl_session_cache_auto_clear;
 
-  char *clientCertPath;
-  char *clientCertPathOnly;
-  char *clientKeyPath;
-  char *clientKeyPathOnly;
-  char *clientCACertFilename;
-  char *clientCACertPath;
-  int clientCertExitOnLoadError;
-  YamlSNIConfig::Policy verifyServerPolicy;
+  char                   *clientCertPath;
+  char                   *clientCertPathOnly;
+  char                   *clientKeyPath;
+  char                   *clientKeyPathOnly;
+  char                   *clientCACertFilename;
+  char                   *clientCACertPath;
+  int                     clientCertExitOnLoadError;
+  YamlSNIConfig::Policy   verifyServerPolicy;
   YamlSNIConfig::Property verifyServerProperties;
-  bool tls_server_connection;
-  int client_verify_depth;
-  long ssl_ctx_options;
-  long ssl_client_ctx_options;
+  bool                    tls_server_connection;
+  int                     client_verify_depth;
+  long                    ssl_ctx_options;
+  long                    ssl_client_ctx_options;
 
   unsigned char alpn_protocols_array[MAX_ALPN_STRING];
-  int alpn_protocols_array_size = 0;
+  int           alpn_protocols_array_size = 0;
 
   char *server_tls13_cipher_suites;
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
-  int server_tls_ver_min;
-  int server_tls_ver_max;
-  int client_tls_ver_min;
-  int client_tls_ver_max;
+  int   server_tls_ver_min;
+  int   server_tls_ver_max;
+  int   client_tls_ver_min;
+  int   client_tls_ver_max;
 
   char *keylog_file;
 
@@ -122,33 +122,33 @@ struct SSLConfigParams : public ConfigInfo {
 
   static uint32_t server_max_early_data;
   static uint32_t server_recv_max_early_data;
-  static bool server_allow_early_data_params;
+  static bool     server_allow_early_data_params;
 
-  static int ssl_maxrecord;
-  static int ssl_misc_max_iobuffer_size_index;
+  static int  ssl_maxrecord;
+  static int  ssl_misc_max_iobuffer_size_index;
   static bool ssl_allow_client_renegotiation;
 
-  static bool ssl_ocsp_enabled;
-  static int ssl_ocsp_cache_timeout;
-  static bool ssl_ocsp_request_mode;
-  static int ssl_ocsp_request_timeout;
-  static int ssl_ocsp_update_period;
-  static int ssl_handshake_timeout_in;
-  char *ssl_ocsp_response_path_only;
+  static bool  ssl_ocsp_enabled;
+  static int   ssl_ocsp_cache_timeout;
+  static bool  ssl_ocsp_request_mode;
+  static int   ssl_ocsp_request_timeout;
+  static int   ssl_ocsp_update_period;
+  static int   ssl_handshake_timeout_in;
+  char        *ssl_ocsp_response_path_only;
   static char *ssl_ocsp_user_agent;
 
-  static int origin_session_cache;
+  static int    origin_session_cache;
   static size_t origin_session_cache_size;
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;
-  static bool session_cache_skip_on_lock_contention;
+  static bool   session_cache_skip_on_lock_contention;
 
   static swoc::IPRangeSet *proxy_protocol_ip_addrs;
 
-  static init_ssl_ctx_func init_ssl_ctx_cb;
+  static init_ssl_ctx_func  init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
 
-  static int async_handshake_enabled;
+  static int   async_handshake_enabled;
   static char *engine_conf_file;
 
   shared_SSL_CTX client_ctx;
@@ -159,7 +159,7 @@ struct SSLConfigParams : public ConfigInfo {
   // The second level map owns the client SSL_CTX objects and is responsible for cleaning them up
   using CTX_MAP = std::unordered_map<std::string, shared_SSL_CTX>;
   mutable std::unordered_map<std::string, CTX_MAP> top_level_ctx_map;
-  mutable ink_mutex ctxMapLock;
+  mutable ink_mutex                                ctxMapLock;
 
   mutable SSLSecret secrets;
 
@@ -168,7 +168,7 @@ struct SSLConfigParams : public ConfigInfo {
                         const char *ca_bundle_path) const;
   shared_SSL_CTX getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file,
                         const char *ca_bundle_path) const;
-  void updateCTX(const std::string &secret_string_name) const;
+  void           updateCTX(const std::string &secret_string_name) const;
 
   void clearCTX(const std::string &client_cert) const;
 
@@ -194,19 +194,19 @@ private:
 /////////////////////////////////////////////////////////////
 
 struct SSLConfig {
-  static void startup();
-  static void reconfigure();
+  static void             startup();
+  static void             reconfigure();
   static SSLConfigParams *acquire();
   static SSLConfigParams *load_acquire();
-  static void release(SSLConfigParams *params);
-  static void load_release(SSLConfigParams *params);
+  static void             release(SSLConfigParams *params);
+  static void             load_release(SSLConfigParams *params);
 
   // These methods manipulate the double buffering of the configs
   // The "loading" version is only active during loading.  Once
   // it is fliped to the active by comit_config_id, it/ becomes the
   // version accessble to the rest of the system.
-  static int get_config_index();
-  static int get_loading_config_index();
+  static int  get_config_index();
+  static int  get_loading_config_index();
   static void commit_config_id();
   using scoped_config = ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams>;
 
@@ -216,10 +216,10 @@ private:
 };
 
 struct SSLCertificateConfig {
-  static bool startup();
-  static bool reconfigure();
+  static bool           startup();
+  static bool           reconfigure();
   static SSLCertLookup *acquire();
-  static void release(SSLCertLookup *params);
+  static void           release(SSLCertLookup *params);
 
   using scoped_config = ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup>;
 
@@ -229,11 +229,11 @@ private:
 
 struct SSLTicketParams : public ConfigInfo {
   ssl_ticket_key_block *default_global_keyblock = nullptr;
-  time_t load_time                              = 0;
-  char *ticket_key_filename                     = nullptr;
-  bool LoadTicket(bool &nochange);
-  bool LoadTicketData(char *ticket_data, int ticket_data_len);
-  void cleanup();
+  time_t                load_time               = 0;
+  char                 *ticket_key_filename     = nullptr;
+  bool                  LoadTicket(bool &nochange);
+  bool                  LoadTicketData(char *ticket_data, int ticket_data_len);
+  void                  cleanup();
 
   ~SSLTicketParams() override { cleanup(); }
 };
@@ -263,5 +263,5 @@ private:
   static int configid;
 };
 
-extern SSLSessionCache *session_cache;
+extern SSLSessionCache       *session_cache;
 extern SSLOriginSessionCache *origin_sess_cache;

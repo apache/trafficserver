@@ -74,13 +74,13 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                                         size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
                                         int format_size, const char *format)
 {
-  char *buffer            = nullptr;
+  char       *buffer      = nullptr;
   const char *lang_ptr    = nullptr;
   const char *charset_ptr = nullptr;
-  char url[1024];
-  const char *set               = nullptr;
-  bool found_requested_template = false;
-  bool plain_flag               = false;
+  char        url[1024];
+  const char *set                      = nullptr;
+  bool        found_requested_template = false;
+  bool        plain_flag               = false;
 
   *resulting_buffer_length = 0;
 
@@ -96,7 +96,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
 
     if (u->valid()) { /* if url exists, copy the string into buffer */
       size_t i;
-      char *s = u->string_get(&context->arena);
+      char  *s = u->string_get(&context->arena);
       for (i = 0; (i < sizeof(url) - 1) && s[i]; i++) {
         url[i] = s[i];
       }
@@ -250,10 +250,10 @@ config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UN
 void
 HttpBodyFactory::reconfigure()
 {
-  RecInt e;
+  RecInt    e;
   RecString s = nullptr;
-  bool all_found;
-  int rec_err;
+  bool      all_found;
+  int       rec_err;
 
   lock();
   sanity_check();
@@ -332,7 +332,7 @@ HttpBodyFactory::reconfigure()
 
 HttpBodyFactory::HttpBodyFactory()
 {
-  int i;
+  int  i;
   bool status, no_registrations_failed;
 
   ////////////////////////////////////
@@ -378,10 +378,10 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
                            int64_t *buffer_length_return, const char **content_language_return, const char **content_charset_return,
                            const char **set_return)
 {
-  char *buffer;
+  char       *buffer;
   const char *pType = context->txn_conf->body_factory_template_base;
   const char *set;
-  char template_base[PATH_NAME_MAX];
+  char        template_base[PATH_NAME_MAX];
 
   if (set_return) {
     *set_return = "???";
@@ -417,8 +417,8 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
     *set_return = set;
   }
 
-  HttpBodyTemplate *t   = nullptr;
-  HttpBodySet *body_set = nullptr;
+  HttpBodyTemplate *t        = nullptr;
+  HttpBodySet      *body_set = nullptr;
   if (pType != nullptr && 0 != *pType && 0 != strncmp(pType, "NONE", 4)) {
     snprintf(template_base, sizeof(template_base), "%s_%s", pType, type);
     t = find_template(set, template_base, &body_set);
@@ -455,8 +455,8 @@ const char *
 HttpBodyFactory::determine_set_by_host(HttpTransact::State *context)
 {
   const char *set;
-  int host_len = context->hh_info.host_len;
-  char host_buffer[host_len + 1];
+  int         host_len = context->hh_info.host_len;
+  char        host_buffer[host_len + 1];
   strncpy(host_buffer, context->hh_info.request_host, host_len);
   host_buffer[host_len] = '\0';
   if (auto it = table_of_sets->find(host_buffer); it != table_of_sets->end()) {
@@ -472,10 +472,10 @@ HttpBodyFactory::determine_set_by_language(std::unique_ptr<BodySetTable> &table_
                                            StrList *acpt_charset_list, float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr,
                                            int *I_best_ptr)
 {
-  float Q, Ql, Qc, Q_best;
-  int I, Idummy, I_best;
-  int La, Lc, La_best, Lc_best;
-  int is_the_default_set;
+  float       Q, Ql, Qc, Q_best;
+  int         I, Idummy, I_best;
+  int         La, Lc, La_best, Lc_best;
+  int         is_the_default_set;
   const char *set_best;
 
   set_best = "default";
@@ -502,7 +502,7 @@ HttpBodyFactory::determine_set_by_language(std::unique_ptr<BodySetTable> &table_
     // loop over set->body-types hash table //
     ///////////////////////////////////////////
     for (const auto &it : *table_of_sets.get()) {
-      const char *set_name         = it.first.c_str();
+      const char         *set_name = it.first.c_str();
       HttpBodySetRawData *body_set = it.second;
 
       if ((it.first.empty()) || (body_set->table_of_pages == nullptr)) {
@@ -628,9 +628,9 @@ done:
 const char *
 HttpBodyFactory::determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list)
 {
-  float Q_best;
+  float       Q_best;
   const char *set_best;
-  int La_best, Lc_best, I_best;
+  int         La_best, Lc_best, I_best;
 
   set_best = determine_set_by_language(table_of_sets, acpt_language_list, acpt_charset_list, &Q_best, &La_best, &Lc_best, &I_best);
 
@@ -732,8 +732,8 @@ HttpBodyFactory::nuke_template_tables()
 std::unique_ptr<HttpBodyFactory::BodySetTable>
 HttpBodyFactory::load_sets_from_directory(char *set_dir)
 {
-  DIR *dir;
-  struct dirent *dirEntry;
+  DIR                                           *dir;
+  struct dirent                                 *dirEntry;
   std::unique_ptr<HttpBodyFactory::BodySetTable> new_table_of_sets;
 
   if (set_dir == nullptr) {
@@ -760,9 +760,9 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   //////////////////////////////////////////
 
   while ((dirEntry = readdir(dir))) {
-    int status;
+    int         status;
     struct stat stat_buf;
-    char subdir[MAXPATHLEN + 1];
+    char        subdir[MAXPATHLEN + 1];
 
     //////////////////////////////////////////////////////
     // ensure a subdirectory, and not starting with '.' //
@@ -802,11 +802,11 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
 HttpBodySet *
 HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 {
-  DIR *dir;
-  int status;
-  struct stat stat_buf;
-  struct dirent *dirEntry;
-  char path[MAXPATHLEN + 1];
+  DIR              *dir;
+  int               status;
+  struct stat       stat_buf;
+  struct dirent    *dirEntry;
+  char              path[MAXPATHLEN + 1];
   static const char BASED_DEFAULT[] = "_default";
 
   ////////////////////////////////////////////////
@@ -844,7 +844,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   while ((dirEntry = readdir(dir))) {
     HttpBodyTemplate *tmpl;
-    size_t d_len = strlen(dirEntry->d_name);
+    size_t            d_len = strlen(dirEntry->d_name);
 
     ///////////////////////////////////////////////////////////////
     // all template files must have a file name of the form      //
@@ -914,7 +914,7 @@ HttpBodySet::~HttpBodySet()
 int
 HttpBodySet::init(char *set, char *dir)
 {
-  int fd, lineno, lines_added = 0;
+  int  fd, lineno, lines_added = 0;
   char info_path[MAXPATHLEN];
 
   char buffer[1024], name[1025], value[1024];
@@ -1089,12 +1089,12 @@ HttpBodyTemplate::reset()
 int
 HttpBodyTemplate::load_from_file(char *dir, char *file)
 {
-  int fd, status;
-  int64_t bytes_read;
+  int         fd, status;
+  int64_t     bytes_read;
   struct stat stat_buf;
-  char path[MAXPATHLEN + 1];
-  char *new_template_buffer;
-  int64_t new_byte_count;
+  char        path[MAXPATHLEN + 1];
+  char       *new_template_buffer;
+  int64_t     new_byte_count;
 
   ////////////////////////////////////
   // ensure this is actually a file //

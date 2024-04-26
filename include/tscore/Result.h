@@ -68,7 +68,7 @@ struct Result {
   static Result
   failure(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
   {
-    Result result;
+    Result  result;
     va_list ap;
 
     va_start(ap, fmt);

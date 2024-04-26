@@ -58,7 +58,7 @@ TEST_CASE("Base64: estimate buffer size needed to encode a message", "[Base64][a
 
 TEST_CASE("Base64: estimate buffer size needed to decode a message", "[Base64][access_control][utility]")
 {
-  size_t encodedLen;
+  size_t      encodedLen;
   const char *encoded;
 
   /* Padding with 2 x '=' */
@@ -89,8 +89,8 @@ TEST_CASE("Base64: estimate buffer size needed to decode a message", "[Base64][a
 
 TEST_CASE("Base64: quick encode / decode", "[Base64][access_control][utility]")
 {
-  const char message[] = "176a1620e31b14782ba2b66de3edc5b3cb19630475b2ce2ee292d5fd0fe41c3a";
-  size_t messageLen    = strlen(message);
+  const char message[]  = "176a1620e31b14782ba2b66de3edc5b3cb19630475b2ce2ee292d5fd0fe41c3a";
+  size_t     messageLen = strlen(message);
   CHECK(64 == messageLen);
 
   size_t encodedMessageEstimatedLen = cryptoBase64EncodedSize(messageLen);
@@ -105,7 +105,7 @@ TEST_CASE("Base64: quick encode / decode", "[Base64][access_control][utility]")
 
   size_t decodedMessageEstimatedLen = cryptoBase64DecodeSize(encodedMessage, encodedMessageLen);
   CHECK(67 == decodedMessageEstimatedLen);
-  char decodedMessage[encodedMessageEstimatedLen];
+  char   decodedMessage[encodedMessageEstimatedLen];
   size_t decodedMessageLen = cryptoBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, encodedMessageLen);
 
   CHECK(64 == decodedMessageLen);
@@ -115,10 +115,10 @@ TEST_CASE("Base64: quick encode / decode", "[Base64][access_control][utility]")
 TEST_CASE("Base64: encode empty message into empty buffer", "[Base64][access_control][utility]")
 {
   /* Encode empty message */
-  const char *message               = "";
-  size_t messageLen                 = strlen(message);
-  size_t encodedMessageEstimatedLen = 0;
-  char encodedMessage[encodedMessageEstimatedLen];
+  const char *message                    = "";
+  size_t      messageLen                 = strlen(message);
+  size_t      encodedMessageEstimatedLen = 0;
+  char        encodedMessage[encodedMessageEstimatedLen];
 
   size_t encodedMessageLen = cryptoBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
 
@@ -129,9 +129,9 @@ TEST_CASE("Base64: encode empty message into empty buffer", "[Base64][access_con
 TEST_CASE("Base64: encode null message into null buffer", "[Base64][access_control][utility]")
 {
   /* Encode using nullptr pointer and 0 sizes */
-  char *message                     = nullptr;
+  char  *message                    = nullptr;
   size_t messageLen                 = 0;
-  char *encodedMessage              = nullptr;
+  char  *encodedMessage             = nullptr;
   size_t encodedMessageEstimatedLen = 0;
 
   size_t encodedMessageLen = cryptoBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
@@ -142,10 +142,10 @@ TEST_CASE("Base64: encode null message into null buffer", "[Base64][access_contr
 
 TEST_CASE("Base64: decode empty message into empty buffer", "[Base64][access_control][utility]")
 {
-  const char *encodedMessage        = "";
-  size_t encodedMessageLen          = strlen(encodedMessage);
-  size_t decodedMessageEstimatedLen = 0;
-  char decodedMessage[decodedMessageEstimatedLen];
+  const char *encodedMessage             = "";
+  size_t      encodedMessageLen          = strlen(encodedMessage);
+  size_t      decodedMessageEstimatedLen = 0;
+  char        decodedMessage[decodedMessageEstimatedLen];
 
   size_t decodedMessageLen = cryptoBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, encodedMessageLen);
 
@@ -155,9 +155,9 @@ TEST_CASE("Base64: decode empty message into empty buffer", "[Base64][access_con
 
 TEST_CASE("Base64: decode null message into null buffer", "[Base64][access_control][utility]")
 {
-  const char *encodedMessage = nullptr;
-  size_t encodedMessageLen   = 0;
-  char *decodedMessage       = nullptr;
+  const char *encodedMessage    = nullptr;
+  size_t      encodedMessageLen = 0;
+  char       *decodedMessage    = nullptr;
 
   size_t decodedMessageLen = cryptoBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, encodedMessageLen);
 
@@ -172,11 +172,11 @@ TEST_CASE("Base64: quick encode / decode with '+', '/' and various paddings", "[
 
   for (int i = 0; i < 3; i++) {
     /* Encode */
-    const char *message               = decoded[i];
-    size_t messageLen                 = strlen(message);
-    size_t encodedMessageEstimatedLen = cryptoBase64EncodedSize(messageLen);
-    char encodedMessage[encodedMessageEstimatedLen];
-    size_t encodedMessageLen = cryptoBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
+    const char *message                    = decoded[i];
+    size_t      messageLen                 = strlen(message);
+    size_t      encodedMessageEstimatedLen = cryptoBase64EncodedSize(messageLen);
+    char        encodedMessage[encodedMessageEstimatedLen];
+    size_t      encodedMessageLen = cryptoBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
     CHECK(strlen(encoded[i]) == encodedMessageLen);
     CHECK(0 == strncmp(encodedMessage, encoded[i], encodedMessageLen));
 
@@ -184,7 +184,7 @@ TEST_CASE("Base64: quick encode / decode with '+', '/' and various paddings", "[
     // Keep test around in case our implementation's estimation gets better
     // size_t decodedMessageEstimatedLen = cryptoBase64DecodeSize(encodedMessage, encodedMessageLen);
     // CHECK(strlen(decoded[i]) == decodedMessageEstimatedLen);
-    char decodedMessage[encodedMessageEstimatedLen];
+    char   decodedMessage[encodedMessageEstimatedLen];
     size_t decodedMessageLen = cryptoBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, encodedMessageLen);
     CHECK(strlen(decoded[i]) == decodedMessageLen);
     CHECK(0 == strncmp(decodedMessage, message, messageLen));
@@ -203,17 +203,17 @@ TEST_CASE("Base64: modified encode / decode with '+', '/' and various paddings",
 
   for (int i = 0; i < 3; i++) {
     /* Encode */
-    const char *message               = decoded[i];
-    size_t messageLen                 = strlen(message);
-    size_t encodedMessageEstimatedLen = cryptoBase64EncodedSize(messageLen);
-    char encodedMessage[encodedMessageEstimatedLen];
-    size_t encodedMessageLen = cryptoModifiedBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
+    const char *message                    = decoded[i];
+    size_t      messageLen                 = strlen(message);
+    size_t      encodedMessageEstimatedLen = cryptoBase64EncodedSize(messageLen);
+    char        encodedMessage[encodedMessageEstimatedLen];
+    size_t      encodedMessageLen = cryptoModifiedBase64Encode(message, messageLen, encodedMessage, encodedMessageEstimatedLen);
     CHECK(strlen(encoded[i]) == encodedMessageLen);
     CHECK(0 == strncmp(encodedMessage, encoded[i], encodedMessageLen));
 
     /* Decode */
     size_t decodedMessageEstimatedLen = cryptoBase64DecodeSize(encodedMessage, encodedMessageLen);
-    char decodedMessage[encodedMessageEstimatedLen];
+    char   decodedMessage[encodedMessageEstimatedLen];
     size_t decodedMessageLen =
       cryptoModifiedBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, decodedMessageEstimatedLen);
     CAPTURE(i);

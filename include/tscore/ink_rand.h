@@ -68,13 +68,13 @@ class InkRand
 public:
   InkRand(uint64_t d);
 
-  void seed(uint64_t d);
+  void     seed(uint64_t d);
   uint64_t random();
-  double drandom();
+  double   drandom();
 
 private:
   uint64_t mt[312];
-  int mti;
+  int      mti;
 };
 
 inline int

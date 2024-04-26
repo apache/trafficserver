@@ -39,8 +39,8 @@ bool
 ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length)
 {
   static const char _codes[66] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  char *obuf                   = outBuffer;
-  char in_tail[4];
+  char             *obuf       = outBuffer;
+  char              in_tail[4];
 
   if (outBufSize < ats_base64_encode_dstlen(inBufferSize)) {
     return false;
@@ -122,10 +122,10 @@ const unsigned char printableToSixBit[256] = {
 bool
 ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize, size_t *length)
 {
-  size_t inBytes        = 0;
-  size_t decodedBytes   = 0;
-  unsigned char *buf    = outBuffer;
-  int inputBytesDecoded = 0;
+  size_t         inBytes           = 0;
+  size_t         decodedBytes      = 0;
+  unsigned char *buf               = outBuffer;
+  int            inputBytesDecoded = 0;
 
   // Make sure there is sufficient space in the output buffer
   if (outBufSize < ats_base64_decode_dstlen(inBufferSize)) {

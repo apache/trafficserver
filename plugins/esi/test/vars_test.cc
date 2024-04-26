@@ -48,7 +48,7 @@ addToHeaderList(const char *strings[], HttpHeaderList &headers)
   }
 }
 
-extern void enableFakeDebugLog();
+extern void   enableFakeDebugLog();
 extern string gFakeDebugLog;
 
 TEST_CASE("esi vars test")
@@ -62,8 +62,8 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("c3");
     allowlistCookies.push_back("c4");
     allowlistCookies.push_back("c5");
-    int dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    int         dummy;
+    Variables   esi_vars(&dummy, allowlistCookies);
     const char *strings[] = {"Cookie",
                              "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
                              "Host",
@@ -289,7 +289,7 @@ TEST_CASE("esi vars test")
   SECTION("Test 2")
   {
     enableFakeDebugLog();
-    int dummy;
+    int       dummy;
     Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
@@ -328,7 +328,7 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("t4");
     allowlistCookies.push_back("t5");
     allowlistCookies.push_back("c1");
-    int dummy;
+    int       dummy;
     Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
@@ -372,12 +372,12 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("F");
     allowlistCookies.push_back("a");
     allowlistCookies.push_back("c");
-    int dummy;
+    int       dummy;
     Variables esi_vars(&dummy, allowlistCookies);
-    string cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
-                      "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
-                      "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
-                      "6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ"); // TODO - might need to
+    string    cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
+                            "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
+                            "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
+                            "6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ"); // TODO - might need to
     esi_vars.populate(HttpHeader("Cookie", -1, cookie_str.data(), cookie_str.size()));
 
     REQUIRE(esi_vars.getValue("HTTP_COOKIE{FPS}") == "dl");
@@ -415,7 +415,7 @@ TEST_CASE("esi vars test")
 
   SECTION("Test 5")
   {
-    int dummy;
+    int       dummy;
     Variables esi_vars(&dummy, allowlistCookies);
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
@@ -433,7 +433,7 @@ TEST_CASE("esi vars test")
   SECTION("Test 6")
   {
     allowlistCookies.push_back("*");
-    int dummy;
+    int       dummy;
     Variables esi_vars(&dummy, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));

@@ -42,10 +42,10 @@
 #include "txn_box/ts_util.h"
 #include "txn_box/yaml_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -262,7 +262,7 @@ Config::parse_unquoted_expr(swoc::TextView const &text)
 {
   // Integer?
   TextView parsed;
-  auto n = swoc::svtoi(text, &parsed);
+  auto     n = swoc::svtoi(text, &parsed);
   if (parsed.size() == text.size()) {
     return Expr{Feature{n}};
   }
@@ -287,7 +287,7 @@ Config::parse_unquoted_expr(swoc::TextView const &text)
 
   // Presume an extractor.
   Extractor::Spec spec;
-  bool valid_p = spec.parse(text);
+  bool            valid_p = spec.parse(text);
   if (!valid_p) {
     return Errata(S_ERROR, R"(Invalid syntax for extractor "{}" - not a valid specifier.)", text);
   }
@@ -306,8 +306,8 @@ Config::parse_unquoted_expr(swoc::TextView const &text)
 Rv<Expr>
 Config::parse_composite_expr(TextView const &text)
 {
-  ActiveType single_vt;
-  auto parser{swoc::bwf::Format::bind(text)};
+  ActiveType                   single_vt;
+  auto                         parser{swoc::bwf::Format::bind(text)};
   std::vector<Extractor::Spec> specs; // hold the specifiers during parse.
   // Used to handle literals in @a format_string. Can't be const because it must be updated
   // for each literal.
@@ -316,9 +316,9 @@ Config::parse_composite_expr(TextView const &text)
   literal_spec._type = Extractor::Spec::LITERAL_TYPE;
 
   while (parser) {
-    Extractor::Spec spec;
+    Extractor::Spec  spec;
     std::string_view literal;
-    bool spec_p = false;
+    bool             spec_p = false;
     try {
       spec_p = parser(literal, spec);
     } catch (std::exception const &exp) {
@@ -361,7 +361,7 @@ Config::parse_composite_expr(TextView const &text)
     // else it's an indexed specifier, treat as a composite.
   }
   // Multiple specifiers, check for overall properties.
-  Expr expr;
+  Expr  expr;
   auto &cexpr = expr._raw.emplace<Expr::COMPOSITE>();
   cexpr._specs.swap(specs);
 
@@ -474,8 +474,8 @@ Config::parse_expr(YAML::Node expr_node)
   }
 
   // Else, after all this, it's a tuple, treat each element as an expression.
-  ActiveType l_types;
-  bool literal_p = true; // Is the entire sequence literal?
+  ActiveType        l_types;
+  bool              literal_p = true; // Is the entire sequence literal?
   std::vector<Expr> xa;
   xa.reserve(expr_node.size());
   for (auto const &child : expr_node) {
@@ -493,8 +493,8 @@ Config::parse_expr(YAML::Node expr_node)
 
   Expr expr;
   if (literal_p) {
-    FeatureTuple t = this->alloc_span<Feature>(xa.size());
-    unsigned idx   = 0;
+    FeatureTuple t   = this->alloc_span<Feature>(xa.size());
+    unsigned     idx = 0;
     for (auto &f : t) {
       f = std::get<Expr::LITERAL>(xa[idx++]._raw);
     }
@@ -528,7 +528,7 @@ Config::load_directive(YAML::Node const &drtv_node)
     // If none of the keys are in the factory, that's an error and is reported after the loop.
     if (auto spot{_factory.find(name)}; spot != _factory.end()) {
       auto &info = spot->second;
-      auto rtti  = &_drtv_info[info._idx];
+      auto  rtti = &_drtv_info[info._idx];
 
       if (!info._hook_mask[IndexFor(this->current_hook())]) {
         return Errata(S_ERROR, R"(Directive "{}" at {} is not allowed on hook "{}".)", name, drtv_node.Mark(),
@@ -560,8 +560,8 @@ Config::parse_directive(YAML::Node const &drtv_node)
   if (drtv_node.IsMap()) {
     return this->load_directive(drtv_node);
   } else if (drtv_node.IsSequence()) {
-    Errata zret;
-    auto list{new DirectiveList};
+    Errata            zret;
+    auto              list{new DirectiveList};
     Directive::Handle drtv_list{list};
     for (auto child : drtv_node) {
       auto &&[handle, errata]{this->load_directive(child)};
@@ -729,11 +729,11 @@ Config::load_file(swoc::file::path const &cfg_path, TextView cfg_key, YamlCache 
 Errata
 Config::load_file_glob(TextView pattern, swoc::TextView cfg_key, YamlCache *cache)
 {
-  int flags = 0;
-  glob_t files;
-  auto err_f                   = [](char const *, int) -> int { return 0; };
+  int              flags = 0;
+  glob_t           files;
+  auto             err_f       = [](char const *, int) -> int { return 0; };
   swoc::file::path abs_pattern = ts::make_absolute(pattern);
-  int result                   = glob(abs_pattern.c_str(), flags, err_f, &files);
+  int              result      = glob(abs_pattern.c_str(), flags, err_f, &files);
   if (result == GLOB_NOMATCH) {
     return Errata(S_WARN, R"(The pattern "{}" did not match any files.)", abs_pattern);
   }
@@ -753,8 +753,8 @@ Config::load_cli_args(Handle handle, const std::vector<std::string> &args, int a
 {
   using argv_type = char const *; // Overall clearer in context of pointers to pointers.
   std::unique_ptr<argv_type[]> buff{new argv_type[args.size()]};
-  swoc::MemSpan<argv_type> argv{buff.get(), args.size()};
-  int idx = 0;
+  swoc::MemSpan<argv_type>     argv{buff.get(), args.size()};
+  int                          idx = 0;
   for (auto const &arg : args) {
     argv[idx++] = arg.c_str();
   }

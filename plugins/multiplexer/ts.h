@@ -42,9 +42,9 @@ namespace ats
 namespace io
 {
   struct IO {
-    TSIOBuffer buffer;
+    TSIOBuffer       buffer;
     TSIOBufferReader reader;
-    TSVIO vio = nullptr;
+    TSVIO            vio = nullptr;
 
     ~IO()
     {

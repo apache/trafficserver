@@ -153,8 +153,8 @@ acl_filter_rule::print()
 acl_filter_rule *
 acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
 {
-  int _name_size      = 0;
-  acl_filter_rule *rp = nullptr;
+  int              _name_size = 0;
+  acl_filter_rule *rp         = nullptr;
   if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
     for (rp = list; rp; rp = rp->next) {
       if (strcasecmp(rp->filter_name, _name) == 0) {
@@ -168,7 +168,7 @@ acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
 void
 acl_filter_rule::delete_byname(acl_filter_rule **rpp, const char *_name)
 {
-  int _name_size = 0;
+  int              _name_size = 0;
   acl_filter_rule *rp;
   if (likely(rpp && _name && (_name_size = strlen(_name)) > 0)) {
     for (; (rp = *rpp) != nullptr; rpp = &rp->next) {

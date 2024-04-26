@@ -494,9 +494,9 @@ TransformVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 uint64_t
 TransformVConnection::backlog(uint64_t limit)
 {
-  uint64_t b          = 0; // backlog
+  uint64_t     b      = 0; // backlog
   VConnection *raw_vc = m_transform;
-  MIOBuffer *w;
+  MIOBuffer   *w;
   while (raw_vc && raw_vc != &m_terminus) {
     INKVConnInternal *vc = static_cast<INKVConnInternal *>(raw_vc);
     if (nullptr != (w = vc->m_read_vio.buffer.writer())) {
@@ -851,10 +851,10 @@ void
 RangeTransform::transform_to_range()
 {
   IOBufferReader *reader = m_write_vio.get_reader();
-  int64_t toskip, tosend, avail;
-  const int64_t *end, *start;
-  int64_t prev_end = 0;
-  int64_t *done_byte;
+  int64_t         toskip, tosend, avail;
+  const int64_t  *end, *start;
+  int64_t         prev_end = 0;
+  int64_t        *done_byte;
 
   if (m_current_range >= m_num_range_fields) {
     return;
@@ -991,7 +991,7 @@ RangeTransform::add_sub_header(int index)
 {
   // this should be large enough to hold three integers!
   char numbers[RANGE_NUMBERS_LENGTH];
-  int len;
+  int  len;
 
   m_done += m_output_buf->write(cont_type, sizeof(cont_type) - 1);
   if (m_content_type) {
@@ -1021,7 +1021,7 @@ void
 RangeTransform::change_response_header()
 {
   MIMEField *field;
-  char *reason_phrase;
+  char      *reason_phrase;
   HTTPStatus status_code;
 
   ink_release_assert(m_transform_resp);

@@ -67,16 +67,16 @@
  *  The names of the first version of access token, have it here so we can make it reconfigurable later.
  */
 struct KvpAccessTokenConfig {
-  const String subjectName     = "sub";
-  StringView expirationName    = "exp";
-  StringView notBeforeName     = "nbf";
-  StringView issuedAtName      = "iat";
-  StringView tokenIdName       = "tid";
-  StringView versionName       = "ver";
-  StringView scopeName         = "scope";
-  StringView keyIdName         = "kid";
-  StringView hashFunctionName  = "st";
-  StringView messageDigestName = "md";
+  const String subjectName       = "sub";
+  StringView   expirationName    = "exp";
+  StringView   notBeforeName     = "nbf";
+  StringView   issuedAtName      = "iat";
+  StringView   tokenIdName       = "tid";
+  StringView   versionName       = "ver";
+  StringView   scopeName         = "scope";
+  StringView   keyIdName         = "kid";
+  StringView   hashFunctionName  = "st";
+  StringView   messageDigestName = "md";
 
   String pairDelimiter = "&";
   String kvDelimiter   = "=";
@@ -176,7 +176,7 @@ public:
     return _state;
   }
 
-  AccessTokenStatus validate(const StringView token, time_t time);
+  AccessTokenStatus         validate(const StringView token, time_t time);
   virtual AccessTokenStatus parse(const StringView token) = 0;
 
 protected:
@@ -185,10 +185,10 @@ protected:
   AccessTokenStatus validateTiming(time_t time);
 
   /* Initial setup members */
-  bool _debug = false;               /** @brief collect and print more debugging info */
-  const StringMap &_secretsMap;      /** @brief map with secret for signing the package*/
-  AccessTokenStatus _state = UNUSED; /** @brief token state */
-  time_t _validationTime   = 0;      /** @brief validation time used for debugging */
+  bool              _debug = false;           /** @brief collect and print more debugging info */
+  const StringMap  &_secretsMap;              /** @brief map with secret for signing the package*/
+  AccessTokenStatus _state          = UNUSED; /** @brief token state */
+  time_t            _validationTime = 0;      /** @brief validation time used for debugging */
 
   /* Helper members */
   StringView _token   = ""; /** @brief whole token */
@@ -227,20 +227,20 @@ class KvpAccessTokenBuilder
 public:
   KvpAccessTokenBuilder(const KvpAccessTokenConfig &config, const StringMap &secretsMap);
 
-  void appendKeyValuePair(const StringView &key, const StringView value);
-  void addSubject(const StringView sub);
-  void addExpiration(time_t exp);
-  void addNotBefore(time_t nbf);
-  void addIssuedAt(time_t iat);
-  void addTokenId(const StringView tid);
-  void addVersion(const StringView ver);
-  void addScope(const StringView scope);
-  void sign(const StringView kid, const StringView hf);
+  void        appendKeyValuePair(const StringView &key, const StringView value);
+  void        addSubject(const StringView sub);
+  void        addExpiration(time_t exp);
+  void        addNotBefore(time_t nbf);
+  void        addIssuedAt(time_t iat);
+  void        addTokenId(const StringView tid);
+  void        addVersion(const StringView ver);
+  void        addScope(const StringView scope);
+  void        sign(const StringView kid, const StringView hf);
   const char *get();
 
 private:
   const KvpAccessTokenConfig &_config;
-  String _buffer;
+  String                      _buffer;
 
   const StringMap &_secretsMap; /** @brief map with secret for signing the package*/
 };
@@ -279,10 +279,10 @@ public:
   }
 
 private:
-  TokenType _desiredType = Unknown; /* Remember for each (only one) token type the factory was initialized */
+  TokenType                   _desiredType = Unknown; /* Remember for each (only one) token type the factory was initialized */
   const KvpAccessTokenConfig &_kvpAccessTokenConfig;
-  const StringMap &_secretMap;
-  bool _enableDebug = false;
+  const StringMap            &_secretMap;
+  bool                        _enableDebug = false;
 
   AccessTokenFactory() = delete;
 };

@@ -58,18 +58,18 @@ struct BodyData {
     return total_size;
   }
 
-  bool intercept_active = false;
-  bool key_hash_active  = false;
-  uint32_t key_hash     = 0;
+  bool     intercept_active = false;
+  bool     key_hash_active  = false;
+  uint32_t key_hash         = 0;
 
 private:
   struct Chunk {
     Chunk(int64_t size, std::vector<char> &&start) : size(size), start(std::move(start)) {}
 
-    int64_t size = 0;
+    int64_t           size = 0;
     std::vector<char> start;
   };
-  int64_t total_size = 0;
+  int64_t            total_size = 0;
   std::vector<Chunk> chunk_list;
 };
 

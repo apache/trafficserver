@@ -19,7 +19,7 @@
 #  limitations under the License.
 
 # Update the PKGDATE with the new version date when making a new clang-format binary package.
-PKGDATE="20230928"
+PKGDATE="20240419"
 
 function main() {
   set -e # exit on error
@@ -40,7 +40,7 @@ function main() {
   fi
   DIR=${@:-$(dirname ${GIT_COMMON_DIR})}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
-  VERSION="clang-format version 17.0.1 (https://github.com/llvm/llvm-project.git e19b7dc36bc047b9eb72078d034596be766da350)"
+  VERSION="clang-format version 18.1.2 (https://github.com/llvm/llvm-project.git 26a1d6601d727a96f4301d0d8647b5a42760ae0c)"
 
   URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
@@ -75,7 +75,7 @@ function main() {
     ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
     ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
     cat > ${ROOT}/sha256 << EOF
-deb056a30ad968c5b7c8768ffecb382408ad2669dd61f2cc126d267069f0c197  ${ARCHIVE}
+a569e8f6da82aa3af00fc3e746c5ca351715e4c54e23c4a14b9bc66554d6d690  ${ARCHIVE}
 EOF
     ${SHASUM} -c ${ROOT}/sha256
     chmod +x ${FORMAT}

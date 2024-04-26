@@ -252,30 +252,30 @@ enum HTTPType {
 
 struct HTTPHdrImpl : public HdrHeapObjImpl {
   // HdrHeapObjImpl is 4 bytes
-  HTTPType m_polarity;   // request or response or unknown
-  HTTPVersion m_version; // cooked version number
+  HTTPType    m_polarity; // request or response or unknown
+  HTTPVersion m_version;  // cooked version number
   // 12 bytes means 4 bytes padding here on 64-bit architectures
   union {
     struct {
-      URLImpl *m_url_impl;
+      URLImpl    *m_url_impl;
       const char *m_ptr_method;
-      uint16_t m_len_method;
-      int16_t m_method_wks_idx;
+      uint16_t    m_len_method;
+      int16_t     m_method_wks_idx;
     } req;
 
     struct {
       const char *m_ptr_reason;
-      uint16_t m_len_reason;
-      int16_t m_status;
+      uint16_t    m_len_reason;
+      int16_t     m_status;
     } resp;
   } u;
 
   MIMEHdrImpl *m_fields_impl;
 
   // Marshaling Functions
-  int marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str);
-  void unmarshal(intptr_t offset);
-  void move_strings(HdrStrHeap *new_heap);
+  int    marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str);
+  void   unmarshal(intptr_t offset);
+  void   move_strings(HdrStrHeap *new_heap);
   size_t strings_length();
 
   // Sanity Check Functions
@@ -283,28 +283,28 @@ struct HTTPHdrImpl : public HdrHeapObjImpl {
 };
 
 struct HTTPValAccept {
-  char *type;
-  char *subtype;
+  char  *type;
+  char  *subtype;
   double qvalue;
 };
 
 struct HTTPValAcceptCharset {
-  char *charset;
+  char  *charset;
   double qvalue;
 };
 
 struct HTTPValAcceptEncoding {
-  char *encoding;
+  char  *encoding;
   double qvalue;
 };
 
 struct HTTPValAcceptLanguage {
-  char *language;
+  char  *language;
   double qvalue;
 };
 
 struct HTTPValFieldList {
-  char *name;
+  char             *name;
   HTTPValFieldList *next;
 };
 
@@ -312,24 +312,24 @@ struct HTTPValCacheControl {
   const char *directive;
 
   union {
-    int delta_seconds;
+    int               delta_seconds;
     HTTPValFieldList *field_names;
   } u;
 };
 
 struct HTTPValRange {
-  int start;
-  int end;
+  int           start;
+  int           end;
   HTTPValRange *next;
 };
 
 struct HTTPValTE {
-  char *encoding;
+  char  *encoding;
   double qvalue;
 };
 
 struct HTTPParser {
-  bool m_parsing_http = false;
+  bool       m_parsing_http = false;
   MIMEParser m_mime_parser;
 };
 
@@ -424,9 +424,9 @@ void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t 
 void http_init();
 
 HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity, HTTPVersion version);
-void http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion version);
+void         http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion version);
 HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
-void http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
+void         http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
 int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
@@ -435,19 +435,19 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
 const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
-void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                         bool must_copy);
+void        http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
+                                bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
-void http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
+void        http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
 const char *http_hdr_reason_get(HTTPHdrImpl *hh, int *length);
-void http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
+void        http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
 const char *http_hdr_reason_lookup(unsigned status);
 
-void http_parser_init(HTTPParser *parser);
-void http_parser_clear(HTTPParser *parser);
+void        http_parser_init(HTTPParser *parser);
+void        http_parser_clear(HTTPParser *parser);
 ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                   bool must_copy_strings, bool eof, int strict_uri_parsing, size_t max_request_line_size,
                                   size_t max_hdr_field_size);
@@ -457,7 +457,7 @@ ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                    bool must_copy_strings, bool eof);
 
-HTTPStatus http_parse_status(const char *start, const char *end);
+HTTPStatus  http_parse_status(const char *start, const char *end);
 HTTPVersion http_parse_version(const char *start, const char *end);
 
 /*
@@ -478,14 +478,14 @@ class IOBufferReader;
 class HTTPHdr : public MIMEHdr
 {
 public:
-  HTTPHdrImpl *m_http = nullptr;
-  mutable URL m_url_cached;
-  mutable MIMEField *m_host_mime       = nullptr;
-  mutable int m_host_length            = 0;     ///< Length of hostname.
-  mutable int m_port                   = 0;     ///< Target port.
-  mutable bool m_target_cached         = false; ///< Whether host name and port are cached.
-  mutable bool m_target_in_url         = false; ///< Whether host name and port are in the URL.
-  mutable bool m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
+  HTTPHdrImpl       *m_http = nullptr;
+  mutable URL        m_url_cached;
+  mutable MIMEField *m_host_mime             = nullptr;
+  mutable int        m_host_length           = 0;     ///< Length of hostname.
+  mutable int        m_port                  = 0;     ///< Target port.
+  mutable bool       m_target_cached         = false; ///< Whether host name and port are cached.
+  mutable bool       m_target_in_url         = false; ///< Whether host name and port are in the URL.
+  mutable bool       m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
@@ -513,11 +513,11 @@ public:
   HTTPType type_get() const;
 
   HTTPVersion version_get() const;
-  void version_set(HTTPVersion version);
+  void        version_set(HTTPVersion version);
 
   const char *method_get(int *length);
-  int method_get_wksidx() const;
-  void method_set(const char *value, int length);
+  int         method_get_wksidx() const;
+  void        method_set(const char *value, int length);
 
   URL *url_create(URL *url);
 
@@ -531,8 +531,8 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
-                       int *length  = nullptr  ///< Store string length here.
+  char *url_string_get(Arena *arena  = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int   *length = nullptr  ///< Store string length here.
   );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
@@ -546,10 +546,10 @@ public:
       Output is not null terminated.
       @return 0 on failure, non-zero on success.
    */
-  int url_print(char *buff,                                       ///< Output buffer
-                int length,                                       ///< Length of @a buffer
-                int *offset,                                      ///< [in,out] ???
-                int *skip,                                        ///< [in,out] ???
+  int url_print(char    *buff,                                    ///< Output buffer
+                int      length,                                  ///< Length of @a buffer
+                int     *offset,                                  ///< [in,out] ???
+                int     *skip,                                    ///< [in,out] ???
                 unsigned normalization_flags = URLNormalize::NONE ///< host/scheme normalized to lower case
   );
 
@@ -607,8 +607,8 @@ public:
   */
   const char *scheme_get(int *length ///< Storage for path length.
   );
-  void url_set(URL *url);
-  void url_set(const char *str, int length);
+  void        url_set(URL *url);
+  void        url_set(const char *str, int length);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -631,10 +631,10 @@ public:
   void mark_target_dirty() const;
 
   HTTPStatus status_get() const;
-  void status_set(HTTPStatus status);
+  void       status_set(HTTPStatus status);
 
   const char *reason_get(int *length);
-  void reason_set(const char *value, int length);
+  void        reason_set(const char *value, int length);
 
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
@@ -651,10 +651,10 @@ public:
 
 public:
   // Utility routines
-  bool is_cache_control_set(const char *cc_directive_wks);
-  bool is_pragma_no_cache_set();
-  bool is_keep_alive_set() const;
-  bool expect_final_response() const;
+  bool          is_cache_control_set(const char *cc_directive_wks);
+  bool          is_pragma_no_cache_set();
+  bool          is_keep_alive_set() const;
+  bool          expect_final_response() const;
   HTTPKeepAlive keep_alive_get() const;
 
 protected:
@@ -876,7 +876,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
     CON_TOKEN_CLOSE,
   };
 
-  int con_token            = CON_TOKEN_NONE;
+  int           con_token  = CON_TOKEN_NONE;
   HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
@@ -906,8 +906,8 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
 inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
-  HTTPKeepAlive retval = HTTP_NO_KEEPALIVE;
-  const MIMEField *pc  = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  HTTPKeepAlive    retval = HTTP_NO_KEEPALIVE;
+  const MIMEField *pc     = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
   if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
@@ -1335,15 +1335,15 @@ public:
   {
     m_alt = info->m_alt;
   }
-  void copy_frag_offsets_from(HTTPInfo *src);
+  void      copy_frag_offsets_from(HTTPInfo *src);
   HTTPInfo &operator=(const HTTPInfo &m);
 
-  int marshal_length();
-  int marshal(char *buf, int len);
+  int        marshal_length();
+  int        marshal(char *buf, int len);
   static int unmarshal(char *buf, int len, RefCountObj *block_ref);
   static int unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref);
-  void set_buffer_reference(RefCountObj *block_ref);
-  int get_handle(char *buf, int len);
+  void       set_buffer_reference(RefCountObj *block_ref);
+  int        get_handle(char *buf, int len);
 
   int32_t
   id_get() const
@@ -1368,9 +1368,9 @@ public:
   }
 
   CryptoHash object_key_get();
-  void object_key_get(CryptoHash *);
-  bool compare_object_key(const CryptoHash *);
-  int64_t object_size_get();
+  void       object_key_get(CryptoHash *);
+  bool       compare_object_key(const CryptoHash *);
+  int64_t    object_size_get();
 
   void
   request_get(HTTPHdr *hdr)
@@ -1478,7 +1478,7 @@ inline CryptoHash
 HTTPInfo::object_key_get()
 {
   CryptoHash val;
-  int32_t *pi = reinterpret_cast<int32_t *>(&val);
+  int32_t   *pi = reinterpret_cast<int32_t *>(&val);
 
   memcpy(pi, m_alt->m_object_key, sizeof(CryptoHash));
 
@@ -1502,8 +1502,8 @@ HTTPInfo::compare_object_key(const CryptoHash *hash)
 inline int64_t
 HTTPInfo::object_size_get()
 {
-  int64_t val = 0; // make gcc shut up.
-  int32_t *pi = reinterpret_cast<int32_t *>(&val);
+  int64_t  val = 0; // make gcc shut up.
+  int32_t *pi  = reinterpret_cast<int32_t *>(&val);
 
   pi[0] = m_alt->m_object_size[0];
   pi[1] = m_alt->m_object_size[1];

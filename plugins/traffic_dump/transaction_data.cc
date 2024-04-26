@@ -31,9 +31,9 @@
 
 namespace traffic_dump
 {
-int TransactionData::transaction_arg_index = 0;
+int                TransactionData::transaction_arg_index = 0;
 sensitive_fields_t TransactionData::sensitive_fields;
-bool TransactionData::_dump_body = false;
+bool               TransactionData::_dump_body = false;
 
 std::string default_sensitive_field_value;
 
@@ -74,8 +74,8 @@ TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edat
   case TS_EVENT_IMMEDIATE:
     // Look for data and if we find any, consume.
     if (TSVIOBufferGet(input_vio)) {
-      TSIOBufferReader reader = TSVIOReaderGet(input_vio);
-      int64_t read_avail      = TSIOBufferReaderAvail(reader);
+      TSIOBufferReader reader     = TSVIOReaderGet(input_vio);
+      int64_t          read_avail = TSIOBufferReaderAvail(reader);
       if (read_avail > 0) {
         char response_buffer[read_avail];
         TSIOBufferReaderCopy(reader, response_buffer, read_avail);
@@ -124,7 +124,7 @@ std::string
 TransactionData::get_sensitive_field_description()
 {
   std::string sensitive_fields_string;
-  bool is_first = true;
+  bool        is_first = true;
   for (const auto &field : sensitive_fields) {
     if (!is_first) {
       sensitive_fields_string += ", ";
@@ -193,9 +193,9 @@ std::string
 TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc, std::string_view http_version)
 {
   std::string result;
-  int len        = 0;
-  char const *cp = nullptr;
-  TSMLoc url_loc = nullptr;
+  int         len     = 0;
+  char const *cp      = nullptr;
+  TSMLoc      url_loc = nullptr;
 
   // 1. "version"
   result += R"("version":")";
@@ -224,7 +224,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     cp = TSUrlHostGet(buffer, url_loc, &len);
     std::string_view host{cp, static_cast<size_t>(len)};
 
-    char *url = TSUrlStringGet(buffer, url_loc, &len);
+    char            *url = TSUrlStringGet(buffer, url_loc, &len);
     std::string_view url_string{url, static_cast<size_t>(len)};
 
     if (host.empty()) {
@@ -252,10 +252,10 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
   result           += R"(,"headers":{"encoding":"esc_json", "fields": [)";
   TSMLoc field_loc  = TSMimeHdrFieldGet(buffer, hdr_loc, 0);
   while (field_loc) {
-    TSMLoc next_field_loc;
-    char const *name  = nullptr;
-    char const *value = nullptr;
-    int name_len = 0, value_len = 0;
+    TSMLoc      next_field_loc;
+    char const *name     = nullptr;
+    char const *value    = nullptr;
+    int         name_len = 0, value_len = 0;
     // Append to "fields" list if valid value exists
     if ((name = TSMimeHdrFieldNameGet(buffer, hdr_loc, field_loc, &name_len)) && name_len) {
       std::string_view name_view{name, static_cast<size_t>(name_len)};
@@ -401,7 +401,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   // Retrieve SessionData
-  TSHttpSsn ssnp       = TSHttpTxnSsnGet(txnp);
+  TSHttpSsn    ssnp    = TSHttpTxnSsnGet(txnp);
   SessionData *ssnData = static_cast<SessionData *>(TSUserArgGet(ssnp, SessionData::get_session_arg_index()));
 
   // If no valid ssnData, continue transaction as if nothing happened. This transaction
@@ -456,7 +456,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     // We must grab the client request information before remap happens because
     // the remap process modifies the request buffer.
     TSMBuffer buffer;
-    TSMLoc hdr_loc;
+    TSMLoc    hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
       Dbg(dbg_ctl, "Found client request");
       // We don't have an accurate view of the body size until TXN_CLOSE so we hold
@@ -491,7 +491,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     }
     // proxy-request/response headers
     TSMBuffer buffer;
-    TSMLoc hdr_loc;
+    TSMLoc    hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
       // The node was started above in TS_EVENT_HTTP_READ_REQUEST_HDR. Here we
       // just have to finish it off by writing the content node.

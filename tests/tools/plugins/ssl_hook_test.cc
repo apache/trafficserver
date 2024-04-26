@@ -36,7 +36,7 @@
 #define PCP "[" PN " Plugin] "
 
 static DbgCtl dbg_ctl{PN};
-static bool was_conn_closed;
+static bool   was_conn_closed;
 
 int
 ReenableSSL(TSCont cont, TSEvent event, void *edata)
@@ -240,7 +240,7 @@ parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &client_
                 int &sni_count, int &cert_count, int &cert_count_immediate, int &preaccept_count_delay, int &close_count,
                 int &out_start_count, int &out_start_delay_count, int &out_close_count)
 {
-  int i = 0;
+  int         i = 0;
   const char *ptr;
   for (i = 0; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -305,7 +305,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int client_hello_count, int 
                 int out_start_delay_count, int out_close_count)
 {
   TSCont cb = nullptr; // pre-accept callback continuation
-  int i;
+  int    i;
 
   Dbg(dbg_ctl, "Setup callbacks pa=%d client_hello=%d client_hello_imm=%d sni=%d cert=%d cert_imm=%d pa_delay=%d", preaccept_count,
       client_hello_count, client_hello_count_immediate, sni_count, cert_count, cert_count_immediate, preaccept_count_delay);

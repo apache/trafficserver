@@ -32,7 +32,7 @@
 #define PINNED_DOC_TABLES     246
 
 struct PinnedDocEntry {
-  CacheKey key;
+  CacheKey   key;
   ink_time_t time;
   LINK(PinnedDocEntry, link);
 };
@@ -41,18 +41,18 @@ struct PinnedDocTable : public Continuation {
   Queue<PinnedDocEntry> bucket[PINNED_DOC_TABLE_SIZE];
 
   void insert(CacheKey *key, ink_time_t time, int update);
-  int probe(CacheKey *key);
-  int remove(CacheKey *key);
-  int cleanup(int event, Event *e);
+  int  probe(CacheKey *key);
+  int  remove(CacheKey *key);
+  int  cleanup(int event, Event *e);
 
   PinnedDocTable() : Continuation(new_ProxyMutex()) { ink_zero(bucket); }
 };
 
 struct CacheTestHost {
-  char *name                     = nullptr;
+  char        *name              = nullptr;
   unsigned int xlast_cachable_id = 0;
-  double xprev_host_prob         = 0;
-  double xnext_host_prob         = 0;
+  double       xprev_host_prob   = 0;
+  double       xnext_host_prob   = 0;
 
   CacheTestHost() {}
 };
@@ -68,31 +68,31 @@ struct CacheTestSM : public RegressionSM {
   // Cache test instance name. This is a pointer to a string literal, so copying is safe.
   const char *cache_test_name = nullptr;
 
-  Action *timeout               = nullptr;
-  Action *cache_action          = nullptr;
-  ink_hrtime start_time         = 0;
-  CacheVConnection *cache_vc    = nullptr;
-  VIO *cvio                     = nullptr;
-  MIOBuffer *buffer             = nullptr;
-  IOBufferReader *buffer_reader = nullptr;
-  CacheHTTPInfo info;
-  char urlstr[1024];
-  int64_t total_size = 0;
-  int64_t nbytes     = -1;
-  CacheKey key;
-  int repeat_count         = 0;
-  int expect_event         = EVENT_NONE;
-  int expect_initial_event = EVENT_NONE;
-  int initial_event        = EVENT_NONE;
-  uint64_t content_salt    = 0;
-  CacheTestHeader header;
-  int end_memcpy_on_clone = 0; // place all variables to be copied between these markers
+  Action           *timeout       = nullptr;
+  Action           *cache_action  = nullptr;
+  ink_hrtime        start_time    = 0;
+  CacheVConnection *cache_vc      = nullptr;
+  VIO              *cvio          = nullptr;
+  MIOBuffer        *buffer        = nullptr;
+  IOBufferReader   *buffer_reader = nullptr;
+  CacheHTTPInfo     info;
+  char              urlstr[1024];
+  int64_t           total_size = 0;
+  int64_t           nbytes     = -1;
+  CacheKey          key;
+  int               repeat_count         = 0;
+  int               expect_event         = EVENT_NONE;
+  int               expect_initial_event = EVENT_NONE;
+  int               initial_event        = EVENT_NONE;
+  uint64_t          content_salt         = 0;
+  CacheTestHeader   header;
+  int               end_memcpy_on_clone = 0; // place all variables to be copied between these markers
 
   void fill_buffer();
-  int check_buffer();
-  int check_result(int event);
-  int complete(int event);
-  int event_handler(int event, void *edata);
+  int  check_buffer();
+  int  check_result(int event);
+  int  complete(int event);
+  int  event_handler(int event, void *edata);
   void
   make_request()
   {
@@ -100,8 +100,8 @@ struct CacheTestSM : public RegressionSM {
     make_request_internal();
   }
   virtual void make_request_internal() = 0;
-  virtual int open_read_callout();
-  virtual int open_write_callout();
+  virtual int  open_read_callout();
+  virtual int  open_write_callout();
 
   void
   cancel_timeout()

@@ -534,7 +534,7 @@ public:
   void clear();
 
   /// Get the first block.
-  IOBufferBlock *head();
+  IOBufferBlock       *head();
   IOBufferBlock const *head() const;
 
   /// STL Container support.
@@ -569,7 +569,7 @@ public:
     value_type *operator->() const;
 
     self_type &operator++();
-    self_type operator++(int);
+    self_type  operator++(int);
   };
 
   class iterator : public const_iterator
@@ -584,10 +584,10 @@ public:
 
   using value_type = IOBufferBlock;
 
-  iterator begin();
+  iterator       begin();
   const_iterator begin() const;
 
-  iterator end();
+  iterator       end();
   const_iterator end() const;
 
 protected:
@@ -861,7 +861,7 @@ public:
     MIOBuffer this reader is allocated from.
 
   */
-  MIOBuffer *mbuf = nullptr;
+  MIOBuffer         *mbuf = nullptr;
   Ptr<IOBufferBlock> block;
 
   /**
@@ -1147,9 +1147,9 @@ public:
   */
   void dealloc_all_readers();
 
-  void set(void *b, int64_t len);
-  void alloc(int64_t i);
-  void append_block_internal(IOBufferBlock *b);
+  void    set(void *b, int64_t len);
+  void    alloc(int64_t i);
+  void    append_block_internal(IOBufferBlock *b);
   int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
 
   // internal interface
@@ -1172,7 +1172,7 @@ public:
   */
   bool is_max_read_avail_more_than(int64_t size);
 
-  int max_block_count();
+  int  max_block_count();
   void check_add_block();
 
   IOBufferBlock *get_current_block();
@@ -1228,7 +1228,7 @@ public:
   int64_t water_mark;
 
   Ptr<IOBufferBlock> _writer;
-  IOBufferReader readers[MAX_MIOBUFFER_READERS];
+  IOBufferReader     readers[MAX_MIOBUFFER_READERS];
 
   const char *_location = nullptr;
 
@@ -1286,7 +1286,7 @@ struct MIOBufferAccessor {
   MIOBufferAccessor &operator=(const MIOBufferAccessor &) = delete;
 
 private:
-  MIOBuffer *mbuf       = nullptr;
+  MIOBuffer      *mbuf  = nullptr;
   IOBufferReader *entry = nullptr;
 };
 

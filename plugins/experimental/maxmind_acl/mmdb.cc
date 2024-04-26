@@ -31,7 +31,7 @@ bool
 Acl::init(char const *filename)
 {
   struct stat s;
-  bool status = false;
+  bool        status = false;
 
   YAML::Node maxmind;
 
@@ -80,7 +80,7 @@ Acl::init(char const *filename)
 
   // Associate our config file with remap.config if possible to be able to initiate reloads
   TSMgmtString result;
-  const char *var_name = "proxy.config.url_remap.filename";
+  const char  *var_name = "proxy.config.url_remap.filename";
   if (TS_SUCCESS != TSMgmtStringGet(var_name, &result)) {
     TSWarning("[%s] Could not retrieve remap filename", PLUGIN_NAME);
   } else if (TS_SUCCESS != TSMgmtConfigFileAdd(result, configloc.c_str())) {
@@ -371,10 +371,10 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
         // Parse each country-regex pair
         for (const auto &i : regex) {
           plugin_regex temp;
-          auto temprule = i.as<std::vector<std::string>>();
-          temp._regex_s = temprule.back();
+          auto         temprule = i.as<std::vector<std::string>>();
+          temp._regex_s         = temprule.back();
           const char *error;
-          int erroffset;
+          int         erroffset;
           temp._rex = pcre_compile(temp._regex_s.c_str(), 0, &error, &erroffset, nullptr);
 
           // Compile the regex for this set of countries
@@ -409,7 +409,7 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
 void
 Acl::loadhtml(const YAML::Node &htmlNode)
 {
-  std::string htmlname, htmlloc;
+  std::string   htmlname, htmlloc;
   std::ifstream f;
 
   if (!htmlNode) {
@@ -484,7 +484,7 @@ bool
 Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
 {
   bool ret = default_allow;
-  int mmdb_error;
+  int  mmdb_error;
 
   auto sockaddr = TSHttpTxnClientAddrGet(txnp);
 
@@ -525,16 +525,16 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
 #endif
 
       MMDB_entry_data_s entry_data;
-      std::string url;
+      std::string       url;
       if (!allow_regex.empty() || !deny_regex.empty()) {
-        TSMBuffer mbuf;
-        TSMLoc ul;
+        TSMBuffer    mbuf;
+        TSMLoc       ul;
         TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
         if (rc != TS_SUCCESS) {
           Dbg(dbg_ctl, "Failed call to TSHttpTxnPristineUrlGet()");
           return false;
         }
-        int host_len = 0, path_len = 0;
+        int  host_len = 0, path_len = 0;
         auto host = TSUrlHostGet(mbuf, ul, &host_len);
         auto path = TSUrlPathGet(mbuf, ul, &path_len);
         url.assign(host, host_len);
@@ -605,7 +605,7 @@ bool
 Acl::eval_anonymous(MMDB_entry_s *entry)
 {
   MMDB_entry_data_s entry_data;
-  int status;
+  int               status;
 
   // For each value we only care if it was successful and if there was data.
   // We can have unsuccessful gets in the instance an IP is not one of the things
@@ -692,8 +692,8 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
 bool
 Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
 {
-  bool ret     = false;
-  bool allow   = default_allow;
+  bool  ret    = false;
+  bool  allow  = default_allow;
   char *output = nullptr;
 
   // We need to null terminate the iso_code ourselves, they are unterminated in the DBs

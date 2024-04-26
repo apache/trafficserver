@@ -56,13 +56,13 @@ class HttpUserAgent
 {
 public:
   HttpVCTableEntry *get_entry() const;
-  void set_entry(HttpVCTableEntry *entry);
+  void              set_entry(HttpVCTableEntry *entry);
 
   IOBufferReader *get_raw_buffer_reader();
-  void set_raw_buffer_reader(IOBufferReader *raw_buffer_reader);
+  void            set_raw_buffer_reader(IOBufferReader *raw_buffer_reader);
 
   ProxyTransaction *get_txn() const;
-  void set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
+  void              set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
 
   int get_client_connection_id() const;
 
@@ -90,12 +90,12 @@ public:
 
 private:
   HttpVCTableEntry *m_entry{nullptr};
-  IOBufferReader *m_raw_buffer_reader{nullptr};
+  IOBufferReader   *m_raw_buffer_reader{nullptr};
   ProxyTransaction *m_txn{nullptr};
 
   ClientConnectionInfo m_conn_info{};
 
-  int m_client_connection_id{-1};
+  int                   m_client_connection_id{-1};
   ClientTransactionInfo m_txn_info{};
 
   void save_transaction_info();

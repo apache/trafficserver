@@ -22,7 +22,7 @@
 #include <time.h>
 
 struct timer {
-  int started;
+  int             started;
   struct timespec start;
 };
 

@@ -23,19 +23,19 @@
 
 typedef struct {
   size_t len;
-  char *name;
+  char  *name;
 } ts_lua_package_path;
 
-static int path_cnt = 0;
+static int                 path_cnt = 0;
 static ts_lua_package_path path[TS_LUA_MAX_PACKAGE_NUM];
 
-static int cpath_cnt = 0;
+static int                 cpath_cnt = 0;
 static ts_lua_package_path cpath[TS_LUA_MAX_PACKAGE_NUM];
 
-static int g_path_cnt = 0;
+static int                 g_path_cnt = 0;
 static ts_lua_package_path g_path[TS_LUA_MAX_PACKAGE_NUM];
 
-static int g_cpath_cnt = 0;
+static int                 g_cpath_cnt = 0;
 static ts_lua_package_path g_cpath[TS_LUA_MAX_PACKAGE_NUM];
 
 static int ts_lua_add_package_path(lua_State *L);
@@ -59,13 +59,13 @@ static int
 ts_lua_add_package_path(lua_State *L)
 {
   ts_lua_instance_conf *conf;
-  const char *data;
-  const char *ptr, *end, *hit;
-  size_t dlen;
-  int i, n;
-  size_t item_len;
-  ts_lua_package_path pp[TS_LUA_MAX_PACKAGE_NUM];
-  ts_lua_package_path *elt;
+  const char           *data;
+  const char           *ptr, *end, *hit;
+  size_t                dlen;
+  int                   i, n;
+  size_t                item_len;
+  ts_lua_package_path   pp[TS_LUA_MAX_PACKAGE_NUM];
+  ts_lua_package_path  *elt;
 
   conf = ts_lua_get_instance_conf(L);
   if (conf == nullptr) {
@@ -158,10 +158,10 @@ ts_lua_add_package_path(lua_State *L)
 static int
 ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
 {
-  int i, base;
+  int         i, base;
   const char *old_path;
-  char new_path[2048];
-  size_t old_path_len, new_path_len;
+  char        new_path[2048];
+  size_t      old_path_len, new_path_len;
 
   base = lua_gettop(L);
 
@@ -205,13 +205,13 @@ static int
 ts_lua_add_package_cpath(lua_State *L)
 {
   ts_lua_instance_conf *conf;
-  const char *data;
-  const char *ptr, *end, *hit;
-  size_t dlen;
-  int i, n;
-  size_t item_len;
-  ts_lua_package_path pp[TS_LUA_MAX_PACKAGE_NUM];
-  ts_lua_package_path *elt;
+  const char           *data;
+  const char           *ptr, *end, *hit;
+  size_t                dlen;
+  int                   i, n;
+  size_t                item_len;
+  ts_lua_package_path   pp[TS_LUA_MAX_PACKAGE_NUM];
+  ts_lua_package_path  *elt;
 
   conf = ts_lua_get_instance_conf(L);
   if (conf == nullptr) {
@@ -304,10 +304,10 @@ ts_lua_add_package_cpath(lua_State *L)
 static int
 ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n)
 {
-  int i, base;
+  int         i, base;
   const char *old_path;
-  char new_path[2048];
-  size_t old_path_len, new_path_len;
+  char        new_path[2048];
+  size_t      old_path_len, new_path_len;
 
   base = lua_gettop(L);
 

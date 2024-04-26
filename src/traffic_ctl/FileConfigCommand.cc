@@ -32,8 +32,8 @@ namespace
 constexpr std::string_view PREFIX{"proxy.config."};
 constexpr std::string_view TS_PREFIX{"ts."};
 
-constexpr bool CREATE_IF_NOT_EXIST{true};
-constexpr bool DO_NOT_CREATE_IF_NOT_EXIST{false};
+constexpr bool                    CREATE_IF_NOT_EXIST{true};
+constexpr bool                    DO_NOT_CREATE_IF_NOT_EXIST{false};
 const std::pair<bool, YAML::Node> NOT_FOUND{false, {}};
 
 /// We support either passing variables with the prefix 'proxy.config.' or 'ts.'
@@ -306,7 +306,7 @@ FileConfigCommand::config_set()
       }
 
       YAML::Emitter doc;
-      YAML::Node last_node;
+      YAML::Node    last_node;
       if (_docs.size() > 0) {
         last_node = _docs.back();
         _docs.pop_back();

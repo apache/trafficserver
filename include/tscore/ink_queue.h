@@ -80,7 +80,7 @@ union head_p {
   typedef int32_t version_type;
   typedef int64_t data_type;
 #elif TS_HAS_128BIT_CAS
-  typedef int64_t version_type;
+  typedef int64_t    version_type;
   typedef __int128_t data_type;
 #else
   using version_type = int64_t;
@@ -88,7 +88,7 @@ union head_p {
 #endif
 
   struct {
-    void *pointer;
+    void        *pointer;
     version_type version;
   } s;
 
@@ -178,13 +178,13 @@ union head_p {
 #endif
 
 struct _InkFreeList {
-  head_p head;
+  head_p      head;
   const char *name;
-  uint32_t type_size, chunk_size, used, allocated, alignment;
-  uint32_t allocated_base, used_base;
-  uint32_t hugepages_failure;
-  bool use_hugepages;
-  int advice;
+  uint32_t    type_size, chunk_size, used, allocated, alignment;
+  uint32_t    allocated_base, used_base;
+  uint32_t    hugepages_failure;
+  bool        use_hugepages;
+  int         advice;
 };
 
 using InkFreeListOps = struct ink_freelist_ops;
@@ -192,7 +192,7 @@ using InkFreeList    = struct _InkFreeList;
 
 const InkFreeListOps *ink_freelist_malloc_ops();
 const InkFreeListOps *ink_freelist_freelist_ops();
-void ink_freelist_init_ops(int nofl_class, int nofl_proxy);
+void                  ink_freelist_init_ops(int nofl_class, int nofl_proxy);
 
 /*
  * alignment must be a power of 2
@@ -200,22 +200,22 @@ void ink_freelist_init_ops(int nofl_class, int nofl_proxy);
 InkFreeList *ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
                                  bool use_hugepages = false);
 
-void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                       bool use_hugepages);
-void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                               bool use_hugepages, int advice);
+void  ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
+                        bool use_hugepages);
+void  ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
+                                bool use_hugepages, int advice);
 void *ink_freelist_new(InkFreeList *f);
-void ink_freelist_free(InkFreeList *f, void *item);
-void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
-void ink_freelists_dump(FILE *f);
-void ink_freelists_dump_baselinerel(FILE *f);
-void ink_freelists_snap_baseline();
+void  ink_freelist_free(InkFreeList *f, void *item);
+void  ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
+void  ink_freelists_dump(FILE *f);
+void  ink_freelists_dump_baselinerel(FILE *f);
+void  ink_freelists_snap_baseline();
 
 struct InkAtomicList {
   InkAtomicList() {}
-  head_p head{};
-  const char *name = nullptr;
-  uint32_t offset  = 0;
+  head_p      head{};
+  const char *name   = nullptr;
+  uint32_t    offset = 0;
 };
 
 #if !defined(INK_QUEUE_NT)

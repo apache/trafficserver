@@ -37,8 +37,8 @@ struct Config {
   std::string header;             // override header
   std::string pregen_header;      // generate request header during remap
   std::string global_skip_header; // skip global plugin
-  bool create_if_none = false;
-  bool passthru       = false; // transparen mode: pass any headers through
+  bool        create_if_none = false;
+  bool        passthru       = false; // transparen mode: pass any headers through
 };
 
 Config *
@@ -114,8 +114,8 @@ config_from_args(int const argc, char const *argv[], PluginType const ptype)
 }
 
 struct TxnData {
-  std::string client_trace;
-  std::string this_trace;
+  std::string   client_trace;
+  std::string   this_trace;
   Config const *config = nullptr;
 };
 
@@ -123,7 +123,7 @@ std::string_view const traceid{"trace-id="};
 std::string_view const parentid{"parent-id="};
 std::string_view const spanid{"span-id="};
 std::string_view const zerospan{"0"};
-char const sep{';'};
+char const             sep{';'};
 
 std::string
 next_trace(std::string_view const request_hdr, TSHttpTxn const txnp)
@@ -316,8 +316,8 @@ global_skip_check(TSCont const contp, TSHttpTxn const txnp, TxnData *const txn_d
   }
 
   // Check for a money trace header.  Route accordingly.
-  TSMBuffer bufp = nullptr;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMBuffer bufp    = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     TSMLoc const field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, conf->global_skip_header.c_str(), conf->global_skip_header.length());
     if (TS_NULL_MLOC != field_loc) {
@@ -364,8 +364,8 @@ send_server_request(TSHttpTxn const txnp, TxnData *const txn_data)
     }
   }
 
-  TSMBuffer bufp = nullptr;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMBuffer bufp    = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc)) {
     if (!set_header(bufp, hdr_loc, txn_data->config->header, txn_data->this_trace)) {
       LOG_ERROR("Unable to set the server request trace header '%s'", txn_data->this_trace.c_str());
@@ -393,8 +393,8 @@ send_client_response(TSHttpTxn const txnp, TxnData *const txn_data)
 
   // send back the original money trace header received in the
   // client request back in the response to the client.
-  TSMBuffer bufp = nullptr;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMBuffer bufp    = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
     if (!set_header(bufp, hdr_loc, txn_data->config->header, txn_data->client_trace)) {
       LOG_ERROR("Unable to set the client response trace header.");
@@ -410,8 +410,8 @@ send_client_response(TSHttpTxn const txnp, TxnData *const txn_data)
 int
 transaction_handler(TSCont const contp, TSEvent const event, void *const edata)
 {
-  TSHttpTxn const txnp    = static_cast<TSHttpTxn>(edata);
-  TxnData *const txn_data = static_cast<TxnData *>(TSContDataGet(contp));
+  TSHttpTxn const txnp     = static_cast<TSHttpTxn>(edata);
+  TxnData *const  txn_data = static_cast<TxnData *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
@@ -452,12 +452,12 @@ check_request_header(TSHttpTxn const txnp, Config const *const conf, PluginType 
   TxnData *txn_data = nullptr;
 
   // Check for a money trace header.  Route accordingly.
-  TSMBuffer bufp = nullptr;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMBuffer bufp    = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     TSMLoc const field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, conf->header.c_str(), conf->header.length());
     if (TS_NULL_MLOC != field_loc) {
-      int length            = 0;
+      int         length    = 0;
       const char *hdr_value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &length);
       if (!hdr_value || length <= 0) {
         LOG_DEBUG("ignoring, corrupt trace header.");
@@ -530,7 +530,7 @@ check_request_header(TSHttpTxn const txnp, Config const *const conf, PluginType 
 int
 global_request_header_hook(TSCont const contp, TSEvent const event, void *const edata)
 {
-  TSHttpTxn const txnp     = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn const     txnp = static_cast<TSHttpTxn>(edata);
   Config const *const conf = static_cast<Config *>(TSContDataGet(contp));
   check_request_header(txnp, conf, GLOBAL);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);

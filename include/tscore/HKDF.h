@@ -46,7 +46,7 @@ public:
 protected:
 #ifdef OPENSSL_IS_OPENSSL3
   EVP_KDF_CTX *_kctx = nullptr;
-  OSSL_PARAM params[5];
+  OSSL_PARAM   params[5];
 #else
   EVP_PKEY_CTX *_pctx      = nullptr;
   const EVP_MD *_digest_md = nullptr;

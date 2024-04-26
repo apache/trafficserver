@@ -102,7 +102,7 @@ namespace inliner
 
   struct AttributeParser {
     Attribute::ATTRIBUTES state_ = Attribute::kPreName;
-    Attributes attributes;
+    Attributes            attributes;
 
     AttributeParser() {}
     void
@@ -129,15 +129,15 @@ namespace inliner
   };
 
   struct HtmlParser {
-    State::STATES state_ = State::kUndefined;
-    Tag::TAGS tag_       = Tag::kUndefined;
+    State::STATES   state_ = State::kUndefined;
+    Tag::TAGS       tag_   = Tag::kUndefined;
     AttributeParser attributeParser_;
 
     HtmlParser() {}
     virtual ~HtmlParser() {}
-    bool parseTag(const char);
-    size_t parse(const char *, size_t, size_t o = 0);
-    virtual void handleImage(const Attributes &)      = 0;
+    bool           parseTag(const char);
+    size_t         parse(const char *, size_t, size_t o = 0);
+    virtual void   handleImage(const Attributes &)    = 0;
     virtual size_t bypass(const size_t, const size_t) = 0;
   };
 

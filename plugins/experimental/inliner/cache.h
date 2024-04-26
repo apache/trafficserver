@@ -93,7 +93,7 @@ namespace cache
   void
   fetch(const std::string &k, A &&...a)
   {
-    const Key key(k);
+    const Key    key(k);
     const TSCont continuation = TSContCreate(Read<T>::handle, TSMutexCreate());
     assert(continuation != nullptr);
     TSContDataSet(continuation, new Read<T>(std::forward<A>(a)...));
@@ -102,8 +102,8 @@ namespace cache
 
   struct Write {
     const std::string content_;
-    io::IO *out_;
-    TSVConn vconnection_;
+    io::IO           *out_;
+    TSVConn           vconnection_;
 
     ~Write()
     {

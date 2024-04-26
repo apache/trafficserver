@@ -98,8 +98,8 @@ void
 ConditionMethod::append_value(std::string &s, const Resources &res)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  int len;
+  TSMLoc    hdr_loc;
+  int       len;
 
   bufp    = res.client_bufp;
   hdr_loc = res.client_hdr_loc;
@@ -208,8 +208,8 @@ void
 ConditionHeader::append_value(std::string &s, const Resources &res)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  int len;
+  TSMLoc    hdr_loc;
+  int       len;
 
   if (_client) {
     bufp    = res.client_bufp;
@@ -226,8 +226,8 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
     Dbg(pi_dbg_ctl, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
-      const char *value     = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
-      TSMLoc next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
+      const char *value          = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
+      TSMLoc      next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
 
       Dbg(pi_dbg_ctl, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
@@ -275,7 +275,7 @@ ConditionUrl::set_qualifier(const std::string &q)
 void
 ConditionUrl::append_value(std::string &s, const Resources &res)
 {
-  TSMLoc url     = nullptr;
+  TSMLoc    url  = nullptr;
   TSMBuffer bufp = nullptr;
 
   if (_type == CLIENT) {
@@ -315,7 +315,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     }
   }
 
-  int i;
+  int         i;
   const char *q_str;
 
   switch (_url_qual) {
@@ -452,16 +452,16 @@ ConditionCookie::initialize(Parser &p)
 void
 ConditionCookie::append_value(std::string &s, const Resources &res)
 {
-  TSMBuffer bufp = res.client_bufp;
-  TSMLoc hdr_loc = res.client_hdr_loc;
-  TSMLoc field_loc;
-  int error;
-  int cookies_len;
-  int cookie_value_len;
-  const char *cookies;
-  const char *cookie_value;
-  const char *const cookie_name = _qualifier.c_str();
-  const int cookie_name_len     = _qualifier.length();
+  TSMBuffer         bufp    = res.client_bufp;
+  TSMLoc            hdr_loc = res.client_hdr_loc;
+  TSMLoc            field_loc;
+  int               error;
+  int               cookies_len;
+  int               cookie_value_len;
+  const char       *cookies;
+  const char       *cookie_value;
+  const char *const cookie_name     = _qualifier.c_str();
+  const int         cookie_name_len = _qualifier.length();
 
   // Sanity
   if (bufp == nullptr || hdr_loc == nullptr) {
@@ -623,8 +623,8 @@ void
 ConditionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
-  MatcherType *match     = new MatcherType(_cond_op);
-  std::string const &arg = p.get_arg();
+  MatcherType       *match = new MatcherType(_cond_op);
+  std::string const &arg   = p.get_arg();
 
   match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
@@ -653,8 +653,8 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
 
   if (ssn) {
     char value[32]; // enough for UINT64_MAX
-    int count  = TSHttpSsnTransactionCount(ssn);
-    int length = ink_fast_itoa(count, value, sizeof(value));
+    int  count  = TSHttpSsnTransactionCount(ssn);
+    int  length = ink_fast_itoa(count, value, sizeof(value));
 
     if (length > 0) {
       Dbg(pi_dbg_ctl, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
@@ -960,8 +960,8 @@ ConditionCidr::initialize(Parser &p)
 void
 ConditionCidr::set_qualifier(const std::string &q)
 {
-  bool ok = true;
-  int cidr;
+  bool  ok = true;
+  int   cidr;
   char *endp;
 
   Condition::set_qualifier(q);
@@ -1010,7 +1010,7 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
   if (addr) {
     switch (addr->sa_family) {
     case AF_INET: {
-      char resource[INET_ADDRSTRLEN];
+      char           resource[INET_ADDRSTRLEN];
       struct in_addr ipv4 = reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr;
 
       ipv4.s_addr &= _v4_mask.s_addr;
@@ -1020,7 +1020,7 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
       }
     } break;
     case AF_INET6: {
-      char resource[INET6_ADDRSTRLEN];
+      char            resource[INET6_ADDRSTRLEN];
       struct in6_addr ipv6 = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
       if (_v6_zero_bytes > 0) {
@@ -1146,7 +1146,7 @@ void
 ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual)
 {
   const char *zret = nullptr;
-  char text[INET6_ADDRSTRLEN];
+  char        text[INET6_ADDRSTRLEN];
 
   switch (qual) {
   case NET_QUAL_LOCAL_ADDR: {
@@ -1181,9 +1181,9 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
     zret = TSHttpTxnClientProtocolStackContains(res.txnp, "ip");
     break;
   case NET_QUAL_STACK: {
-    std::array<char const *, 8> tags = {};
-    int count                        = 0;
-    size_t len                       = 0;
+    std::array<char const *, 8> tags  = {};
+    int                         count = 0;
+    size_t                      len   = 0;
     TSHttpTxnClientProtocolStackGet(res.txnp, tags.size(), tags.data(), &count);
     for (int i = 0; i < count; ++i) {
       len += 1 + strlen(tags[i]);
@@ -1229,8 +1229,8 @@ void
 ConditionSessionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
-  MatcherType *match     = new MatcherType(_cond_op);
-  std::string const &arg = p.get_arg();
+  MatcherType       *match = new MatcherType(_cond_op);
+  std::string const &arg   = p.get_arg();
 
   match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
@@ -1248,7 +1248,7 @@ ConditionSessionTransactCount::eval(const Resources &res)
 void
 ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
 {
-  char value[32]; // enough for UINT64_MAX
+  char      value[32]; // enough for UINT64_MAX
   int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
   int const length = ink_fast_itoa(count, value, sizeof(value));
 
@@ -1263,8 +1263,8 @@ ConditionTcpInfo::initialize(Parser &p)
 {
   Condition::initialize(p);
   Dbg(pi_dbg_ctl, "Initializing TCP Info");
-  MatcherType *match     = new MatcherType(_cond_op);
-  std::string const &arg = p.get_arg();
+  MatcherType       *match = new MatcherType(_cond_op);
+  std::string const &arg   = p.get_arg();
 
   match->set(strtol(arg.c_str(), nullptr, 10), mods());
   _matcher = match;
@@ -1299,11 +1299,11 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
     Dbg(pi_dbg_ctl, "No TCP-INFO available for internal transactions");
     return;
   }
-  TSReturnCode tsSsn;
-  int fd;
+  TSReturnCode    tsSsn;
+  int             fd;
   struct tcp_info info;
-  socklen_t tcp_info_len = sizeof(info);
-  tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  socklen_t       tcp_info_len = sizeof(info);
+  tsSsn                        = TSHttpTxnClientFdGet(res.txnp, &fd);
   if (tsSsn != TS_SUCCESS || fd <= 0) {
     Dbg(pi_dbg_ctl, "error getting the client socket fd from ssn");
   }
@@ -1356,7 +1356,7 @@ void
 ConditionCache::append_value(std::string &s, const Resources &res)
 {
   TSHttpTxn txn = res.txnp;
-  int status;
+  int       status;
 
   static const char *names[] = {
     "miss",      // TS_CACHE_LOOKUP_MISS,

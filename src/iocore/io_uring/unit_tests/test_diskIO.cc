@@ -42,9 +42,9 @@ using ts::Metrics;
 swoc::file::path
 temp_prefix(const char *basename)
 {
-  char buffer[PATH_MAX];
+  char            buffer[PATH_MAX];
   std::error_code err;
-  auto tmpdir = swoc::file::temp_directory_path();
+  auto            tmpdir = swoc::file::temp_directory_path();
   snprintf(buffer, sizeof(buffer), "%s/%s.XXXXXX", tmpdir.c_str(), basename);
   auto prefix = swoc::file::path(mkdtemp(buffer));
   bool result = swoc::file::create_directories(prefix, err, 0755);
@@ -205,7 +205,7 @@ make_listen_socket(int port)
   set_reuseport(s);
 
   const sockaddr_in addr = any_addr(port);
-  int rc                 = ::bind(s, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
+  int               rc   = ::bind(s, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
   if (rc == -1) {
     throw std::runtime_error("failed to bind");
   }
@@ -239,11 +239,11 @@ public:
     });
   }
 
-  int s;
-  int port;
-  int clients;
+  int         s;
+  int         port;
+  int         clients;
   sockaddr_in client;
-  socklen_t client_len;
+  socklen_t   client_len;
 };
 
 TEST_CASE("net_io", "[io_uring]")
@@ -258,8 +258,8 @@ TEST_CASE("net_io", "[io_uring]")
 
   server.start(ctx);
 
-  auto client_addr = make_addr("127.0.0.1", 4321);
-  int s            = make_client_socket();
+  auto              client_addr = make_addr("127.0.0.1", 4321);
+  int               s           = make_client_socket();
   std::atomic<bool> connected{false};
   io_uring_connect(ctx, s, reinterpret_cast<sockaddr *>(&client_addr), sizeof(client_addr), [&](int result) {
     REQUIRE(result == 0);

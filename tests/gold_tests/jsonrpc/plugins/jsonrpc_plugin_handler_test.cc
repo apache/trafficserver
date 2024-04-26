@@ -165,7 +165,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
   // We open the file if exist, we update/add the host in the structure. For simplicity we do not delete anything.
   fs::path sandbox  = fs::current_path() / "runtime";
   fs::path dumpFile = sandbox / "my_test_plugin_dump.yaml";
-  bool newFile{false};
+  bool     newFile{false};
   if (!fs::exists(dumpFile)) {
     newFile = true;
   }
@@ -219,7 +219,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
   YAML::Emitter out;
   out << dump;
 
-  fs::path tmpFile = sandbox / "tmpfile.yaml";
+  fs::path      tmpFile = sandbox / "tmpfile.yaml";
   std::ofstream ofs(tmpFile.c_str());
   ofs << out.c_str();
   ofs.close();
@@ -284,7 +284,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   TSRPCHandlerOptions opt{{true}};
-  std::string method_name{"test_join_hosts_method"};
+  std::string         method_name{"test_join_hosts_method"};
   if (TSRPCRegisterMethodHandler(method_name.c_str(), method_name.size(), test_join_hosts_method, rpcRegistrationInfo, &opt) ==
       TS_ERROR) {
     Dbg(dbg_ctl, "%s failed to register", method_name.c_str());

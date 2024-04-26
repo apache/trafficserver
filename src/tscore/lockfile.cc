@@ -29,9 +29,9 @@
 int
 Lockfile::Open(pid_t *holding_pid)
 {
-  char buf[LOCKFILE_BUF_LEN];
+  char  buf[LOCKFILE_BUF_LEN];
   pid_t val;
-  int err;
+  int   err;
   *holding_pid = 0;
 
 #define FAIL(x)  \
@@ -42,8 +42,8 @@ Lockfile::Open(pid_t *holding_pid)
   }
 
   struct flock lock;
-  char *t;
-  int size;
+  char        *t;
+  int          size;
 
   fd = -1;
 
@@ -129,7 +129,7 @@ int
 Lockfile::Get(pid_t *holding_pid)
 {
   char buf[LOCKFILE_BUF_LEN];
-  int err;
+  int  err;
   *holding_pid = 0;
 
   fd = -1;
@@ -221,8 +221,8 @@ lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char * /* 
 void
 Lockfile::Kill(int sig, int initial_sig, const char *pname)
 {
-  int err;
-  int pid;
+  int   err;
+  int   pid;
   pid_t holding_pid;
 
   err = Open(&holding_pid);
@@ -241,7 +241,7 @@ Lockfile::Kill(int sig, int initial_sig, const char *pname)
 void
 Lockfile::KillGroup(int sig, int initial_sig, const char *pname)
 {
-  int err;
+  int   err;
   pid_t pid;
   pid_t holding_pid;
   pid_t self = getpid();

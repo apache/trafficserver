@@ -48,7 +48,7 @@ TEST_CASE("Encoding pure escapify url", "[pure_esc_url]")
     "%2520",
   };
   char output[128];
-  int output_len;
+  int  output_len;
 
   int n = sizeof(input) / sizeof(input[0]);
   for (int i = 0; i < n; ++i) {
@@ -72,7 +72,7 @@ TEST_CASE("Encoding escapify url", "[esc_url]")
     "%20",
   };
   char output[128];
-  int output_len;
+  int  output_len;
 
   int n = sizeof(input) / sizeof(input[0]);
   for (int i = 0; i < n; ++i) {

@@ -43,12 +43,12 @@ using ts::Metrics;
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
-int max_records_entries   = REC_MAX_RECORDS;
-static bool g_initialized = false;
-RecRecord *g_records      = nullptr;
+int                                          max_records_entries = REC_MAX_RECORDS;
+static bool                                  g_initialized       = false;
+RecRecord                                   *g_records           = nullptr;
 std::unordered_map<std::string, RecRecord *> g_records_ht;
-ink_rwlock g_records_rwlock;
-int g_num_records = 0;
+ink_rwlock                                   g_records_rwlock;
+int                                          g_num_records = 0;
 
 //-------------------------------------------------------------------------
 // register_record
@@ -163,7 +163,7 @@ static int
 link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecByte *rec_byte = static_cast<RecByte *>(cookie);
-  RecByte byte      = static_cast<RecByte>(data.rec_int);
+  RecByte  byte     = static_cast<RecByte>(data.rec_int);
 
   ink_atomic_swap(rec_byte, byte);
   return REC_ERR_OKAY;
@@ -513,9 +513,9 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err          = REC_ERR_FAIL;
+  RecErrT      err     = REC_ERR_FAIL;
   ts::Metrics &metrics = ts::Metrics::instance();
-  auto it              = metrics.find(name);
+  auto         it      = metrics.find(name);
 
   if (it != metrics.end()) {
     RecRecord r;
@@ -745,7 +745,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
                   RecCheckT check_type, const char *check_expr, RecSourceT source, RecAccessT access_type)
 {
   RecRecord *r;
-  bool updated_p;
+  bool       updated_p;
 
   ink_rwlock_wrlock(&g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL, &updated_p)) != nullptr) {
@@ -810,7 +810,7 @@ RecRecord *
 RecForceInsert(RecRecord *record)
 {
   RecRecord *r = nullptr;
-  bool r_is_a_new_record;
+  bool       r_is_a_new_record;
 
   ink_rwlock_wrlock(&g_records_rwlock);
 
@@ -950,8 +950,8 @@ RecInt
 REC_readInteger(const char *name, bool *found, bool lock)
 {
   ink_assert(name);
-  RecInt _tmp = 0;
-  bool _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
+  RecInt _tmp   = 0;
+  bool   _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
 
   if (found) {
     *found = _found;
@@ -963,8 +963,8 @@ RecFloat
 REC_readFloat(char *name, bool *found, bool lock)
 {
   ink_assert(name);
-  RecFloat _tmp = 0.0;
-  bool _found   = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
+  RecFloat _tmp   = 0.0;
+  bool     _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
 
   if (found) {
     *found = _found;
@@ -976,8 +976,8 @@ RecCounter
 REC_readCounter(char *name, bool *found, bool lock)
 {
   ink_assert(name);
-  RecCounter _tmp = 0;
-  bool _found     = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
+  RecCounter _tmp   = 0;
+  bool       _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
 
   if (found) {
     *found = _found;
@@ -989,8 +989,8 @@ RecString
 REC_readString(const char *name, bool *found, bool lock)
 {
   ink_assert(name);
-  RecString _tmp = nullptr;
-  bool _found    = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
+  RecString _tmp   = nullptr;
+  bool      _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
 
   if (found) {
     *found = _found;

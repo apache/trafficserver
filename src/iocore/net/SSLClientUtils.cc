@@ -43,9 +43,9 @@ int
 verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 {
   X509 *cert;
-  int depth;
-  int err;
-  SSL *ssl;
+  int   depth;
+  int   err;
+  SSL  *ssl;
 
   Debug("ssl_verify", "Entered cert verify callback");
 
@@ -77,7 +77,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     if (!signature_ok) {
       Debug("ssl_verify", "verification error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
       const char *sni_name;
-      char buff[INET6_ADDRSTRLEN];
+      char        buff[INET6_ADDRSTRLEN];
       ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
       if (netvc->options.sni_servername) {
         sni_name = netvc->options.sni_servername.get();
@@ -100,9 +100,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   bool check_name =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
   if (check_name) {
-    char *matched_name = nullptr;
+    char          *matched_name = nullptr;
     unsigned char *sni_name;
-    char buff[INET6_ADDRSTRLEN];
+    char           buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {
       sni_name = reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get());
     } else {
@@ -131,7 +131,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   if (netvc->getSSLHandshakeStatus() == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
     // Verify server hook failed and set the status to SSL_HANDSHAKE_ERROR
     unsigned char *sni_name;
-    char buff[INET6_ADDRSTRLEN];
+    char           buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {
       sni_name = reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get());
     } else {
@@ -150,7 +150,7 @@ static int
 ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  SSL_CTX *ctx             = SSL_get_SSL_CTX(ssl);
+  SSL_CTX           *ctx   = SSL_get_SSL_CTX(ssl);
   if (ctx) {
     // Do not need to free either the cert or the ssl_ctx
     // both are internal pointers
@@ -183,8 +183,8 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
-  const SSL_METHOD *meth = nullptr;
-  SSL_CTX *client_ctx    = nullptr;
+  const SSL_METHOD *meth       = nullptr;
+  SSL_CTX          *client_ctx = nullptr;
 
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that

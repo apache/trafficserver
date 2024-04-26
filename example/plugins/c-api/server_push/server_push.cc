@@ -46,7 +46,7 @@ bool
 should_push(TSHttpTxn txnp)
 {
   TSMBuffer mbuf;
-  TSMLoc hdr, in_url;
+  TSMLoc    hdr, in_url;
   if (TSHttpTxnClientReqGet(txnp, &mbuf, &hdr) != TS_SUCCESS) {
     return false;
   }

@@ -40,10 +40,10 @@
 #include <netinet/in.h>
 #endif
 
-using swoc::TextView;
 using swoc::Errata;
-using swoc::Rv;
 using swoc::MemSpan;
+using swoc::Rv;
+using swoc::TextView;
 using namespace swoc::literals;
 
 /* ------------------------------------------------------------------------------------ */
@@ -116,8 +116,8 @@ protected:
     return 0;
   };
   template <typename tcp_info>
-  static auto value(Context &ctx, Field field, swoc::meta::CaseTag<1>)
-    -> std::enable_if_t<(type_size<tcp_info>::value > 0), intmax_t>;
+  static auto value(Context &ctx, Field field,
+                    swoc::meta::CaseTag<1>) -> std::enable_if_t<(type_size<tcp_info>::value > 0), intmax_t>;
 
   /// Data stored per context if needed.
   struct CtxInfo {
@@ -176,8 +176,8 @@ Ex_tcp_info::extract(Context &ctx, const Spec &spec)
 
 template <typename tcp_info>
 auto
-Ex_tcp_info::value(Context &ctx, Ex_tcp_info::Field field, swoc::meta::CaseTag<1>)
-  -> std::enable_if_t<(type_size<tcp_info>::value > 0), intmax_t>
+Ex_tcp_info::value(Context &ctx, Ex_tcp_info::Field field,
+                   swoc::meta::CaseTag<1>) -> std::enable_if_t<(type_size<tcp_info>::value > 0), intmax_t>
 {
   auto fd = ctx._txn.inbound_fd();
   if (fd >= 0) {

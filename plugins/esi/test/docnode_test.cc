@@ -150,7 +150,7 @@ TEST_CASE("esi docnode test")
   SECTION("Test 1")
   {
     EsiParser parser{1024 * 1024};
-    string input_data = "foo <esi:include src=blah /> bar";
+    string    input_data = "foo <esi:include src=blah /> bar";
 
     DocNodeList node_list;
     REQUIRE(parser.completeParse(node_list, input_data) == true);
@@ -181,46 +181,46 @@ TEST_CASE("esi docnode test")
   SECTION("Test 2")
   {
     EsiParser parser{1024 * 1024};
-    string input_data("<esi:choose>"
-                      "<esi:when test=c1>"
-                      "<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=foo1 />"
-                      "raw1"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:include src=bar1 />"
-                      "</esi:except>"
-                      "</esi:try>"
-                      "</esi:when>"
-                      "<esi:when test=c2>"
-                      "<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=foo2 />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "raw2"
-                      "<esi:include src=bar2 />"
-                      "</esi:except>"
-                      "</esi:try>"
-                      "</esi:when>"
-                      "<esi:otherwise>"
-                      "<esi:try>"
-                      "<esi:attempt>"
-                      "<esi:include src=foo3 />"
-                      "</esi:attempt>"
-                      "<esi:except>"
-                      "<esi:include src=bar3 />"
-                      "</esi:except>"
-                      "</esi:try>"
-                      "</esi:otherwise>"
-                      "</esi:choose>");
+    string    input_data("<esi:choose>"
+                            "<esi:when test=c1>"
+                            "<esi:try>"
+                            "<esi:attempt>"
+                            "<esi:include src=foo1 />"
+                            "raw1"
+                            "</esi:attempt>"
+                            "<esi:except>"
+                            "<esi:include src=bar1 />"
+                            "</esi:except>"
+                            "</esi:try>"
+                            "</esi:when>"
+                            "<esi:when test=c2>"
+                            "<esi:try>"
+                            "<esi:attempt>"
+                            "<esi:include src=foo2 />"
+                            "</esi:attempt>"
+                            "<esi:except>"
+                            "raw2"
+                            "<esi:include src=bar2 />"
+                            "</esi:except>"
+                            "</esi:try>"
+                            "</esi:when>"
+                            "<esi:otherwise>"
+                            "<esi:try>"
+                            "<esi:attempt>"
+                            "<esi:include src=foo3 />"
+                            "</esi:attempt>"
+                            "<esi:except>"
+                            "<esi:include src=bar3 />"
+                            "</esi:except>"
+                            "</esi:try>"
+                            "</esi:otherwise>"
+                            "</esi:choose>");
 
     DocNodeList node_list;
     REQUIRE(parser.completeParse(node_list, input_data) == true);
     checkNodeList2(node_list);
 
-    string packed = node_list.pack();
+    string      packed = node_list.pack();
     DocNodeList node_list2;
     REQUIRE(node_list2.unpack(packed) == true);
     checkNodeList2(node_list2);

@@ -27,17 +27,17 @@
 #include "tscore/ink_time.h"
 
 union Alias32 {
-  uint8_t byte[4];
-  int32_t i32;
+  uint8_t  byte[4];
+  int32_t  i32;
   uint32_t u32;
 };
 
 union Alias64 {
-  uint8_t byte[8];
-  int32_t i32[2];
-  uint32_t u32[2];
-  int64_t i64;
-  uint64_t u64;
+  uint8_t    byte[8];
+  int32_t    i32[2];
+  uint32_t   u32[2];
+  int64_t    i64;
+  uint64_t   u64;
   ink_time_t i_time;
 };
 
@@ -47,7 +47,7 @@ union Alias64 {
 
 #define INK_MIN_ALIGN 8
 /* INK_ALIGN() is only to be used to align on a power of 2 boundary */
-#define INK_ALIGN(size, boundary) (((size) + ((boundary)-1)) & ~((boundary)-1))
+#define INK_ALIGN(size, boundary) (((size) + ((boundary) - 1)) & ~((boundary) - 1))
 
 /** Default alignment */
 #define INK_ALIGN_DEFAULT(size) INK_ALIGN(size, INK_MIN_ALIGN)

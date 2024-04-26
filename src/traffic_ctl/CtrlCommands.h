@@ -184,7 +184,7 @@ public:
 
 private:
   static inline const std::string MSG_STR{"msg"};
-  void plugin_msg();
+  void                            plugin_msg();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class DirectRPCCommand : public CtrlCommand, public RPCAccessor
@@ -235,4 +235,4 @@ private:
 // -----------------------------------------------------------------------------------------------------------------------------------
 
 BasePrinter::Options::OutputFormat parse_format(ts::Arguments *args);
-BasePrinter::Options parse_print_opts(ts::Arguments *args);
+BasePrinter::Options               parse_print_opts(ts::Arguments *args);

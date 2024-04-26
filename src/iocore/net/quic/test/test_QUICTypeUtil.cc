@@ -30,7 +30,7 @@
 TEST_CASE("QUICTypeUtil", "[quic]")
 {
   uint8_t buf[8];
-  size_t len;
+  size_t  len;
 
   QUICIntUtil::write_uint_as_nbytes(0xff, 1, buf, &len);
   INFO("1 byte to 1 byte");
@@ -71,10 +71,10 @@ TEST_CASE("QUICTypeUtil", "[quic]")
 
 TEST_CASE("Variable Length - encoding 1", "[quic]")
 {
-  uint8_t dst[8]   = {0};
-  uint64_t src     = 151288809941952652;
-  size_t len       = 0;
-  uint8_t expect[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
+  uint8_t  dst[8]   = {0};
+  uint64_t src      = 151288809941952652;
+  size_t   len      = 0;
+  uint8_t  expect[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
 
   QUICVariableInt::encode(dst, sizeof(dst), len, src);
 
@@ -84,10 +84,10 @@ TEST_CASE("Variable Length - encoding 1", "[quic]")
 
 TEST_CASE("Variable Length - encoding 2", "[quic]")
 {
-  uint8_t dst[8]   = {0};
-  uint64_t src     = 494878333;
-  size_t len       = 0;
-  uint8_t expect[] = {0x9d, 0x7f, 0x3e, 0x7d};
+  uint8_t  dst[8]   = {0};
+  uint64_t src      = 494878333;
+  size_t   len      = 0;
+  uint8_t  expect[] = {0x9d, 0x7f, 0x3e, 0x7d};
 
   QUICVariableInt::encode(dst, sizeof(dst), len, src);
 
@@ -97,10 +97,10 @@ TEST_CASE("Variable Length - encoding 2", "[quic]")
 
 TEST_CASE("Variable Length - encoding 3", "[quic]")
 {
-  uint8_t dst[8]   = {0};
-  uint64_t src     = 15293;
-  size_t len       = 0;
-  uint8_t expect[] = {0x7b, 0xbd};
+  uint8_t  dst[8]   = {0};
+  uint64_t src      = 15293;
+  size_t   len      = 0;
+  uint8_t  expect[] = {0x7b, 0xbd};
 
   QUICVariableInt::encode(dst, sizeof(dst), len, src);
 
@@ -110,10 +110,10 @@ TEST_CASE("Variable Length - encoding 3", "[quic]")
 
 TEST_CASE("Variable Length - encoding 4", "[quic]")
 {
-  uint8_t dst[8]   = {0};
-  uint64_t src     = 37;
-  size_t len       = 0;
-  uint8_t expect[] = {0x25};
+  uint8_t  dst[8]   = {0};
+  uint64_t src      = 37;
+  size_t   len      = 0;
+  uint8_t  expect[] = {0x25};
 
   QUICVariableInt::encode(dst, sizeof(dst), len, src);
 
@@ -123,9 +123,9 @@ TEST_CASE("Variable Length - encoding 4", "[quic]")
 
 TEST_CASE("Variable Length - decoding 1", "[quic]")
 {
-  uint8_t src[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
-  uint64_t dst  = 0;
-  size_t len    = 0;
+  uint8_t  src[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
+  uint64_t dst   = 0;
+  size_t   len   = 0;
   QUICVariableInt::decode(dst, len, src, sizeof(src));
 
   CHECK(dst == 151288809941952652);
@@ -134,9 +134,9 @@ TEST_CASE("Variable Length - decoding 1", "[quic]")
 
 TEST_CASE("Variable Length - decoding 2", "[quic]")
 {
-  uint8_t src[] = {0x9d, 0x7f, 0x3e, 0x7d, 0x00, 0x00, 0x00, 0x00};
-  uint64_t dst  = 0;
-  size_t len    = 0;
+  uint8_t  src[] = {0x9d, 0x7f, 0x3e, 0x7d, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst   = 0;
+  size_t   len   = 0;
   QUICVariableInt::decode(dst, len, src, sizeof(src));
 
   CHECK(dst == 494878333);
@@ -145,9 +145,9 @@ TEST_CASE("Variable Length - decoding 2", "[quic]")
 
 TEST_CASE("Variable Length - decoding 3", "[quic]")
 {
-  uint8_t src[] = {0x7b, 0xbd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  uint64_t dst  = 0;
-  size_t len    = 0;
+  uint8_t  src[] = {0x7b, 0xbd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst   = 0;
+  size_t   len   = 0;
   QUICVariableInt::decode(dst, len, src, sizeof(src));
 
   CHECK(dst == 15293);
@@ -156,9 +156,9 @@ TEST_CASE("Variable Length - decoding 3", "[quic]")
 
 TEST_CASE("Variable Length - decoding 4", "[quic]")
 {
-  uint8_t src[] = {0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  uint64_t dst  = 0;
-  size_t len    = 0;
+  uint8_t  src[] = {0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst   = 0;
+  size_t   len   = 0;
   QUICVariableInt::decode(dst, len, src, sizeof(src));
 
   CHECK(dst == 37);
@@ -167,9 +167,9 @@ TEST_CASE("Variable Length - decoding 4", "[quic]")
 
 TEST_CASE("Variable Length - decoding 5", "[quic]")
 {
-  uint8_t src[] = {0x40, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  uint64_t dst  = 0;
-  size_t len    = 0;
+  uint8_t  src[] = {0x40, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst   = 0;
+  size_t   len   = 0;
   QUICVariableInt::decode(dst, len, src, sizeof(src));
 
   CHECK(dst == 37);

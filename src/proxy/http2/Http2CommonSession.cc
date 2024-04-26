@@ -191,7 +191,7 @@ Http2CommonSession::state_read_connection_preface(int event, void *edata)
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
 
   if (this->_read_buffer_reader->read_avail() >= static_cast<int64_t>(HTTP2_CONNECTION_PREFACE_LEN)) {
-    char buf[HTTP2_CONNECTION_PREFACE_LEN];
+    char     buf[HTTP2_CONNECTION_PREFACE_LEN];
     unsigned nbytes;
 
     nbytes = copy_from_buffer_reader(buf, this->_read_buffer_reader, sizeof(buf));
@@ -248,7 +248,7 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
   ret_error = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
   ink_release_assert(this->_read_buffer_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN);
 
-  uint8_t buf[HTTP2_FRAME_HEADER_LEN];
+  uint8_t  buf[HTTP2_FRAME_HEADER_LEN];
   unsigned nbytes;
 
   Http2SsnDebug("receiving frame header");
@@ -363,7 +363,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
     if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
       ip_port_text_buffer ipb;
-      const char *peer_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
+      const char         *peer_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error peer_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            peer_ip, this->get_connection_id(), this->connection_state.get_stream_error_rate(),

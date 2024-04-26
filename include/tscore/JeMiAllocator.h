@@ -82,17 +82,17 @@ class JeMiNodumpAllocator
 {
 public:
   void *allocate(InkFreeList *f);
-  void deallocate(InkFreeList *f, void *ptr);
+  void  deallocate(InkFreeList *f, void *ptr);
 
 private:
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
   thread_local static extent_alloc_t *original_alloc;
-  thread_local static extent_hooks_t extent_hooks;
-  thread_local static int arena_flags;
+  thread_local static extent_hooks_t  extent_hooks;
+  thread_local static int             arena_flags;
 
   static void *alloc(extent_hooks_t *extent, void *new_addr, size_t size, size_t alignment, bool *zero, bool *commit,
                      unsigned int arena_id);
-  int extend_and_setup_arena();
+  int          extend_and_setup_arena();
 #elif MIMALLOC_NODUMP_ALLOCATOR_SUPPORTED
   thread_local static mi_heap_t *nodump_heap;
 #endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */

@@ -78,11 +78,11 @@ isClientEcdsaCapable(const SSL_CLIENT_HELLO *ssl_client_hello)
     // If the supported_versions extension is found then we assume that the client is competent
     // enough that just checking the signature_algorithms is sufficient.
     const uint8_t *supported_versions_data;
-    size_t supported_versions_len;
+    size_t         supported_versions_len;
     if (SSL_early_callback_ctx_extension_get(ssl_client_hello, TLSEXT_TYPE_supported_versions, &supported_versions_data,
                                              &supported_versions_len)) {
       const uint8_t *signature_algorithms_data;
-      size_t signature_algorithms_len;
+      size_t         signature_algorithms_len;
       if (SSL_early_callback_ctx_extension_get(ssl_client_hello, TLSEXT_TYPE_signature_algorithms, &signature_algorithms_data,
                                                &signature_algorithms_len)) {
         CBS signature_algorithms_ext, signature_algorithms;
@@ -103,7 +103,7 @@ isClientEcdsaCapable(const SSL_CLIENT_HELLO *ssl_client_hello)
   // Otherwise we are < TLSv1.3 and need to look at both the curves in the supported_groups for
   // ECDSA and also for a compatible cipher suite. https://tools.ietf.org/html/rfc4492#section-5.1.1
   const uint8_t *curvelist_data;
-  size_t curvelist_len;
+  size_t         curvelist_len;
   if (!SSL_early_callback_ctx_extension_get(ssl_client_hello, TLSEXT_TYPE_supported_groups, &curvelist_data, &curvelist_len)) {
     return false;
   }

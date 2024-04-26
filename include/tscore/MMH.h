@@ -30,10 +30,10 @@
 extern uint64_t MMH_x[MMH_X_SIZE + 8];
 
 struct MMH_CTX {
-  uint64_t state[4];
+  uint64_t      state[4];
   unsigned char buffer[32];
-  int buffer_size;
-  int blocks;
+  int           buffer_size;
+  int           blocks;
 };
 
 // signed-unsigned-const gratuitous differences brought

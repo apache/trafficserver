@@ -84,8 +84,8 @@ int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
 int recvmmsg(int fd, struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout, void *pOLP = nullptr);
 #endif
 int64_t lseek(int fd, off_t offset, int whence);
-int fsync(int fildes);
-int poll(struct pollfd *fds, unsigned long nfds, int timeout);
+int     fsync(int fildes);
+int     poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
 int shutdown(int s, int how);
 

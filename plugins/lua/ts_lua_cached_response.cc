@@ -21,7 +21,7 @@
 #define TS_LUA_CHECK_CACHED_RESPONSE_HDR(http_ctx)                                               \
   do {                                                                                           \
     TSMBuffer bufp;                                                                              \
-    TSMLoc hdrp;                                                                                 \
+    TSMLoc    hdrp;                                                                              \
     if (!http_ctx->cached_response_hdrp) {                                                       \
       if (TSHttpTxnCachedRespGet(http_ctx->txnp, &bufp, &hdrp) != TS_SUCCESS) {                  \
         return 0;                                                                                \
@@ -116,7 +116,7 @@ ts_lua_inject_cached_response_misc_api(lua_State *L)
 static int
 ts_lua_cached_response_get_status(lua_State *L)
 {
-  int status;
+  int              status;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -133,9 +133,9 @@ ts_lua_cached_response_get_status(lua_State *L)
 static int
 ts_lua_cached_response_get_version(lua_State *L)
 {
-  int version;
+  int  version;
   char buf[32];
-  int n;
+  int  n;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -160,11 +160,11 @@ ts_lua_cached_response_header_get(lua_State *L)
 {
   const char *key;
   const char *val;
-  int val_len;
-  size_t key_len;
-  int count;
+  int         val_len;
+  size_t      key_len;
+  int         count;
 
-  TSMLoc field_loc, next_field_loc;
+  TSMLoc           field_loc, next_field_loc;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -214,11 +214,11 @@ ts_lua_cached_response_header_table_get(lua_State *L)
 {
   const char *key;
   const char *val;
-  int val_len;
-  size_t key_len;
-  int count;
+  int         val_len;
+  size_t      key_len;
+  int         count;
 
-  TSMLoc field_loc, next_field_loc;
+  TSMLoc           field_loc, next_field_loc;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -268,12 +268,12 @@ ts_lua_cached_response_get_headers(lua_State *L)
 {
   const char *name;
   const char *value;
-  int name_len;
-  int value_len;
-  TSMLoc field_loc;
-  TSMLoc next_field_loc;
+  int         name_len;
+  int         value_len;
+  TSMLoc      field_loc;
+  TSMLoc      next_field_loc;
   const char *tvalue;
-  size_t tvalue_len;
+  size_t      tvalue_len;
 
   ts_lua_http_ctx *http_ctx;
 

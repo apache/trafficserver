@@ -81,18 +81,18 @@ public:
   // called when handing an  event from this NetVConnection,//
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
-  virtual void set_active_timeout(ink_hrtime timeout_in) override;
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) override;
-  virtual bool is_default_inactivity_timeout() override;
-  virtual void cancel_active_timeout() override;
-  virtual void cancel_inactivity_timeout() override;
-  void set_action(Continuation *c) override;
+  virtual void  set_active_timeout(ink_hrtime timeout_in) override;
+  virtual void  set_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual void  set_default_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual bool  is_default_inactivity_timeout() override;
+  virtual void  cancel_active_timeout() override;
+  virtual void  cancel_inactivity_timeout() override;
+  void          set_action(Continuation *c) override;
   const Action *get_action() const;
-  virtual void add_to_keep_alive_queue() override;
-  virtual void remove_from_keep_alive_queue() override;
-  virtual bool add_to_active_queue() override;
-  virtual void remove_from_active_queue();
+  virtual void  add_to_keep_alive_queue() override;
+  virtual void  remove_from_keep_alive_queue() override;
+  virtual bool  add_to_active_queue() override;
+  virtual void  remove_from_active_queue();
 
   // The public interface is VIO::reenable()
   void reenable(VIO *vio) override;
@@ -118,7 +118,7 @@ public:
   /** Release the inbound connection tracking for this connection. */
   void release_inbound_connection_tracking();
 
-  int populate_protocol(std::string_view *results, int n) const override;
+  int         populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
   // noncopyable
@@ -195,13 +195,13 @@ public:
   }
 
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
-  void readDisable(NetHandler *nh);
-  void readSignalError(NetHandler *nh, int err);
-  int readSignalDone(int event, NetHandler *nh);
-  int readSignalAndUpdate(int event);
-  void readReschedule(NetHandler *nh);
-  void writeReschedule(NetHandler *nh);
-  void netActivity(EThread *lthread);
+  void            readDisable(NetHandler *nh);
+  void            readSignalError(NetHandler *nh, int err);
+  int             readSignalDone(int event, NetHandler *nh);
+  int             readSignalAndUpdate(int event);
+  void            readReschedule(NetHandler *nh);
+  void            writeReschedule(NetHandler *nh);
+  void            netActivity(EThread *lthread);
   /**
    * If the current object's thread does not match the t argument, create a new
    * NetVC in the thread t context based on the socket and ssl information in the
@@ -214,31 +214,31 @@ public:
   unsigned int id = 0;
 
   Connection con;
-  int recursion            = 0;
-  bool from_accept_thread  = false;
-  NetAccept *accept_object = nullptr;
+  int        recursion          = 0;
+  bool       from_accept_thread = false;
+  NetAccept *accept_object      = nullptr;
 
-  int startEvent(int event, Event *e);
-  int acceptEvent(int event, Event *e);
-  int mainEvent(int event, Event *e);
+  int         startEvent(int event, Event *e);
+  int         acceptEvent(int event, Event *e);
+  int         mainEvent(int event, Event *e);
   virtual int connectUp(EThread *t, int fd);
   /**
    * Populate the current object based on the socket information in the
    * con parameter.
    * This is logic is invoked when the NetVC object is created in a new thread context
    */
-  virtual int populate(Connection &con, Continuation *c, void *arg);
+  virtual int  populate(Connection &con, Continuation *c, void *arg);
   virtual void clear();
 
   ink_hrtime get_inactivity_timeout() override;
   ink_hrtime get_active_timeout() override;
 
   virtual void set_local_addr() override;
-  void set_mptcp_state() override;
+  void         set_mptcp_state() override;
   virtual void set_remote_addr() override;
-  void set_remote_addr(const sockaddr *) override;
-  int set_tcp_congestion_control(int side) override;
-  void apply_options() override;
+  void         set_remote_addr(const sockaddr *) override;
+  int          set_tcp_congestion_control(int side) override;
+  void         apply_options() override;
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
@@ -252,7 +252,7 @@ public:
   }
 
 private:
-  virtual void *_prepareForMigration();
+  virtual void         *_prepareForMigration();
   virtual NetProcessor *_getNetProcessor();
 
   bool _is_tunnel_endpoint{false};
@@ -307,7 +307,7 @@ UnixNetVConnection::set_mptcp_state()
 {
 #if defined(HAVE_STRUCT_MPTCP_INFO_SUBFLOWS) && defined(MPTCP_INFO) && MPTCP_INFO == 1
   struct mptcp_info minfo;
-  int minfo_len = sizeof(minfo);
+  int               minfo_len = sizeof(minfo);
 
   Dbg(_dbg_ctl_socket_mptcp, "MPTCP_INFO and struct mptcp_info defined");
   if (0 == safe_getsockopt(con.fd, SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {

@@ -37,7 +37,7 @@
 
 thread_local PluginThreadContext *pluginThreadContext;
 
-static void *INSTANCE_HANDLER = (void *)789;
+static void    *INSTANCE_HANDLER = (void *)789;
 std::error_code ec;
 
 /* The following are paths that are used commonly in the unit-tests */
@@ -70,7 +70,7 @@ public:
   getDebugObject()
   {
     std::string error; /* ignore the error, return nullptr if symbol not defined */
-    void *address = nullptr;
+    void       *address = nullptr;
     getSymbol("getPluginDebugObjectTest", address, error);
     GetPluginDebugObjectFunction *getObject = reinterpret_cast<GetPluginDebugObjectFunction *>(address);
     if (getObject) {
@@ -122,13 +122,13 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string error;
+  std::string        error;
   PluginDebugObject *debugObject = nullptr;
 
   GIVEN("a plugin which has only minimum required call back functions")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_required_cb.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_required_cb.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     WHEN("loading")
     {
@@ -145,8 +145,8 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 
   GIVEN("a plugin which is missing the plugin TSREMAP_FUNCNAME_INIT function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_missing_init.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_missing_init.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     WHEN("loading")
     {
@@ -163,8 +163,8 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 
   GIVEN("a plugin which is missing the TSREMAP_FUNCNAME_DO_REMAP function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_missing_doremap.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_missing_doremap.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     WHEN("loading")
     {
@@ -181,8 +181,8 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 
   GIVEN("a plugin which has TSREMAP_FUNCNAME_NEW_INSTANCE but is missing the TSREMAP_FUNCNAME_DELETE_INSTANCE function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_missing_deleteinstance.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_missing_deleteinstance.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     WHEN("loading")
     {
@@ -199,8 +199,8 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 
   GIVEN("a plugin which has TSREMAP_FUNCNAME_DELETE_INSTANCE but is missing the TSREMAP_FUNCNAME_NEW_INSTANCE function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_missing_newinstance.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_missing_newinstance.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     WHEN("loading")
     {
@@ -240,13 +240,13 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string error;
+  std::string        error;
   PluginDebugObject *debugObject = nullptr;
 
   GIVEN("plugin init function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);
@@ -288,19 +288,19 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string error;
+  std::string        error;
   PluginDebugObject *debugObject = nullptr;
-  void *ih                       = nullptr; // Instance handler pointer.
+  void              *ih          = nullptr; // Instance handler pointer.
 
   /* a sample test set of parameters */
   static const char *args[] = {"arg1", "arg2", "arg3"};
-  static char **ARGV        = const_cast<char **>(args);
-  static char ARGC          = sizeof ARGV;
+  static char      **ARGV   = const_cast<char **>(args);
+  static char        ARGC   = sizeof ARGV;
 
   GIVEN("an instance init function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);
@@ -361,13 +361,13 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string error;
+  std::string        error;
   PluginDebugObject *debugObject = nullptr;
 
   GIVEN("a 'done' function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);
@@ -388,8 +388,8 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 
   GIVEN("a 'delete_instance' function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);
@@ -414,13 +414,13 @@ SCENARIO("config reload", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string error;
+  std::string        error;
   PluginDebugObject *debugObject = nullptr;
 
   GIVEN("a 'config reload' callback function")
   {
-    fs::path pluginConfigPath   = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin = setupSandBox(pluginConfigPath);
+    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
 
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);

@@ -366,16 +366,16 @@ namespace std
 {
 template <typename VISITOR>
 auto
-visit(VISITOR &&visitor, Feature &feature)
-  -> decltype(visit(std::forward<VISITOR>(visitor), static_cast<Feature::variant_type &>(feature)))
+visit(VISITOR &&visitor,
+      Feature  &feature) -> decltype(visit(std::forward<VISITOR>(visitor), static_cast<Feature::variant_type &>(feature)))
 {
   return visit(std::forward<VISITOR>(visitor), static_cast<Feature::variant_type &>(feature));
 }
 
 template <typename VISITOR>
 auto
-visit(VISITOR &&visitor, Feature const &feature)
-  -> decltype(visit(std::forward<VISITOR>(visitor), static_cast<Feature::variant_type const &>(feature)))
+visit(VISITOR &&visitor, Feature const &feature) -> decltype(visit(std::forward<VISITOR>(visitor),
+                                                                   static_cast<Feature::variant_type const &>(feature)))
 {
   return visit(std::forward<VISITOR>(visitor), static_cast<Feature::variant_type const &>(feature));
 }
@@ -542,9 +542,9 @@ public:
   }
 
 protected:
-  ValueMask _base_type;      ///< Base type of the feature.
-  ValueMask _tuple_type;     ///< Types of the elements of a tuple.
-  bool _cfg_const_p = false; ///< Config time constant.
+  ValueMask                  _base_type;           ///< Base type of the feature.
+  ValueMask                  _tuple_type;          ///< Types of the elements of a tuple.
+  bool                       _cfg_const_p = false; ///< Config time constant.
   friend swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ActiveType const &type);
 };
 
@@ -869,8 +869,8 @@ extern swoc::Lexicon<BoolTag> const BoolNames;
 
 /// Container for global data.
 struct Global {
-  swoc::Errata _preload_errata;
-  int TxnArgIdx = -1;
+  swoc::Errata             _preload_errata;
+  int                      TxnArgIdx = -1;
   std::vector<std::string> _args; ///< Global configuration arguments.
   /// Amount of reserved storage requested by remap directives.
   /// This is not always correct, @c Context must handle overflows gracefully.
@@ -895,9 +895,9 @@ struct ReservedSpan {
 /// Used for clean up in @c Config and @c Context.
 /// A list of these is used to perform additional cleanup for extensions to the basic object.
 struct Finalizer {
-  using self_type = Finalizer;    ///< Self reference type.
-  void *_ptr      = nullptr;      ///< Pointer to object to destroy.
-  std::function<void(void *)> _f; ///< Functor to destroy @a _ptr.
+  using self_type                  = Finalizer; ///< Self reference type.
+  void                       *_ptr = nullptr;   ///< Pointer to object to destroy.
+  std::function<void(void *)> _f;               ///< Functor to destroy @a _ptr.
 
   self_type *_prev = nullptr;                           ///< List support.
   self_type *_next = nullptr;                           ///< List support.
@@ -913,8 +913,8 @@ inline Finalizer::Finalizer(void *ptr, std::function<void(void *)> &&f) : _ptr(p
  * @tparam T Type of variable to scope.
  */
 template <typename T> struct let {
-  T &_var;  ///< Reference to scoped variable.
-  T _value; ///< Original value.
+  T &_var;   ///< Reference to scoped variable.
+  T  _value; ///< Original value.
 
   /** Construct a scope.
    *

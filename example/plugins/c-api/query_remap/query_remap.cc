@@ -40,10 +40,10 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 uint32_t hash_fnv32(char *buf, size_t len);
 
 struct query_remap_info {
-  char *param_name;
+  char  *param_name;
   size_t param_len;
   char **hosts;
-  int num_hosts;
+  int    num_hosts;
 };
 
 TSReturnCode
@@ -123,13 +123,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
     return TSREMAP_NO_REMAP;
   }
 
-  int req_query_len;
+  int         req_query_len;
   const char *req_query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &req_query_len);
 
   if (req_query && req_query_len > 0) {
     char *q, *key;
-    char *s     = nullptr;
-    int hostidx = -1;
+    char *s       = nullptr;
+    int   hostidx = -1;
 
     /* make a copy of the query, as it is read only */
     q = TSstrndup(req_query, req_query_len + 1);

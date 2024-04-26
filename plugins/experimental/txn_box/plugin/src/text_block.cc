@@ -41,10 +41,10 @@
 #include "txn_box/yaml_util.h"
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 using Clock = std::chrono::system_clock;
@@ -69,7 +69,7 @@ protected:
 
 public:
   static inline const std::string KEY{"text-block-define"}; ///< Directive name.
-  static const HookMask HOOKS;                              ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                    ///< Valid hooks for directive.
 
   /// Functor to do file content updating as needed.
   struct Updater {
@@ -116,16 +116,16 @@ protected:
     explicit CfgInfo(MapHandle &&map) : _map(std::move(map)) {}
   };
 
-  TextView _name;                                                             ///< Block name.
-  swoc::file::path _path;                                                     ///< Path to file (optional)
-  std::optional<TextView> _text;                                              ///< Default literal text (optional)
-  feature_type_for<DURATION> _duration;                                       ///< Time between update checks.
+  TextView                     _name;                                         ///< Block name.
+  swoc::file::path             _path;                                         ///< Path to file (optional)
+  std::optional<TextView>      _text;                                         ///< Default literal text (optional)
+  feature_type_for<DURATION>   _duration;                                     ///< Time between update checks.
   std::atomic<Clock::duration> _last_check = Clock::now().time_since_epoch(); ///< Absolute time of the last alert.
-  Clock::time_point _last_modified;                                           ///< Last modified time of the file.
+  Clock::time_point            _last_modified;                                ///< Last modified time of the file.
   std::shared_ptr<std::string> _content;                                      ///< Content of the file.
-  int _line_no = 0;                                                           ///< For debugging name conflicts.
-  std::shared_mutex _content_mutex;                                           ///< Lock for access @a content.
-  ts::TaskHandle _task;                                                       ///< Handle for periodic checking task.
+  int                          _line_no = 0;                                  ///< For debugging name conflicts.
+  std::shared_mutex            _content_mutex;                                ///< Lock for access @a content.
+  ts::TaskHandle               _task;                                         ///< Handle for periodic checking task.
 
   FeatureGroup _fg; ///< Support cross reference in the keys.
   using index_type                  = FeatureGroup::index_type;
@@ -187,9 +187,9 @@ Rv<Directive::Handle>
 Do_text_block_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &, swoc::TextView const &,
                            YAML::Node key_value)
 {
-  auto self = new self_type();
+  auto   self = new self_type();
   Handle handle(self);
-  auto &fg       = self->_fg;
+  auto  &fg      = self->_fg;
   self->_line_no = drtv_node.Mark().line;
 
   auto errata = self->_fg.load(cfg, key_value,
@@ -251,7 +251,7 @@ Do_text_block_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_n
 
   if (!self->_path.empty()) {
     std::error_code ec;
-    auto content = swoc::file::load(self->_path, ec);
+    auto            content = swoc::file::load(self->_path, ec);
     if (!ec) {
       self->_content = std::make_shared<std::string>(std::move(content));
     } else if (self->_text.has_value()) {
@@ -293,7 +293,7 @@ Do_text_block_define::Updater::operator()()
 
   // This should be scheduled at the appropriate intervals and so no need to check time.
   std::error_code ec;
-  auto fs = swoc::file::status(_block->_path, ec);
+  auto            fs = swoc::file::status(_block->_path, ec);
   if (!ec) {
     auto mtime = self_type::update_time(fs);
     if (mtime <= _block->_last_modified) {
@@ -309,8 +309,8 @@ Do_text_block_define::Updater::operator()()
       }
       if (_block->_notify_idx != FeatureGroup::INVALID_IDX) {
         Context ctx(cfg);
-        auto text{_block->_fg.extract(ctx, _block->_notify_idx)};
-        auto msg = ctx.render_transient([&](BufferWriter &w) { w.print("[{}] {}", Config::PLUGIN_TAG, text); });
+        auto    text{_block->_fg.extract(ctx, _block->_notify_idx)};
+        auto    msg = ctx.render_transient([&](BufferWriter &w) { w.print("[{}] {}", Config::PLUGIN_TAG, text); });
         ts::Log_Note(msg);
       }
       return;
@@ -334,7 +334,7 @@ public:
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
   using super_type::extract; // un-hide the overloaded
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
@@ -368,7 +368,7 @@ Ex_text_block::extract_block(Context &ctx, TextView tag)
 {
   if (auto info = ctx.cfg().named_object<Do_text_block_define::CfgInfo>(Do_text_block_define::KEY); info) {
     if (auto spot = info->_map->find(tag); spot != info->_map->end()) {
-      auto block = spot->second;
+      auto                         block = spot->second;
       std::shared_ptr<std::string> content;
       { // grab a copy of the shared pointer to file content.
         std::shared_lock lock(block->_content_mutex);

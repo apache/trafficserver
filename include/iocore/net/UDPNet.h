@@ -45,8 +45,8 @@
 class UDPNetProcessor : public Processor
 {
 public:
-  virtual EventType register_event_type()                 = 0;
-  int start(int n_upd_threads, size_t stacksize) override = 0;
+  virtual EventType register_event_type()                               = 0;
+  int               start(int n_upd_threads, size_t stacksize) override = 0;
 
   // this function was internal initially.. this is required for public and
   // interface probably should change.
@@ -105,7 +105,7 @@ public:
 };
 
 extern UDPNetProcessor &udpNet;
-extern EventType ET_UDP;
+extern EventType        ET_UDP;
 
 #include "iocore/net/UDPPacket.h"
 #include "iocore/net/UDPConnection.h"

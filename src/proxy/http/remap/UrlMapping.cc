@@ -61,9 +61,9 @@ url_mapping::get_plugin_instance(std::size_t index) const
  **/
 url_mapping::~url_mapping()
 {
-  referer_info *r;
+  referer_info     *r;
   redirect_tag_str *rc;
-  acl_filter_rule *afr;
+  acl_filter_rule  *afr;
 
   tag                 = static_cast<char *>(ats_free_null(tag));
   filter_redirect_url = static_cast<char *>(ats_free_null(filter_redirect_url));
@@ -114,7 +114,7 @@ url_mapping::PrintRemapHitCount() const
 redirect_tag_str *
 redirect_tag_str::parse_format_redirect_url(char *url)
 {
-  char *c;
+  char             *c;
   redirect_tag_str *r;
   redirect_tag_str *list = nullptr;
 
@@ -160,7 +160,7 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
   : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
 {
   const char *error;
-  int erroffset;
+  int         erroffset;
 
   if (error_flag) {
     *error_flag = false;

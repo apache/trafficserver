@@ -36,9 +36,9 @@ public:
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
+  bool           is_done() const override;
 
 private:
   Http3Transaction *_transaction = nullptr;
-  VIO *_source_vio               = nullptr;
+  VIO              *_source_vio  = nullptr;
 };

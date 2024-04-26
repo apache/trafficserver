@@ -29,7 +29,7 @@ URL *
 create_url(const char *url_string)
 {
   char buf[4096];
-  int len    = 0;
+  int  len   = 0;
   URL *url_p = new URL(url_string);
   URL &url   = *url_p;
 

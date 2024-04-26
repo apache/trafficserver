@@ -58,7 +58,7 @@ public:
    * @param follow_dups Continue on to duplicate fields flag.
    * @return A view of the first sub-value in multi-valued data.
    */
-  TextView get_first(const MIMEField *m, bool follow_dups = true);
+  TextView    get_first(const MIMEField *m, bool follow_dups = true);
   const char *get_first(const MIMEField *m, int *len, bool follow_dups = true);
 
   /** Get the next sub-value.
@@ -68,7 +68,7 @@ public:
    * If @a follow_dups was set in the constructor, this will continue on to additional fields
    * if those fields have the same name as the original field (e.g, are duplicates).
    */
-  TextView get_next();
+  TextView    get_next();
   const char *get_next(int *len);
 
   /** Get the current sub-value.
@@ -77,7 +77,7 @@ public:
    *
    * The state of the iterator is not modified.
    */
-  TextView get_current();
+  TextView    get_current();
   const char *get_current(int *len);
 
   int count_values(MIMEField *field, bool follow_dups = true);
@@ -178,7 +178,7 @@ HdrCsvIter::get_first_int(MIMEField *m, int &result)
 
   if (val) {
     TextView parsed;
-    int n = swoc::svtoi(val, &parsed);
+    int      n = swoc::svtoi(val, &parsed);
     if (parsed) {
       result = n;
       return true;
@@ -194,7 +194,7 @@ HdrCsvIter::get_next_int(int &result)
 
   if (val) {
     TextView parsed;
-    int n = swoc::svtoi(val, &parsed);
+    int      n = swoc::svtoi(val, &parsed);
     if (parsed) {
       result = n;
       return true;

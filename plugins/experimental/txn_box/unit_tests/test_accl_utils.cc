@@ -106,7 +106,7 @@ static auto
 generateKVFrom(T const &str)
 {
   std::vector<std::pair<T, T>> kvs;
-  T gradstr;
+  T                            gradstr;
   for (auto const &c : str) {
     gradstr += c;
     kvs.push_back({gradstr, gradstr});
@@ -117,7 +117,7 @@ generateKVFrom(T const &str)
 
 TEST_CASE("Basic Prefix match Test on std::string", "[insert][prefix_match][std::string]")
 {
-  StringTree<std::string, std::string> trie;
+  StringTree<std::string, std::string>             trie;
   std::vector<std::pair<std::string, std::string>> kvs = generateKVFrom(std::string{"http://www.apache.com/trafficserver"});
   for (auto const &[k, v] : kvs) {
     trie.insert(k, v);
@@ -258,7 +258,7 @@ TEST_CASE("Very basic perf test")
     string_tree_map trie;
     {
       func_timer<> f;
-      auto const &took = f.run([&trie]() {
+      auto const  &took = f.run([&trie]() {
         for (auto const &[k, v] : kv) {
           trie.insert(k, v);
         }
@@ -268,20 +268,20 @@ TEST_CASE("Very basic perf test")
     }
     {
       func_timer<> f;
-      auto const &took = f.run([&trie]() { trie.insert("trafficserver.apache.com", "ats.apache.com"); });
+      auto const  &took = f.run([&trie]() { trie.insert("trafficserver.apache.com", "ats.apache.com"); });
       std::cout << "string_tree_map - insert single element into an existing trie took " << took
                 << to_string<func_timer<>::unit>::value << std::endl;
     }
     {
       func_timer<> f;
-      auto const &took = f.run([&trie]() { trie.full_match("ASF.com"); });
+      auto const  &took = f.run([&trie]() { trie.full_match("ASF.com"); });
       std::cout << "string_tree_map - full_match(\"ASF.com\") took " << took << to_string<func_timer<>::unit>::value << std::endl;
     }
     {
-      func_timer<> f;
-      std::size_t found{0};
+      func_timer<>                 f;
+      std::size_t                  found{0};
       string_tree_map::search_type search;
-      auto const &took = f.run([&trie, &found]() {
+      auto const                  &took = f.run([&trie, &found]() {
         auto const &r = trie.prefix_match("Yahoo.com");
         found         = r.size();
       });
@@ -290,10 +290,10 @@ TEST_CASE("Very basic perf test")
                 << ". Found " << found << " elements." << std::endl;
     }
     {
-      func_timer<> f;
-      std::size_t found{0};
+      func_timer<>                 f;
+      std::size_t                  found{0};
       string_tree_map::search_type search;
-      auto const &took = f.run([&trie, &found]() {
+      auto const                  &took = f.run([&trie, &found]() {
         auto const &r = trie.suffix_match("/es");
         found         = r.size();
       });
@@ -308,7 +308,7 @@ TEST_CASE("Very basic perf test")
     std::unordered_map<std::string_view, std::string_view> map;
     {
       func_timer<> f;
-      auto const &took = f.run([&map]() {
+      auto const  &took = f.run([&map]() {
         for (auto const &[k, v] : kv) {
           map.insert({k, v});
         }
@@ -318,13 +318,13 @@ TEST_CASE("Very basic perf test")
     }
     {
       func_timer<> f;
-      auto const &took = f.run([&map]() { map.insert({"trafficserver.apache.com", "ats.apache.com"}); });
+      auto const  &took = f.run([&map]() { map.insert({"trafficserver.apache.com", "ats.apache.com"}); });
       std::cout << "std::unordered_map - insert single element into an existing trie took " << took
                 << to_string<func_timer<>::unit>::value << std::endl;
     }
     {
       func_timer<> f;
-      auto const &took = f.run([&map]() { map.find("ASF.com"); });
+      auto const  &took = f.run([&map]() { map.find("ASF.com"); });
       std::cout << "std::unordered_map - insert(\"ASF.com\") took " << took << to_string<func_timer<>::unit>::value << std::endl;
     }
   }

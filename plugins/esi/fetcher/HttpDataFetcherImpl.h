@@ -69,10 +69,10 @@ public:
 
   // used to return data to callers
   struct ResponseData {
-    const char *content;
-    int content_len;
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    const char  *content;
+    int          content_len;
+    TSMBuffer    bufp;
+    TSMLoc       hdr_loc;
     TSHttpStatus status;
     ResponseData() { set(nullptr, 0, nullptr, nullptr, TS_HTTP_STATUS_NONE); }
     inline void set(const char *c, int clen, TSMBuffer b, TSMLoc loc, TSHttpStatus s);
@@ -108,15 +108,15 @@ private:
 
   // used to track a request that was made
   struct RequestData {
-    std::string response;
-    std::string raw_response;
-    const char *body         = nullptr;
-    int body_len             = 0;
-    TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+    std::string        response;
+    std::string        raw_response;
+    const char        *body        = nullptr;
+    int                body_len    = 0;
+    TSHttpStatus       resp_status = TS_HTTP_STATUS_NONE;
     CallbackObjectList callback_objects;
-    bool complete  = false;
-    TSMBuffer bufp = nullptr;
-    TSMLoc hdr_loc = nullptr;
+    bool               complete = false;
+    TSMBuffer          bufp     = nullptr;
+    TSMLoc             hdr_loc  = nullptr;
 
     RequestData() {}
   };
@@ -127,8 +127,8 @@ private:
   using IteratorArray = std::vector<UrlToContentMap::iterator>;
   IteratorArray _page_entry_lookup; // used to map event ids to requests
 
-  int _n_pending_requests;
-  int _curr_event_id_base;
+  int          _n_pending_requests;
+  int          _curr_event_id_base;
   TSHttpParser _http_parser;
 
   static const int FETCH_EVENT_ID_BASE;

@@ -36,8 +36,8 @@ namespace
 DbgCtl dbg_ctl{"plugin_esi_parser"};
 }
 
-const char *EsiParser::ESI_TAG_PREFIX   = "<esi:";
-const int EsiParser::ESI_TAG_PREFIX_LEN = 5;
+const char *EsiParser::ESI_TAG_PREFIX     = "<esi:";
+const int   EsiParser::ESI_TAG_PREFIX_LEN = 5;
 
 const string EsiParser::SRC_ATTR_STR("src");
 const string EsiParser::TEST_ATTR_STR("test");
@@ -130,8 +130,8 @@ EsiParser::MATCH_TYPE
 EsiParser::_searchData(const string &data, size_t start_pos, const char *str, int str_len, size_t &pos) const
 {
   const char *data_ptr = data.data() + start_pos;
-  int data_len         = data.size() - start_pos;
-  int i_data = 0, i_str = 0;
+  int         data_len = data.size() - start_pos;
+  int         i_data = 0, i_str = 0;
 
   while (i_data < data_len) {
     if (data_ptr[i_data] == str[i_str]) {
@@ -163,7 +163,7 @@ EsiParser::_searchData(const string &data, size_t start_pos, const char *str, in
 EsiParser::MATCH_TYPE
 EsiParser::_compareData(const string &data, size_t pos, const char *str, int str_len) const
 {
-  int i_str     = 0;
+  int    i_str  = 0;
   size_t i_data = pos;
   for (; i_data < data.size(); ++i_data) {
     if (data[i_data] == str[i_str]) {
@@ -188,7 +188,7 @@ EsiParser::MATCH_TYPE
 EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening_tag_pos, bool &is_html_comment_node) const
 {
   size_t i_data = start_pos;
-  int i_esi = 0, i_html_comment = 0;
+  int    i_esi = 0, i_html_comment = 0;
 
   while (i_data < data.size()) {
     if (data[i_data] == ESI_TAG_PREFIX[i_esi]) {
@@ -261,14 +261,14 @@ EsiParser::_processSimpleContentTag(DocNode::TYPE node_type, const char *data, i
 bool
 EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_list, bool last_chunk /* = false */) const
 {
-  size_t orig_list_size = node_list.size();
-  size_t curr_pos, end_pos;
-  const char *const data_start_ptr = data.data();
-  size_t data_size                 = data.size();
+  size_t             orig_list_size = node_list.size();
+  size_t             curr_pos, end_pos;
+  const char *const  data_start_ptr = data.data();
+  size_t             data_size      = data.size();
   const EsiNodeInfo *node_info;
-  MATCH_TYPE search_result;
-  bool is_html_comment_node;
-  bool parse_result;
+  MATCH_TYPE         search_result;
+  bool               is_html_comment_node;
+  bool               parse_result;
 
   while (parse_start_pos < static_cast<int>(data_size)) {
     search_result = _findOpeningTag(data, static_cast<int>(parse_start_pos), curr_pos, is_html_comment_node);
@@ -471,14 +471,14 @@ bool
 EsiParser::_processWhenTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
 {
   Attribute test_expr;
-  size_t term_pos;
+  size_t    term_pos;
   if (!Utils::getAttribute(data, TEST_ATTR_STR, curr_pos, end_pos, test_expr, &term_pos, '>')) {
     TSError("[%s] Could not find test attribute", __FUNCTION__);
     return false;
   }
   ++term_pos; // go past the terminator
   const char *data_start_ptr = data.data() + term_pos;
-  int data_size              = end_pos - term_pos;
+  int         data_size      = end_pos - term_pos;
   if (!_processSimpleContentTag(DocNode::TYPE_WHEN, data_start_ptr, data_size, node_list)) {
     TSError("[%s] Could not parse when node's content", __FUNCTION__);
     return false;
@@ -493,8 +493,8 @@ bool
 EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
 {
   const char *data_start_ptr = data.data() + curr_pos;
-  int data_size              = end_pos - curr_pos;
-  DocNode try_node(DocNode::TYPE_TRY);
+  int         data_size      = end_pos - curr_pos;
+  DocNode     try_node(DocNode::TYPE_TRY);
   if (!parse(try_node.child_nodes, data_start_ptr, data_size)) {
     TSError("[%s] Could not parse try node's content", __FUNCTION__);
     return false;
@@ -548,8 +548,8 @@ bool
 EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
 {
   const char *data_start_ptr = data.data() + curr_pos;
-  size_t data_size           = end_pos - curr_pos;
-  DocNode choose_node(DocNode::TYPE_CHOOSE);
+  size_t      data_size      = end_pos - curr_pos;
+  DocNode     choose_node(DocNode::TYPE_CHOOSE);
   if (!parse(choose_node.child_nodes, data_start_ptr, data_size)) {
     TSError("[%s] Couldn't parse choose node content", __FUNCTION__);
     return false;
@@ -625,12 +625,12 @@ EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len 
 {
   string data;
   size_t orig_output_list_size;
-  int parse_start_pos = -1;
-  bool retval         = _completeParse(data, parse_start_pos, orig_output_list_size, node_list, ext_data_ptr, data_len);
+  int    parse_start_pos = -1;
+  bool   retval          = _completeParse(data, parse_start_pos, orig_output_list_size, node_list, ext_data_ptr, data_len);
   if (retval && (node_list.size() - orig_output_list_size)) {
     // adjust all pointers to addresses in input parameter
-    const char *int_data_start      = data.data();
-    DocNodeList::iterator node_iter = node_list.begin();
+    const char           *int_data_start = data.data();
+    DocNodeList::iterator node_iter      = node_list.begin();
     for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter) {
       ;
     }

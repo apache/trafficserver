@@ -134,7 +134,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
     }
   }
 
-  int64_t size;
+  int64_t         size;
   TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
   if (isSizeState()) {

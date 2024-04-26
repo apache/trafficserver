@@ -88,24 +88,24 @@ struct NetAcceptAction : public Action, public RefCountObjInHeap {
 // Handles accepting connections.
 //
 struct NetAccept : public Continuation {
-  ink_hrtime period = 0;
-  Server server;
-  AcceptFunctionPtr accept_fn = nullptr;
-  int ifd                     = NO_FD;
-  int id                      = -1;
-  Ptr<NetAcceptAction> action_;
+  ink_hrtime             period = 0;
+  Server                 server;
+  AcceptFunctionPtr      accept_fn = nullptr;
+  int                    ifd       = NO_FD;
+  int                    id        = -1;
+  Ptr<NetAcceptAction>   action_;
   SSLNextProtocolAccept *snpa = nullptr;
-  NetAcceptEventIO ep;
+  NetAcceptEventIO       ep;
 
   HttpProxyPort *proxyPort = nullptr;
-  AcceptOptions opt;
+  AcceptOptions  opt;
 
   virtual NetProcessor *getNetProcessor() const;
 
-  virtual void init_accept(EThread *t = nullptr);
-  void init_accept_loop();
-  void init_accept_per_thread();
-  virtual void stop_accept();
+  virtual void       init_accept(EThread *t = nullptr);
+  void               init_accept_loop();
+  void               init_accept_per_thread();
+  virtual void       stop_accept();
   virtual NetAccept *clone() const;
 
   // 0 == success
@@ -115,12 +115,12 @@ struct NetAccept : public Continuation {
   virtual int acceptEvent(int event, void *e);
   virtual int acceptFastEvent(int event, void *e);
   virtual int accept_per_thread(int event, void *e);
-  int acceptLoopEvent(int event, Event *e);
-  void cancel();
+  int         acceptLoopEvent(int event, Event *e);
+  void        cancel();
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   ~NetAccept() override { action_ = nullptr; }
 };
 
-extern Ptr<ProxyMutex> naVecMutex;
+extern Ptr<ProxyMutex>          naVecMutex;
 extern std::vector<NetAccept *> naVec;

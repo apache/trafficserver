@@ -29,7 +29,7 @@ Cript::string
 Crypto::Base64::encode(Cript::string_view str)
 {
   Cript::string ret;
-  size_t encoded_len = 0;
+  size_t        encoded_len = 0;
 
   ret.resize(ENCODED_LEN(str.size())); // Don't use reserve() here, or bad things happens.
   if (TS_SUCCESS != TSBase64Encode(str.data(), str.size(), ret.data(), ret.capacity(), &encoded_len)) {
@@ -45,7 +45,7 @@ Cript::string
 Crypto::Base64::decode(Cript::string_view str)
 {
   Cript::string ret;
-  size_t decoded_len = 0;
+  size_t        decoded_len = 0;
 
   ret.resize(DECODED_LEN(str.size())); // Don't use reserve() here, or bad things happens.
   if (TS_SUCCESS !=
@@ -84,7 +84,7 @@ Crypto::Escape::encode(Cript::string_view str)
   };
 
   Cript::string ret;
-  size_t encoded_len = 0;
+  size_t        encoded_len = 0;
 
   ret.resize(str.size() * 3 + 1); // Don't use reserve() here, or bad things happens.
   TSStringPercentEncode(str.data(), str.size(), ret.data(), ret.capacity(), &encoded_len, map);
@@ -97,7 +97,7 @@ Cript::string
 Crypto::Escape::decode(Cript::string_view str)
 {
   Cript::string ret;
-  size_t decoded_len = 0;
+  size_t        decoded_len = 0;
 
   ret.resize(str.size() + 1); // Don't use reserve() here, or bad things happens.
   TSStringPercentDecode(str.data(), str.size(), ret.data(), ret.capacity(), &decoded_len);
@@ -126,7 +126,7 @@ Crypto::detail::Cipher::hex() const
 Crypto::SHA256
 Crypto::SHA256::encode(Cript::string_view str)
 {
-  SHA256_CTX ctx;
+  SHA256_CTX     ctx;
   Crypto::SHA256 digest;
 
   SHA256_Init(&ctx);
@@ -139,7 +139,7 @@ Crypto::SHA256::encode(Cript::string_view str)
 Crypto::SHA512
 Crypto::SHA512::encode(Cript::string_view str)
 {
-  SHA512_CTX ctx;
+  SHA512_CTX     ctx;
   Crypto::SHA512 digest;
 
   SHA512_Init(&ctx);
@@ -152,7 +152,7 @@ Crypto::SHA512::encode(Cript::string_view str)
 Crypto::MD5
 Crypto::MD5::encode(Cript::string_view str)
 {
-  MD5_CTX ctx;
+  MD5_CTX     ctx;
   Crypto::MD5 digest;
 
   MD5_Init(&ctx);

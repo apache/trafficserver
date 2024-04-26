@@ -151,14 +151,14 @@ get_server_tls_description(TSHttpTxn txnp)
 namespace traffic_dump
 {
 // Static member initialization.
-int SessionData::session_arg_index                 = -1;
-std::atomic<int64_t> SessionData::sample_pool_size = default_sample_pool_size;
-std::atomic<int64_t> SessionData::max_disk_usage   = default_max_disk_usage;
-std::atomic<int64_t> SessionData::disk_usage       = 0;
-std::atomic<bool> SessionData::enforce_disk_limit  = default_enforce_disk_limit;
-swoc::file::path SessionData::log_directory{default_log_directory};
-uint64_t SessionData::session_counter = 0;
-std::string SessionData::sni_filter;
+int                   SessionData::session_arg_index  = -1;
+std::atomic<int64_t>  SessionData::sample_pool_size   = default_sample_pool_size;
+std::atomic<int64_t>  SessionData::max_disk_usage     = default_max_disk_usage;
+std::atomic<int64_t>  SessionData::disk_usage         = 0;
+std::atomic<bool>     SessionData::enforce_disk_limit = default_enforce_disk_limit;
+swoc::file::path      SessionData::log_directory{default_log_directory};
+uint64_t              SessionData::session_counter = 0;
+std::string           SessionData::sni_filter;
 std::optional<IpAddr> SessionData::client_ip_filter = std::nullopt;
 
 int
@@ -252,7 +252,7 @@ SessionData::get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_
   std::ostringstream protocol_description;
   protocol_description << R"("protocol":[)";
   char const *protocol[10];
-  int count = -1;
+  int         count = -1;
   TSAssert(TS_SUCCESS == get_protocol_stack(10, protocol, &count));
   bool is_first_printed_protocol = true;
   for (int i = 0; i < count; ++i) {
@@ -351,7 +351,7 @@ int
 SessionData::write_to_disk(std::string_view content)
 {
   const std::lock_guard<std::recursive_mutex> _(disk_io_mutex);
-  const int result = write_to_disk_no_lock(content);
+  const int                                   result = write_to_disk_no_lock(content);
   return result;
 }
 
@@ -408,14 +408,14 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_AIO_DONE: {
-    TSAIOCallback cb     = static_cast<TSAIOCallback>(edata);
-    SessionData *ssnData = static_cast<SessionData *>(TSContDataGet(contp));
+    TSAIOCallback cb      = static_cast<TSAIOCallback>(edata);
+    SessionData  *ssnData = static_cast<SessionData *>(TSContDataGet(contp));
     if (!ssnData) {
       Dbg(dbg_ctl, "session_aio_handler(): No valid ssnData. Abort.");
       return TS_ERROR;
     }
-    char *buf         = TSAIOBufGet(cb);
-    bool free_ssnData = false;
+    char *buf          = TSAIOBufGet(cb);
+    bool  free_ssnData = false;
     {
       const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
 
@@ -426,7 +426,7 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
           // check for ssn close, if closed, do clean up
           TSContDataSet(contp, nullptr);
           close(ssnData->log_fd);
-          std::error_code ec;
+          std::error_code         ec;
           swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
           if (!ec) {
             disk_usage += swoc::file::file_size(st);
@@ -465,9 +465,9 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     // any sampling will apply just to that subset of connections that match
     // that SNI.
     if (!sni_filter.empty()) {
-      TSVConn ssn_vc           = TSHttpSsnClientVConnGet(ssnp);
+      TSVConn         ssn_vc   = TSHttpSsnClientVConnGet(ssnp);
       TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
-      SSL *ssl_obj             = reinterpret_cast<SSL *>(ssl_conn);
+      SSL            *ssl_obj  = reinterpret_cast<SSL *>(ssl_conn);
       if (ssl_obj == nullptr) {
         Dbg(dbg_ctl, "global_session_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
         break;
@@ -520,7 +520,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     std::string session_hex_name = stream.str();
 
     // Use client ip as sub directory name
-    char client_str[INET6_ADDRSTRLEN];
+    char            client_str[INET6_ADDRSTRLEN];
     sockaddr const *client_ip = TSHttpSsnClientAddrGet(ssnp);
     if (AF_INET == client_ip->sa_family) {
       inet_ntop(AF_INET, &(reinterpret_cast<sockaddr_in const *>(client_ip)->sin_addr), client_str, INET_ADDRSTRLEN);

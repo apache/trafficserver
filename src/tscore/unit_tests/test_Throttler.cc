@@ -31,8 +31,8 @@ using namespace std::literals;
 TEST_CASE("Throttler", "[libts][Throttler]")
 {
   auto const periodicity = 100ms;
-  Throttler throttler(periodicity);
-  uint64_t skipped_count = 0;
+  Throttler  throttler(periodicity);
+  uint64_t   skipped_count = 0;
 
   // The first check should be allowed.
   CHECK_FALSE(throttler.is_throttled(skipped_count));

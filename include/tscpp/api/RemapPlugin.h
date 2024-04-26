@@ -64,10 +64,10 @@ public:
   virtual Result
   remapTransaction(Transaction &transaction, TSRemapRequestInfo *rri)
   {
-    Url map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
-    bool redirect              = false;
-    RemapPlugin::Result result = doRemap(map_from_url, map_to_url, transaction, redirect);
-    rri->redirect              = redirect ? 1 : 0;
+    Url                 map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
+    bool                redirect = false;
+    RemapPlugin::Result result   = doRemap(map_from_url, map_to_url, transaction, redirect);
+    rri->redirect                = redirect ? 1 : 0;
     return result;
   }
 

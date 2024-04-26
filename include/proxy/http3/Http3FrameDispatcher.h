@@ -44,9 +44,9 @@ private:
     READING_PAYLOAD_LEN,
     READING_PAYLOAD,
   } _reading_state = READING_TYPE_LEN;
-  int64_t _reading_frame_type_len;
-  int64_t _reading_frame_length_len;
-  uint64_t _reading_frame_payload_len;
-  Http3FrameFactory _frame_factory;
+  int64_t                          _reading_frame_type_len;
+  int64_t                          _reading_frame_length_len;
+  uint64_t                         _reading_frame_payload_len;
+  Http3FrameFactory                _frame_factory;
   std::vector<Http3FrameHandler *> _handlers[256];
 };

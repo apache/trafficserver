@@ -58,9 +58,9 @@ struct trans_config {
 };
 
 struct trans_state {
-  ParentResult parent_result;
+  ParentResult    parent_result;
   HttpRequestData request_data;
-  trans_config txn_conf;
+  trans_config    txn_conf;
   trans_state() {}
 };
 

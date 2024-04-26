@@ -61,7 +61,7 @@ public:
   virtual ~QUICNetProcessor();
 
   void init() override;
-  int start(int, size_t stacksize) override;
+  int  start(int, size_t stacksize) override;
 
   Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions const &opts) override;
 
@@ -78,8 +78,8 @@ private:
   QUICNetProcessor(const QUICNetProcessor &);
   QUICNetProcessor &operator=(const QUICNetProcessor &);
 
-  QUICConnectionTable *_ctable  = nullptr;
-  quiche_config *_quiche_config = nullptr;
+  QUICConnectionTable *_ctable        = nullptr;
+  quiche_config       *_quiche_config = nullptr;
 };
 
 extern QUICNetProcessor quic_NetProcessor;

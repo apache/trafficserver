@@ -71,24 +71,24 @@
 #define RESERVED_FDS 3
 
 typedef struct {
-  char *url_str;
-  int protocol;
-  char *hostname;
+  char          *url_str;
+  int            protocol;
+  char          *hostname;
   unsigned short port;
 #ifdef USE_IPV6
   struct sockaddr_in6 sa;
 #else  /* USE_IPV6 */
   struct sockaddr_in sa;
 #endif /* USE_IPV6 */
-  int sa_len, sock_family, sock_type, sock_protocol;
+  int   sa_len, sock_family, sock_type, sock_protocol;
   char *filename;
-  int got_bytes;
-  long bytes;
-  int got_checksum;
-  long checksum;
+  int   got_bytes;
+  long  bytes;
+  int   got_checksum;
+  long  checksum;
   char *buf;
-  int buf_bytes;
-  int unique_id_offset;
+  int   buf_bytes;
+  int   unique_id_offset;
   struct {
     int completed;
     int max_response;
@@ -97,14 +97,14 @@ typedef struct {
 
 } url;
 static url *urls;
-static int num_urls, max_urls, cur_url;
+static int  num_urls, max_urls, cur_url;
 
 typedef struct {
-  char *str;
+  char              *str;
   struct sockaddr_in sa;
 } sip;
 static sip *sips;
-static int num_sips, max_sips;
+static int  num_sips, max_sips;
 
 /* Protocol symbols. */
 #define PROTO_HTTP  0
@@ -205,28 +205,28 @@ typedef enum {
 } header_states;
 
 typedef struct {
-  int url_num;
+  int                url_num;
   struct sockaddr_in sa;
-  int sa_len;
-  int conn_fd;
-  SSL *ssl;
-  connection_states conn_state;
-  header_states header_state;
-  int did_connect, did_response;
-  struct timeval started_at;
-  struct timeval connect_at;
-  struct timeval request_at;
-  struct timeval response_at;
-  Timer *idle_timer;
-  Timer *wakeup_timer;
-  long content_length;
-  long bytes;
-  long checksum;
-  int http_status;
-  int reusable;
-  int keep_alive;
-  int chunked;
-  unsigned int unique_id;
+  int                sa_len;
+  int                conn_fd;
+  SSL               *ssl;
+  connection_states  conn_state;
+  header_states      header_state;
+  int                did_connect, did_response;
+  struct timeval     started_at;
+  struct timeval     connect_at;
+  struct timeval     request_at;
+  struct timeval     response_at;
+  Timer             *idle_timer;
+  Timer             *wakeup_timer;
+  long               content_length;
+  long               bytes;
+  long               checksum;
+  int                http_status;
+  int                reusable;
+  int                keep_alive;
+  int                chunked;
+  unsigned int       unique_id;
   struct {
     int connections;
     int requests;
@@ -236,62 +236,62 @@ typedef struct {
 } connection;
 
 static connection *connections;
-static int max_connections, num_connections, max_parallel, num_ka_conns;
+static int         max_connections, num_connections, max_parallel, num_ka_conns;
 
-static int http_status_counts[1000]; /* room for all three-digit statuses */
-static char *argv0;
-static int do_checksum, do_throttle, do_verbose, do_jitter, do_proxy;
-static int do_accept_gzip, do_sequential;
-static float throttle;
-static int idle_secs;
-static char *proxy_hostname;
+static int            http_status_counts[1000]; /* room for all three-digit statuses */
+static char          *argv0;
+static int            do_checksum, do_throttle, do_verbose, do_jitter, do_proxy;
+static int            do_accept_gzip, do_sequential;
+static float          throttle;
+static int            idle_secs;
+static char          *proxy_hostname;
 static unsigned short proxy_port;
-static char *user_agent;
-static char *cookie;
-static char *http_version;
-static int is_http_1_1;
-static int ignore_bytes;
-static int keep_alive;
-static char *extra_headers;
-static unsigned int unique_id_counter;
-static int unique_id = 0;
-static int socket_pool;
-static int epfd;
-static int max_connect_failures = 0;
+static char          *user_agent;
+static char          *cookie;
+static char          *http_version;
+static int            is_http_1_1;
+static int            ignore_bytes;
+static int            keep_alive;
+static char          *extra_headers;
+static unsigned int   unique_id_counter;
+static int            unique_id = 0;
+static int            socket_pool;
+static int            epfd;
+static int            max_connect_failures = 0;
 
 static struct timeval start_at;
-static int fetches_started, connects_completed, responses_completed, fetches_completed;
-static long long total_bytes;
-static long long total_connect_usecs, max_connect_usecs, min_connect_usecs;
-static long long total_response_usecs, max_response_usecs, min_response_usecs;
-int total_timeouts, total_badbytes, total_badchecksums;
+static int            fetches_started, connects_completed, responses_completed, fetches_completed;
+static long long      total_bytes;
+static long long      total_connect_usecs, max_connect_usecs, min_connect_usecs;
+static long long      total_response_usecs, max_response_usecs, min_response_usecs;
+int                   total_timeouts, total_badbytes, total_badchecksums;
 
 static long start_interval, low_interval, high_interval, range_interval;
 
 static SSL_CTX *ssl_ctx = (SSL_CTX *)0;
-static char *cipher     = (char *)0;
+static char    *cipher  = (char *)0;
 
 /* Forwards. */
-static void usage(void);
-static void read_url_file(char *url_file);
-static void lookup_address(int url_num);
-static void read_sip_file(char *sip_file);
-static void start_connection(struct timeval *nowP);
-static void start_socket(int url_num, int cnum, struct timeval *nowP);
-static void handle_connect(int cnum, struct timeval *nowP, int double_check);
-static void handle_read(int cnum, struct timeval *nowP);
-static void idle_connection(ClientData client_data, struct timeval *nowP);
-static void wakeup_connection(ClientData client_data, struct timeval *nowP);
-static void close_connection(int cnum);
-static void progress_report(ClientData client_data, struct timeval *nowP);
-static void start_timer(ClientData client_data, struct timeval *nowP);
-static void end_timer(ClientData client_data, struct timeval *nowP);
-static void finish(struct timeval *nowP);
+static void      usage(void);
+static void      read_url_file(char *url_file);
+static void      lookup_address(int url_num);
+static void      read_sip_file(char *sip_file);
+static void      start_connection(struct timeval *nowP);
+static void      start_socket(int url_num, int cnum, struct timeval *nowP);
+static void      handle_connect(int cnum, struct timeval *nowP, int double_check);
+static void      handle_read(int cnum, struct timeval *nowP);
+static void      idle_connection(ClientData client_data, struct timeval *nowP);
+static void      wakeup_connection(ClientData client_data, struct timeval *nowP);
+static void      close_connection(int cnum);
+static void      progress_report(ClientData client_data, struct timeval *nowP);
+static void      start_timer(ClientData client_data, struct timeval *nowP);
+static void      end_timer(ClientData client_data, struct timeval *nowP);
+static void      finish(struct timeval *nowP);
 static long long delta_timeval(struct timeval *start, struct timeval *finish);
-static void *malloc_check(size_t size);
-static void *realloc_check(void *ptr, size_t size);
-static char *strdup_check(char *str);
-static void check(void *ptr);
+static void     *malloc_check(size_t size);
+static void     *realloc_check(void *ptr, size_t size);
+static char     *strdup_check(char *str);
+static void      check(void *ptr);
 
 int
 main(int argc, char **argv)
@@ -306,16 +306,16 @@ main(int argc, char **argv)
 #define END_NONE    0
 #define END_FETCHES 1
 #define END_SECONDS 2
-  int end_fetches = -1, end_seconds = -1;
-  int cnum;
+  int   end_fetches = -1, end_seconds = -1;
+  int   cnum;
   char *url_file;
   char *sip_file;
 #ifdef RLIMIT_NOFILE
   struct rlimit limits;
 #endif /* RLIMIT_NOFILE */
   struct epoll_event *events;
-  struct timeval now;
-  int i, r, periodic_tmr;
+  struct timeval      now;
+  int                 i, r, periodic_tmr;
 
   max_connections = 64 - RESERVED_FDS; /* a guess */
 #ifdef RLIMIT_NOFILE
@@ -625,12 +625,12 @@ usage(void)
 static void
 read_url_file(char *url_file)
 {
-  char line[5000], hostname[5000];
-  char *http    = "http://";
-  int http_len  = strlen(http);
-  char *https   = "https://";
-  int https_len = strlen(https);
-  int proto_len, host_len;
+  char  line[5000], hostname[5000];
+  char *http      = "http://";
+  int   http_len  = strlen(http);
+  char *https     = "https://";
+  int   https_len = strlen(https);
+  int   proto_len, host_len;
   char *cp;
 
   FILE *fp = fopen(url_file, "r");
@@ -648,8 +648,8 @@ read_url_file(char *url_file)
      constructed by the URL host and possibly port (if not port 80) */
 
   char hdr_buf[2048];
-  int hdr_bytes  = 0;
-  hdr_bytes     += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
+  int  hdr_bytes  = 0;
+  hdr_bytes      += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
   if (cookie)
     hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Cookie: %s\r\n", cookie);
   if (do_accept_gzip)
@@ -664,7 +664,7 @@ read_url_file(char *url_file)
 
   while (fgets(line, sizeof(line), fp) != (char *)0) {
     char req_buf[2048];
-    int req_bytes = 0;
+    int  req_bytes = 0;
 
     /* Nuke trailing newline. */
     if (line[strlen(line) - 1] == '\n')
@@ -759,13 +759,13 @@ lookup_address(int url_num)
     urls[url_num].sa            = urls[url_num - 1].sa;
     return;
   }
-  int i;
-  char *hostname;
+  int            i;
+  char          *hostname;
   unsigned short port;
 #ifdef USE_IPV6
-  struct addrinfo hints;
-  char portstr[10];
-  int gaierr;
+  struct addrinfo  hints;
+  char             portstr[10];
+  int              gaierr;
   struct addrinfo *ai;
   struct addrinfo *ai2;
   struct addrinfo *aiv4;
@@ -880,7 +880,7 @@ static void
 read_sip_file(char *sip_file)
 {
   FILE *fp;
-  char line[5000];
+  char  line[5000];
 
   fp = fopen(sip_file, "r");
   if (fp == (FILE *)0) {
@@ -917,7 +917,7 @@ read_sip_file(char *sip_file)
 static void
 start_connection(struct timeval *nowP)
 {
-  int cnum, url_num;
+  int        cnum, url_num;
   static int cycle_slot = 0;
 
   /* Find an empty connection slot. */
@@ -992,9 +992,9 @@ static void
 start_socket(int url_num, int cnum, struct timeval *nowP)
 {
   ClientData client_data;
-  int flags;
-  int sip_num;
-  int reusable = connections[cnum].reusable;
+  int        flags;
+  int        sip_num;
+  int        reusable = connections[cnum].reusable;
 
   /* Start filling in the connection slot. */
   connections[cnum].url_num        = url_num;
@@ -1118,9 +1118,9 @@ cert_verify_callback(int ok __attribute__((unused)), X509_STORE_CTX *ctx __attri
 static void
 handle_connect(int cnum, struct timeval *nowP, int double_check)
 {
-  static int connect_failures = 0;
-  int url_num;
-  int r;
+  static int         connect_failures = 0;
+  int                url_num;
+  int                r;
   struct epoll_event ev;
 
 #ifdef DEBUG
@@ -1241,11 +1241,11 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
 static void
 handle_read(int cnum, struct timeval *nowP)
 {
-  char buf[30000]; /* must be larger than throttle / 2 */
-  int bytes_to_read, bytes_read, bytes_handled;
-  float elapsed;
+  char       buf[30000]; /* must be larger than throttle / 2 */
+  int        bytes_to_read, bytes_read, bytes_handled;
+  float      elapsed;
   ClientData client_data;
-  long checksum;
+  long       checksum;
 
   tmr_reset(nowP, connections[cnum].idle_timer);
 
@@ -2769,10 +2769,10 @@ handle_read(int cnum, struct timeval *nowP)
 static void
 idle_connection(ClientData client_data, struct timeval *nowP __attribute__((unused)))
 {
-  int cnum;
+  int            cnum;
   struct timeval tv;
-  char strTime[32];
-  struct tm localtv;
+  char           strTime[32];
+  struct tm      localtv;
   gettimeofday(&tv, NULL);
   strftime(strTime, 32, "%T", localtime_r(&tv.tv_sec, &localtv));
 
@@ -2914,7 +2914,7 @@ static void
 finish(struct timeval *nowP)
 {
   float elapsed;
-  int i;
+  int   i;
 
   /* Report statistics. */
   elapsed = delta_timeval(&start_at, nowP) / 1000000.0;

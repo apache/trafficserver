@@ -45,7 +45,7 @@ class SSLMultiCertConfigLoader
 {
 public:
   struct CertLoadData {
-    std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
+    std::vector<std::string>        cert_names_list, key_list, ca_list, ocsp_list;
     std::vector<SSLCertContextType> cert_type_list;
   };
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
@@ -55,7 +55,7 @@ public:
 
   virtual SSL_CTX *default_server_ssl_ctx();
 
-  virtual std::vector<SSLLoadingContext> init_server_ssl_ctx(CertLoadData const &data,
+  virtual std::vector<SSLLoadingContext> init_server_ssl_ctx(CertLoadData const             &data,
                                                              const SSLMultiCertConfigParams *sslMultCertSettings);
 
   static bool load_certs(SSL_CTX *ctx, const std::vector<std::string> &cert_names_list,
@@ -63,15 +63,15 @@ public:
                          const SSLMultiCertConfigParams *sslMultCertSettings);
 
   bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, CertLoadData &data, const SSLConfigParams *params,
-                                            const SSLMultiCertConfigParams *sslMultCertSettings,
-                                            std::set<std::string> &common_names,
+                                            const SSLMultiCertConfigParams                 *sslMultCertSettings,
+                                            std::set<std::string>                          &common_names,
                                             std::unordered_map<int, std::set<std::string>> &unique_names,
-                                            SSLCertContextType *certType);
+                                            SSLCertContextType                             *certType);
 
   static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
                                      const SSLMultiCertConfigParams *sslMultCertSettings);
 
-  static int check_server_cert_now(X509 *cert, const char *certname);
+  static int  check_server_cert_now(X509 *cert, const char *certname);
   static void clear_pw_references(SSL_CTX *ssl_ctx);
 
   bool update_ssl_ctx(const std::string &secret_name);
@@ -83,9 +83,9 @@ protected:
                              SSLCertContextType ctx_type, std::set<std::string> &names);
 
 private:
-  virtual const char *_debug_tag() const;
+  virtual const char   *_debug_tag() const;
   virtual const DbgCtl &_dbg_ctl() const;
-  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual bool          _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
   bool _prep_ssl_ctx(const shared_SSLMultiCertConfigParams &sslMultCertSettings, SSLMultiCertConfigLoader::CertLoadData &data,
                      std::set<std::string> &common_names, std::unordered_map<int, std::set<std::string>> &unique_names);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);

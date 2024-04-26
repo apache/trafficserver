@@ -211,19 +211,19 @@ public:
   bool finalize();
 
 private:
-  std::string _apiHeader;
-  std::string _nextHeader;
-  std::string _fetchPolicy;
-  std::string _replaceHost;
-  std::string _namespace;
-  std::string _metricsPrefix;
-  std::string _logName;
-  std::string _queryKey;
-  unsigned _fetchCount      = 1;
-  unsigned _fetchMax        = 0;
-  EvalPolicy _fetchOverflow = EvalPolicy::Overflow32;
-  bool _front               = false;
-  bool _exactMatch          = false;
-  bool _cmcd_nor            = false;
+  std::string  _apiHeader;
+  std::string  _nextHeader;
+  std::string  _fetchPolicy;
+  std::string  _replaceHost;
+  std::string  _namespace;
+  std::string  _metricsPrefix;
+  std::string  _logName;
+  std::string  _queryKey;
+  unsigned     _fetchCount    = 1;
+  unsigned     _fetchMax      = 0;
+  EvalPolicy   _fetchOverflow = EvalPolicy::Overflow32;
+  bool         _front         = false;
+  bool         _exactMatch    = false;
+  bool         _cmcd_nor      = false;
   MultiPattern _nextPaths;
 };

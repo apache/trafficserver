@@ -63,12 +63,12 @@ public:
   /// Constructs an empty pool.
   ServerSessionPool();
   /// Handle events from server sessions.
-  int eventHandler(int event, void *data);
+  int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
-  void removeSession(PoolableSession *ssn);
-  void addSession(PoolableSession *ssn);
+  void        removeSession(PoolableSession *ssn);
+  void        addSession(PoolableSession *ssn);
   int
   count() const
   {
@@ -103,7 +103,7 @@ public:
 
   // Pools of server sessions.
   // Note that each server session is stored in both pools.
-  IPTable m_ip_pool;
+  IPTable   m_ip_pool;
   FQDNTable m_fqdn_pool;
 };
 
@@ -114,9 +114,9 @@ public:
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(HttpSM *sm, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn);
   HSMresult_t release_session(PoolableSession *to_release);
-  void purge_keepalives();
-  void init();
-  int main_handler(int event, void *data);
+  void        purge_keepalives();
+  void        init();
+  int         main_handler(int event, void *data);
   void
   set_pool_type(int pool_type)
   {
@@ -131,9 +131,9 @@ public:
 private:
   /// Global pool, used if not per thread pools.
   /// @internal We delay creating this because the session manager is created during global statistics init.
-  ServerSessionPool *m_g_pool = nullptr;
-  HSMresult_t _acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
-                               TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type);
+  ServerSessionPool             *m_g_pool = nullptr;
+  HSMresult_t                    _acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
+                                                  TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type);
   TSServerSessionSharingPoolType m_pool_type = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 };
 

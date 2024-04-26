@@ -25,13 +25,13 @@
 
 #include "tscore/ParseRules.h"
 
-const unsigned int parseRulesCType[256] = {0};
-const char parseRulesCTypeToUpper[256]  = {0};
-const char parseRulesCTypeToLower[256]  = {0};
+const unsigned int parseRulesCType[256]        = {0};
+const char         parseRulesCTypeToUpper[256] = {0};
+const char         parseRulesCTypeToLower[256] = {0};
 
 unsigned int tparseRulesCType[256];
-char tparseRulesCTypeToUpper[256];
-char tparseRulesCTypeToLower[256];
+char         tparseRulesCTypeToUpper[256];
+char         tparseRulesCTypeToLower[256];
 
 #include <cstdio>
 #include <cctype>
@@ -40,7 +40,7 @@ char tparseRulesCTypeToLower[256];
 static char *
 uint_to_binary(unsigned int u)
 {
-  int i;
+  int         i;
   static char buf[33];
   for (i = 0; i < 32; i++) {
     buf[i] = ((u & (1 << (31 - i))) ? '1' : '0');

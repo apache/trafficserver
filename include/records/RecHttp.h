@@ -220,9 +220,9 @@ public:
   void markIn(const char *value, SessionProtocolSet &sp_set);
 
 protected:
-  int m_n = 0; ///< Index of first unused slot.
+  int                       m_n = 0; ///< Index of first unused slot.
   std::array<TextView, MAX> m_names;
-  swoc::MemArena m_arena; ///< Storage for non-constant strings.
+  swoc::MemArena            m_arena; ///< Storage for non-constant strings.
 };
 
 extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
@@ -259,10 +259,10 @@ public:
     TRANSPORT_QUIC,         ///< SSL connection.
   };
 
-  int m_fd;                                 ///< Pre-opened file descriptor if present.
-  TransportType m_type = TRANSPORT_DEFAULT; ///< Type of connection.
-  in_port_t m_port     = 0;                 ///< Port on which to listen.
-  uint8_t m_family     = AF_INET;           ///< IP address family.
+  int           m_fd;                         ///< Pre-opened file descriptor if present.
+  TransportType m_type   = TRANSPORT_DEFAULT; ///< Type of connection.
+  in_port_t     m_port   = 0;                 ///< Port on which to listen.
+  uint8_t       m_family = AF_INET;           ///< IP address family.
   /// True if proxy protocol is required on incoming requests.
   bool m_proxy_protocol = false;
   /// True if inbound connects (from client) are transparent.
@@ -360,7 +360,7 @@ public:
       @return @c true if a valid port was found, @c false if none.
   */
   static bool loadValue(std::vector<self> &ports, ///< Destination for found port data.
-                        const char *value         ///< Source port data.
+                        const char        *value  ///< Source port data.
   );
 
   /** Load ports from a value string into the global ports.
@@ -387,8 +387,8 @@ public:
       are checked.
       @return The port if found, @c nullptr if not.
   */
-  static const self *findHttp(Group const &ports,         ///< Group to search.
-                              uint16_t family = AF_UNSPEC ///< Desired address family.
+  static const self *findHttp(Group const &ports,             ///< Group to search.
+                              uint16_t     family = AF_UNSPEC ///< Desired address family.
   );
 
   /** Find an HTTP port in the global ports.
@@ -403,8 +403,8 @@ public:
 
       @return The number of characters used for the description.
   */
-  int print(char *out, ///< Output string.
-            size_t n   ///< Maximum output length.
+  int print(char  *out, ///< Output string.
+            size_t n    ///< Maximum output length.
   );
 
   static const char *const PORTS_CONFIG_NAME; ///< New unified port descriptor.

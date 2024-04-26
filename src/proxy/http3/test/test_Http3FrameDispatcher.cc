@@ -38,16 +38,16 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
                        // 3rd frame (incomplete)
                        0xff};
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3MockFrameHandler handler;
     Http3ProtocolEnforcer enforcer;
     http3FrameDispatcher.add_handler(&handler);
     http3FrameDispatcher.add_handler(&enforcer);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -85,17 +85,17 @@ TEST_CASE("control stream tests", "[http3]")
       0x00,       // Value
     };
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3ProtocolEnforcer enforcer;
     Http3MockFrameHandler handler;
 
     http3FrameDispatcher.add_handler(&enforcer);
     http3FrameDispatcher.add_handler(&handler);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -126,17 +126,17 @@ TEST_CASE("control stream tests", "[http3]")
       0x00,       // Value
     };
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3ProtocolEnforcer enforcer;
     Http3MockFrameHandler handler;
 
     http3FrameDispatcher.add_handler(&enforcer);
     http3FrameDispatcher.add_handler(&handler);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -165,17 +165,17 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3ProtocolEnforcer enforcer;
     Http3MockFrameHandler handler;
 
     http3FrameDispatcher.add_handler(&enforcer);
     http3FrameDispatcher.add_handler(&handler);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -204,17 +204,17 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3ProtocolEnforcer enforcer;
     Http3MockFrameHandler handler;
 
     http3FrameDispatcher.add_handler(&enforcer);
     http3FrameDispatcher.add_handler(&handler);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -243,17 +243,17 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3ProtocolEnforcer enforcer;
     Http3MockFrameHandler handler;
 
     http3FrameDispatcher.add_handler(&enforcer);
     http3FrameDispatcher.add_handler(&handler);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -279,10 +279,10 @@ TEST_CASE("ignore unknown frames", "[http3]")
 
     Http3FrameDispatcher http3FrameDispatcher;
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 
@@ -304,16 +304,16 @@ TEST_CASE("Reserved frame type not allowed", "[http3]")
                        // 3rd frame (incomplete)
                        0xff};
 
-    Http3FrameDispatcher http3FrameDispatcher;
+    Http3FrameDispatcher  http3FrameDispatcher;
     Http3MockFrameHandler handler;
     Http3ProtocolEnforcer enforcer;
     http3FrameDispatcher.add_handler(&handler);
     http3FrameDispatcher.add_handler(&enforcer);
 
-    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
     IOBufferReader *reader = buf->alloc_reader();
-    uint64_t nread         = 0;
-    Http3ErrorUPtr error   = Http3ErrorUPtr(nullptr);
+    uint64_t        nread  = 0;
+    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
 
     buf->write(input, sizeof(input));
 

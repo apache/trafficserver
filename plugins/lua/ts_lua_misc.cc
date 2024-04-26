@@ -147,7 +147,7 @@ static int
 ts_lua_get_process_id(lua_State *L)
 {
   const char *s;
-  TSUuid process = TSProcessUuidGet();
+  TSUuid      process = TSProcessUuidGet();
   if (process) {
     s = TSUuidStringGet(process);
   } else {
@@ -173,7 +173,7 @@ ts_lua_debug(lua_State *L)
 {
   const char *msg;
   const char *flag;
-  size_t msg_len = 0, flag_len = 0;
+  size_t      msg_len = 0, flag_len = 0;
 
   if (lua_gettop(L) == 2) {
     msg  = luaL_checklstring(L, 2, &msg_len);
@@ -192,8 +192,8 @@ static int
 ts_lua_is_debug_tag_set(lua_State *L)
 {
   const char *flag;
-  size_t flag_len = 0;
-  int stat        = 0;
+  size_t      flag_len = 0;
+  int         stat     = 0;
 
   if (lua_gettop(L) == 1) {
     flag = luaL_checklstring(L, 1, &flag_len);
@@ -215,7 +215,7 @@ static int
 ts_lua_error(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSError("%.*s", (int)len, msg);
@@ -226,7 +226,7 @@ static int
 ts_lua_emergency(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSEmergency("%.*s", (int)len, msg);
@@ -237,7 +237,7 @@ static int
 ts_lua_fatal(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSFatal("%.*s", (int)len, msg);
@@ -248,7 +248,7 @@ static int
 ts_lua_status(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSStatus("%.*s", (int)len, msg);
@@ -259,7 +259,7 @@ static int
 ts_lua_note(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSNote("%.*s", (int)len, msg);
@@ -270,7 +270,7 @@ static int
 ts_lua_warning(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSWarning("%.*s", (int)len, msg);
@@ -281,7 +281,7 @@ static int
 ts_lua_alert(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  size_t      len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
   TSAlert("%.*s", (int)len, msg);
@@ -299,7 +299,7 @@ ts_lua_schedule(lua_State *L)
 
   int n;
 
-  TSCont contp;
+  TSCont            contp;
   ts_lua_cont_info *ci;
   ts_lua_cont_info *nci;
 
@@ -346,12 +346,12 @@ ts_lua_schedule(lua_State *L)
 static int
 ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
 {
-  lua_State *L;
+  lua_State        *L;
   ts_lua_cont_info *ci;
   ts_lua_coroutine *crt;
-  int event, n, ret;
-  ts_lua_http_ctx *actx;
-  ts_lua_main_ctx *main_ctx;
+  int               event, n, ret;
+  ts_lua_http_ctx  *actx;
+  ts_lua_main_ctx  *main_ctx;
 
   event = (int)ev;
   Dbg(dbg_ctl, "getting actx and other info");
@@ -397,11 +397,11 @@ done:
 static int
 ts_lua_sleep(lua_State *L)
 {
-  int sec;
-  TSAction action;
-  TSCont contp;
+  int                sec;
+  TSAction           action;
+  TSCont             contp;
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
+  ts_lua_cont_info  *ci;
 
   ci = ts_lua_get_cont_info(L);
   if (ci == nullptr) {
@@ -428,7 +428,7 @@ static int
 ts_lua_sleep_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
+  ts_lua_cont_info  *ci;
 
   ai = static_cast<decltype(ai)>(TSContDataGet(contp));
   ci = ai->cinfo;
@@ -458,12 +458,12 @@ ts_lua_sleep_cleanup(ts_lua_async_item *ai)
 static int
 ts_lua_host_lookup(lua_State *L)
 {
-  const char *host;
-  size_t host_len = 0;
-  TSAction action;
-  TSCont contp;
+  const char        *host;
+  size_t             host_len = 0;
+  TSAction           action;
+  TSCont             contp;
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
+  ts_lua_cont_info  *ci;
 
   ci = ts_lua_get_cont_info(L);
   if (ci == nullptr) {
@@ -496,11 +496,11 @@ static int
 ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
 {
   ts_lua_async_item *ai;
-  ts_lua_cont_info *ci;
-  char cip[128];
-  lua_State *L;
-  ts_lua_coroutine *crt;
-  unsigned int resume;
+  ts_lua_cont_info  *ci;
+  char               cip[128];
+  lua_State         *L;
+  ts_lua_coroutine  *crt;
+  unsigned int       resume;
 
   ai  = static_cast<decltype(ai)>(TSContDataGet(contp));
   ci  = ai->cinfo;
@@ -524,8 +524,8 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   } else if (!edata) {
     lua_pushnil(L);
   } else {
-    TSHostLookupResult record   = (TSHostLookupResult)edata;
-    struct sockaddr const *addr = TSHostLookupResultAddrGet(record);
+    TSHostLookupResult     record = (TSHostLookupResult)edata;
+    struct sockaddr const *addr   = TSHostLookupResultAddrGet(record);
     if (addr->sa_family == AF_INET) {
       inet_ntop(AF_INET, &((struct sockaddr_in const *)addr)->sin_addr, cip, sizeof(cip));
     } else if (addr->sa_family == AF_INET6) {

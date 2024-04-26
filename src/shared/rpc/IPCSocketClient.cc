@@ -36,9 +36,9 @@ namespace
 ///        and reuse the already created BufferWritter.
 template <size_t N> class BufferStream
 {
-  std::ostringstream _os;
+  std::ostringstream         _os;
   swoc::LocalBufferWriter<N> _bw;
-  size_t _written{0};
+  size_t                     _written{0};
 
 public:
   char *
@@ -144,9 +144,9 @@ IPCSocketClient::read_all(std::string &content)
 
   ReadStatus readStatus{ReadStatus::UNKNOWN};
   while (true) {
-    auto buf           = bs.writable_data();
-    const auto to_read = bs.available();
-    const ssize_t ret  = ::read(_sock, buf, to_read);
+    auto          buf     = bs.writable_data();
+    const auto    to_read = bs.available();
+    const ssize_t ret     = ::read(_sock, buf, to_read);
 
     if (ret > 0) {
       bs.save(ret);

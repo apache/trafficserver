@@ -29,12 +29,12 @@
 class FrequencyCounter
 {
 public:
-  void increment(uint16_t amount = 1);
+  void     increment(uint16_t amount = 1);
   uint32_t get_count();
   virtual ~FrequencyCounter() {}
 
 protected:
-  uint16_t _count[2]      = {0};
+  uint16_t   _count[2]    = {0};
   ink_hrtime _last_update = 0;
 
 private:

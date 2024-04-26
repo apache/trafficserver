@@ -69,7 +69,7 @@ enum ExpansionField {
 
 struct SslHdrExpansion {
   SslHdrExpansion() : name() {}
-  std::string name; // HTTP header name
+  std::string    name; // HTTP header name
   ExpansionScope scope = SSL_HEADERS_SCOPE_NONE;
   ExpansionField field = SSL_HEADERS_FIELD_NONE;
 
@@ -87,8 +87,8 @@ struct SslHdrInstance {
   ~SslHdrInstance();
 
   expansion_list expansions;
-  AttachOptions attach = SSL_HEADERS_ATTACH_SERVER;
-  TSCont cont;
+  AttachOptions  attach = SSL_HEADERS_ATTACH_SERVER;
+  TSCont         cont;
 
   // noncopyable
   SslHdrInstance(const SslHdrInstance &)            = delete;

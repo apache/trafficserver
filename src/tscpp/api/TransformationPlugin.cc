@@ -55,16 +55,16 @@ namespace detail
  * @private
  */
 struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseCont {
-  TSVConn vconn_;
-  Transaction &transaction_;
-  TransformationPlugin &transformation_plugin_;
+  TSVConn                    vconn_;
+  Transaction               &transaction_;
+  TransformationPlugin      &transformation_plugin_;
   TransformationPlugin::Type type_;
-  TSVIO output_vio_; // this gets initialized on an output().
-  TSHttpTxn txn_;
-  TSIOBuffer output_buffer_;
-  TSIOBufferReader output_buffer_reader_;
-  int64_t bytes_written_;
-  bool paused_;
+  TSVIO                      output_vio_; // this gets initialized on an output().
+  TSHttpTxn                  txn_;
+  TSIOBuffer                 output_buffer_;
+  TSIOBufferReader           output_buffer_reader_;
+  int64_t                    bytes_written_;
+  bool                       paused_;
 
   // We can only send a single WRITE_COMPLETE even though
   // we may receive an immediate event after we've sent a
@@ -156,7 +156,7 @@ handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
 
       if (to_read > 0) {
         /* Create a buffer and a buffer reader */
-        TSIOBuffer input_buffer       = TSIOBufferCreate();
+        TSIOBuffer       input_buffer = TSIOBufferCreate();
         TSIOBufferReader input_reader = TSIOBufferReaderAlloc(input_buffer);
 
         /* Copy the data from the read buffer to the input buffer. */

@@ -78,10 +78,10 @@ const short border = 8;
 static void
 prettyPrint(const int x, const int y, const double number, const int type)
 {
-  char buffer[32];
-  char exp         = ' ';
+  char   buffer[32];
+  char   exp       = ' ';
   double my_number = number;
-  short color;
+  short  color;
   if (number > 1000000000000LL) {
     my_number = number / 1000000000000LL;
     exp       = 'T';
@@ -136,7 +136,7 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
   for (const auto &item : items) {
     string prettyName;
     double value = 0;
-    int type;
+    int    type;
 
     stats.getStat(item, value, prettyName, type);
     mvprintw(my_y, x, "%s", prettyName.c_str());
@@ -224,9 +224,9 @@ help(const string &host, const string &version)
 
   while (true) {
     clear();
-    time_t now = time(nullptr);
+    time_t    now = time(nullptr);
     struct tm nowtm;
-    char timeBuf[32];
+    char      timeBuf[32];
     localtime_r(&now, &nowtm);
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
 
@@ -381,9 +381,9 @@ main(int argc, const char **argv)
 {
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
 
-  int sleep_time = 6; // In seconds
-  bool absolute  = false;
-  auto &version  = AppVersionInfo::setup_version("traffic_top");
+  int   sleep_time = 6; // In seconds
+  bool  absolute   = false;
+  auto &version    = AppVersionInfo::setup_version("traffic_top");
 
   const ArgumentDescription argument_descriptions[] = {
     {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},
@@ -404,7 +404,7 @@ main(int argc, const char **argv)
   }
 
   HostStatus host_status{HostStatus::DOWN};
-  Stats stats;
+  Stats      stats;
   if (stats.getStats()) {
     host_status = HostStatus::UP;
   }
@@ -429,7 +429,7 @@ main(int argc, const char **argv)
     MAIN_PAGE,
     RESPONSE_PAGE,
   };
-  Page page       = MAIN_PAGE;
+  Page   page     = MAIN_PAGE;
   string page_alt = "(r)esponse";
 
   int animation_index{0};
@@ -437,10 +437,10 @@ main(int argc, const char **argv)
     attron(COLOR_PAIR(colorPair::border));
     attron(A_BOLD);
 
-    string version;
-    time_t now = time(nullptr);
+    string    version;
+    time_t    now = time(nullptr);
     struct tm nowtm;
-    char timeBuf[32];
+    char      timeBuf[32];
     localtime_r(&now, &nowtm);
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
     stats.getStat("version", version);

@@ -66,7 +66,7 @@ void
 DebugMsg(swoc::TextView fmt, Args &&...args)
 {
   swoc::LocalBufferWriter<1024> w;
-  auto arg_pack = std::forward_as_tuple(args...);
+  auto                          arg_pack = std::forward_as_tuple(args...);
   w.print_v(fmt, arg_pack);
   if (!w.error()) {
     TS_DBG("%.*s", int(w.size()), w.data());
@@ -179,7 +179,7 @@ public:
 
 protected:
   TSMBuffer _buff = nullptr; ///< TS buffer handle.
-  TSMLoc _loc     = nullptr; ///< TS memory location handle.
+  TSMLoc    _loc  = nullptr; ///< TS memory location handle.
 };
 
 inline HeapObject &
@@ -226,7 +226,7 @@ public:
    *
    * @note If the port is not explicitly set, it is computed based on the scheme.
    */
-  in_port_t port() const;          ///< Port.
+  in_port_t      port() const;     ///< Port.
   swoc::TextView scheme() const;   ///< View of the URL scheme.
   swoc::TextView path() const;     ///< View of the URL path.
   swoc::TextView query() const;    ///< View of the query.
@@ -587,9 +587,9 @@ public:
   template <typename T> bool is_valid(typename std::decay<T>::type) { return false; }
 
 protected:
-  std::string _name;           ///< Name.
-  TSOverridableConfigKey _key; ///< override index value.
-  TSRecordDataType _ts_type{TS_RECORDDATATYPE_NULL};
+  std::string            _name; ///< Name.
+  TSOverridableConfigKey _key;  ///< override index value.
+  TSRecordDataType       _ts_type{TS_RECORDDATATYPE_NULL};
 };
 
 /** Wrapper for a TS C API transaction.
@@ -805,10 +805,10 @@ public:
 protected:
   using TxnConfigVarTable = std::unordered_map<swoc::TextView, std::unique_ptr<TxnConfigVar>, std::hash<std::string_view>>;
 
-  TSHttpTxn _txn = nullptr;
+  TSHttpTxn                _txn = nullptr;
   static TxnConfigVarTable _var_table;
-  static std::mutex _var_table_lock;
-  static int _arg_idx;
+  static std::mutex        _var_table_lock;
+  static int               _arg_idx;
 
   /** Duplicate a string into TS owned memory.
    *
@@ -927,15 +927,15 @@ void Log_Error(swoc::TextView const &text);
 struct TaskHandle {
   /// Wrapper for data needed when the event is dispatched.
   struct Data {
-    std::function<void()> _f;         ///< Functor to dispatch.
-    std::atomic<bool> _active = true; ///< Set @c false if the task has been canceled.
+    std::function<void()> _f;             ///< Functor to dispatch.
+    std::atomic<bool>     _active = true; ///< Set @c false if the task has been canceled.
 
     /// Construct from functor @a f.
     Data(std::function<void()> &&f) : _f(std::move(f)) {}
   };
 
   TSAction _action = nullptr; ///< Internal handle returned from task scheduling.
-  TSCont _cont     = nullptr; ///< Continuation for @a _action.
+  TSCont   _cont   = nullptr; ///< Continuation for @a _action.
 
   /// Cancel the task.
   void cancel();
@@ -970,7 +970,7 @@ inline URL::URL(TSMBuffer buff, TSMLoc loc) : super_type(buff, loc) {}
 inline swoc::TextView
 URL::path() const
 {
-  int length;
+  int  length;
   auto text = TSUrlPathGet(_buff, _loc, &length);
   return {text, static_cast<size_t>(length)};
 }
@@ -978,7 +978,7 @@ URL::path() const
 inline swoc::TextView
 URL::query() const
 {
-  int length;
+  int  length;
   auto text = TSUrlHttpQueryGet(_buff, _loc, &length);
   return text ? swoc::TextView{text, static_cast<size_t>(length)} : swoc::TextView{};
 }
@@ -986,7 +986,7 @@ URL::query() const
 inline swoc::TextView
 URL::fragment() const
 {
-  int length;
+  int  length;
   auto text = TSUrlHttpFragmentGet(_buff, _loc, &length);
   return text ? swoc::TextView{text, static_cast<size_t>(length)} : swoc::TextView{};
 }

@@ -47,7 +47,7 @@ bool
 SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const
 {
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
-  unsigned char *advertised;
+  unsigned char                                  *advertised;
 
   ats_free(*npn);
   *npn = nullptr;

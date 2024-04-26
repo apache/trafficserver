@@ -38,18 +38,18 @@ TSTextLogObject protocol_plugin_log;
 
 /* static variable */
 static TSAction pending_action;
-static int accept_port;
-static int server_port;
+static int      accept_port;
+static int      server_port;
 
 /* Functions only seen in this file, should be static. */
 static void protocol_init(int accept_port, int server_port);
-static int accept_handler(TSCont contp, TSEvent event, void *edata);
+static int  accept_handler(TSCont contp, TSEvent event, void *edata);
 
 /* When the handle is called, the net_vc is returned. */
 static int
 accept_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSCont txn_sm;
+  TSCont  txn_sm;
   TSMutex pmutex;
 
   switch (event) {
@@ -90,7 +90,7 @@ static void
 protocol_init(int accept_port, int server_port ATS_UNUSED)
 {
   TSCont contp;
-  int ret_val;
+  int    ret_val;
 
   /* create customized log */
   ret_val = TSTextLogObjectCreate(PLUGIN_NAME, TS_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
@@ -117,8 +117,8 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  char *end;
-  int tmp;
+  char                    *end;
+  int                      tmp;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

@@ -56,9 +56,9 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   bzero(&ip4, sizeof(ip4));
   bzero(&ip6, sizeof(ip6));
 
-  int status; // return for system calls.
+  int            status; // return for system calls.
   ip_text_buffer ip_strbuf;
-  char localhost[1024];
+  char           localhost[1024];
 
   uuid.initialize(TS_UUID_V4);
   ink_release_assert(nullptr != uuid.getString()); // The Process UUID must be available on startup
@@ -84,8 +84,8 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
     // one address / interface the return count is 120. Stack space is
     // cheap so it's best to go big.
     static constexpr int N_REQ = 1024;
-    ifconf conf;
-    ifreq req[N_REQ];
+    ifconf               conf;
+    ifreq                req[N_REQ];
     if (0 <= s) {
       conf.ifc_len = sizeof(req);
       conf.ifc_req = req;
@@ -110,7 +110,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
       } spot_type = NA,
         ip4_type = NA, ip6_type = NA;
       sockaddr const *ifip;
-      unsigned int ifflags;
+      unsigned int    ifflags;
       for (
 #if HAVE_IFADDRS_H
         ifaddrs *spot = ifa_addrs; spot; spot = spot->ifa_next

@@ -64,7 +64,7 @@ struct HttpStatsBlock {
   // Need two stats for these for counts and times
   Metrics::Counter::AtomicType *background_fill_bytes_aborted;
   Metrics::Counter::AtomicType *background_fill_bytes_completed;
-  Metrics::Gauge::AtomicType *background_fill_current_count;
+  Metrics::Gauge::AtomicType   *background_fill_current_count;
   Metrics::Counter::AtomicType *background_fill_total_count;
   Metrics::Counter::AtomicType *broken_server_connections;
   Metrics::Counter::AtomicType *cache_deletes;
@@ -92,13 +92,13 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_writes;
   Metrics::Counter::AtomicType *completed_requests;
   Metrics::Counter::AtomicType *connect_requests;
-  Metrics::Gauge::AtomicType *current_active_client_connections;
-  Metrics::Gauge::AtomicType *current_cache_connections;
-  Metrics::Gauge::AtomicType *current_client_connections;
-  Metrics::Gauge::AtomicType *current_client_transactions;
-  Metrics::Gauge::AtomicType *current_parent_proxy_connections;
-  Metrics::Gauge::AtomicType *current_server_connections;
-  Metrics::Gauge::AtomicType *current_server_transactions;
+  Metrics::Gauge::AtomicType   *current_active_client_connections;
+  Metrics::Gauge::AtomicType   *current_cache_connections;
+  Metrics::Gauge::AtomicType   *current_client_connections;
+  Metrics::Gauge::AtomicType   *current_client_transactions;
+  Metrics::Gauge::AtomicType   *current_parent_proxy_connections;
+  Metrics::Gauge::AtomicType   *current_server_connections;
+  Metrics::Gauge::AtomicType   *current_server_transactions;
   Metrics::Counter::AtomicType *delete_requests;
   Metrics::Counter::AtomicType *disallowed_post_100_continue;
   Metrics::Counter::AtomicType *dns_lookup_begin_time;
@@ -164,7 +164,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *parent_proxy_request_total_bytes;
   Metrics::Counter::AtomicType *parent_proxy_response_total_bytes;
   Metrics::Counter::AtomicType *parent_proxy_transaction_time;
-  Metrics::Gauge::AtomicType *pooled_server_connections;
+  Metrics::Gauge::AtomicType   *pooled_server_connections;
   Metrics::Counter::AtomicType *post_body_too_large;
   Metrics::Counter::AtomicType *post_requests;
   Metrics::Counter::AtomicType *proxy_loop_detected;
@@ -265,7 +265,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_transactions_time;
   Metrics::Counter::AtomicType *total_x_redirect;
   Metrics::Counter::AtomicType *trace_requests;
-  Metrics::Gauge::AtomicType *tunnel_current_active_connections;
+  Metrics::Gauge::AtomicType   *tunnel_current_active_connections;
   Metrics::Counter::AtomicType *tunnels;
   Metrics::Counter::AtomicType *ua_begin_time;
   Metrics::Counter::AtomicType *ua_begin_write_time;
@@ -302,7 +302,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *user_agent_request_header_total_size;
   Metrics::Counter::AtomicType *user_agent_response_document_total_size;
   Metrics::Counter::AtomicType *user_agent_response_header_total_size;
-  Metrics::Gauge::AtomicType *websocket_current_active_client_connections;
+  Metrics::Gauge::AtomicType   *websocket_current_active_client_connections;
 };
 
 enum CacheOpenWriteFailAction_t {
@@ -327,8 +327,8 @@ extern HttpStatsBlock http_rsb;
 //   (corresponds to a "*" in the config file)
 /////////////////////////////////////////////////////////////
 struct HttpConfigPortRange {
-  int low                   = 0;
-  int high                  = 0;
+  int                  low  = 0;
+  int                  high = 0;
   HttpConfigPortRange *next = nullptr;
 
   HttpConfigPortRange() {}
@@ -430,16 +430,16 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_out = 1;
   MgmtByte keep_alive_post_out    = 1; // share server sessions for post
 
-  MgmtInt server_min_keep_alive_conns         = 0;
+  MgmtInt  server_min_keep_alive_conns        = 0;
   MgmtByte server_session_sharing_match       = 0;
-  char *server_session_sharing_match_str      = nullptr;
+  char    *server_session_sharing_match_str   = nullptr;
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
   MgmtByte attach_server_session_to_client    = 0;
-  MgmtInt max_proxy_cycles                    = 0;
-  MgmtInt tunnel_activity_check_period        = 0;
-  MgmtInt default_inactivity_timeout          = 24 * 60 * 60;
+  MgmtInt  max_proxy_cycles                   = 0;
+  MgmtInt  tunnel_activity_check_period       = 0;
+  MgmtInt  default_inactivity_timeout         = 24 * 60 * 60;
 
   MgmtByte forward_connect_method = 0;
 
@@ -467,7 +467,7 @@ struct OverridableHttpConfigParams {
   // Forwarded //
   ///////////////
   HttpForwarded::OptionBitSet insert_forwarded;
-  MgmtInt proxy_protocol_out = -1;
+  MgmtInt                     proxy_protocol_out = -1;
 
   //////////////////////
   //  Version Hell    //
@@ -543,7 +543,7 @@ struct OverridableHttpConfigParams {
   // Redirection  //
   //////////////////
   MgmtByte redirect_use_orig_cache_key = 0;
-  MgmtInt number_of_redirections       = 0;
+  MgmtInt  number_of_redirections      = 0;
 
   //////////////////////////////
   // server verification mode //
@@ -610,10 +610,10 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////
   // parent proxy connect attempts //
   ///////////////////////////////////
-  MgmtInt parent_connect_attempts          = 4;
-  MgmtInt parent_retry_time                = 300;
-  MgmtInt parent_fail_threshold            = 10;
-  MgmtInt per_parent_connect_attempts      = 2;
+  MgmtInt  parent_connect_attempts         = 4;
+  MgmtInt  parent_retry_time               = 300;
+  MgmtInt  parent_fail_threshold           = 10;
+  MgmtInt  per_parent_connect_attempts     = 2;
   MgmtByte enable_parent_timeout_markdowns = 0;
   MgmtByte disable_parent_markdowns        = 0;
 
@@ -646,15 +646,15 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
-  char *body_factory_template_base        = nullptr;
+  char  *body_factory_template_base       = nullptr;
   size_t body_factory_template_base_len   = 0;
-  char *proxy_response_server_string      = nullptr; // This does not get free'd by us!
+  char  *proxy_response_server_string     = nullptr; // This does not get free'd by us!
   size_t proxy_response_server_string_len = 0;       // Updated when server_string is set.
 
   ///////////////////////////////////////////////////////////////////
   // Global User Agent header                                      //
   ///////////////////////////////////////////////////////////////////
-  char *global_user_agent_header       = nullptr; // This does not get free'd by us!
+  char  *global_user_agent_header      = nullptr; // This does not get free'd by us!
   size_t global_user_agent_header_size = 0;       // Updated when user_agent is set.
 
   MgmtFloat cache_heuristic_lm_factor = 0.10;
@@ -698,17 +698,17 @@ public:
 public:
   ts::IPAddrPair inbound;
   // Initialize to any addr (default constructed) because these must always be set.
-  ts::IPAddrPair outbound;
-  IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
+  ts::IPAddrPair   outbound;
+  IpAddr           proxy_protocol_ip4, proxy_protocol_ip6;
   swoc::IPRangeSet config_proxy_protocol_ip_addrs;
 
   MgmtInt server_max_connections    = 0;
   MgmtInt max_websocket_connections = -1;
 
-  char *proxy_request_via_string    = nullptr;
-  char *proxy_response_via_string   = nullptr;
-  int proxy_request_via_string_len  = 0;
-  int proxy_response_via_string_len = 0;
+  char *proxy_request_via_string      = nullptr;
+  char *proxy_response_via_string     = nullptr;
+  int   proxy_request_via_string_len  = 0;
+  int   proxy_response_via_string_len = 0;
 
   MgmtInt accept_no_activity_timeout = 120;
 
@@ -720,13 +720,13 @@ public:
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
   ////////////////////////////////////////////
-  char *connect_ports_string         = nullptr;
-  HttpConfigPortRange *connect_ports = nullptr;
+  char                *connect_ports_string = nullptr;
+  HttpConfigPortRange *connect_ports        = nullptr;
 
-  char *reverse_proxy_no_host_redirect   = nullptr;
-  char *proxy_hostname                   = nullptr;
-  int reverse_proxy_no_host_redirect_len = 0;
-  int proxy_hostname_len                 = 0;
+  char *reverse_proxy_no_host_redirect     = nullptr;
+  char *proxy_hostname                     = nullptr;
+  int   reverse_proxy_no_host_redirect_len = 0;
+  int   proxy_hostname_len                 = 0;
 
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
@@ -734,9 +734,9 @@ public:
   MgmtInt max_payload_iobuf_index = BUFFER_SIZE_INDEX_32K;
   MgmtInt max_msg_iobuf_index     = BUFFER_SIZE_INDEX_32K;
 
-  char *redirect_actions_string                        = nullptr;
-  RedirectEnabled::ActionMap *redirect_actions_map     = nullptr;
-  RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
+  char                       *redirect_actions_string      = nullptr;
+  RedirectEnabled::ActionMap *redirect_actions_map         = nullptr;
+  RedirectEnabled::Action     redirect_actions_self_action = RedirectEnabled::Action::INVALID;
 
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
@@ -809,7 +809,7 @@ public:
   static void reconfigure();
 
   static HttpConfigParams *acquire();
-  static void release(HttpConfigParams *params);
+  static void              release(HttpConfigParams *params);
 
   static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
 
@@ -820,7 +820,7 @@ public:
   static RedirectEnabled::ActionMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
 
 public:
-  static int m_id;
+  static int              m_id;
   static HttpConfigParams m_master;
 };
 

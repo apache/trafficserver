@@ -33,7 +33,7 @@ int
 remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len)
 {
   TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
-  int cnt      = 0;
+  int    cnt   = 0;
 
   while (field) {
     TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
@@ -58,7 +58,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
     return false;
   }
 
-  bool ret         = false;
+  bool   ret       = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
 
   if (!field_loc) {
@@ -71,8 +71,8 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = nullptr;
-    bool first = true;
+    TSMLoc tmp   = nullptr;
+    bool   first = true;
 
     while (field_loc) {
       tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
@@ -97,10 +97,10 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 void
 dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  TSIOBuffer output_buffer;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
-  TSIOBufferBlock block;
-  int64_t block_avail;
+  TSIOBufferBlock  block;
+  int64_t          block_avail;
 
   output_buffer = TSIOBufferCreate();
   reader        = TSIOBufferReaderAlloc(output_buffer);

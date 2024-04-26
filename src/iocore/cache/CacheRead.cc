@@ -48,11 +48,11 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
   }
   ink_assert(caches[type] == this);
 
-  Stripe *stripe = key_to_stripe(key, hostname, host_len);
-  Dir result, *last_collision = nullptr;
-  ProxyMutex *mutex = cont->mutex.get();
-  OpenDirEntry *od  = nullptr;
-  CacheVC *c        = nullptr;
+  Stripe       *stripe = key_to_stripe(key, hostname, host_len);
+  Dir           result, *last_collision = nullptr;
+  ProxyMutex   *mutex = cont->mutex.get();
+  OpenDirEntry *od    = nullptr;
+  CacheVC      *c     = nullptr;
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
@@ -116,11 +116,11 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  Stripe *stripe = key_to_stripe(key, hostname, host_len);
-  Dir result, *last_collision = nullptr;
-  ProxyMutex *mutex = cont->mutex.get();
-  OpenDirEntry *od  = nullptr;
-  CacheVC *c        = nullptr;
+  Stripe       *stripe = key_to_stripe(key, hostname, host_len);
+  Dir           result, *last_collision = nullptr;
+  ProxyMutex   *mutex = cont->mutex.get();
+  OpenDirEntry *od    = nullptr;
+  CacheVC      *c     = nullptr;
 
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
@@ -505,8 +505,8 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
     vio.ndone = seek_to;
     seek_to   = 0;
   }
-  IOBufferBlock *b = nullptr;
-  int64_t ntodo    = vio.ntodo();
+  IOBufferBlock *b     = nullptr;
+  int64_t        ntodo = vio.ntodo();
   if (ntodo <= 0) {
     return EVENT_CONT;
   }
@@ -641,7 +641,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     // Keep the lock on stripe->mutex, for dir_delete.
     char tmpstring[CRYPTO_HEX_SIZE];
     if (request.valid()) {
-      int url_length;
+      int         url_length;
       const char *url_text = request.url_get()->string_get_ref(&url_length);
       Warning("Document %s truncated, url[%.*s] .. clearing", earliest_key.toHexStr(tmpstring), url_length, url_text);
     } else {
@@ -667,10 +667,10 @@ int
 CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
-  Doc *doc         = reinterpret_cast<Doc *>(buf->data());
-  int64_t ntodo    = vio.ntodo();
-  int64_t bytes    = doc->len - doc_pos;
-  IOBufferBlock *b = nullptr;
+  Doc           *doc   = reinterpret_cast<Doc *>(buf->data());
+  int64_t        ntodo = vio.ntodo();
+  int64_t        bytes = doc->len - doc_pos;
+  IOBufferBlock *b     = nullptr;
   if (seek_to) { // handle do_io_pread
     if (seek_to >= doc_len) {
       vio.ndone = doc_len;
@@ -687,9 +687,9 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
        The essential difference is the existence of a fragment table.
     */
     if (frags) {
-      int target                    = 0;
+      int                  target   = 0;
       HTTPInfo::FragOffset next_off = frags[target];
-      int lfi                       = static_cast<int>(alternate.get_frag_offset_count()) - 1;
+      int                  lfi      = static_cast<int>(alternate.get_frag_offset_count()) - 1;
       ink_assert(lfi >= 0); // because it's not a single frag doc.
 
       /* Note: frag[i].offset is the offset of the first byte past the
@@ -756,8 +756,8 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       char xt[CRYPTO_HEX_SIZE];
       char yt[CRYPTO_HEX_SIZE];
 
-      int url_length       = 0;
-      char const *url_text = nullptr;
+      int         url_length = 0;
+      char const *url_text   = nullptr;
       if (request.valid()) {
         url_text = request.url_get()->string_get_ref(&url_length);
       }
@@ -881,7 +881,7 @@ Lcallreturn:
 int
 CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  int ret  = 0;
+  int  ret = 0;
   Doc *doc = nullptr;
   cancel_trigger();
   set_io_not_in_progress();
@@ -956,8 +956,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
       // don't want any writers while we are evacuating the vector
       if (!stripe->open_write(this, false, 1)) {
-        Doc *doc1    = reinterpret_cast<Doc *>(first_buf->data());
-        uint32_t len = this->load_http_info(write_vector, doc1);
+        Doc     *doc1 = reinterpret_cast<Doc *>(first_buf->data());
+        uint32_t len  = this->load_http_info(write_vector, doc1);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
         // if the vector had one alternate, delete it's directory entry
@@ -1089,7 +1089,7 @@ int
 CacheVC::openReadStartHead(int event, Event *e)
 {
   intptr_t err = ECACHE_NO_DOC;
-  Doc *doc     = nullptr;
+  Doc     *doc = nullptr;
   cancel_trigger();
   set_io_not_in_progress();
   if (_action.cancelled) {
@@ -1151,8 +1151,8 @@ CacheVC::openReadStartHead(int event, Event *e)
       }
       if ((uml = this->load_http_info(&vector, doc)) != doc->hlen) {
         if (buf) {
-          HTTPCacheAlt *alt  = reinterpret_cast<HTTPCacheAlt *>(doc->hdr());
-          int32_t alt_length = 0;
+          HTTPCacheAlt *alt        = reinterpret_cast<HTTPCacheAlt *>(doc->hdr());
+          int32_t       alt_length = 0;
           // count should be reasonable, as vector is initialized and unlikely to be too corrupted
           // by bad disk data - count should be the number of successfully unmarshalled alts.
           for (int32_t i = 0; i < vector.count(); ++i) {

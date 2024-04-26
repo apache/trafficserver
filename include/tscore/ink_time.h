@@ -73,7 +73,7 @@ int cftime_replacement(char *s, int maxsize, const char *format, const time_t *c
 
 ink_time_t convert_tm(const struct tm *tp);
 
-char *ink_ctime_r(const ink_time_t *clock, char *buf);
+char      *ink_ctime_r(const ink_time_t *clock, char *buf);
 struct tm *ink_localtime_r(const ink_time_t *clock, struct tm *res);
 
 /*===========================================================================*
@@ -84,7 +84,7 @@ struct tm *ink_localtime_r(const ink_time_t *clock, struct tm *res);
 inline int
 ink_timezone()
 {
-  struct timeval tp;
+  struct timeval  tp;
   struct timezone tzp;
   ink_assert(!gettimeofday(&tp, &tzp));
   return tzp.tz_minuteswest * 60;

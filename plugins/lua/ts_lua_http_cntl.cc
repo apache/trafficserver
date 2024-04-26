@@ -65,8 +65,8 @@ ts_lua_inject_http_cntl_variables(lua_State *L)
 static int
 ts_lua_http_cntl_set(lua_State *L)
 {
-  int cntl_type;
-  int value;
+  int              cntl_type;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -82,8 +82,8 @@ ts_lua_http_cntl_set(lua_State *L)
 static int
 ts_lua_http_cntl_get(lua_State *L)
 {
-  int cntl_type;
-  int64_t value;
+  int              cntl_type;
+  int64_t          value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);

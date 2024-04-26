@@ -97,8 +97,8 @@ HdrCsvIter::find_csv()
 int
 HdrCsvIter::count_values(MIMEField *field, bool follow_dups)
 {
-  int count = 0;
-  auto val  = get_first(field, follow_dups); // get index 0
+  int  count = 0;
+  auto val   = get_first(field, follow_dups); // get index 0
   while (val) {
     val = get_next();
     ++count;

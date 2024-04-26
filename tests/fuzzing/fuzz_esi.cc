@@ -50,11 +50,11 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   EsiParser parser("parser_fuzzing", &Debug, &Error);
 
   EsiLib::DocNodeList node_list;
-  bool ret = parser.completeParse(node_list, input);
+  bool                ret = parser.completeParse(node_list, input);
 
   if (ret == true) {
     EsiLib::DocNodeList node_list2;
-    std::string packed = node_list.pack();
+    std::string         packed = node_list.pack();
     node_list2.unpack(packed);
     node_list2.clear();
   }

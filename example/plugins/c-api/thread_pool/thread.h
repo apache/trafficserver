@@ -37,23 +37,23 @@ using ExecFunc = int (*)(TSCont, void *);
 /* Structure that contains all information for a job execution */
 struct Job {
   unsigned int magic;
-  TSCont cont;   /* Continuation to call once job is done */
-  ExecFunc func; /* Job function */
-  void *data;    /* Any data to pass to the job function */
+  TSCont       cont; /* Continuation to call once job is done */
+  ExecFunc     func; /* Job function */
+  void        *data; /* Any data to pass to the job function */
 };
 
 /* Implementation of the queue for jobs */
 struct Cell {
   unsigned int magic;
-  void *ptr_data;
+  void        *ptr_data;
   struct Cell *ptr_next;
   struct Cell *ptr_prev;
 };
 
 struct Queue {
-  Cell *head;
-  Cell *tail;
-  int nb_elem;
+  Cell   *head;
+  Cell   *tail;
+  int     nb_elem;
   TSMutex mutex;
 };
 

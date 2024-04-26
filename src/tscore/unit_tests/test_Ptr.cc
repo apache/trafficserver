@@ -33,7 +33,7 @@ TEST_CASE("Ptr", "[libts][ptr]")
   unsigned alive{0};
 
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
-  PtrObject *p2     = p1.detach();
+  PtrObject     *p2 = p1.detach();
   Ptr<PtrObject> p3;
 
   REQUIRE(p1.get() == nullptr);

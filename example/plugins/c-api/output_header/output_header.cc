@@ -49,17 +49,17 @@ static void
 handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
-  TSIOBuffer output_buffer;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
-  int total_avail;
+  int              total_avail;
 
   TSIOBufferBlock block;
-  const char *block_start;
-  int64_t block_avail;
+  const char     *block_start;
+  int64_t         block_avail;
 
-  char *output_string;
+  char   *output_string;
   int64_t output_len;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {

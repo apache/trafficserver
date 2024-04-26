@@ -76,8 +76,8 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
   if (data && (data_len > 0)) {
     _zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
     _zstrm.avail_in = data_len;
-    char raw_buf[BUF_SIZE];
-    int inflate_result;
+    char    raw_buf[BUF_SIZE];
+    int     inflate_result;
     int32_t curr_buf_size;
 
     do {

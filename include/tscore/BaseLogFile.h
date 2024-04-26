@@ -91,11 +91,11 @@ public:
   };
 
 private:
-  char *_filename;                // the name of the meta file
-  time_t _creation_time;          // file creation time
+  char    *_filename;             // the name of the meta file
+  time_t   _creation_time;        // file creation time
   uint64_t _log_object_signature; // log object signature
-  int _flags;                     // metainfo status flags
-  char _buffer[BUF_SIZE];         // read/write buffer
+  int      _flags;                // metainfo status flags
+  char     _buffer[BUF_SIZE];     // read/write buffer
 
   void _read_from_file();
   void _write_to_file();
@@ -172,14 +172,14 @@ public:
   BaseLogFile(const char *name, uint64_t sig);
   BaseLogFile(const BaseLogFile &);
   ~BaseLogFile();
-  int roll();
-  int roll(long interval_start, long interval_end);
+  int         roll();
+  int         roll(long interval_start, long interval_end);
   static bool rolled_logfile(char *path);
   static bool exists(const char *pathname);
-  int open_file(int perm = -1);
-  int close_file();
-  void change_name(const char *new_name);
-  void display(FILE *fd = stdout);
+  int         open_file(int perm = -1);
+  int         close_file();
+  void        change_name(const char *new_name);
+  void        display(FILE *fd = stdout);
   const char *
   get_name() const
   {
@@ -219,9 +219,9 @@ public:
     LOG_FILE_COULD_NOT_OPEN_FILE,
   };
 
-  FILE *m_fp               = nullptr;
-  long m_start_time        = time(nullptr);
-  long m_end_time          = 0L;
+  FILE    *m_fp            = nullptr;
+  long     m_start_time    = time(nullptr);
+  long     m_end_time      = 0L;
   uint64_t m_bytes_written = 0;
 
 private:
@@ -231,9 +231,9 @@ private:
   // member variables
   ats_scoped_str m_name;
   ats_scoped_str m_hostname;
-  bool m_is_regfile         = false;
-  bool m_is_init            = false;
-  BaseMetaInfo *m_meta_info = nullptr;
-  uint64_t m_signature      = 0;
-  bool m_has_signature      = false;
+  bool           m_is_regfile    = false;
+  bool           m_is_init       = false;
+  BaseMetaInfo  *m_meta_info     = nullptr;
+  uint64_t       m_signature     = 0;
+  bool           m_has_signature = false;
 };

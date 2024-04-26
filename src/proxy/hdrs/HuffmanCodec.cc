@@ -293,8 +293,8 @@ static const huffman_entry huffman_table[] = {
 
 using Node = struct node {
   node *left, *right;
-  char ascii_code;
-  bool leaf_node;
+  char  ascii_code;
+  bool  leaf_node;
 };
 
 Node *HUFFMAN_TREE_ROOT;
@@ -318,7 +318,7 @@ make_huffman_tree()
   // insert leafs for each ascii code
   for (unsigned i = 0; i < countof(huffman_table); i++) {
     uint32_t bit_len = huffman_table[i].bit_len;
-    Node *current    = root;
+    Node    *current = root;
 
     while (bit_len > 0) {
       if (huffman_table[i].code_as_hex & (1 << (bit_len - 1))) {
@@ -376,10 +376,10 @@ hpack_huffman_fin()
 int64_t
 huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 {
-  char *dst_end      = dst_start;
-  uint8_t shift      = 7;
-  Node *current      = HUFFMAN_TREE_ROOT;
-  int nbits          = 0;
+  char    *dst_end   = dst_start;
+  uint8_t  shift     = 7;
+  Node    *current   = HUFFMAN_TREE_ROOT;
+  int      nbits     = 0;
   uint32_t curr_bits = 0;
 
   while (src_len) {

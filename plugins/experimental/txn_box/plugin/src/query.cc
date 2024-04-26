@@ -36,10 +36,10 @@
 
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 using namespace swoc::literals;
 
 /* ------------------------------------------------------------------------------------ */
@@ -54,13 +54,13 @@ struct QPair {
   static constexpr char Sep = '=';
   using self_type           = QPair;
 
-  TextView name;
-  TextView value;
-  char elt_sep     = 0;   ///< Separator before name.
-  char kv_sep      = Sep; ///< Separator for name/value - always '=' if not null.
-  self_type *_next = nullptr;
-  self_type *_prev = nullptr;
-  using Linkage    = swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
+  TextView   name;
+  TextView   value;
+  char       elt_sep = 0;   ///< Separator before name.
+  char       kv_sep  = Sep; ///< Separator for name/value - always '=' if not null.
+  self_type *_next   = nullptr;
+  self_type *_prev   = nullptr;
+  using Linkage      = swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
 
   QPair() = default;
   QPair(TextView k, TextView v) : name(k), value(v) {}
@@ -87,8 +87,8 @@ query_take_qpair(TextView &qs)
 
   // If there's anything left, look for kv pair.
   if (qs) {
-    auto v{qs.clip_prefix_of([](char c) { return c != '&' && c != ';'; })};
-    auto k = v.take_prefix_at(QPair::Sep);
+    auto  v{qs.clip_prefix_of([](char c) { return c != '&' && c != ';'; })};
+    auto  k = v.take_prefix_at(QPair::Sep);
     QPair zret{k, v};
     zret.elt_sep = elt_sep;
     return zret;
@@ -100,7 +100,7 @@ TextView
 query_value_update(Context &ctx, TextView qs, TextView name, Feature const &value, bool case_p, bool force_equal_p)
 {
   TextView zret;
-  bool nv_is_nil_p = (value.value_type() == NIL);
+  bool     nv_is_nil_p = (value.value_type() == NIL);
   if (qs.empty()) {
     if (!nv_is_nil_p) {
       zret = ctx.render_transient([&](BufferWriter &w) { w.print("{}={}", name, std::get<STRING>(value)); });
@@ -199,7 +199,7 @@ public:
   static constexpr TextView NAME{"ua-req-query"};
 
   using Extractor::extract; // un-hide the overloaded
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -227,7 +227,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  TextView query_string(Context &ctx) const override;
+  TextView        query_string(Context &ctx) const override;
 };
 
 TextView const &
@@ -254,7 +254,7 @@ class Ex_pre_remap_query : public StringExtractor
 public:
   static constexpr TextView NAME{"pre-remap-query"};
   using Extractor::extract; // un-hide the overloaded
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -280,7 +280,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  TextView query_string(Context &ctx) const override;
+  TextView        query_string(Context &ctx) const override;
 };
 
 TextView const &
@@ -305,7 +305,7 @@ class Ex_proxy_req_query : public StringExtractor
 public:
   static constexpr TextView NAME{"proxy-req-query"};
   using Extractor::extract; // un-hide the overloaded
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -333,7 +333,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  TextView query_string(Context &ctx) const override;
+  TextView        query_string(Context &ctx) const override;
 };
 
 TextView const &
@@ -364,10 +364,10 @@ class Mod_query_sort : public Modifier
 
 public:
   static inline const std::string KEY{"query-sort"};
-  bool is_valid_for(ActiveType const &ex_type) const override;
-  ActiveType result_type(ActiveType const &) const override;
+  bool                            is_valid_for(ActiveType const &ex_type) const override;
+  ActiveType                      result_type(ActiveType const &) const override;
   using super_type::operator(); // un-hide overloaded.
-  Rv<Feature> operator()(Context &ctx, feature_type_for<STRING> qs) override;
+  Rv<Feature>       operator()(Context &ctx, feature_type_for<STRING> qs) override;
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
 protected:
@@ -401,8 +401,8 @@ Mod_query_sort::operator()(Context &ctx, feature_type_for<STRING> qs)
 
   // Make an array of pointers to list items to sort.
   size_t length = list->count() - 1; // separators required.
-  auto sa       = ctx.alloc_span<QPair *>(list->count());
-  auto ptr      = sa.begin();
+  auto   sa     = ctx.alloc_span<QPair *>(list->count());
+  auto   ptr    = sa.begin();
   for (auto &item : *list) {
     *ptr++  = &item;
     length += item.name.size() + item.value.size() + 1;
@@ -418,7 +418,7 @@ Mod_query_sort::operator()(Context &ctx, feature_type_for<STRING> qs)
   std::stable_sort(sa.begin(), sa.end(), sorter);
 
   swoc::FixedBufferWriter w{ctx.transient_buffer(length)};
-  bool first_p = true;
+  bool                    first_p = true;
   for (auto item : sa) {
     if (!first_p) {
       w.write(item->elt_sep);
@@ -470,10 +470,10 @@ public:
   static constexpr TextView CFG_STORE_KEY = "mod-query-filter";
   using cfg_store_type                    = ReservedSpan;
 
-  bool is_valid_for(ActiveType const &ex_type) const override;
+  bool       is_valid_for(ActiveType const &ex_type) const override;
   ActiveType result_type(ActiveType const &) const override;
   using super_type::operator(); // un-hide overloaded.
-  Rv<Feature> operator()(Context &ctx, feature_type_for<STRING> qs) override;
+  Rv<Feature>       operator()(Context &ctx, feature_type_for<STRING> qs) override;
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
   /// Local extractor for name in a pair.
@@ -519,7 +519,7 @@ protected:
     Errata pre_load(Config &cfg, YAML::Node node);
 
     Errata parse_pair(Config &cfg, YAML::Node node, PairExpr &pair);
-    void eval_pair(Context &ctx, PairExpr const &pe, QPair &qp) const;
+    void   eval_pair(Context &ctx, PairExpr const &pe, QPair &qp) const;
   };
 
   /// Container for cases with comparisons.
@@ -528,7 +528,7 @@ protected:
   Mod_query_filter() = default;
   Case const *compare(Context &ctx, QPair const &qp) const;
 
-  static inline Ex_Name ex_name;
+  static inline Ex_Name  ex_name;
   static inline Ex_Value ex_value;
   /// Table for local extactors.
   static Extractor::Table _ex_table;
@@ -724,9 +724,9 @@ Mod_query_filter::Case::pre_load(Config &cfg, YAML::Node cmp_node)
 Rv<Modifier::Handle>
 Mod_query_filter::load(Config &cfg, YAML::Node node, TextView, TextView, YAML::Node key_value)
 {
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
-  let local_ex_scope{cfg._local_extractors, &_ex_table};
+  let    local_ex_scope{cfg._local_extractors, &_ex_table};
 
   // Need reserved context storage to pass the current @c QPair down to nested extractors.
   // The reserved span is stored in the configuration and then used at run time.
@@ -767,12 +767,12 @@ Rv<Feature>
 Mod_query_filter::operator()(Context &ctx, feature_type_for<STRING> qs)
 {
   using list_type = swoc::IntrusiveDList<QPair::Linkage>;
-  auto list       = ctx.make<list_type>();
+  auto    list    = ctx.make<list_type>();
   QPair *&qp_ex   = ctx.storage_for(*ctx.cfg().named_object<cfg_store_type>(CFG_STORE_KEY)).rebind<QPair *>()[0];
 
   while (qs) {
-    auto qp       = query_take_qpair(qs);
-    auto c        = this->compare(ctx, qp);
+    auto   qp     = query_take_qpair(qs);
+    auto   c      = this->compare(ctx, qp);
     Action action = (c ? c->_action : DROP);
     qp_ex         = &qp; // pass to potential extractors.
     switch (action) {
@@ -810,7 +810,7 @@ Mod_query_filter::operator()(Context &ctx, feature_type_for<STRING> qs)
   }
 
   swoc::FixedBufferWriter w{ctx.transient_buffer(length)};
-  bool first_p = true;
+  bool                    first_p = true;
   for (auto &item : *list) {
     if (!first_p) {
       w.write(item.elt_sep);
@@ -830,8 +830,8 @@ class Do_ua_req_query : public Directive
   using super_type = Directive;       ///< Parent type.
   using self_type  = Do_ua_req_query; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   explicit Do_ua_req_query(Expr &&expr);
 
@@ -845,7 +845,7 @@ protected:
 };
 
 const std::string Do_ua_req_query::KEY{"ua-req-query"};
-const HookMask Do_ua_req_query::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_query::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Do_ua_req_query::Do_ua_req_query(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -884,8 +884,8 @@ class Do_proxy_req_query : public Directive
   using super_type = Directive;          ///< Parent type.
   using self_type  = Do_proxy_req_query; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   explicit Do_proxy_req_query(Expr &&fmt);
 
@@ -899,7 +899,7 @@ protected:
 };
 
 const std::string Do_proxy_req_query::KEY{"proxy-req-query"};
-const HookMask Do_proxy_req_query::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_query::HOOKS{MaskFor({Hook::PREQ})};
 
 Do_proxy_req_query::Do_proxy_req_query(Expr &&fmt) : _fmt(std::move(fmt)) {}
 
@@ -935,7 +935,7 @@ class QueryValueDirective : public Directive
 
 public:
   TextView _name; ///< Query value key name.
-  Expr _expr;     ///< Replacement value.
+  Expr     _expr; ///< Replacement value.
 
   /** Base constructor.
    *
@@ -1012,7 +1012,7 @@ class Do_ua_req_query_value : public QueryValueDirective
 
 public:
   static inline const std::string KEY{"ua-req-query-value"}; ///< Directive key.
-  static inline const HookMask HOOKS{
+  static inline const HookMask    HOOKS{
     MaskFor(Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP)}; ///< Valid hooks for directive.
 
   using super_type::invoke;
@@ -1055,7 +1055,7 @@ class Do_proxy_req_query_value : public QueryValueDirective
 
 public:
   static inline const std::string KEY{"proxy-req-query-value"}; ///< Directive key.
-  static inline const HookMask HOOKS{MaskFor(Hook::PREQ)};      ///< Valid hooks for directive.
+  static inline const HookMask    HOOKS{MaskFor(Hook::PREQ)};   ///< Valid hooks for directive.
 
   using super_type::invoke;
   Errata invoke(Context &ctx) override;
@@ -1091,12 +1091,12 @@ Do_proxy_req_query_value::load(Config &cfg, CfgStaticData const *, YAML::Node, s
 /* ------------------------------------------------------------------------------------ */
 namespace
 {
-Ex_ua_req_query ua_req_query;
+Ex_ua_req_query    ua_req_query;
 Ex_proxy_req_query proxy_req_query;
 Ex_pre_remap_query pre_remap_query;
 
-Ex_ua_req_query_value ua_req_query_value;
-Ex_pre_remap_query pre_remap_req_query_value;
+Ex_ua_req_query_value    ua_req_query_value;
+Ex_pre_remap_query       pre_remap_req_query_value;
 Ex_proxy_req_query_value proxy_req_query_value;
 
 [[maybe_unused]] bool INITIALIZED = []() -> bool {

@@ -55,5 +55,5 @@ struct Http3StatsBlock {
   Metrics::Counter::AtomicType *unknown_frames_in;
 };
 
-extern Http3StatsBlock http3_rsb; // Container for statistics.
+extern Http3StatsBlock               http3_rsb; // Container for statistics.
 extern Metrics::Counter::AtomicType *http3_frame_metrics_in[static_cast<int>(Http3FrameType::UNKNOWN) + 1];

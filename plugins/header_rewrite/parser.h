@@ -95,12 +95,12 @@ public:
 private:
   bool preprocess(std::vector<std::string> tokens);
 
-  bool _cond  = false;
-  bool _empty = false;
+  bool                     _cond  = false;
+  bool                     _empty = false;
   std::vector<std::string> _mods;
-  std::string _op;
-  std::string _arg;
-  std::string _val;
+  std::string              _op;
+  std::string              _arg;
+  std::string              _val;
 
 protected:
   std::vector<std::string> _tokens;

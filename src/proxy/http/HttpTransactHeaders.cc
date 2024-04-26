@@ -116,21 +116,21 @@ HttpTransactHeaders::is_method_idempotent(int method)
 void
 HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int scheme)
 {
-  int method_output_lengths[32];
+  int         method_output_lengths[32];
   const char *methods[] = {
     HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_OPTIONS,
     HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
   };
-  char inline_buffer[64];
+  char  inline_buffer[64];
   char *alloced_buffer, *value_buffer;
 
   int nmethods = sizeof(methods) / sizeof(methods[0]);
   ink_assert(nmethods <= 32);
 
-  char *p;
-  int i, is_supported;
-  size_t bytes              = 0;
-  int num_methods_supported = 0;
+  char      *p;
+  int        i, is_supported;
+  size_t     bytes                 = 0;
+  int        num_methods_supported = 0;
   MIMEField *field;
 
   // step 1: determine supported methods, count bytes & allocate
@@ -248,7 +248,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
     if (field_flags & HTIF_HOPBYHOP) {
       std::string_view name(field.name_get());
       std::string_view value(field.value_get());
-      bool const is_te_trailers = name == MIME_FIELD_TE && value == "trailers";
+      bool const       is_te_trailers = name == MIME_FIELD_TE && value == "trailers";
       if (is_te_trailers) {
         // te: trailers is used by gRPC, do not delete it.
         continue;
@@ -420,9 +420,9 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
-  SquidLogCode log_code          = SQUID_LOG_EMPTY;
-  SquidHierarchyCode hier_code   = SQUID_HIER_EMPTY;
-  SquidHitMissCode hit_miss_code = SQUID_HIT_RESERVED;
+  SquidLogCode       log_code      = SQUID_LOG_EMPTY;
+  SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+  SquidHitMissCode   hit_miss_code = SQUID_HIT_RESERVED;
 
   /////////////////////////////
   // First the Hit-Miss Code //
@@ -439,7 +439,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
       hit_miss_code = SQUID_HIT_RESERVED;
     }
   } else {
-    int reason_len;
+    int         reason_len;
     const char *reason = header->reason_get(&reason_len);
 
     if (reason != nullptr && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
@@ -641,9 +641,9 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
       hdr += v->size();
     }
   } else {
-    std::string_view *proto_end = proto_buf + n_proto;
-    bool http_1_0_p             = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
-    bool http_1_1_p             = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
+    std::string_view *proto_end  = proto_buf + n_proto;
+    bool              http_1_0_p = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
+    bool              http_1_1_p = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
 
     if ((http_1_0_p || http_1_1_p) && hdr + 10 < limit) {
       bool tls_p = std::find_if(proto_buf, proto_end, [](std::string_view tag) { return IsPrefixOf("tls/"sv, tag); }) != proto_end;
@@ -724,7 +724,7 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
 void
 HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header)
 {
-  char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
+  char  new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
   char *via_string = new_via_string;
   char *via_limit  = via_string + sizeof(new_via_string);
 
@@ -733,9 +733,9 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
     return;
   }
 
-  char *incoming_via = s->via_string;
+  char                            *incoming_via = s->via_string;
   std::array<std::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
-  int n_proto = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
+  int                              n_proto = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
 
   via_string +=
     write_hdr_protocol_stack(via_string, via_limit - via_string, ProtocolStackDetail::Standard, proto_buf.data(), n_proto);
@@ -786,8 +786,8 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
 void
 HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header)
 {
-  char new_hsts_string[64];
-  char *hsts_string                   = new_hsts_string;
+  char           new_hsts_string[64];
+  char          *hsts_string          = new_hsts_string;
   constexpr char include_subdomains[] = "; includeSubDomains";
 
   // add max-age
@@ -806,7 +806,7 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
 void
 HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header)
 {
-  char new_via_string[HTTP_OUR_VIA_MAX_LENGTH];
+  char  new_via_string[HTTP_OUR_VIA_MAX_LENGTH];
   char *via_string = new_via_string;
   char *via_limit  = via_string + sizeof(new_via_string);
 
@@ -815,9 +815,9 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
     return;
   }
 
-  char *incoming_via = s->via_string;
+  char                            *incoming_via = s->via_string;
   std::array<std::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
-  int n_proto = 0;
+  int                              n_proto = 0;
 
   // Should suffice - if we're adding a response VIA, the connection is HTTP and only 1.0 and 1.1 are supported outbound.
   // TODO H2 expand for HTTP/2 outbound
@@ -883,7 +883,7 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 void
 HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
 {
-  int len            = 0;
+  int         len    = 0;
   const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
 
   if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
@@ -1018,8 +1018,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
     }
 
-    std::array<std::string_view, 10> protoBuf; // 10 seems like a reasonable number of protos to print
-    int n_proto = 0;                           // Indulge clang's incorrect claim that this need to be initialized.
+    std::array<std::string_view, 10> protoBuf;    // 10 seems like a reasonable number of protos to print
+    int                              n_proto = 0; // Indulge clang's incorrect claim that this need to be initialized.
 
     static const HttpForwarded::OptionBitSet OptionsNeedingProtocol = HttpForwarded::OptionBitSet()
                                                                         .set(HttpForwarded::PROTO)
@@ -1113,7 +1113,7 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
 {
   if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
-    bool do_add = true;
+    bool       do_add = true;
 
     if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == nullptr) {
       if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != nullptr)) {
@@ -1134,7 +1134,7 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
 }
 
 void
-HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
+HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams                  *http_config_param,
                                                          const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (!header) {
@@ -1173,8 +1173,8 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_
   // FIXME: we shouldn't parse this list every time, only when the
   // FIXME: config file changes.
   if (http_config_param->anonymize_other_header_list) {
-    Str *field;
-    StrList anon_list(false);
+    Str        *field;
+    StrList     anon_list(false);
     const char *anon_string;
 
     anon_string = http_config_param->anonymize_other_header_list;

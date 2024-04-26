@@ -64,20 +64,20 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 #define STATE_BYPASS      6
 
 struct TransformData {
-  int state;
+  int       state;
   TSHttpTxn txn;
 
-  TSIOBuffer input_buf;
+  TSIOBuffer       input_buf;
   TSIOBufferReader input_reader;
 
-  TSIOBuffer output_buf;
+  TSIOBuffer       output_buf;
   TSIOBufferReader output_reader;
-  TSVConn output_vc;
-  TSVIO output_vio;
+  TSVConn          output_vc;
+  TSVIO            output_vio;
 
   TSAction pending_action;
-  TSVConn server_vc;
-  TSVIO server_vio;
+  TSVConn  server_vc;
+  TSVIO    server_vio;
 
   int content_length;
 };
@@ -85,12 +85,12 @@ struct TransformData {
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
 static in_addr_t server_ip;
-static int server_port;
+static int       server_port;
 
 static TSCont
 transform_create(TSHttpTxn txnp)
 {
-  TSCont contp;
+  TSCont         contp;
   TransformData *data;
 
   contp = TSTransformCreate(transform_handler, txnp);
@@ -145,8 +145,8 @@ transform_destroy(TSCont contp)
 static int
 transform_connect(TSCont contp, TransformData *data)
 {
-  TSAction action;
-  int content_length;
+  TSAction           action;
+  int                content_length;
   struct sockaddr_in ip_addr;
 
   data->state = STATE_CONNECT;
@@ -163,7 +163,7 @@ transform_connect(TSCont contp, TransformData *data)
      */
 
     {
-      TSIOBuffer temp;
+      TSIOBuffer       temp;
       TSIOBufferReader tempReader;
 
       temp       = TSIOBufferCreate();
@@ -286,7 +286,7 @@ transform_bypass(TSCont contp, TransformData *data)
 static int
 transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
-  TSVIO write_vio;
+  TSVIO   write_vio;
   int64_t towrite;
 
   if (!data->input_buf) {
@@ -406,15 +406,15 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
     return transform_bypass(contp, data);
   case TS_EVENT_VCONN_READ_COMPLETE:
     if (TSIOBufferReaderAvail(data->output_reader) == sizeof(int)) {
-      void *buf_ptr;
+      void   *buf_ptr;
       int64_t avail;
       int64_t read_nbytes = sizeof(int);
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
-        TSIOBufferBlock blk = TSIOBufferReaderStart(data->output_reader);
-        char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, data->output_reader, &avail));
-        int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
+        TSIOBufferBlock blk        = TSIOBufferReaderStart(data->output_reader);
+        char           *buf        = const_cast<char *>(TSIOBufferBlockReadStart(blk, data->output_reader, &avail));
+        int64_t         read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
 
         memcpy(buf_ptr, buf, read_ndone);
         if (read_ndone > 0) {
@@ -506,7 +506,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
     return 0;
   } else {
     TransformData *data;
-    int val = 0;
+    int            val = 0;
 
     data = static_cast<TransformData *>(TSContDataGet(contp));
     if (data == nullptr) {
@@ -573,8 +573,8 @@ server_response_ok(TSHttpTxn txnp)
    * responses.
    */
 
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpStatus resp_status;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
@@ -631,7 +631,7 @@ void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
-  TSCont cont;
+  TSCont                   cont;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

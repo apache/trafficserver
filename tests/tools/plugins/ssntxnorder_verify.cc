@@ -52,12 +52,12 @@ static char support_email[] = "shinrich@apache.org";
 
 // List of started sessions, SSN_START seen, SSN_CLOSE not seen yet.
 thread_local std::set<TSHttpSsn> started_ssns;
-thread_local int ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
+thread_local int                 ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
 
 // Metadata for active transactions. Stored upon start to persist improper
 // closing behavior.
 using started_txn = struct started_txn {
-  uint64_t id;
+  uint64_t  id;
   TSHttpTxn txnp;
   TSHttpSsn ssnp;                      // enclosing session
   started_txn(uint64_t id) : id(id) {} // used for lookup on id
@@ -75,7 +75,7 @@ struct txn_compare {
 // List of started transactions, TXN_START seen, TXN_CLOSE not seen yet.
 thread_local std::set<started_txn, txn_compare> started_txns;
 thread_local std::set<started_txn, txn_compare> closed_txns;
-thread_local int txn_balance = 0; // +1 on TXN_START -1 on TXN_CLOSE
+thread_local int                                txn_balance = 0; // +1 on TXN_START -1 on TXN_CLOSE
 
 // Statistics provided by the plugin
 static int stat_ssn_close = 0; // number of TS_HTTP_SSN_CLOSE hooks caught
@@ -86,7 +86,7 @@ static int stat_err       = 0; // number of inaccuracies encountered
 static int stat_test_done = 0; // Set to 1 when the test is done
 
 // IPC information
-static char *ctl_tag         = plugin_name; // name is a convenient identifier
+static char      *ctl_tag    = plugin_name; // name is a convenient identifier
 static const char ctl_dump[] = "dump";      // output active ssn/txn tables cmd
 
 /**
@@ -136,8 +136,8 @@ dump_tables()
 static int
 handle_order(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpSsn ssnp;    // session data
-  TSHttpTxn txnp;    // transaction data
+  TSHttpSsn    ssnp; // session data
+  TSHttpTxn    txnp; // transaction data
   TSPluginMsg *msgp; // message data
 
   // Find the event that happened

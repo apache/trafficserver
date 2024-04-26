@@ -37,7 +37,7 @@
 //
 
 SSLNetProcessor ssl_NetProcessor;
-NetProcessor &sslNetProcessor = ssl_NetProcessor;
+NetProcessor   &sslNetProcessor = ssl_NetProcessor;
 
 struct OCSPContinuation : public Continuation {
   int
@@ -69,8 +69,8 @@ SSLNetProcessor::start(int, size_t stacksize)
   SSLInitializeStatistics();
 
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    EventType ET_OCSP  = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
-    Continuation *cont = new OCSPContinuation();
+    EventType     ET_OCSP = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
+    Continuation *cont    = new OCSPContinuation();
     // schedule the update initially to get things populated
     eventProcessor.schedule_imm(cont, ET_OCSP);
     eventProcessor.schedule_every(cont, HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);

@@ -67,7 +67,7 @@ int
 sessionHandler(TSCont continuation, TSEvent event, void *d)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(d);
-  TSCont txn_contp;
+  TSCont    txn_contp;
 
   switch (event) {
   case TS_EVENT_HTTP_PRE_REMAP: {

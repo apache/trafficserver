@@ -130,8 +130,8 @@ public:
 
 private:
   OutstandingRequests _urls;
-  TSTextLogObject _log = nullptr;
-  TSMutex _lock        = TSMutexCreate();
+  TSTextLogObject     _log  = nullptr;
+  TSMutex             _lock = TSMutexCreate();
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -194,25 +194,25 @@ struct BgFetchData {
   void schedule();
   void log(TSEvent event) const;
 
-  TSMBuffer mbuf = TSMBufferCreate();
-  TSMLoc hdr_loc = TS_NULL_MLOC;
-  TSMLoc url_loc = TS_NULL_MLOC;
+  TSMBuffer mbuf    = TSMBufferCreate();
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
+  TSMLoc    url_loc = TS_NULL_MLOC;
 
   struct sockaddr_storage client_ip;
 
   // This is for the actual background fetch / NetVC
-  TSVConn vc                          = nullptr;
-  TSIOBuffer req_io_buf               = nullptr;
-  TSIOBuffer resp_io_buf              = nullptr;
+  TSVConn          vc                 = nullptr;
+  TSIOBuffer       req_io_buf         = nullptr;
+  TSIOBuffer       resp_io_buf        = nullptr;
   TSIOBufferReader req_io_buf_reader  = nullptr;
   TSIOBufferReader resp_io_buf_reader = nullptr;
-  TSVIO r_vio                         = nullptr;
-  TSVIO w_vio                         = nullptr;
+  TSVIO            r_vio              = nullptr;
+  TSVIO            w_vio              = nullptr;
 
 private:
   std::string _url;
-  int64_t _bytes = 0;
-  TSCont _cont   = nullptr;
+  int64_t     _bytes = 0;
+  TSCont      _cont  = nullptr;
 };
 
 // This sets up the data and continuation properly, this is done outside
@@ -227,8 +227,8 @@ private:
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 {
-  struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
-  bool ret                  = false;
+  struct sockaddr const *ip  = TSHttpTxnClientAddrGet(txnp);
+  bool                   ret = false;
 
   TSAssert(TS_NULL_MLOC == hdr_loc);
   TSAssert(TS_NULL_MLOC == url_loc);
@@ -254,8 +254,8 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
     if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &request, &p_url)) {
       if (TS_SUCCESS == TSUrlClone(mbuf, request, p_url, &url_loc)) {
         TSMLoc c_url = TS_NULL_MLOC;
-        int len;
-        char *url = nullptr;
+        int    len;
+        char  *url = nullptr;
 
         // Get the cache key URL (for now), since this has better lookup behavior when using
         // e.g. the cachekey plugin.
@@ -364,14 +364,14 @@ static int
 cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   BgFetchData *data = static_cast<BgFetchData *>(TSContDataGet(contp));
-  int64_t avail;
+  int64_t      avail;
 
   switch (event) {
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     // Debug info for this particular bg fetch (put all debug in here please)
     if (Bg_dbg_ctl.on()) {
-      char buf[INET6_ADDRSTRLEN];
+      char            buf[INET6_ADDRSTRLEN];
       const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
@@ -462,7 +462,7 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   TSMBuffer response, request;
-  TSMLoc resp_hdr, req_hdr;
+  TSMLoc    resp_hdr, req_hdr;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
@@ -511,7 +511,7 @@ static int
 cont_handle_response(TSCont contp, TSEvent event, void *edata)
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
-  TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn      txnp   = static_cast<TSHttpTxn>(edata);
   BgFetchConfig *config = static_cast<BgFetchConfig *>(TSContDataGet(contp));
 
   if (nullptr == config) {
@@ -522,7 +522,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
     case TS_EVENT_HTTP_READ_RESPONSE_HDR:
       if (config->bgFetchAllowed(txnp)) {
         TSMBuffer response;
-        TSMLoc resp_hdr;
+        TSMLoc    resp_hdr;
 
         if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
           // ToDo: Check the MIME type first, to see if it's a type we care about.
@@ -606,9 +606,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  TSCont cont           = TSContCreate(cont_handle_response, nullptr);
-  BgFetchConfig *config = new BgFetchConfig(cont);
-  bool success          = true;
+  TSCont         cont    = TSContCreate(cont_handle_response, nullptr);
+  BgFetchConfig *config  = new BgFetchConfig(cont);
+  bool           success = true;
 
   // The first two arguments are the "from" and "to" URL string. We need to
   // skip them, but we also require that there be an option to masquerade as
@@ -662,7 +662,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   }
 
   TSMBuffer bufp;
-  TSMLoc req_hdrs;
+  TSMLoc    req_hdrs;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
     TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);

@@ -81,8 +81,8 @@ public:
 private:
   Request(void *hdr_buf, void *hdr_loc);
   RequestState *state_;
-  void init(void *hdr_buf, void *hdr_loc);
-  void reset();
+  void          init(void *hdr_buf, void *hdr_loc);
+  void          reset();
   friend class Transaction;
   friend class ClientRequest;
   friend class utils::internal;

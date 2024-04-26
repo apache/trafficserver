@@ -37,13 +37,13 @@
 #include "ts_lua_fetch.h"
 #include "ts_lua_http_intercept.h"
 
-static lua_State *ts_lua_new_state();
-static void ts_lua_init_registry(lua_State *L);
-static void ts_lua_init_globals(lua_State *L);
-static void ts_lua_inject_ts_api(lua_State *L);
+static lua_State        *ts_lua_new_state();
+static void              ts_lua_init_registry(lua_State *L);
+static void              ts_lua_init_globals(lua_State *L);
+static void              ts_lua_inject_ts_api(lua_State *L);
 static ts_lua_ctx_stats *ts_lua_create_ctx_stats();
-static void ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats);
-static void ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx);
+static void              ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats);
+static void              ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx);
 
 /**
    Update http_ctx->server_response_hdrp if there.
@@ -112,7 +112,7 @@ ts_lua_clear_http_ctx(ts_lua_http_ctx *http_ctx)
 int
 ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
 {
-  int i;
+  int        i;
   lua_State *L;
 
   for (i = 0; i < n; i++) {
@@ -135,9 +135,9 @@ ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
 void
 ts_lua_destroy_vm(ts_lua_main_ctx *arr, int n)
 {
-  int i;
-  lua_State *L;
-  TSMutex mutexp;
+  int               i;
+  lua_State        *L;
+  TSMutex           mutexp;
   ts_lua_ctx_stats *stats;
 
   for (i = 0; i < n; i++) {
@@ -206,7 +206,7 @@ ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats)
 ts_lua_instance_conf *
 ts_lua_script_registered(lua_State *L, char *script)
 {
-  TSMgmtInt curr_time;
+  TSMgmtInt             curr_time;
   ts_lua_instance_conf *conf = nullptr;
 
   Dbg(dbg_ctl, "[%s] checking if script [%s] is registered", __FUNCTION__, script);
@@ -281,8 +281,8 @@ ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *conf)
 int
 ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int argc, char *argv[], char *errbuf, int errbuf_size)
 {
-  int i, ret;
-  int t;
+  int        i, ret;
+  int        t;
   lua_State *L;
 
   for (i = 0; i < n; i++) {
@@ -385,7 +385,7 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
 int
 ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 {
-  int i;
+  int        i;
   lua_State *L;
 
   for (i = 0; i < n; i++) {
@@ -440,7 +440,7 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 int
 ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 {
-  int i;
+  int        i;
   lua_State *L;
 
   for (i = 0; i < n; i++) {
@@ -614,10 +614,10 @@ ts_lua_get_cont_info(lua_State *L)
 ts_lua_http_ctx *
 ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
 {
-  int i;
-  lua_State *l;
+  int               i;
+  lua_State        *l;
   ts_lua_coroutine *crt;
-  ts_lua_http_ctx *actx;
+  ts_lua_http_ctx  *actx;
 
   actx = TSRalloc<ts_lua_http_ctx>();
   memset(actx, 0, sizeof(*actx));
@@ -632,8 +632,8 @@ ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
   crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
 
   // update thread stats
-  ts_lua_main_ctx *const main_ctx = crt->mctx;
-  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+  ts_lua_main_ctx *const  main_ctx = crt->mctx;
+  ts_lua_ctx_stats *const stats    = main_ctx->stats;
 
   TSMutexLock(stats->mutexp);
   ++stats->threads;
@@ -660,8 +660,8 @@ ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx)
   ci = &http_ctx->cinfo;
 
   // update thread stats
-  ts_lua_main_ctx *const main_ctx = ci->routine.mctx;
-  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+  ts_lua_main_ctx *const  main_ctx = ci->routine.mctx;
+  ts_lua_ctx_stats *const stats    = main_ctx->stats;
 
   TSMutexLock(stats->mutexp);
   --stats->threads;
@@ -746,8 +746,8 @@ void
 ts_lua_destroy_vconn_ctx(ts_lua_vconn_ctx *vconn_ctx)
 {
   // update thread stats
-  ts_lua_main_ctx *const main_ctx = vconn_ctx->mctx;
-  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+  ts_lua_main_ctx *const  main_ctx = vconn_ctx->mctx;
+  ts_lua_ctx_stats *const stats    = main_ctx->stats;
 
   TSMutexLock(stats->mutexp);
   --stats->threads;
@@ -786,9 +786,9 @@ ts_lua_http_ctx *
 ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
 {
   ts_lua_coroutine *crt;
-  ts_lua_http_ctx *http_ctx;
-  lua_State *L;
-  lua_State *l;
+  ts_lua_http_ctx  *http_ctx;
+  lua_State        *L;
+  lua_State        *l;
 
   L = main_ctx->lua;
 
@@ -876,8 +876,8 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)
   }
 
   // update thread stats
-  ts_lua_main_ctx *const main_ctx = ci->routine.mctx;
-  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+  ts_lua_main_ctx *const  main_ctx = ci->routine.mctx;
+  ts_lua_ctx_stats *const stats    = main_ctx->stats;
 
   TSMutexLock(stats->mutexp);
   --stats->threads;
@@ -912,10 +912,10 @@ ts_lua_get_http_intercept_ctx(lua_State *L)
 ts_lua_http_intercept_ctx *
 ts_lua_create_http_intercept_ctx(lua_State *L, ts_lua_http_ctx *http_ctx, int n)
 {
-  int i;
-  lua_State *l;
-  ts_lua_cont_info *hci;
-  ts_lua_coroutine *crt;
+  int                        i;
+  lua_State                 *l;
+  ts_lua_cont_info          *hci;
+  ts_lua_coroutine          *crt;
   ts_lua_http_intercept_ctx *ictx;
 
   hci = &http_ctx->cinfo;
@@ -991,10 +991,10 @@ ts_lua_get_http_transform_ctx(lua_State *L)
 ts_lua_http_transform_ctx *
 ts_lua_create_http_transform_ctx(ts_lua_http_ctx *http_ctx, TSVConn connp)
 {
-  lua_State *L;
-  ts_lua_cont_info *hci;
-  ts_lua_cont_info *ci;
-  ts_lua_coroutine *crt;
+  lua_State                 *L;
+  ts_lua_cont_info          *hci;
+  ts_lua_cont_info          *ci;
+  ts_lua_coroutine          *crt;
   ts_lua_http_transform_ctx *transform_ctx;
 
   hci = &http_ctx->cinfo;
@@ -1045,14 +1045,14 @@ ts_lua_destroy_http_transform_ctx(ts_lua_http_transform_ctx *transform_ctx)
 int
 ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 {
-  TSHttpTxn txnp;
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
-  int event, ret, rc, n, t;
-  lua_State *L;
-  ts_lua_http_ctx *http_ctx;
-  ts_lua_main_ctx *main_ctx;
+  TSHttpTxn         txnp;
+  TSMBuffer         bufp;
+  TSMLoc            hdr_loc;
+  TSMLoc            url_loc;
+  int               event, ret, rc, n, t;
+  lua_State        *L;
+  ts_lua_http_ctx  *http_ctx;
+  ts_lua_main_ctx  *main_ctx;
   ts_lua_cont_info *ci;
   ts_lua_coroutine *crt;
 

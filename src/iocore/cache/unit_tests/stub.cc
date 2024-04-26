@@ -49,7 +49,7 @@ TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
   return TSVConn{};
 }
 
-int TS_MIME_LEN_CONTENT_LENGTH           = 0;
+int         TS_MIME_LEN_CONTENT_LENGTH   = 0;
 const char *TS_MIME_FIELD_CONTENT_LENGTH = "";
 
 TSIOBufferBlock

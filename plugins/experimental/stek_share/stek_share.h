@@ -114,15 +114,15 @@ public:
 
   // State machine.
   nuraft::ptr<nuraft::state_machine> sm_instance;
-  std::shared_mutex sm_mutex;
+  std::shared_mutex                  sm_mutex;
 
   // State manager.
   nuraft::ptr<nuraft::state_mgr> smgr_instance;
-  std::shared_mutex smgr_mutex;
+  std::shared_mutex              smgr_mutex;
 
   // Raft server instance.
   nuraft::ptr<nuraft::raft_server> raft_instance;
-  std::shared_mutex raft_mutex;
+  std::shared_mutex                raft_mutex;
 
   // Raft launcher.
   nuraft::raft_launcher raft_launcher;

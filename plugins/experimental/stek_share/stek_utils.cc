@@ -40,7 +40,7 @@ int
 get_good_random(char *buffer, int size, int need_good_entropy)
 {
   FILE *fp;
-  int numread = 0;
+  int   numread = 0;
   char *rand_file_name;
 
   /* /dev/random blocks until good entropy and can take up to 2 seconds per byte on idle machines */

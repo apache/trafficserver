@@ -43,8 +43,8 @@ struct LogDeleteCandidate {
    * For example: /var/log/my_log.log_a_host_name.20191122.20h18m35s-20191122.20h18m51s.old
    */
   std::string rolled_log_path;
-  int64_t size;
-  time_t mtime;
+  int64_t     size;
+  time_t      mtime;
 
   LogDeleteCandidate(std::string_view p_name, int64_t st_size, time_t st_time)
     : rolled_log_path(p_name), size(st_size), mtime(st_time)

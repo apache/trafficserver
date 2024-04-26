@@ -113,15 +113,15 @@ private:
 //
 struct pRecord : ATSConsistentHashNode {
 public:
-  char hostname[MAXDNAME + 1];
-  int port;
-  std::atomic<time_t> failedAt = 0;
-  std::atomic<int> failCount   = 0;
-  int32_t upAt;
-  const char *scheme; // for which parent matches (if any)
-  int idx;
-  float weight;
-  char hash_string[MAXDNAME + 1];
+  char                hostname[MAXDNAME + 1];
+  int                 port;
+  std::atomic<time_t> failedAt  = 0;
+  std::atomic<int>    failCount = 0;
+  int32_t             upAt;
+  const char         *scheme; // for which parent matches (if any)
+  int                 idx;
+  float               weight;
+  char                hash_string[MAXDNAME + 1];
 };
 
 using P_table = ControlMatcher<ParentRecord, ParentResult>;
@@ -137,15 +137,15 @@ public:
   ~ParentRecord();
 
   Result Init(matcher_line *line_info);
-  bool DefaultInit(char *val);
-  void UpdateMatch(ParentResult *result, RequestData *rdata);
+  bool   DefaultInit(char *val);
+  void   UpdateMatch(ParentResult *result, RequestData *rdata);
 
   void Print() const;
 
-  pRecord *parents           = nullptr;
-  pRecord *secondary_parents = nullptr;
-  int num_parents            = 0;
-  int num_secondary_parents  = 0;
+  pRecord *parents               = nullptr;
+  pRecord *secondary_parents     = nullptr;
+  int      num_parents           = 0;
+  int      num_secondary_parents = 0;
 
   bool
   bypass_ok() const
@@ -155,20 +155,20 @@ public:
 
   const char *scheme = nullptr;
   // private:
-  void PreProcessParents(const char *val, const int line_num, char *buf, size_t len);
-  const char *ProcessParents(char *val, bool isPrimary);
-  bool ignore_query                                                  = false;
-  uint32_t rr_next                                                   = 0;
-  bool go_direct                                                     = true;
-  bool parent_is_proxy                                               = true;
-  ParentSelectionStrategy *selection_strategy                        = nullptr;
+  void                            PreProcessParents(const char *val, const int line_num, char *buf, size_t len);
+  const char                     *ProcessParents(char *val, bool isPrimary);
+  bool                            ignore_query                       = false;
+  uint32_t                        rr_next                            = 0;
+  bool                            go_direct                          = true;
+  bool                            parent_is_proxy                    = true;
+  ParentSelectionStrategy        *selection_strategy                 = nullptr;
   UnavailableServerResponseCodes *unavailable_server_retry_responses = nullptr;
-  SimpleRetryResponseCodes *simple_server_retry_responses            = nullptr;
-  ParentRetry_t parent_retry                                         = PARENT_RETRY_NONE;
-  int max_simple_retries                                             = 1;
-  int max_unavailable_server_retries                                 = 1;
-  int secondary_mode                                                 = 1;
-  bool ignore_self_detect                                            = false;
+  SimpleRetryResponseCodes       *simple_server_retry_responses      = nullptr;
+  ParentRetry_t                   parent_retry                       = PARENT_RETRY_NONE;
+  int                             max_simple_retries                 = 1;
+  int                             max_unavailable_server_retries     = 1;
+  int                             secondary_mode                     = 1;
+  bool                            ignore_self_detect                 = false;
 };
 
 // If the parent was set by the external customer api,
@@ -186,14 +186,14 @@ struct ParentResult {
   ParentResult() { reset(); }
   // For outside consumption
   ParentResultType result;
-  const char *hostname;
-  const char *url;
-  int port;
-  bool retry;
-  bool chash_init[MAX_GROUP_RINGS] = {false};
-  bool use_pristine                = false;
-  TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
-  bool do_not_cache_response       = false;
+  const char      *hostname;
+  const char      *url;
+  int              port;
+  bool             retry;
+  bool             chash_init[MAX_GROUP_RINGS] = {false};
+  bool             use_pristine                = false;
+  TSHostStatus     first_choice_status         = TSHostStatus::TS_HOST_STATUS_INIT;
+  bool             do_not_cache_response       = false;
 
   void
   reset()
@@ -308,15 +308,15 @@ struct ParentResult {
 private:
   // Internal use only
   //   Not to be modified by HTTP
-  int line_number;
+  int           line_number;
   ParentRecord *rec;
-  uint32_t last_parent;
-  uint32_t start_parent;
-  uint32_t last_group;
-  bool wrap_around;
-  bool mapWrapped[2];
+  uint32_t      last_parent;
+  uint32_t      start_parent;
+  uint32_t      last_group;
+  bool          wrap_around;
+  bool          mapWrapped[2];
   // state for consistent hash.
-  int last_lookup;
+  int                   last_lookup;
   ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
 
   friend class NextHopSelectionStrategy;
@@ -360,8 +360,8 @@ public:
   // Returns the number of parent records in a strategy.
   //
   virtual uint32_t numParents(ParentResult *result) const = 0;
-  void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
-  void markParentUp(ParentResult *result);
+  void             markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
+  void             markParentUp(ParentResult *result);
 
   // virtual destructor.
   virtual ~ParentSelectionStrategy(){};
@@ -417,8 +417,8 @@ public:
     }
   }
 
-  P_table *parent_table;
-  ParentRecord *DefaultParent;
+  P_table              *parent_table;
+  ParentRecord         *DefaultParent;
   ParentSelectionPolicy policy;
 };
 
@@ -452,7 +452,7 @@ ParentRecord *createDefaultParent(char *val);
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);
 void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = nullptr); // short for build request
-int verify(ParentResult *r, ParentResultType e, const char *h, int p);
+int  verify(ParentResult *r, ParentResultType e, const char *h, int p);
 
 /*
   For supporting multiple Socks servers, we essentially use the

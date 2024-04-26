@@ -28,24 +28,24 @@ enum class CacheOpType { Lookup = 0, Read, Write, Update, Remove, Evacuate, Scan
 
 struct CacheStatsBlock {
   struct {
-    Metrics::Gauge::AtomicType *active    = nullptr;
+    Metrics::Gauge::AtomicType   *active  = nullptr;
     Metrics::Counter::AtomicType *success = nullptr;
     Metrics::Counter::AtomicType *failure = nullptr;
   } status[static_cast<int>(CacheOpType::Last)];
 
   Metrics::Counter::AtomicType *fragment_document_count[3] = {nullptr, nullptr, nullptr}; // For 1, 2 and 3+ fragments
 
-  Metrics::Gauge::AtomicType *bytes_used              = nullptr;
-  Metrics::Gauge::AtomicType *bytes_total             = nullptr;
-  Metrics::Gauge::AtomicType *stripes                 = nullptr;
-  Metrics::Gauge::AtomicType *ram_cache_bytes         = nullptr;
-  Metrics::Gauge::AtomicType *ram_cache_bytes_total   = nullptr;
-  Metrics::Gauge::AtomicType *direntries_total        = nullptr;
-  Metrics::Gauge::AtomicType *direntries_used         = nullptr;
+  Metrics::Gauge::AtomicType   *bytes_used            = nullptr;
+  Metrics::Gauge::AtomicType   *bytes_total           = nullptr;
+  Metrics::Gauge::AtomicType   *stripes               = nullptr;
+  Metrics::Gauge::AtomicType   *ram_cache_bytes       = nullptr;
+  Metrics::Gauge::AtomicType   *ram_cache_bytes_total = nullptr;
+  Metrics::Gauge::AtomicType   *direntries_total      = nullptr;
+  Metrics::Gauge::AtomicType   *direntries_used       = nullptr;
   Metrics::Counter::AtomicType *ram_cache_hits        = nullptr;
   Metrics::Counter::AtomicType *ram_cache_misses      = nullptr;
   Metrics::Counter::AtomicType *pread_count           = nullptr;
-  Metrics::Gauge::AtomicType *percent_full            = nullptr;
+  Metrics::Gauge::AtomicType   *percent_full          = nullptr;
   Metrics::Counter::AtomicType *read_seek_fail        = nullptr;
   Metrics::Counter::AtomicType *read_invalid          = nullptr;
   Metrics::Counter::AtomicType *write_backlog_failure = nullptr;
@@ -64,7 +64,7 @@ struct CacheStatsBlock {
   Metrics::Counter::AtomicType *directory_sync_bytes  = nullptr;
   Metrics::Counter::AtomicType *span_errors_read      = nullptr;
   Metrics::Counter::AtomicType *span_errors_write     = nullptr;
-  Metrics::Gauge::AtomicType *span_offline            = nullptr;
-  Metrics::Gauge::AtomicType *span_online             = nullptr;
-  Metrics::Gauge::AtomicType *span_failing            = nullptr;
+  Metrics::Gauge::AtomicType   *span_offline          = nullptr;
+  Metrics::Gauge::AtomicType   *span_online           = nullptr;
+  Metrics::Gauge::AtomicType   *span_failing          = nullptr;
 };

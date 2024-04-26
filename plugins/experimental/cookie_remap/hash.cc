@@ -66,7 +66,7 @@ hash_fnv32_buckets(const char *buf, size_t len, uint32_t num_buckets)
 {
   uint32_t hash;
   uint32_t retry;
-  int first_bit;
+  int      first_bit;
 
   if (num_buckets < 1) {
     return 0;

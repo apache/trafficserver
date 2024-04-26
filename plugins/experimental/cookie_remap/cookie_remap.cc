@@ -94,7 +94,7 @@ public:
   {
     if (_d[pre_remap].url.empty()) {
       auto urlh = _get_url(pre_remap);
-      int length;
+      int  length;
       auto data         = TSUrlStringGet(urlh.bufp, urlh.urlp, &length);
       _d[pre_remap].url = std::string_view(data, length);
     }
@@ -120,18 +120,18 @@ public:
 
 private:
   TSRemapRequestInfo *_rri;
-  TSHttpTxn _txn;
+  TSHttpTxn           _txn;
 
   struct _UrlHandle {
     TSMBuffer bufp = nullptr;
-    TSMLoc urlp    = nullptr; // Doesn't really need initialization, this is only to shut up Coverity.
+    TSMLoc    urlp = nullptr; // Doesn't really need initialization, this is only to shut up Coverity.
   };
 
   // Buffer any data that's likely to be used more than once.
 
   struct _Data {
-    _UrlHandle urlh;
-    std::string path_str;
+    _UrlHandle       urlh;
+    std::string      path_str;
     std::string_view url;
     std::string_view query;
   };
@@ -166,7 +166,7 @@ private:
   static std::string_view
   _get_url_comp(_UrlHandle urlh, char const *(*comp_func)(TSMBuffer, TSMLoc, int *))
   {
-    int length;
+    int  length;
     auto data = comp_func(urlh.bufp, urlh.urlp, &length);
     return std::string_view(data, length);
   }
@@ -385,7 +385,7 @@ public:
   {
     const char *error_comp  = nullptr;
     const char *error_study = nullptr;
-    int erroffset;
+    int         erroffset;
 
     op_type      = REGEXP;
     regex_string = s;
@@ -451,19 +451,19 @@ public:
   }
 
 private:
-  std::string cookie;
-  std::string operation;
+  std::string         cookie;
+  std::string         operation;
   enum operation_type op_type = UNKNOWN;
-  enum target_type target     = UNKNOWN_TARGET;
+  enum target_type    target  = UNKNOWN_TARGET;
 
   std::string str_match;
 
-  pcre *regex             = nullptr;
+  pcre       *regex       = nullptr;
   pcre_extra *regex_extra = nullptr;
   std::string regex_string;
-  int regex_ccount = 0;
+  int         regex_ccount = 0;
 
-  std::string bucket;
+  std::string  bucket;
   unsigned int how_many = 0;
   unsigned int out_of   = 0;
 };
@@ -547,8 +547,8 @@ public:
                     // sendto url???
     }
 
-    int retval        = 1;
-    bool cookie_found = false;
+    int         retval       = 1;
+    bool        cookie_found = false;
     std::string c;
     std::string cookie_data;
     std::string object_name; // name of the thing being processed,
@@ -559,8 +559,8 @@ public:
 
     for (auto subop : subops) {
       // subop* s = *it;
-      int subop_type     = subop->getOpType();
-      target_type target = subop->getTargetType();
+      int         subop_type = subop->getOpType();
+      target_type target     = subop->getTargetType();
 
       c = subop->getCookieName();
       if (c.length()) {
@@ -658,7 +658,7 @@ public:
       std::string request_uri; // only set the value if we
                                // need it; we might
       // match the cookie data instead
-      bool use_url = (target == URI) || (target == PRE_REMAP_URI);
+      bool               use_url = (target == URI) || (target == PRE_REMAP_URI);
       const std::string &string_to_match(use_url ? request_uri : cookie_data);
       if (use_url) {
         request_uri = req_url.path(target == PRE_REMAP_URI);
@@ -809,9 +809,9 @@ public:
   }
 
 private:
-  SubOpQueue subops{};
-  std::string sendto{""};
-  std::string else_sendto{""};
+  SubOpQueue   subops{};
+  std::string  sendto{""};
+  std::string  else_sendto{""};
   TSHttpStatus status      = TS_HTTP_STATUS_NONE;
   TSHttpStatus else_status = TS_HTTP_STATUS_NONE;
 };
@@ -917,10 +917,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     YAML::Node config = YAML::LoadFile(filename);
 
     std::unique_ptr<OpsQueue> ops(new OpsQueue);
-    OpMap op_data;
+    OpMap                     op_data;
 
     for (YAML::const_iterator it = config.begin(); it != config.end(); ++it) {
-      const string &name         = it->first.as<std::string>();
+      const string         &name = it->first.as<std::string>();
       YAML::NodeType::value type = it->second.Type();
 
       if (name != "op" || type != YAML::NodeType::Map) {
@@ -974,7 +974,7 @@ namespace
 std::string
 unmatched_path(UrlComponents &req_url, bool pre_remap)
 {
-  std::string path           = req_url.path(pre_remap);
+  std::string      path      = req_url.path(pre_remap);
   std::string_view from_path = req_url.from_path();
 
   std::size_t pos = path.find(from_path);
@@ -997,46 +997,46 @@ int const sub_url_encode_id      = -6;
 
 struct CompNext {
   std::string_view const comp;
-  int const *const next;
+  int const *const       next;
 
   CompNext(std::string_view p, int const *n) : comp(p), next(n) {}
 };
 
 struct SubUnmatched {
   SubUnmatched() = default; // Work-around for Intel compiler problem.
-  int count      = 2;
+  int      count = 2;
   CompNext o1{"ath", &sub_unmatched_path_id};
   CompNext o2{"path", &sub_unmatched_ppath_id};
 };
 SubUnmatched const sub_unmatched;
 
 struct SubP {
-  SubP()    = default; // Work-around for Intel compiler problem.
-  int count = 2;
+  SubP()         = default; // Work-around for Intel compiler problem.
+  int      count = 2;
   CompNext o1{"ath", &sub_path_id};
   CompNext o2{"path", &sub_ppath_id};
 };
 SubP const sub_p;
 
 struct SubCrReq {
-  SubCrReq() = default; // Work-around for Intel compiler problem.
-  int count  = 2;
+  SubCrReq()     = default; // Work-around for Intel compiler problem.
+  int      count = 2;
   CompNext o1{"url", &sub_req_url_id};
   CompNext o2{"purl", &sub_req_purl_id};
 };
 SubCrReq const sub_cr_req;
 
 struct SubCr {
-  SubCr()   = default; // Work-around for Intel compiler problem.
-  int count = 2;
+  SubCr()        = default; // Work-around for Intel compiler problem.
+  int      count = 2;
   CompNext o1{"req_", &sub_cr_req.count};
   CompNext o2{"urlencode(", &sub_url_encode_id};
 };
 SubCr const sub_cr;
 
 struct Sub {
-  Sub()     = default; // Work-around for Intel compiler problem.
-  int count = 3;
+  Sub()          = default; // Work-around for Intel compiler problem.
+  int      count = 3;
   CompNext o1{"cr_", &sub_cr.count};
   CompNext o2{"p", &sub_p.count};
   CompNext o3{"unmatched_p", &sub_unmatched.count};
@@ -1046,8 +1046,8 @@ Sub const sub;
 int
 sub_lookup(char const *targ, int targ_len)
 {
-  int count = sub.count;
-  auto opt  = &sub.o1;
+  int  count = sub.count;
+  auto opt   = &sub.o1;
   for (;;) {
     while ((targ_len < static_cast<int>(opt->comp.size())) || (std::string_view(targ, opt->comp.size()) != opt->comp)) {
       if (!--count) {
@@ -1082,7 +1082,7 @@ cr_substitutions(std::string &obj, UrlComponents &req_url)
     Dbg(dbg_ctl, "x req_url.url: %*s %d", FMT_SV(url), static_cast<int>(url.size()));
   }
 
-  auto npos = std::string::npos;
+  auto        npos = std::string::npos;
   std::string tmp;
   std::size_t pos = 0;
   for (;;) {
@@ -1163,7 +1163,7 @@ cr_substitutions(std::string &obj, UrlComponents &req_url)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  OpsQueue *ops       = static_cast<OpsQueue *>(ih);
+  OpsQueue    *ops    = static_cast<OpsQueue *>(ih);
   TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
   UrlComponents req_url{rri, txnp};
@@ -1177,7 +1177,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // get any query params..we will append that to the answer (possibly)
   std::string client_req_query_params;
-  auto query = req_url.query(false);
+  auto        query = req_url.query(false);
   if (!query.empty()) {
     client_req_query_params  = "?";
     client_req_query_params += query;
@@ -1185,8 +1185,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   Dbg(dbg_ctl, "Query Parameters: %s", client_req_query_params.c_str());
 
   std::string rewrite_to;
-  char cookie_str[] = "Cookie";
-  TSMLoc field      = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, cookie_str, sizeof(cookie_str) - 1);
+  char        cookie_str[] = "Cookie";
+  TSMLoc      field        = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, cookie_str, sizeof(cookie_str) - 1);
 
   // cookie header doesn't exist
   if (field == nullptr) {
@@ -1194,13 +1194,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     // return TSREMAP_NO_REMAP;
   }
 
-  const char *cookie = nullptr;
-  int cookie_len     = 0;
+  const char *cookie     = nullptr;
+  int         cookie_len = 0;
   if (field != nullptr) {
     cookie = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, field, -1, &cookie_len);
   }
   std::string temp_cookie(cookie, cookie_len);
-  CookieJar jar;
+  CookieJar   jar;
   jar.create(temp_cookie);
 
   for (auto &op : *ops) {
@@ -1235,8 +1235,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
                     "URL too long");
             TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
           } else {
-            const char *start = rewrite_to.c_str();
-            int dest_len      = rewrite_to.size();
+            const char *start    = rewrite_to.c_str();
+            int         dest_len = rewrite_to.size();
 
             if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
               TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);

@@ -35,18 +35,18 @@ struct Config {
   static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 128; // 128MB
   static constexpr int64_t const blockbytesdefault = 1024 * 1024;       // 1MB
 
-  int64_t m_blockbytes{blockbytesdefault};
+  int64_t     m_blockbytes{blockbytesdefault};
   std::string m_remaphost; // remap host to use for loopback slice GET
   std::string m_regexstr;  // regex string for things to slice (default all)
   enum RegexType { None, Include, Exclude };
-  RegexType m_regex_type{None};
-  pcre *m_regex{nullptr};
+  RegexType   m_regex_type{None};
+  pcre       *m_regex{nullptr};
   pcre_extra *m_regex_extra{nullptr};
-  int m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
-  int m_prefetchcount{0}; // 0 disables prefetching
+  int         m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
+  int         m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
-  RefType m_reftype{First};       // reference slice is relative to request
-  bool m_head_strip_range{false}; // strip range header for head requests
+  RefType m_reftype{First};          // reference slice is relative to request
+  bool    m_head_strip_range{false}; // strip range header for head requests
 
   std::string m_skip_header;
   std::string m_crr_ims_header;
@@ -74,6 +74,6 @@ struct Config {
   bool matchesRegex(char const *const url, int const urllen) const;
 
 private:
-  TSHRTime m_nextlogtime{0}; // next time to log in ns
+  TSHRTime   m_nextlogtime{0}; // next time to log in ns
   std::mutex m_mutex;
 };

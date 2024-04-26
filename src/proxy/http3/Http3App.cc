@@ -79,7 +79,7 @@ Http3App::~Http3App()
 void
 Http3App::start()
 {
-  QUICStreamId stream_id;
+  QUICStreamId            stream_id;
   QUICConnectionErrorUPtr error;
 
   error = this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
@@ -99,7 +99,7 @@ Http3App::start()
 void
 Http3App::on_stream_open(QUICStream &stream)
 {
-  auto ret   = this->_streams.emplace(stream.id(), stream);
+  auto  ret  = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
 
   switch (stream.direction()) {
@@ -132,7 +132,7 @@ Http3App::main_event_handler(int event, Event *data)
 {
   Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
-  VIO *vio                     = reinterpret_cast<VIO *>(data->cookie);
+  VIO                 *vio     = reinterpret_cast<VIO *>(data->cookie);
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
   if (adapter == nullptr) {
@@ -214,10 +214,10 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 void
 Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
 {
-  Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
-  Http3StreamType type;
+  Http3ErrorUPtr       error = Http3ErrorUPtr(nullptr);
+  Http3StreamType      type;
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
-  auto it                      = this->_remote_uni_stream_map.find(adapter->stream().id());
+  auto                 it      = this->_remote_uni_stream_map.find(adapter->stream().id());
   if (it == this->_remote_uni_stream_map.end()) {
     // Set uni stream suitable app (HTTP/3 or QPACK) by stream type
     uint8_t buf;
@@ -297,8 +297,8 @@ Http3App::_handle_bidi_stream_on_read_ready(int event, VIO *vio)
 {
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
-  QUICStreamId stream_id = adapter->stream().id();
-  Http3Transaction *txn  = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
+  QUICStreamId      stream_id = adapter->stream().id();
+  Http3Transaction *txn       = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
 
   if (txn == nullptr) {
     if (auto ret = this->_streams.find(stream_id); ret != this->_streams.end()) {
@@ -344,7 +344,7 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, VIO *vio)
       this->_is_control_stream_initialized = true;
     } else {
       size_t nwritten = 0;
-      bool all_done   = false;
+      bool   all_done = false;
       this->_control_stream_collector.on_write_ready(adapter->stream().id(), *vio->get_writer(), nwritten, all_done);
       vio->nbytes += nwritten;
       if (all_done) {
@@ -446,8 +446,8 @@ Http3App::_handle_bidi_stream_on_write_ready(int event, VIO *vio)
 {
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
-  QUICStreamId stream_id = adapter->stream().id();
-  Http3Transaction *txn  = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
+  QUICStreamId      stream_id = adapter->stream().id();
+  Http3Transaction *txn       = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
   if (txn != nullptr) {
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->handleEvent(event);

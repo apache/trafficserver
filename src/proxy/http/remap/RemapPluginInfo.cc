@@ -53,7 +53,7 @@ T *
 RemapPluginInfo::getFunctionSymbol(const char *symbol)
 {
   std::string error; /* ignore the error, return nullptr if symbol not defined */
-  void *address = nullptr;
+  void       *address = nullptr;
   if (getSymbol(symbol, address, error)) {
     PluginDbg(_dbg_ctl(), "plugin '%s' found symbol '%s'", _configPath.c_str(), symbol);
   }
@@ -123,7 +123,7 @@ bool
 RemapPluginInfo::init(std::string &error)
 {
   TSRemapInterface ri;
-  bool result = true;
+  bool             result = true;
 
   PluginDbg(_dbg_ctl(), "started initializing plugin '%s'", _configPath.c_str());
 
@@ -165,8 +165,8 @@ RemapPluginInfo::done()
 bool
 RemapPluginInfo::initInstance(int argc, char **argv, void **ih, std::string &error)
 {
-  TSReturnCode res = TS_SUCCESS;
-  bool result      = true;
+  TSReturnCode res    = TS_SUCCESS;
+  bool         result = true;
 
   PluginDbg(_dbg_ctl(), "started initializing instance of plugin '%s'", _configPath.c_str());
 

@@ -45,22 +45,22 @@ using ArgumentFunction = void(const ArgumentDescription *, unsigned int, const c
 
 struct ArgumentDescription {
   const char *name;
-  char key; // set to '-' if no single character key.
-            /*
-               "I" = integer
-               "L" = int64_t
-               "D" = double (floating point)
-               "T" = toggle
-               "F" = set flag to TRUE (default is FALSE)
-               "f" = set flag to FALSE (default is TRUE)
-               "T" = toggle
-               "S80" = read string, 80 chars max
-               "S*" = read unbounded string, allocating
-             */
-  const char *description;
-  const char *type;
-  void *location;
-  const char *env;
+  char        key; // set to '-' if no single character key.
+                   /*
+                      "I" = integer
+                      "L" = int64_t
+                      "D" = double (floating point)
+                      "T" = toggle
+                      "F" = set flag to TRUE (default is FALSE)
+                      "f" = set flag to FALSE (default is TRUE)
+                      "T" = toggle
+                      "S80" = read string, 80 chars max
+                      "S*" = read unbounded string, allocating
+                    */
+  const char       *description;
+  const char       *type;
+  void             *location;
+  const char       *env;
   ArgumentFunction *pfn;
 };
 
@@ -80,9 +80,9 @@ struct ArgumentDescription {
 /* Global Data
  */
 extern const char *file_arguments[]; // exported by process_args()
-extern unsigned n_file_arguments;    // exported by process_args()
+extern unsigned    n_file_arguments; // exported by process_args()
 extern const char *program_name;     // exported by process_args()
-extern int cmd_disable_pfreelist;
+extern int         cmd_disable_pfreelist;
 
 /* Print out arguments and values
  */

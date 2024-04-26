@@ -92,7 +92,7 @@ Cript::string_view
 Header::Method::getSV()
 {
   if (_method.size() == 0) {
-    int len;
+    int         len;
     const char *value = TSHttpHdrMethodGet(_owner->_bufp, _owner->_hdr_loc, &len);
 
     _method = Cript::string_view(value, static_cast<Cript::string_view::size_type>(len));
@@ -140,8 +140,8 @@ Header::String::operator=(const Cript::string_view str)
         _field_loc = tmp;
       }
     } else {
-      TSMLoc tmp = nullptr;
-      bool first = true;
+      TSMLoc tmp   = nullptr;
+      bool   first = true;
 
       // Replace the existing header
       while (_field_loc) {
@@ -180,8 +180,8 @@ Header::String &
 Header::String::operator=(integer val)
 {
   if (_field_loc) {
-    TSMLoc tmp = nullptr;
-    bool first = true;
+    TSMLoc tmp   = nullptr;
+    bool   first = true;
 
     // Replace the existing header
     while (_field_loc) {
@@ -240,11 +240,11 @@ Header::operator[](const Cript::string_view str)
 {
   TSAssert(_bufp && _hdr_loc);
 
-  TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, str.data(), str.size());
+  TSMLoc         field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, str.data(), str.size());
   Header::String ret;
 
   if (field_loc) {
-    int len           = 0;
+    int         len   = 0;
     const char *value = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, field_loc, -1, &len);
 
     ret.initialize(str, Cript::string_view(value, len), this, field_loc);
@@ -286,8 +286,8 @@ Header::begin()
   _iterator_loc = TSMimeHdrFieldGet(_bufp, _hdr_loc, 0);
 
   if (_iterator_loc) {
-    int name_len;
-    const char *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
+    int                name_len;
+    const char        *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
     Cript::string_view name_view(name, name_len);
 
     return {name_view, _iterator_tag, this};
@@ -306,7 +306,7 @@ Header::iterate()
   _iterator_loc = next_loc;
 
   if (_iterator_loc) {
-    int name_len;
+    int         name_len;
     const char *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
 
     return {name, static_cast<Cript::string_view::size_type>(name_len)};

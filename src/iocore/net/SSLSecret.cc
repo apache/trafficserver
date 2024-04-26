@@ -46,7 +46,7 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
   // Call the load secret hooks
   //
   class APIHook *curHook = g_lifecycle_hooks->get(TS_LIFECYCLE_SSL_SECRET_HOOK);
-  TSSecretID secret_name;
+  TSSecretID     secret_name;
   secret_name.cert_name     = name1.data();
   secret_name.cert_name_len = name1.size();
   secret_name.key_name      = name2.data();
@@ -73,7 +73,7 @@ std::string
 SSLSecret::loadFile(const std::string &name)
 {
   Dbg(dbg_ctl_ssl_secret, "SSLSecret::loadFile(%s)", name.c_str());
-  std::error_code error;
+  std::error_code   error;
   std::string const data = swoc::file::load(swoc::file::path(name), error);
   if (error) {
     Dbg(dbg_ctl_ssl_secret_err, "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
@@ -102,7 +102,7 @@ std::string
 SSLSecret::getSecret(const std::string &name) const
 {
   std::scoped_lock lock(secret_map_mutex);
-  auto iter = secret_map.find(name);
+  auto             iter = secret_map.find(name);
   if (secret_map.end() == iter) {
     Dbg(dbg_ctl_ssl_secret, "Get secret for %s: not found", name.c_str());
     return std::string{};
@@ -121,7 +121,7 @@ SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, s
 {
   Dbg(dbg_ctl_ssl_secret, "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
   {
-    std::scoped_lock lock(secret_map_mutex);
+    std::scoped_lock   lock(secret_map_mutex);
     std::string *const data1ptr = &(secret_map[name1]);
     std::string *const data2ptr = [&]() -> std::string * {
       if (name2.empty()) {

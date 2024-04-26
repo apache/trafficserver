@@ -35,15 +35,15 @@
 
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 /* ------------------------------------------------------------------------------------ */
 
-Global G;
+Global             G;
 extern std::string glob_to_rxp(TextView glob);
 
 const std::string Config::GLOBAL_ROOT_KEY{"txn_box"};
@@ -70,20 +70,20 @@ Convert_TS_Event_To_TxB_Hook(TSEvent ev)
 
 namespace
 {
-Config::Handle Plugin_Config;
+Config::Handle    Plugin_Config;
 std::shared_mutex Plugin_Config_Mutex; // safe updating of the shared ptr.
 /// Start time of the currently active reload. If the default value then no reload is active.
 /// @note A time instead of a @c bool for better diagnostics.
 /// @internal Older gcc versions don't like the default constructor when used with @c atomic.
 static constexpr std::chrono::system_clock::time_point SYSTEM_CLOCK_NULL_TIME;
-std::atomic<std::chrono::system_clock::time_point> Plugin_Reloading{SYSTEM_CLOCK_NULL_TIME};
+std::atomic<std::chrono::system_clock::time_point>     Plugin_Reloading{SYSTEM_CLOCK_NULL_TIME};
 
 // Get a shared pointer to the configuration safely against updates.
 Config::Handle
 scoped_plugin_config()
 {
   std::shared_lock lock(Plugin_Config_Mutex);
-  auto zret = Plugin_Config; // Be *completely* sure this is done under lock.
+  auto             zret = Plugin_Config; // Be *completely* sure this is done under lock.
   return zret;
 }
 
@@ -123,8 +123,8 @@ Task_ConfigReload()
   auto t_null = SYSTEM_CLOCK_NULL_TIME;
   auto t0     = std::chrono::system_clock::now();
   if (Plugin_Reloading.compare_exchange_strong(t_null, t0)) {
-    std::shared_ptr cfg = std::make_shared<Config>();
-    auto errata         = cfg->load_cli_args(cfg, G._args, 1);
+    std::shared_ptr cfg    = std::make_shared<Config>();
+    auto            errata = cfg->load_cli_args(cfg, G._args, 1);
     if (errata.is_ok()) {
       std::unique_lock lock(Plugin_Config_Mutex);
       Plugin_Config = cfg;
@@ -133,8 +133,8 @@ Task_ConfigReload()
       swoc::bwprint(err_str, "{}: Failed to reload configuration.\n{}", Config::PLUGIN_NAME, errata);
       TSError("%s", err_str.c_str());
     }
-    Plugin_Reloading = t_null;
-    auto delta       = std::chrono::system_clock::now() - t0;
+    Plugin_Reloading  = t_null;
+    auto        delta = std::chrono::system_clock::now() - t0;
     std::string text;
     TS_DBG("%s", swoc::bwprint(text, "{} files loaded in {} ms.", Plugin_Config->file_count(),
                                std::chrono::duration_cast<std::chrono::milliseconds>(delta).count())
@@ -152,7 +152,7 @@ CB_TxnBoxMsg(TSCont, TSEvent, void *data)
 {
   static constexpr TextView TAG{"txn_box."};
   static constexpr TextView RELOAD("reload");
-  auto msg = static_cast<TSPluginMsg *>(data);
+  auto                      msg = static_cast<TSPluginMsg *>(data);
   if (TextView tag{msg->tag, strlen(msg->tag)}; tag.starts_with_nocase(TAG)) {
     tag.remove_prefix(TAG.size());
     if (0 == strcasecmp(tag, RELOAD)) {
@@ -182,7 +182,7 @@ TxnBoxInit()
   if (!errata.is_ok()) {
     return errata;
   }
-  auto delta = std::chrono::system_clock::now() - t0;
+  auto        delta = std::chrono::system_clock::now() - t0;
   std::string text;
   TS_DBG("%s", swoc::bwprint(text, "{} files loaded in {} ms.", Plugin_Config->file_count(),
                              std::chrono::duration_cast<std::chrono::milliseconds>(delta).count())

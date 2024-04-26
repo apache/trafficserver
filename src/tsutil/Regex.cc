@@ -60,7 +60,7 @@ public:
 
 private:
   std::vector<RegexContext *> _contexts;
-  std::mutex _mutex;
+  std::mutex                  _mutex;
 };
 RegexContextCleanup regex_context_cleanup;
 
@@ -123,16 +123,16 @@ private:
     _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
     pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
   }
-  pcre2_general_context *_general_context = nullptr;
-  pcre2_compile_context *_compile_context = nullptr;
-  pcre2_match_context *_match_context     = nullptr;
-  pcre2_jit_stack *_jit_stack             = nullptr;
+  pcre2_general_context            *_general_context = nullptr;
+  pcre2_compile_context            *_compile_context = nullptr;
+  pcre2_match_context              *_match_context   = nullptr;
+  pcre2_jit_stack                  *_jit_stack       = nullptr;
   thread_local static RegexContext *_regex_context;
-  static bool _shutdown; // flag to indicate destructor was called, so no new instances can be created
+  static bool                       _shutdown; // flag to indicate destructor was called, so no new instances can be created
 };
 
 thread_local RegexContext *RegexContext::_regex_context = nullptr;
-bool RegexContext::_shutdown                            = false;
+bool                       RegexContext::_shutdown      = false;
 
 //----------------------------------------------------------------------------
 
@@ -169,8 +169,8 @@ struct RegexMatches::_MatchData {
 //----------------------------------------------------------------------------
 RegexMatches::RegexMatches(uint32_t size)
 {
-  pcre2_general_context *ctx = pcre2_general_context_create(
-    &RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
+  pcre2_general_context *ctx =
+    pcre2_general_context_create(&RegexMatches::malloc, [](void *, void *) -> void {}, static_cast<void *>(this));
 
   pcre2_match_data *match_data = pcre2_match_data_create(size, ctx);
   if (match_data == nullptr) {
@@ -270,7 +270,7 @@ bool
 Regex::compile(std::string_view pattern, uint32_t flags)
 {
   std::string error;
-  int erroroffset;
+  int         erroroffset;
 
   return this->compile(pattern, error, erroroffset, flags);
 }
@@ -291,9 +291,9 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
   }
 
   PCRE2_SIZE error_offset;
-  int error_code;
-  auto code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                            regex_context->get_compile_context());
+  int        error_code;
+  auto       code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
+                                  regex_context->get_compile_context());
   if (!code) {
     erroroffset = error_offset;
 
@@ -369,7 +369,7 @@ DFA::~DFA() {}
 bool
 DFA::build(const std::string_view pattern, unsigned flags)
 {
-  Regex rxp;
+  Regex       rxp;
   std::string string{pattern};
 
   if (!(flags & RE_UNANCHORED)) {

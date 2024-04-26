@@ -84,7 +84,7 @@ copy(const TSIOBufferReader &r, const TSIOBuffer b)
   uint64_t length = 0;
 
   for (; block; block = TSIOBufferBlockNext(block)) {
-    int64_t size              = 0;
+    int64_t           size    = 0;
     const void *const pointer = TSIOBufferBlockReadStart(block, r, &size);
 
     if (pointer != nullptr && size > 0) {
@@ -116,7 +116,7 @@ read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
   uint64_t length = 0;
 
   for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
-    int64_t size              = 0;
+    int64_t           size    = 0;
     const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
     if (pointer != nullptr && size > 0) {
       size = std::min(size, l);
@@ -133,16 +133,16 @@ uint64_t
 read(const TSIOBuffer &b, std::string &o, const int64_t l = 0)
 {
   TSIOBufferReader reader = TSIOBufferReaderAlloc(b);
-  const uint64_t length   = read(reader, o);
+  const uint64_t   length = read(reader, o);
   TSIOBufferReaderFree(reader);
   return length;
 }
 
 class Handler
 {
-  int64_t length;
+  int64_t        length;
   struct timeval start;
-  std::string response;
+  std::string    response;
 
 public:
   const std::string url;
@@ -186,7 +186,7 @@ public:
   {
     length += l;
     if (dbg_ctl.on()) {
-      std::string buffer;
+      std::string    buffer;
       const uint64_t length  = read(r, buffer, l);
       response              += buffer;
       Dbg(dbg_ctl, "Receiving response chunk \"%s\" of %" PRIu64 " bytes", buffer.c_str(), length);
@@ -219,8 +219,8 @@ generateRequests(const Origins &o, const TSMBuffer buffer, const TSMLoc location
   assert(buffer != nullptr);
   assert(location != nullptr);
 
-  Origins::const_iterator iterator  = o.begin();
-  const Origins::const_iterator end = o.end();
+  Origins::const_iterator       iterator = o.begin();
+  const Origins::const_iterator end      = o.end();
 
   OriginalRequest request(buffer, location);
   request.urlScheme("");
@@ -240,9 +240,9 @@ void
 addBody(Requests &r, const TSIOBufferReader re)
 {
   assert(re != nullptr);
-  Requests::iterator iterator  = r.begin();
-  const Requests::iterator end = r.end();
-  const int64_t length         = TSIOBufferReaderAvail(re);
+  Requests::iterator       iterator = r.begin();
+  const Requests::iterator end      = r.end();
+  const int64_t            length   = TSIOBufferReaderAvail(re);
   if (length == 0) {
     return;
   }
@@ -258,8 +258,8 @@ addBody(Requests &r, const TSIOBufferReader re)
 void
 dispatch(Requests &r, const int t)
 {
-  Requests::iterator iterator  = r.begin();
-  const Requests::iterator end = r.end();
+  Requests::iterator       iterator = r.begin();
+  const Requests::iterator end      = r.end();
   for (; iterator != end; ++iterator) {
     assert(iterator->io.get() != nullptr);
     if (dbg_ctl.on()) {

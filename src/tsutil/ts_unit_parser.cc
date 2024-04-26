@@ -34,11 +34,11 @@ auto
 UnitParser::operator()(swoc::TextView const &src) const noexcept -> Rv<value_type>
 {
   value_type zret = 0;
-  TextView text   = src; // Keep @a src around to report error offsets.
+  TextView   text = src; // Keep @a src around to report error offsets.
 
   while (text.ltrim_if(&isspace)) {
     TextView parsed;
-    auto n = swoc::svtou(text, &parsed);
+    auto     n = swoc::svtou(text, &parsed);
     if (parsed.empty()) {
       return Errata("Required count not found at offset {}", text.data() - src.data());
     } else if (n == std::numeric_limits<decltype(n)>::max()) {

@@ -34,8 +34,8 @@
 
 #define HASH_SIZE 67
 static Timer *timers[HASH_SIZE];
-static Timer *free_timers   = (Timer *)0;
-static long mstimeout_cache = -1;
+static Timer *free_timers     = (Timer *)0;
+static long   mstimeout_cache = -1;
 
 ClientData JunkClientData;
 
@@ -53,7 +53,7 @@ hash(Timer *t)
 static void
 l_add(Timer *t)
 {
-  int h = t->hash;
+  int    h = t->hash;
   Timer *t2;
   Timer *t2prev;
 
@@ -162,7 +162,7 @@ tmr_create(struct timeval *nowP, TimerProc *timer_proc, ClientData client_data, 
 struct timeval *
 tmr_timeout(struct timeval *nowP)
 {
-  long msecs;
+  long                  msecs;
   static struct timeval timeout;
 
   msecs = tmr_mstimeout(nowP);
@@ -179,9 +179,9 @@ tmr_mstimeout(struct timeval *nowP)
   if (mstimeout_cache > -1) {
     return mstimeout_cache;
   } else {
-    int h;
-    int gotone;
-    long msecs, m;
+    int    h;
+    int    gotone;
+    long   msecs, m;
     Timer *t;
 
     gotone = 0;
@@ -213,7 +213,7 @@ tmr_mstimeout(struct timeval *nowP)
 void
 tmr_run(struct timeval *nowP)
 {
-  int h;
+  int    h;
   Timer *t;
   Timer *next;
 
