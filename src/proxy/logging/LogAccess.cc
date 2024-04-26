@@ -31,6 +31,7 @@
 #include "proxy/logging/LogFormat.h"
 #include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
+#include "../private/SSLProxySession.h"
 
 char INVALID_STR[] = "!INVALID_STR!";
 
