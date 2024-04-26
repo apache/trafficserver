@@ -34,7 +34,7 @@
 #include "tsutil/Metrics.h"
 
 #include "iocore/cache/CacheVC.h"
-#include "iocore/cache/CacheEvacuateDocVC.h"
+#include "CacheEvacuateDocVC.h"
 
 using ts::Metrics;
 

@@ -24,7 +24,7 @@
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
-#include "iocore/cache/CacheEvacuateDocVC.h"
+#include "CacheEvacuateDocVC.h"
 
 // These macros allow two incrementing unsigned values x and y to maintain
 // their ordering when one of them overflows, given that the values stay close to each other.
