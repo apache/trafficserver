@@ -507,15 +507,32 @@ public:
 
   }; // class Counter
 
+  /**
+   * Derive metrics by summing a set of other metrics.
+   *
+   */
   class Derived
   {
   public:
     struct DerivedMetricSpec {
-      std::string_view                                                                              derived_name;
-      std::initializer_list<std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>> derived_from;
+      using MetricSpec = std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>;
+      std::string_view                  derived_name;
+      std::initializer_list<MetricSpec> derived_from;
     };
 
+    /**
+     * Create new metrics derived from existing metrics.
+     *
+     * This function will create new metrics from a list of existing metrics.  The existing metric can
+     * be specified by name, id or a pointer to the metric.
+     */
     static void derive(const std::initializer_list<DerivedMetricSpec> &metrics);
+
+    /**
+     * Update derived metrics.
+     *
+     * This static function should be called periodically to update derived metrics.
+     */
     static void update_derived();
   };
 
