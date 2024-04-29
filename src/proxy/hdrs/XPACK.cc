@@ -474,6 +474,10 @@ XpackDynamicTable::count() const
 bool
 XpackDynamicTable::_make_space(uint64_t required_size)
 {
+  if (is_empty()) {
+    // if the table is empty, skip and just check if there is enough space
+    return required_size <= this->_available;
+  }
   uint32_t freed = 0;
   uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
 
