@@ -207,18 +207,18 @@ Metrics::iterator::next()
 namespace details
 {
   struct DerivedMetric {
-    Metrics::IdType metric;
+    Metrics::IdType                    metric;
     std::vector<Metrics::AtomicType *> derived_from;
   };
 
   struct DerivativeMetrics {
     std::vector<DerivedMetric> metrics;
-    std::mutex metrics_lock;
+    std::mutex                 metrics_lock;
 
     void
     update()
     {
-      auto &instance = Metrics::instance();
+      auto           &instance = Metrics::instance();
       std::lock_guard l(metrics_lock);
 
       for (auto &m : metrics) {
