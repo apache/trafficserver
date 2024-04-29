@@ -39,7 +39,7 @@ PromotionPolicy::doSample() const
 int
 PromotionPolicy::create_stat(std::string_view name, std::string_view remap_identifier)
 {
-  int stat_id = -1;
+  int                                      stat_id = -1;
   swoc::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
 
   stat_name.clear().restrict(1);

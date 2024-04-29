@@ -65,10 +65,10 @@ ink_bsprintf(char *buffer, const char *format, ...)
 int
 ink_bvsprintf(char *buffer, const char *format, va_list ap)
 {
-  int d_val;
+  int         d_val;
   const char *s;
-  char *d, *p, *s_val, d_buffer[32];
-  va_list ap_local;
+  char       *d, *p, *s_val, d_buffer[32];
+  va_list     ap_local;
 
   va_copy(ap_local, ap);
 
@@ -114,7 +114,7 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
       if (buffer) {                     // if have output buffer
         while (*p) {
           *d++ = *p++;
-        }      //   copy value
+        } //   copy value
       } else { // else
         while (*p) {
           d++;
@@ -130,7 +130,7 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
       if (buffer) {                                      // if have output buffer
         while (*p) {
           *d++ = *p++;
-        }      //   copy value
+        } //   copy value
       } else { // else
         while (*p) {
           d++;

@@ -74,7 +74,7 @@ public:
 
   /** Interface for the VConnection that owns this handle. */
   Continuation *get_continuation() const;
-  void set_continuation(Continuation *cont);
+  void          set_continuation(Continuation *cont);
 
   /**
     Set nbytes to be what is current available.
@@ -98,9 +98,9 @@ public:
   /////////////////////
   // buffer settings //
   /////////////////////
-  void set_writer(MIOBuffer *writer);
-  void set_reader(IOBufferReader *reader);
-  MIOBuffer *get_writer() const;
+  void            set_writer(MIOBuffer *writer);
+  void            set_reader(IOBufferReader *reader);
+  MIOBuffer      *get_writer() const;
   IOBufferReader *get_reader() const;
 
   /**

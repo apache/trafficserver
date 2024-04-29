@@ -27,8 +27,8 @@
 
 TEST_CASE("Long Header - regular case", "[quic]")
 {
-  const uint8_t raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  const uint8_t raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
+  const uint8_t    raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  const uint8_t    raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
   QUICConnectionId expected_dcid(raw_dcid, 8);
   QUICConnectionId expected_scid(raw_scid, 8);
 
@@ -44,11 +44,11 @@ TEST_CASE("Long Header - regular case", "[quic]")
     };
     uint64_t buf_len = sizeof(buf);
 
-    QUICVersion version   = 0;
-    uint8_t dcil          = 0;
-    uint8_t scil          = 0;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
-    QUICConnectionId scid = QUICConnectionId::ZERO();
+    QUICVersion      version = 0;
+    uint8_t          dcil    = 0;
+    uint8_t          scil    = 0;
+    QUICConnectionId dcid    = QUICConnectionId::ZERO();
+    QUICConnectionId scid    = QUICConnectionId::ZERO();
 
     CHECK(QUICInvariants::version(version, buf, buf_len));
     CHECK(version == 0x11223344);
@@ -75,11 +75,11 @@ TEST_CASE("Long Header - regular case", "[quic]")
     };
     uint64_t buf_len = sizeof(buf);
 
-    QUICVersion version   = 0;
-    uint8_t dcil          = 0;
-    uint8_t scil          = 0;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
-    QUICConnectionId scid = QUICConnectionId::ZERO();
+    QUICVersion      version = 0;
+    uint8_t          dcil    = 0;
+    uint8_t          scil    = 0;
+    QUICConnectionId dcid    = QUICConnectionId::ZERO();
+    QUICConnectionId scid    = QUICConnectionId::ZERO();
 
     CHECK(QUICInvariants::version(version, buf, buf_len));
     CHECK(version == 0x11223344);
@@ -106,11 +106,11 @@ TEST_CASE("Long Header - regular case", "[quic]")
     };
     uint64_t buf_len = sizeof(buf);
 
-    QUICVersion version   = 0;
-    uint8_t dcil          = 0;
-    uint8_t scil          = 0;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
-    QUICConnectionId scid = QUICConnectionId::ZERO();
+    QUICVersion      version = 0;
+    uint8_t          dcil    = 0;
+    uint8_t          scil    = 0;
+    QUICConnectionId dcid    = QUICConnectionId::ZERO();
+    QUICConnectionId scid    = QUICConnectionId::ZERO();
 
     CHECK(QUICInvariants::version(version, buf, buf_len));
     CHECK(version == 0x11223344);
@@ -152,11 +152,11 @@ TEST_CASE("Long Header - error cases", "[quic]")
     };
     uint64_t buf_len = sizeof(buf);
 
-    const uint8_t raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    const uint8_t    raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     QUICConnectionId expected_dcid(raw_dcid, 8);
 
-    QUICVersion version   = 0;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
+    QUICVersion      version = 0;
+    QUICConnectionId dcid    = QUICConnectionId::ZERO();
 
     CHECK(QUICInvariants::version(version, buf, buf_len));
     CHECK(version == 0x11223344);
@@ -175,14 +175,14 @@ TEST_CASE("Long Header - error cases", "[quic]")
     };
     uint64_t buf_len = sizeof(buf);
 
-    const uint8_t raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-    const uint8_t raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
+    const uint8_t    raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    const uint8_t    raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
     QUICConnectionId expected_dcid(raw_dcid, 8);
     QUICConnectionId expected_scid(raw_scid, 8);
 
-    QUICVersion version   = 0;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
-    QUICConnectionId scid = QUICConnectionId::ZERO();
+    QUICVersion      version = 0;
+    QUICConnectionId dcid    = QUICConnectionId::ZERO();
+    QUICConnectionId scid    = QUICConnectionId::ZERO();
 
     CHECK(QUICInvariants::version(version, buf, buf_len));
     CHECK(version == 0x11223344);

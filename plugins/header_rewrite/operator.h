@@ -50,7 +50,7 @@ public:
   void operator=(const Operator &) = delete;
 
   OperModifiers get_oper_modifiers() const;
-  void initialize(Parser &p) override;
+  void          initialize(Parser &p) override;
 
   void
   do_exec(const Resources &res) const

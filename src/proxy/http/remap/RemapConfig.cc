@@ -62,7 +62,7 @@ bool remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
 static int
 UrlWhack(char *toWhack, int *origLength)
 {
-  int length = strlen(toWhack);
+  int   length = strlen(toWhack);
   char *tmp;
   *origLength = length;
 
@@ -114,7 +114,7 @@ static const char *
 process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf, int errStrBufSize)
 {
   acl_filter_rule *rp, **rpp;
-  const char *errStr = nullptr;
+  const char      *errStr = nullptr;
 
   if (unlikely(!mp || !bti || !errStrBuf || errStrBufSize <= 0)) {
     Dbg(dbg_ctl_url_rewrite, "[process_filter_opt] Invalid argument(s)");
@@ -180,9 +180,9 @@ is_inkeylist(const char *key, ...)
 static const char *
 parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
 {
-  bool flg;
+  bool             flg;
   acl_filter_rule *rp;
-  const char *cstr = nullptr;
+  const char      *cstr = nullptr;
 
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
@@ -297,7 +297,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   // to keep the ACL rules from the parent because ACLs must be global across the full set of config
   // files.
   BUILD_TABLE_INFO nbti;
-  bool success;
+  bool             success;
 
   if (access(path, R_OK) == -1) {
     snprintf(errbuf, errbufsize, "%s: %s", path, strerror(errno));
@@ -336,14 +336,14 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
 
   for (unsigned i = 1; i < static_cast<unsigned>(bti->paramc); ++i) {
     ats_scoped_str path;
-    const char *errmsg = nullptr;
+    const char    *errmsg = nullptr;
 
     // The included path is relative to SYSCONFDIR, just like remap.config is.
     path = RecConfigReadConfigPath(nullptr, bti->paramv[i]);
 
     if (ink_file_is_directory(path)) {
       struct dirent **entrylist;
-      int n_entries;
+      int             n_entries;
 
       n_entries = scandir(path, &entrylist, nullptr, alphasort);
       if (n_entries == -1) {
@@ -439,8 +439,8 @@ const char *
 remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize)
 {
   acl_filter_rule *rule;
-  int i, j;
-  bool new_rule_flg = false;
+  int              i, j;
+  bool             new_rule_flg = false;
 
   if (!rule_pp) {
     Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Invalid argument(s)");
@@ -468,7 +468,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   bool ip_is_listed = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
-    bool hasarg;
+    bool          hasarg;
 
     const char *argptr;
     if ((ul = remap_check_option(&argv[i], 1, 0, nullptr, &argptr)) == 0) {
@@ -667,7 +667,7 @@ unsigned long
 remap_check_option(const char **argv, int argc, unsigned long findmode, int *_ret_idx, const char **argptr)
 {
   unsigned long ret_flags = 0;
-  int idx                 = 0;
+  int           idx       = 0;
 
   if (argptr) {
     *argptr = nullptr;
@@ -812,11 +812,11 @@ bool
 remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, int errbufsize, int jump_to_argc,
                   int *plugin_found_at, UrlRewrite *rewrite)
 {
-  char *c, *err;
+  char       *c, *err;
   const char *new_argv[1024];
-  char *pargv[1024];
-  int idx          = 0;
-  int parc         = 0;
+  char       *pargv[1024];
+  int         idx  = 0;
+  int         parc = 0;
   *plugin_found_at = 0;
 
   memset(pargv, 0, sizeof(pargv));
@@ -892,7 +892,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   }
 
   RemapPluginInst *pi = nullptr;
-  std::string error;
+  std::string      error;
   {
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
@@ -923,11 +923,11 @@ static bool
 process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map)
 {
   const char *str;
-  int str_index;
+  int         str_index;
   const char *to_host;
-  int to_host_len;
-  int substitution_id;
-  int captures;
+  int         to_host_len;
+  int         substitution_id;
+  int         captures;
 
   reg_map->to_url_host_template     = nullptr;
   reg_map->to_url_host_template_len = 0;
@@ -990,40 +990,40 @@ namespace
 bool
 remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 {
-  char errBuf[1024];
-  char errStrBuf[1024];
+  char        errBuf[1024];
+  char        errStrBuf[1024];
   const char *errStr;
 
   Tokenizer whiteTok(" \t");
 
   // Vars to parse line in file
   char *tok_state, *cur_line, *cur_line_tmp;
-  int rparse, cur_line_size, cln = 0; // Our current line number
+  int   rparse, cur_line_size, cln = 0; // Our current line number
 
   // Vars to build the mapping
-  const char *fromScheme, *toScheme;
-  int fromSchemeLen, toSchemeLen;
-  const char *fromHost, *toHost;
-  int fromHostLen, toHostLen;
-  char *map_from, *map_from_start;
-  char *map_to, *map_to_start;
-  const char *tmp; // Appease the DEC compiler
-  char *fromHost_lower     = nullptr;
-  char *fromHost_lower_ptr = nullptr;
-  char fromHost_lower_buf[1024];
-  url_mapping *new_mapping = nullptr;
-  mapping_type maptype;
+  const char   *fromScheme, *toScheme;
+  int           fromSchemeLen, toSchemeLen;
+  const char   *fromHost, *toHost;
+  int           fromHostLen, toHostLen;
+  char         *map_from, *map_from_start;
+  char         *map_to, *map_to_start;
+  const char   *tmp; // Appease the DEC compiler
+  char         *fromHost_lower     = nullptr;
+  char         *fromHost_lower_ptr = nullptr;
+  char          fromHost_lower_buf[1024];
+  url_mapping  *new_mapping = nullptr;
+  mapping_type  maptype;
   referer_info *ri;
-  int origLength;
-  int length;
-  int tok_count;
+  int           origLength;
+  int           length;
+  int           tok_count;
 
   UrlRewrite::RegexMapping *reg_map;
-  bool is_cur_mapping_regex;
-  const char *type_id_str;
+  bool                      is_cur_mapping_regex;
+  const char               *type_id_str;
 
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{path}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{path}, ec)};
   if (ec.value() == ENOENT) { // a missing file is ok - treat as empty, no rules.
     return true;
   }
@@ -1322,8 +1322,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // and gives a new remap rule with the IPv4 addr.
     if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
         fromScheme == URL_SCHEME_TUNNEL && (fromHost_lower[0] < '0' || fromHost_lower[0] > '9')) {
-      addrinfo *ai_records; // returned records.
-      ip_text_buffer ipb;   // buffer for address string conversion.
+      addrinfo      *ai_records; // returned records.
+      ip_text_buffer ipb;        // buffer for address string conversion.
       if (0 == getaddrinfo(fromHost_lower, nullptr, nullptr, &ai_records)) {
         for (addrinfo *ai_spot = ai_records; ai_spot; ai_spot = ai_spot->ai_next) {
           if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr) && ai_spot->ai_protocol == IPPROTO_TCP) {

@@ -86,5 +86,5 @@ public:
 
 private:
   char fname[PATH_NAME_MAX];
-  int fd = 0;
+  int  fd = 0;
 };

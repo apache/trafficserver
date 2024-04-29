@@ -64,17 +64,17 @@ public:
   void set_error_from_socket();
 
   // get fd
-  virtual int get_fd()                   = 0;
-  virtual Ptr<ProxyMutex> &get_mutex()   = 0;
-  virtual ContFlags &get_control_flags() = 0;
+  virtual int              get_fd()            = 0;
+  virtual Ptr<ProxyMutex> &get_mutex()         = 0;
+  virtual ContFlags       &get_control_flags() = 0;
 
   ReadWriteEventIO ep{};
-  NetState read{};
-  NetState write{};
+  NetState         read{};
+  NetState         write{};
 
-  int closed     = 0;
-  int error      = 0;
-  NetHandler *nh = nullptr;
+  int         closed = 0;
+  int         error  = 0;
+  NetHandler *nh     = nullptr;
 
   /** The explicitly set inactivity timeout duration in seconds.
    *

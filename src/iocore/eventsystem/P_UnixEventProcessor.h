@@ -51,7 +51,7 @@ EventProcessor::allocate(int size)
 TS_INLINE EThread *
 EventProcessor::assign_thread(EventType etype)
 {
-  int next;
+  int                    next;
   ThreadGroupDescriptor *tg = &thread_group[etype];
 
   ink_assert(etype < MAX_EVENT_TYPES);

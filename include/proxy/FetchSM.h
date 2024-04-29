@@ -81,31 +81,31 @@ public:
     fetch_flags = flags;
   }
 
-  int fetch_handler(int event, void *data);
-  void process_fetch_read(int event);
-  void process_fetch_write(int event);
-  void httpConnect();
-  void cleanUp();
-  void get_info_from_buffer(IOBufferReader *reader);
+  int   fetch_handler(int event, void *data);
+  void  process_fetch_read(int event);
+  void  process_fetch_write(int event);
+  void  httpConnect();
+  void  cleanUp();
+  void  get_info_from_buffer(IOBufferReader *reader);
   char *resp_get(int *length);
 
   TSMBuffer resp_hdr_bufp();
-  TSMLoc resp_hdr_mloc();
+  TSMLoc    resp_hdr_mloc();
 
   //
   // Extended APIs for FetchSM
   //
   // *flags* can be bitwise OR of several TSFetchFlags
   //
-  void ext_init(Continuation *cont, const char *method, const char *url, const char *version, const sockaddr *client_addr,
-                int flags);
-  void ext_add_header(const char *name, int name_len, const char *value, int value_len);
-  void ext_launch();
-  void ext_destroy();
+  void    ext_init(Continuation *cont, const char *method, const char *url, const char *version, const sockaddr *client_addr,
+                   int flags);
+  void    ext_add_header(const char *name, int name_len, const char *value, int value_len);
+  void    ext_launch();
+  void    ext_destroy();
   ssize_t ext_read_data(char *buf, size_t len);
-  void ext_write_data(const void *data, size_t len);
-  void ext_set_user_data(void *data);
-  void *ext_get_user_data();
+  void    ext_write_data(const void *data, size_t len);
+  void    ext_set_user_data(void *data);
+  void   *ext_get_user_data();
   bool
   get_internal_request()
   {
@@ -118,7 +118,7 @@ public:
   }
 
 private:
-  int InvokePlugin(int event, void *data);
+  int  InvokePlugin(int event, void *data);
   void InvokePluginExt(int error_event = 0);
 
   void
@@ -142,37 +142,37 @@ private:
   bool check_body_done();
   bool check_chunked();
   bool check_connection_close();
-  int dechunk_body();
+  int  dechunk_body();
 
-  int recursion               = 0;
-  PluginVC *http_vc           = nullptr;
-  VIO *read_vio               = nullptr;
-  VIO *write_vio              = nullptr;
-  MIOBuffer *req_buffer       = nullptr;
-  IOBufferReader *req_reader  = nullptr;
-  char *client_response       = nullptr;
-  int client_bytes            = 0;
-  MIOBuffer *resp_buffer      = nullptr; // response to HttpConnect Call
-  IOBufferReader *resp_reader = nullptr;
-  Continuation *contp         = nullptr;
-  Ptr<ProxyMutex> cont_mutex;
-  HTTPParser http_parser;
-  HTTPHdr client_response_hdr;
-  ChunkedHandler chunked_handler;
-  TSFetchEvent callback_events;
-  TSFetchWakeUpOptions callback_options = NO_CALLBACK;
-  bool req_finished                     = false;
-  bool header_done                      = false;
-  bool is_method_head                   = false;
-  bool is_internal_request              = true;
-  bool destroyed                        = false;
-  IpEndpoint _addr;
-  int resp_is_chunked            = -1;
-  int resp_received_close        = -1;
-  int fetch_flags                = 0;
-  void *user_data                = nullptr;
-  bool has_sent_header           = false;
-  int64_t req_content_length     = 0;
-  int64_t resp_content_length    = -1;
-  int64_t resp_received_body_len = 0;
+  int                  recursion       = 0;
+  PluginVC            *http_vc         = nullptr;
+  VIO                 *read_vio        = nullptr;
+  VIO                 *write_vio       = nullptr;
+  MIOBuffer           *req_buffer      = nullptr;
+  IOBufferReader      *req_reader      = nullptr;
+  char                *client_response = nullptr;
+  int                  client_bytes    = 0;
+  MIOBuffer           *resp_buffer     = nullptr; // response to HttpConnect Call
+  IOBufferReader      *resp_reader     = nullptr;
+  Continuation        *contp           = nullptr;
+  Ptr<ProxyMutex>      cont_mutex;
+  HTTPParser           http_parser;
+  HTTPHdr              client_response_hdr;
+  ChunkedHandler       chunked_handler;
+  TSFetchEvent         callback_events;
+  TSFetchWakeUpOptions callback_options    = NO_CALLBACK;
+  bool                 req_finished        = false;
+  bool                 header_done         = false;
+  bool                 is_method_head      = false;
+  bool                 is_internal_request = true;
+  bool                 destroyed           = false;
+  IpEndpoint           _addr;
+  int                  resp_is_chunked        = -1;
+  int                  resp_received_close    = -1;
+  int                  fetch_flags            = 0;
+  void                *user_data              = nullptr;
+  bool                 has_sent_header        = false;
+  int64_t              req_content_length     = 0;
+  int64_t              resp_content_length    = -1;
+  int64_t              resp_received_body_len = 0;
 };

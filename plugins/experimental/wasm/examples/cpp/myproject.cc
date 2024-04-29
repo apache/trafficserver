@@ -33,7 +33,7 @@ public:
   explicit ExampleContext(uint32_t id, RootContext *root) : Context(id, root) {}
 
   FilterHeadersStatus onRequestHeaders(uint32_t headers, bool end_of_stream) override;
-  void onDone() override;
+  void                onDone() override;
 
   void onDelete() override;
 };

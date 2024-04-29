@@ -162,21 +162,21 @@ struct Dir {
 #define dir_set_big(_e, _v)         (_e)->w[1] = (uint16_t)(((_e)->w[1] & 0xFCFF) | (((uint16_t)(_v)) & 0x3) << 8)
 #define dir_size(_e)                ((uint32_t)(((_e)->w[1]) >> 10))
 #define dir_set_size(_e, _v)        (_e)->w[1] = (uint16_t)(((_e)->w[1] & ((1 << 10) - 1)) | ((_v) << 10))
-#define dir_set_approx_size(_e, _s)                   \
-  do {                                                \
-    if ((_s) <= DIR_SIZE_WITH_BLOCK(0)) {             \
-      dir_set_big(_e, 0);                             \
-      dir_set_size(_e, ((_s)-1) / DIR_BLOCK_SIZE(0)); \
-    } else if ((_s) <= DIR_SIZE_WITH_BLOCK(1)) {      \
-      dir_set_big(_e, 1);                             \
-      dir_set_size(_e, ((_s)-1) / DIR_BLOCK_SIZE(1)); \
-    } else if ((_s) <= DIR_SIZE_WITH_BLOCK(2)) {      \
-      dir_set_big(_e, 2);                             \
-      dir_set_size(_e, ((_s)-1) / DIR_BLOCK_SIZE(2)); \
-    } else {                                          \
-      dir_set_big(_e, 3);                             \
-      dir_set_size(_e, ((_s)-1) / DIR_BLOCK_SIZE(3)); \
-    }                                                 \
+#define dir_set_approx_size(_e, _s)                     \
+  do {                                                  \
+    if ((_s) <= DIR_SIZE_WITH_BLOCK(0)) {               \
+      dir_set_big(_e, 0);                               \
+      dir_set_size(_e, ((_s) - 1) / DIR_BLOCK_SIZE(0)); \
+    } else if ((_s) <= DIR_SIZE_WITH_BLOCK(1)) {        \
+      dir_set_big(_e, 1);                               \
+      dir_set_size(_e, ((_s) - 1) / DIR_BLOCK_SIZE(1)); \
+    } else if ((_s) <= DIR_SIZE_WITH_BLOCK(2)) {        \
+      dir_set_big(_e, 2);                               \
+      dir_set_size(_e, ((_s) - 1) / DIR_BLOCK_SIZE(2)); \
+    } else {                                            \
+      dir_set_big(_e, 3);                               \
+      dir_set_size(_e, ((_s) - 1) / DIR_BLOCK_SIZE(3)); \
+    }                                                   \
   } while (0)
 #define dir_approx_size(_e) ((dir_size(_e) + 1) * DIR_BLOCK_SIZE(dir_big(_e)))
 #define round_to_approx_dir_size(_s)      \
@@ -210,19 +210,19 @@ LINK_FORWARD_DECLARATION(CacheVC, opendir_link) // forward declaration
 struct OpenDirEntry {
   DLL<CacheVC, Link_CacheVC_opendir_link> writers; // list of all the current writers
   DLL<CacheVC, Link_CacheVC_opendir_link> readers; // list of all the current readers - not used
-  CacheHTTPInfoVector vector;                      // Vector for the http document. Each writer
+  CacheHTTPInfoVector                     vector;  // Vector for the http document. Each writer
                                                    // maintains a pointer to this vector and
                                                    // writes it down to disk.
   CacheKey single_doc_key;                         // Key for the resident alternate.
-  Dir single_doc_dir;                              // Directory for the resident alternate
-  Dir first_dir;                                   // Dir for the vector. If empty, a new dir is
+  Dir      single_doc_dir;                         // Directory for the resident alternate
+  Dir      first_dir;                              // Dir for the vector. If empty, a new dir is
                                                    // inserted, otherwise this dir is overwritten
   uint16_t num_writers;                            // num of current writers
   uint16_t max_writers;                            // max number of simultaneous writers allowed
-  bool dont_update_directory;                      // if set, the first_dir is not updated.
-  bool move_resident_alt;                          // if set, single_doc_dir is inserted.
-  bool reading_vec;                                // somebody is currently reading the vector
-  bool writing_vec;                                // somebody is currently writing the vector
+  bool     dont_update_directory;                  // if set, the first_dir is not updated.
+  bool     move_resident_alt;                      // if set, single_doc_dir is inserted.
+  bool     reading_vec;                            // somebody is currently reading the vector
+  bool     writing_vec;                            // somebody is currently writing the vector
 
   LINK(OpenDirEntry, link);
 
@@ -237,55 +237,55 @@ struct OpenDirEntry {
 
 struct OpenDir : public Continuation {
   Queue<CacheVC, Link_CacheVC_opendir_link> delayed_readers;
-  DLL<OpenDirEntry> bucket[OPEN_DIR_BUCKETS];
+  DLL<OpenDirEntry>                         bucket[OPEN_DIR_BUCKETS];
 
-  int open_write(CacheVC *c, int allow_if_writers, int max_writers);
-  int close_write(CacheVC *c);
+  int           open_write(CacheVC *c, int allow_if_writers, int max_writers);
+  int           close_write(CacheVC *c);
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  int signal_readers(int event, Event *e);
+  int           signal_readers(int event, Event *e);
 
   OpenDir();
 };
 
 struct CacheSync : public Continuation {
-  int stripe_index = 0;
-  char *buf        = nullptr;
-  size_t buflen    = 0;
-  bool buf_huge    = false;
-  off_t writepos   = 0;
+  int                 stripe_index = 0;
+  char               *buf          = nullptr;
+  size_t              buflen       = 0;
+  bool                buf_huge     = false;
+  off_t               writepos     = 0;
   AIOCallbackInternal io;
-  Event *trigger        = nullptr;
-  ink_hrtime start_time = 0;
-  int mainEvent(int event, Event *e);
-  void aio_write(int fd, char *b, int n, off_t o);
+  Event              *trigger    = nullptr;
+  ink_hrtime          start_time = 0;
+  int                 mainEvent(int event, Event *e);
+  void                aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };
 
 // Global Functions
 
-int dir_probe(const CacheKey *, Stripe *, Dir *, Dir **);
-int dir_insert(const CacheKey *key, Stripe *stripe, Dir *to_part);
-int dir_overwrite(const CacheKey *key, Stripe *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int dir_delete(const CacheKey *key, Stripe *stripe, Dir *del);
-int dir_lookaside_probe(const CacheKey *key, Stripe *stripe, Dir *result, EvacuationBlock **eblock);
-int dir_lookaside_insert(EvacuationBlock *b, Stripe *stripe, Dir *to);
-int dir_lookaside_fixup(const CacheKey *key, Stripe *stripe);
-void dir_lookaside_cleanup(Stripe *stripe);
-void dir_lookaside_remove(const CacheKey *key, Stripe *stripe);
-void dir_free_entry(Dir *e, int s, Stripe *stripe);
-void dir_sync_init();
-int check_dir(Stripe *stripe);
-void dir_clean_vol(Stripe *stripe);
-void dir_clear_range(off_t start, off_t end, Stripe *stripe);
-int dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
-                          int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
+int      dir_probe(const CacheKey *, Stripe *, Dir *, Dir **);
+int      dir_insert(const CacheKey *key, Stripe *stripe, Dir *to_part);
+int      dir_overwrite(const CacheKey *key, Stripe *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int      dir_delete(const CacheKey *key, Stripe *stripe, Dir *del);
+int      dir_lookaside_probe(const CacheKey *key, Stripe *stripe, Dir *result, EvacuationBlock **eblock);
+int      dir_lookaside_insert(EvacuationBlock *b, Stripe *stripe, Dir *to);
+int      dir_lookaside_fixup(const CacheKey *key, Stripe *stripe);
+void     dir_lookaside_cleanup(Stripe *stripe);
+void     dir_lookaside_remove(const CacheKey *key, Stripe *stripe);
+void     dir_free_entry(Dir *e, int s, Stripe *stripe);
+void     dir_sync_init();
+int      check_dir(Stripe *stripe);
+void     dir_clean_vol(Stripe *stripe);
+void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
+int      dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+                               int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Stripe *stripe);
-void sync_cache_dir_on_shutdown();
-int dir_freelist_length(Stripe *stripe, int s);
+void     sync_cache_dir_on_shutdown();
+int      dir_freelist_length(Stripe *stripe, int s);
 
-int dir_bucket_length(Dir *b, int s, Stripe *stripe);
-int dir_freelist_length(Stripe *stripe, int s);
+int  dir_bucket_length(Dir *b, int s, Stripe *stripe);
+int  dir_freelist_length(Stripe *stripe, int s);
 void dir_clean_segment(int s, Stripe *stripe);
 
 // Inline Functions

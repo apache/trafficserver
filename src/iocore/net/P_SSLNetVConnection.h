@@ -110,7 +110,7 @@ class SSLNetVConnection : public UnixNetVConnection,
   typedef UnixNetVConnection super; ///< Parent type.
 
 public:
-  int sslStartHandShake(int event, int &err) override;
+  int  sslStartHandShake(int event, int &err) override;
   void clear() override;
   void free_thread(EThread *t) override;
 
@@ -142,11 +142,11 @@ public:
     sslHandshakeStatus = state;
   }
 
-  int sslServerHandShakeEvent(int &err);
-  int sslClientHandShakeEvent(int &err);
-  void net_read_io(NetHandler *nh, EThread *lthread) override;
+  int     sslServerHandShakeEvent(int &err);
+  int     sslClientHandShakeEvent(int &err);
+  void    net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void do_io_close(int lerrno = -1) override;
+  void    do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //
@@ -301,7 +301,7 @@ public:
     return retval;
   }
 
-  int populate_protocol(std::string_view *results, int n) const override;
+  int         populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
   /**
@@ -311,9 +311,9 @@ public:
    */
   int populate(Connection &con, Continuation *c, void *arg) override;
 
-  SSL *ssl                    = nullptr;
-  ink_hrtime sslLastWriteTime = 0;
-  int64_t sslTotalBytesSent   = 0;
+  SSL       *ssl               = nullptr;
+  ink_hrtime sslLastWriteTime  = 0;
+  int64_t    sslTotalBytesSent = 0;
 
   std::shared_ptr<SSL_SESSION> client_sess = nullptr;
 
@@ -338,8 +338,8 @@ public:
   SSLNetVConnection(const SSLNetVConnection &)            = delete;
   SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
-  bool protocol_mask_set      = false;
-  unsigned long protocol_mask = 0;
+  bool          protocol_mask_set = false;
+  unsigned long protocol_mask     = 0;
 
   // Only applies during the VERIFY certificate hooks (client and server side)
   // Means to give the plugin access to the data structure passed in during the underlying
@@ -422,27 +422,27 @@ protected:
   }
 
   // TLSSNISupport
-  void _fire_ssl_servername_event() override;
+  void      _fire_ssl_servername_event() override;
   in_port_t _get_local_port() override;
 
-  bool _isTryingRenegotiation() const override;
+  bool           _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
   shared_SSL_CTX _lookupContextByIP() override;
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
-  bool update_rbio(bool move_to_socket);
-  void increment_ssl_version_metric(int version) const;
-  NetProcessor *_getNetProcessor() override;
-  void *_prepareForMigration() override;
+  bool             update_rbio(bool move_to_socket);
+  void             increment_ssl_version_metric(int version) const;
+  NetProcessor    *_getNetProcessor() override;
+  void            *_prepareForMigration() override;
 
-  enum SSLHandshakeStatus sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
-  bool sslClientRenegotiationAbort           = false;
-  bool first_ssl_connect                     = true;
-  MIOBuffer *handShakeBuffer                 = nullptr;
-  IOBufferReader *handShakeHolder            = nullptr;
-  IOBufferReader *handShakeReader            = nullptr;
-  int handShakeBioStored                     = 0;
+  enum SSLHandshakeStatus sslHandshakeStatus          = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
+  bool                    sslClientRenegotiationAbort = false;
+  bool                    first_ssl_connect           = true;
+  MIOBuffer              *handShakeBuffer             = nullptr;
+  IOBufferReader         *handShakeHolder             = nullptr;
+  IOBufferReader         *handShakeReader             = nullptr;
+  int                     handShakeBioStored          = 0;
 
   bool transparentPassThrough = false;
   bool allowPlain             = false;
@@ -483,19 +483,19 @@ private:
 
   // early data related stuff
 #if TS_HAS_TLS_EARLY_DATA
-  bool _early_data_finish            = false;
-  MIOBuffer *_early_data_buf         = nullptr;
+  bool            _early_data_finish = false;
+  MIOBuffer      *_early_data_buf    = nullptr;
   IOBufferReader *_early_data_reader = nullptr;
 #endif
 
 private:
-  void _make_ssl_connection(SSL_CTX *ctx);
-  void _bindSSLObject();
-  void _unbindSSLObject();
+  void                _make_ssl_connection(SSL_CTX *ctx);
+  void                _bindSSLObject();
+  void                _unbindSSLObject();
   UnixNetVConnection *_migrateFromSSL();
-  void _propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t);
+  void                _propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t);
 
-  int _ssl_read_from_net(EThread *lthread, int64_t &ret);
+  int         _ssl_read_from_net(EThread *lthread, int64_t &ret);
   ssl_error_t _ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread);
   ssl_error_t _ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten);
   ssl_error_t _ssl_connect();

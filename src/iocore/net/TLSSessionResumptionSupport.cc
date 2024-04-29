@@ -93,13 +93,13 @@ TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyna
                                                   HMAC_CTX *hctx, int enc)
 #endif
 {
-  SSLConfig::scoped_config config;
+  SSLConfig::scoped_config            config;
   SSLCertificateConfig::scoped_config lookup;
-  SSLTicketKeyConfig::scoped_config params;
+  SSLTicketKeyConfig::scoped_config   params;
 
   // Get the IP address to look up the keyblock
-  const IpEndpoint &ip           = this->_getLocalEndpoint();
-  SSLCertContext *cc             = lookup->find(ip);
+  const IpEndpoint     &ip       = this->_getLocalEndpoint();
+  SSLCertContext       *cc       = lookup->find(ip);
   ssl_ticket_key_block *keyblock = nullptr;
   if (cc == nullptr || cc->keyblock == nullptr) {
     // Try the default
@@ -157,8 +157,8 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
     hook = hook->m_link.next;
   }
 
-  SSL_SESSION *session             = nullptr;
-  ssl_session_cache_exdata *exdata = nullptr;
+  SSL_SESSION              *session = nullptr;
+  ssl_session_cache_exdata *exdata  = nullptr;
   if (session_cache->getSession(sid, &session, &exdata)) {
     ink_assert(session);
     ink_assert(exdata);
@@ -187,7 +187,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 std::shared_ptr<SSL_SESSION>
 TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
 {
-  ssl_curve_id curve                       = 0;
+  ssl_curve_id                 curve       = 0;
   std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve);
 
   if (shared_sess != nullptr) {

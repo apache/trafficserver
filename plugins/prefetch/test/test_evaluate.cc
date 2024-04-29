@@ -42,27 +42,27 @@ TEST_CASE("Empty expression", "[empty]")
 
 TEST_CASE("64-bit result works", "[evaluate64]")
 {
-  const uint32_t max32  = std::numeric_limits<uint32_t>::max();
-  const String max32str = std::to_string(max32);
+  const uint32_t max32    = std::numeric_limits<uint32_t>::max();
+  const String   max32str = std::to_string(max32);
   REQUIRE(evaluate(max32str + "+" + max32str) == "8589934590");
 
   const uint64_t max32_64 = max32;
-  const String addedstr   = std::to_string(2 * max32_64);
+  const String   addedstr = std::to_string(2 * max32_64);
   REQUIRE(evaluate(max32str + "+" + max32str, EvalPolicy::Bignum) == addedstr);
 }
 
 TEST_CASE("Larger number 32-bit saturation", "[saturation]")
 {
-  const uint32_t max32  = std::numeric_limits<uint32_t>::max();
-  const String max32str = std::to_string(max32);
+  const uint32_t max32    = std::numeric_limits<uint32_t>::max();
+  const String   max32str = std::to_string(max32);
   REQUIRE(evaluate("3842948374928374982374982374") == max32str);
   REQUIRE(evaluate("3248739487239847298374738924-" + max32str) == "0");
 }
 
 TEST_CASE("Larger number 64-bit saturation", "[saturation]")
 {
-  const uint64_t max64  = std::numeric_limits<uint64_t>::max();
-  const String max64str = std::to_string(max64);
+  const uint64_t max64    = std::numeric_limits<uint64_t>::max();
+  const String   max64str = std::to_string(max64);
   REQUIRE(evaluate("3842948374928374982374982374", EvalPolicy::Overflow64) == max64str);
   REQUIRE(evaluate("3248739487239847298374738924-" + max64str, EvalPolicy::Overflow64) == "0");
 }

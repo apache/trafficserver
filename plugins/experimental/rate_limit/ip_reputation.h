@@ -236,27 +236,27 @@ public:
   }
 
   // Debugging tool, dumps some info around the buckets
-  void dump();
+  void   dump();
   size_t memoryUsed() const;
 
 protected:
   int32_t move_bucket(KeyClass key, uint32_t to_bucket);
 
 private:
-  HashMap _map;
+  HashMap                    _map;
   std::vector<SieveBucket *> _buckets;
-  std::string _name;
-  bool _initialized = false; // If this has been properly initialized yet
-  TSMutex _lock;             // The lock around all data access
+  std::string                _name;
+  bool                       _initialized = false; // If this has been properly initialized yet
+  TSMutex                    _lock;                // The lock around all data access
   // Standard options
-  uint32_t _num_buckets         = 10;                           // Leave this at 10 ...
-  uint32_t _size                = 0;                            // Set this up to initialize
-  uint32_t _percentage          = 90;                           // At what percentage of limit do we start blocking
-  std::chrono::seconds _max_age = std::chrono::seconds::zero(); // Aging time in the SieveLru (default off)
+  uint32_t             _num_buckets = 10;                           // Leave this at 10 ...
+  uint32_t             _size        = 0;                            // Set this up to initialize
+  uint32_t             _percentage  = 90;                           // At what percentage of limit do we start blocking
+  std::chrono::seconds _max_age     = std::chrono::seconds::zero(); // Aging time in the SieveLru (default off)
   // Perma-block options
-  uint32_t _permablock_limit               = 0;                            // "Hits" limit for blocking permanently
-  uint32_t _permablock_threshold           = 0;                            // Pressure threshold for permanent block
-  std::chrono::seconds _permablock_max_age = std::chrono::seconds::zero(); // Aging time in the SieveLru for perma-blocks
+  uint32_t             _permablock_limit     = 0;                            // "Hits" limit for blocking permanently
+  uint32_t             _permablock_threshold = 0;                            // Pressure threshold for permanent block
+  std::chrono::seconds _permablock_max_age   = std::chrono::seconds::zero(); // Aging time in the SieveLru for perma-blocks
 };
 
 } // namespace IpReputation

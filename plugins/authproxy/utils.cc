@@ -33,10 +33,10 @@ DbgCtl Auth_dbg_ctl{"authproxy"};
 void
 HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
 {
-  HttpIoBuffer iobuf;
-  int64_t nbytes;
-  int64_t avail;
-  const char *ptr;
+  HttpIoBuffer    iobuf;
+  int64_t         nbytes;
+  int64_t         avail;
+  const char     *ptr;
   TSIOBufferBlock blk;
 
   TSHttpHdrPrint(mbuf, mhdr, iobuf.buffer);
@@ -104,7 +104,7 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name, cons
 unsigned
 HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr)
 {
-  TSMLoc mloc;
+  TSMLoc   mloc;
   unsigned value = 0;
 
   mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, -1);
@@ -120,12 +120,12 @@ bool
 HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
 {
   TSMLoc mloc;
-  bool ischunked = false;
+  bool   ischunked = false;
 
   mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_TRANSFER_ENCODING, -1);
   if (mloc != TS_NULL_MLOC) {
     const char *str;
-    int len;
+    int         len;
 
     str = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
     if (str && len) {

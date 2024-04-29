@@ -37,10 +37,10 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
 {
   ink_assert(_s);
 
-  TSRemapStatus plugin_retcode;
+  TSRemapStatus      plugin_retcode;
   TSRemapRequestInfo rri;
-  URL *map_from = _s->url_map.getFromURL();
-  URL *map_to   = _s->url_map.getToURL();
+  URL               *map_from = _s->url_map.getFromURL();
+  URL               *map_to   = _s->url_map.getToURL();
 
   // This is the equivalent of TSHttpTxnClientReqGet(), which every remap plugin would
   // have to call.
@@ -88,10 +88,10 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
 bool
 RemapPlugins::run_single_remap()
 {
-  url_mapping *map             = _s->url_map.getMapping();
-  RemapPluginInst *plugin      = map->get_plugin_instance(_cur); // get the nth plugin in our list of plugins
-  TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
-  bool zret                    = true; // default - last iteration.
+  url_mapping     *map            = _s->url_map.getMapping();
+  RemapPluginInst *plugin         = map->get_plugin_instance(_cur); // get the nth plugin in our list of plugins
+  TSRemapStatus    plugin_retcode = TSREMAP_NO_REMAP;
+  bool             zret           = true; // default - last iteration.
   Dbg(dbg_ctl_url_rewrite, "running single remap rule id %d for the %d%s time", map->map_id, _cur,
       _cur == 1 ? "st" :
       _cur == 2 ? "nd" :

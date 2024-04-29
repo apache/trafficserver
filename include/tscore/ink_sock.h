@@ -98,7 +98,7 @@ int read_ready(int fd, int timeout_msec = 0);
 int write_ready(int fd, int timeout_msec = 0);
 
 char fd_read_char(int fd);
-int fd_read_line(int fd, char *s, int len);
+int  fd_read_line(int fd, char *s, int len);
 
 int close_socket(int s);
 int write_socket(int s, const char *buffer, int length);

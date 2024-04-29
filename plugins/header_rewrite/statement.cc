@@ -37,7 +37,7 @@ ResourceIDs
 Statement::get_resource_ids() const
 {
   const Statement *stmt = this;
-  ResourceIDs ids       = RSRC_NONE;
+  ResourceIDs      ids  = RSRC_NONE;
 
   while (stmt) {
     ids  = static_cast<ResourceIDs>(ids | stmt->_rsrc);

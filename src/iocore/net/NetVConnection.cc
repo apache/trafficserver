@@ -47,7 +47,7 @@
 bool
 NetVConnection::has_proxy_protocol(IOBufferReader *reader)
 {
-  char buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
+  char           buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
   swoc::TextView tv;
   tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
 

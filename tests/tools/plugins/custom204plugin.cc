@@ -34,26 +34,26 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 static int
 local_handler(TSCont contp, TSEvent event, void *edata)
 {
-  const char *msg = "<HTML>\n"
-                    "<HEAD>\n"
-                    "<TITLE>Spec-breaking 204!</TITLE>\n"
-                    "</HEAD>\n"
-                    "\n"
-                    "<BODY>\n"
-                    "<H1>This is body content for a 204.</H1>\n"
-                    "<HR>\n"
-                    "\n"
-                    "Description: According to rfc7231 I should not have been sent to you!<BR/>\n"
-                    "This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
-                    "<HR>\n"
-                    "</BODY>";
-  TSHttpTxn txnp  = static_cast<TSHttpTxn>(edata);
-  TSMBuffer bufp  = nullptr;
-  TSMLoc hdr_loc  = nullptr;
-  TSMLoc url_loc  = nullptr;
+  const char *msg     = "<HTML>\n"
+                        "<HEAD>\n"
+                        "<TITLE>Spec-breaking 204!</TITLE>\n"
+                        "</HEAD>\n"
+                        "\n"
+                        "<BODY>\n"
+                        "<H1>This is body content for a 204.</H1>\n"
+                        "<HR>\n"
+                        "\n"
+                        "Description: According to rfc7231 I should not have been sent to you!<BR/>\n"
+                        "This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
+                        "<HR>\n"
+                        "</BODY>";
+  TSHttpTxn   txnp    = static_cast<TSHttpTxn>(edata);
+  TSMBuffer   bufp    = nullptr;
+  TSMLoc      hdr_loc = nullptr;
+  TSMLoc      url_loc = nullptr;
   ;
   const char *host = nullptr;
-  int host_length;
+  int         host_length;
   const char *test_host = "www.customplugin204.test";
 
   switch (event) {
@@ -121,8 +121,8 @@ done:
 static int
 global_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
-  TSCont txn_contp = nullptr;
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(edata);
+  TSCont    txn_contp = nullptr;
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:

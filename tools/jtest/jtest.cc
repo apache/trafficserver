@@ -123,124 +123,124 @@ enum FTP_MODE {
 using accept_fn_t = int (*)(int);
 using poll_cb     = int (*)(int);
 
-static int read_request(int sock);
-static int write_request(int sock);
-static int make_client(unsigned int addr, int port);
+static int  read_request(int sock);
+static int  write_request(int sock);
+static int  make_client(unsigned int addr, int port);
 static void make_bfc_client(unsigned int addr, int port);
-static int make_url_client(const char *url, const char *base_url = 0, bool seen = false, bool unthrottled = false);
-static int write_ftp_response(int sock);
+static int  make_url_client(const char *url, const char *base_url = 0, bool seen = false, bool unthrottled = false);
+static int  write_ftp_response(int sock);
 static void interval_report();
 static void undefer_url(bool unthrottled = false);
 static void done();
-static int is_done();
-static int open_server(unsigned short int port, accept_fn_t accept_fn);
-static int accept_ftp_data(int sock);
+static int  is_done();
+static int  open_server(unsigned short int port, accept_fn_t accept_fn);
+static int  accept_ftp_data(int sock);
 
-static char **defered_urls     = nullptr;
-static int n_defered_urls      = 0;
-static int server_fd           = 0;
-static int server_port         = 0;
-static int proxy_port          = 8080;
-static unsigned int proxy_addr = 0;
-static unsigned int local_addr = 0;
-static char proxy_host[81]     = "localhost";
-static char local_host[255 + 1];
-static int verbose           = 0;
-static int verbose_errors    = 1;
-static int debug             = 0;
-static int nclients          = 100;
-static int current_clients   = 0;
-static int client_speed      = 0;
-static int check_content     = 0;
-static int nocheck_length    = 0;
-static int obey_redirects    = 1;
-static int only_clients      = 0;
-static int only_server       = 0;
-static int drop_after_CL     = 0;
-static int server_speed      = 0;
-static int server_delay      = 0;
-static int interval          = 1;
-static int sbuffersize       = SERVER_BUFSIZE;
-static int cbuffersize       = CLIENT_BUFSIZE;
-static int test_time         = 0;
-static int last_fd           = -1;
-static char *response_buffer = nullptr;
-static int errors            = 0;
-static int clients = 0, running_clients = 0, new_clients = 0, total_clients = 0;
-static int servers = 0, running_servers = 0, new_servers = 0, total_servers = 0;
-static float running_ops = 0;
-static int new_ops       = 0;
-static float total_ops   = 0;
-static int running_sops = 0, new_sops = 0, total_sops = 0;
-static int running_latency = 0, latency = 0;
-static int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
-static uint64_t running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
-static uint64_t running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
-static int average_over    = 5;
-static double hitrate      = 0.4;
-static int hotset          = 1000;
-static int keepalive       = 4;
-static int keepalive_cons  = 4;
-static int follow_arg      = 0;
-static int follow          = 0;
-static int follow_same_arg = 0;
-static int follow_same     = 0;
-static char current_host[512];
-static int fullpage                = 0;
-static int show_before             = 0;
-static int show_headers            = 0;
-static int server_keepalive        = 4;
-static int urls_mode               = 0;
-static int pipeline                = 1;
-static int hostrequest             = 0;
-static int ftp                     = 0;
-static double ftp_mdtm_err_rate    = 0.0;
-static int ftp_mdtm_rate           = 0;
-static time_t ftp_mdtm_last_update = 0;
-static char ftp_mdtm_str[64];
-static int embed_url            = 1;
-static double ims_rate          = 0.5;
-static double client_abort_rate = 0.0;
-static double server_abort_rate = 0.0;
-static int compd_port           = 0;
-static int compd_suite          = 0;
-static int ka_cache_head[500];
-static int ka_cache_tail[500];
-static int n_ka_cache                              = 0;
-static char urls_file[256]                         = "";
-static FILE *urls_fp                               = nullptr;
-static char urlsdump_file[256]                     = "";
-static FILE *urlsdump_fp                           = nullptr;
-static int drand_seed                              = 0;
-static int docsize                                 = -1;
-static int url_hash_entries                        = 1000000;
-static char url_hash_filename[256]                 = "";
-static int bandwidth_test                          = 0;
-static int bandwidth_test_to_go                    = 0;
-static uint64_t total_client_request_bytes         = 0;
-static uint64_t total_proxy_request_bytes          = 0;
-static uint64_t total_server_response_body_bytes   = 0;
-static uint64_t total_server_response_header_bytes = 0;
-static uint64_t total_proxy_response_body_bytes    = 0;
-static uint64_t total_proxy_response_header_bytes  = 0;
-static ink_hrtime now = 0, start_time = 0;
-static int extra_headers       = 0;
-static int alternates          = 0;
-static int abort_retry_speed   = 0;
-static int abort_retry_bytes   = 0;
-static int abort_retry_secs    = 5;
-static int client_rate         = 0;
-static double reload_rate      = 0;
-static int vary_user_agent     = 0;
-static int server_content_type = 0;
-static int request_extension   = 0;
-static int no_cache            = 0;
-static double evo_rate         = 0.0;
-static double zipf             = 0.0;
-static int zipf_bucket_size    = 1;
-static int range_mode          = 0;
-static int post_support        = 0;
-static int post_size           = 0;
+static char       **defered_urls   = nullptr;
+static int          n_defered_urls = 0;
+static int          server_fd      = 0;
+static int          server_port    = 0;
+static int          proxy_port     = 8080;
+static unsigned int proxy_addr     = 0;
+static unsigned int local_addr     = 0;
+static char         proxy_host[81] = "localhost";
+static char         local_host[255 + 1];
+static int          verbose         = 0;
+static int          verbose_errors  = 1;
+static int          debug           = 0;
+static int          nclients        = 100;
+static int          current_clients = 0;
+static int          client_speed    = 0;
+static int          check_content   = 0;
+static int          nocheck_length  = 0;
+static int          obey_redirects  = 1;
+static int          only_clients    = 0;
+static int          only_server     = 0;
+static int          drop_after_CL   = 0;
+static int          server_speed    = 0;
+static int          server_delay    = 0;
+static int          interval        = 1;
+static int          sbuffersize     = SERVER_BUFSIZE;
+static int          cbuffersize     = CLIENT_BUFSIZE;
+static int          test_time       = 0;
+static int          last_fd         = -1;
+static char        *response_buffer = nullptr;
+static int          errors          = 0;
+static int          clients = 0, running_clients = 0, new_clients = 0, total_clients = 0;
+static int          servers = 0, running_servers = 0, new_servers = 0, total_servers = 0;
+static float        running_ops  = 0;
+static int          new_ops      = 0;
+static float        total_ops    = 0;
+static int          running_sops = 0, new_sops = 0, total_sops = 0;
+static int          running_latency = 0, latency = 0;
+static int          lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
+static uint64_t     running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
+static uint64_t     running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
+static int          average_over    = 5;
+static double       hitrate         = 0.4;
+static int          hotset          = 1000;
+static int          keepalive       = 4;
+static int          keepalive_cons  = 4;
+static int          follow_arg      = 0;
+static int          follow          = 0;
+static int          follow_same_arg = 0;
+static int          follow_same     = 0;
+static char         current_host[512];
+static int          fullpage             = 0;
+static int          show_before          = 0;
+static int          show_headers         = 0;
+static int          server_keepalive     = 4;
+static int          urls_mode            = 0;
+static int          pipeline             = 1;
+static int          hostrequest          = 0;
+static int          ftp                  = 0;
+static double       ftp_mdtm_err_rate    = 0.0;
+static int          ftp_mdtm_rate        = 0;
+static time_t       ftp_mdtm_last_update = 0;
+static char         ftp_mdtm_str[64];
+static int          embed_url         = 1;
+static double       ims_rate          = 0.5;
+static double       client_abort_rate = 0.0;
+static double       server_abort_rate = 0.0;
+static int          compd_port        = 0;
+static int          compd_suite       = 0;
+static int          ka_cache_head[500];
+static int          ka_cache_tail[500];
+static int          n_ka_cache                         = 0;
+static char         urls_file[256]                     = "";
+static FILE        *urls_fp                            = nullptr;
+static char         urlsdump_file[256]                 = "";
+static FILE        *urlsdump_fp                        = nullptr;
+static int          drand_seed                         = 0;
+static int          docsize                            = -1;
+static int          url_hash_entries                   = 1000000;
+static char         url_hash_filename[256]             = "";
+static int          bandwidth_test                     = 0;
+static int          bandwidth_test_to_go               = 0;
+static uint64_t     total_client_request_bytes         = 0;
+static uint64_t     total_proxy_request_bytes          = 0;
+static uint64_t     total_server_response_body_bytes   = 0;
+static uint64_t     total_server_response_header_bytes = 0;
+static uint64_t     total_proxy_response_body_bytes    = 0;
+static uint64_t     total_proxy_response_header_bytes  = 0;
+static ink_hrtime   now = 0, start_time = 0;
+static int          extra_headers       = 0;
+static int          alternates          = 0;
+static int          abort_retry_speed   = 0;
+static int          abort_retry_bytes   = 0;
+static int          abort_retry_secs    = 5;
+static int          client_rate         = 0;
+static double       reload_rate         = 0;
+static int          vary_user_agent     = 0;
+static int          server_content_type = 0;
+static int          request_extension   = 0;
+static int          no_cache            = 0;
+static double       evo_rate            = 0.0;
+static double       zipf                = 0.0;
+static int          zipf_bucket_size    = 1;
+static int          range_mode          = 0;
+static int          post_support        = 0;
+static int          post_size           = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
   {"proxy_port",        'p', "Proxy Port",                                                              "I",    &proxy_port,          "JTEST_PROXY_PORT",                   nullptr},
@@ -318,51 +318,51 @@ static const ArgumentDescription argument_descriptions[] = {
 int n_argument_descriptions = countof(argument_descriptions);
 
 struct FD {
-  int fd;
-  poll_cb read_cb;
-  poll_cb write_cb;
+  int        fd;
+  poll_cb    read_cb;
+  poll_cb    write_cb;
   ink_hrtime start;
   ink_hrtime active;
   ink_hrtime ready;
 
-  double doc;
-  int doc_length;
+  double             doc;
+  int                doc_length;
   struct sockaddr_in name;
 
-  int state;   // request parsing state
-  int req_pos; // request read position
-  char *base_url          = nullptr;
-  char *req_header        = nullptr;
-  char *response          = nullptr;
-  char *response_header   = nullptr;
-  int max_req_header_size = 0;
-  int length;
-  int response_length;
-  int response_remaining;
-  int keepalive = 0;
-  int next;
-  int nalternate  = 0;
-  unsigned int ip = 0;
-  unsigned int binary        : 1;
-  unsigned int ims           : 1;
-  unsigned int range         : 1;
-  unsigned int drop_after_CL : 1;
-  unsigned int client_abort  : 1;
-  unsigned int jg_compressed : 1;
-  int *count;
-  int bytes;
-  int ftp_data_fd = 0;
-  FTP_MODE ftp_mode;
-  unsigned int ftp_peer_addr;
+  int            state;   // request parsing state
+  int            req_pos; // request read position
+  char          *base_url            = nullptr;
+  char          *req_header          = nullptr;
+  char          *response            = nullptr;
+  char          *response_header     = nullptr;
+  int            max_req_header_size = 0;
+  int            length;
+  int            response_length;
+  int            response_remaining;
+  int            keepalive = 0;
+  int            next;
+  int            nalternate = 0;
+  unsigned int   ip         = 0;
+  unsigned int   binary        : 1;
+  unsigned int   ims           : 1;
+  unsigned int   range         : 1;
+  unsigned int   drop_after_CL : 1;
+  unsigned int   client_abort  : 1;
+  unsigned int   jg_compressed : 1;
+  int           *count;
+  int            bytes;
+  int            ftp_data_fd = 0;
+  FTP_MODE       ftp_mode;
+  unsigned int   ftp_peer_addr;
   unsigned short ftp_peer_port;
-  unsigned long range_bytes;
-  unsigned long range_end;
-  unsigned long range_start;
-  int post_size;
-  int total_length;
-  int post_cl;
-  int send_header;
-  int header_size;
+  unsigned long  range_bytes;
+  unsigned long  range_end;
+  unsigned long  range_start;
+  int            post_size;
+  int            total_length;
+  int            post_cl;
+  int            send_header;
+  int            header_size;
 
   void
   reset()
@@ -631,9 +631,9 @@ fast(int sock, int speed, int d)
   if (!speed) {
     return 0;
   }
-  int64_t t  = now - fd[sock].start + 1;
-  int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
-  int delta  = d - target;
+  int64_t t      = now - fd[sock].start + 1;
+  int     target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
+  int     delta  = d - target;
   if (delta > 0) {
     int mwait      = (delta * 1000) / speed;
     fd[sock].ready = now + (mwait * HRTIME_MSECOND);
@@ -658,9 +658,9 @@ faster_than(int sock, int speed, int d)
   if (!speed) {
     return 1;
   }
-  int64_t t  = now - fd[sock].start + 1;
-  int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
-  int delta  = d - target;
+  int64_t t      = now - fd[sock].start + 1;
+  int     target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
+  int     delta  = d - target;
   if (delta > 0) {
     return 1;
   }
@@ -778,8 +778,8 @@ send_response(int sock)
 {
   char *url_start = nullptr;
   char *url_end   = nullptr;
-  int err         = 0, towrite;
-  int url_len     = 0;
+  int   err       = 0, towrite;
+  int   url_len   = 0;
 
   if (fd[sock].req_pos >= 0) {
     char header[1024];
@@ -887,8 +887,8 @@ send_response(int sock)
 static char *
 strncasestr(char *s, const char *find, int len)
 {
-  int findlen = strlen(find);
-  char *e     = s + len;
+  int   findlen = strlen(find);
+  char *e       = s + len;
   while (1) {
     char *x = (char *)memchr(s, *find, e - s);
     if (!x) {
@@ -918,7 +918,7 @@ check_keepalive(char *r, int length)
     return http_1_1;
   }
   if (ka) {
-    int l   = length - (ka - r);
+    int   l = length - (ka - r);
     char *e = (char *)memchr(ka, '\n', l);
     if (!e) {
       e = (char *)memchr(ka, '\r', l);
@@ -943,7 +943,7 @@ check_alt(char *r, int length)
     s += sizeof("Cookie:");
   }
   if (s) {
-    int l   = length - (s - r);
+    int   l = length - (s - r);
     char *e = (char *)memchr(s, '\n', l);
     if (!e) {
       e = (char *)memchr(s, '\r', l);
@@ -1014,10 +1014,10 @@ send_ftp_data(int sock, char *start /*, char * end */)
 static int
 process_header(int sock, char *buffer, int offset)
 {
-  char host[80];
-  int port, length;
+  char  host[80];
+  int   port, length;
   float r;
-  int post_request = 0;
+  int   post_request = 0;
   if (sscanf(buffer, "GET http://%[^:]:%d/%f/%d", host, &port, &r, &length) == 4) {
   } else if (sscanf(buffer, "GET /%f/%d", &r, &length) == 2) {
   } else if (sscanf(buffer, "POST http://%[^:]:%d/%f/%d", host, &port, &r, &length) == 4) {
@@ -1347,7 +1347,7 @@ read_compd_request(int sock)
 
   {
     char buf[MAX_BUFSIZE];
-    int toread = cbuffersize;
+    int  toread = cbuffersize;
     if (fast(sock, client_speed, fd[sock].bytes)) {
       return 0;
     }
@@ -1426,7 +1426,7 @@ read_ftp_request(int sock)
     fd[sock].req_pos                      += err;
     fd[sock].req_header[fd[sock].req_pos]  = 0;
     char *buffer                           = fd[sock].req_header, *n;
-    int res                                = 0;
+    int   res                              = 0;
     buffer[fd[sock].req_pos]               = 0;
     if (verbose) {
       printf("buffer [%s]\n", buffer);
@@ -1534,7 +1534,7 @@ read_ftp_request(int sock)
       if (fd[sock].ftp_mode == FTP_NULL) {
         // default to PORT ftp
         struct sockaddr_in ftp_peer;
-        int ftp_peer_addr_len = sizeof(ftp_peer);
+        int                ftp_peer_addr_len = sizeof(ftp_peer);
         if (getpeername(sock, (struct sockaddr *)&ftp_peer,
 #if 0
                           &ftp_peer_addr_len
@@ -1592,8 +1592,8 @@ static int
 accept_sock(int sock)
 {
   struct sockaddr_in clientname;
-  int size   = sizeof(clientname);
-  int new_fd = 0;
+  int                size   = sizeof(clientname);
+  int                new_fd = 0;
   do {
     new_fd = accept(sock, (struct sockaddr *)&clientname,
 #if 0
@@ -1707,8 +1707,8 @@ static int
 open_server(unsigned short int port, accept_fn_t accept_fn)
 {
   struct linger lngr;
-  int sock;
-  int one = 1;
+  int           sock;
+  int           one = 1;
 
   /* Create the socket. */
   sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -1786,8 +1786,8 @@ poll_loop()
     }
   }
   pollfd pfd[POLL_GROUP_SIZE];
-  int ip = 0;
-  now    = ink_get_hrtime();
+  int    ip = 0;
+  now       = ink_get_hrtime();
   for (int i = 0; i <= last_fd; i++) {
     if (fd[i].fd > 0 && (!fd[i].ready || now >= fd[i].ready)) {
       pfd[ip].fd      = i;
@@ -1838,9 +1838,9 @@ gen_bfc_dist(double f = 10.0)
     return docsize;
   }
 
-  double rand  = 0.0;
-  double rand2 = 0.0;
-  bool f_given = f < 9.0;
+  double rand    = 0.0;
+  double rand2   = 0.0;
+  bool   f_given = f < 9.0;
   if (!f_given) {
     rand  = ts::Random::drandom();
     rand2 = ts::Random::drandom();
@@ -2009,7 +2009,7 @@ init_client(int sock)
 static unsigned int
 get_addr(const char *host)
 {
-  unsigned int addr         = inet_addr(host);
+  unsigned int    addr      = inet_addr(host);
   struct hostent *host_info = nullptr;
 
   if (!addr || (-1 == (int)addr)) {
@@ -2122,7 +2122,7 @@ compose_url(char *new_url, char *base, char *input)
 {
   char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
   char curl[512];
-  int xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
+  int  xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
   ink_web_decompose_url(base, sche, host, port, path, frag, quer, para, &xsche, &xhost, &xport, &xpath, &xfrag, &xquer, &xpar, &rel,
                         &slash);
   strcpy(curl, "http://");
@@ -2164,9 +2164,9 @@ static void
 extract_urls(char *buf, int buflen, char *base_url)
 {
   // if (verbose) printf("EXTRACT<<%s\n>>", buf);
-  char *start        = nullptr;
-  char *end          = nullptr;
-  char old_base[512] = {0};
+  char *start         = nullptr;
+  char *end           = nullptr;
+  char  old_base[512] = {0};
   strncpy(old_base, base_url, sizeof(old_base) - 1);
 
   start = strncasestr(buf, "<base ", buflen);
@@ -2227,7 +2227,7 @@ follow_links(int sock)
     if (fd[sock].binary) {
       return;
     }
-    int l   = fd[sock].response_remaining;
+    int   l = fd[sock].response_remaining;
     char *r = fd[sock].response, *p = r, *n = r;
     if (r) {
       extract_urls(r, l, fd[sock].base_url);
@@ -2259,9 +2259,9 @@ verify_content(int sock, char *buf, int done)
   if ((urls_mode && !check_content) || range_mode) {
     return 1;
   }
-  int l    = fd[sock].response_length;
-  char *d  = response_buffer + (l % 256) + fd[sock].nalternate;
-  int left = fd[sock].length;
+  int   l    = fd[sock].response_length;
+  char *d    = response_buffer + (l % 256) + fd[sock].nalternate;
+  int   left = fd[sock].length;
   if (left > 0) {
     if (embed_url && !fd[sock].jg_compressed) {
       if (l == left && left > 64) {
@@ -2406,10 +2406,10 @@ read_response(int sock)
     fd[sock].req_pos += err;
     fd[sock].bytes   += err;
     fd[sock].active   = ink_get_hrtime();
-    int total_read    = fd[sock].req_pos;
+    int   total_read  = fd[sock].req_pos;
     char *p           = fd[sock].req_header;
     char *cl          = nullptr;
-    int cli           = 0;
+    int   cli         = 0;
     while ((p = strchr(p, '\n'))) {
       if (verbose) {
         printf("read header end? [%s]\n", p);
@@ -2506,9 +2506,9 @@ read_response(int sock)
       }
       return read_response_error(sock);
     }
-    char *r    = fd[sock].req_header;
-    int length = p - r;
-    char *ka   = check_keepalive(r, length);
+    char *r      = fd[sock].req_header;
+    int   length = p - r;
+    char *ka     = check_keepalive(r, length);
     if (urls_mode) {
       fd[sock].response_remaining = total_read - length;
       if (fd[sock].response_remaining) {
@@ -2537,8 +2537,8 @@ read_response(int sock)
 
   {
     char *r = nullptr;
-    char buf[MAX_BUFSIZE];
-    int toread = cbuffersize;
+    char  buf[MAX_BUFSIZE];
+    int   toread = cbuffersize;
     if (urls_mode) {
       if (fd[sock].response_remaining + cbuffersize < MAX_BUFSIZE) {
         r = fd[sock].response + fd[sock].response_remaining;
@@ -2915,8 +2915,8 @@ make_random_url(int sock, double *dr, double *h)
     unsigned long long int doc = get_zipf(*dr);
     // Some large randomish number.
     unsigned long long int doc_len_int  = doc * 0x14A4D0FB0E93E3A7LL;
-    unsigned long int x                 = doc_len_int;
-    double y                            = (double)x;
+    unsigned long int      x            = doc_len_int;
+    double                 y            = (double)x;
     y                                  /= 0x100000000LL; // deterministic random number between 0 and 1.0
     fd[sock].response_length            = gen_bfc_dist(y);
     *dr                                 = doc;
@@ -3069,7 +3069,7 @@ static int
 build_request(int sock)
 {
   double dr, h;
-  char rbuf[1024];
+  char   rbuf[1024];
 
   make_random_url(sock, &dr, &h);
 
@@ -3162,7 +3162,7 @@ build_request(int sock)
 static void
 make_bfc_client(unsigned int addr, int port)
 {
-  int sock = -1;
+  int  sock = -1;
   char rbuf[1024];
   memset(rbuf, 0, 1024);
 
@@ -3232,7 +3232,7 @@ interval_report()
   RUNNING(servers);
   RUNNING(sops);
   RUNNING(tbytes);
-  float t      = (float)(now - start_time);
+  float    t   = (float)(now - start_time);
   uint64_t per = current_clients ? running_cbytes / current_clients : 0;
   printf("%4d %4d %7.1f %4d %4d %10" PRIu64 "/%-6" PRIu64 "  %4d %4d %4d  %9" PRIu64 " %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
@@ -3285,9 +3285,9 @@ interval_report()
 #define END_HASH_LOOP }
 
 struct UrlHashTable {
-  unsigned int numbytes;
+  unsigned int   numbytes;
   unsigned char *bytes;
-  int fd;
+  int            fd;
 
   void
   zero()
@@ -3441,7 +3441,7 @@ seen_it(char *url)
   if (!url_hash_entries) {
     return 0;
   }
-  int l      = 0;
+  int   l    = 0;
   char *para = strrchr(url, '#');
   if (para) {
     l = para - url;
@@ -3467,11 +3467,11 @@ seen_it(char *url)
 static int
 make_url_client(const char *url, const char *base_url, bool seen, bool unthrottled)
 {
-  int iport       = 80;
-  unsigned int ip = 0;
-  char curl[512]  = {0};
-  char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
-  int xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
+  int          iport     = 80;
+  unsigned int ip        = 0;
+  char         curl[512] = {0};
+  char         sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
+  int          xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
 
   if (base_url) {
     ink_web_canonicalize_url(base_url, url, curl, 512);
@@ -3733,7 +3733,7 @@ main(int argc __attribute__((unused)), const char *argv[])
     }
     for (unsigned i = 0; i < n_file_arguments; i++) {
       char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
-      int xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
+      int  xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
       ink_web_decompose_url(file_arguments[i], sche, host, port, path, frag, quer, para, &xsche, &xhost, &xport, &xpath, &xfrag,
                             &xquer, &xpar, &rel, &slash);
       if (xhost) {
@@ -3848,7 +3848,7 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
  */
 {
   const char *start = src_url;
-  int len           = strlen(src_url);
+  int         len   = strlen(src_url);
   const char *end   = start + len;
   const char *ptr   = start;
   const char *ptr2, *temp, *temp2;
@@ -3859,16 +3859,16 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   const char *frag1 = nullptr, *frag2 = nullptr;
   const char *quer1 = nullptr, *quer2 = nullptr;
   const char *para1 = nullptr, *para2 = nullptr;
-  bool fail = false;
-  int num;
-  int sche_exists   = 0;
-  int host_exists   = 0;
-  int port_exists   = 0;
-  int path_exists   = 0;
-  int frag_exists   = 0;
-  int quer_exists   = 0;
-  int para_exists   = 0;
-  int leading_slash = 0;
+  bool        fail = false;
+  int         num;
+  int         sche_exists   = 0;
+  int         host_exists   = 0;
+  int         port_exists   = 0;
+  int         path_exists   = 0;
+  int         frag_exists   = 0;
+  int         quer_exists   = 0;
+  int         para_exists   = 0;
+  int         leading_slash = 0;
 
   temp2 = ptr;
   /* strip fragments "#" off the end */
@@ -4195,11 +4195,11 @@ static void ink_web_dump_url_components(FILE *fp, InkWebURLComponents *c)
 static void
 ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_url, int max_dest_url_len)
 {
-  int doff;
+  int                 doff;
   InkWebURLComponents base, emb;
-  char temp[MAX_URL_LEN + 1], temp2[MAX_URL_LEN + 1];
-  int leading_slash, use_base_sche, use_base_host, use_base_path, use_base_quer, use_base_para, use_base_frag;
-  int host_last = 0;
+  char                temp[MAX_URL_LEN + 1], temp2[MAX_URL_LEN + 1];
+  int                 leading_slash, use_base_sche, use_base_host, use_base_path, use_base_quer, use_base_para, use_base_frag;
+  int                 host_last = 0;
 
   doff = 0;
 
@@ -4235,7 +4235,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
   } else if (emb.sche_exists && ((strcasecmp(emb.sche, "telnet") == 0) || (strcasecmp(emb.sche, "mailto") == 0) ||
                                  (strcasecmp(emb.sche, "news") == 0))) {
     const char *p = emb_url;
-    char *q       = dest_url;
+    char       *q = dest_url;
     while (*p) {
       *q++ = ParseRules::ink_tolower(*p++);
     }
@@ -4308,8 +4308,8 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
           emb.path_exists   = 1;
           emb.leading_slash = base.leading_slash;
         } /* 5 */
-      }   /* 4 */
-    }     /* 3 */
+      } /* 4 */
+    } /* 3 */
   }
 
   /* step 7 - combine parts */
@@ -4493,10 +4493,10 @@ static int
 ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
 {
   char *ptr, *end;
-  int free_flag = 0;
-  int scount, segstart, zapflag, doff, num;
-  int temp, i;
-  int error = 0;
+  int   free_flag = 0;
+  int   scount, segstart, zapflag, doff, num;
+  int   temp, i;
+  int   error = 0;
 
   /* offsets to each path segment */
   char **seg, *segstatic[STATIC_PATH_LEVELS];
@@ -4657,15 +4657,15 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
 static int
 ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
 {
-  char *src  = src_in;
-  char *dest = dest_in;
+  char       *src  = src_in;
+  char       *dest = dest_in;
   const char *c1;
   const char *c2;
-  int quit   = 0;
-  int dcount = 0;
-  int num    = 0;
-  int dig1   = 0;
-  int dig2   = 0;
+  int         quit   = 0;
+  int         dcount = 0;
+  int         num    = 0;
+  int         dig1   = 0;
+  int         dig2   = 0;
 
   while ((*src != 0) && !quit) {
     if (*src == '%') {
@@ -4775,11 +4775,11 @@ ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
 static int
 ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len)
 {
-  int d1, d2;
-  char *src  = src_in;
-  char *dest = dest_in;
-  int dcount = 0;
-  int quit   = 0;
+  int   d1, d2;
+  char *src    = src_in;
+  char *dest   = dest_in;
+  int   dcount = 0;
+  int   quit   = 0;
 
   while ((*src != 0) && (dcount < max_dest_len) && (quit == 0)) {
     if ((char *)strchr(dontescapify, *src) || ParseRules::is_alpha(*src) || ParseRules::is_digit(*src)) {

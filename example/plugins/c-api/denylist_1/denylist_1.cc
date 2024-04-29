@@ -32,12 +32,12 @@
 #define MAX_NSITES 500
 #define RETRY_TIME 10
 
-static DbgCtl dbg_ctl{PLUGIN_NAME};
-static char *sites[MAX_NSITES];
-static int nsites;
-static TSMutex sites_mutex;
+static DbgCtl          dbg_ctl{PLUGIN_NAME};
+static char           *sites[MAX_NSITES];
+static int             nsites;
+static TSMutex         sites_mutex;
 static TSTextLogObject ts_log;
-static TSCont global_contp;
+static TSCont          global_contp;
 
 static void handle_txn_start(TSCont contp, TSHttpTxn txnp);
 
@@ -70,12 +70,12 @@ destroy_continuation(TSHttpTxn txnp, TSCont contp)
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
+  TSMBuffer   bufp;
+  TSMLoc      hdr_loc;
+  TSMLoc      url_loc;
   const char *host;
-  int i;
-  int host_length;
+  int         i;
+  int         host_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
@@ -134,11 +134,11 @@ static void
 handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
-  char *url_str;
-  char *buf;
-  int url_length;
+  TSMLoc    hdr_loc;
+  TSMLoc    url_loc;
+  char     *url_str;
+  char     *buf;
+  int       url_length;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);
@@ -178,7 +178,7 @@ done:
 static void
 read_denylist(TSCont contp)
 {
-  char denylist_file[1024];
+  char   denylist_file[1024];
   TSFile file;
 
   snprintf(denylist_file, sizeof(denylist_file), "%s/denylist.txt", TSPluginDirGet());
@@ -228,7 +228,7 @@ static int
 denylist_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp;
-  cdata *cd;
+  cdata    *cd;
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
@@ -309,9 +309,9 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
-  int i;
+  int                      i;
   TSPluginRegistrationInfo info;
-  TSReturnCode error;
+  TSReturnCode             error;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

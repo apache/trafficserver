@@ -33,8 +33,8 @@ namespace Stats
                                                   "esi.n_includes",         "esi.n_include_errs", "esi.n_spcl_includes",
                                                   "esi.n_spcl_include_errs"};
 
-  int g_stat_indices[Stats::MAX_STAT_ENUM] = {0};
-  StatSystem *g_system                     = nullptr;
+  int         g_stat_indices[Stats::MAX_STAT_ENUM] = {0};
+  StatSystem *g_system                             = nullptr;
 
   void
   init(StatSystem *system)

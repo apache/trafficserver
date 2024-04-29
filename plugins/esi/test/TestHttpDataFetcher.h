@@ -84,7 +84,7 @@ public:
   };
 
 private:
-  int _n_pending_requests = 0;
+  int         _n_pending_requests = 0;
   std::string _data;
-  bool _return_data = true;
+  bool        _return_data = true;
 };

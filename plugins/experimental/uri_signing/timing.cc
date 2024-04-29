@@ -18,5 +18,5 @@
 
 #include "timing.h"
 
-extern inline void start_timer(struct timer *);
+extern inline void    start_timer(struct timer *);
 extern inline int64_t mark_timer(struct timer *);

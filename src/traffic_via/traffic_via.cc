@@ -44,7 +44,7 @@ struct VIA {
   ~VIA() { delete next; }
   const char *title;
   const char *viaData[128] = {}; // zero initialize
-  VIA *next                = nullptr;
+  VIA        *next         = nullptr;
 };
 
 // Function to get via header table for every field/category in the via header
@@ -255,14 +255,14 @@ decodeViaHeader(std::string_view text)
 static bool
 filterViaHeader()
 {
-  const pcre *compiledReg;
+  const pcre       *compiledReg;
   const pcre_extra *extraReg = nullptr;
-  int subStringVector[SUBSTRING_VECTOR_COUNT];
-  const char *err;
-  int errOffset;
-  int pcreExecCode;
-  int i;
-  const char *viaPattern =
+  int               subStringVector[SUBSTRING_VECTOR_COUNT];
+  const char       *err;
+  int               errOffset;
+  int               pcreExecCode;
+  int               i;
+  const char       *viaPattern =
     R"(\[([ucsfpe]+[^\]]+)\])"; // Regex to match via header with in [] which can start with character class ucsfpe
   std::string line;
 

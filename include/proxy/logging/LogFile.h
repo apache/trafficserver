@@ -59,7 +59,7 @@ public:
   int preproc_and_try_delete(LogBuffer *lb) override;
 
   bool trim_rolled(size_t rolling_max_count);
-  int roll(long interval_start, long interval_end, bool reopen_after_rolling = false);
+  int  roll(long interval_start, long interval_end, bool reopen_after_rolling = false);
 
   /** Check whether the file at the log's filename exists and, if not, close
    * the current file descriptor and reopen it.
@@ -95,13 +95,13 @@ public:
     return (m_file_format == LOG_FILE_BINARY ? "binary" : (m_file_format == LOG_FILE_PIPE ? "ascii_pipe" : "ascii"));
   }
 
-  static int write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format = nullptr);
-  int write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format = nullptr);
+  static int  write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format = nullptr);
+  int         write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format = nullptr);
   static bool rolled_logfile(char *file);
   static bool exists(const char *pathname);
 
   void display(FILE *fd = stdout);
-  int open_file();
+  int  open_file();
 
   off_t
   get_size_bytes() const
@@ -115,27 +115,27 @@ public:
   }
 
 public:
-  bool is_open();
-  void close_file();
-  void check_fd();
-  int get_fd();
+  bool       is_open();
+  void       close_file();
+  void       check_fd();
+  int        get_fd();
   static int writeln(char *data, int len, int fd, const char *path);
 
 public:
   LogFileFormat m_file_format;
 
 private:
-  char *m_name;
+  char         *m_name;
   LogEscapeType m_escape_type;
 
 public:
   BaseLogFile *m_log; // BaseLogFile backs the actual file on disk
-  char *m_header;
-  uint64_t m_signature;       // signature of log object stored
-  size_t m_ascii_buffer_size; // size of ascii buffer
-  size_t m_max_line_size;     // size of longest log line (record)
-  int m_pipe_buffer_size;     // this is the size of the pipe buffer set by fcntl
-  int m_fd;                   // this could back m_log or a pipe, depending on the situation
+  char        *m_header;
+  uint64_t     m_signature;         // signature of log object stored
+  size_t       m_ascii_buffer_size; // size of ascii buffer
+  size_t       m_max_line_size;     // size of longest log line (record)
+  int          m_pipe_buffer_size;  // this is the size of the pipe buffer set by fcntl
+  int          m_fd;                // this could back m_log or a pipe, depending on the situation
 
 public:
   Link<LogFile> link;

@@ -63,8 +63,8 @@ namespace err = rpc::handlers::errors;
 static bool
 is_server_draining()
 {
-  ts::Metrics &metrics = ts::Metrics::instance();
-  static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
+  ts::Metrics &metrics  = ts::Metrics::instance();
+  static auto  drain_id = metrics.lookup("proxy.process.proxy.draining");
 
   return (metrics[drain_id].load() != 0);
 }
@@ -72,8 +72,8 @@ is_server_draining()
 static void
 set_server_drain(bool drain)
 {
-  ts::Metrics &metrics = ts::Metrics::instance();
-  static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
+  ts::Metrics &metrics  = ts::Metrics::instance();
+  static auto  drain_id = metrics.lookup("proxy.process.proxy.draining");
 
   TSSystemState::drain(drain);
   metrics[drain_id].store(TSSystemState::is_draining() ? 1 : 0);

@@ -168,7 +168,7 @@ template <auto R, auto S>
 auto
 Histogram<R, S>::min_for_bucket(unsigned idx) -> raw_type
 {
-  auto range         = idx / N_SPAN_BUCKETS;
+  auto     range     = idx / N_SPAN_BUCKETS;
   raw_type base      = 0; // minimum value for the range (not span!).
   raw_type span_size = 1; // for @a range 0 or 1
   if (range > 0) {

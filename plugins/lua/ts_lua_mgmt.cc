@@ -51,8 +51,8 @@ static int
 ts_lua_mgmt_get_int(lua_State *L)
 {
   const char *name;
-  size_t name_len;
-  TSMgmtInt int_val;
+  size_t      name_len;
+  TSMgmtInt   int_val;
 
   name = luaL_checklstring(L, 1, &name_len);
 
@@ -67,8 +67,8 @@ ts_lua_mgmt_get_int(lua_State *L)
 static int
 ts_lua_mgmt_get_counter(lua_State *L)
 {
-  const char *name;
-  size_t name_len;
+  const char   *name;
+  size_t        name_len;
   TSMgmtCounter counter_val;
 
   name = luaL_checklstring(L, 1, &name_len);
@@ -84,7 +84,7 @@ static int
 ts_lua_mgmt_get_float(lua_State *L)
 {
   const char *name;
-  size_t name_len;
+  size_t      name_len;
   TSMgmtFloat float_val;
 
   name = luaL_checklstring(L, 1, &name_len);
@@ -98,8 +98,8 @@ ts_lua_mgmt_get_float(lua_State *L)
 static int
 ts_lua_mgmt_get_string(lua_State *L)
 {
-  const char *name;
-  size_t name_len;
+  const char  *name;
+  size_t       name_len;
   TSMgmtString str_val;
 
   name = luaL_checklstring(L, 1, &name_len);
@@ -117,7 +117,7 @@ ts_lua_mgmt_add_config_file(lua_State *L)
 {
   const char *parent;
   const char *filename;
-  size_t parent_len = 0, filename_len = 0;
+  size_t      parent_len = 0, filename_len = 0;
 
   if (lua_gettop(L) == 2) {
     filename = luaL_checklstring(L, 2, &filename_len);

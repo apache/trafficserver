@@ -55,12 +55,12 @@ enum CacheInfoMagic {
 };
 
 struct CacheInfo {
-  CryptoHash cache_key;
-  CacheFragType frag_type = CACHE_FRAG_TYPE_NONE;
-  int len                 = 0;
-  char *hostname          = nullptr;
-  time_t pin_in_cache     = 0;
-  CacheInfoMagic magic    = CACHE_INFO_MAGIC_ALIVE;
+  CryptoHash     cache_key;
+  CacheFragType  frag_type    = CACHE_FRAG_TYPE_NONE;
+  int            len          = 0;
+  char          *hostname     = nullptr;
+  time_t         pin_in_cache = 0;
+  CacheInfoMagic magic        = CACHE_INFO_MAGIC_ALIVE;
 
   CacheInfo() {}
 };
@@ -77,23 +77,23 @@ public:
   FileImpl();
   ~FileImpl();
 
-  int fopen(const char *filename, const char *mode);
-  void fclose();
+  int     fopen(const char *filename, const char *mode);
+  void    fclose();
   ssize_t fread(void *buf, size_t length);
   ssize_t fwrite(const void *buf, size_t length);
   ssize_t fflush();
-  char *fgets(char *buf, size_t length);
+  char   *fgets(char *buf, size_t length);
 
 public:
-  int m_fd;
-  int m_mode;
-  char *m_buf;
+  int    m_fd;
+  int    m_mode;
+  char  *m_buf;
   size_t m_bufsize;
   size_t m_bufpos;
 };
 
 struct INKConfigImpl : public ConfigInfo {
-  void *mdata;
+  void               *mdata;
   TSConfigDestroyFunc m_destroy_func;
 
   ~INKConfigImpl() override { m_destroy_func(mdata); }
@@ -103,7 +103,7 @@ struct HttpAltInfo {
   HTTPHdr m_client_req;
   HTTPHdr m_cached_req;
   HTTPHdr m_cached_resp;
-  float m_qvalue;
+  float   m_qvalue;
 };
 
 class ConfigUpdateCallback : public Continuation
@@ -177,8 +177,8 @@ public:
 protected:
   /// Track the state of one scope of hooks.
   struct Scope {
-    APIHook const *_c      = nullptr; ///< Current hook (candidate for invocation).
-    APIHook const *_p      = nullptr; ///< Previous hook (already invoked).
+    APIHook const  *_c     = nullptr; ///< Current hook (candidate for invocation).
+    APIHook const  *_p     = nullptr; ///< Previous hook (already invoked).
     APIHooks const *_hooks = nullptr; ///< Reference to the real hook list
 
     /// Initialize the scope.
@@ -193,9 +193,9 @@ protected:
 
 private:
   TSHttpHookID _id = TS_HTTP_LAST_HOOK; ///< Hook ID.
-  Scope _global;                        ///< Chain from global hooks.
-  Scope _ssn;                           ///< Chain from session hooks.
-  Scope _txn;                           ///< Chain from transaction hooks.
+  Scope        _global;                 ///< Chain from global hooks.
+  Scope        _ssn;                    ///< Chain from session hooks.
+  Scope        _txn;                    ///< Chain from transaction hooks.
 };
 
 inline TSHttpHookID

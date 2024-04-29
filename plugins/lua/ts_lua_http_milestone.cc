@@ -97,9 +97,9 @@ ts_lua_inject_http_milestone_variables(lua_State *L)
 static int
 ts_lua_http_milestone_get(lua_State *L)
 {
-  int milestone_type;
-  TSHRTime value;
-  TSHRTime epoch;
+  int              milestone_type;
+  TSHRTime         value;
+  TSHRTime         epoch;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);

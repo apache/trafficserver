@@ -52,37 +52,37 @@
 #include "SSLSessionTicket.h"
 #include "iocore/net/YamlSNIConfig.h"
 
-int SSLConfig::config_index                                 = 0;
-int SSLConfig::configids[]                                  = {0, 0};
-int SSLCertificateConfig::configid                          = 0;
-int SSLTicketKeyConfig::configid                            = 0;
-int SSLConfigParams::ssl_maxrecord                          = 0;
-int SSLConfigParams::ssl_misc_max_iobuffer_size_index       = 8;
-bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
-bool SSLConfigParams::ssl_ocsp_enabled                      = false;
-int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
-bool SSLConfigParams::ssl_ocsp_request_mode                 = false;
-int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
-int SSLConfigParams::ssl_ocsp_update_period                 = 60;
-char *SSLConfigParams::ssl_ocsp_user_agent                  = nullptr;
-int SSLConfigParams::ssl_handshake_timeout_in               = 0;
-int SSLConfigParams::origin_session_cache                   = 1;
-size_t SSLConfigParams::origin_session_cache_size           = 10240;
-size_t SSLConfigParams::session_cache_number_buckets        = 1024;
-bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
-size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
-swoc::IPRangeSet *SSLConfigParams::proxy_protocol_ip_addrs  = nullptr;
-bool SSLConfigParams::ssl_ktls_enabled                      = false;
+int                SSLConfig::config_index                                = 0;
+int                SSLConfig::configids[]                                 = {0, 0};
+int                SSLCertificateConfig::configid                         = 0;
+int                SSLTicketKeyConfig::configid                           = 0;
+int                SSLConfigParams::ssl_maxrecord                         = 0;
+int                SSLConfigParams::ssl_misc_max_iobuffer_size_index      = 8;
+bool               SSLConfigParams::ssl_allow_client_renegotiation        = false;
+bool               SSLConfigParams::ssl_ocsp_enabled                      = false;
+int                SSLConfigParams::ssl_ocsp_cache_timeout                = 3600;
+bool               SSLConfigParams::ssl_ocsp_request_mode                 = false;
+int                SSLConfigParams::ssl_ocsp_request_timeout              = 10;
+int                SSLConfigParams::ssl_ocsp_update_period                = 60;
+char              *SSLConfigParams::ssl_ocsp_user_agent                   = nullptr;
+int                SSLConfigParams::ssl_handshake_timeout_in              = 0;
+int                SSLConfigParams::origin_session_cache                  = 1;
+size_t             SSLConfigParams::origin_session_cache_size             = 10240;
+size_t             SSLConfigParams::session_cache_number_buckets          = 1024;
+bool               SSLConfigParams::session_cache_skip_on_lock_contention = false;
+size_t             SSLConfigParams::session_cache_max_bucket_size         = 100;
+init_ssl_ctx_func  SSLConfigParams::init_ssl_ctx_cb                       = nullptr;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb                      = nullptr;
+swoc::IPRangeSet  *SSLConfigParams::proxy_protocol_ip_addrs               = nullptr;
+bool               SSLConfigParams::ssl_ktls_enabled                      = false;
 
-const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
-uint32_t SSLConfigParams::server_max_early_data      = 0;
-uint32_t SSLConfigParams::server_recv_max_early_data = EARLY_DATA_DEFAULT_SIZE;
-bool SSLConfigParams::server_allow_early_data_params = false;
+const uint32_t EARLY_DATA_DEFAULT_SIZE                         = 16384;
+uint32_t       SSLConfigParams::server_max_early_data          = 0;
+uint32_t       SSLConfigParams::server_recv_max_early_data     = EARLY_DATA_DEFAULT_SIZE;
+bool           SSLConfigParams::server_allow_early_data_params = false;
 
-int SSLConfigParams::async_handshake_enabled = 0;
-char *SSLConfigParams::engine_conf_file      = nullptr;
+int   SSLConfigParams::async_handshake_enabled = 0;
+char *SSLConfigParams::engine_conf_file        = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
@@ -191,8 +191,8 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 int
 UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  SSLConfigParams *params = SSLConfig::acquire();
-  char *verify_server     = data.rec_string;
+  SSLConfigParams *params        = SSLConfig::acquire();
+  char            *verify_server = data.rec_string;
   if (params != nullptr && verify_server != nullptr) {
     Debug("ssl_load", "New Server Policy %s", verify_server);
     params->SetServerPolicy(verify_server);
@@ -205,8 +205,8 @@ UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS
 int
 UpdateServerPolicyProperties(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  SSLConfigParams *params = SSLConfig::acquire();
-  char *verify_server     = data.rec_string;
+  SSLConfigParams *params        = SSLConfig::acquire();
+  char            *verify_server = data.rec_string;
   if (params != nullptr && verify_server != nullptr) {
     params->SetServerPolicyProperties(verify_server);
   }
@@ -638,9 +638,9 @@ SSLCertificateConfig::startup()
 bool
 SSLCertificateConfig::reconfigure()
 {
-  bool retStatus = true;
+  bool                     retStatus = true;
   SSLConfig::scoped_config params;
-  SSLCertLookup *lookup = new SSLCertLookup();
+  SSLCertLookup           *lookup = new SSLCertLookup();
 
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.
@@ -705,8 +705,8 @@ SSLTicketParams::LoadTicket(bool &nochange)
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
-  time_t last_load_time    = 0;
-  bool no_default_keyblock = true;
+  time_t                   last_load_time      = 0;
+  bool                     no_default_keyblock = true;
 
   SSLTicketKeyConfig::scoped_config ticket_params;
   if (ticket_params) {
@@ -851,8 +851,7 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
       // As a fail-safe, handle it if secret_for_updateCTX doesn't or no longer points to a null-terminated string.
       //
       char const *s{expected};
-      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {
-      }
+      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {}
       Debug("ssl_config_updateCTX", "Update cert, indirect recusive call caused by call for %.*s", int(s - expected), expected);
     }
     return;
@@ -895,7 +894,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
                         const char *ca_bundle_path) const
 {
   shared_SSL_CTX client_ctx = nullptr;
-  std::string top_level_key, ctx_key;
+  std::string    top_level_key, ctx_key;
   ctx_key = client_cert;
   swoc::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
@@ -911,9 +910,9 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   }
   ink_mutex_release(&ctxMapLock);
 
-  BIO *biop     = nullptr;
-  X509 *cert    = nullptr;
-  EVP_PKEY *key = nullptr;
+  BIO      *biop = nullptr;
+  X509     *cert = nullptr;
+  EVP_PKEY *key  = nullptr;
   // Create context if doesn't exists
   if (!client_ctx) {
     Debug("ssl_client_ctx", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
@@ -976,7 +975,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
       }
 
       pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(client_ctx.get());
-      void *u                      = SSL_CTX_get_default_passwd_cb_userdata(client_ctx.get());
+      void            *u           = SSL_CTX_get_default_passwd_cb_userdata(client_ctx.get());
       key                          = PEM_read_bio_PrivateKey(biop, nullptr, password_cb, u);
       if (!key) {
         SSLError("failed to load client private key file from %s", key_file_name.c_str());

@@ -90,8 +90,8 @@ public:
   void demote();
 
 private:
-  bool elevated = false;
-  uid_t saved_uid;
+  bool     elevated = false;
+  uid_t    saved_uid;
   unsigned level;
 
   /// Acquire the privileges marked in @a mask for this process.

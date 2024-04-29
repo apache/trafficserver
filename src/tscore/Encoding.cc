@@ -83,7 +83,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   // Count specials in the url, assuming that there won't be any.
   //
-  int count        = 0;
+  int   count      = 0;
   char *p          = url;
   char *in_url_end = url + len_in;
 
@@ -142,9 +142,9 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
        * mean that the three character sequence is already encoded.  Just copy it over.
        */
       if (!pure_escape && (*from == '%') && ((from + 2) < in_url_end)) {
-        unsigned char c1   = *(from + 1);
-        unsigned char c2   = *(from + 2);
-        bool needsEncoding = ((map[c1 / 8] & (1 << (7 - c1 % 8))) || (map[c2 / 8] & (1 << (7 - c2 % 8))));
+        unsigned char c1            = *(from + 1);
+        unsigned char c2            = *(from + 2);
+        bool          needsEncoding = ((map[c1 / 8] & (1 << (7 - c1 % 8))) || (map[c2 / 8] & (1 << (7 - c2 % 8))));
         if (!needsEncoding) {
           out_len -= 2;
           Debug("log-utils", "character already encoded..skipping %c, %c, %c", *from, *(from + 1), *(from + 2));

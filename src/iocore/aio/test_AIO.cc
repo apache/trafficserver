@@ -48,27 +48,27 @@ enum {
 };
 
 struct AIO_Device;
-int n_accessors = 0;
-int orig_n_accessors;
+int         n_accessors = 0;
+int         orig_n_accessors;
 AIO_Device *dev[MAX_DISK_THREADS];
 
 extern RecInt cache_config_threads_per_disk;
 
-int write_after         = 0;
-int write_skip          = 0;
-int hotset_size         = 20;
+int    write_after      = 0;
+int    write_skip       = 0;
+int    hotset_size      = 20;
 double hotset_frequency = 0.9;
-int touch_data          = 0;
-int disk_size           = 4000;
-int read_size           = 1024;
-char *disk_path[MAX_DISK_THREADS];
-int n_disk_path      = 0;
-int run_time         = 0;
-int threads_per_disk = 1;
-int delete_disks     = 0;
-int max_size         = 0;
-int use_lseek        = 0;
-int num_processors   = 0;
+int    touch_data       = 0;
+int    disk_size        = 4000;
+int    read_size        = 1024;
+char  *disk_path[MAX_DISK_THREADS];
+int    n_disk_path      = 0;
+int    run_time         = 0;
+int    threads_per_disk = 1;
+int    delete_disks     = 0;
+int    max_size         = 0;
+int    use_lseek        = 0;
+int    num_processors   = 0;
 #if TS_USE_LINUX_IO_URING
 int io_uring_queue_entries = 32;
 int io_uring_sq_poll_ms    = 0;
@@ -78,28 +78,28 @@ int io_uring_wq_unbounded  = 0;
 int io_uring_force_thread  = 0;
 #endif
 
-int chains                    = 1;
+int    chains                 = 1;
 double seq_read_percent       = 0.0;
 double seq_write_percent      = 0.0;
 double rand_read_percent      = 0.0;
 double real_seq_read_percent  = 0.0;
 double real_seq_write_percent = 0.0;
 double real_rand_read_percent = 0.0;
-int seq_read_size             = 0;
-int seq_write_size            = 0;
-int rand_read_size            = 0;
+int    seq_read_size          = 0;
+int    seq_write_size         = 0;
+int    rand_read_size         = 0;
 
 struct AIO_Device : public Continuation {
-  char *path;
-  int fd;
-  int id;
-  char *buf;
-  ink_hrtime time_start, time_end;
-  int seq_reads;
-  int seq_writes;
-  int rand_reads;
-  int hotset_idx;
-  int mode;
+  char        *path;
+  int          fd;
+  int          id;
+  char        *buf;
+  ink_hrtime   time_start, time_end;
+  int          seq_reads;
+  int          seq_writes;
+  int          rand_reads;
+  int          hotset_idx;
+  int          mode;
   AIOCallback *io;
   AIO_Device(ProxyMutex *m) : Continuation(m)
   {
@@ -128,7 +128,7 @@ struct AIO_Device : public Continuation {
     unsigned int len    = static_cast<unsigned int>(orig_len);
     unsigned int offset = static_cast<unsigned int>(orig_offset);
     offset              = offset % 1024;
-    char *b             = buf;
+    char     *b         = buf;
     unsigned *x         = reinterpret_cast<unsigned *>(b);
     for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       x[j]   = offset;
@@ -371,8 +371,7 @@ read_config(const char *config_filename)
   while (!fin.eof()) {
     field_name[0] = '\0';
     fin >> field_name;
-    if (0) {
-    }
+    if (0) {}
     PARAM(hotset_size)
     PARAM(hotset_frequency)
     PARAM(touch_data)

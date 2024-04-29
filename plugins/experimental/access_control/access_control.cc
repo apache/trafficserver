@@ -98,15 +98,15 @@ AccessTokenStatus
 AccessToken::validateSignature()
 {
   /* Get secret needed for the signature */
-  size_t secretLen   = 0;
-  const char *secret = getSecretMap(_secretsMap, _keyId, secretLen);
+  size_t      secretLen = 0;
+  const char *secret    = getSecretMap(_secretsMap, _keyId, secretLen);
   if (nullptr == secret || 0 == secretLen) {
     ERROR_OUT("failed to find the secret for key id: '" << _keyId << "'");
     return _state = INVALID_SECRET;
   }
 
   /* Calculate signature. */
-  char computedMd[MAX_MSGDIGEST_BUFFER_SIZE];
+  char   computedMd[MAX_MSGDIGEST_BUFFER_SIZE];
   size_t computedMdLen = 0;
   computedMdLen = calcMessageDigest(_hashFunction, secret, _payload.data(), _payload.size(), computedMd, MAX_MSGDIGEST_BUFFER_SIZE);
   if (0 == computedMdLen) {
@@ -192,9 +192,9 @@ KvpAccessToken::parse(const StringView token)
   size_t pos         = 0;
   do {
     /* Look for the next KVP */
-    pos              = _token.find(_tokenConfig.pairDelimiter, prev);
-    StringView kvp   = _token.substr(prev, pos - prev);
-    size_t equalsign = kvp.find(_tokenConfig.kvDelimiter);
+    pos                  = _token.find(_tokenConfig.pairDelimiter, prev);
+    StringView kvp       = _token.substr(prev, pos - prev);
+    size_t     equalsign = kvp.find(_tokenConfig.kvDelimiter);
     if (kvp.npos == equalsign) {
       ERROR_OUT("invalid key-value-pair, missing key-value delimiter");
       return _state = INVALID_SYNTAX;
@@ -300,9 +300,9 @@ KvpAccessTokenBuilder::sign(const StringView kid, const StringView hf)
   appendKeyValuePair(_config.hashFunctionName, hf);
   appendKeyValuePair(_config.messageDigestName, ""); /* add an empty message digest and append the actual digest later */
 
-  char md[MAX_MSGDIGEST_BUFFER_SIZE];
-  size_t secretLen   = 0;
-  const char *secret = getSecretMap(_secretsMap, kid, secretLen);
+  char        md[MAX_MSGDIGEST_BUFFER_SIZE];
+  size_t      secretLen = 0;
+  const char *secret    = getSecretMap(_secretsMap, kid, secretLen);
   if (nullptr == secret || 0 == secretLen) {
     ERROR_OUT("failed to find the secret for kid='" << kid << "'");
     return;
@@ -313,8 +313,8 @@ KvpAccessTokenBuilder::sign(const StringView kid, const StringView hf)
     DEBUG_OUT("failed to calculate message digest");
   } else {
     /* Hex-encode signature. */
-    char mdHexLenMax = 2 * mdLen + 1;
-    char mdHex[mdHexLenMax];
+    char   mdHexLenMax = 2 * mdLen + 1;
+    char   mdHex[mdHexLenMax];
     size_t mdHexLen = hexEncode(md, mdLen, mdHex, mdHexLenMax);
     if (0 == mdHexLen) {
       DEBUG_OUT("failed to hex-encode new MD");
@@ -394,7 +394,7 @@ getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize)
     DEBUG_OUT("secrets map is empty");
     return nullptr;
   }
-  const char *result = nullptr;
+  const char               *result = nullptr;
   StringMap::const_iterator it;
   it = map.find(String(key));
   if (map.end() != it) {

@@ -84,8 +84,8 @@ public:
 private:
   struct Header {
     Header(const char *n, const char *v) : name(n), value(v), name_len(strlen(name)), value_len(strlen(value)) {}
-    const char *name;
-    const char *value;
+    const char  *name;
+    const char  *value;
     const size_t name_len;
     const size_t value_len;
   };
@@ -174,13 +174,13 @@ private:
     };
 
   private:
-    uint16_t _largest_reference;
-    EThread *_thread;
-    Continuation *_continuation;
-    uint64_t _stream_id;
+    uint16_t       _largest_reference;
+    EThread       *_thread;
+    Continuation  *_continuation;
+    uint64_t       _stream_id;
     const uint8_t *_header_block;
-    size_t _header_block_len;
-    HTTPHdr &_hdr;
+    size_t         _header_block_len;
+    HTTPHdr       &_hdr;
 
     // For IntrusiveDList support
     DecodeRequest *_next = nullptr;
@@ -192,24 +192,24 @@ private:
     uint16_t largest;
   };
 
-  XpackDynamicTable _dynamic_table;
+  XpackDynamicTable                         _dynamic_table;
   std::map<uint64_t, struct EntryReference> _references;
-  uint32_t _max_field_section_size = 0;
-  uint16_t _max_table_size         = 0;
-  uint16_t _max_blocking_streams   = 0;
+  uint32_t                                  _max_field_section_size = 0;
+  uint16_t                                  _max_table_size         = 0;
+  uint16_t                                  _max_blocking_streams   = 0;
 
   Continuation *_event_handler = nullptr;
-  void _resume_decode();
-  void _abort_decode();
+  void          _resume_decode();
+  void          _abort_decode();
 
   bool _invalid = false;
 
   swoc::IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
-  bool _add_to_blocked_list(DecodeRequest *decode_request);
+  bool                                         _add_to_blocked_list(DecodeRequest *decode_request);
 
   uint16_t _largest_known_received_index = 0;
-  void _update_largest_known_received_index_by_insert_count(uint16_t insert_count);
-  void _update_largest_known_received_index_by_stream_id(uint64_t stream_id);
+  void     _update_largest_known_received_index_by_insert_count(uint16_t insert_count);
+  void     _update_largest_known_received_index_by_stream_id(uint64_t stream_id);
 
   void _update_reference_counts(uint64_t stream_id);
 
@@ -248,22 +248,22 @@ private:
 
   void _decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const uint8_t *header_block, size_t header_block_len,
                HTTPHdr &hdr);
-  int _decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
-  int _decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
-  int _decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                       uint32_t &header_len);
-  int _decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                 uint32_t &header_len);
-  int _decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
-  int _decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                          uint32_t &header_len);
+  int  _decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
+  int  _decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
+  int  _decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                        uint32_t &header_len);
+  int  _decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                  uint32_t &header_len);
+  int  _decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
+  int  _decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                           uint32_t &header_len);
 
   // Utilities
   uint16_t _calc_absolute_index_from_relative_index(uint16_t base_index, uint16_t relative_index);
   uint16_t _calc_absolute_index_from_postbase_index(uint16_t base_index, uint16_t postbase_index);
   uint16_t _calc_relative_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
   uint16_t _calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
-  void _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
+  void     _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
 
   int _on_read_ready(VIO *vio);
   int _on_decoder_stream_read_ready(IOBufferReader &reader);
@@ -279,8 +279,8 @@ private:
   uint64_t _decoder_stream_id = 9999;
 
   // Chain of sending instructions
-  MIOBuffer *_encoder_stream_sending_instructions;
-  MIOBuffer *_decoder_stream_sending_instructions;
+  MIOBuffer      *_encoder_stream_sending_instructions;
+  MIOBuffer      *_decoder_stream_sending_instructions;
   IOBufferReader *_encoder_stream_sending_instructions_reader;
   IOBufferReader *_decoder_stream_sending_instructions_reader;
 

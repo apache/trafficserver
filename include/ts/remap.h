@@ -28,9 +28,9 @@
 #define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16) | TSREMAP_VMINOR)
 
 struct TSRemapInterface {
-  unsigned long size;            /* in: sizeof(struct _tsremap_api_info) */
-  unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
-  TSRemapPluginInfo plugin_info; /* in: Pointer to the internal RemapPluginInst */
+  unsigned long     size;            /* in: sizeof(struct _tsremap_api_info) */
+  unsigned long     tsremap_version; /* in: TS supported version ((major << 16) | minor) */
+  TSRemapPluginInfo plugin_info;     /* in: Pointer to the internal RemapPluginInst */
 };
 
 struct TSRemapRequestInfo {
@@ -46,7 +46,7 @@ struct TSRemapRequestInfo {
 
   /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
   TSMBuffer requestBufp;
-  TSMLoc requestHdrp;
+  TSMLoc    requestHdrp;
 
   /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
   int redirect;
@@ -135,7 +135,7 @@ extern "C" void TSRemapDone(void);
            TS_ERROR - instance creation error
 */
 extern "C" TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
-extern "C" void TSRemapDeleteInstance(void *);
+extern "C" void         TSRemapDeleteInstance(void *);
 
 /* Check response code from Origin Server
    os_response_type -> TSServerState

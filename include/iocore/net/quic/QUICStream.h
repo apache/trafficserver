@@ -47,11 +47,11 @@ public:
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
   ~QUICStream();
 
-  QUICStreamId id() const;
+  QUICStreamId                      id() const;
   const QUICConnectionInfoProvider *connection_info();
-  QUICStreamDirection direction() const;
-  bool is_bidirectional() const;
-  bool has_no_more_data() const;
+  QUICStreamDirection               direction() const;
+  bool                              is_bidirectional() const;
+  bool                              has_no_more_data() const;
 
   QUICOffset final_offset() const;
 
@@ -78,12 +78,12 @@ public:
   LINK(QUICStream, link);
 
 protected:
-  QUICConnectionInfoProvider *_connection_info = nullptr;
-  QUICStreamId _id                             = 0;
-  QUICStreamAdapter *_adapter                  = nullptr;
-  uint64_t _received_bytes                     = 0;
-  uint64_t _sent_bytes                         = 0;
-  bool _has_no_more_data                       = false;
+  QUICConnectionInfoProvider *_connection_info  = nullptr;
+  QUICStreamId                _id               = 0;
+  QUICStreamAdapter          *_adapter          = nullptr;
+  uint64_t                    _received_bytes   = 0;
+  uint64_t                    _sent_bytes       = 0;
+  bool                        _has_no_more_data = false;
 };
 
 class QUICStreamStateListener

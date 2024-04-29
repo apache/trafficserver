@@ -48,7 +48,7 @@ check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_por
 TEST_CASE("YamlSNIConfig sets port ranges appropriately")
 {
   YamlSNIConfig conf{};
-  swoc::Errata zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml")};
+  swoc::Errata  zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml")};
   if (!zret.is_ok()) {
     std::stringstream errorstream;
     errorstream << zret;
@@ -113,7 +113,7 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
   std::string filepath;
   swoc::bwprint(filepath, "{}/sni_conf_test_bad_port_{}.yaml", _XSTR(LIBINKNET_UNIT_TEST_DIR), port_str);
 
-  swoc::Errata zret{conf.loader(filepath)};
+  swoc::Errata      zret{conf.loader(filepath)};
   std::stringstream errorstream;
   errorstream << zret;
 

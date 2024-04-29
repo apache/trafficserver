@@ -190,7 +190,7 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
 static void
 setBondingStat(TSMutex stat_creation_mutex, const char *interface)
 {
-  char infdir[PATH_MAX];
+  char           infdir[PATH_MAX];
   struct dirent *dent;
 
   memset(&infdir[0], 0, sizeof(infdir));
@@ -223,7 +223,7 @@ static int
 netStatsInfo(TSMutex stat_creation_mutex)
 {
   struct dirent *dent;
-  DIR *srcdir = opendir(NET_STATS_DIR);
+  DIR           *srcdir = opendir(NET_STATS_DIR);
 
   if (srcdir == nullptr) {
     return 0;
@@ -315,7 +315,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont stats_cont;
+  TSCont                   stats_cont;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

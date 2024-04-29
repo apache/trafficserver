@@ -50,7 +50,7 @@ void
 QUICCertConfig::reconfigure()
 {
   SSLConfig::scoped_config params;
-  SSLCertLookup *lookup = new SSLCertLookup();
+  SSLCertLookup           *lookup = new SSLCertLookup();
 
   QUICMultiCertConfigLoader loader(params);
   loader.load(lookup);

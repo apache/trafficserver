@@ -32,9 +32,9 @@ bool has_trailing_parameter(TSMBuffer buf, TSMLoc http_hdr_loc);
 void add_trailing_parameter(TSMBuffer buf, TSMLoc http_hdr_loc);
 bool strip_trailing_parameter(TSMBuffer buf, TSMLoc http_hdr_loc);
 
-void get_pristine_url(StateInfo *state);
-void fix_connection_close(StateInfo *state);
+void      get_pristine_url(StateInfo *state);
+void      fix_connection_close(StateInfo *state);
 BodyData *intercept_check_request(StateInfo *state);
-bool intercept_fetch_the_url(StateInfo *state);
+bool      intercept_fetch_the_url(StateInfo *state);
 
 /*-----------------------------------------------------------------------------------------------*/

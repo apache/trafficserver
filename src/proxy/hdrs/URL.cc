@@ -512,7 +512,7 @@ URLImpl::set_port(HdrHeap *heap, unsigned int port)
   url_called_set(this);
   if (port > 0) {
     char value[6];
-    int length;
+    int  length;
 
     length = ink_fast_itoa(port, value, sizeof(value));
     mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), true);
@@ -630,10 +630,10 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalizat
     }
     return const_cast<char *>(url->m_ptr_printed_string);
   } else { // either not clean or never printed
-    int len = url_length_get(url, normalization_flags);
+    int   len = url_length_get(url, normalization_flags);
     char *buf;
-    int index  = 0;
-    int offset = 0;
+    int   index  = 0;
+    int   offset = 0;
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
     buf = heap->allocate_str(len + 1);
@@ -654,11 +654,11 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalizat
 char *
 url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 {
-  int len = url_length_get(url);
+  int   len = url_length_get(url);
   char *buf;
   char *buf2;
-  int index  = 0;
-  int offset = 0;
+  int   index  = 0;
+  int   offset = 0;
 
   buf = arena ? arena->str_alloc(len) : static_cast<char *>(ats_malloc(len + 1));
 
@@ -687,10 +687,10 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 char *
 url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 {
-  int len    = url_length_get(url);
-  int index  = 0;
-  int offset = 0;
-  char *buf  = nullptr;
+  int   len    = url_length_get(url);
+  int   index  = 0;
+  int   offset = 0;
+  char *buf    = nullptr;
 
   if (dstbuf && dstbuf_size > 0) {
     buf = dstbuf;
@@ -858,7 +858,7 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
   if (url->m_ptr_host) {
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
-    int const n          = url->m_len_host;
+    int const  n         = url->m_len_host;
     bool const bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
       length += 2;
@@ -901,8 +901,8 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
 char *
 url_to_string(URLImpl *url, Arena *arena, int *length)
 {
-  int len;
-  int idx;
+  int   len;
+  int   idx;
   char *str;
 
   len = url_length_get(url) + 1;
@@ -992,11 +992,11 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
 void
 unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state)
 {
-  int copy_len;
+  int   copy_len;
   char *first_pct;
-  int buf_len = static_cast<int>(buf_e - buf);
-  int str_len = static_cast<int>(str_e - str);
-  int min_len = (str_len < buf_len ? str_len : buf_len);
+  int   buf_len = static_cast<int>(buf_e - buf);
+  int   str_len = static_cast<int>(str_e - str);
+  int   min_len = (str_len < buf_len ? str_len : buf_len);
 
   first_pct  = ink_memcpy_until_char(buf, const_cast<char *>(str), min_len, '%');
   copy_len   = static_cast<int>(first_pct - str);
@@ -1122,7 +1122,7 @@ url_unescapify(Arena *arena, const char *str, int length)
 {
   char *buffer;
   char *t, *e;
-  int s;
+  int   s;
 
   if (length == -1) {
     length = static_cast<int>(strlen(str));
@@ -1163,11 +1163,10 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   const char *scheme_wks;
   const char *scheme_start = nullptr;
   const char *scheme_end   = nullptr;
-  int scheme_wks_idx;
+  int         scheme_wks_idx;
 
   // Skip over spaces
-  while (' ' == *cur && ++cur < end) {
-  }
+  while (' ' == *cur && ++cur < end) {}
 
   if (cur < end) {
     scheme_start = scheme_end = cur;
@@ -1175,8 +1174,7 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
     // If the URL is more complex then a path, parse to see if there is a scheme
     if ('/' != *cur) {
       // Search for a : it could be part of a scheme or a username:password
-      while (':' != *cur && ++cur < end) {
-      }
+      while (':' != *cur && ++cur < end) {}
 
       // If there is a :// then there is a scheme
       if (cur + 2 < end && cur[1] == '/' && cur[2] == '/') { // found "://"
@@ -1288,13 +1286,13 @@ ParseResult
 url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *end, bool copy_strings_p,
                    bool verify_host_characters)
 {
-  const char *cur = *start;
-  const char *base;              // Base for host/port field.
-  const char *bracket = nullptr; // marker for open bracket, if any.
-  swoc::TextView user, passw, host, port;
-  static size_t const MAX_COLON = 8; // max # of valid colons.
-  size_t n_colon                = 0;
-  const char *last_colon        = nullptr; // pointer to last colon seen.
+  const char         *cur = *start;
+  const char         *base;              // Base for host/port field.
+  const char         *bracket = nullptr; // marker for open bracket, if any.
+  swoc::TextView      user, passw, host, port;
+  static size_t const MAX_COLON  = 8; // max # of valid colons.
+  size_t              n_colon    = 0;
+  const char         *last_colon = nullptr; // pointer to last colon seen.
 
   // Do a quick check for "://"
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1434,7 +1432,7 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   const char *query_end      = nullptr;
   const char *fragment_start = nullptr;
   const char *fragment_end   = nullptr;
-  char mask;
+  char        mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings, verify_host_characters);
   if (err < 0) {
@@ -1600,8 +1598,8 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
 
   // Did we find something for the host?
   if (base != host_end) {
-    const char *port = nullptr;
-    int port_len     = 0;
+    const char *port     = nullptr;
+    int         port_len = 0;
 
     // Check for port. Search from the end stopping on the first non-digit
     // or more than 5 digits and a delimiter.
@@ -1687,7 +1685,7 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   if (url->m_ptr_host) {
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
-    int n          = url->m_len_host;
+    int  n         = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1780,7 +1778,7 @@ memcpy_tolower(char *d, const char *s, int n)
 static inline void
 url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache_generation_t generation)
 {
-  char buffer[BUFSIZE];
+  char  buffer[BUFSIZE];
   char *p;
 
   p = buffer;
@@ -1820,12 +1818,12 @@ static inline void
 url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, bool ignore_query,
                            cache_generation_t generation)
 {
-  char buffer[BUFSIZE];
-  char *p, *e;
+  char        buffer[BUFSIZE];
+  char       *p, *e;
   const char *strs[13], *ends[13];
   const char *t;
-  in_port_t port;
-  int i, s;
+  in_port_t   port;
+  int         i, s;
 
   strs[0] = url->m_ptr_scheme;
   strs[1] = "://";

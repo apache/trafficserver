@@ -113,10 +113,10 @@ DbgCtl dbg_ctl_no_brackets{"stream-editor"};
 } // namespace
 
 struct edit_t {
-  const size_t start;
-  const size_t bytes;
+  const size_t      start;
+  const size_t      bytes;
   const std::string repl;
-  const int priority;
+  const int         priority;
   edit_t(size_t s, size_t b, const std::string &r, int p) : start(s), bytes(b), repl(r), priority(p) { ; }
   bool
   operator!=(const edit_t &x) const
@@ -166,17 +166,17 @@ struct edit_t {
 class scope_t
 {
   virtual bool match(const char *) const = 0;
-  const bool uri;
+  const bool   uri;
 
 public:
   bool
   in_scope(TSHttpTxn tx) const
   {
     /* Get the URL from tx, and feed it to match() */
-    bool ret = false;
-    TSMBuffer bufp;
-    TSMLoc offset;
-    int length;
+    bool         ret = false;
+    TSMBuffer    bufp;
+    TSMLoc       offset;
+    int          length;
     TSReturnCode rc = TSHttpTxnPristineUrlGet(tx, &bufp, &offset);
     if (rc != TS_SUCCESS) {
       TSError("Error getting URL of current Txn");
@@ -225,9 +225,9 @@ private:
 public:
   rxscope(const bool u, const bool i, const char *pattern, int len) : scope_t(u)
   {
-    int flags = REG_NOSUB | REG_EXTENDED | (i ? REG_ICASE : 0);
-    char *str = TSstrndup(pattern, len);
-    int error = regcomp(&rx, str, flags);
+    int   flags = REG_NOSUB | REG_EXTENDED | (i ? REG_ICASE : 0);
+    char *str   = TSstrndup(pattern, len);
+    int   error = regcomp(&rx, str, flags);
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
@@ -243,7 +243,7 @@ class strscope : public scope_t
 {
 private:
   const bool icase;
-  char *str;
+  char      *str;
   bool
 
   match(const char *p) const override
@@ -264,15 +264,15 @@ public:
 class match_t
 {
 public:
-  virtual bool find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
-  virtual size_t cont_size() const                                                               = 0;
-  virtual ~match_t()                                                                             = default;
+  virtual bool   find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
+  virtual size_t cont_size() const                                                                 = 0;
+  virtual ~match_t()                                                                               = default;
 };
 
 class strmatch : public match_t
 {
-  const bool icase;
-  char *str;
+  const bool   icase;
+  char        *str;
   const size_t slen;
 
 public:
@@ -307,7 +307,7 @@ public:
 
 class rxmatch : public match_t
 {
-  size_t match_len;
+  size_t  match_len;
   regex_t rx;
 
 public:
@@ -317,7 +317,7 @@ public:
     regmatch_t pmatch[MAX_RX_MATCH];
     if (regexec(&rx, buf, MAX_RX_MATCH, pmatch, REG_NOTEOL) == 0) {
       char c;
-      int n;
+      int  n;
       found     = pmatch[0].rm_so;
       found_len = pmatch[0].rm_eo - found;
       while (c = *tmpl++, c != '\0') {
@@ -359,9 +359,9 @@ public:
 
   rxmatch(bool i, const char *pattern, size_t sz, size_t match_max) : match_len(match_max)
   {
-    char *str = TSstrndup(pattern, sz);
-    int flags = REG_EXTENDED | (i ? REG_ICASE : 0);
-    int error = regcomp(&rx, str, flags);
+    char *str   = TSstrndup(pattern, sz);
+    int   flags = REG_EXTENDED | (i ? REG_ICASE : 0);
+    int   error = regcomp(&rx, str, flags);
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
@@ -383,11 +383,11 @@ public:
 class rule_t
 {
 private:
-  scope_t *scope;
+  scope_t     *scope;
   unsigned int priority;
-  match_t *from;
-  char *to;
-  int *refcount;
+  match_t     *from;
+  char        *to;
+  int         *refcount;
 
 public:
   rule_t(const char *line) : scope(nullptr), priority(5), from(nullptr), to(nullptr), refcount(nullptr)
@@ -397,11 +397,11 @@ public:
     const char *to_spec    = strcasestr(line, "to:");
     const char *prio_spec  = strcasestr(line, "prio:");
     const char *len_spec   = strcasestr(line, "len:");
-    bool icase             = false;
-    bool rx                = false;
-    bool uri;
-    size_t len, match_len;
-    char delim;
+    bool        icase      = false;
+    bool        rx         = false;
+    bool        uri;
+    size_t      len, match_len;
+    char        delim;
 
     PARSE_VERIFY(line, scope_spec, "scope:");
     PARSE_VERIFY(line, from_spec, "from:");
@@ -560,15 +560,15 @@ using rule_p       = ruleset_t::const_iterator;
 using ruleset_up_t = std::unique_ptr<ruleset_t>;
 
 struct contdata_t {
-  TSCont cont             = nullptr;
-  TSIOBuffer out_buf      = nullptr;
-  TSIOBufferReader out_rd = nullptr;
-  TSVIO out_vio           = nullptr;
-  ruleset_up_t rules;
-  std::string contbuf;
-  size_t contbuf_sz = 0;
-  int64_t bytes_in  = 0;
-  int64_t bytes_out = 0;
+  TSCont           cont    = nullptr;
+  TSIOBuffer       out_buf = nullptr;
+  TSIOBufferReader out_rd  = nullptr;
+  TSVIO            out_vio = nullptr;
+  ruleset_up_t     rules;
+  std::string      contbuf;
+  size_t           contbuf_sz = 0;
+  int64_t          bytes_in   = 0;
+  int64_t          bytes_out  = 0;
   /* Use new/delete so destructor does cleanup for us */
   contdata_t() = default;
   ~contdata_t()
@@ -595,11 +595,11 @@ struct contdata_t {
 static int64_t
 process_block(contdata_t *contdata, TSIOBufferReader reader)
 {
-  int64_t nbytes, start;
-  size_t n = 0;
-  size_t buflen;
-  size_t keep;
-  const char *buf;
+  int64_t         nbytes, start;
+  size_t          n = 0;
+  size_t          buflen;
+  size_t          keep;
+  const char     *buf;
   TSIOBufferBlock block;
 
   if (reader == nullptr) { // We're just flushing anything we have buffered
@@ -680,10 +680,10 @@ streamedit_process(TSCont contp)
   // Loop over rules, and apply them to build our edit set
   // Loop over edits, and apply them to the stream
   // Retain buffered data at the end
-  int64_t ntodo, nbytes;
-  contdata_t *contdata      = static_cast<contdata_t *>(TSContDataGet(contp));
-  TSVIO input_vio           = TSVConnWriteVIOGet(contp);
-  TSIOBufferReader input_rd = TSVIOReaderGet(input_vio);
+  int64_t          ntodo, nbytes;
+  contdata_t      *contdata  = static_cast<contdata_t *>(TSContDataGet(contp));
+  TSVIO            input_vio = TSVConnWriteVIOGet(contp);
+  TSIOBufferReader input_rd  = TSVIOReaderGet(input_vio);
 
   if (contdata->out_buf == nullptr) {
     contdata->out_buf = TSIOBufferCreate();
@@ -768,9 +768,9 @@ streamedit_filter(TSCont contp, TSEvent event, void *edata)
 static int
 streamedit_setup(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txn        = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn   txn      = static_cast<TSHttpTxn>(edata);
   contdata_t *contdata = nullptr;
-  auto rules_in{static_cast<ruleset_t *>(TSContDataGet(contp))};
+  auto        rules_in{static_cast<ruleset_t *>(TSContDataGet(contp))};
 
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));
 
@@ -808,7 +808,7 @@ streamedit_setup(TSCont contp, TSEvent event, void *edata)
 static void
 read_conf(const char *filename, ruleset_up_t &in, ruleset_up_t &out)
 {
-  char buf[MAX_CONFIG_LINE];
+  char  buf[MAX_CONFIG_LINE];
   FILE *file = fopen(filename, "r");
 
   if (file == nullptr) {
@@ -839,9 +839,9 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont inputcont, outputcont;
-  ruleset_up_t rewrites_in;
-  ruleset_up_t rewrites_out;
+  TSCont                   inputcont, outputcont;
+  ruleset_up_t             rewrites_in;
+  ruleset_up_t             rewrites_out;
 
   info.plugin_name   = (char *)"stream-editor";
   info.vendor_name   = (char *)"Apache Software Foundation";

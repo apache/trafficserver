@@ -23,8 +23,8 @@
 #include "iocore/eventsystem/ProxyAllocator.h"
 #include "tscore/ink_assert.h"
 
-int thread_freelist_high_watermark = 512;
-int thread_freelist_low_watermark  = 32;
+int        thread_freelist_high_watermark = 512;
+int        thread_freelist_low_watermark  = 32;
 extern int cmd_disable_pfreelist;
 
 void *
@@ -42,8 +42,8 @@ thread_alloc(Allocator &a, ProxyAllocator &l)
 void
 thread_freeup(Allocator &a, ProxyAllocator &l)
 {
-  void *head   = l.freelist;
-  void *tail   = l.freelist;
+  void  *head  = l.freelist;
+  void  *tail  = l.freelist;
   size_t count = 0;
   while (l.freelist && l.allocated > thread_freelist_low_watermark) {
     tail       = l.freelist;

@@ -239,8 +239,8 @@ SocksEntry::startEvent(int event, void *data)
 int
 SocksEntry::mainEvent(int event, void *data)
 {
-  int ret     = EVENT_DONE;
-  int n_bytes = 0;
+  int            ret     = EVENT_DONE;
+  int            n_bytes = 0;
   unsigned char *p;
 
   switch (event) {
@@ -452,10 +452,10 @@ SocksEntry::mainEvent(int event, void *data)
 void
 loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 {
-  ats_scoped_str config_pathname;
-  swoc::Errata errata;
+  ats_scoped_str  config_pathname;
+  swoc::Errata    errata;
   std::error_code ec;
-  std::string config_text;
+  std::string     config_text;
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
   socks_conf_stuff->socks_needed   = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
@@ -530,7 +530,7 @@ int
 loadSocksAuthInfo(swoc::TextView content, socks_conf_struct *socks_stuff)
 {
   static constexpr swoc::TextView PREFIX = "auth u ";
-  std::string text;
+  std::string                     text;
 
   while (content.ltrim_if(&isspace)) {
     auto line = content.take_prefix_at('\n');
@@ -554,7 +554,7 @@ swoc::Errata
 loadSocksIPAddrs(swoc::TextView content, socks_conf_struct *socks_stuff)
 {
   static constexpr swoc::TextView PREFIX = "no_socks ";
-  std::string text;
+  std::string                     text;
 
   while (content.ltrim_if(&isspace)) {
     auto line = content.take_prefix_at('\n');
@@ -577,7 +577,7 @@ int
 socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 {
   // for more info on Socks5 see RFC 1928
-  int ret           = 0;
+  int   ret         = 0;
   char *pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd.data();
 
   switch (event) {
@@ -651,9 +651,9 @@ int
 socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 {
   // for more info see RFC 1929
-  int ret = 0;
+  int   ret = 0;
   char *pass_phrase;
-  int pass_len;
+  int   pass_len;
 
   switch (event) {
   case SOCKS_AUTH_OPEN:

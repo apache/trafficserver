@@ -123,7 +123,7 @@ inline const char *
 ptr_len_str(const char *p1, int l1, const char *str)
 {
   if (str && str[0]) {
-    int str_index           = 0;
+    int         str_index   = 0;
     const char *match_start = nullptr;
 
     while (l1 > 0) {

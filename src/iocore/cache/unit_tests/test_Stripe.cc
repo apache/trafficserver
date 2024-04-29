@@ -27,15 +27,15 @@
 #include <ostream>
 
 // Required by main.h
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 struct AddWriterBranchTest {
-  int initial_buffer_size{};
-  int agg_len{};
-  int header_len{};
-  int write_len{};
-  int readers{};
+  int  initial_buffer_size{};
+  int  agg_len{};
+  int  header_len{};
+  int  write_len{};
+  int  readers{};
   bool result{};
 };
 

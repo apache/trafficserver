@@ -41,14 +41,14 @@
 void
 DiagsConfig::reconfigure_diags()
 {
-  int i, e;
-  char *p, *dt, *at;
+  int              i, e;
+  char            *p, *dt, *at;
   DiagsConfigState c;
-  bool found, all_found;
+  bool             found, all_found;
 
   static struct {
     const char *config_name;
-    DiagsLevel level;
+    DiagsLevel  level;
   } output_records[] = {
     {"proxy.config.diags.output.diag",      DL_Diag     },
     {"proxy.config.diags.output.debug",     DL_Debug    },
@@ -96,7 +96,7 @@ DiagsConfig::reconfigure_diags()
   // read output routing values
   for (i = 0;; i++) {
     const char *record_name = output_records[i].config_name;
-    DiagsLevel l            = output_records[i].level;
+    DiagsLevel  l           = output_records[i].level;
 
     if (!record_name) {
       break;
@@ -301,10 +301,10 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   int diags_log_roll_enable  = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
 
   // Grab some perms for the actual files on disk
-  char *diags_perm       = REC_ConfigReadString("proxy.config.diags.logfile_perm");
-  char *output_perm      = REC_ConfigReadString("proxy.config.output.logfile_perm");
-  int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
-  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+  char *diags_perm         = REC_ConfigReadString("proxy.config.diags.logfile_perm");
+  char *output_perm        = REC_ConfigReadString("proxy.config.output.logfile_perm");
+  int   diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int   output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
 
   ats_free(diags_perm);
   ats_free(output_perm);
@@ -346,9 +346,9 @@ DiagsConfig::register_diags_callbacks()
     "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", nullptr,
   };
 
-  bool total_status = true;
-  bool status;
-  int i;
+  bool  total_status = true;
+  bool  status;
+  int   i;
   void *o = (void *)this;
 
   // set triggers to call same callback for any diag config change

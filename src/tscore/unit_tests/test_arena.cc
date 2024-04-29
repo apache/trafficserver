@@ -53,8 +53,8 @@ TEST_CASE("test arena", "[libts][arena]")
 {
   const int sizes_to_test   = 12;
   const int regions_to_test = 1024 * 2;
-  char **test_regions       = new char *[regions_to_test];
-  Arena *a                  = new Arena();
+  char    **test_regions    = new char *[regions_to_test];
+  Arena    *a               = new Arena();
 
   for (int i = 0; i < sizes_to_test; i++) {
     int test_size = 1 << i;

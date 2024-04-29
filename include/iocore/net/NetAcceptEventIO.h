@@ -29,7 +29,7 @@ struct NetAccept;
 
 struct NetAcceptEventIO : public EventIO {
   NetAcceptEventIO() : EventIO() {}
-  int start(EventLoop l, NetAccept *vc, int events);
+  int  start(EventLoop l, NetAccept *vc, int events);
   void process_event(int flags) override;
 
 private:

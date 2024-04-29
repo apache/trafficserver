@@ -60,7 +60,7 @@ static int
 ts_lua_txn_info_get(lua_State *L)
 {
   TSHttpTxnInfoKey type;
-  TSMgmtInt value;
+  TSMgmtInt        value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);

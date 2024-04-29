@@ -34,10 +34,10 @@
 #include "txn_box/yaml_util.h"
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -55,7 +55,7 @@ class Do_ua_req_url_host : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -83,7 +83,7 @@ protected:
 };
 
 const std::string Do_ua_req_url_host::KEY{"ua-req-url-host"};
-const HookMask Do_ua_req_url_host::HOOKS = MaskFor(Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP);
+const HookMask    Do_ua_req_url_host::HOOKS = MaskFor(Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP);
 
 Do_ua_req_url_host::Do_ua_req_url_host(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -125,7 +125,7 @@ class Do_proxy_req_url_host : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -153,7 +153,7 @@ protected:
 };
 
 const std::string Do_proxy_req_url_host::KEY{"proxy-req-url-host"};
-const HookMask Do_proxy_req_url_host::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_url_host::HOOKS{MaskFor({Hook::PREQ})};
 
 Do_proxy_req_url_host::Do_proxy_req_url_host(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -195,7 +195,7 @@ class Do_ua_req_url_port : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -223,7 +223,7 @@ protected:
 };
 
 const std::string Do_ua_req_url_port::KEY{"ua-req-url-port"};
-const HookMask Do_ua_req_url_port::HOOKS{MaskFor({Hook::CREQ, Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_url_port::HOOKS{MaskFor({Hook::CREQ, Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Do_ua_req_url_port::Do_ua_req_url_port(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -265,7 +265,7 @@ class Do_proxy_req_url_port : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -293,7 +293,7 @@ protected:
 };
 
 const std::string Do_proxy_req_url_port::KEY{"proxy-req-url-port"};
-const HookMask Do_proxy_req_url_port::HOOKS{MaskFor(Hook::PREQ)};
+const HookMask    Do_proxy_req_url_port::HOOKS{MaskFor(Hook::PREQ)};
 
 Do_proxy_req_url_port::Do_proxy_req_url_port(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -353,9 +353,9 @@ Loc_String_Parse(TextView const &loc, TextView &host_token, int &port)
 void
 URL_Loc_Set(Context &ctx, Expr &expr, ts::URL &url)
 {
-  auto value = ctx.extract(expr);
+  auto     value = ctx.extract(expr);
   TextView host_token;
-  int port = -1; // if still -1 after parsing, the parsing failed.
+  int      port = -1; // if still -1 after parsing, the parsing failed.
   if (auto loc = std::get_if<IndexFor(STRING)>(&value); nullptr != loc) {
     // split the string to get the pieces.
     Loc_String_Parse(*loc, host_token, port);
@@ -385,9 +385,9 @@ URL_Loc_Set(Context &ctx, Expr &expr, ts::URL &url)
 void
 Req_Loc_Set(Context &ctx, Expr &expr, ts::HttpRequest &req)
 {
-  auto value = ctx.extract(expr);
+  auto     value = ctx.extract(expr);
   TextView host_token;
-  int port = -1; // if still -1 after parsing, the parsing failed.
+  int      port = -1; // if still -1 after parsing, the parsing failed.
   if (auto loc = std::get_if<IndexFor(STRING)>(&value); nullptr != loc && Loc_String_Parse(*loc, host_token, port)) {
     req.field_obtain(ts::HTTP_FIELD_HOST).assign(*loc);
   } else if (auto t = std::get_if<IndexFor(TUPLE)>(&value); nullptr != t) {
@@ -404,7 +404,7 @@ Req_Loc_Set(Context &ctx, Expr &expr, ts::HttpRequest &req)
         } else {
           port = 0; // no port element, clear port.
         }
-        auto buffer = ctx.transient_buffer(host_token.size() + 1 + std::numeric_limits<in_port_t>::digits10);
+        auto                    buffer = ctx.transient_buffer(host_token.size() + 1 + std::numeric_limits<in_port_t>::digits10);
         swoc::FixedBufferWriter w{buffer};
         w.write(host_token);
         if (port > 0) {
@@ -435,7 +435,7 @@ class Do_ua_req_url_loc : public Directive
 
 public:
   static inline const std::string KEY = "ua-req-url-loc";
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask           HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -502,7 +502,7 @@ class Do_proxy_req_url_loc : public Directive
 
 public:
   static inline const std::string KEY = "proxy-req-url-loc";
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask           HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -570,7 +570,7 @@ class Do_ua_req_host : public Directive
   using self_type  = Do_ua_req_host; ///< Self reference type.
 public:
   static inline const std::string KEY{"ua-req-host"}; ///< Directive name.
-  static const HookMask HOOKS;                        ///< Valid hooks for directive.
+  static const HookMask           HOOKS;              ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -642,7 +642,7 @@ class Do_ua_req_port : public Directive
   using self_type  = Do_ua_req_port; ///< Self reference type.
 public:
   static inline const std::string KEY{"ua-req-port"}; ///< Directive name.
-  static const HookMask HOOKS;                        ///< Valid hooks for directive.
+  static const HookMask           HOOKS;              ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -716,7 +716,7 @@ class Do_proxy_req_port : public Directive
   using self_type  = Do_proxy_req_port; ///< Self reference type.
 public:
   static inline const std::string KEY{"proxy-req-port"}; ///< Directive name.
-  static const HookMask HOOKS;                           ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                 ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -788,8 +788,8 @@ class Do_proxy_req_host : public Directive
   using super_type = Directive;         ///< Parent type.
   using self_type  = Do_proxy_req_host; ///< Self reference type.
 public:
-  static inline const std::string KEY{"proxy-req-host"};   ///< Directive name.
-  static inline const HookMask HOOKS{MaskFor(Hook::PREQ)}; ///< Valid hooks for directive.
+  static inline const std::string KEY{"proxy-req-host"};      ///< Directive name.
+  static inline const HookMask    HOOKS{MaskFor(Hook::PREQ)}; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -857,7 +857,7 @@ class Do_ua_req_loc : public Directive
   using self_type  = Do_ua_req_loc; ///< Self reference type.
 public:
   static inline const std::string KEY{"ua-req-loc"}; ///< Directive name.
-  static const HookMask HOOKS;                       ///< Valid hooks for directive.
+  static const HookMask           HOOKS;             ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -926,7 +926,7 @@ class Do_proxy_req_loc : public Directive
   using self_type  = Do_proxy_req_loc; ///< Self reference type.
 public:
   static inline const std::string KEY{"proxy-req-loc"}; ///< Directive name.
-  static const HookMask HOOKS;                          ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -993,8 +993,8 @@ class Do_ua_req_scheme : public Directive
   using super_type = Directive;        ///< Parent type.
   using self_type  = Do_ua_req_scheme; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1027,7 +1027,7 @@ protected:
 };
 
 const std::string Do_ua_req_scheme::KEY{"ua-req-scheme"};
-const HookMask Do_ua_req_scheme::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_scheme::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Do_ua_req_scheme::Do_ua_req_scheme(Expr &&fmt) : _expr(std::move(fmt)) {}
 
@@ -1063,8 +1063,8 @@ class Do_ua_req_url : public Directive
   using super_type = Directive;     ///< Parent type.
   using self_type  = Do_ua_req_url; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1097,7 +1097,7 @@ protected:
 };
 
 const std::string Do_ua_req_url::KEY{"ua-req-url"};
-const HookMask Do_ua_req_url::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_url::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Do_ua_req_url::Do_ua_req_url(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -1133,8 +1133,8 @@ class Do_proxy_req_scheme : public Directive
   using super_type = Directive;           ///< Parent type.
   using self_type  = Do_proxy_req_scheme; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1167,7 +1167,7 @@ protected:
 };
 
 const std::string Do_proxy_req_scheme::KEY{"proxy-req-scheme"};
-const HookMask Do_proxy_req_scheme::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_scheme::HOOKS{MaskFor({Hook::PREQ})};
 
 Do_proxy_req_scheme::Do_proxy_req_scheme(Expr &&fmt) : _fmt(std::move(fmt)) {}
 
@@ -1203,8 +1203,8 @@ class Do_proxy_req_url : public Directive
   using super_type = Directive;        ///< Parent type.
   using self_type  = Do_proxy_req_url; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -1237,7 +1237,7 @@ protected:
 };
 
 const std::string Do_proxy_req_url::KEY{"proxy-req-url"};
-const HookMask Do_proxy_req_url::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_url::HOOKS{MaskFor({Hook::PREQ})};
 
 Do_proxy_req_url::Do_proxy_req_url(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -1271,8 +1271,8 @@ class Do_did_remap : public Directive
   using self_type = Do_did_remap;
 
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature expression..
    *
@@ -1305,7 +1305,7 @@ protected:
 };
 
 const std::string Do_did_remap::KEY{"did-remap"};
-const HookMask Do_did_remap::HOOKS{MaskFor(Hook::REMAP)};
+const HookMask    Do_did_remap::HOOKS{MaskFor(Hook::REMAP)};
 
 Do_did_remap::Do_did_remap(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -1344,8 +1344,8 @@ class Do_apply_remap_rule : public Directive
   using super_type = Directive;           ///< Parent type.
   using self_type  = Do_apply_remap_rule; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Invoke directive.
    *
@@ -1369,7 +1369,7 @@ public:
 };
 
 const std::string Do_apply_remap_rule::KEY{"apply-remap-rule"};
-const HookMask Do_apply_remap_rule::HOOKS{MaskFor(Hook::REMAP)};
+const HookMask    Do_apply_remap_rule::HOOKS{MaskFor(Hook::REMAP)};
 
 Errata
 Do_apply_remap_rule::invoke(Context &ctx)
@@ -1428,8 +1428,8 @@ class Do_ua_req_path : public Directive
   using super_type = Directive;      ///< Parent type.
   using self_type  = Do_ua_req_path; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a expr.
    *
@@ -1462,7 +1462,7 @@ protected:
 };
 
 const std::string Do_ua_req_path::KEY{"ua-req-path"};
-const HookMask Do_ua_req_path::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_path::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Do_ua_req_path::Do_ua_req_path(Expr &&expr) : _expr(std::move(expr)) {}
 
@@ -1501,7 +1501,7 @@ class Do_ua_req_fragment : public Directive
   using self_type  = Do_ua_req_fragment; ///< Self reference type.
 public:
   static inline const std::string KEY{"ua-req-fragment"}; ///< Directive name.
-  static const HookMask HOOKS;                            ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                  ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1572,8 +1572,8 @@ class Do_proxy_req_path : public Directive
   using super_type = Directive;         ///< Parent type.
   using self_type  = Do_proxy_req_path; ///< Self reference type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1606,7 +1606,7 @@ protected:
 };
 
 const std::string Do_proxy_req_path::KEY{"proxy-req-path"};
-const HookMask Do_proxy_req_path::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_path::HOOKS{MaskFor({Hook::PREQ})};
 
 Do_proxy_req_path::Do_proxy_req_path(Expr &&fmt) : _fmt(std::move(fmt)) {}
 
@@ -1643,7 +1643,7 @@ class Do_proxy_req_fragment : public Directive
   using self_type  = Do_proxy_req_fragment; ///< Self reference type.
 public:
   static inline const std::string KEY{"proxy-req-fragment"}; ///< Directive name.
-  static const HookMask HOOKS;                               ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                     ///< Valid hooks for directive.
 
   /** Construct with feature extractor @a fmt.
    *
@@ -1710,7 +1710,7 @@ class FieldDirective : public Directive
   using super_type = Directive;      ///< Parent type.
 protected:
   TextView _name; ///< Field name.
-  Expr _expr;     ///< Value for field.
+  Expr     _expr; ///< Value for field.
 
   /** Base constructor.
    *
@@ -1755,10 +1755,10 @@ protected:
 
   /// Visitor to perform the assignment.
   struct Apply {
-    Context &_ctx;         ///< Runtime context.
-    ts::HttpHeader &_hdr;  ///< HTTP Header to modify.
-    ts::HttpField _field;  ///< Working field.
-    TextView const &_name; ///< Field name.
+    Context        &_ctx;   ///< Runtime context.
+    ts::HttpHeader &_hdr;   ///< HTTP Header to modify.
+    ts::HttpField   _field; ///< Working field.
+    TextView const &_name;  ///< Field name.
 
     Apply(Context &ctx, ts::HttpHeader &hdr, TextView const &name) : _ctx(ctx), _hdr(hdr), _field(hdr.field(name)), _name(name) {}
 
@@ -1930,8 +1930,8 @@ class Do_ua_req_field : public FieldDirective
   using super_type = FieldDirective;
 
 public:
-  static const std::string KEY; ///< Directive key.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive key.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   using super_type::invoke;
   Errata invoke(Context &ctx) override;
@@ -1959,7 +1959,7 @@ protected:
 };
 
 const std::string Do_ua_req_field::KEY{"ua-req-field"};
-const HookMask Do_ua_req_field::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_ua_req_field::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Errata
 Do_ua_req_field::invoke(Context &ctx)
@@ -1983,8 +1983,8 @@ class Do_proxy_req_field : public FieldDirective
   using super_type = FieldDirective;
 
 public:
-  static const std::string KEY; ///< Directive key.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive key.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override;
 
@@ -2011,7 +2011,7 @@ protected:
 };
 
 const std::string Do_proxy_req_field::KEY{"proxy-req-field"};
-const HookMask Do_proxy_req_field::HOOKS{MaskFor({Hook::PREQ})};
+const HookMask    Do_proxy_req_field::HOOKS{MaskFor({Hook::PREQ})};
 
 Errata
 Do_proxy_req_field::invoke(Context &ctx)
@@ -2035,8 +2035,8 @@ class Do_proxy_rsp_field : public FieldDirective
   using super_type = FieldDirective;
 
 public:
-  static const std::string KEY; ///< Directive key.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive key.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override;
 
@@ -2063,7 +2063,7 @@ protected:
 };
 
 const std::string Do_proxy_rsp_field::KEY{"proxy-rsp-field"};
-const HookMask Do_proxy_rsp_field::HOOKS{MaskFor(Hook::PRSP)};
+const HookMask    Do_proxy_rsp_field::HOOKS{MaskFor(Hook::PRSP)};
 
 Errata
 Do_proxy_rsp_field::invoke(Context &ctx)
@@ -2087,8 +2087,8 @@ class Do_upstream_rsp_field : public FieldDirective
   using super_type = FieldDirective;
 
 public:
-  static const std::string KEY; ///< Directive key.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive key.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override;
 
@@ -2115,7 +2115,7 @@ protected:
 };
 
 const std::string Do_upstream_rsp_field::KEY{"upstream-rsp-field"};
-const HookMask Do_upstream_rsp_field::HOOKS{MaskFor(Hook::URSP)};
+const HookMask    Do_upstream_rsp_field::HOOKS{MaskFor(Hook::URSP)};
 
 Errata
 Do_upstream_rsp_field::invoke(Context &ctx)
@@ -2138,8 +2138,8 @@ class Do_upstream_rsp_status : public Directive
   using self_type  = Do_upstream_rsp_status; ///< Self reference type.
   using super_type = Directive;              ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -2163,14 +2163,14 @@ protected:
 };
 
 const std::string Do_upstream_rsp_status::KEY{"upstream-rsp-status"};
-const HookMask Do_upstream_rsp_status::HOOKS{MaskFor({Hook::URSP})};
+const HookMask    Do_upstream_rsp_status::HOOKS{MaskFor({Hook::URSP})};
 
 Errata
 Do_upstream_rsp_status::invoke(Context &ctx)
 {
-  int status    = TS_HTTP_STATUS_NONE;
-  Feature value = ctx.extract(_expr);
-  auto vtype    = value.value_type();
+  int     status = TS_HTTP_STATUS_NONE;
+  Feature value  = ctx.extract(_expr);
+  auto    vtype  = value.value_type();
   if (INTEGER == vtype) {
     status = std::get<IndexFor(INTEGER)>(value);
   } else if (TUPLE == vtype) {
@@ -2206,7 +2206,7 @@ Do_upstream_rsp_status::load(Config &cfg, CfgStaticData const *, YAML::Node drtv
   if (!errata.is_ok()) {
     return std::move(errata);
   }
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
 
   auto expr_type = expr.result_type();
@@ -2223,8 +2223,8 @@ class Do_upstream_reason : public Directive
   using self_type  = Do_upstream_reason; ///< Self reference type.
   using super_type = Directive;          ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -2240,13 +2240,13 @@ public:
 
 protected:
   TSHttpStatus _status = TS_HTTP_STATUS_NONE; ///< Return status is literal, 0 => extract at runtime.
-  Expr _fmt;                                  ///< Reason phrase.
+  Expr         _fmt;                          ///< Reason phrase.
 
   Do_upstream_reason() = default;
 };
 
 const std::string Do_upstream_reason::KEY{"upstream-reason"};
-const HookMask Do_upstream_reason::HOOKS{MaskFor({Hook::URSP})};
+const HookMask    Do_upstream_reason::HOOKS{MaskFor({Hook::URSP})};
 
 Errata
 Do_upstream_reason::invoke(Context &ctx)
@@ -2270,7 +2270,7 @@ Do_upstream_reason::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_nod
   if (!expr.result_type().can_satisfy(STRING)) {
     return Errata(S_ERROR, R"(The value for "{}" must be a string.)", KEY, drtv_node.Mark());
   }
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
 
   self->_fmt = std::move(expr);
@@ -2284,8 +2284,8 @@ class Do_proxy_rsp_status : public Directive
   using self_type  = Do_proxy_rsp_status; ///< Self reference type.
   using super_type = Directive;           ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -2306,14 +2306,14 @@ protected:
 };
 
 const std::string Do_proxy_rsp_status::KEY{"proxy-rsp-status"};
-const HookMask Do_proxy_rsp_status::HOOKS{MaskFor({Hook::PRSP})};
+const HookMask    Do_proxy_rsp_status::HOOKS{MaskFor({Hook::PRSP})};
 
 Errata
 Do_proxy_rsp_status::invoke(Context &ctx)
 {
-  int status    = TS_HTTP_STATUS_NONE;
-  Feature value = ctx.extract(_expr);
-  auto vtype    = value.value_type();
+  int     status = TS_HTTP_STATUS_NONE;
+  Feature value  = ctx.extract(_expr);
+  auto    vtype  = value.value_type();
   if (INTEGER == vtype) {
     status = std::get<IndexFor(INTEGER)>(value);
   } else if (TUPLE == vtype) {
@@ -2349,7 +2349,7 @@ Do_proxy_rsp_status::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_no
   if (!errata.is_ok()) {
     return std::move(errata);
   }
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
 
   auto expr_type = expr.result_type();
@@ -2366,8 +2366,8 @@ class Do_proxy_rsp_reason : public Directive
   using self_type  = Do_proxy_rsp_reason; ///< Self reference type.
   using super_type = Directive;           ///< Parent type.
 public:
-  static inline const std::string KEY{"proxy-rsp-reason"};   ///< Directive name.
-  static inline const HookMask HOOKS{MaskFor({Hook::PRSP})}; ///< Valid hooks for directive.
+  static inline const std::string KEY{"proxy-rsp-reason"};      ///< Directive name.
+  static inline const HookMask    HOOKS{MaskFor({Hook::PRSP})}; ///< Valid hooks for directive.
 
   /** Invoke directive.
    *
@@ -2388,7 +2388,7 @@ public:
 
 protected:
   TSHttpStatus _status = TS_HTTP_STATUS_NONE; ///< Return status is literal, 0 => extract at runtime.
-  Expr _expr;                                 ///< Reason phrase.
+  Expr         _expr;                         ///< Reason phrase.
 
   Do_proxy_rsp_reason() = default;
 };
@@ -2415,7 +2415,7 @@ Do_proxy_rsp_reason::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_no
   if (!expr.result_type().can_satisfy(STRING)) {
     return Errata(S_ERROR, R"(The value for "{}" must be a string.)", KEY, drtv_node.Mark());
   }
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
 
   self->_expr = std::move(expr);
@@ -2429,8 +2429,8 @@ class Do_proxy_rsp_body : public Directive
   using self_type  = Do_proxy_rsp_body; ///< Self reference type.
   using super_type = Directive;         ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -2451,13 +2451,13 @@ protected:
 };
 
 const std::string Do_proxy_rsp_body::KEY{"proxy-rsp-body"};
-const HookMask Do_proxy_rsp_body::HOOKS{MaskFor({Hook::PRSP})};
+const HookMask    Do_proxy_rsp_body::HOOKS{MaskFor({Hook::PRSP})};
 
 Errata
 Do_proxy_rsp_body::invoke(Context &ctx)
 {
   TextView body, mime{"text/html"};
-  auto value = ctx.extract(_expr);
+  auto     value = ctx.extract(_expr);
   if (STRING == value.value_type()) {
     body = std::get<IndexFor(STRING)>(value);
   } else if (auto tp = std::get_if<IndexFor(TUPLE)>(&value); tp) {
@@ -2489,7 +2489,7 @@ Do_proxy_rsp_body::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node
   if (!expr.result_type().can_satisfy({STRING, ActiveType::TupleOf(STRING)})) {
     return Errata(S_ERROR, R"(The value for "{}" must be a string or a list of two strings.)", KEY, drtv_node.Mark());
   }
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
 
   self->_expr = std::move(expr);
@@ -2503,8 +2503,8 @@ class Do_upstream_rsp_body : public Directive
   using self_type  = Do_upstream_rsp_body; ///< Self reference type.
   using super_type = Directive;            ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -2525,7 +2525,7 @@ protected:
 };
 
 const std::string Do_upstream_rsp_body::KEY{"upstream-rsp-body"};
-const HookMask Do_upstream_rsp_body::HOOKS{MaskFor({Hook::URSP})};
+const HookMask    Do_upstream_rsp_body::HOOKS{MaskFor({Hook::URSP})};
 
 Errata
 Do_upstream_rsp_body::invoke(Context &ctx)
@@ -2536,7 +2536,7 @@ Do_upstream_rsp_body::invoke(Context &ctx)
   /// transaction termination, not the final transform event. Therefore the destructor here does
   /// the cleanup, so that it can be marked for cleanup in the @c Context.
   struct State {
-    TextView _view;                  ///< Source view for body.
+    TextView   _view;                ///< Source view for body.
     TSIOBuffer _tsio_buff = nullptr; ///< Buffer used to write body.
     /// Clean up the @c IOBuffer.
     ~State()
@@ -2590,10 +2590,10 @@ Do_upstream_rsp_body::invoke(Context &ctx)
     return 0;
   };
 
-  auto value            = ctx.extract(_expr);
-  auto vtype            = value.value_type();
-  TextView *content     = nullptr;
-  TextView content_type = "text/html";
+  auto      value        = ctx.extract(_expr);
+  auto      vtype        = value.value_type();
+  TextView *content      = nullptr;
+  TextView  content_type = "text/html";
   if (STRING == vtype) {
     content = &std::get<IndexFor(STRING)>(value);
   } else if (TUPLE == vtype) {
@@ -2682,7 +2682,7 @@ protected:
 
   FeatureGroup _fg; ///< Support cross references among the keys.
 
-  int _status = 0;        ///< Return status is literal, 0 => extract at runtime.
+  int        _status = 0; ///< Return status is literal, 0 => extract at runtime.
   index_type _status_idx; ///< Return status.
   index_type _reason_idx; ///< Status reason text.
   index_type _body_idx;   ///< Body content of respons.
@@ -2785,7 +2785,7 @@ Do_proxy_reply::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, s
 {
   Handle handle{new self_type};
   Errata errata;
-  auto self = static_cast<self_type *>(handle.get());
+  auto   self = static_cast<self_type *>(handle.get());
   if (key_value.IsScalar()) {
     errata = self->_fg.load_as_scalar(cfg, key_value, STATUS_KEY);
   } else if (key_value.IsSequence()) {
@@ -2827,10 +2827,10 @@ class Do_remap_redirect : public Directive
   using self_type  = Do_remap_redirect; ///< Self reference type.
   using super_type = Directive;         ///< Parent type.
 public:
-  static inline const HookMask HOOKS{MaskFor(Hook::REMAP)}; ///< Valid hooks for directive.
-  static inline const std::string KEY = "remap-redirect";   ///< Directive name.
+  static inline const HookMask    HOOKS{MaskFor(Hook::REMAP)}; ///< Valid hooks for directive.
+  static inline const std::string KEY = "remap-redirect";      ///< Directive name.
 
-  Errata invoke(Context &ctx) override; ///< Runtime activation.
+  Errata            invoke(Context &ctx) override; ///< Runtime activation.
   static Rv<Handle> load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &name,
                          swoc::TextView const &arg, YAML::Node key_value);
 };
@@ -2902,7 +2902,7 @@ protected:
 
   FeatureGroup _fg; ///< Support cross references among the keys.
 
-  int _status = 0;          ///< Return status is literal, 0 => extract at runtime.
+  int        _status = 0;   ///< Return status is literal, 0 => extract at runtime.
   index_type _status_idx;   ///< Return status.
   index_type _reason_idx;   ///< Status reason text.
   index_type _location_idx; ///< Location field value.
@@ -3029,7 +3029,7 @@ Do_redirect::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc
 {
   Handle handle{new self_type};
   Errata errata;
-  auto self = static_cast<self_type *>(handle.get());
+  auto   self = static_cast<self_type *>(handle.get());
   if (key_value.IsScalar()) {
     errata = self->_fg.load_as_scalar(cfg, key_value, LOCATION_KEY);
   } else if (key_value.IsSequence()) {
@@ -3075,9 +3075,9 @@ class Do_debug : public Directive
 
 public:
   static const std::string KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
-  Errata invoke(Context &ctx) override;
+  Errata            invoke(Context &ctx) override;
   static Rv<Handle> load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &name,
                          swoc::TextView const &arg, YAML::Node key_value);
 
@@ -3089,8 +3089,8 @@ protected:
 };
 
 const std::string Do_debug::KEY{"debug"};
-const HookMask Do_debug::HOOKS{MaskFor({Hook::POST_LOAD, Hook::TXN_START, Hook::CREQ, Hook::PREQ, Hook::URSP, Hook::PRSP,
-                                        Hook::PRE_REMAP, Hook::POST_REMAP, Hook::REMAP})};
+const HookMask    Do_debug::HOOKS{MaskFor({Hook::POST_LOAD, Hook::TXN_START, Hook::CREQ, Hook::PREQ, Hook::URSP, Hook::PRSP,
+                                           Hook::PRE_REMAP, Hook::POST_REMAP, Hook::REMAP})};
 
 Do_debug::Do_debug(Expr &&tag, Expr &&msg) : _tag(std::move(tag)), _msg(std::move(msg)) {}
 
@@ -3098,7 +3098,7 @@ Errata
 Do_debug::invoke(Context &ctx)
 {
   [[maybe_unused]] TextView tag = ctx.extract_view(_tag, {Context::EX_COMMIT, Context::EX_C_STR});
-  TextView msg                  = ctx.extract_view(_msg);
+  TextView                  msg = ctx.extract_view(_msg);
   TS_DBG("%.*s", static_cast<int>(msg.size()), msg.data());
   return {};
 }
@@ -3145,9 +3145,9 @@ class Do_error : public Directive
 
 public:
   static inline const std::string KEY{"error"};
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask           HOOKS; ///< Valid hooks for directive.
 
-  Errata invoke(Context &ctx) override;
+  Errata            invoke(Context &ctx) override;
   static Rv<Handle> load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &name,
                          swoc::TextView const &arg, YAML::Node key_value);
 
@@ -3245,9 +3245,9 @@ class Do_warning : public Directive
 
 public:
   static inline const std::string KEY{"warning"};
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask           HOOKS; ///< Valid hooks for directive.
 
-  Errata invoke(Context &ctx) override;
+  Errata            invoke(Context &ctx) override;
   static Rv<Handle> load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &name,
                          swoc::TextView const &arg, YAML::Node key_value);
 
@@ -3289,8 +3289,8 @@ class Do_cache_key : public Directive
   using self_type  = Do_cache_key; ///< Self reference type.
   using super_type = Directive;    ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -3314,7 +3314,7 @@ protected:
 };
 
 const std::string Do_cache_key::KEY{"cache-key"};
-const HookMask Do_cache_key::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
+const HookMask    Do_cache_key::HOOKS{MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 Errata
 Do_cache_key::invoke(Context &ctx)
@@ -3325,7 +3325,7 @@ Do_cache_key::invoke(Context &ctx)
 }
 
 Rv<Directive::Handle>
-Do_cache_key::load(Config &cfg, CfgStaticData const *, YAML::Node, swoc::TextView const &, swoc::TextView const &,
+Do_cache_key::load(Config    &cfg, CfgStaticData const *, YAML::Node, swoc::TextView const &, swoc::TextView const &,
                    YAML::Node key_value)
 {
   auto &&[fmt, errata]{cfg.parse_expr(key_value)};
@@ -3342,8 +3342,8 @@ class Do_txn_conf : public Directive
   using self_type  = Do_txn_conf; ///< Self reference type.
   using super_type = Directive;   ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -3361,14 +3361,14 @@ public:
                          swoc::TextView const &arg, YAML::Node key_value);
 
 protected:
-  Expr _expr; ///< Value for override.
+  Expr              _expr; ///< Value for override.
   ts::TxnConfigVar *_var = nullptr;
 
   Do_txn_conf(Expr &&fmt, ts::TxnConfigVar *var) : _expr(std::move(fmt)), _var(var) {}
 };
 
 const std::string Do_txn_conf::KEY{"txn-conf"};
-const HookMask Do_txn_conf::HOOKS{
+const HookMask    Do_txn_conf::HOOKS{
   MaskFor({Hook::TXN_START, Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP, Hook::PREQ})};
 
 Errata
@@ -3419,7 +3419,7 @@ class Do_upstream_addr : public Directive
   using super_type = Directive;        ///< Parent type.
 public:
   static inline const std::string KEY{"upstream-addr"}; ///< Directive name.
-  static const HookMask HOOKS;                          ///< Valid hooks for directive.
+  static const HookMask           HOOKS;                ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -3437,7 +3437,7 @@ public:
                          swoc::TextView const &arg, YAML::Node key_value);
 
 protected:
-  Expr _expr; ///< Address.
+  Expr              _expr; ///< Address.
   ts::TxnConfigVar *_var = nullptr;
 
   Do_upstream_addr(Expr &&expr) : _expr(std::move(expr)) {}
@@ -3456,7 +3456,7 @@ Do_upstream_addr::invoke(Context &ctx)
 }
 
 Rv<Directive::Handle>
-Do_upstream_addr::load(Config &cfg, CfgStaticData const *, YAML::Node, swoc::TextView const &, swoc::TextView const &,
+Do_upstream_addr::load(Config    &cfg, CfgStaticData const *, YAML::Node, swoc::TextView const &, swoc::TextView const &,
                        YAML::Node key_value)
 {
   auto &&[expr, errata]{cfg.parse_expr(key_value)};
@@ -3477,8 +3477,8 @@ class Do_var : public Directive
   using self_type  = Do_var;    ///< Self reference type.
   using super_type = Directive; ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -3496,14 +3496,14 @@ public:
                          swoc::TextView const &arg, YAML::Node key_value);
 
 protected:
-  TextView _name; ///< Variable name.
-  Expr _value;    ///< Value for variable.
+  TextView _name;  ///< Variable name.
+  Expr     _value; ///< Value for variable.
 
   Do_var(TextView const &arg, Expr &&value) : _name(arg), _value(std::move(value)) {}
 };
 
 const std::string Do_var::KEY{"var"};
-const HookMask Do_var::HOOKS{
+const HookMask    Do_var::HOOKS{
   MaskFor({Hook::CREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP, Hook::PREQ, Hook::URSP, Hook::PRSP})};
 
 Errata
@@ -3537,7 +3537,7 @@ public:
   static inline const HookMask HOOKS{
     MaskFor({Hook::TXN_START, Hook::CREQ, Hook::PREQ, Hook::URSP, Hook::PRSP, Hook::PRE_REMAP, Hook::POST_REMAP, Hook::REMAP})};
 
-  Errata invoke(Context &ctx) override;
+  Errata            invoke(Context &ctx) override;
   static Rv<Handle> load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &name,
                          swoc::TextView const &arg, YAML::Node key_value);
 
@@ -3583,7 +3583,7 @@ public:
   static const std::string SELECT_KEY;
   static const std::string FOR_EACH_KEY;
   static const std::string CONTINUE_KEY;
-  static const HookMask HOOKS; ///< Valid hooks for directive.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override;
 
@@ -3601,8 +3601,8 @@ public:
                          swoc::TextView const &arg, YAML::Node key_value);
 
 protected:
-  Expr _expr;            ///< Feature expression
-  Directive::Handle _do; ///< Explicit actions.
+  Expr              _expr; ///< Feature expression
+  Directive::Handle _do;   ///< Explicit actions.
 
   union {
     uint32_t all = 0;
@@ -3615,7 +3615,7 @@ protected:
   /// A single case in the select.
   struct Case {
     Comparison::Handle _cmp; ///< Comparison to perform.
-    Directive::Handle _do;   ///< Directives to execute.
+    Directive::Handle  _do;  ///< Directives to execute.
   };
   using CaseGroup = std::vector<Case>;
   CaseGroup _cases; ///< List of cases for the select.
@@ -3690,7 +3690,7 @@ Do_with::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::Te
     return std::move(errata);
   }
 
-  auto *self = new self_type;
+  auto  *self = new self_type;
   Handle handle(self); // for return, and cleanup in case of error.
   self->_expr  = std::move(expr);
   auto f_scope = cfg.feature_scope(self->_expr.result_type());
@@ -3752,7 +3752,7 @@ Errata
 Do_with::load_case(Config &cfg, YAML::Node node)
 {
   if (node.IsMap()) {
-    Case c;
+    Case       c;
     YAML::Node do_node{node[DO_KEY]};
     // It's allowed to have no comparison, which is either an empty map or only a DO key.
     // In that case the comparison always matches.
@@ -3787,7 +3787,7 @@ Do_with::load_case(Config &cfg, YAML::Node node)
 
 /* ------------------------------------------------------------------------------------ */
 const std::string When::KEY{"when"};
-const HookMask When::HOOKS{
+const HookMask    When::HOOKS{
   MaskFor({Hook::CREQ, Hook::PREQ, Hook::URSP, Hook::PRSP, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP})};
 
 When::When(Hook hook_idx, Directive::Handle &&directive) : _hook(hook_idx), _directive(std::move(directive)) {}

@@ -27,7 +27,7 @@
 #include <map>
 #include <string>
 
-extern int res_track_memory; /* set this to zero to disable resource tracking */
+extern int      res_track_memory; /* set this to zero to disable resource tracking */
 extern uint64_t ssl_memory_allocated;
 extern uint64_t ssl_memory_freed;
 
@@ -50,7 +50,7 @@ public:
   static void dump(FILE *fd);
 
 private:
-  static Resource &lookup(const char *name);
+  static Resource                          &lookup(const char *name);
   static std::map<const char *, Resource *> _resourceMap;
-  static ink_mutex resourceLock;
+  static ink_mutex                          resourceLock;
 };

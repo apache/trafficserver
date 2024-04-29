@@ -51,7 +51,7 @@ namespace Stats
   };
 
   extern const char *STAT_NAMES[MAX_STAT_ENUM];
-  extern int g_stat_indices[Stats::MAX_STAT_ENUM];
+  extern int         g_stat_indices[Stats::MAX_STAT_ENUM];
   extern StatSystem *g_system;
 
   void init(StatSystem *system);

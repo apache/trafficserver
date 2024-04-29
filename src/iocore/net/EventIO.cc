@@ -46,7 +46,7 @@ EventIO::start_common(EventLoop l, int afd, int e)
 #if TS_USE_KQUEUE
   events = e;
   struct kevent ev[2];
-  int n = 0;
+  int           n = 0;
   if (e & EVENTIO_READ) {
     EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   }
@@ -84,9 +84,9 @@ EventIO::modify(int e)
     return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_MOD, fd, &ev);
 #endif
 #if TS_USE_KQUEUE && !defined(USE_EDGE_TRIGGER)
-  int n = 0;
+  int           n = 0;
   struct kevent ev[2];
-  int ee = events;
+  int           ee = events;
   if (e < 0) {
     ee &= ~(-e);
     if ((-e) & EVENTIO_READ)
@@ -121,7 +121,7 @@ EventIO::refresh(int e)
 #if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
   struct kevent ev[2];
-  int n = 0;
+  int           n = 0;
   if (e & EVENTIO_READ) {
     EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   }

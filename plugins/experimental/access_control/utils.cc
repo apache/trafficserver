@@ -48,8 +48,8 @@ hexEncode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src    = in;
   const char *srcEnd = in + inLen;
-  char *dst          = out;
-  char *dstEnd       = out + outLen;
+  char       *dst    = out;
+  char       *dstEnd = out + outLen;
 
   while (src < srcEnd && dst < dstEnd && 2 == snprintf(dst, outLen, "%02x", static_cast<unsigned char>(*src))) {
     dst += 2;
@@ -93,8 +93,8 @@ hexDecode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src    = in;
   const char *srcEnd = in + inLen;
-  char *dst          = out;
-  char *dstEnd       = out + outLen;
+  char       *dst    = out;
+  char       *dstEnd = out + outLen;
 
   while (src < (srcEnd - 1) && dst < dstEnd) {
     *dst++  = hex2uchar(*src) << 4 | hex2uchar(*(src + 1));
@@ -116,7 +116,7 @@ size_t
 urlEncode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src = in;
-  char *dst       = out;
+  char       *dst = out;
   while (static_cast<size_t>(src - in) < inLen && static_cast<size_t>(dst - out) < outLen) {
     if (isalnum(*src) || *src == '-' || *src == '_' || *src == '.' || *src == '~') {
       *dst++ = *src;
@@ -145,7 +145,7 @@ size_t
 urlDecode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src = in;
-  char *dst       = out;
+  char       *dst = out;
   while (static_cast<size_t>(src - in) < inLen && static_cast<size_t>(dst - out) < outLen) {
     if (*src == '%') {
       if (src[1] && src[2]) {
@@ -208,9 +208,9 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
   HMAC_CTX *ctx;
 #endif
 
-  const EVP_MD *md = nullptr;
-  unsigned int len = 0;
-  char buffer[256];
+  const EVP_MD *md  = nullptr;
+  unsigned int  len = 0;
+  char          buffer[256];
 
   if (!(md = EVP_get_digestbyname(digestType))) {
     AccessControlError("unknown digest name '%s'", digestType);
@@ -348,10 +348,10 @@ cryptoModifiedBase64Encode(const char *in, size_t inLen, char *out, size_t outLe
 {
   size_t len = cryptoBase64Encode(in, inLen, out, outLen);
 
-  char *cur            = out;
-  const char *end      = out + len;
-  const char *padStart = out + len;
-  bool foundPadStart   = false;
+  char       *cur           = out;
+  const char *end           = out + len;
+  const char *padStart      = out + len;
+  bool        foundPadStart = false;
   while (cur < end) {
     if ('+' == *cur) {
       *cur = '-';
@@ -388,8 +388,8 @@ cryptoModifiedBase64Decode(const char *in, size_t inLen, char *out, size_t outLe
   /* Since 'in' would like to be unmodifiable to add the padding will need a copy */
   const char *cur = in;
   const char *end = in + inLen;
-  char buffer[bufferLen];
-  char *dst = buffer;
+  char        buffer[bufferLen];
+  char       *dst = buffer;
   while (cur < end) {
     if ('-' == *cur) {
       *dst++ = '+';

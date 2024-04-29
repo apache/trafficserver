@@ -27,8 +27,8 @@
 bool
 BgBlockFetch::schedule(Data *const data, int blocknum)
 {
-  bool ret         = false;
-  BgBlockFetch *bg = new BgBlockFetch(blocknum);
+  bool          ret = false;
+  BgBlockFetch *bg  = new BgBlockFetch(blocknum);
   if (bg->fetch(data)) {
     ret = true;
   } else {
@@ -50,11 +50,11 @@ BgBlockFetch::fetch(Data *const data)
   }
 
   int64_t const blockbeg = (data->m_config->m_blockbytes * m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
+  Range         blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
 
-  char rangestr[1024];
-  int rangelen      = sizeof(rangestr);
-  bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
+  char       rangestr[1024];
+  int        rangelen = sizeof(rangestr);
+  bool const rpstat   = blockbe.toStringClosed(rangestr, &rangelen);
   TSAssert(rpstat);
 
   DEBUG_LOG("Request background block: %s", rangestr);

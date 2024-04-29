@@ -92,7 +92,7 @@ struct Machine {
 
   std::string host_name;
   std::string ip_hex_string; ///< IP address as hex string
-  ATSUuid uuid;
+  ATSUuid     uuid;
 
   ~Machine();
 
@@ -102,23 +102,23 @@ struct Machine {
       @note This must be called before called @c instance so that the
       singleton is not @em inadvertently default initialized.
   */
-  static self_type *init(char const *name     = nullptr, ///< Host name of the machine.
+  static self_type *init(char const     *name = nullptr, ///< Host name of the machine.
                          sockaddr const *addr = nullptr  ///< Primary IP address of the machine.
   );
   /// @return The global instance of this class.
   static self_type *instance();
-  bool is_self(std::string_view name);
-  bool is_self(char const *name);
-  bool is_self(std::string const &name);
-  bool is_self(IpAddr const &ipaddr);
-  bool is_self(struct sockaddr const *addr);
-  void insert_id(char const *id);
-  void insert_id(IpAddr const &ipaddr);
+  bool              is_self(std::string_view name);
+  bool              is_self(char const *name);
+  bool              is_self(std::string const &name);
+  bool              is_self(IpAddr const &ipaddr);
+  bool              is_self(struct sockaddr const *addr);
+  void              insert_id(char const *id);
+  void              insert_id(IpAddr const &ipaddr);
 
 protected:
   Machine(char const *hostname, sockaddr const *addr);
 
-  static self_type *_instance; ///< Singleton for the class.
+  static self_type                                                           *_instance; ///< Singleton for the class.
   std::unordered_set<std::string, std::hash<std::string>, ts::caseless_equal> machine_id_strings;
-  std::unordered_set<IpAddr, IpAddr::Hasher> machine_id_ipaddrs;
+  std::unordered_set<IpAddr, IpAddr::Hasher>                                  machine_id_ipaddrs;
 };

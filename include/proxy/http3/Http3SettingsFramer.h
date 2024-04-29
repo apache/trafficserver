@@ -33,10 +33,10 @@ public:
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
+  bool           is_done() const override;
 
 private:
   NetVConnectionContext_t _context;
-  bool _is_done = false; ///< Be careful when setting FIN flag on CONTROL stream. Maybe never?
-  bool _is_sent = false; ///< Send SETTINGS frame only once
+  bool                    _is_done = false; ///< Be careful when setting FIN flag on CONTROL stream. Maybe never?
+  bool                    _is_sent = false; ///< Send SETTINGS frame only once
 };

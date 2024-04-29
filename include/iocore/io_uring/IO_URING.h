@@ -65,7 +65,7 @@ public:
 
   bool supports_op(int op) const;
 
-  int set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
+  int                 set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
   std::pair<int, int> get_wq_max_workers();
 
   void submit();
@@ -75,10 +75,10 @@ public:
   int register_eventfd();
 
   // assigns the global iouring config
-  static void set_config(const IOUringConfig &);
+  static void            set_config(const IOUringConfig &);
   static IOUringContext *local_context();
-  static void set_main_queue(IOUringContext *);
-  static int get_main_queue_fd();
+  static void            set_main_queue(IOUringContext *);
+  static int             get_main_queue_fd();
 
   bool
   valid()
@@ -87,10 +87,10 @@ public:
   }
 
 private:
-  io_uring ring         = {};
+  io_uring        ring  = {};
   io_uring_probe *probe = nullptr;
-  int evfd              = -1;
+  int             evfd  = -1;
 
-  void handle_cqe(io_uring_cqe *);
+  void                 handle_cqe(io_uring_cqe *);
   static IOUringConfig config;
 };

@@ -41,18 +41,18 @@ namespace
 InkFreeList *flist = nullptr;
 
 // Args
-int nloop                 = 1000000;
-int nthreads              = 1;
-int affinity              = 0;
-int thread_assiging_order = 0;
-bool debug_enabled        = false;
+int  nloop                 = 1000000;
+int  nthreads              = 1;
+int  affinity              = 0;
+int  thread_assiging_order = 0;
+bool debug_enabled         = false;
 
 #if TS_USE_HWLOC
 hwloc_obj_type_t
 thread_affinity()
 {
   hwloc_obj_type_t obj_type = HWLOC_OBJ_MACHINE;
-  char const *obj_name      = nullptr;
+  char const      *obj_name = nullptr;
 
   switch (affinity) {
   case 3: {
@@ -102,7 +102,7 @@ thread_affinity()
 void *
 test_case_1(void *d)
 {
-  int id;
+  int   id;
   void *m1;
 
   id = (intptr_t)d;
@@ -125,8 +125,8 @@ setup_test_case_1(const int64_t n)
 
 #if TS_USE_HWLOC
   // ThreadAffinityInitializer::set_affinity mimics
-  const hwloc_obj_type_t obj_type = thread_affinity();
-  const int obj_count             = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
+  const hwloc_obj_type_t obj_type  = thread_affinity();
+  const int              obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
 
   assert(obj_count > 0);
 
@@ -146,8 +146,8 @@ setup_test_case_1(const int64_t n)
     hwloc_set_thread_cpubind(ink_get_topology(), list[i], obj->cpuset, HWLOC_CPUBIND_STRICT);
 
     if (debug_enabled) {
-      int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-      char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
+      int   cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
+      char *cpu_mask     = static_cast<char *>(alloca(cpu_mask_len));
       hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
 
       std::cout << "tid=" << list[i] << " obj->logical_index=" << obj->logical_index << " cpu_mask=" << cpu_mask << std::endl;

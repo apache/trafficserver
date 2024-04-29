@@ -53,14 +53,14 @@ public:
     bool operator()(std::string_view &literal, Spec &spec);
 
   protected:
-    std::vector<Spec> const &_specs;         ///< Specifiers in format.
-    std::vector<Spec>::const_iterator _iter; ///< Current specifier.
+    std::vector<Spec> const          &_specs; ///< Specifiers in format.
+    std::vector<Spec>::const_iterator _iter;  ///< Current specifier.
   };
 
   /// Single extractor that generates a direct value.
   struct Direct {
     Direct(Spec const &spec, ActiveType rtype) : _spec(spec), _result_type(rtype) {}
-    Spec _spec;                       ///< Specifier with extractor.
+    Spec       _spec;                 ///< Specifier with extractor.
     ActiveType _result_type = STRING; ///< Type of full, default is a string.
   };
 
@@ -74,7 +74,7 @@ public:
   struct List {
     /// Expressions which are the elements of the tuple.
     std::vector<self_type> _exprs;
-    ActiveType _types; ///< Types of the expressions.
+    ActiveType             _types; ///< Types of the expressions.
   };
 
   using Raw = std::variant<std::monostate, Feature, Direct, Composite, List>;

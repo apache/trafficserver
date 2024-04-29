@@ -58,7 +58,7 @@
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 ClassAllocator<UDPPacket> udpPacketAllocator("udpPacketAllocator");
-EventType ET_UDP;
+EventType                 ET_UDP;
 
 namespace
 {
@@ -140,7 +140,7 @@ UDPPacket::append_block(IOBufferBlock *block)
 int64_t
 UDPPacket::getPktLength()
 {
-  UDPPacket *pkt = this;
+  UDPPacket     *pkt = this;
   IOBufferBlock *b;
 
   pkt->p.pktLength = 0;
@@ -196,9 +196,9 @@ UDPPacket::get_entire_chain_buffer(size_t *buf_len)
 //
 
 UDPNetProcessorInternal udpNetInternal;
-UDPNetProcessor &udpNet = udpNetInternal;
+UDPNetProcessor        &udpNet = udpNetInternal;
 
-int g_udp_pollTimeout;
+int     g_udp_pollTimeout;
 int32_t g_udp_periodicCleanupSlots;
 int32_t g_udp_periodicFreeCancelledPkts;
 int32_t g_udp_numSendRetries;
@@ -213,7 +213,7 @@ UDPNetHandler::Cfg G_udp_config;
 // Public functions
 // See header for documentation
 //
-int G_bwGrapherFd;
+int          G_bwGrapherFd;
 sockaddr_in6 G_bwGrapherLoc;
 
 void
@@ -242,7 +242,7 @@ initialize_thread_for_udp_net(EThread *thread)
   nh->mutex  = thread->mutex.get();
   nh->thread = thread;
 
-  PollCont *upc       = get_UDPPollCont(thread);
+  PollCont       *upc = get_UDPPollCont(thread);
   PollDescriptor *upd = upc->pollDescriptor;
 
   REC_ReadConfigInteger(g_udp_pollTimeout, "proxy.config.udp.poll_timeout");
@@ -339,7 +339,7 @@ get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_in6 *toaddr)
 unsigned int
 build_iovec_block_chain(unsigned max_niov, int64_t size_index, Ptr<IOBufferBlock> &chain, struct iovec *out_tiovec)
 {
-  unsigned int niov;
+  unsigned int   niov;
   IOBufferBlock *b, *last;
 
   // build struct iov
@@ -374,15 +374,15 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
 
   // receive packet and queue onto UDPConnection.
   // don't call back connection at this time.
-  int64_t r;
-  int iters         = 0;
-  unsigned max_niov = 32;
-  int64_t gso_size{0}; // in case is available.
-  struct msghdr msg;
+  int64_t            r;
+  int                iters    = 0;
+  unsigned           max_niov = 32;
+  int64_t            gso_size{0}; // in case is available.
+  struct msghdr      msg;
   Ptr<IOBufferBlock> chain, next_chain;
-  struct iovec tiovec[max_niov];
-  int64_t size_index  = BUFFER_SIZE_INDEX_2K;
-  int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
+  struct iovec       tiovec[max_niov];
+  int64_t            size_index  = BUFFER_SIZE_INDEX_2K;
+  int64_t            buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
   // The max length of receive buffer is 32 * buffer_size (2048) = 65536 bytes.
   // Because the 'UDP Length' is type of uint16_t defined in RFC 768.
   // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
@@ -393,26 +393,24 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     // build struct msghdr
     sockaddr_in6 fromaddr;
     sockaddr_in6 toaddr;
-    int toaddr_len  = sizeof(toaddr);
-    msg.msg_name    = &fromaddr;
-    msg.msg_namelen = sizeof(fromaddr);
-    msg.msg_iov     = tiovec;
-    msg.msg_iovlen  = niov;
+    int          toaddr_len = sizeof(toaddr);
+    msg.msg_name            = &fromaddr;
+    msg.msg_namelen         = sizeof(fromaddr);
+    msg.msg_iov             = tiovec;
+    msg.msg_iovlen          = niov;
 
-    static const size_t cmsg_size
-    {
-      CMSG_SPACE(sizeof(int))
+    static const size_t cmsg_size{CMSG_SPACE(sizeof(int))
 #ifdef IP_PKTINFO
-      +CMSG_SPACE(sizeof(struct in_pktinfo))
+                                  + CMSG_SPACE(sizeof(struct in_pktinfo))
 #endif
 #if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
-        + CMSG_SPACE(sizeof(struct in6_pktinfo))
+                                  + CMSG_SPACE(sizeof(struct in6_pktinfo))
 #endif
 #ifdef IP_RECVDSTADDR
-        + CMSG_SPACE(sizeof(struct in_addr))
+                                  + CMSG_SPACE(sizeof(struct in_addr))
 #endif
 #ifdef UDP_GRO
-        + CMSG_SPACE(sizeof(uint16_t))
+                                  + CMSG_SPACE(sizeof(uint16_t))
 #endif
     };
 
@@ -452,7 +450,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
         (gso_size > 0 ? "GRO" : "No GRO"));
 
     IOBufferBlock *block;
-    int64_t remaining{r};
+    int64_t        remaining{r};
     while (remaining > 0) {
       block                 = chain.get();
       int64_t this_packet_r = gso_size ? std::min(gso_size, r) : r;
@@ -504,33 +502,31 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
   UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
 
   std::array<Ptr<IOBufferBlock>, MAX_RECEIVE_MSG_PER_CALL> buffer_chain;
-  unsigned max_niov = 32;
-  int64_t gso_size{0}; // In case is available
+  unsigned                                                 max_niov = 32;
+  int64_t                                                  gso_size{0}; // In case is available
 
   struct mmsghdr mmsg[MAX_RECEIVE_MSG_PER_CALL];
-  struct iovec tiovec[MAX_RECEIVE_MSG_PER_CALL][max_niov];
+  struct iovec   tiovec[MAX_RECEIVE_MSG_PER_CALL][max_niov];
 
   // Addresses
   sockaddr_in6 fromaddr[MAX_RECEIVE_MSG_PER_CALL];
   sockaddr_in6 toaddr[MAX_RECEIVE_MSG_PER_CALL];
-  int toaddr_len = sizeof(toaddr);
+  int          toaddr_len = sizeof(toaddr);
 
   size_t total_bytes_read{0};
 
-  static const size_t cmsg_size
-  {
-    CMSG_SPACE(sizeof(int))
+  static const size_t cmsg_size{CMSG_SPACE(sizeof(int))
 #ifdef IP_PKTINFO
-    +CMSG_SPACE(sizeof(struct in_pktinfo))
+                                + CMSG_SPACE(sizeof(struct in_pktinfo))
 #endif
 #if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
-      + CMSG_SPACE(sizeof(struct in6_pktinfo))
+                                + CMSG_SPACE(sizeof(struct in6_pktinfo))
 #endif
 #ifdef IP_RECVDSTADDR
-      + CMSG_SPACE(sizeof(struct in_addr))
+                                + CMSG_SPACE(sizeof(struct in_addr))
 #endif
 #ifdef UDP_GRO
-      + CMSG_SPACE(sizeof(uint16_t))
+                                + CMSG_SPACE(sizeof(uint16_t))
 #endif
   };
 
@@ -605,9 +601,9 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
     Dbg(dbg_ctl_udp_read, "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(received),
         static_cast<long long>(gso_size), (gso_size > 0 ? "GRO" : "No GRO"));
 
-    auto chain = buffer_chain[packet_num];
+    auto           chain = buffer_chain[packet_num];
     IOBufferBlock *block;
-    int64_t remaining{received};
+    int64_t        remaining{received};
     while (remaining > 0) {
       block                 = chain.get();
       int64_t this_packet_r = gso_size ? std::min(gso_size, received) : received;
@@ -705,7 +701,7 @@ public:
   }
 
   void cancel();
-  int readPollEvent(int event, Event *e);
+  int  readPollEvent(int event, Event *e);
 
   Action *
   getAction()
@@ -718,15 +714,15 @@ public:
 private:
   Event *event = UNINITIALIZED_EVENT_PTR; // the completion event token created
   // on behalf of the client
-  Ptr<IOBufferBlock> readbuf{nullptr};
-  int readlen                   = 0;
-  struct sockaddr_in6 *fromaddr = nullptr;
-  socklen_t *fromaddrlen        = nullptr;
-  int fd                        = NO_FD; // fd we are reading from
-  int ifd                       = NO_FD; // poll fd index
-  ink_hrtime period             = 0;     // polling period
-  ink_hrtime elapsed_time       = 0;
-  ink_hrtime timeout_interval   = 0;
+  Ptr<IOBufferBlock>   readbuf{nullptr};
+  int                  readlen          = 0;
+  struct sockaddr_in6 *fromaddr         = nullptr;
+  socklen_t           *fromaddrlen      = nullptr;
+  int                  fd               = NO_FD; // fd we are reading from
+  int                  ifd              = NO_FD; // poll fd index
+  ink_hrtime           period           = 0;     // polling period
+  ink_hrtime           elapsed_time     = 0;
+  ink_hrtime           timeout_interval = 0;
 };
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
@@ -813,8 +809,8 @@ void
 UDPReadContinuation::setupPollDescriptor()
 {
 #if TS_USE_EPOLL
-  Pollfd *pfd;
-  EThread *et  = (EThread *)this_thread();
+  Pollfd   *pfd;
+  EThread  *et = (EThread *)this_thread();
   PollCont *pc = get_PollCont(et);
   if (pc->nextPollDescriptor == nullptr) {
     pc->nextPollDescriptor = new PollDescriptor();
@@ -859,7 +855,7 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
   c = completionUtil::getContinuation(event);
   // do read
   socklen_t tmp_fromlen = *fromaddrlen;
-  int rlen              = SocketManager::recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
+  int       rlen        = SocketManager::recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
 
   completionUtil::setThread(event, e->ethread);
   // call back user with their event
@@ -922,7 +918,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
 {
   (void)useReadCont;
   ink_assert(buf->write_avail() >= len);
-  int actual;
+  int    actual;
   Event *event = completionUtil::create();
 
   completionUtil::setContinuation(event, cont);
@@ -964,7 +960,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
 Action *
 UDPNetProcessor::sendmsg_re(Continuation *cont, void *token, int fd, struct msghdr *msg)
 {
-  int actual;
+  int    actual;
   Event *event = completionUtil::create();
 
   completionUtil::setContinuation(event, cont);
@@ -1019,9 +1015,9 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
-  int res = 0, fd = -1;
+  int        res = 0, fd = -1;
   IpEndpoint local_addr;
-  int local_addr_len = sizeof(local_addr.sa);
+  int        local_addr_len = sizeof(local_addr.sa);
 
   // Need to do address calculations first, so we can determine the
   // address family for socket creation.
@@ -1137,13 +1133,13 @@ HardError:
 Action *
 UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int send_bufsize, int recv_bufsize)
 {
-  int res              = 0;
-  UnixUDPConnection *n = nullptr;
-  IpEndpoint myaddr;
-  int myaddr_len     = sizeof(myaddr);
-  PollCont *pc       = nullptr;
-  PollDescriptor *pd = nullptr;
-  bool need_bind     = true;
+  int                res = 0;
+  UnixUDPConnection *n   = nullptr;
+  IpEndpoint         myaddr;
+  int                myaddr_len = sizeof(myaddr);
+  PollCont          *pc         = nullptr;
+  PollDescriptor    *pd         = nullptr;
+  bool               need_bind  = true;
 
   if (fd == -1) {
     if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
@@ -1298,9 +1294,9 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now     = ink_get_hrtime();
-  uint64_t timeSpent = 0;
-  uint64_t pktSendStartTime;
+  ink_hrtime now       = ink_get_hrtime();
+  uint64_t   timeSpent = 0;
+  uint64_t   pktSendStartTime;
   ink_hrtime pktSendTime;
   UDPPacket *p = nullptr;
 
@@ -1343,13 +1339,13 @@ UDPQueue::service(UDPNetHandler *nh)
 void
 UDPQueue::SendPackets()
 {
-  UDPPacket *p;
-  static ink_hrtime lastCleanupTime = ink_get_hrtime();
-  ink_hrtime now                    = ink_get_hrtime();
-  ink_hrtime send_threshold_time    = now + SLOT_TIME;
-  int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
-  int32_t bytesThisPipe;
-  int64_t pktLen;
+  UDPPacket        *p;
+  static ink_hrtime lastCleanupTime     = ink_get_hrtime();
+  ink_hrtime        now                 = ink_get_hrtime();
+  ink_hrtime        send_threshold_time = now + SLOT_TIME;
+  int32_t           bytesThisSlot = INT_MAX, bytesUsed = 0;
+  int32_t           bytesThisPipe;
+  int64_t           pktLen;
 
   bytesThisSlot = INT_MAX;
 
@@ -1359,8 +1355,8 @@ UDPQueue::SendPackets()
   constexpr int N_MAX_PACKETS = 1024;
 #endif
   UDPPacket *packets[N_MAX_PACKETS];
-  int nsent;
-  int npackets;
+  int        nsent;
+  int        npackets;
 
 sendPackets:
   nsent         = 0;
@@ -1415,8 +1411,8 @@ void
 UDPQueue::SendUDPPacket(UDPPacket *p)
 {
   struct msghdr msg;
-  struct iovec iov[32];
-  int n, count = 0;
+  struct iovec  iov[32];
+  int           n, count = 0;
 
   p->p.conn->lastSentPktStartTime = p->p.delivery_time;
   Dbg(dbg_ctl_udp_send, "Sending %p", p);
@@ -1437,7 +1433,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
       iov[0].iov_len  = p->p.chain.get()->size();
 
       union udp_segment_hdr {
-        char buf[CMSG_SPACE(sizeof(uint16_t))];
+        char           buf[CMSG_SPACE(sizeof(uint16_t))];
         struct cmsghdr align;
       } u;
       msg.msg_control    = u.buf;
@@ -1556,11 +1552,11 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
 {
 #ifdef HAVE_SENDMMSG
   struct mmsghdr *msgvec;
-  int msgvec_size;
+  int             msgvec_size;
 
 #ifdef SOL_UDP
   union udp_segment_hdr {
-    char buf[CMSG_SPACE(sizeof(uint16_t))];
+    char           buf[CMSG_SPACE(sizeof(uint16_t))];
     struct cmsghdr align;
   };
   if (use_udp_gso) {
@@ -1578,8 +1574,8 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   memset(msgvec, 0, msgvec_size);
 
   // The sizeof(struct iove) is 16 bytes or so. It can be too big to stack (alloca).
-  int iovec_size      = sizeof(struct iovec) * n * 64;
-  IOBufferBlock *tmp2 = new_IOBufferBlock();
+  int            iovec_size = sizeof(struct iovec) * n * 64;
+  IOBufferBlock *tmp2       = new_IOBufferBlock();
   tmp2->alloc(iobuffer_size_to_index(iovec_size, BUFFER_SIZE_INDEX_1M));
   struct iovec *iovec = reinterpret_cast<struct iovec *>(tmp2->buf());
   memset(iovec, 0, iovec_size);
@@ -1588,10 +1584,10 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   int vlen = 0;
   int fd   = p[0]->p.conn->getFd();
   for (int i = 0; i < n; ++i) {
-    UDPPacket *packet;
+    UDPPacket     *packet;
     struct msghdr *msg;
-    struct iovec *iov;
-    int iov_len;
+    struct iovec  *iov;
+    int            iov_len;
 
     packet                               = p[i];
     packet->p.conn->lastSentPktStartTime = packet->p.delivery_time;
@@ -1760,7 +1756,7 @@ int
 UDPNetHandler::waitForActivity(ink_hrtime timeout)
 {
   UnixUDPConnection *uc;
-  PollCont *pc = get_UDPPollCont(this->thread);
+  PollCont          *pc = get_UDPPollCont(this->thread);
   pc->do_poll(timeout);
 
   /* Notice: the race between traversal of newconn_list and UDPBind()
@@ -1789,11 +1785,11 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
   udpOutQueue.service(this);
 
   // handle UDP read operations
-  int i        = 0;
+  int      i   = 0;
   EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    epd       = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
-    int flags = get_ev_events(pc->pollDescriptor, i);
+    epd                                = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
+    int                          flags = get_ev_events(pc->pollDescriptor, i);
     epd->process_event(flags);
   } // end for
 

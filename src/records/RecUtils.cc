@@ -63,7 +63,7 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
     return nullptr;
   }
 
-  int i        = g_num_records++;
+  int        i = g_num_records++;
   RecRecord *r = &(g_records[i]);
 
   RecRecordInit(r);
@@ -390,9 +390,9 @@ namespace
 bool
 recordRegexCheck(const char *pattern, const char *value)
 {
-  pcre *regex;
+  pcre       *regex;
   const char *error;
-  int erroffset;
+  int         erroffset;
 
   regex = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
   if (!regex) {
@@ -410,7 +410,7 @@ recordRegexCheck(const char *pattern, const char *value)
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  char *p = const_cast<char *>(pattern);
+  char     *p = const_cast<char *>(pattern);
   Tokenizer dashTok("-");
 
   if (recordRegexCheck("^[0-9]+$", value)) {
@@ -434,7 +434,7 @@ recordIPCheck(const char *pattern, const char *value)
 {
   //  regex_t regex;
   //  int result;
-  bool check;
+  bool        check;
   const char *range_pattern = R"(\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\])";
   const char *ip_pattern    = "[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9]";
 

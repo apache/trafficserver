@@ -65,7 +65,7 @@ using ink_thread_key = pthread_key_t;
 
 struct ink_semaphore {
 #if TS_EMULATE_ANON_SEMAPHORES
-  sem_t *sema;
+  sem_t  *sema;
   int64_t semid;
 #else
   sem_t sema;
@@ -103,8 +103,8 @@ using ink_timestruc = struct timespec;
 static inline void
 ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
 {
-  ink_thread t;
-  int ret;
+  ink_thread     t;
+  int            ret;
   pthread_attr_t attr;
 
   if (tid == nullptr) {
@@ -166,10 +166,10 @@ ink_thread_null()
 static inline int
 ink_thread_get_priority(ink_thread t, int *priority)
 {
-  int policy;
+  int                policy;
   struct sched_param param;
-  int res   = pthread_getschedparam(t, &policy, &param);
-  *priority = param.sched_priority;
+  int                res = pthread_getschedparam(t, &policy, &param);
+  *priority              = param.sched_priority;
   return res;
 }
 

@@ -57,8 +57,8 @@ public:
 
   /// Track the state of provided features.
   struct ActiveFeatureState {
-    ActiveType _type;    ///< Type of active feature.
-    bool _ref_p = false; ///< Feature has been referenced / used.
+    ActiveType _type;          ///< Type of active feature.
+    bool       _ref_p = false; ///< Feature has been referenced / used.
   };
 
   /// Scoped change to active feature.
@@ -68,8 +68,8 @@ public:
     using self_type = ActiveFeatureScope; ///< Self reference type.
     friend class Config;
 
-    Config *_cfg = nullptr;    ///< Associated configuration instance.
-    ActiveFeatureState _state; ///< Previous active feature,
+    Config            *_cfg = nullptr; ///< Associated configuration instance.
+    ActiveFeatureState _state;         ///< Previous active feature,
 
   public:
     /** Construct from configuration.
@@ -102,8 +102,8 @@ public:
   /// Track the state of the active capture groups.
   struct ActiveCaptureState {
     unsigned _count = 0;     ///< Number of active capture groups - 0 => not active.
-    int _line       = -1;    ///< Line of the active regular expression.
-    bool _ref_p     = false; ///< Regular expression capture groups referenced / used.
+    int      _line  = -1;    ///< Line of the active regular expression.
+    bool     _ref_p = false; ///< Regular expression capture groups referenced / used.
   };
 
   /// Scope for group capture.
@@ -113,8 +113,8 @@ public:
     using self_type = ActiveCaptureScope;
     friend class Config;
 
-    Config *_cfg = nullptr;    ///< Associated config.
-    ActiveCaptureState _state; ///< Cached capture state.
+    Config            *_cfg = nullptr; ///< Associated config.
+    ActiveCaptureState _state;         ///< Cached capture state.
 
   public:
     /** Construct from configuration.
@@ -490,7 +490,7 @@ public:
 
   struct active_value_save {
     void *&_value;
-    void *_saved;
+    void  *_saved;
 
     active_value_save(void *&var, void *value) : _value(var), _saved(_value) { _value = value; }
     ~active_value_save() { _value = _saved; }
@@ -531,7 +531,7 @@ protected:
   using ActiveValues = std::unordered_map<swoc::TextView, void *, std::hash<std::string_view>>;
   /// Active (scoped) values used by elements (primarily directives and modifiers).
   /// Valid only during configuration load, not at run time.
-  ActiveValues _active_values;
+  ActiveValues   _active_values;
   swoc::MemArena _active_value_arena;
 
   ActiveFeatureState _active_feature; ///< Feature.

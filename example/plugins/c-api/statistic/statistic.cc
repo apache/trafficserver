@@ -49,7 +49,7 @@ TSPluginInit(int /* argc */, const char * /* argv */[])
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  int id;
+  int        id;
   const char name[] = "plugin." PLUGIN_NAME ".now";
 
   if (TSStatFindName(name, &id) == TS_ERROR) {

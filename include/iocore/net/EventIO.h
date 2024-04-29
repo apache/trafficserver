@@ -63,7 +63,7 @@ struct EventIO {
   int events = 0; ///< a bit mask of enabled events
 #endif
   EventLoop event_loop = nullptr; ///< the assigned event loop
-  bool syscall         = true;    ///< if false, disable all functionality (for QUIC)
+  bool      syscall    = true;    ///< if false, disable all functionality (for QUIC)
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)

@@ -94,8 +94,18 @@ public:
   uint16_t c = {3};
 
   // operator[]
-  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
-  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
+  template <typename F>
+  decltype(auto)
+  operator[](F field) const
+  {
+    return ext::get(*this, field);
+  }
+  template <typename F>
+  decltype(auto)
+  operator[](F field)
+  {
+    return ext::set(*this, field);
+  }
 };
 
 ext::FieldId<C, std::atomic<uint16_t>> ext_c_1;
@@ -205,7 +215,7 @@ TEST_CASE("Extendible Pointer Math", "")
   CHECK(ext::viewFormat(x) == format);
 
   ext::FieldId<A, bool> a_bit;
-  ext::FieldId<A, int> a_int;
+  ext::FieldId<A, int>  a_int;
   static_assert(std::is_same<decltype(ext::get(x, a_bit)), bool>::value);
   static_assert(std::is_same<decltype(ext::get(x, a_int)), int const &>::value);
   delete &x;
@@ -218,13 +228,23 @@ struct Derived : Extendible<Derived> {
   string m_str;
 
   // operator[] for shorthand
-  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
-  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
+  template <typename F>
+  decltype(auto)
+  operator[](F field) const
+  {
+    return ext::get(*this, field);
+  }
+  template <typename F>
+  decltype(auto)
+  operator[](F field)
+  {
+    return ext::set(*this, field);
+  }
 
   static const string
   testFormat()
   {
-    const size_t intenal_size = sizeof(Derived) - sizeof(ext::Extendible<Derived>::short_ptr_t);
+    const size_t      intenal_size = sizeof(Derived) - sizeof(ext::Extendible<Derived>::short_ptr_t);
     std::stringstream format;
     format << "\n                      7Derived | EXT  |     1b |##" << string(intenal_size, '_') << "#"
            << "\n                      7Derived | BASE | " << setw(5) << intenal_size << "b |__" << string(intenal_size, '#')
@@ -267,7 +287,7 @@ DerivedExtfieldFind(char const *field_name)
 // something to store more complex than an int
 struct testField {
   std::array<uint8_t, 5> arr;
-  static int alive;
+  static int             alive;
   testField()
   {
     uint8_t x = 1;
@@ -302,9 +322,9 @@ TEST_CASE("Extendible", "")
   printf("\nsizeof(string) = %lu", sizeof(std::string));
   printf("\nsizeof(Derived) = %lu", sizeof(Derived));
 
-  ext::FieldId<Derived, bool> bit_a, bit_b, bit_c;
+  ext::FieldId<Derived, bool>             bit_a, bit_b, bit_c;
   ext::FieldId<Derived, std::atomic<int>> int_a, int_b, int_c;
-  Derived *ptr;
+  Derived                                *ptr;
 
   // test cases:
   //[constructor] [operator] [type] [access] [capacity] [modifier] [operation] [compare] [find]
@@ -366,7 +386,7 @@ TEST_CASE("Extendible", "")
   INFO("test bit field");
   {
     shared_ptr<Derived> sptr{ext::create<Derived>()};
-    Derived &ref = *sptr;
+    Derived            &ref = *sptr;
 
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
 
@@ -382,7 +402,7 @@ TEST_CASE("Extendible", "")
   INFO("test bit packing")
   {
     struct size_test {
-      string s;
+      string   s;
       uint16_t i;
     };
 
@@ -403,7 +423,7 @@ TEST_CASE("Extendible", "")
     ext::details::areFieldsFinalized() = true;
 
     shared_ptr<Derived> sptr(ext::create<Derived>());
-    Derived &ref = *sptr;
+    Derived            &ref = *sptr;
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
     using Catch::Matchers::Contains;
     REQUIRE_THAT(ext::toString(ref), Contains("bit_a: 0"));
@@ -432,7 +452,7 @@ TEST_CASE("Extendible", "")
     CHECK(ext::sizeOf<Derived>() == expected_size);
 
     shared_ptr<Derived> sptr(ext::create<Derived>());
-    Derived &ref = *sptr;
+    Derived            &ref = *sptr;
     CHECK(ext::get(ref, int_a) == 0);
     CHECK(ext::get(ref, int_b) == 0);
     ++ext::set(ref, int_a);
@@ -480,8 +500,8 @@ TEST_CASE("Extendible C API")
     void *d = DerivedExtalloc();
     REQUIRE(d != nullptr);
 
-    ExtFieldContext cf_a = DerivedExtfieldFind("cf_a");
-    uint8_t *data8       = static_cast<uint8_t *>(ExtFieldPtr(d, cf_a));
+    ExtFieldContext cf_a  = DerivedExtfieldFind("cf_a");
+    uint8_t        *data8 = static_cast<uint8_t *>(ExtFieldPtr(d, cf_a));
 
     CHECK(data8[0] == 0);
     ink_atomic_increment(&data8[0], 1);

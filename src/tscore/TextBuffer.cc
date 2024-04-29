@@ -126,7 +126,7 @@ TextBuffer::enlargeBuffer(unsigned N)
 {
   unsigned addedSize = 0;
   unsigned newSize   = (currentSize ? currentSize : 1) * 2;
-  char *newSpace;
+  char    *newSpace;
 
   if (spaceLeft < N) {
     while ((newSize - currentSize) < N) {

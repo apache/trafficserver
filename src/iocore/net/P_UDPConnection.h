@@ -40,13 +40,13 @@ public:
   ~UDPConnectionInternal() override;
 
   Continuation *continuation = nullptr;
-  int refcount               = 0; // public for assertion
+  int           refcount     = 0; // public for assertion
 
-  SOCKET fd = -1;
+  SOCKET     fd = -1;
   IpEndpoint binding{};
-  bool binding_valid    = false;
-  int tobedestroyed     = 0;
-  int sendGenerationNum = 0;
+  bool       binding_valid     = false;
+  int        tobedestroyed     = 0;
+  int        sendGenerationNum = 0;
 };
 
 TS_INLINE
@@ -74,7 +74,7 @@ TS_INLINE void
 UDPConnection::setBinding(IpAddr const &ip, in_port_t port)
 {
   UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
-  IpEndpoint addr;
+  IpEndpoint             addr;
   addr.assign(ip, htons(port));
   ats_ip_copy(&p->binding, addr);
   p->binding_valid = true;

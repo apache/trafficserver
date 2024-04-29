@@ -37,11 +37,11 @@ struct BgBlockFetch {
 
   explicit BgBlockFetch(int blocknum) : m_blocknum(blocknum) {}
 
-  bool fetch(Data *const data);
+  bool       fetch(Data *const data);
   static int handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */);
 
   /* This is for the actual background fetch / NetVC */
-  Stage m_stream;
-  int m_blocknum;
+  Stage  m_stream;
+  int    m_blocknum;
   TSCont m_cont = nullptr;
 };

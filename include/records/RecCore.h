@@ -43,7 +43,7 @@ int RecSetDiags(Diags *diags);
 using RecConfigEntryCallback = void (*)(RecT, RecDataT, const char *, const char *, RecSourceT);
 
 void RecConfigFileInit();
-int RecConfigFileParse(const char *path, RecConfigEntryCallback handler);
+int  RecConfigFileParse(const char *path, RecConfigEntryCallback handler);
 
 // Return a copy of the system's configuration directory.
 std::string RecConfigReadConfigDir();
@@ -265,15 +265,15 @@ void RecConfigWarnIfUnregistered();
     _var = (RecByte)REC_ConfigReadInteger(_config_var_name);  \
   } while (0)
 
-RecInt REC_ConfigReadInteger(const char *name);
-char *REC_ConfigReadString(const char *name);
+RecInt   REC_ConfigReadInteger(const char *name);
+char    *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);
 
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX
-RecInt REC_readInteger(const char *name, bool *found, bool lock = true);
-RecFloat REC_readFloat(char *name, bool *found, bool lock = true);
+RecInt     REC_readInteger(const char *name, bool *found, bool lock = true);
+RecFloat   REC_readFloat(char *name, bool *found, bool lock = true);
 RecCounter REC_readCounter(char *name, bool *found, bool lock = true);
-RecString REC_readString(const char *name, bool *found, bool lock = true);
+RecString  REC_readString(const char *name, bool *found, bool lock = true);
 
 //------------------------------------------------------------------------
 // Clear Statistics

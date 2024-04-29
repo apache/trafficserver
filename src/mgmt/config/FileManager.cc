@@ -58,7 +58,7 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
       ret.note("Error reading {}", fileName).note(zret);
     }
   } else {
-    RecT rec_type;
+    RecT  rec_type;
     char *data = const_cast<char *>(configName.c_str());
     if (RecGetRecordType(data, &rec_type) == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
       RecSetSyncRequired(data);
@@ -212,10 +212,10 @@ FileManager::rereadConfig()
 {
   swoc::Errata ret;
 
-  ConfigManager *rb;
+  ConfigManager               *rb;
   std::vector<ConfigManager *> changedFiles;
   std::vector<ConfigManager *> parentFileNeedChange;
-  size_t n;
+  size_t                       n;
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
     rb = it.second;
@@ -277,7 +277,7 @@ FileManager::rereadConfig()
   // INKqa11910
   // need to first check that enable_customizations is enabled
   bool found;
-  int enabled = static_cast<int>(REC_readInteger("proxy.config.body_factory.enable_customizations", &found));
+  int  enabled = static_cast<int>(REC_readInteger("proxy.config.body_factory.enable_customizations", &found));
 
   if (found && enabled) {
     if (auto const &r = fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
@@ -304,7 +304,7 @@ bool
 FileManager::isConfigStale()
 {
   ConfigManager *rb;
-  bool stale = false;
+  bool           stale = false;
 
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
@@ -344,7 +344,7 @@ FileManager::get_files_registry_rpc_endpoint(std::string_view const &id, YAML::N
     ink_scoped_mutex_lock lock(accessLock);
     for (auto &&it : bindings) {
       if (ConfigManager *cm = it.second; cm) {
-        YAML::Node element{YAML::NodeType::Map};
+        YAML::Node  element{YAML::NodeType::Map};
         std::string sysconfdir(RecConfigReadConfigDir());
         element[FILE_PATH_KEY_STR]          = Layout::get()->relative_to(sysconfdir, cm->getFileName());
         element[RECORD_NAME_KEY_STR]        = cm->getConfigName();
@@ -403,7 +403,7 @@ FileManager::ConfigManager::ConfigManager(const char *fileName_, const char *con
 int
 FileManager::ConfigManager::statFile(struct stat *buf)
 {
-  int statResult;
+  int         statResult;
   std::string sysconfdir(RecConfigReadConfigDir());
   std::string filePath = Layout::get()->relative_to(sysconfdir, fileName);
 
@@ -420,7 +420,7 @@ bool
 FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType how)
 {
   struct stat fileInfo;
-  bool result;
+  bool        result;
 
   ink_mutex_acquire(&fileAccessLock);
 

@@ -34,9 +34,9 @@ constexpr char const PLUGIN_TAG[]  = "tls_bridge";
 char const CONNECT_FORMAT[] = "CONNECT https://%.*s HTTP/1.1\r\n\r\n";
 
 // TextView of the 'CONNECT' method string.
-const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
+const TextView     METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
 constexpr TextView CONFIG_FILE_ARG{"--file"};
-const std::string TS_CONFIG_DIR{TSConfigDirGet()};
+const std::string  TS_CONFIG_DIR{TSConfigDirGet()};
 
 DbgCtl dbg_ctl{PLUGIN_TAG};
 
@@ -78,7 +78,7 @@ class BridgeConfig
     Item(std::string_view pattern, Regex &&r, std::string_view service) : _pattern(pattern), _r(std::move(r)), _service(service) {}
 
     std::string _pattern; ///< Original configuration regular expression.
-    Regex _r;             ///< Compiled regex.
+    Regex       _r;       ///< Compiled regex.
     std::string _service; ///< Destination service if matched.
   };
 
@@ -140,7 +140,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
                 CONFIG_FILE_ARG.data());
       } else {
         swoc::file::path fp(argv[i + 1]);
-        std::error_code ec;
+        std::error_code  ec;
         if (!fp.is_absolute()) {
           fp = swoc::file::path{TS_CONFIG_DIR} / fp; // slap the config dir on it to make it absolute.
         }
@@ -152,7 +152,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
 
         } else {
           // walk the lines.
-          int line_no = 0;
+          int      line_no = 0;
           TextView src{content};
           while (!src.empty()) {
             TextView line{src.take_prefix_at('\n').trim_if(&isspace)};
@@ -207,8 +207,8 @@ BridgeConfig Config;
 struct Bridge {
   /// An I/O operation wrapper.
   struct Op {
-    TSVIO _vio               = nullptr; ///< VIO for operation.
-    TSIOBuffer _buff         = nullptr; ///< Buffer for operation.
+    TSVIO            _vio    = nullptr; ///< VIO for operation.
+    TSIOBuffer       _buff   = nullptr; ///< Buffer for operation.
     TSIOBufferReader _reader = nullptr; ///< Reader for operation.
 
     /// Initialize - set up buffer and reader.
@@ -220,8 +220,8 @@ struct Bridge {
   /// Per VConn data.
   struct VCData {
     TSVConn _vc = nullptr; ///< The virtual connection.
-    Op _write;             ///< Write operational data.
-    Op _read;              ///< Read operational data.
+    Op      _write;        ///< Write operational data.
+    Op      _read;         ///< Read operational data.
 
     /// Initialize - assign the VC and set up the IOBuffers and readers.
     void init(TSVConn vc);
@@ -241,11 +241,11 @@ struct Bridge {
     void do_close();
   };
 
-  TSCont _self_cont; ///< The continuation that handles events for @a this.
-  TSHttpTxn _ua_txn; ///< User Agent transaction.
-  TextView _peer;    ///< ATS peer for upstream connection.
-  VCData _ua;        ///< User agent connection.
-  VCData _out;       ///< Outbound connection.
+  TSCont    _self_cont; ///< The continuation that handles events for @a this.
+  TSHttpTxn _ua_txn;    ///< User Agent transaction.
+  TextView  _peer;      ///< ATS peer for upstream connection.
+  VCData    _ua;        ///< User agent connection.
+  VCData    _out;       ///< Outbound connection.
 
   sockaddr const *_ua_addr; ///< User Agent address, needed for outbound connect.
 
@@ -305,7 +305,7 @@ Bridge::Bridge(TSCont cont, TSHttpTxn txn, TextView peer) : _self_cont(cont), _u
 void
 Bridge::net_accept(TSVConn vc)
 {
-  char buff[1024];
+  char    buff[1024];
   int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
 
   Dbg(dbg_ctl, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
@@ -366,7 +366,7 @@ Bridge::read_ready(TSVIO vio)
 bool
 Bridge::check_outbound_OK()
 {
-  bool zret = false;
+  bool     zret = false;
   TextView raw{_out.first_block_data()};
 
   // Only need to check the first block - it's guaranteed to be big enough to hold the status line
@@ -380,8 +380,8 @@ Bridge::check_outbound_OK()
       if (block[1] == '.' && ((block[0] == '1' && (block[2] == '0' || block[2] == '1')) || (block[0] == '0' && block[2] == '9'))) {
         block += 3;
         block.ltrim_if(&isspace);
-        TextView code  = block.take_prefix_if(&isspace);
-        TSHttpStatus c = static_cast<TSHttpStatus>(swoc::svtoi(code));
+        TextView     code = block.take_prefix_if(&isspace);
+        TSHttpStatus c    = static_cast<TSHttpStatus>(swoc::svtoi(code));
         if (TS_HTTP_STATUS_OK == c) {
           _out_resp_state = OK;
         } else {
@@ -404,7 +404,7 @@ Bridge::check_outbound_OK()
 bool
 Bridge::check_outbound_terminal()
 {
-  bool zret = false;
+  bool     zret = false;
   TextView block;
 
   // Need to be more careful here than with the status check because the terminator can
@@ -507,7 +507,7 @@ void
 Bridge::update_ua_response()
 {
   TSMBuffer mbuf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(_ua_txn, &mbuf, &hdr_loc)) {
     // If there is a non-200 upstream code then that's the most accurate because it was from
     // an actual upstream connection. Otherwise, let the original connection response code
@@ -570,7 +570,7 @@ Bridge::VCData::first_block_data()
 {
   TSIOBufferBlock b = TSIOBufferReaderStart(_read._reader);
   if (b) {
-    int64_t k;
+    int64_t     k;
     const char *s = TSIOBufferBlockReadStart(b, _read._reader, &k);
     return {s, static_cast<size_t>(k)};
   }
@@ -650,18 +650,18 @@ CB_Exec(TSCont contp, TSEvent ev_idx, void *data)
 int
 CB_Read_Request_Hdr(TSCont contp, TSEvent ev_idx, void *data)
 {
-  auto txn = static_cast<TSHttpTxn>(data);
+  auto      txn = static_cast<TSHttpTxn>(data);
   TSMBuffer mbuf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   if (!TSHttpTxnIsInternal(txn)) {
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &mbuf, &hdr_loc)) {
-      int method_len;
+      int         method_len;
       const char *method_data = TSHttpHdrMethodGet(mbuf, hdr_loc, &method_len);
       if (TextView{method_data, method_len} == METHOD_CONNECT) {
-        int host_len          = 0;
+        int         host_len  = 0;
         const char *host_name = TSHttpHdrHostGet(mbuf, hdr_loc, &host_len);
-        TextView peer{Config.match({host_name, host_len})};
+        TextView    peer{Config.match({host_name, host_len})};
         if (peer) {
           // Everything checks, let's intercept.
           auto actor = TSContCreate(CB_Exec, TSContMutexGet(reinterpret_cast<TSCont>(txn)));

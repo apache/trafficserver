@@ -56,10 +56,10 @@ namespace ats
 bool
 getHeader(TSMBuffer buffer, TSMLoc location, const std::string &name, std::string &value)
 {
-  bool result        = false;
-  const TSMLoc field = TSMimeHdrFieldFind(buffer, location, name.c_str(), name.size());
+  bool         result = false;
+  const TSMLoc field  = TSMimeHdrFieldFind(buffer, location, name.c_str(), name.size());
   if (field != nullptr) {
-    int length                = 0;
+    int               length  = 0;
     const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, -1, &length);
     if (content != nullptr && length > 0) {
       value  = std::string(content, length);
@@ -73,8 +73,8 @@ getHeader(TSMBuffer buffer, TSMLoc location, const std::string &name, std::strin
 namespace inliner
 {
   struct AnotherClass {
-    util::Buffer content_;
-    std::string contentType_;
+    util::Buffer      content_;
+    std::string       contentType_;
     const std::string url_;
 
     AnotherClass(const std::string &u) : url_(u) {}
@@ -93,7 +93,7 @@ namespace inliner
       int64_t length = 0;
 
       for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
-        int64_t size              = 0;
+        int64_t           size    = 0;
         const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
         if (pointer != nullptr && size > 0) {
           size = std::min(size, l);
@@ -133,8 +133,8 @@ namespace inliner
         output += ";base64,";
 
         {
-          const int64_t s = output.size();
-          size_t size     = 0;
+          const int64_t s    = output.size();
+          size_t        size = 0;
           output.resize(content_.size() * 5);
           CHECK(TSBase64Encode(content_.data(), content_.size(), const_cast<char *>(output.data()) + s, output.size() - s, &size));
           output.resize(size + s);
@@ -162,7 +162,7 @@ namespace inliner
 
         if (!contentLengthValue.empty()) {
           std::stringstream ss(contentLengthValue);
-          uint32_t contentLength = 0;
+          uint32_t          contentLength = 0;
           ss >> contentLength;
           Dbg(dbg_ctl, "Content-Length: %i", contentLength);
           content_.reserve(contentLength);
@@ -198,7 +198,7 @@ namespace inliner
     uint64_t length = 0;
 
     for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
-      int64_t size              = 0;
+      int64_t           size    = 0;
       const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
       if (pointer != nullptr && size > 0) {
         size = std::min(size, l);
@@ -212,12 +212,12 @@ namespace inliner
   }
 
   struct CacheHandler {
-    std::string src_;
-    std::string original_;
-    std::string classes_;
-    std::string id_;
-    io::SinkPointer sink_;
-    io::SinkPointer sink2_;
+    std::string      src_;
+    std::string      original_;
+    std::string      classes_;
+    std::string      id_;
+    io::SinkPointer  sink_;
+    io::SinkPointer  sink2_;
     TSIOBufferReader reader_;
 
     ~CacheHandler()

@@ -70,14 +70,14 @@ using ts::Metrics;
 //
 // Config
 //
-extern int dns_timeout;
-extern int dns_retries;
-extern int dns_search;
-extern int dns_failover_number;
-extern int dns_failover_period;
-extern int dns_failover_try_period;
-extern int dns_max_dns_in_flight;
-extern int dns_max_tcp_continuous_failures;
+extern int          dns_timeout;
+extern int          dns_retries;
+extern int          dns_search;
+extern int          dns_failover_number;
+extern int          dns_failover_period;
+extern int          dns_failover_try_period;
+extern int          dns_max_dns_in_flight;
+extern int          dns_max_tcp_continuous_failures;
 extern unsigned int dns_sequence_number;
 
 //
@@ -89,7 +89,7 @@ extern unsigned int dns_sequence_number;
 #define DNS_SEQUENCE_NUMBER_RESTART_OFFSET 4000
 #define DNS_PRIMARY_RETRY_PERIOD           HRTIME_SECONDS(5)
 #define DNS_PRIMARY_REOPEN_PERIOD          HRTIME_SECONDS(60)
-#define BAD_DNS_RESULT                     (reinterpret_cast<HostEnt *>((uintptr_t)-1))
+#define BAD_DNS_RESULT                     (reinterpret_cast<HostEnt *>((uintptr_t) - 1))
 #define DEFAULT_NUM_TRY_SERVER             8
 
 // these are from nameser.h
@@ -103,7 +103,7 @@ extern unsigned int dns_sequence_number;
 // Stats
 struct DNSStatsBlock {
   Metrics::Counter::AtomicType *fail_time;
-  Metrics::Gauge::AtomicType *in_flight;
+  Metrics::Gauge::AtomicType   *in_flight;
   Metrics::Counter::AtomicType *lookup_fail;
   Metrics::Counter::AtomicType *lookup_success;
   Metrics::Counter::AtomicType *max_retries_exceeded;
@@ -127,33 +127,33 @@ extern DNSStatsBlock dns_rsb;
 
 */
 struct DNSEntry : public Continuation {
-  int id[MAX_DNS_RETRIES];
-  int qtype                   = 0;             ///< Type of query to send.
+  int          id[MAX_DNS_RETRIES];
+  int          qtype          = 0;             ///< Type of query to send.
   HostResStyle host_res_style = HOST_RES_NONE; ///< Preferred IP address family.
-  int retries                 = DEFAULT_DNS_RETRIES;
-  int which_ns                = NO_NAMESERVER_SELECTED;
-  ink_hrtime submit_time      = 0;
-  ink_hrtime send_time        = 0;
-  char qname[MAXDNAME + 1];
-  int qname_len          = 0;
-  int orig_qname_len     = 0;
-  char **domains         = nullptr;
-  EThread *submit_thread = nullptr;
-  Action action;
-  Event *timeout = nullptr;
+  int          retries        = DEFAULT_DNS_RETRIES;
+  int          which_ns       = NO_NAMESERVER_SELECTED;
+  ink_hrtime   submit_time    = 0;
+  ink_hrtime   send_time      = 0;
+  char         qname[MAXDNAME + 1];
+  int          qname_len      = 0;
+  int          orig_qname_len = 0;
+  char       **domains        = nullptr;
+  EThread     *submit_thread  = nullptr;
+  Action       action;
+  Event       *timeout = nullptr;
   Ptr<HostEnt> result_ent;
-  DNSHandler *dnsH       = nullptr;
-  bool written_flag      = false;
-  bool once_written_flag = false;
-  bool last              = false;
+  DNSHandler  *dnsH              = nullptr;
+  bool         written_flag      = false;
+  bool         once_written_flag = false;
+  bool         last              = false;
   LINK(DNSEntry, dup_link);
   Que(DNSEntry, dup_link) dups;
 
-  int mainEvent(int event, Event *e);
-  int delayEvent(int event, Event *e);
-  int postAllEvent(int event, Event *e);
-  int post(DNSHandler *h, HostEnt *ent);
-  int postOneEvent(int event, Event *e);
+  int  mainEvent(int event, Event *e);
+  int  delayEvent(int event, Event *e);
+  int  postAllEvent(int event, Event *e);
+  int  post(DNSHandler *h, HostEnt *ent);
+  int  postOneEvent(int event, Event *e);
   void init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
@@ -175,31 +175,31 @@ struct DNSEntry;
 */
 struct DNSHandler : public Continuation {
   /// This is used as the target if round robin isn't set.
-  IpEndpoint ip;
-  IpEndpoint local_ipv6; ///< Local V6 address if set.
-  IpEndpoint local_ipv4; ///< Local V4 address if set.
-  int ifd[MAX_NAMED];
-  int n_con = 0;
-  DNSConnection tcpcon[MAX_NAMED];
-  DNSConnection udpcon[MAX_NAMED];
-  Queue<DNSEntry> entries;
+  IpEndpoint           ip;
+  IpEndpoint           local_ipv6; ///< Local V6 address if set.
+  IpEndpoint           local_ipv4; ///< Local V4 address if set.
+  int                  ifd[MAX_NAMED];
+  int                  n_con = 0;
+  DNSConnection        tcpcon[MAX_NAMED];
+  DNSConnection        udpcon[MAX_NAMED];
+  Queue<DNSEntry>      entries;
   Queue<DNSConnection> triggered;
-  int in_flight    = 0;
-  int name_server  = 0;
-  int in_write_dns = 0;
+  int                  in_flight    = 0;
+  int                  name_server  = 0;
+  int                  in_write_dns = 0;
 
   HostEnt *hostent_cache = nullptr;
 
-  int ns_down[MAX_NAMED];
-  int failover_number[MAX_NAMED];
-  int failover_soon_number[MAX_NAMED];
-  int tcp_continuous_failures[MAX_NAMED];
+  int        ns_down[MAX_NAMED];
+  int        failover_number[MAX_NAMED];
+  int        failover_soon_number[MAX_NAMED];
+  int        tcp_continuous_failures[MAX_NAMED];
   ink_hrtime crossed_failover_number[MAX_NAMED];
   ink_hrtime last_primary_retry  = 0;
   ink_hrtime last_primary_reopen = 0;
 
-  ink_res_state m_res    = nullptr;
-  int txn_lookup_timeout = 0;
+  ink_res_state m_res              = nullptr;
+  int           txn_lookup_timeout = 0;
 
   InkRand generator;
   // bitmap of query ids in use
@@ -241,18 +241,18 @@ struct DNSHandler : public Continuation {
   }
 
   void recv_dns(int event, Event *e);
-  int startEvent(int event, Event *e);
-  int startEvent_sdns(int event, Event *e);
-  int mainEvent(int event, Event *e);
+  int  startEvent(int event, Event *e);
+  int  startEvent_sdns(int event, Event *e);
+  int  mainEvent(int event, Event *e);
 
-  void open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
-  bool open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
-  void failover();
-  void rr_failure(int ndx);
-  void recover();
-  void retry_named(int ndx, ink_hrtime t, bool reopen = true);
-  void try_primary_named(bool reopen = true);
-  void switch_named(int ndx);
+  void     open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
+  bool     open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
+  void     failover();
+  void     rr_failure(int ndx);
+  void     recover();
+  void     retry_named(int ndx, ink_hrtime t, bool reopen = true);
+  void     try_primary_named(bool reopen = true);
+  void     switch_named(int ndx);
   uint16_t get_query_id();
 
   void
@@ -297,7 +297,7 @@ private:
    -------------------------------------------------------------- */
 struct DNSServer {
   IpEndpoint x_server_ip[MAXNS];
-  char x_dns_ip_line[MAXDNAME * 2];
+  char       x_dns_ip_line[MAXDNAME * 2];
 
   char x_def_domain[MAXDNAME];
   char x_domain_srch_list[MAXDNAME];

@@ -119,20 +119,20 @@ public:
   }
 
   bool doSample() const;
-  int create_stat(std::string_view name, std::string_view remap_identifier);
+  int  create_stat(std::string_view name, std::string_view remap_identifier);
 
   // These are pure virtual
-  virtual bool doPromote(TSHttpTxn txnp)       = 0;
-  virtual const char *policyName() const       = 0;
-  virtual void usage() const                   = 0;
-  virtual bool stats_add(const char *remap_id) = 0;
+  virtual bool        doPromote(TSHttpTxn txnp)       = 0;
+  virtual const char *policyName() const              = 0;
+  virtual void        usage() const                   = 0;
+  virtual bool        stats_add(const char *remap_id) = 0;
 
   // when true stats are incremented.
-  bool _stats_enabled    = false;
-  bool _internal_enabled = false;
-  int _cache_hits_id     = -1;
-  int _promoted_id       = -1;
-  int _total_requests_id = -1;
+  bool _stats_enabled     = false;
+  bool _internal_enabled  = false;
+  int  _cache_hits_id     = -1;
+  int  _promoted_id       = -1;
+  int  _total_requests_id = -1;
 
 private:
   float _sample = 0.0;

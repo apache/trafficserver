@@ -29,9 +29,9 @@
 
 struct ArenaBlock {
   ArenaBlock *next;
-  char *m_heap_end;
-  char *m_water_level;
-  char data[8];
+  char       *m_heap_end;
+  char       *m_water_level;
+  char        data[8];
 };
 
 class Arena
@@ -39,12 +39,12 @@ class Arena
 public:
   Arena() {}
   ~Arena() { reset(); }
-  void *alloc(size_t size, size_t alignment = sizeof(double));
-  void free(void *mem, size_t size);
+  void  *alloc(size_t size, size_t alignment = sizeof(double));
+  void   free(void *mem, size_t size);
   size_t str_length(const char *str);
-  char *str_alloc(size_t len);
-  void str_free(char *str);
-  char *str_store(const char *str, size_t len);
+  char  *str_alloc(size_t len);
+  void   str_free(char *str);
+  char  *str_store(const char *str, size_t len);
 
   void reset();
 
@@ -59,7 +59,7 @@ inline size_t
 Arena::str_length(const char *str)
 {
   unsigned char *s, *e;
-  size_t len;
+  size_t         len;
 
   e = (unsigned char *)str;
   s = e - 1;
@@ -97,8 +97,8 @@ inline char *
 Arena::str_alloc(size_t len)
 {
   unsigned char *mem, *p;
-  size_t size;
-  size_t tmp;
+  size_t         size;
+  size_t         tmp;
 
   size = len + 1 + 1;
   tmp  = len;
@@ -130,7 +130,7 @@ inline void
 Arena::str_free(char *str)
 {
   unsigned char *p, *s, *e;
-  size_t len;
+  size_t         len;
 
   e = reinterpret_cast<unsigned char *>(str);
   s = e - 1;

@@ -62,7 +62,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   }
 
   if (format_str) {
-    const char *tag                = " %<phn>";
+    const char  *tag               = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
     m_format_str                   = static_cast<char *>(ats_malloc(m_format_str_size));
     ink_strlcpy(m_format_str, format_str, m_format_str_size);
@@ -75,7 +75,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
 
     char *printf_str    = nullptr;
     char *fieldlist_str = nullptr;
-    int nfields         = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
+    int   nfields       = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
     if (nfields > (m_tagging_on ? 1 : 0)) {
       init_variables(name, fieldlist_str, printf_str, interval_sec);
     } else {
@@ -262,9 +262,9 @@ LogFormat *
 LogFormat::format_from_specification(char *spec, char **file_name, char **file_header, LogFileFormat *file_type)
 {
   LogFormat *format;
-  char *token;
-  int format_id;
-  char *format_name, *format_str;
+  char      *token;
+  int        format_id;
+  char      *format_name, *format_str;
 
   ink_assert(file_name != nullptr);
   ink_assert(file_header != nullptr);
@@ -405,10 +405,10 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
 int
 LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates)
 {
-  char *sym_str;
-  int field_count = 0;
-  LogField *f;
-  char *symbol, *name, *sym, *saveptr;
+  char               *sym_str;
+  int                 field_count = 0;
+  LogField           *f;
+  char               *symbol, *name, *sym, *saveptr;
   LogField::Container container;
   LogField::Aggregate aggregate;
 
@@ -558,7 +558,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
 int
 LogFormat::parse_escape_string(const char *str, int len)
 {
-  int sum, start = 0;
+  int           sum, start = 0;
   unsigned char a, b, c;
 
   if (str[start] != '\\' || len < 2) {
@@ -652,7 +652,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   unsigned field_count = 0;
   unsigned field_len;
   unsigned start, stop;
-  int escape_char;
+  int      escape_char;
 
   for (start = 0; start < len; start++) {
     //

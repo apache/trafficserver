@@ -26,8 +26,8 @@
 #include "configs.h"
 
 const char *PLUGIN_NAME = "cache_promote";
-int TXN_ARG_IDX;
-DbgCtl cache_promote_dbg_ctl{PLUGIN_NAME};
+int         TXN_ARG_IDX;
+DbgCtl      cache_promote_dbg_ctl{PLUGIN_NAME};
 
 // This has to be a global here. I tried doing a classic singleton (with a getInstance()) in the PolicyManager,
 // but then reloading the DSO does not work. What happens is that the old singleton is still there, even though
@@ -46,7 +46,7 @@ static PolicyManager gManager;
 static int
 cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp          = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn        txnp   = static_cast<TSHttpTxn>(edata);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
   switch (event) {
@@ -159,7 +159,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 void
 TSRemapDeleteInstance(void *ih)
 {
-  TSCont contp            = static_cast<TSCont>(ih);
+  TSCont           contp  = static_cast<TSCont>(ih);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
   delete config; // This will return the PromotionPolicy to the PromotionManager as well

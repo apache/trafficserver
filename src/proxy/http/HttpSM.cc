@@ -120,7 +120,7 @@ static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Co
 static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
-static const int len_100_continue_response   = strlen(str_100_continue_response);
+static const int   len_100_continue_response = strlen(str_100_continue_response);
 
 // Handy alias for short (single line) message generation.
 using lbw = swoc::LocalBufferWriter<256>;
@@ -142,7 +142,7 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
 {
   ink_release_assert(conf >= 0);
 
-  ProxyProtocol info              = vc_in->get_proxy_protocol_info();
+  ProxyProtocol        info       = vc_in->get_proxy_protocol_info();
   ProxyProtocolVersion pp_version = proxy_protocol_version_cast(conf);
 
   if (info.version == ProxyProtocolVersion::UNDEFINED) {
@@ -160,7 +160,7 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
   vc_out->set_proxy_protocol_info(info);
 
   IOBufferBlock *block = miob->first_write_block();
-  size_t len           = proxy_protocol_build(reinterpret_cast<uint8_t *>(block->buf()), block->write_avail(), info, pp_version);
+  size_t         len   = proxy_protocol_build(reinterpret_cast<uint8_t *>(block->buf()), block->write_avail(), info, pp_version);
 
   if (len > 0) {
     miob->fill(len);
@@ -723,7 +723,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
-      int len            = 0;
+      int         len    = 0;
       const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
       if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
@@ -786,8 +786,8 @@ HttpSM::wait_for_full_body()
 {
   is_waiting_for_full_body = true;
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-  bool chunked = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
-  int64_t alloc_index;
+  bool                chunked = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
+  int64_t             alloc_index;
   HttpTunnelProducer *p = nullptr;
 
   // content length is undefined, use default buffer size
@@ -799,8 +799,8 @@ HttpSM::wait_for_full_body()
   } else {
     alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length, t_state.http_config_param->max_payload_iobuf_index);
   }
-  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
-  IOBufferReader *buf_start = post_buffer->alloc_reader();
+  MIOBuffer      *post_buffer = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start   = post_buffer->alloc_reader();
 
   this->_postbuf.init(post_buffer->clone_reader(buf_start));
 
@@ -992,9 +992,9 @@ HttpSM::state_read_push_response_header(int event, void *data)
 
   int state = PARSE_RESULT_CONT;
   while (_ua.get_txn()->get_remote_reader()->read_avail() && state == PARSE_RESULT_CONT) {
-    const char *start = _ua.get_txn()->get_remote_reader()->start();
-    const char *tmp   = start;
-    int64_t data_size = _ua.get_txn()->get_remote_reader()->block_read_avail();
+    const char *start     = _ua.get_txn()->get_remote_reader()->start();
+    const char *tmp       = start;
+    int64_t     data_size = _ua.get_txn()->get_remote_reader()->block_read_avail();
     ink_assert(data_size >= 0);
 
     /////////////////////
@@ -1520,9 +1520,9 @@ HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START: {
-    NetVConnection *netvc = _ua.get_txn()->get_netvc();
-    auto *tts             = netvc->get_service<TLSTunnelSupport>();
-    bool forward_dest     = tts != nullptr && tts->is_decryption_needed();
+    NetVConnection *netvc        = _ua.get_txn()->get_netvc();
+    auto           *tts          = netvc->get_service<TLSTunnelSupport>();
+    bool            forward_dest = tts != nullptr && tts->is_decryption_needed();
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {
@@ -2166,9 +2166,9 @@ HttpSM::cancel_pending_server_connection()
 bool
 HttpSM::add_to_existing_request()
 {
-  HttpTransact::State &s = this->t_state;
-  bool retval            = false;
-  EThread *ethread       = this_ethread();
+  HttpTransact::State &s       = this->t_state;
+  bool                 retval  = false;
+  EThread             *ethread = this_ethread();
 
   if (this->plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
     return false;
@@ -2313,7 +2313,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
     pending_action = nullptr;
     process_srv_info(static_cast<HostDBRecord *>(data));
 
-    char const *host_name = t_state.dns_info.is_srv() ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
+    char const              *host_name = t_state.dns_info.is_srv() ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
     HostDBProcessor::Options opt;
     opt.port    = t_state.dns_info.is_srv() ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.host_order_port();
     opt.flags   = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
@@ -2819,11 +2819,11 @@ HttpSM::tunnel_handler_trailer(int event, void *data)
   // Set up a new tunnel to transport the trailing header to the UA
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
-  MIOBuffer *trailer_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  IOBufferReader *buf_start = trailer_buffer->alloc_reader();
+  MIOBuffer      *trailer_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  IOBufferReader *buf_start      = trailer_buffer->alloc_reader();
 
-  size_t nbytes   = INT64_MAX;
-  int start_bytes = trailer_buffer->write(server_txn->get_remote_reader(), server_txn->get_remote_reader()->read_avail());
+  size_t nbytes      = INT64_MAX;
+  int    start_bytes = trailer_buffer->write(server_txn->get_remote_reader(), server_txn->get_remote_reader()->read_avail());
   server_txn->get_remote_reader()->consume(start_bytes);
   // The server has already sent all it has
   if (server_txn->is_read_closed()) {
@@ -2856,9 +2856,9 @@ HttpSM::tunnel_handler_cache_fill(int event, void *data)
 
   ink_release_assert(cache_sm.cache_write_vc);
 
-  int64_t alloc_index       = find_server_buffer_size();
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
-  IOBufferReader *buf_start = buf->alloc_reader();
+  int64_t         alloc_index = find_server_buffer_size();
+  MIOBuffer      *buf         = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start   = buf->alloc_reader();
 
   TunnelChunkingAction_t action =
     (t_state.current.server && t_state.current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING) ?
@@ -3371,7 +3371,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 
     if (ua_cl > 0) {
       int64_t ua_body_done = c->bytes_written - client_response_hdr_bytes;
-      float pDone          = static_cast<float>(ua_body_done) / ua_cl;
+      float   pDone        = static_cast<float>(ua_body_done) / ua_cl;
 
       // If we got a good content length.  Check to make sure that we haven't already
       //  done more the content length since that would indicate the content-length
@@ -3391,9 +3391,9 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 int
 HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 {
-  bool close_connection     = true;
-  HttpTunnelProducer *p     = nullptr;
-  HttpTunnelConsumer *selfc = nullptr;
+  bool                close_connection = true;
+  HttpTunnelProducer *p                = nullptr;
+  HttpTunnelConsumer *selfc            = nullptr;
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == _ua.get_txn());
@@ -4279,7 +4279,7 @@ HttpSM::check_sni_host()
 {
   // Check that the SNI and host name fields match, if it matters
   // Issue warning or mark the transaction to be terminated as necessary
-  int host_len;
+  int         host_len;
   const char *host_name = t_state.hdr_info.client_request.host_get(&host_len);
 
   if (host_name == nullptr || host_len == 0) {
@@ -4347,7 +4347,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
-      int host_len          = 0;
+      int         host_len  = 0;
       const char *host_name = host_field->value_get(&host_len);
       if (host_name && host_len) {
         int port = -1;
@@ -4568,16 +4568,16 @@ HttpSM::do_hostdb_update_if_necessary()
 void
 HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 {
-  int prev_good_range = -1;
-  const char *value;
-  int value_len;
-  int n_values;
-  int nr          = 0; // number of valid ranges, also index to range array.
-  int not_satisfy = 0;
-  HdrCsvIter csv;
-  const char *s, *e, *tmp;
+  int          prev_good_range = -1;
+  const char  *value;
+  int          value_len;
+  int          n_values;
+  int          nr          = 0; // number of valid ranges, also index to range array.
+  int          not_satisfy = 0;
+  HdrCsvIter   csv;
+  const char  *s, *e, *tmp;
   RangeRecord *ranges = nullptr;
-  int64_t start, end;
+  int64_t      start, end;
 
   ink_assert(field != nullptr && t_state.range_setup == HttpTransact::RANGE_NONE && t_state.ranges == nullptr);
 
@@ -4731,7 +4731,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer == 2) {
         // write in progress, check if request range not in cache yet
         HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
-        int frag_offset_cnt                   = t_state.cache_info.object_read->get_frag_offset_count();
+        int                   frag_offset_cnt = t_state.cache_info.object_read->get_frag_offset_count();
 
         if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < static_cast<uint64_t>(end))) {
           SMDbg(dbg_ctl_http_range, "request range in cache, end %" PRId64 ", frg_offset_cnt %d" PRId64, end, frag_offset_cnt);
@@ -4793,8 +4793,8 @@ HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 void
 HttpSM::do_range_parse(MIMEField *range_field)
 {
-  int num_chars_for_ct   = 0;
-  int64_t content_length = 0;
+  int     num_chars_for_ct = 0;
+  int64_t content_length   = 0;
 
   if (t_state.cache_info.object_read != nullptr) {
     t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
@@ -4862,9 +4862,9 @@ HttpSM::do_range_setup_if_necessary()
       // We have to do the transform on (allowed) multi-range request, *or* if the VC is not pread capable
       if (do_transform) {
         if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == nullptr) {
-          int field_content_type_len = -1;
-          const char *content_type   = nullptr;
-          int64_t content_length     = 0;
+          int         field_content_type_len = -1;
+          const char *content_type           = nullptr;
+          int64_t     content_length         = 0;
 
           if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
             content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
@@ -5121,7 +5121,7 @@ HttpSM::get_outbound_sni() const
 
   if (policy.empty() || policy == "host"_tv) {
     // By default the host header field value is used for the SNI.
-    int len;
+    int         len;
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
   } else if (_ua.get_txn() && policy == "server_name"_tv) {
@@ -5159,7 +5159,7 @@ HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
       if (this->get_request_method_wksidx() != -1) {
         result = !acl.isMethodAllowed(this->get_request_method_wksidx());
       } else {
-        int method_str_len{};
+        int  method_str_len{};
         auto method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
         result          = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
       }
@@ -5174,8 +5174,8 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
 {
   if (dbg_ctl_ip_allow.on()) {
     ip_text_buffer ipb;
-    const char *method_str{};
-    int method_str_len{};
+    const char    *method_str{};
+    int            method_str_len{};
     method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
 
     const char *ntop_formatted = ats_ip_ntop(this->get_server_remote_addr(), ipb, sizeof(ipb));
@@ -5212,7 +5212,7 @@ bool
 HttpSM::is_prewarm_enabled_or_sni_overridden(const TLSTunnelSupport &tts) const
 {
   PreWarmConfig::scoped_config prewarm_conf;
-  bool result = prewarm_conf->enabled;
+  bool                         result = prewarm_conf->enabled;
 
   if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = tts.get_tunnel_prewarm_configuration();
       sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
@@ -5244,8 +5244,8 @@ HttpSM::open_prewarmed_connection()
 void
 HttpSM::do_http_server_open(bool raw, bool only_direct)
 {
-  int ip_family = t_state.current.server->dst_addr.sa.sa_family;
-  auto fam_name = ats_ip_family_name(ip_family);
+  int  ip_family = t_state.current.server->dst_addr.sa.sa_family;
+  auto fam_name  = ats_ip_family_name(ip_family);
   SMDbg(dbg_ctl_http_track, "entered inside do_http_server_open ][%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
 
   NetVConnection *vc = _ua.get_txn()->get_netvc();
@@ -5466,8 +5466,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   // Check to see if we have reached the max number of connections on this upstream host.
   if (t_state.txn_conf->connection_tracker_config.server_max > 0) {
-    auto &ct_state       = t_state.outbound_conn_track_state;
-    auto ccount          = ct_state.reserve();
+    auto     &ct_state   = t_state.outbound_conn_track_state;
+    auto      ccount     = ct_state.reserve();
     int const server_max = t_state.txn_conf->connection_tracker_config.server_max;
     if (ccount > server_max) {
       ct_state.release();
@@ -5498,8 +5498,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   opt.ip_family = ip_family;
 
-  int scheme_to_use = t_state.scheme; // get initial scheme
-  bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
+  int  scheme_to_use = t_state.scheme; // get initial scheme
+  bool tls_upstream  = scheme_to_use == URL_WKSIDX_HTTPS;
   if (_ua.get_txn()) {
     auto tts = _ua.get_txn()->get_netvc()->get_service<TLSTunnelSupport>();
     if (tts && raw) {
@@ -5751,9 +5751,9 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
       if (++info->active->fail_count >= t_state.txn_conf->connect_attempts_rr_retries) {
         if (info->active) {
           if (info->active->last_failure.load() == TS_TIME_ZERO) {
-            char *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
-            int host_len;
-            const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
+            char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
+            int              host_len;
+            const char      *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
             std::string_view host_name{host_name_ptr, size_t(host_len)};
             swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
                           swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
@@ -6118,10 +6118,10 @@ HttpSM::setup_transform_to_server_transfer()
   ink_assert(post_transform_info.vc != nullptr);
   ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
 
-  int64_t nbytes            = t_state.hdr_info.transform_request_cl;
-  int64_t alloc_index       = buffer_size_to_index(nbytes, t_state.http_config_param->max_payload_iobuf_index);
-  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
-  IOBufferReader *buf_start = post_buffer->alloc_reader();
+  int64_t         nbytes      = t_state.hdr_info.transform_request_cl;
+  int64_t         alloc_index = buffer_size_to_index(nbytes, t_state.http_config_param->max_payload_iobuf_index);
+  MIOBuffer      *post_buffer = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start   = post_buffer->alloc_reader();
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
 
@@ -6183,7 +6183,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
       (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
-    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer(t_state.http_config_param->max_payload_iobuf_index);
+    MIOBuffer      *postdata_producer_buffer = new_empty_MIOBuffer(t_state.http_config_param->max_payload_iobuf_index);
     IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
 
     postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);
@@ -6203,9 +6203,9 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
       alloc_index =
         buffer_size_to_index(t_state.hdr_info.request_content_length, t_state.http_config_param->max_payload_iobuf_index);
     }
-    MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
-    IOBufferReader *buf_start = post_buffer->alloc_reader();
-    int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+    MIOBuffer      *post_buffer = new_MIOBuffer(alloc_index);
+    IOBufferReader *buf_start   = post_buffer->alloc_reader();
+    int64_t         post_bytes  = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
 
     if (enable_redirection) {
       this->_postbuf.init(post_buffer->clone_reader(buf_start));
@@ -6435,9 +6435,9 @@ HttpSM::write_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 
   dumpoffset = 0;
   do {
-    IOBufferBlock *block = b->get_current_block();
-    int bufindex         = 0;
-    int tmp              = dumpoffset;
+    IOBufferBlock *block    = b->get_current_block();
+    int            bufindex = 0;
+    int            tmp      = dumpoffset;
 
     ink_assert(block->write_avail() > 0);
     done        = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
@@ -6566,7 +6566,7 @@ HttpSM::setup_server_send_request_api()
 void
 HttpSM::setup_server_send_request()
 {
-  int hdr_length;
+  int     hdr_length;
   int64_t msg_len = 0; /* lv: just make gcc happy */
 
   hsm_release_assert(server_entry != nullptr);
@@ -6712,7 +6712,7 @@ HttpSM::setup_cache_transfer_to_transform()
 
   doc_size                  = t_state.cache_info.object_read->object_size_get();
   alloc_index               = buffer_size_to_index(doc_size, t_state.http_config_param->max_payload_iobuf_index);
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
+  MIOBuffer      *buf       = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
@@ -6750,7 +6750,7 @@ HttpSM::setup_cache_write_transfer(HttpCacheSM *c_sm, VConnection *source_vc, HT
 void
 HttpSM::setup_100_continue_transfer()
 {
-  MIOBuffer *buf            = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  MIOBuffer      *buf       = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
@@ -6860,7 +6860,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   int64_t buf_size =
     index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
 
-  MIOBuffer *buf            = new_MIOBuffer(buffer_size_to_index(buf_size, t_state.http_config_param->max_payload_iobuf_index));
+  MIOBuffer      *buf       = new_MIOBuffer(buffer_size_to_index(buf_size, t_state.http_config_param->max_payload_iobuf_index));
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
@@ -6989,7 +6989,7 @@ HttpSM::setup_server_transfer_to_transform()
   int64_t nbytes;
 
   alloc_index               = find_server_buffer_size();
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
+  MIOBuffer      *buf       = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
   nbytes                    = server_transfer_init(buf, 0);
 
@@ -7055,9 +7055,9 @@ HttpSM::setup_transfer_from_transform()
 HttpTunnelProducer *
 HttpSM::setup_transfer_from_transform_to_cache_only()
 {
-  int64_t alloc_index       = find_server_buffer_size();
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
-  IOBufferReader *buf_start = buf->alloc_reader();
+  int64_t         alloc_index = find_server_buffer_size();
+  MIOBuffer      *buf         = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start   = buf->alloc_reader();
 
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
   ink_assert(c != nullptr);
@@ -7148,7 +7148,7 @@ HttpSM::setup_push_transfer_to_cache()
   int64_t nbytes, alloc_index;
 
   alloc_index               = find_http_resp_buffer_size(t_state.hdr_info.request_content_length);
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
+  MIOBuffer      *buf       = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   ink_release_assert(t_state.hdr_info.request_content_length != HTTP_UNDEFINED_CL);
@@ -7193,10 +7193,10 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   HttpTunnelConsumer *c_os;
   HttpTunnelProducer *p_ua;
   HttpTunnelProducer *p_os;
-  MIOBuffer *from_ua_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  MIOBuffer *to_ua_buf   = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  IOBufferReader *r_from = from_ua_buf->alloc_reader();
-  IOBufferReader *r_to   = to_ua_buf->alloc_reader();
+  MIOBuffer          *from_ua_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  MIOBuffer          *to_ua_buf   = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  IOBufferReader     *r_from      = from_ua_buf->alloc_reader();
+  IOBufferReader     *r_to        = to_ua_buf->alloc_reader();
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
   if (send_response_hdr) {
@@ -7244,10 +7244,10 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   if (this->transform_info.vc != nullptr) {
     HttpTunnelConsumer *c_trans = tunnel.add_consumer(transform_info.vc, server_entry->vc, &HttpSM::tunnel_handler_transform_write,
                                                       HT_TRANSFORM, "server tunnel - transform");
-    MIOBuffer *trans_buf        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-    IOBufferReader *trans_to    = trans_buf->alloc_reader();
-    HttpTunnelProducer *p_trans = tunnel.add_producer(transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
-                                                      HT_TRANSFORM, "server tunnel - transform");
+    MIOBuffer          *trans_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+    IOBufferReader     *trans_to  = trans_buf->alloc_reader();
+    HttpTunnelProducer *p_trans   = tunnel.add_producer(transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
+                                                        HT_TRANSFORM, "server tunnel - transform");
     c_ua = tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
                                "user agent - tunnel");
     tunnel.chain(c_trans, p_trans);
@@ -7263,8 +7263,8 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   if (this->post_transform_info.vc != nullptr) {
     HttpTunnelConsumer *c_trans = tunnel.add_consumer(
       post_transform_info.vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM, "ua tunnel - transform");
-    MIOBuffer *trans_buf        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-    IOBufferReader *trans_to    = trans_buf->alloc_reader();
+    MIOBuffer          *trans_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+    IOBufferReader     *trans_to  = trans_buf->alloc_reader();
     HttpTunnelProducer *p_trans = tunnel.add_producer(post_transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
                                                       HT_TRANSFORM, "ua tunnel - transform");
     c_os = tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
@@ -7585,16 +7585,16 @@ HttpSM::update_stats()
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
     char url_string[256] = "";
-    int offset           = 0;
-    int skip             = 0;
+    int  offset          = 0;
+    int  skip            = 0;
 
     t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string) - 1, &offset, &skip);
     url_string[offset] = 0; // NULL terminate the string
 
     // unique id
-    char unique_id_string[128] = "";
-    int length                 = 0;
-    const char *field          = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
+    char        unique_id_string[128] = "";
+    int         length                = 0;
+    const char *field                 = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
     if (field != nullptr && length > 0) {
       length = std::min(length, static_cast<int>(sizeof(unique_id_string)) - 1);
       memcpy(unique_id_string, field, length);
@@ -7602,7 +7602,7 @@ HttpSM::update_stats()
     }
 
     // set the fd for the request
-    int fd             = 0;
+    int             fd = 0;
     NetVConnection *vc = nullptr;
     if (_ua.get_txn() != nullptr) {
       vc = _ua.get_txn()->get_netvc();
@@ -7694,8 +7694,8 @@ HttpSM::dump_state_on_assert()
   // Loop through the history and dump it
   for (unsigned int i = 0; i < history.size(); i++) {
     char buf[256];
-    int r = history[i].reentrancy;
-    int e = history[i].event;
+    int  r = history[i].reentrancy;
+    int  e = history[i].event;
     Error("%d   %d   %s", e, r, history[i].location.str(buf, sizeof(buf)));
   }
 
@@ -7717,10 +7717,10 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
 {
   // Dump the client request if available
   if (h->valid()) {
-    int l         = h->length_get();
+    int   l       = h->length_get();
     char *hdr_buf = static_cast<char *>(ats_malloc(l + 1));
-    int index     = 0;
-    int offset    = 0;
+    int   index   = 0;
+    int   offset  = 0;
 
     h->print(hdr_buf, l, &index, &offset);
 
@@ -8237,7 +8237,7 @@ HttpSM::do_redirect()
         Metrics::Counter::increment(http_rsb.total_x_redirect);
       } else {
         // get the location header and setup the redirect
-        int redir_len = 0;
+        int   redir_len = 0;
         char *redir_url =
           const_cast<char *>(t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len));
         redirect_request(redir_url, redir_len);
@@ -8257,16 +8257,16 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   SMDbg(dbg_ctl_http_redirect, "redirect url: %.*s", arg_redirect_len, arg_redirect_url);
   // get a reference to the client request header and client url and check to see if the url is valid
   HTTPHdr &clientRequestHeader = t_state.hdr_info.client_request;
-  URL &clientUrl               = *clientRequestHeader.url_get();
+  URL     &clientUrl           = *clientRequestHeader.url_get();
   if (!clientUrl.valid()) {
     return;
   }
 
   bool valid_origHost = true;
-  int origHost_len, origMethod_len;
+  int  origHost_len, origMethod_len;
   char origHost[MAXDNAME];
   char origMethod[255];
-  int origPort = 80;
+  int  origPort = 80;
 
   if (t_state.hdr_info.server_request.valid()) {
     char *tmpOrigHost;
@@ -8336,10 +8336,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     t_state.hdr_info.client_response.destroy();
   }
 
-  int scheme                  = t_state.next_hop_scheme;
-  int scheme_len              = hdrtoken_index_to_length(scheme);
+  int         scheme          = t_state.next_hop_scheme;
+  int         scheme_len      = hdrtoken_index_to_length(scheme);
   const char *next_hop_scheme = hdrtoken_index_to_wks(scheme);
-  char scheme_str[scheme_len + 1];
+  char        scheme_str[scheme_len + 1];
 
   if (next_hop_scheme) {
     memcpy(scheme_str, next_hop_scheme, scheme_len);
@@ -8378,12 +8378,12 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
   if (t_state.hdr_info.client_request.presence(MIME_PRESENCE_HOST)) {
-    int host_len;
+    int         host_len;
     const char *host = clientUrl.host_get(&host_len);
 
     if (host != nullptr) {
-      int port = clientUrl.port_get();
-      int redirectSchemeLen;
+      int         port = clientUrl.port_get();
+      int         redirectSchemeLen;
       const char *redirectScheme = clientUrl.scheme_get(&redirectSchemeLen);
 
       if (redirectScheme == nullptr) {
@@ -8392,7 +8392,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       }
 
       if (noPortInHost) {
-        int redirectSchemeIdx = clientUrl.scheme_get_wksidx();
+        int  redirectSchemeIdx = clientUrl.scheme_get_wksidx();
         bool defaultPort =
           (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (port == 80)) || ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (port == 443)));
 
@@ -8426,8 +8426,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
         host_len = strlen(origHostNoPort);
         if (noPortInHost) {
-          int redirectSchemeIdx = t_state.next_hop_scheme;
-          bool defaultPort      = (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (origPort == 80)) ||
+          int  redirectSchemeIdx = t_state.next_hop_scheme;
+          bool defaultPort       = (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (origPort == 80)) ||
                               ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (origPort == 443)));
 
           if (!defaultPort) {
@@ -8479,7 +8479,7 @@ HttpSM::set_http_schedule(Continuation *contp)
 int
 HttpSM::get_http_schedule(int event, void * /* data ATS_UNUSED */)
 {
-  bool plugin_lock;
+  bool            plugin_lock;
   Ptr<ProxyMutex> plugin_mutex;
   if (schedule_cont->mutex) {
     plugin_mutex = schedule_cont->mutex;
@@ -8591,8 +8591,8 @@ HttpSM::populate_client_protocol(std::string_view *result, int n) const
 const char *
 HttpSM::client_protocol_contains(std::string_view tag_prefix) const
 {
-  const char *retval     = nullptr;
-  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+  const char      *retval = nullptr;
+  std::string_view proto  = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
   if (!proto.empty()) {
     std::string_view prefix(tag_prefix);
     if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
@@ -8628,8 +8628,8 @@ HttpSM::populate_server_protocol(std::string_view *result, int n) const
 const char *
 HttpSM::server_protocol_contains(std::string_view tag_prefix) const
 {
-  const char *retval     = nullptr;
-  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
+  const char      *retval = nullptr;
+  std::string_view proto  = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
   if (!proto.empty()) {
     std::string_view prefix(tag_prefix);
     if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
@@ -8738,7 +8738,7 @@ HttpSM::milestone_update_api_time()
   // to positive.
   if (api_timer) {
     ink_hrtime delta;
-    bool active = api_timer >= 0;
+    bool       active = api_timer >= 0;
     if (!active) {
       api_timer = -api_timer;
     }

@@ -380,8 +380,8 @@ ts_lua_inject_http_config_variables(lua_State *L)
 static int
 ts_lua_http_config_int_set(lua_State *L)
 {
-  int conf;
-  int value;
+  int              conf;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -397,8 +397,8 @@ ts_lua_http_config_int_set(lua_State *L)
 static int
 ts_lua_http_config_int_get(lua_State *L)
 {
-  int conf;
-  int64_t value;
+  int              conf;
+  int64_t          value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -415,8 +415,8 @@ ts_lua_http_config_int_get(lua_State *L)
 static int
 ts_lua_http_config_float_set(lua_State *L)
 {
-  int conf;
-  float value;
+  int              conf;
+  float            value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -432,8 +432,8 @@ ts_lua_http_config_float_set(lua_State *L)
 static int
 ts_lua_http_config_float_get(lua_State *L)
 {
-  int conf;
-  float value;
+  int              conf;
+  float            value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -450,9 +450,9 @@ ts_lua_http_config_float_get(lua_State *L)
 static int
 ts_lua_http_config_string_set(lua_State *L)
 {
-  int conf;
-  const char *value;
-  size_t value_len;
+  int              conf;
+  const char      *value;
+  size_t           value_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -468,9 +468,9 @@ ts_lua_http_config_string_set(lua_State *L)
 static int
 ts_lua_http_config_string_get(lua_State *L)
 {
-  int conf;
-  const char *value;
-  int value_len;
+  int              conf;
+  const char      *value;
+  int              value_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -487,8 +487,8 @@ ts_lua_http_config_string_get(lua_State *L)
 static int
 ts_lua_http_timeout_set(lua_State *L)
 {
-  int conf;
-  int value;
+  int              conf;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -528,7 +528,7 @@ ts_lua_http_timeout_set(lua_State *L)
 static int
 ts_lua_http_client_packet_mark_set(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -544,7 +544,7 @@ ts_lua_http_client_packet_mark_set(lua_State *L)
 static int
 ts_lua_http_server_packet_mark_set(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -561,7 +561,7 @@ ts_lua_http_server_packet_mark_set(lua_State *L)
 static int
 ts_lua_http_enable_redirect(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -577,7 +577,7 @@ ts_lua_http_enable_redirect(lua_State *L)
 static int
 ts_lua_http_set_debug(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -593,7 +593,7 @@ ts_lua_http_set_debug(lua_State *L)
 static int
 ts_lua_http_client_packet_dscp_set(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -609,7 +609,7 @@ ts_lua_http_client_packet_dscp_set(lua_State *L)
 static int
 ts_lua_http_server_packet_dscp_set(lua_State *L)
 {
-  int value;
+  int              value;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);

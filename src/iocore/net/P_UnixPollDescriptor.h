@@ -47,9 +47,9 @@ using Pollfd = struct pollfd;
 struct PollDescriptor {
   int result; // result of poll
 #if TS_USE_EPOLL
-  int epoll_fd;
-  int nfds; // actual number
-  Pollfd pfd[POLL_DESCRIPTOR_SIZE];
+  int                epoll_fd;
+  int                nfds; // actual number
+  Pollfd             pfd[POLL_DESCRIPTOR_SIZE];
   struct epoll_event ePoll_Triggered_Events[POLL_DESCRIPTOR_SIZE];
 #endif
 #if TS_USE_KQUEUE

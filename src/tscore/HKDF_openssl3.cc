@@ -42,13 +42,13 @@ HKDF::~HKDF()
 int
 HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len)
 {
-  size_t keysize;
-  int mode      = EVP_KDF_HKDF_MODE_EXTRACT_ONLY;
-  OSSL_PARAM *p = params + 1;
-  *p++          = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, const_cast<uint8_t *>(ikm), ikm_len);
-  *p++          = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT, const_cast<uint8_t *>(salt), salt_len);
-  *p++          = OSSL_PARAM_construct_int(OSSL_KDF_PARAM_MODE, &mode);
-  *p            = OSSL_PARAM_construct_end();
+  size_t      keysize;
+  int         mode = EVP_KDF_HKDF_MODE_EXTRACT_ONLY;
+  OSSL_PARAM *p    = params + 1;
+  *p++             = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, const_cast<uint8_t *>(ikm), ikm_len);
+  *p++             = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT, const_cast<uint8_t *>(salt), salt_len);
+  *p++             = OSSL_PARAM_construct_int(OSSL_KDF_PARAM_MODE, &mode);
+  *p               = OSSL_PARAM_construct_end();
 
   EVP_KDF_CTX_set_params(_kctx, params);
   keysize = EVP_KDF_CTX_get_kdf_size(this->_kctx);
@@ -69,12 +69,12 @@ int
 HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
              uint16_t length)
 {
-  int mode      = EVP_KDF_HKDF_MODE_EXPAND_ONLY;
-  OSSL_PARAM *p = params + 1;
-  *p++          = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, const_cast<uint8_t *>(prk), prk_len);
-  *p++          = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_INFO, const_cast<uint8_t *>(info), info_len);
-  *p++          = OSSL_PARAM_construct_int(OSSL_KDF_PARAM_MODE, &mode);
-  *p            = OSSL_PARAM_construct_end();
+  int         mode = EVP_KDF_HKDF_MODE_EXPAND_ONLY;
+  OSSL_PARAM *p    = params + 1;
+  *p++             = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, const_cast<uint8_t *>(prk), prk_len);
+  *p++             = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_INFO, const_cast<uint8_t *>(info), info_len);
+  *p++             = OSSL_PARAM_construct_int(OSSL_KDF_PARAM_MODE, &mode);
+  *p               = OSSL_PARAM_construct_end();
   if (EVP_KDF_derive(_kctx, dst, length, params) <= 0) {
     return -1;
   }

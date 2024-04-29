@@ -30,7 +30,7 @@
 
 TEST_CASE("config default", "[AWS][slice][utility]")
 {
-  Config const config;
+  Config const  config;
   int64_t const defval = Config::blockbytesdefault;
   CHECK(defval == config.m_blockbytes);
 }
@@ -52,8 +52,8 @@ TEST_CASE("config bytesfrom valid parsing", "[AWS][slice][utility]")
 
   for (size_t index = 0; index < teststrings.size(); ++index) {
     std::string const &teststr = teststrings[index];
-    int64_t const &exp         = expvals[index];
-    int64_t const got          = Config::bytesFrom(teststr.c_str());
+    int64_t const     &exp     = expvals[index];
+    int64_t const      got     = Config::bytesFrom(teststr.c_str());
 
     CHECK(got == exp);
     if (got != exp) {
@@ -83,14 +83,14 @@ TEST_CASE("config bytesfrom invalid parsing", "[AWS][slice][utility]")
 
 TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
 {
-  char const *const appname = "slice.so";
-  int64_t blockBytesMax = 128 * 1024 * 1024, blockBytesMin = 256 * 1024;
+  char const *const appname       = "slice.so";
+  int64_t           blockBytesMax = 128 * 1024 * 1024, blockBytesMin = 256 * 1024;
 
   CHECK(blockBytesMax == Config::blockbytesmax);
   CHECK(blockBytesMin == Config::blockbytesmin);
 
-  std::vector<std::string> const argkws                 = {"-b ", "--blockbytes=", "blockbytes:"};
-  std::vector<std::pair<std::string, bool>> const tests = {
+  std::vector<std::string> const                  argkws = {"-b ", "--blockbytes=", "blockbytes:"};
+  std::vector<std::pair<std::string, bool>> const tests  = {
     {"4m",                              true },
     {"1",                               false},
     {"32m",                             true },
@@ -113,7 +113,7 @@ TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
 
       // set up args
       std::vector<char *> argv;
-      std::string arg = kw + test.first;
+      std::string         arg = kw + test.first;
       argv.push_back((char *)appname);
       argv.push_back((char *)arg.c_str());
 

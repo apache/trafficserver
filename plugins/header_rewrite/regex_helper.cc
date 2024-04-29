@@ -22,7 +22,7 @@ regexHelper::setRegexMatch(const std::string &s, bool nocase)
 {
   const char *errorComp  = nullptr;
   const char *errorStudy = nullptr;
-  int erroffset;
+  int         erroffset;
 
   regexString = s;
   regex       = pcre_compile(regexString.c_str(), nocase ? PCRE_CASELESS : 0, &errorComp, &erroffset, nullptr);

@@ -114,7 +114,7 @@ NetHandler::stopCop(NetEvent *ne)
 int
 NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, void *)
 {
-  uint32_t *updated_member = nullptr; // direct pointer to config member for update.
+  uint32_t        *updated_member = nullptr; // direct pointer to config member for update.
   std::string_view name{str};
 
   if (name == "proxy.config.net.max_connections_in"sv) {
@@ -353,8 +353,8 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   // Get & Process polling result
   PollDescriptor *pd = get_PollDescriptor(this->thread);
   for (int x = 0; x < pd->result; x++) {
-    epd       = static_cast<EventIO *> get_ev_data(pd, x);
-    int flags = get_ev_events(pd, x);
+    epd                                = static_cast<EventIO *> get_ev_data(pd, x);
+    int                          flags = get_ev_events(pd, x);
     epd->process_event(flags);
     ev_next_event(pd, x);
   }
@@ -402,12 +402,12 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
   ink_hrtime now = ink_get_hrtime();
 
   // loop over the non-active connections and try to close them
-  NetEvent *ne         = active_queue.head;
-  NetEvent *ne_next    = nullptr;
-  int closed           = 0;
-  int handle_event     = 0;
-  int total_idle_time  = 0;
-  int total_idle_count = 0;
+  NetEvent *ne               = active_queue.head;
+  NetEvent *ne_next          = nullptr;
+  int       closed           = 0;
+  int       handle_event     = 0;
+  int       total_idle_time  = 0;
+  int       total_idle_count = 0;
   for (; ne != nullptr; ne = ne_next) {
     ne_next = ne->active_queue_link.next;
     // It seems dangerous closing the current ne at this point
@@ -445,8 +445,8 @@ NetHandler::configure_per_thread_values()
 void
 NetHandler::manage_keep_alive_queue()
 {
-  uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now                = ink_get_hrtime();
+  uint32_t   total_connections_in = active_queue_size + keep_alive_queue_size;
+  ink_hrtime now                  = ink_get_hrtime();
 
   Debug("v_net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
@@ -456,11 +456,11 @@ NetHandler::manage_keep_alive_queue()
   }
 
   // loop over the non-active connections and try to close them
-  NetEvent *ne_next    = nullptr;
-  int closed           = 0;
-  int handle_event     = 0;
-  int total_idle_time  = 0;
-  int total_idle_count = 0;
+  NetEvent *ne_next          = nullptr;
+  int       closed           = 0;
+  int       handle_event     = 0;
+  int       total_idle_time  = 0;
+  int       total_idle_count = 0;
   for (NetEvent *ne = keep_alive_queue.head; ne != nullptr; ne = ne_next) {
     ne_next = ne->keep_alive_queue_link.next;
     _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);

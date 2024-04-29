@@ -42,7 +42,7 @@ AIOFaultInjection::_op_result(int fd)
   auto it = _faults_by_fd.find(fd);
   if (it != _faults_by_fd.end()) {
     std::size_t op_count = _state_by_fd[fd].op_count++;
-    auto results         = it->second;
+    auto        results  = it->second;
     if (results.find(op_count) != results.end()) {
       return results[op_count];
     }
@@ -62,11 +62,11 @@ int
 AIOFaultInjection::open(const char *pathname, int flags, mode_t mode)
 {
   std::lock_guard<std::mutex> lock{_mutex};
-  std::filesystem::path abspath = std::filesystem::absolute(pathname);
-  int fd                        = ::open(pathname, flags, mode);
+  std::filesystem::path       abspath = std::filesystem::absolute(pathname);
+  int                         fd      = ::open(pathname, flags, mode);
   if (fd >= 0) {
     for (auto &[re_str, faults] : _faults_by_regex) {
-      std::regex re{re_str};
+      std::regex  re{re_str};
       std::cmatch m;
       if (std::regex_match(abspath.c_str(), m, re)) {
         _faults_by_fd.insert_or_assign(fd, faults);
@@ -81,8 +81,8 @@ ssize_t
 AIOFaultInjection::pread(int fd, void *buf, size_t nbytes, off_t offset)
 {
   std::lock_guard<std::mutex> lock{_mutex};
-  IOFault result = _op_result(fd);
-  ssize_t ret    = 0;
+  IOFault                     result = _op_result(fd);
+  ssize_t                     ret    = 0;
   if (result.skip_io) {
     ink_release_assert(result.err_no != 0);
   } else {
@@ -103,8 +103,8 @@ ssize_t
 AIOFaultInjection::pwrite(int fd, const void *buf, size_t n, off_t offset)
 {
   std::lock_guard<std::mutex> lock{_mutex};
-  IOFault result = _op_result(fd);
-  ssize_t ret    = 0;
+  IOFault                     result = _op_result(fd);
+  ssize_t                     ret    = 0;
   if (result.skip_io) {
     ink_release_assert(result.err_no != 0);
   } else {

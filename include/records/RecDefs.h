@@ -132,9 +132,9 @@ enum RecAccessT {
 // Data Union
 //-------------------------------------------------------------------------
 union RecData {
-  RecInt rec_int;
-  RecFloat rec_float;
-  RecString rec_string;
+  RecInt     rec_int;
+  RecFloat   rec_float;
+  RecString  rec_string;
   RecCounter rec_counter;
 };
 
@@ -147,8 +147,8 @@ struct RecRawStat {
   // XXX - these will waste some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
   // possible, this should be revisited -bcall
-  int64_t last_sum;   // value from the last global sync
-  int64_t last_count; // value from the last global sync
+  int64_t  last_sum;   // value from the last global sync
+  int64_t  last_count; // value from the last global sync
   uint32_t version;
 };
 
@@ -169,11 +169,11 @@ struct RecRawStatBlockOps {
 // WARNING!  It's advised that developers do not modify the contents of
 // the RecRawStatBlock.  ^_^
 struct RecRawStatBlock {
-  off_t ethr_stat_offset; // thread local raw-stat storage
-  RecRawStat **global;    // global raw-stat storage (ptr to RecRecord)
-  int num_stats;          // number of stats in this block
-  int max_stats;          // maximum number of stats for this block
-  ink_mutex mutex;
+  off_t               ethr_stat_offset; // thread local raw-stat storage
+  RecRawStat        **global;           // global raw-stat storage (ptr to RecRecord)
+  int                 num_stats;        // number of stats in this block
+  int                 max_stats;        // maximum number of stats for this block
+  ink_mutex           mutex;
   RecRawStatBlockOps *ops;
 };
 

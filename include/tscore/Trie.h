@@ -48,7 +48,7 @@ public:
   bool Insert(const char *key, T *value, int rank, int key_len = -1);
 
   // will return false if not found; else value_ptr will point to found value
-  T *Search(const char *key, int key_len = -1) const;
+  T   *Search(const char *key, int key_len = -1) const;
   void Clear();
   void Print() const;
 
@@ -78,9 +78,9 @@ private:
   class Node
   {
   public:
-    T *value;
+    T   *value;
     bool occupied;
-    int rank;
+    int  rank;
 
     void
     Clear()
@@ -111,7 +111,7 @@ private:
     Node *children[N_NODE_CHILDREN];
   };
 
-  Node m_root;
+  Node     m_root;
   Queue<T> m_value_list;
 
   void _CheckArgs(const char *key, int &key_len) const;
@@ -146,7 +146,7 @@ Trie<T>::Insert(const char *key, T *value, int rank, int key_len /* = -1 */)
 
   Node *next_node;
   Node *curr_node = &m_root;
-  int i           = 0;
+  int   i         = 0;
 
   while (true) {
     if (dbg_ctl_insert.on()) {
@@ -192,7 +192,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 
   const Node *found_node = nullptr;
   const Node *curr_node  = &m_root;
-  int i                  = 0;
+  int         i          = 0;
 
   while (curr_node) {
     if (dbg_ctl_search.on()) {

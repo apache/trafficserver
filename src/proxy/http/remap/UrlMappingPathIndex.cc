@@ -41,11 +41,11 @@ UrlMappingPathIndex::~UrlMappingPathIndex()
 bool
 UrlMappingPathIndex::Insert(url_mapping *mapping)
 {
-  int scheme_idx;
-  int port = (mapping->fromURL).port_get();
+  int             scheme_idx;
+  int             port = (mapping->fromURL).port_get();
   UrlMappingTrie *trie;
-  int from_path_len;
-  const char *from_path;
+  int             from_path_len;
+  const char     *from_path;
 
   trie = _GetTrie(&(mapping->fromURL), scheme_idx, port);
 
@@ -67,11 +67,11 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 url_mapping *
 UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
-  url_mapping *retval = nullptr;
-  int scheme_idx;
+  url_mapping    *retval = nullptr;
+  int             scheme_idx;
   UrlMappingTrie *trie;
-  int path_len;
-  const char *path;
+  int             path_len;
+  const char     *path;
 
   trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
 

@@ -33,11 +33,11 @@ enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_E
 bool
 Parser::parse_line(const std::string &original_line)
 {
-  std::string line        = original_line;
-  ParserState state       = PARSER_DEFAULT;
-  bool extracting_token   = false;
-  off_t cur_token_start   = 0;
-  size_t cur_token_length = 0;
+  std::string line             = original_line;
+  ParserState state            = PARSER_DEFAULT;
+  bool        extracting_token = false;
+  off_t       cur_token_start  = 0;
+  size_t      cur_token_length = 0;
 
   for (size_t i = 0; i < line.size(); ++i) {
     if ((state == PARSER_DEFAULT) && (std::isspace(line[i]) || ((line[i] == '=')))) {
@@ -142,7 +142,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         m = m.substr(1, m.size() - 2);
         if (m.find_first_of(',') != std::string::npos) {
           std::istringstream iss(m);
-          std::string t;
+          std::string        t;
           while (getline(iss, t, ',')) {
             _mods.push_back(t);
           }
@@ -256,11 +256,11 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
 
 HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &original_line)
 {
-  std::string line        = original_line;
-  ParserState state       = PARSER_DEFAULT;
-  bool extracting_token   = false;
-  off_t cur_token_start   = 0;
-  size_t cur_token_length = 0;
+  std::string line             = original_line;
+  ParserState state            = PARSER_DEFAULT;
+  bool        extracting_token = false;
+  off_t       cur_token_start  = 0;
+  size_t      cur_token_length = 0;
 
   for (size_t i = 0; i < line.size(); ++i) {
     extracting_token = true;

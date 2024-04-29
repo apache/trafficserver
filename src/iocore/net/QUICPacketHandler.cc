@@ -78,11 +78,11 @@ QUICPacketHandler::send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOB
 
   if (is_debug_tag_set(v_debug_tag)) {
     ip_port_text_buffer ipb;
-    QUICConnectionId dcid = QUICConnectionId::ZERO();
-    QUICConnectionId scid = QUICConnectionId::ZERO();
+    QUICConnectionId    dcid = QUICConnectionId::ZERO();
+    QUICConnectionId    scid = QUICConnectionId::ZERO();
 
-    const uint8_t *buf = reinterpret_cast<uint8_t *>(udp_payload->buf());
-    uint64_t buf_len   = udp_payload->size();
+    const uint8_t *buf     = reinterpret_cast<uint8_t *>(udp_payload->buf());
+    uint64_t       buf_len = udp_payload->size();
 
     if (!QUICInvariants::dcid(dcid, buf, buf_len)) {
       ink_assert(false);
@@ -143,7 +143,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
     }
 
     Queue<UDPPacket> *queue = static_cast<Queue<UDPPacket> *>(data);
-    UDPPacket *packet_r;
+    UDPPacket        *packet_r;
     while ((packet_r = queue->dequeue())) {
       this->_recv_packet(event, packet_r);
     }
@@ -158,8 +158,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
   /////////////////
   // EVENT_ERROR //
   /////////////////
-  if (((long)data) == -ECONNABORTED) {
-  }
+  if (((long)data) == -ECONNABORTED) {}
 
   ink_abort("QUIC accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
   return EVENT_CONT;
@@ -175,7 +174,7 @@ QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
   n = eventProcessor.thread_group[ET_UDP]._count;
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
-    EThread *t   = eventProcessor.thread_group[ET_UDP]._thread[i];
+    EThread   *t = eventProcessor.thread_group[ET_UDP]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
     t->schedule_imm(a);
   }
@@ -190,19 +189,19 @@ QUICPacketHandlerIn::_get_continuation()
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  size_t buf_len{0};
+  size_t   buf_len{0};
   uint8_t *buf = udp_packet->get_entire_chain_buffer(&buf_len);
 
   constexpr int MAX_TOKEN_LEN             = 1200;
   constexpr int DEFAULT_MAX_DATAGRAM_SIZE = 1350;
-  uint8_t type;
-  uint32_t version;
-  uint8_t scid[QUICHE_MAX_CONN_ID_LEN];
-  size_t scid_len = sizeof(scid);
-  uint8_t dcid[QUICHE_MAX_CONN_ID_LEN];
-  size_t dcid_len = sizeof(dcid);
-  uint8_t token[MAX_TOKEN_LEN];
-  size_t token_len = sizeof(token);
+  uint8_t       type;
+  uint32_t      version;
+  uint8_t       scid[QUICHE_MAX_CONN_ID_LEN];
+  size_t        scid_len = sizeof(scid);
+  uint8_t       dcid[QUICHE_MAX_CONN_ID_LEN];
+  size_t        dcid_len = sizeof(dcid);
+  uint8_t       token[MAX_TOKEN_LEN];
+  size_t        token_len = sizeof(token);
 
   int rc = quiche_header_info(buf, buf_len, QUICConnectionId::SCID_LEN, &version, &type, scid, &scid_len, dcid, &dcid_len, token,
                               &token_len);
@@ -217,7 +216,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     udp_packet->free();
     return;
   }
-  QUICConnection *qc     = this->_ctable.lookup({dcid, static_cast<uint8_t>(dcid_len)});
+  QUICConnection     *qc = this->_ctable.lookup({dcid, static_cast<uint8_t>(dcid_len)});
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
 
   EThread *eth = nullptr;
@@ -277,7 +276,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICConnectionId new_cid;
 
     QUICCertConfig::scoped_config server_cert;
-    SSL *ssl = SSL_new(server_cert->defaultContext());
+    SSL                          *ssl = SSL_new(server_cert->defaultContext());
 
     quiche_conn *quiche_con = quiche_conn_new_with_tls(
       new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->to.sa,
@@ -286,8 +285,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
     if (params->get_qlog_file_base_name() != nullptr) {
       swoc::LocalBufferWriter<PATH_MAX> w;
-      const uint8_t *quic_trace_id;
-      size_t quic_trace_id_len{0};
+      const uint8_t                    *quic_trace_id;
+      size_t                            quic_trace_id_len{0};
       quiche_conn_trace_id(quiche_con, &quic_trace_id, &quic_trace_id_len);
 
       w.print("{}-{}.sqlog\0", Layout::get()->relative(params->get_qlog_file_base_name()),

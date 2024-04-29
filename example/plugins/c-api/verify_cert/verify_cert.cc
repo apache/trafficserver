@@ -51,7 +51,7 @@ debug_certificate(const char *msg, X509_NAME *name)
   }
 
   if (X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE) > 0) {
-    long len;
+    long  len;
     char *ptr;
     len = BIO_get_mem_data(bio, &ptr);
     Dbg(dbg_ctl, "%s %.*s", msg, static_cast<int>(len), ptr);
@@ -63,9 +63,9 @@ debug_certificate(const char *msg, X509_NAME *name)
 int
 CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
-  TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
+  TSVConn         ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
+  SSL            *ssl    = reinterpret_cast<SSL *>(sslobj);
 #ifdef OPENSSL_IS_OPENSSL3
   X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
@@ -88,9 +88,9 @@ CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  bool success = false;
+  bool                     success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_cert = nullptr; // Certificate callback continuation
+  TSCont                   cb_cert = nullptr; // Certificate callback continuation
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

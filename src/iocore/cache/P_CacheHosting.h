@@ -50,12 +50,12 @@ struct CacheHostRecord {
     ats_free(cp);
   }
 
-  CacheType type                 = CACHE_NONE_TYPE;
-  Stripe **stripes               = nullptr;
-  int num_vols                   = 0;
+  CacheType       type           = CACHE_NONE_TYPE;
+  Stripe        **stripes        = nullptr;
+  int             num_vols       = 0;
   unsigned short *vol_hash_table = nullptr;
-  CacheVol **cp                  = nullptr;
-  int num_cachevols              = 0;
+  CacheVol      **cp             = nullptr;
+  int             num_cachevols  = 0;
 
   CacheHostRecord() {}
 };
@@ -97,12 +97,12 @@ public:
   }
 
 private:
-  static void PrintFunc(void *opaque_data);
-  HostLookup *host_lookup;     // Data structure to do the lookups
-  CacheHostRecord *data_array; // array of all data items
-  int array_len;               // the length of the arrays
-  int num_el;                  // the number of items in the tree
-  CacheType type;
+  static void      PrintFunc(void *opaque_data);
+  HostLookup      *host_lookup; // Data structure to do the lookups
+  CacheHostRecord *data_array;  // array of all data items
+  int              array_len;   // the length of the arrays
+  int              num_el;      // the number of items in the tree
+  CacheType        type;
 };
 
 // ReplaceablePtr provides threadsafe access to an object which may be replaced.
@@ -207,7 +207,7 @@ private:
   ReplaceablePtr &operator=(const ReplaceablePtr &) = delete;
 
   std::unique_ptr<T> h = nullptr;
-  std::shared_mutex m;
+  std::shared_mutex  m;
 
   friend class ReplaceablePtr::ScopedReader;
 };
@@ -245,15 +245,15 @@ public:
     REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
-  CacheType type   = CACHE_HTTP_TYPE;
-  Cache *cache     = nullptr;
-  int m_numEntries = 0;
+  CacheType       type         = CACHE_HTTP_TYPE;
+  Cache          *cache        = nullptr;
+  int             m_numEntries = 0;
   CacheHostRecord gen_host_rec;
 
 private:
-  CacheHostMatcher *hostMatch    = nullptr;
-  const matcher_tags config_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
-  const char *matcher_name       = "unknown"; // Used for Debug/Warning/Error messages
+  CacheHostMatcher  *hostMatch    = nullptr;
+  const matcher_tags config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
+  const char        *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
 
 struct CacheHostTableConfig;
@@ -272,8 +272,8 @@ struct CacheHostTableConfig : public Continuation {
     (void)e;
     (void)event;
 
-    CacheType type = CACHE_HTTP_TYPE;
-    Cache *cache   = nullptr;
+    CacheType type  = CACHE_HTTP_TYPE;
+    Cache    *cache = nullptr;
     {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);
       type  = hosttable->type;
@@ -290,22 +290,22 @@ private:
 
 /* list of volumes in the volume.config file */
 struct ConfigVol {
-  int number;
+  int       number;
   CacheType scheme;
-  off_t size;
-  bool in_percent;
-  bool ramcache_enabled;
-  int percent;
+  off_t     size;
+  bool      in_percent;
+  bool      ramcache_enabled;
+  int       percent;
   CacheVol *cachep;
   LINK(ConfigVol, link);
 };
 
 struct ConfigVolumes {
-  int num_volumes;
-  int num_http_volumes;
+  int              num_volumes;
+  int              num_http_volumes;
   Queue<ConfigVol> cp_queue;
-  void read_config_file();
-  void BuildListFromString(char *config_file_path, char *file_buf);
+  void             read_config_file();
+  void             BuildListFromString(char *config_file_path, char *file_buf);
 
   void
   clear_all()

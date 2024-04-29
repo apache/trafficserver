@@ -30,7 +30,7 @@ Url::Scheme::getSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
-    int len           = 0;
+    int         len   = 0;
 
     value = TSUrlSchemeGet(_owner->_bufp, _owner->_urlp, &len);
     _data = Cript::string_view(value, len);
@@ -55,7 +55,7 @@ Url::Host::getSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
-    int len           = 0;
+    int         len   = 0;
 
     value   = TSUrlHostGet(_owner->_bufp, _owner->_urlp, &len);
     _data   = Cript::string_view(value, len);
@@ -111,7 +111,7 @@ Url::Path::getSV()
     return {_storage};
   } else if (_owner && _data.empty()) {
     const char *value = nullptr;
-    int len           = 0;
+    int         len   = 0;
 
     value   = TSUrlPathGet(_owner->_bufp, _owner->_urlp, &len);
     _data   = Cript::string_view(value, len);
@@ -253,7 +253,7 @@ Url::Query::getSV()
   // from the URL object inside of ATS...
   if (_owner && !_loaded) {
     const char *value = nullptr;
-    int len           = 0;
+    int         len   = 0;
 
     value   = TSUrlHttpQueryGet(_owner->_bufp, _owner->_urlp, &len);
     _data   = Cript::string_view(value, len);
@@ -296,7 +296,7 @@ Url::Query::operator[](Cript::string_view param)
   _parser();
 
   Parameter ret;
-  auto iter = _hashed.find(param);
+  auto      iter = _hashed.find(param);
 
   if (iter != _hashed.end()) {
     ret._initialize(iter->first, iter->second, this);
@@ -348,7 +348,7 @@ Url::Query::_parser()
 {
   if (_ordered.size() == 0) {
     for (const auto sv : split('&')) {
-      const auto eq          = sv.find_first_of('=');
+      const auto         eq  = sv.find_first_of('=');
       Cript::string_view key = sv.substr(0, eq);
       Cript::string_view val;
 
@@ -368,7 +368,7 @@ Url::url() const
   Cript::string ret;
 
   if (_state) {
-    int full_len   = 0;
+    int   full_len = 0;
     char *full_str = TSUrlStringGet(_bufp, _urlp, &full_len);
 
     if (full_str) {
@@ -430,7 +430,7 @@ Cache::URL &
 Cache::URL::_get(Cript::Context *context)
 {
   if (!context->_cache_url.initialized()) {
-    Cache::URL *url      = &context->_cache_url;
+    Cache::URL      *url = &context->_cache_url;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
     switch (context->state.hook) {

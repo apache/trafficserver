@@ -71,7 +71,7 @@ struct UrlComponents {
     const int bitAddPort   = 1;
     const int bitAddQuery  = 1 << 1;
     const int bitAddMatrix = 1 << 2;
-    int bitField           = bitAddPort; // add port by default
+    int       bitField     = bitAddPort; // add port by default
     if ((_scheme.compare("http") == 0 && _port == 80) || (_scheme.compare("https") == 0 && _port == 443)) {
       bitField &= ~bitAddPort;
     }
@@ -147,7 +147,7 @@ struct UrlComponents {
     size_t iLen = _path.size() + _query.size() + _matrix.size() + 3 + 6 + 32;
     p.reserve(iLen);
 
-    int bitField           = 0;
+    int       bitField     = 0;
     const int bitAddQuery  = 1 << 1;
     const int bitAddMatrix = 1 << 2;
     if (_query.size() != 0) {
@@ -261,5 +261,5 @@ private:
   std::string _path;
   std::string _query;
   std::string _matrix;
-  int _port;
+  int         _port;
 };

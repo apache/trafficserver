@@ -40,12 +40,12 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 int
 CB_cert_update(TSCont, TSEvent, void *edata)
 {
-  TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
+  TSPluginMsg                      *msg = static_cast<TSPluginMsg *>(edata);
   static constexpr std::string_view PLUGIN_PREFIX("cert_update.");
 
   std::string_view tag(msg->tag, strlen(msg->tag));
-  const char *server_cert_path = nullptr;
-  const char *client_cert_path = nullptr;
+  const char      *server_cert_path = nullptr;
+  const char      *client_cert_path = nullptr;
   if (tag.substr(0, PLUGIN_PREFIX.size()) == PLUGIN_PREFIX) {
     tag.remove_prefix(PLUGIN_PREFIX.size());
     if (tag == "server") {

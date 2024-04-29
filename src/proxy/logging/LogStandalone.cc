@@ -107,7 +107,7 @@ initialize_process_manager()
 static void
 check_lockfile()
 {
-  int err;
+  int   err;
   pid_t holding_pid;
   char *lockfile = nullptr;
 

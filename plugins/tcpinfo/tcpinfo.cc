@@ -65,9 +65,9 @@ static const char *tcpi_headers[] = {"timestamp event client server rtt",
 static DbgCtl dbg_ctl{"tcpinfo"};
 
 struct Config {
-  int sample             = 1000;
-  unsigned int log_level = 1;
-  TSTextLogObject log    = nullptr;
+  int             sample    = 1000;
+  unsigned int    log_level = 1;
+  TSTextLogObject log       = nullptr;
 
   ~Config()
   {
@@ -78,8 +78,8 @@ struct Config {
 };
 
 union const_sockaddr_ptr {
-  const struct sockaddr *sa;
-  const struct sockaddr_in *in;
+  const struct sockaddr     *sa;
+  const struct sockaddr_in  *in;
   const struct sockaddr_in6 *in6;
 
   const void *
@@ -101,14 +101,14 @@ union const_sockaddr_ptr {
 static void
 log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 {
-  char client_str[INET6_ADDRSTRLEN];
-  char server_str[INET6_ADDRSTRLEN];
+  char               client_str[INET6_ADDRSTRLEN];
+  char               server_str[INET6_ADDRSTRLEN];
   const_sockaddr_ptr client_addr;
   const_sockaddr_ptr server_addr;
 
   struct tcp_info info;
-  socklen_t tcp_info_len = sizeof(info);
-  int fd;
+  socklen_t       tcp_info_len = sizeof(info);
+  int             fd;
 
   TSReleaseAssert(config->log != nullptr);
 
@@ -184,10 +184,10 @@ log_tcp_info(Config * /* config */, const char * /* event_name */, TSHttpSsn /* 
 static int
 tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpSsn ssnp = nullptr;
-  TSHttpTxn txnp = nullptr;
-  int random     = 0;
-  Config *config = static_cast<Config *>(TSContDataGet(contp));
+  TSHttpSsn ssnp   = nullptr;
+  TSHttpTxn txnp   = nullptr;
+  int       random = 0;
+  Config   *config = static_cast<Config *>(TSContDataGet(contp));
 
   const char *event_name;
   switch (event) {
@@ -275,13 +275,13 @@ static unsigned
 parse_hook_list(const char *hook_list)
 {
   unsigned mask = 0;
-  char *tok;
-  char *str;
-  char *last;
+  char    *tok;
+  char    *str;
+  char    *last;
 
   const struct hookmask {
     const char *name;
-    unsigned mask;
+    unsigned    mask;
   } hooks[] = {
     {"ssn_start",     TCPI_HOOK_SSN_START    },
     {"txn_start",     TCPI_HOOK_TXN_START    },
@@ -315,7 +315,7 @@ parse_hook_list(const char *hook_list)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const char usage[]             = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT] "
+  static const char          usage[]    = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT] "
                                           "[--rolling-enabled=VALUE] [--rolling-offset-hr=HOUR] [--rolling-interval-sec=SECONDS] "
                                           "[--rolling-size=MB]";
   static const struct option longopts[] = {
@@ -331,16 +331,16 @@ TSPluginInit(int argc, const char *argv[])
   };
 
   TSPluginRegistrationInfo info;
-  auto config          = std::make_unique<Config>();
-  const char *filename = "tcpinfo";
-  TSCont cont;
-  unsigned int hooks                = 0;
-  int rolling_enabled               = -1;
-  unsigned int rolling_interval_sec = 86400;
-  unsigned int rolling_offset_hr    = 0;
-  unsigned int rolling_size         = 1024;
-  unsigned int i                    = 0;
-  char *endptr;
+  auto                     config   = std::make_unique<Config>();
+  const char              *filename = "tcpinfo";
+  TSCont                   cont;
+  unsigned int             hooks                = 0;
+  int                      rolling_enabled      = -1;
+  unsigned int             rolling_interval_sec = 86400;
+  unsigned int             rolling_offset_hr    = 0;
+  unsigned int             rolling_size         = 1024;
+  unsigned int             i                    = 0;
+  char                    *endptr;
 
   info.plugin_name   = (char *)"tcpinfo";
   info.vendor_name   = (char *)"Apache Software Foundation";

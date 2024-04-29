@@ -25,7 +25,7 @@
 
 // debug messages during one-time initialization
 static const char DEBUG_TAG[] = "TSEmergency_test";
-static DbgCtl dbg_ctl{DEBUG_TAG};
+static DbgCtl     dbg_ctl{DEBUG_TAG};
 
 // plugin registration info
 static char plugin_name[]   = "TSEmergency_test";

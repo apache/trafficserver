@@ -88,11 +88,11 @@ QUICTransportParameters::~QUICTransportParameters()
 void
 QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion version)
 {
-  bool has_error   = false;
-  const uint8_t *p = buf;
-  size_t l;
-  uint64_t param_id;
-  uint64_t param_len;
+  bool           has_error = false;
+  const uint8_t *p         = buf;
+  size_t         l;
+  uint64_t       param_id;
+  uint64_t       param_len;
 
   // Read parameters
   while (len) {
@@ -155,17 +155,13 @@ QUICTransportParameters::_validate_parameters(QUICVersion version) const
   // MUSTs
 
   // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_IDLE_TIMEOUT)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_IDLE_TIMEOUT)) != this->_parameters.end()) {}
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE)) != this->_parameters.end()) {
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
@@ -180,20 +176,15 @@ QUICTransportParameters::_validate_parameters(QUICVersion version) const
   }
 
   // MAYs (initial values for the flow control on each type of stream)
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION)) != this->_parameters.end()) {}
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_ACK_DELAY)) != this->_parameters.end()) {
-  }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_ACK_DELAY)) != this->_parameters.end()) {}
 
   return 0;
 }
@@ -214,10 +205,10 @@ QUICTransportParameters::getAsBytes(QUICTransportParameterId tpid, uint16_t &len
 uint64_t
 QUICTransportParameters::getAsUInt(QUICTransportParameterId tpid) const
 {
-  uint64_t int_value       = 0;
-  size_t int_value_len     = 0;
-  uint16_t raw_value_len   = 0;
-  const uint8_t *raw_value = this->getAsBytes(tpid, raw_value_len);
+  uint64_t       int_value     = 0;
+  size_t         int_value_len = 0;
+  uint16_t       raw_value_len = 0;
+  const uint8_t *raw_value     = this->getAsBytes(tpid, raw_value_len);
   if (raw_value) {
     QUICVariableInt::decode(int_value, int_value_len, raw_value, raw_value_len);
     return int_value;
@@ -247,7 +238,7 @@ void
 QUICTransportParameters::set(QUICTransportParameterId id, uint64_t value)
 {
   uint8_t v[8];
-  size_t n;
+  size_t  n;
   QUICIntUtil::write_QUICVariableInt(value, v, &n);
   this->set(id, v, n);
 }
@@ -256,7 +247,7 @@ void
 QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 {
   uint8_t *p = buf;
-  size_t l;
+  size_t   l;
 
   *len = 0;
   for (auto &it : this->_parameters) {
@@ -284,7 +275,7 @@ QUICTransportParameters::_print() const
       Debug(tag, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
     } else if (p.second->len() <= 8) {
       uint64_t int_value;
-      size_t int_value_len;
+      size_t   int_value_len;
       QUICVariableInt::decode(int_value, int_value_len, p.second->data(), p.second->len());
       Debug(tag, "%s (%" PRIu32 "): 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
             static_cast<uint16_t>(p.first), int_value, int_value);
@@ -294,9 +285,9 @@ QUICTransportParameters::_print() const
       Debug(tag, "%s (%" PRIu32 "): %s", QUICDebugNames::transport_parameter_id(p.first), static_cast<uint16_t>(p.first), hex_str);
     } else if (QUICTransportParameterId::PREFERRED_ADDRESS == p.first) {
       QUICPreferredAddress pref_addr(p.second->data(), p.second->len());
-      char token_hex_str[QUICStatelessResetToken::LEN * 2 + 1];
-      char ep_ipv4_hex_str[512];
-      char ep_ipv6_hex_str[512];
+      char                 token_hex_str[QUICStatelessResetToken::LEN * 2 + 1];
+      char                 ep_ipv4_hex_str[512];
+      char                 ep_ipv6_hex_str[512];
       to_hex_str(token_hex_str, sizeof(token_hex_str), pref_addr.token().buf(), QUICStatelessResetToken::LEN);
       ats_ip_nptop(pref_addr.endpoint_ipv4(), ep_ipv4_hex_str, sizeof(ep_ipv4_hex_str));
       ats_ip_nptop(pref_addr.endpoint_ipv6(), ep_ipv6_hex_str, sizeof(ep_ipv6_hex_str));

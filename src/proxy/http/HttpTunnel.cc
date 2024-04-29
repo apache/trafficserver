@@ -48,8 +48,8 @@ DbgCtl dbg_ctl_http_chunk{"http_chunk"};
 DbgCtl dbg_ctl_http_redirect{"http_redirect"};
 DbgCtl dbg_ctl_http_tunnel{"http_tunnel"};
 
-const int min_block_transfer_bytes = 256;
-const char *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
+const int         min_block_transfer_bytes = 256;
+const char *const CHUNK_HEADER_FMT         = "%" PRIx64 "\r\n";
 // This should be as small as possible because it will only hold the
 // header and trailer per chunk - the chunk body will be a reference to
 // a block in the input stream.
@@ -133,11 +133,11 @@ void
 ChunkedHandler::read_size()
 {
   int64_t bytes_used;
-  bool done = false;
+  bool    done = false;
 
   while (chunked_reader->read_avail() > 0 && !done) {
-    const char *tmp   = chunked_reader->start();
-    int64_t data_size = chunked_reader->block_read_avail();
+    const char *tmp       = chunked_reader->start();
+    int64_t     data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
     bytes_used = 0;
@@ -271,11 +271,11 @@ void
 ChunkedHandler::read_trailer()
 {
   int64_t bytes_used;
-  bool done = false;
+  bool    done = false;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
-    const char *tmp   = chunked_reader->start();
-    int64_t data_size = chunked_reader->block_read_avail();
+    const char *tmp       = chunked_reader->start();
+    int64_t     data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
     for (bytes_used = 0; data_size > 0; data_size--) {
@@ -342,8 +342,8 @@ ChunkedHandler::process_chunked_content()
 bool
 ChunkedHandler::generate_chunked_content()
 {
-  char tmp[16];
-  bool server_done = false;
+  char    tmp[16];
+  bool    server_done = false;
   int64_t r_avail;
 
   ink_assert(max_chunk_header_len);
@@ -779,7 +779,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // since all chunked content read by the producer gets dechunked
   // prior to being written into the cache.
   HttpTunnelConsumer *c, *cache_write_consumer = nullptr;
-  bool transform_consumer = false;
+  bool                transform_consumer = false;
 
   for (c = p->consumer_list.head; c; c = c->link.next) {
     if (c->vc_type == HT_CACHE_WRITE) {
@@ -1163,7 +1163,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 {
   HttpTunnelConsumer *c;
   HttpProducerHandler jump_point;
-  bool sm_callback = false;
+  bool                sm_callback = false;
 
   Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
 
@@ -1307,8 +1307,8 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
     // the backlog short cuts quit when the value is equal (or
     // greater) to the target, we use strict comparison only for
     // checking low water, otherwise the flow control can stall out.
-    uint64_t backlog         = (flow_state.enabled_p && p->is_source()) ? p->backlog(flow_state.high_water) : 0;
-    HttpTunnelProducer *srcp = p->flow_control_source;
+    uint64_t            backlog = (flow_state.enabled_p && p->is_source()) ? p->backlog(flow_state.high_water) : 0;
+    HttpTunnelProducer *srcp    = p->flow_control_source;
 
     if (backlog >= flow_state.high_water) {
       if (dbg_ctl_http_tunnel.on()) {
@@ -1368,7 +1368,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 bool
 HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
 {
-  bool sm_callback = false;
+  bool                sm_callback = false;
   HttpConsumerHandler jump_point;
   HttpTunnelProducer *p = c->producer;
 
@@ -1557,9 +1557,9 @@ void
 HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
 {
   ink_assert(p->alive == false);
-  HttpTunnelConsumer *c         = p->consumer_list.head;
-  int64_t total_bytes           = 0;
-  TunnelChunkingAction_t action = p->chunking_action;
+  HttpTunnelConsumer    *c           = p->consumer_list.head;
+  int64_t                total_bytes = 0;
+  TunnelChunkingAction_t action      = p->chunking_action;
 
   if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
     // if the only chunked data was in the initial read, make sure we don't consume too much
@@ -1685,9 +1685,9 @@ HttpTunnel::main_handler(int event, void *data)
     return EVENT_DONE;
   }
 
-  HttpTunnelProducer *p = nullptr;
-  HttpTunnelConsumer *c = nullptr;
-  bool sm_callback      = false;
+  HttpTunnelProducer *p           = nullptr;
+  HttpTunnelConsumer *c           = nullptr;
+  bool                sm_callback = false;
 
   ++reentrancy_count;
 

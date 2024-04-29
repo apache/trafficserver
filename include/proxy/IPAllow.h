@@ -78,10 +78,10 @@ class IpAllow : public ConfigInfo
      */
     Record(uint32_t method_mask, int line, MethodNames &&nonstandard_methods, bool deny_nonstandard_methods);
 
-    uint32_t _method_mask{0};              ///< Well known method mask.
-    int _src_line{0};                      ///< Configuration file source line.
-    MethodNames _nonstandard_methods;      ///< Allowed methods that are not well known.
-    bool _deny_nonstandard_methods{false}; ///< Denied methods that are not well known.
+    uint32_t    _method_mask{0};                  ///< Well known method mask.
+    int         _src_line{0};                     ///< Configuration file source line.
+    MethodNames _nonstandard_methods;             ///< Allowed methods that are not well known.
+    bool        _deny_nonstandard_methods{false}; ///< Denied methods that are not well known.
   };
 
 public:
@@ -189,8 +189,8 @@ public:
     // @a config must already be ref counted.
     ACL(const Record *r, IpAllow *config) noexcept;
 
-    const Record *_r{nullptr}; ///< The actual ACL record.
-    IpAllow *_config{nullptr}; ///< The backing configuration.
+    const Record *_r{nullptr};      ///< The actual ACL record.
+    IpAllow      *_config{nullptr}; ///< The backing configuration.
   };
 
   explicit IpAllow(const char *ip_allow_config_var, const char *categories_config_var);
@@ -251,9 +251,9 @@ public:
   static bool has_no_rules();
 
 private:
-  static size_t configid;               ///< Configuration ID for update management.
+  static size_t       configid;         ///< Configuration ID for update management.
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
-  static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
+  static bool         accept_check_p;   ///< @c true if deny all can be enforced during accept.
 
   void DebugMap(IpMap const &map) const;
 
@@ -275,9 +275,9 @@ private:
 
   swoc::file::path ip_allow_config_file;      ///< Path to ip_allow configuration file.
   swoc::file::path ip_categories_config_file; ///< Path to ip_allow configuration file.
-  IpMap _src_map;
-  IpMap _dst_map;
-  IpCategories ip_category_map; ///< Map of IP categories to IP spaces.
+  IpMap            _src_map;
+  IpMap            _dst_map;
+  IpCategories     ip_category_map; ///< Map of IP categories to IP spaces.
   /// Storage for records.
   swoc::MemArena _arena;
 

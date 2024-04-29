@@ -66,15 +66,15 @@ public:
     return _ready;
   }
 
-  TSHttpTxn txnp;
-  TSCont contp             = nullptr;
-  TSRemapRequestInfo *_rri = nullptr;
-  TSMBuffer bufp           = nullptr;
-  TSMLoc hdr_loc           = nullptr;
-  TSMBuffer client_bufp    = nullptr;
-  TSMLoc client_hdr_loc    = nullptr;
-  TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
-  bool changed_url         = false;
+  TSHttpTxn           txnp;
+  TSCont              contp          = nullptr;
+  TSRemapRequestInfo *_rri           = nullptr;
+  TSMBuffer           bufp           = nullptr;
+  TSMLoc              hdr_loc        = nullptr;
+  TSMBuffer           client_bufp    = nullptr;
+  TSMLoc              client_hdr_loc = nullptr;
+  TSHttpStatus        resp_status    = TS_HTTP_STATUS_NONE;
+  bool                changed_url    = false;
 
 private:
   void destroy();

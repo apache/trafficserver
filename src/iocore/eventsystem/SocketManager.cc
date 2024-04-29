@@ -106,7 +106,7 @@ SocketManager::fastopen_supported()
   static const unsigned TFO_CLIENT_ENABLE = 1;
 
   ats_scoped_fd fd(::open("/proc/sys/net/ipv4/tcp_fastopen", O_RDONLY));
-  int value = 0;
+  int           value = 0;
 
   if (fd) {
     TextBuffer buffer(16);

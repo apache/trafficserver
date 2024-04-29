@@ -490,7 +490,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
   for (const auto &it : _option_list) {
     if (!it.second.default_value.empty() && ret.get(it.second.key).empty()) {
       std::istringstream ss(it.second.default_value);
-      std::string token;
+      std::string        token;
       while (std::getline(ss, token, ' ')) {
         ret.append_arg(it.second.key, token);
       }

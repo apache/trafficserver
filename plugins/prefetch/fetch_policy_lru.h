@@ -99,16 +99,16 @@ public:
   ~FetchPolicyLru() override{};
 
   /* Fetch policy interface methods */
-  bool init(const char *parameters) override;
-  bool acquire(const std::string &url) override;
-  bool release(const std::string &url) override;
+  bool        init(const char *parameters) override;
+  bool        acquire(const std::string &url) override;
+  bool        release(const std::string &url) override;
   const char *name() override;
-  size_t getMaxSize() override;
-  size_t getSize() override;
+  size_t      getMaxSize() override;
+  size_t      getSize() override;
 
 protected:
-  LruMap _map;
-  LruList _list;
+  LruMap             _map;
+  LruList            _list;
   LruList::size_type _maxSize = 10;
   LruList::size_type _size    = 0;
 };

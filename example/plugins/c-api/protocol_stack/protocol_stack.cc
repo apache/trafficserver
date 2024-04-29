@@ -36,9 +36,9 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 static int
 proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn   txnp = static_cast<TSHttpTxn>(edata);
   const char *results[10];
-  int count = 0;
+  int         count = 0;
   Dbg(dbg_ctl, "Protocols:");
   TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);
   for (int i = 0; i < count; i++) {

@@ -87,8 +87,8 @@ public:
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  TSCont _cont = nullptr;
-  list_type _rules;
-  bool _allow_304 = false;
+  TSCont      _cont = nullptr;
+  list_type   _rules;
+  bool        _allow_304 = false;
   std::string _log_file;
 };

@@ -60,7 +60,7 @@ namespace Yaml
   {
     if (!_bad && (_used_key.size() != _map.size())) {
       std::string msg{(_map.size() - _used_key.size()) > 1 ? "keys " : "key "};
-      bool first{true};
+      bool        first{true};
 
       for (auto const &kv : _map) {
         auto key = kv.first.as<std::string>();

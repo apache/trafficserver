@@ -40,13 +40,13 @@ static std::array<std::string_view, 5> Node_Type_to_Str{
 namespace
 {
 constexpr std::string_view CONFIG_RECORD_PREFIX{"proxy.config"};
-const inline std::string RECORD_YAML_ROOT_STR{"ts"};
+const inline std::string   RECORD_YAML_ROOT_STR{"ts"};
 
 } // namespace
 
 namespace detail
 {
-void flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &errata);
+void                             flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &errata);
 std::pair<RecDataT, std::string> try_deduce_type(YAML::Node const &node);
 
 // Helper class to make the code less verbose when lock is needed.
@@ -71,9 +71,9 @@ void
 SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
 {
   std::string record_name{field.get_record_name()};
-  RecT rec_type{RecT::RECT_CONFIG};
-  RecDataT data_type{RecDataT::RECD_NULL};
-  RecCheckT check_type{RecCheckT::RECC_NULL};
+  RecT        rec_type{RecT::RECT_CONFIG};
+  RecDataT    data_type{RecDataT::RECD_NULL};
+  RecCheckT   check_type{RecCheckT::RECC_NULL};
   std::string check_expr;
   // this function (GetRec..) should be generic and possibly getting the value either
   // from where it gets it currently or a schema file.
@@ -120,7 +120,7 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
                                                                 // 'null' which is exactly what we want.
 
   std::string value_str = RecConfigOverrideFromEnvironment(record_name.c_str(), field_value.c_str());
-  RecSourceT source     = (field_value == value_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
+  RecSourceT  source    = (field_value == value_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
   if (source == REC_SOURCE_ENV) {
     errata.note(ERRATA_DEBUG, "'{}' was override with '{}' using an env variable", record_name, value_str);

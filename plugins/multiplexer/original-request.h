@@ -34,10 +34,10 @@
 class OriginalRequest
 {
   TSMBuffer buffer_;
-  TSMLoc location_;
-  TSMLoc url_;
-  TSMLoc hostHeader_;
-  TSMLoc xMultiplexerHeader_;
+  TSMLoc    location_;
+  TSMLoc    url_;
+  TSMLoc    hostHeader_;
+  TSMLoc    xMultiplexerHeader_;
 
   OriginalRequest(const OriginalRequest &);
   OriginalRequest &operator=(const OriginalRequest &);

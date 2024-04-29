@@ -75,7 +75,7 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
   unsigned int h = cont->first_key.slice32(0);
-  int b          = h % OPEN_DIR_BUCKETS;
+  int          b = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
     if (!(d->writers.head->first_key == cont->first_key)) {
       continue;
@@ -110,8 +110,8 @@ int
 OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
-  EThread *t = mutex->thread_holding;
-  CacheVC *c = nullptr;
+  EThread                                  *t = mutex->thread_holding;
+  CacheVC                                  *c = nullptr;
   while ((c = delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
     if (lock.is_locked()) {
@@ -140,7 +140,7 @@ OpenDir::close_write(CacheVC *cont)
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
     unsigned int h = cont->first_key.slice32(0);
-    int b          = h % OPEN_DIR_BUCKETS;
+    int          b = h % OPEN_DIR_BUCKETS;
     bucket[b].remove(cont->od);
     delayed_readers.append(cont->od->readers);
     signal_readers(0, nullptr);
@@ -155,7 +155,7 @@ OpenDirEntry *
 OpenDir::open_read(const CryptoHash *key) const
 {
   unsigned int h = key->slice32(0);
-  int b          = h % OPEN_DIR_BUCKETS;
+  int          b = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
     if (d->writers.head->first_key == *key) {
       return d;
@@ -217,7 +217,7 @@ dir_init_segment(int s, Stripe *stripe)
 {
   stripe->header->freelist[s] = 0;
   Dir *seg                    = stripe->dir_segment(s);
-  int l, b;
+  int  l, b;
   memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * stripe->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
     for (b = 0; b < stripe->buckets; b++) {
@@ -243,9 +243,9 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe)
 int
 dir_freelist_length(Stripe *stripe, int s)
 {
-  int free = 0;
-  Dir *seg = stripe->dir_segment(s);
-  Dir *e   = dir_from_offset(stripe->header->freelist[s], seg);
+  int  free = 0;
+  Dir *seg  = stripe->dir_segment(s);
+  Dir *e    = dir_from_offset(stripe->header->freelist[s], seg);
   if (dir_bucket_loop_fix(e, s, stripe)) {
     return (DIR_DEPTH - 1) * stripe->buckets;
   }
@@ -260,7 +260,7 @@ int
 dir_bucket_length(Dir *b, int s, Stripe *stripe)
 {
   Dir *e   = b;
-  int i    = 0;
+  int  i   = 0;
   Dir *seg = stripe->dir_segment(s);
 #ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(b, s, vol))
@@ -319,7 +319,7 @@ inline Dir *
 dir_delete_entry(Dir *e, Dir *p, int s, Stripe *stripe)
 {
   Dir *seg              = stripe->dir_segment(s);
-  int no                = dir_next(e);
+  int  no               = dir_next(e);
   stripe->header->dirty = 1;
   if (p) {
     unsigned int fo = stripe->header->freelist[s];
@@ -432,7 +432,7 @@ freelist_clean(int s, Stripe *stripe)
     return;
   }
   Warning("cache directory overflow on '%s' segment %d, purging...", stripe->path, s);
-  int n    = 0;
+  int  n   = 0;
   Dir *seg = stripe->dir_segment(s);
   for (int bi = 0; bi < stripe->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
@@ -473,11 +473,11 @@ freelist_pop(int s, Stripe *stripe)
 int
 dir_segment_accounted(int s, Stripe *stripe, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
 {
-  int free = dir_freelist_length(stripe, s);
-  int used = 0, empty = 0;
-  int valid = 0, agg_valid = 0;
+  int     free = dir_freelist_length(stripe, s);
+  int     used = 0, empty = 0;
+  int     valid = 0, agg_valid = 0;
   int64_t agg_size = 0;
-  Dir *seg         = stripe->dir_segment(s);
+  Dir    *seg      = stripe->dir_segment(s);
   for (int bi = 0; bi < stripe->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
     Dir *e = b;
@@ -526,9 +526,9 @@ dir_segment_accounted(int s, Stripe *stripe, int offby, int *f, int *u, int *et,
 void
 dir_free_entry(Dir *e, int s, Stripe *stripe)
 {
-  Dir *seg        = stripe->dir_segment(s);
-  unsigned int fo = stripe->header->freelist[s];
-  unsigned int eo = dir_to_offset(e, seg);
+  Dir         *seg = stripe->dir_segment(s);
+  unsigned int fo  = stripe->header->freelist[s];
+  unsigned int eo  = dir_to_offset(e, seg);
   dir_set_next(e, fo);
   if (fo) {
     dir_set_prev(dir_from_offset(fo, seg), eo);
@@ -540,8 +540,8 @@ int
 dir_probe(const CacheKey *key, Stripe *stripe, Dir *result, Dir **last_collision)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int s    = key->slice32(0) % stripe->segments;
-  int b    = key->slice32(1) % stripe->buckets;
+  int  s   = key->slice32(0) % stripe->segments;
+  int  b   = key->slice32(1) % stripe->buckets;
   Dir *seg = stripe->dir_segment(s);
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   CHECK_DIR(d);
@@ -616,8 +616,8 @@ dir_insert(const CacheKey *key, Stripe *stripe, Dir *to_part)
   Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
 #if defined(DEBUG) && defined(DO_CHECK_DIR_FAST)
-  unsigned int t = DIR_MASK_TAG(key->slice32(2));
-  Dir *col       = b;
+  unsigned int t   = DIR_MASK_TAG(key->slice32(2));
+  Dir         *col = b;
   while (col) {
     ink_assert((dir_tag(col) != t) || (dir_offset(col) != dir_offset(to_part)));
     col = next_dir(col, seg);
@@ -677,15 +677,15 @@ int
 dir_overwrite(const CacheKey *key, Stripe *stripe, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int s          = key->slice32(0) % stripe->segments, l;
-  int bi         = key->slice32(1) % stripe->buckets;
-  Dir *seg       = stripe->dir_segment(s);
-  Dir *e         = nullptr;
-  Dir *b         = dir_bucket(bi, seg);
-  unsigned int t = DIR_MASK_TAG(key->slice32(2));
-  int res        = 1;
+  int          s   = key->slice32(0) % stripe->segments, l;
+  int          bi  = key->slice32(1) % stripe->buckets;
+  Dir         *seg = stripe->dir_segment(s);
+  Dir         *e   = nullptr;
+  Dir         *b   = dir_bucket(bi, seg);
+  unsigned int t   = DIR_MASK_TAG(key->slice32(2));
+  int          res = 1;
 #ifdef LOOP_CHECK_MODE
-  int loop_count     = 0;
+  int  loop_count    = 0;
   bool loop_possible = true;
 #endif
   CHECK_DIR(d);
@@ -764,8 +764,8 @@ int
 dir_delete(const CacheKey *key, Stripe *stripe, Dir *del)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int s    = key->slice32(0) % stripe->segments;
-  int b    = key->slice32(1) % stripe->buckets;
+  int  s   = key->slice32(0) % stripe->segments;
+  int  b   = key->slice32(1) % stripe->buckets;
   Dir *seg = stripe->dir_segment(s);
   Dir *e = nullptr, *p = nullptr;
 #ifdef LOOP_CHECK_MODE
@@ -804,7 +804,7 @@ int
 dir_lookaside_probe(const CacheKey *key, Stripe *stripe, Dir *result, EvacuationBlock **eblock)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int i              = key->slice32(3) % LOOKASIDE_SIZE;
+  int              i = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
@@ -830,7 +830,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Stripe *stripe, Dir *to)
   DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
        (int)dir_phase(to));
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int i                      = key->slice32(3) % LOOKASIDE_SIZE;
+  int              i         = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b         = new_EvacuationBlock(stripe->mutex->thread_holding);
   b->evac_frags.key          = *key;
   b->evac_frags.earliest_key = *key;
@@ -846,7 +846,7 @@ int
 dir_lookaside_fixup(const CacheKey *key, Stripe *stripe)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int i              = key->slice32(3) % LOOKASIDE_SIZE;
+  int              i = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
@@ -892,7 +892,7 @@ void
 dir_lookaside_remove(const CacheKey *key, Stripe *stripe)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int i              = key->slice32(3) % LOOKASIDE_SIZE;
+  int              i = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
@@ -1037,8 +1037,8 @@ Lrestart:
       goto Ldone;
     }
 
-    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
-    size_t dirlen = stripe->dirlen();
+    int    headerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+    size_t dirlen    = stripe->dirlen();
     if (!writepos) {
       // start
       Dbg(dbg_ctl_cache_dir_sync, "sync started");
@@ -1087,8 +1087,8 @@ Lrestart:
       memcpy(buf, stripe->raw_dir, dirlen);
       stripe->dir_sync_in_progress = true;
     }
-    size_t B    = stripe->header->sync_serial & 1;
-    off_t start = stripe->skip + (B ? dirlen : 0);
+    size_t B     = stripe->header->sync_serial & 1;
+    off_t  start = stripe->skip + (B ? dirlen : 0);
 
     if (!writepos) {
       // write header

@@ -50,6 +50,6 @@ public:
   int main_event_handler(int event, Event *data);
 
 private:
-  Http09Session *_ssn = nullptr;
+  Http09Session                                                *_ssn = nullptr;
   std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 };

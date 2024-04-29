@@ -40,9 +40,9 @@ struct ATSHash32FNV1a : ATSHash32 {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final() override;
+  void     final() override;
   uint32_t get() const override;
-  void clear() override;
+  void     clear() override;
 
 private:
   uint32_t hval;
@@ -71,9 +71,9 @@ struct ATSHash64FNV1a : ATSHash64 {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final() override;
+  void     final() override;
   uint64_t get() const override;
-  void clear() override;
+  void     clear() override;
 
 private:
   uint64_t hval;

@@ -69,15 +69,15 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   // Accessor Methods
-  bool allow_half_open() const;
-  void set_half_close_flag(bool flag) override;
-  bool get_half_close_flag() const override;
-  int get_transact_count() const override;
-  bool is_chunked_encoding_supported() const override;
+  bool         allow_half_open() const;
+  void         set_half_close_flag(bool flag) override;
+  bool         get_half_close_flag() const override;
+  int          get_transact_count() const override;
+  bool         is_chunked_encoding_supported() const override;
   virtual bool is_outbound_transparent() const;
 
   PoolableSession *get_server_session() const override;
-  const char *get_protocol_string() const override;
+  const char      *get_protocol_string() const override;
 
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
@@ -99,13 +99,13 @@ private:
     HCS_CLOSED,
   };
 
-  int magic          = HTTP_CS_MAGIC_DEAD;
-  int transact_count = 0;
-  bool half_close    = false;
-  bool conn_decrease = false;
+  int  magic          = HTTP_CS_MAGIC_DEAD;
+  int  transact_count = 0;
+  bool half_close     = false;
+  bool conn_decrease  = false;
 
-  MIOBuffer *read_buffer  = nullptr;
-  IOBufferReader *_reader = nullptr;
+  MIOBuffer      *read_buffer = nullptr;
+  IOBufferReader *_reader     = nullptr;
 
   C_Read_State read_state = HCS_INIT;
 

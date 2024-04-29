@@ -47,8 +47,8 @@ public:
   }
 
 public:
-  TSVIO vio               = nullptr;
-  TSIOBuffer buffer       = nullptr;
+  TSVIO            vio    = nullptr;
+  TSIOBuffer       buffer = nullptr;
   TSIOBufferReader reader = nullptr;
 };
 
@@ -83,14 +83,14 @@ public:
 
 public:
   IOHandle output;
-  Mp4Meta mm;
-  int64_t total;
-  int64_t tail;
-  int64_t pos;
-  int64_t content_length;
-  int64_t meta_length;
+  Mp4Meta  mm;
+  int64_t  total;
+  int64_t  tail;
+  int64_t  pos;
+  int64_t  content_length;
+  int64_t  meta_length;
 
-  TSIOBuffer res_buffer;
+  TSIOBuffer       res_buffer;
   TSIOBufferReader res_reader;
   TSIOBufferReader dup_reader;
 
@@ -112,7 +112,7 @@ public:
   }
 
 public:
-  float start;
+  float   start;
   int64_t cl;
 
   Mp4TransformContext *mtc;

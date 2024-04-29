@@ -104,9 +104,9 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 void
 CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) const
 {
-  void *opaque_ptr;
+  void            *opaque_ptr;
   CacheHostRecord *data_ptr;
-  bool r;
+  bool             r;
 
   // Check to see if there is any work to do before making
   //   the string copy
@@ -119,7 +119,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
   }
 
   std::string_view data{rdata, static_cast<size_t>(rlen)};
-  HostLookupState s;
+  HostLookupState  s;
 
   r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
 
@@ -143,8 +143,8 @@ void
 CacheHostMatcher::NewEntry(matcher_line *line_info)
 {
   CacheHostRecord *cur_d;
-  int errNo;
-  char *match_data;
+  int              errNo;
+  char            *match_data;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -253,16 +253,16 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   Note("%s loading ...", ts::filename::HOSTING);
 
   // Table build locals
-  Tokenizer bufTok("\n");
+  Tokenizer      bufTok("\n");
   tok_iter_state i_state;
-  const char *tmp       = nullptr;
-  matcher_line *first   = nullptr;
-  matcher_line *current = nullptr;
-  matcher_line *last    = nullptr;
-  int line_num          = 0;
-  int second_pass       = 0;
-  int numEntries        = 0;
-  const char *errPtr    = nullptr;
+  const char    *tmp         = nullptr;
+  matcher_line  *first       = nullptr;
+  matcher_line  *current     = nullptr;
+  matcher_line  *last        = nullptr;
+  int            line_num    = 0;
+  int            second_pass = 0;
+  int            numEntries  = 0;
+  const char    *errPtr      = nullptr;
 
   // type counts
   int hostDomain = 0;
@@ -399,7 +399,7 @@ int
 CacheHostTable::BuildTable(const char *config_file_path)
 {
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
 
   if (ec) {
     switch (ec.value()) {
@@ -419,9 +419,9 @@ CacheHostTable::BuildTable(const char *config_file_path)
 int
 CacheHostRecord::Init(CacheType typ)
 {
-  int i, j;
+  int                    i, j;
   extern Queue<CacheVol> cp_list;
-  extern int cp_list_len;
+  extern int             cp_list_len;
 
   num_vols = 0;
   type     = typ;
@@ -458,10 +458,10 @@ CacheHostRecord::Init(CacheType typ)
 int
 CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 {
-  int i, j;
+  int                    i, j;
   extern Queue<CacheVol> cp_list;
-  int is_vol_present = 0;
-  char config_file[PATH_NAME_MAX];
+  int                    is_vol_present = 0;
+  char                   config_file[PATH_NAME_MAX];
 
   REC_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
   type = typ;
@@ -474,10 +474,10 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 
     if (!strcasecmp(label, "volume")) {
       /* parse the list of volumes */
-      val          = ats_strdup(line_info->line[1][i]);
-      char *vol_no = val;
-      char *s      = val;
-      int volume_number;
+      val              = ats_strdup(line_info->line[1][i]);
+      char     *vol_no = val;
+      char     *s      = val;
+      int       volume_number;
       CacheVol *cachep;
 
       /* first find out the number of volumes */
@@ -599,7 +599,7 @@ ConfigVolumes::read_config_file()
   Note("%s loading ...", ts::filename::VOLUME);
 
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{config_path}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{config_path}, ec)};
 
   if (ec) {
     switch (ec.value()) {
@@ -622,13 +622,13 @@ void
 ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 {
   // Table build locals
-  Tokenizer bufTok("\n");
+  Tokenizer      bufTok("\n");
   tok_iter_state i_state;
-  const char *tmp;
-  int line_num = 0;
-  int total    = 0; // added by YTS Team, yamsat for bug id 59632
+  const char    *tmp;
+  int            line_num = 0;
+  int            total    = 0; // added by YTS Team, yamsat for bug id 59632
 
-  char volume_seen[256];
+  char        volume_seen[256];
   const char *matcher_name = "[CacheVolition]";
 
   memset(volume_seen, 0, sizeof(volume_seen));
@@ -646,14 +646,14 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   while (tmp != nullptr) {
     line_num++;
 
-    char *end;
-    char *line_end        = nullptr;
-    const char *err       = nullptr;
-    int volume_number     = 0;
-    CacheType scheme      = CACHE_NONE_TYPE;
-    int size              = 0;
-    int in_percent        = 0;
-    bool ramcache_enabled = true;
+    char       *end;
+    char       *line_end         = nullptr;
+    const char *err              = nullptr;
+    int         volume_number    = 0;
+    CacheType   scheme           = CACHE_NONE_TYPE;
+    int         size             = 0;
+    int         in_percent       = 0;
+    bool        ramcache_enabled = true;
 
     while (true) {
       // skip all blank spaces at beginning of line

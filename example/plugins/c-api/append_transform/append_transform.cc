@@ -48,15 +48,15 @@
 #define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 
 struct MyData {
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
-  int append_needed;
+  int              append_needed;
 };
 
-static TSIOBuffer append_buffer;
+static TSIOBuffer       append_buffer;
 static TSIOBufferReader append_buffer_reader;
-static int append_buffer_length;
+static int              append_buffer_length;
 
 static MyData *
 my_data_alloc()
@@ -89,7 +89,7 @@ static void
 handle_transform(TSCont contp)
 {
   TSVConn output_conn;
-  TSVIO write_vio;
+  TSVIO   write_vio;
   MyData *data;
   int64_t towrite;
 
@@ -245,8 +245,8 @@ static int
 transformable(TSHttpTxn txnp)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  int val_length;
+  TSMLoc    hdr_loc;
+  int       val_length;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
     /*
@@ -310,7 +310,7 @@ transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 static int
 load(const char *filename)
 {
-  TSFile fp;
+  TSFile  fp;
   int64_t avail;
 
   fp = TSfopen(filename, "r");
@@ -323,7 +323,7 @@ load(const char *filename)
 
   for (;;) {
     TSIOBufferBlock blk = TSIOBufferStart(append_buffer);
-    char *p             = TSIOBufferBlockWriteStart(blk, &avail);
+    char           *p   = TSIOBufferBlockWriteStart(blk, &avail);
 
     int err = TSfread(fp, p, avail);
     if (err > 0) {

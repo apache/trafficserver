@@ -48,35 +48,35 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 /* Directories that we are watching for inotify IN_CREATE events. */
 typedef struct HCDirEntry_t {
-  char dname[MAX_PATH_LEN];   /* Directory name */
-  int wd;                     /* Watch descriptor */
-  struct HCDirEntry_t *_next; /* Linked list */
+  char                 dname[MAX_PATH_LEN]; /* Directory name */
+  int                  wd;                  /* Watch descriptor */
+  struct HCDirEntry_t *_next;               /* Linked list */
 } HCDirEntry;
 
 /* Information about a status file. This is never modified (only replaced, see HCFileInfo_t) */
 typedef struct HCFileData_t {
-  int exists;                 /* Does this file exist */
-  char body[MAX_BODY_LEN];    /* Body from fname. Empty string means file is missing */
-  int b_len;                  /* Length of data */
-  time_t remove;              /* Used for deciding when the old object can be permanently removed */
-  struct HCFileData_t *_next; /* Only used when these guys end up on the freelist */
+  int                  exists;             /* Does this file exist */
+  char                 body[MAX_BODY_LEN]; /* Body from fname. Empty string means file is missing */
+  int                  b_len;              /* Length of data */
+  time_t               remove;             /* Used for deciding when the old object can be permanently removed */
+  struct HCFileData_t *_next;              /* Only used when these guys end up on the freelist */
 } HCFileData;
 
 /* The only thing that should change in this struct is data, atomically swapping ptrs */
 typedef struct HCFileInfo_t {
-  char fname[MAX_PATH_LEN];       /* Filename */
-  char *basename;                 /* The "basename" of the file */
-  unsigned basename_len = 0;      /* The length of the basename */
-  char path[PATH_NAME_MAX];       /* URL path for this HC */
-  int p_len;                      /* Length of path */
-  const char *ok;                 /* Header for an OK result */
-  int o_len;                      /* Length of OK header */
-  const char *miss;               /* Header for miss results */
-  int m_len;                      /* Length of miss header */
-  std::atomic<HCFileData *> data; /* Holds the current data for this health check file */
-  int wd;                         /* Watch descriptor */
-  HCDirEntry *dir;                /* Reference to the directory this file resides in */
-  struct HCFileInfo_t *_next;     /* Linked list */
+  char                      fname[MAX_PATH_LEN]; /* Filename */
+  char                     *basename;            /* The "basename" of the file */
+  unsigned                  basename_len = 0;    /* The length of the basename */
+  char                      path[PATH_NAME_MAX]; /* URL path for this HC */
+  int                       p_len;               /* Length of path */
+  const char               *ok;                  /* Header for an OK result */
+  int                       o_len;               /* Length of OK header */
+  const char               *miss;                /* Header for miss results */
+  int                       m_len;               /* Length of miss header */
+  std::atomic<HCFileData *> data;                /* Holds the current data for this health check file */
+  int                       wd;                  /* Watch descriptor */
+  HCDirEntry               *dir;                 /* Reference to the directory this file resides in */
+  struct HCFileInfo_t      *_next;               /* Linked list */
 } HCFileInfo;
 
 /* Global configuration */
@@ -85,11 +85,11 @@ HCFileInfo *g_config;
 /* State used for the intercept plugin. ToDo: Can this be improved ? */
 typedef struct HCState_t {
   TSVConn net_vc;
-  TSVIO read_vio;
-  TSVIO write_vio;
+  TSVIO   read_vio;
+  TSVIO   write_vio;
 
-  TSIOBuffer req_buffer;
-  TSIOBuffer resp_buffer;
+  TSIOBuffer       req_buffer;
+  TSIOBuffer       resp_buffer;
   TSIOBufferReader resp_reader;
 
   int output_bytes;
@@ -134,7 +134,7 @@ setup_watchers(int fd)
 {
   HCFileInfo *conf     = g_config;
   HCDirEntry *head_dir = nullptr, *last_dir = nullptr, *dir;
-  char fname[MAX_PATH_LEN];
+  char        fname[MAX_PATH_LEN];
 
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
@@ -169,9 +169,9 @@ setup_watchers(int fd)
 static void *
 hc_thread(void *data ATS_UNUSED)
 {
-  int fd              = inotify_init();
-  HCFileData *fl_head = nullptr;
-  char buffer[INOTIFY_BUFLEN];
+  int            fd      = inotify_init();
+  HCFileData    *fl_head = nullptr;
+  char           buffer[INOTIFY_BUFLEN];
   struct timeval last_free, now;
 
   gettimeofday(&last_free, nullptr);
@@ -218,14 +218,14 @@ hc_thread(void *data ATS_UNUSED)
       /* coverity[ -tainted_data] */
       while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        HCFileInfo *finfo           = g_config;
+        HCFileInfo           *finfo = g_config;
 
         while (finfo && !((event->wd == finfo->wd) ||
                           ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, finfo->basename_len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
-          auto *new_data = TSRalloc<HCFileData>();
+          auto       *new_data = TSRalloc<HCFileData>();
           HCFileData *old_data;
 
           if (event->mask & (IN_CLOSE_WRITE | IN_ATTRIB)) {
@@ -264,12 +264,12 @@ static char *
 gen_header(char *status_str, char *mime, int *header_len)
 {
   TSHttpStatus status;
-  char *buf = nullptr;
+  char        *buf = nullptr;
 
   status = TSHttpStatus(atoi(status_str));
   if (status > TS_HTTP_STATUS_NONE && status < (TSHttpStatus)999) {
     const char *status_reason;
-    int len = sizeof(HEADER_TEMPLATE) + 3 + 1;
+    int         len = sizeof(HEADER_TEMPLATE) + 3 + 1;
 
     status_reason  = TSHttpHdrReasonLookup(status);
     len           += strlen(status_reason);
@@ -286,8 +286,8 @@ gen_header(char *status_str, char *mime, int *header_len)
 static HCFileInfo *
 parse_configs(const char *fname)
 {
-  FILE *fd;
-  char buf[2 * 1024];
+  FILE       *fd;
+  char        buf[2 * 1024];
   HCFileInfo *head_finfo = nullptr, *finfo = nullptr, *prev_finfo = nullptr;
 
   if (!fname) {
@@ -439,7 +439,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     char buf[48];
-    int len;
+    int  len;
 
     len                     = snprintf(buf, sizeof(buf), "Content-Length: %d\r\n\r\n", my_state->data->b_len);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
@@ -493,16 +493,16 @@ hc_intercept(TSCont contp, TSEvent event, void *edata)
 static int
 health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSMBuffer reqp;
-  TSMLoc hdr_loc = nullptr, url_loc = nullptr;
-  TSCont icontp;
-  HCState *my_state;
-  TSHttpTxn txnp   = (TSHttpTxn)edata;
+  TSMBuffer   reqp;
+  TSMLoc      hdr_loc = nullptr, url_loc = nullptr;
+  TSCont      icontp;
+  HCState    *my_state;
+  TSHttpTxn   txnp = (TSHttpTxn)edata;
   HCFileInfo *info = g_config;
 
   if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
-    int path_len     = 0;
-    const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
+    int         path_len = 0;
+    const char *path     = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case, and we won't allow healthchecks on / */
     if (!path || !path_len) {

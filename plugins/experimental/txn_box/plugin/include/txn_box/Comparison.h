@@ -212,7 +212,7 @@ public:
   virtual Errata load(Config &cfg, YAML::Node node);
 
 protected:
-  virtual Errata load_case(Config &cfg, YAML::Node node) = 0;
+  virtual Errata               load_case(Config &cfg, YAML::Node node) = 0;
   swoc::Rv<Comparison::Handle> load_cmp(Config &cfg, YAML::Node node);
 };
 

@@ -95,7 +95,7 @@ static bool
 mptcp_supported()
 {
   ats_scoped_fd fd(::open("/proc/sys/net/mptcp/enabled", O_RDONLY));
-  int value = 0;
+  int           value = 0;
 
   if (fd > 0) {
     TextBuffer buffer(16);
@@ -110,11 +110,11 @@ ts::IPAddrPair
 RecHttpLoadIp(char const *name)
 {
   ts::IPAddrPair zret;
-  char value[1024];
+  char           value[1024];
 
   if (REC_ERR_OKAY == RecGetRecordString(name, value, sizeof(value))) {
     Tokenizer tokens(", ");
-    int n_addrs = tokens.Initialize(value);
+    int       n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
       const char *host = tokens[i];
       // For backwards compatibility we need to support the use of host names
@@ -246,8 +246,8 @@ HttpProxyPort::hasQUIC(Group const &ports)
 const HttpProxyPort *
 HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 {
-  bool check_family_p = ats_is_ip(family);
-  const self *zret    = nullptr;
+  bool        check_family_p = ats_is_ip(family);
+  const self *zret           = nullptr;
   for (int i = 0, n = ports.size(); i < n && !zret; ++i) {
     const self &p = ports[i];
     if (p.m_port &&                               // has a valid port
@@ -278,7 +278,7 @@ bool
 HttpProxyPort::loadConfig(std::vector<self> &entries)
 {
   char *text;
-  bool found_p;
+  bool  found_p;
 
   text = REC_readString(PORTS_CONFIG_NAME, &found_p);
   if (found_p) {
@@ -305,10 +305,10 @@ HttpProxyPort::loadValue(std::vector<self> &ports, const char *text)
   unsigned old_port_length = ports.size(); // remember this.
   if (text && *text) {
     Tokenizer tokens(", ");
-    int n_ports = tokens.Initialize(text);
+    int       n_ports = tokens.Initialize(text);
     if (n_ports > 0) {
       for (int p = 0; p < n_ports; ++p) {
-        const char *elt = tokens[p];
+        const char   *elt = tokens[p];
         HttpProxyPort entry;
         if (entry.processOptions(elt)) {
           ports.push_back(entry);
@@ -324,18 +324,18 @@ HttpProxyPort::loadValue(std::vector<self> &ports, const char *text)
 bool
 HttpProxyPort::processOptions(const char *opts)
 {
-  bool zret           = false; // found a port?
-  bool af_set_p       = false; // AF explicitly specified?
-  bool host_res_set_p = false; // Host resolution order set explicitly?
-  bool sp_set_p       = false; // Session protocol set explicitly?
-  bool bracket_p      = false; // found an open bracket in the input?
-  const char *value;           // Temp holder for value of a prefix option.
-  IpAddr ip;                   // temp for loading IP addresses.
-  std::vector<char *> values;  // Pointers to single option values.
+  bool                zret           = false; // found a port?
+  bool                af_set_p       = false; // AF explicitly specified?
+  bool                host_res_set_p = false; // Host resolution order set explicitly?
+  bool                sp_set_p       = false; // Session protocol set explicitly?
+  bool                bracket_p      = false; // found an open bracket in the input?
+  const char         *value;                  // Temp holder for value of a prefix option.
+  IpAddr              ip;                     // temp for loading IP addresses.
+  std::vector<char *> values;                 // Pointers to single option values.
 
   // Make a copy we can modify safely.
   size_t opts_len = strlen(opts) + 1;
-  char *text      = static_cast<char *>(alloca(opts_len));
+  char  *text     = static_cast<char *>(alloca(opts_len));
   memcpy(text, opts, opts_len);
 
   // Split the copy in to tokens.
@@ -366,7 +366,7 @@ HttpProxyPort::processOptions(const char *opts)
   for (auto item : values) {
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
-      int port = strtoul(item, &ptr, 10);
+      int   port = strtoul(item, &ptr, 10);
       if (ptr == item) {
         // really, this shouldn't happen, since we checked for a leading digit.
         Warning("Mangled port value '%s' in port configuration '%s'", item, opts);
@@ -378,7 +378,7 @@ HttpProxyPort::processOptions(const char *opts)
       }
     } else if (nullptr != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
       char *ptr; // tmp for syntax check.
-      int fd = strtoul(value, &ptr, 10);
+      int   fd = strtoul(value, &ptr, 10);
       if (ptr == value) {
         Warning("Mangled file descriptor value '%s' in port descriptor '%s'", item, opts);
       } else {
@@ -535,7 +535,7 @@ HttpProxyPort::processSessionProtocolPreference(const char *value)
 void
 SessionProtocolNameRegistry::markIn(const char *value, SessionProtocolSet &sp_set)
 {
-  int n; // # of tokens
+  int       n; // # of tokens
   Tokenizer tokens(" ;|,:");
 
   n = tokens.Initialize(value);
@@ -558,9 +558,9 @@ SessionProtocolNameRegistry::markIn(const char *value, SessionProtocolSet &sp_se
 int
 HttpProxyPort::print(char *out, size_t n)
 {
-  size_t zret = 0; // # of chars printed so far.
+  size_t         zret = 0; // # of chars printed so far.
   ip_text_buffer ipb;
-  bool need_colon_p = false;
+  bool           need_colon_p = false;
 
   if (m_inbound_ip.isValid()) {
     zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_INBOUND_IP_PREFIX, m_inbound_ip.toString(ipb, sizeof(ipb)));
@@ -849,8 +849,8 @@ SessionProtocolNameRegistry::toIndexConst(TextView name)
 int
 SessionProtocolNameRegistry::indexFor(TextView name) const
 {
-  const swoc::TextView *end = m_names.begin() + m_n;
-  auto spot                 = std::find(m_names.begin(), end, name);
+  const swoc::TextView *end  = m_names.begin() + m_n;
+  auto                  spot = std::find(m_names.begin(), end, name);
   if (spot != end) {
     return static_cast<int>(spot - m_names.begin());
   }
@@ -883,8 +883,8 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
 
   // Parse the comma separated protocol string into a list of protocol names.
   std::vector<std::string_view> alpn_protocols;
-  TextView protocol;
-  int computed_alpn_array_len = 0;
+  TextView                      protocol;
+  int                           computed_alpn_array_len = 0;
 
   while (protocols) {
     protocol = protocols.take_prefix_at(',').trim_if(&isspace);

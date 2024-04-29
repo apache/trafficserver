@@ -38,8 +38,8 @@ class LogAccess;
 
 struct LogSlice {
   bool m_enable;
-  int m_start;
-  int m_end;
+  int  m_start;
+  int  m_end;
 
   LogSlice()
   {
@@ -139,9 +139,9 @@ public:
   unsigned marshal(LogAccess *lad, char *buf);
   unsigned marshal_agg(char *buf);
   unsigned unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type = LOG_ESCAPE_NONE);
-  void display(FILE *fd = stdout);
-  bool operator==(LogField &rhs);
-  void updateField(LogAccess *lad, char *val, int len);
+  void     display(FILE *fd = stdout);
+  bool     operator==(LogField &rhs);
+  void     updateField(LogAccess *lad, char *val, int len);
 
   const char *
   name() const
@@ -183,29 +183,29 @@ public:
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
-  static void init_milestone_container();
+  static void      init_milestone_container();
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
-  static bool fieldlist_contains_aggregates(const char *fieldlist);
-  static bool isContainerUpdateFieldSupported(Container container);
+  static bool      fieldlist_contains_aggregates(const char *fieldlist);
+  static bool      isContainerUpdateFieldSupported(Container container);
 
 private:
-  char *m_name;
-  char *m_symbol;
-  Type m_type;
-  Container m_container;
-  MarshalFunc m_marshal_func;        // place data into buffer
-  VarUnmarshalFunc m_unmarshal_func; // create a string of the data
-  Aggregate m_agg_op;
-  int64_t m_agg_cnt;
-  int64_t m_agg_val;
-  TSMilestonesType m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
-  TSMilestonesType m_milestone2; ///< Second milestone for MSDMS
-  bool m_time_field;
+  char                 *m_name;
+  char                 *m_symbol;
+  Type                  m_type;
+  Container             m_container;
+  MarshalFunc           m_marshal_func;   // place data into buffer
+  VarUnmarshalFunc      m_unmarshal_func; // create a string of the data
+  Aggregate             m_agg_op;
+  int64_t               m_agg_cnt;
+  int64_t               m_agg_val;
+  TSMilestonesType      m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
+  TSMilestonesType      m_milestone2; ///< Second milestone for MSDMS
+  bool                  m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
-  SetFunc m_set_func;
-  TSMilestonesType milestone_from_m_name();
-  int milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  SetFunc               m_set_func;
+  TSMilestonesType      milestone_from_m_name();
+  int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
 
 public:
   LINK(LogField, link);
@@ -231,13 +231,13 @@ public:
   LogFieldList();
   ~LogFieldList();
 
-  void clear();
-  void add(LogField *field, bool copy = true);
+  void      clear();
+  void      add(LogField *field, bool copy = true);
   LogField *find_by_name(const char *name) const;
   LogField *find_by_symbol(const char *symbol) const;
-  unsigned marshal_len(LogAccess *lad);
-  unsigned marshal(LogAccess *lad, char *buf);
-  unsigned marshal_agg(char *buf);
+  unsigned  marshal_len(LogAccess *lad);
+  unsigned  marshal(LogAccess *lad, char *buf);
+  unsigned  marshal_agg(char *buf);
 
   LogField *
   first() const
@@ -250,7 +250,7 @@ public:
     return (here->link).next;
   }
   unsigned count();
-  void display(FILE *fd = stdout);
+  void     display(FILE *fd = stdout);
 
   // Add a bad symbol seen in the log format to the list of bad symbols.
   //
@@ -270,9 +270,9 @@ public:
   LogFieldList &operator=(const LogFieldList &rhs) = delete;
 
 private:
-  unsigned m_marshal_len = 0;
+  unsigned        m_marshal_len = 0;
   Queue<LogField> m_field_list;
-  std::string _badSymbols;
+  std::string     _badSymbols;
 };
 
 /** Base IP address data.
@@ -296,7 +296,7 @@ struct LogFieldIp6 : public LogFieldIp {
 };
 /// Something big enough to hold any of the IP field types.
 union LogFieldIpStorage {
-  LogFieldIp _ip;
+  LogFieldIp  _ip;
   LogFieldIp4 _ip4;
   LogFieldIp6 _ip6;
 };

@@ -32,14 +32,14 @@
 
 ink_hrtime last_throttle_warning;
 ink_hrtime last_shedding_warning;
-int net_connections_throttle;
-bool net_memory_throttle = false;
-int fds_throttle;
+int        net_connections_throttle;
+bool       net_memory_throttle = false;
+int        fds_throttle;
 ink_hrtime last_transient_accept_error;
 
-NetHandler::Config NetHandler::global_config;
+NetHandler::Config                                     NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
-const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affects_per_thread_value{0x3};
+const std::bitset<NetHandler::CONFIG_ITEM_COUNT>       NetHandler::config_value_affects_per_thread_value{0x3};
 
 namespace
 {
@@ -80,8 +80,8 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = ink_get_hrtime();
-    NetHandler &nh = *get_NetHandler(this_ethread());
+    ink_hrtime  now = ink_get_hrtime();
+    NetHandler &nh  = *get_NetHandler(this_ethread());
 
     Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
     // The rest NetEvents in cop_list which are not triggered between InactivityCop runs.
@@ -172,11 +172,11 @@ initialize_thread_for_net(EThread *thread)
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
-  PollCont *pc       = get_PollCont(thread);
+  PollCont       *pc = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
 
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
-  int cop_freq                 = 1;
+  int            cop_freq      = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
   memcpy(&nh->config, &NetHandler::global_config, sizeof(NetHandler::global_config));

@@ -176,7 +176,7 @@ jwt_check_aud(json_t *aud, const char *id)
   PluginDebug("Checking aud %s against token aud array", id);
   /* If aud is an array, check all items */
   if (json_is_array(aud)) {
-    size_t index;
+    size_t  index;
     json_t *aud_item;
     json_array_foreach(aud, index, aud_item)
     {
@@ -207,9 +207,9 @@ jwt_check_uri(const char *cdniuc, const char *uri)
   }
 
   /* Normalize the URI */
-  int uri_ct  = strlen(uri);
-  int buff_ct = uri_ct + 2;
-  int err;
+  int   uri_ct  = strlen(uri);
+  int   buff_ct = uri_ct + 2;
+  int   err;
   char *normal_uri = static_cast<char *>(TSmalloc(buff_ct));
   memset(normal_uri, 0, buff_ct);
 
@@ -230,7 +230,7 @@ jwt_check_uri(const char *cdniuc, const char *uri)
     ++container;
 
     size_t len = container - kind;
-    bool status;
+    bool   status;
     PluginDebug("Comparing with match kind \"%.*s\" on \"%s\" to normalized URI \"%s\"", (int)len - 1, kind, container, normal_uri);
     switch (len) {
     case sizeof CONT_URI_HASH_STR:
@@ -302,20 +302,20 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
     return nullptr;
   }
 
-  int buff_ct = uri_ct + 2;
-  int normal_err;
+  int   buff_ct = uri_ct + 2;
+  int   normal_err;
   char *normal_uri = static_cast<char *>(TSmalloc(buff_ct));
   memset(normal_uri, 0, buff_ct);
 
   normal_err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
   if (!normal_err) {
     /* Determine Path String Based on cdnistd claim */
-    size_t normal_size     = strlen(normal_uri);
-    const char *path_start = normal_uri;
-    const char *path_end   = nullptr;
-    const char *uri_end    = normal_uri + normal_size;
-    char *path_string      = nullptr;
-    size_t path_size       = normal_size + 1;
+    size_t      normal_size = strlen(normal_uri);
+    const char *path_start  = normal_uri;
+    const char *path_end    = nullptr;
+    const char *uri_end     = normal_uri + normal_size;
+    char       *path_string = nullptr;
+    size_t      path_size   = normal_size + 1;
 
     path_string = static_cast<char *>(TSmalloc(path_size));
     memset(path_string, 0, path_size);
@@ -382,7 +382,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
       }
       // Block ending at fail_json label.
       {
-        cjose_err err;
+        cjose_err   err;
         const char *kid = cjose_jwk_get_kid(jwk, &err);
         if (!kid) {
           PluginDebug("Unable to get kid from signing key: %s", err.message);
@@ -412,7 +412,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
 
             } else {
               const char *fmt = "%s=%s; Path=%s";
-              size_t s_ct;
+              size_t      s_ct;
               s = static_cast<char *>(malloc(s_ct = (1 + snprintf(nullptr, 0, fmt, package, jws_str, path_string))));
               snprintf(s, s_ct, fmt, package, jws_str, path_string);
               PluginDebug("Cookie returned from renew function: %s", s);

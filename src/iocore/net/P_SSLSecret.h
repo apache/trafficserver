@@ -31,13 +31,13 @@ class SSLSecret
 public:
   SSLSecret() {}
   std::string getSecret(const std::string &name) const;
-  void setSecret(const std::string &name, std::string_view data);
-  void getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data, std::string &data2);
+  void        setSecret(const std::string &name, std::string_view data);
+  void        getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data, std::string &data2);
 
 private:
-  void loadSecret(const std::string &name1, const std::string &name2, std::string &data_item, std::string &data_item2);
+  void        loadSecret(const std::string &name1, const std::string &name2, std::string &data_item, std::string &data_item2);
   std::string loadFile(const std::string &name);
 
   std::unordered_map<std::string, std::string> secret_map;
-  mutable std::recursive_mutex secret_map_mutex;
+  mutable std::recursive_mutex                 secret_map_mutex;
 };

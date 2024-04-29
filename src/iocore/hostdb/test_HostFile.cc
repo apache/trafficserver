@@ -52,7 +52,7 @@ spit(const swoc::file::path &p, std::string_view data)
 
 TEST_CASE("HostFile", "[hostdb]")
 {
-  auto tmp = swoc::file::temp_directory_path();
+  auto                          tmp = swoc::file::temp_directory_path();
   swoc::LocalBufferWriter<1024> w;
   w.print("{}/localhost.{}", tmp, ::getpid());
 

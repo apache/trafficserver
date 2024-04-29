@@ -57,10 +57,10 @@ public:
   }
 
 private:
-  inline static std::mutex _mtx;
+  inline static std::mutex               _mtx;
   inline static std::vector<std::size_t> _id_stack;
-  inline static std::size_t _stack_top_idx;
-  inline static std::size_t _num_possible_values{256};
+  inline static std::size_t              _stack_top_idx;
+  inline static std::size_t              _num_possible_values{256};
 
   static void
   _init()
@@ -101,5 +101,5 @@ private:
   };
 
   inline static thread_local _Id _id;
-  inline static bool _inited{false};
+  inline static bool             _inited{false};
 };

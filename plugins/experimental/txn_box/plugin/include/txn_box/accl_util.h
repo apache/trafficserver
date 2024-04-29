@@ -84,7 +84,7 @@ template <typename Key, typename Value> class StringTree
       }
     }
 
-    Key key;
+    Key   key;
     Value value;
     /// bit pos where it differs from previous node.
     std::size_t bit_count{0};
@@ -149,7 +149,7 @@ private:
   /// hold the first element on the entire tree.
   node_type_ptr _head;
   /// this gets incremented on every insert.
-  int32_t _rank_counter{0};
+  int32_t        _rank_counter{0};
   swoc::MemArena _arena; ///< Storage for nodes
 };
 
@@ -197,7 +197,7 @@ get_bit(Key const &key, std::size_t position)
   assert(ptr != nullptr);
   int const byte_number      = position / 8;
   int const position_in_byte = position - (byte_number * 8);
-  auto byte                  = get_byte<Key>(ptr, byte_number);
+  auto      byte             = get_byte<Key>(ptr, byte_number);
   return ((byte) >> (7 - position_in_byte)) & 1;
 }
 
@@ -206,8 +206,8 @@ static auto
 get_first_diff_bit_position(Key const &lhs, Key const &rhs)
 {
   std::size_t byte_count{0};
-  auto lhs_iter = std::begin(lhs);
-  auto rhs_iter = std::begin(rhs);
+  auto        lhs_iter = std::begin(lhs);
+  auto        rhs_iter = std::begin(rhs);
   while ((lhs_iter != std::end(lhs) && rhs_iter != std::end(rhs)) && *lhs_iter == *rhs_iter) {
     ++lhs_iter;
     ++rhs_iter;
@@ -247,7 +247,7 @@ bool
 StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *cmp)
 {
   node_type_ptr search_node = _head;
-  std::size_t idx{0};
+  std::size_t   idx{0};
 
   // We wil try to go down the path and get close to the place where we want to insert the new value, then we will
   // follow the logic as like a search miss.
@@ -298,7 +298,7 @@ std::pair<bool, Value>
 StringTree<Key, Value>::full_match(Key const &key, Comparison *cmp) const noexcept
 {
   node_type_ptr search_node = _head->left;
-  std::size_t idx{0};
+  std::size_t   idx{0};
 
   // Walk down the tree using the bit_count to check which direction take. We will check this on every node.
   // If 1 we follow right, on 0 we go left. We will stop when find the uplink. At this point only we will compare the key.
@@ -483,7 +483,7 @@ public:
   }
   // for debugging purpose we may need to log it.
   template <typename T> friend std::ostream &operator<<(std::ostream &os, reversed_view<T> const &v);
-  template <typename T> friend bool operator==(reversed_view<T> const &lhs, reversed_view<T> const &rhs);
+  template <typename T> friend bool          operator==(reversed_view<T> const &lhs, reversed_view<T> const &rhs);
 
   // To be removed. POC for testing purposes.
   View

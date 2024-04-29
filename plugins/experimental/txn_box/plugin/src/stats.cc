@@ -34,10 +34,10 @@
 
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 using namespace swoc::literals;
 
 /* ------------------------------------------------------------------------------------ */
@@ -53,7 +53,7 @@ protected:
 
 public:
   static inline const std::string KEY{"stat-define"}; ///< Directive name.
-  static const HookMask HOOKS;                        ///< Valid hooks for directive.
+  static const HookMask           HOOKS;              ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -88,10 +88,10 @@ protected:
    */
   static TextView expand_and_localize(Config &cfg, TextView const &name);
 
-  TextView _name;             ///< Stat name (internal)
-  TextView _full_name;        ///< Fullname including prefix.
-  int _value         = 0;     ///< Initial value.
-  bool _persistent_p = false; ///< Make persistent.
+  TextView _name;                 ///< Stat name (internal)
+  TextView _full_name;            ///< Fullname including prefix.
+  int      _value        = 0;     ///< Initial value.
+  bool     _persistent_p = false; ///< Make persistent.
 
   static inline const std::string NAME_TAG{"name"};
   static inline const std::string VALUE_TAG{"value"};
@@ -132,12 +132,12 @@ Rv<Directive::Handle>
 Do_stat_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &, swoc::TextView const &,
                      YAML::Node key_value)
 {
-  auto self = new self_type();
+  auto   self = new self_type();
   Handle handle(self);
 
   // Prefix is optional - defaults to "plugin.txn_box"
   // Need this before the name so it can be combined as needed.
-  auto prefix_node = key_value[PREFIX_TAG];
+  auto     prefix_node = key_value[PREFIX_TAG];
   TextView prefix;
   if (prefix_node) {
     auto &&[prefix_expr, prefix_errata]{cfg.parse_expr(prefix_node)};
@@ -227,8 +227,8 @@ Do_stat_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, s
 struct Stat {
   static constexpr int UNRESOLVED = -1;
   static constexpr int INVALID    = -2;
-  TextView _name;        ///< Statistic name.
-  int _idx = UNRESOLVED; ///< Statistic index.
+  TextView             _name;             ///< Statistic name.
+  int                  _idx = UNRESOLVED; ///< Statistic index.
 
   Stat(Config &cfg, TextView const &name) { this->assign(cfg, name); }
 
@@ -277,8 +277,8 @@ class Do_stat_update : public Directive
   using self_type  = Do_stat_update; ///< Self reference type.
   using super_type = Directive;      ///< Parent type.
 public:
-  static const std::string KEY; ///< Directive name.
-  static const HookMask HOOKS;  ///< Valid hooks for directive.
+  static const std::string KEY;   ///< Directive name.
+  static const HookMask    HOOKS; ///< Valid hooks for directive.
 
   Errata invoke(Context &ctx) override; ///< Runtime activation.
 
@@ -303,8 +303,8 @@ protected:
 };
 
 const std::string Do_stat_update::KEY{"stat-update"};
-const HookMask Do_stat_update::HOOKS{MaskFor({Hook::CREQ, Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP, Hook::PRSP,
-                                              Hook::URSP, Hook::TXN_START, Hook::TXN_CLOSE})};
+const HookMask    Do_stat_update::HOOKS{MaskFor({Hook::CREQ, Hook::PREQ, Hook::PRE_REMAP, Hook::REMAP, Hook::POST_REMAP, Hook::PRSP,
+                                                 Hook::URSP, Hook::TXN_START, Hook::TXN_CLOSE})};
 
 Do_stat_update::Do_stat_update(Config &cfg, TextView const &name, Expr &&expr) : _stat{cfg, name}, _expr(std::move(expr)) {}
 
@@ -347,7 +347,7 @@ public:
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
   using Extractor::extract; // un-hide the overloaded
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 

@@ -32,14 +32,14 @@ static TSTextLogObject pluginlog;
 bool
 is_get_request(TSHttpTxn transaction)
 {
-  TSMLoc req_loc;
+  TSMLoc    req_loc;
   TSMBuffer req_bufp;
   if (TSHttpTxnClientReqGet(transaction, &req_bufp, &req_loc) == TS_ERROR) {
     TSError("Error while retrieving client request header\n");
     return false;
   }
-  int method_len     = 0;
-  const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
+  int         method_len = 0;
+  const char *method     = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
   if (method_len != static_cast<int>(strlen(TS_HTTP_METHOD_GET)) || strncasecmp(method, TS_HTTP_METHOD_GET, method_len) != 0) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
     return false;

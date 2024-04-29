@@ -56,36 +56,36 @@ constexpr std::string_view SLICE_CRR_VAL    = "1";
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
-  bool consider_ims_header{false};
-  bool modify_cache_key{true};
-  bool verify_cacheability{false};
-  bool cache_complete_responses{false};
-  std::string ims_header;
+  bool                 consider_ims_header{false};
+  bool                 modify_cache_key{true};
+  bool                 verify_cacheability{false};
+  bool                 cache_complete_responses{false};
+  std::string          ims_header;
 };
 
 struct txndata {
-  std::string range_value;
+  std::string  range_value;
   TSHttpStatus origin_status{TS_HTTP_STATUS_NONE};
-  time_t ims_time{0};
-  bool verify_cacheability{false};
-  bool cache_complete_responses{false};
-  bool slice_response{false};
-  bool slice_request{false};
+  time_t       ims_time{0};
+  bool         verify_cacheability{false};
+  bool         cache_complete_responses{false};
+  bool         slice_response{false};
+  bool         slice_request{false};
 };
 
 // pluginconfig struct (global plugin only)
 pluginconfig *gPluginConfig = {nullptr};
 
-int handle_read_request_header(TSCont, TSEvent, void *);
-void range_header_check(TSHttpTxn, pluginconfig *const);
-void handle_send_origin_request(TSCont, TSHttpTxn, txndata *const);
-void handle_client_send_response(TSHttpTxn, txndata *const);
-void handle_server_read_response(TSHttpTxn, txndata *const);
-int remove_header(TSMBuffer, TSMLoc, const char *, int);
-bool set_header(TSMBuffer, TSMLoc, const char *, int, const char *, int);
-int transaction_handler(TSCont, TSEvent, void *);
+int                  handle_read_request_header(TSCont, TSEvent, void *);
+void                 range_header_check(TSHttpTxn, pluginconfig *const);
+void                 handle_send_origin_request(TSCont, TSHttpTxn, txndata *const);
+void                 handle_client_send_response(TSHttpTxn, txndata *const);
+void                 handle_server_read_response(TSHttpTxn, txndata *const);
+int                  remove_header(TSMBuffer, TSMLoc, const char *, int);
+bool                 set_header(TSMBuffer, TSMLoc, const char *, int, const char *, int);
+int                  transaction_handler(TSCont, TSEvent, void *);
 struct pluginconfig *create_pluginconfig(int argc, char *const argv[]);
-void delete_pluginconfig(pluginconfig *const);
+void                 delete_pluginconfig(pluginconfig *const);
 
 /**
  * Creates pluginconfig data structure
@@ -212,12 +212,12 @@ void
 range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
 {
   TSMBuffer hdr_buf = nullptr;
-  TSMLoc hdr_loc    = TS_NULL_MLOC;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_buf, &hdr_loc)) {
     TSMLoc const range_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
     if (TS_NULL_MLOC != range_loc) {
-      int len                     = 0;
+      int               len       = 0;
       char const *const hdr_value = TSMimeHdrFieldValueStringGet(hdr_buf, hdr_loc, range_loc, 0, &len);
 
       if (!hdr_value || len <= 0) {
@@ -232,10 +232,10 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         // Consider config options
         if (nullptr != pc) {
           char cache_key_url[16384] = {0};
-          int cache_key_url_len     = 0;
+          int  cache_key_url_len    = 0;
 
           if (pc->modify_cache_key || PS_CACHEKEY_URL == pc->ps_mode) {
-            int url_len         = 0;
+            int         url_len = 0;
             char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
             cache_key_url_len   = snprintf(cache_key_url, sizeof(cache_key_url), "%s-%s", req_url, rv.c_str());
             DEBUG_LOG("Forming new cache URL for '%s': '%.*s'", req_url, cache_key_url_len, cache_key_url);
@@ -257,9 +257,9 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
 
           // Set the parent_selection_url to the modified cache_key.
           if (PS_CACHEKEY_URL == pc->ps_mode) {
-            TSMLoc ps_loc     = TS_NULL_MLOC;
-            const char *start = cache_key_url;
-            const char *end   = cache_key_url + cache_key_url_len;
+            TSMLoc      ps_loc = TS_NULL_MLOC;
+            const char *start  = cache_key_url;
+            const char *end    = cache_key_url + cache_key_url_len;
             if (TS_SUCCESS == TSUrlCreate(hdr_buf, &ps_loc)) {
               if (TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) && // This should always succeed.
                   TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_buf, ps_loc)) {
@@ -327,7 +327,7 @@ void
 handle_send_origin_request(TSCont contp, TSHttpTxn txnp, txndata *const txn_state)
 {
   TSMBuffer hdr_buf;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
 
   std::string const &rv = txn_state->range_value;
   if (rv.empty()) {
@@ -355,7 +355,7 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
 
   // Detect header modified by this plugin (200 response)
   TSMBuffer resp_buf = nullptr;
-  TSMLoc resp_loc    = TS_NULL_MLOC;
+  TSMLoc    resp_loc = TS_NULL_MLOC;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &resp_buf, &resp_loc)) {
     TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
     // a cached status will be 200 with expected parent response status of 206
@@ -402,7 +402,7 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
     // Restore the range request header
     if (!rv.empty()) {
       TSMBuffer req_buf = nullptr;
-      TSMLoc req_loc    = TS_NULL_MLOC;
+      TSMLoc    req_loc = TS_NULL_MLOC;
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
         DEBUG_LOG("Adding range header: %s", rv.c_str());
         if (!set_header(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.size())) {
@@ -423,8 +423,8 @@ void
 handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
 {
   TSMBuffer resp_buf = nullptr;
-  TSMLoc resp_loc    = TS_NULL_MLOC;
-  int cache_lookup;
+  TSMLoc    resp_loc = TS_NULL_MLOC;
+  int       cache_lookup;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
     TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
@@ -477,7 +477,7 @@ int
 remove_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len)
 {
   TSMLoc field = TSMimeHdrFieldFind(buf, hdr_loc, header, len);
-  int cnt      = 0;
+  int    cnt   = 0;
 
   while (TS_NULL_MLOC != field) {
     TSMLoc const tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field);
@@ -506,7 +506,7 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
   }
 
   DEBUG_LOG("header: %s, len: %d, val: %s, val_len: %d", header, len, val, val_len);
-  bool ret         = false;
+  bool   ret       = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(buf, hdr_loc, header, len);
 
   if (TS_NULL_MLOC == field_loc) {
@@ -542,9 +542,9 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
 time_t
 get_date_from_cached_hdr(TSHttpTxn txn)
 {
-  TSMBuffer buf  = nullptr;
-  TSMLoc hdr_loc = TS_NULL_MLOC;
-  time_t date    = 0;
+  TSMBuffer buf     = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
+  time_t    date    = 0;
 
   if (TSHttpTxnCachedRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
     TSMLoc const date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE);
@@ -573,7 +573,7 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
       if (ch_time < txn_state->ims_time) {
         TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
         if (dbg_ctl.on()) {
-          int url_len         = 0;
+          int         url_len = 0;
           char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
           if (nullptr != req_url) {
             std::string const &rv = txn_state->range_value;
@@ -593,7 +593,7 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
 int
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp           = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn      txnp      = static_cast<TSHttpTxn>(edata);
   txndata *const txn_state = static_cast<txndata *>(TSContDataGet(contp));
 
   switch (event) {
@@ -694,7 +694,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont txnp_cont;
+  TSCont                   txnp_cont;
 
   info.plugin_name   = (char *)PLUGIN_NAME;
   info.vendor_name   = (char *)"Comcast";

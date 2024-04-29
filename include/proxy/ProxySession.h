@@ -71,8 +71,8 @@ struct ProxyError {
     return len;
   }
 
-  ProxyErrorClass cls = ProxyErrorClass::NONE;
-  uint32_t code       = 0;
+  ProxyErrorClass cls  = ProxyErrorClass::NONE;
+  uint32_t        code = 0;
 };
 
 /// Abstract class for HttpSM to interface with any session
@@ -103,7 +103,7 @@ public:
   virtual void decrement_current_active_connections_stat() = 0;
 
   // Virtual Accessors
-  virtual int get_transact_count() const          = 0;
+  virtual int         get_transact_count() const  = 0;
   virtual const char *get_protocol_string() const = 0;
 
   virtual void hook_add(TSHttpHookID id, INKContInternal *cont);
@@ -114,7 +114,7 @@ public:
 
   virtual PoolableSession *get_server_session() const;
 
-  virtual bool is_protocol_framed() const;
+  virtual bool     is_protocol_framed() const;
   virtual uint64_t get_received_frame_count(uint64_t type) const;
 
   // Replicate NetVConnection API
@@ -127,13 +127,13 @@ public:
   virtual void cancel_inactivity_timeout();
   virtual void cancel_active_timeout();
 
-  virtual int populate_protocol(std::string_view *result, int size) const;
+  virtual int         populate_protocol(std::string_view *result, int size) const;
   virtual const char *protocol_contains(std::string_view tag_prefix) const;
   virtual HTTPVersion get_version(HTTPHdr &hdr) const;
 
   // Non-Virtual Methods
   NetVConnection *get_netvc() const;
-  int do_api_callout(TSHttpHookID id);
+  int             do_api_callout(TSHttpHookID id);
 
   void set_debug(bool flag);
   bool debug() const;
@@ -144,13 +144,13 @@ public:
   bool is_draining() const;
   bool is_peer_closed() const;
 
-  int64_t connection_id() const;
+  int64_t      connection_id() const;
   TSHttpHookID get_hookid() const;
-  bool has_hooks() const;
+  bool         has_hooks() const;
 
   virtual bool support_sni() const;
 
-  APIHook *hook_get(TSHttpHookID id) const;
+  APIHook            *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
 
   // Returns null pointer if session does not use a TLS connection.
@@ -196,8 +196,8 @@ protected:
   bool debug_on   = false;
   bool in_destroy = false;
 
-  int64_t con_id        = 0;
-  Event *schedule_event = nullptr;
+  int64_t con_id         = 0;
+  Event  *schedule_event = nullptr;
 
   // This function should be called in all overrides of new_connection() where
   // the new_vc may be an SSLNetVConnection object.
@@ -207,10 +207,10 @@ protected:
 
 private:
   void handle_api_return(int event);
-  int state_api_callout(int event, void *edata);
+  int  state_api_callout(int event, void *edata);
 
   APIHook const *cur_hook = nullptr;
-  HttpAPIHooks api_hooks;
+  HttpAPIHooks   api_hooks;
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to
@@ -219,7 +219,7 @@ private:
   bool m_active = false;
 
   std::unique_ptr<SSLProxySession> _ssl;
-  static inline int64_t next_cs_id = 0;
+  static inline int64_t            next_cs_id = 0;
 };
 
 ///////////////////

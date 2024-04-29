@@ -189,12 +189,12 @@ struct OneWayTunnel : public Continuation {
 
   bool last_connection();
 
-  VIO *vioSource             = nullptr;
-  VIO *vioTarget             = nullptr;
-  Continuation *cont         = nullptr;
-  Transform_fn manipulate_fn = nullptr;
-  int n_connections          = 0;
-  int lerrno                 = 0;
+  VIO          *vioSource     = nullptr;
+  VIO          *vioTarget     = nullptr;
+  Continuation *cont          = nullptr;
+  Transform_fn  manipulate_fn = nullptr;
+  int           n_connections = 0;
+  int           lerrno        = 0;
 
   bool single_buffer    = false;
   bool close_source     = false;
@@ -203,7 +203,7 @@ struct OneWayTunnel : public Continuation {
 
   /** Non-nullptr when this is one side of a two way tunnel. */
   OneWayTunnel *tunnel_peer = nullptr;
-  bool free_vcs             = true;
+  bool          free_vcs    = true;
 
   // noncopyable
   OneWayTunnel(const OneWayTunnel &)            = delete;

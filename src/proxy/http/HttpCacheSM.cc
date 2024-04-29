@@ -175,7 +175,7 @@ HttpCacheSM::write_retry_done() const
   MgmtInt const timeout_ms = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
   if (0 < timeout_ms && 0 < open_write_start) {
     ink_hrtime const elapsed = ink_get_hrtime() - open_write_start;
-    MgmtInt const msecs      = ink_hrtime_to_msec(elapsed);
+    MgmtInt const    msecs   = ink_hrtime_to_msec(elapsed);
     return timeout_ms < msecs;
   } else {
     return master_sm->t_state.txn_conf->max_cache_open_write_retries < open_write_tries;

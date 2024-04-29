@@ -63,10 +63,10 @@ constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 const swoc::bwf::Spec ADDR_ONLY_FMT{"::a"};
 
 struct PPv2Hdr {
-  uint8_t sig[12]; ///< preface
-  uint8_t ver_cmd; ///< protocol version and command
-  uint8_t fam;     ///< protocol family and transport
-  uint16_t len;    ///< number of following bytes part of the header
+  uint8_t  sig[12]; ///< preface
+  uint8_t  ver_cmd; ///< protocol version and command
+  uint8_t  fam;     ///< protocol family and transport
+  uint16_t len;     ///< number of following bytes part of the header
   union {
     // for TCP/UDP over IPv4, len = 12 (PPv2_ADDR_LEN_INET)
     struct {
@@ -77,8 +77,8 @@ struct PPv2Hdr {
     } ip4;
     // for TCP/UDP over IPv6, len = 36 (PPv2_ADDR_LEN_INET6)
     struct {
-      uint8_t src_addr[16];
-      uint8_t dst_addr[16];
+      uint8_t  src_addr[16];
+      uint8_t  dst_addr[16];
       uint16_t src_port;
       uint16_t dst_port;
     } ip6;
@@ -227,8 +227,8 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   // Assuming PREFACE check is done
 
   // length check
-  const uint16_t len     = ntohs(hdr_v2->len);
-  const size_t total_len = PPv2_CONNECTION_HEADER_LEN + len;
+  const uint16_t len       = ntohs(hdr_v2->len);
+  const size_t   total_len = PPv2_CONNECTION_HEADER_LEN + len;
 
   if (msg.size() < total_len) {
     return 0;

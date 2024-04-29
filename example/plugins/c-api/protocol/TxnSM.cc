@@ -62,9 +62,9 @@ int state_done(TSCont contp, TSEvent event, TSVIO vio);
 int send_response_to_client(TSCont contp);
 int prepare_to_die(TSCont contp);
 
-char *get_info_from_buffer(TSIOBufferReader the_reader);
-int is_request_end(char *buf);
-int parse_request(char *request, char *server_name, char *file_name);
+char      *get_info_from_buffer(TSIOBufferReader the_reader);
+int        is_request_end(char *buf);
+int        parse_request(char *request, char *server_name, char *file_name);
 TSCacheKey CacheKeyCreate(char *file_name);
 
 /* Continuation handler is a function pointer, this function
@@ -72,7 +72,7 @@ TSCacheKey CacheKeyCreate(char *file_name);
 int
 main_handler(TSCont contp, TSEvent event, void *data)
 {
-  TxnSM *txn_sm                  = static_cast<TxnSM *>(TSContDataGet(contp));
+  TxnSM       *txn_sm            = static_cast<TxnSM *>(TSContDataGet(contp));
   TxnSMHandler q_current_handler = txn_sm->q_current_handler;
 
   Dbg(dbg_ctl, "main_handler (contp %p event %d)", contp, event);
@@ -264,9 +264,9 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 int
 state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 {
-  TxnSM *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
+  TxnSM  *txn_sm = static_cast<TxnSM *>(TSContDataGet(contp));
   int64_t response_size;
-  int ret_val;
+  int     ret_val;
 
   Dbg(dbg_ctl, "enter state_handle_cache_lookup");
 
@@ -641,8 +641,8 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
-  TxnSM *txn_sm  = static_cast<TxnSM *>(TSContDataGet(contp));
-  int bytes_read = 0;
+  TxnSM *txn_sm     = static_cast<TxnSM *>(TSContDataGet(contp));
+  int    bytes_read = 0;
 
   Dbg(dbg_ctl, "enter state_read_response_from_server");
 
@@ -896,7 +896,7 @@ int
 send_response_to_client(TSCont contp)
 {
   TxnSM *txn_sm;
-  int response_len;
+  int    response_len;
 
   Dbg(dbg_ctl, "enter send_response_to_client");
 
@@ -934,7 +934,7 @@ get_info_from_buffer(TSIOBufferReader the_reader)
   /* Read the data out of the reader */
   while (read_avail > 0) {
     TSIOBufferBlock blk = TSIOBufferReaderStart(the_reader);
-    char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, the_reader, &read_done));
+    char           *buf = const_cast<char *>(TSIOBufferBlockReadStart(blk, the_reader, &read_done));
     memcpy(info, buf, read_done);
     if (read_done > 0) {
       TSIOBufferReaderConsume(the_reader, read_done);

@@ -68,7 +68,7 @@ static bool
 check_value(TSHttpTxn txnp, BgFetchRule::size_cmp_type const &cmp)
 {
   TSMBuffer hdr_bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &hdr_bufp, &hdr_loc)) {
     TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
@@ -97,7 +97,7 @@ static bool
 check_value(TSHttpTxn txnp, BgFetchRule::field_cmp_type const &cmp)
 {
   TSMBuffer hdr_bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &hdr_bufp, &hdr_loc)) {
     TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
@@ -116,9 +116,9 @@ check_value(TSHttpTxn txnp, BgFetchRule::field_cmp_type const &cmp)
     return true;
   }
 
-  int val_len         = 0;
+  int         val_len = 0;
   char const *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, hdr_loc, loc, 0, &val_len);
-  bool zret           = false;
+  bool        zret    = false;
 
   if (!val_str || val_len <= 0) {
     Dbg(Bg_dbg_ctl, "invalid field");

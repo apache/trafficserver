@@ -66,8 +66,8 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
     TSError("[%s] No space for value after [%.*s] attribute", __FUNCTION__, int(attr.size()), attr.data());
     return false;
   }
-  bool in_quoted_part = false;
-  bool quoted         = false;
+  bool   in_quoted_part = false;
+  bool   quoted         = false;
   size_t i;
   for (i = curr_pos; i < end_pos; ++i) {
     if (data[i] == '"') {
@@ -108,7 +108,7 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
 void
 Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, HeaderValueList &allowlistCookies)
 {
-  string key, value;
+  string             key, value;
   std::istringstream iss;
   for (const auto &conf_line : lines) {
     // handy reference
@@ -142,13 +142,13 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
     return;
   }
   char separator_lookup[256] = {0};
-  int i;
+  int  i;
   for (i = 0; pair_separators[i]; ++i) {
     separator_lookup[static_cast<uint8_t>(pair_separators[i])] = 1;
   }
   Attribute attr;
-  bool inside_quotes = false, end_of_attribute;
-  bool escape_on     = false;
+  bool      inside_quotes = false, end_of_attribute;
+  bool      escape_on     = false;
   for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i) {
     ;
   }
@@ -176,8 +176,8 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
                 attr.value_len, attr.value);
             attr_list.push_back(attr);
           } // else ignore empty name/value
-        }   // else ignore attribute with no value
-      }     // else ignore variable with unterminated quotes
+        } // else ignore attribute with no value
+      } // else ignore variable with unterminated quotes
       for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i) {
         ;
       }

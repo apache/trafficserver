@@ -283,7 +283,7 @@ Http2Stream::send_headers(Http2ConnectionState &cstate)
 
     if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
       // Check whether the request uses CONNECT method
-      int method_len;
+      int         method_len;
       const char *method = _receive_header.method_get(&method_len);
       if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
         this->_is_tunneling = true;
@@ -301,7 +301,7 @@ Http2Stream::send_headers(Http2ConnectionState &cstate)
   // HttpSM::write_header_into_buffer, but create an alias for clarity in the
   // use of this variable below this loop.
   int &num_header_bytes = dumpoffset;
-  int done, tmp;
+  int  done, tmp;
   do {
     bufindex             = 0;
     tmp                  = dumpoffset;
@@ -805,7 +805,7 @@ Http2Stream::update_write_request(bool call_update)
       // Schedule session shutdown if response header has "Connection: close"
       MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
       if (field) {
-        int len;
+        int         len;
         const char *value = field->value_get(&len);
         if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
           SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());

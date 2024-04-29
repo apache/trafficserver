@@ -48,7 +48,7 @@ struct EscalationState {
   };
 
   struct RetryInfo {
-    RetryType type;
+    RetryType   type;
     std::string target;
   };
 
@@ -62,9 +62,9 @@ struct EscalationState {
   }
 
   ~EscalationState() { TSContDestroy(cont); }
-  TSCont cont;
+  TSCont        cont;
   StatusMapType status_map;
-  bool use_pristine = false;
+  bool          use_pristine = false;
 };
 
 // Little helper function, to update the Host portion of a URL, and stringify the result.
@@ -88,14 +88,14 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
 static int
 EscalateResponse(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn       = static_cast<TSHttpTxn>(edata);
-  EscalationState *es = static_cast<EscalationState *>(TSContDataGet(cont));
+  TSHttpTxn                                      txn = static_cast<TSHttpTxn>(edata);
+  EscalationState                               *es  = static_cast<EscalationState *>(TSContDataGet(cont));
   EscalationState::StatusMapType::const_iterator entry;
-  TSMBuffer mbuf;
-  TSMLoc hdrp, url;
-  TSHttpStatus status;
-  char *url_str = nullptr;
-  int url_len, tries;
+  TSMBuffer                                      mbuf;
+  TSMLoc                                         hdrp, url;
+  TSHttpStatus                                   status;
+  char                                          *url_str = nullptr;
+  int                                            url_len, tries;
 
   TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
 

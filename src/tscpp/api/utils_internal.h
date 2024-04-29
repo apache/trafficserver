@@ -47,16 +47,16 @@ namespace utils
   class internal
   {
   public:
-    static TSHttpHookID convertInternalHookToTsHook(Plugin::HookType);
-    static TSHttpHookID convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type);
-    static void invokePluginForEvent(TransactionPlugin *, TSHttpTxn, TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, TSHttpTxn, TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, TSHttpAltInfo, TSEvent);
-    static HttpVersion getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc);
-    static void initTransactionManagement();
-    static std::string consumeFromTSIOBufferReader(TSIOBufferReader);
+    static TSHttpHookID           convertInternalHookToTsHook(Plugin::HookType);
+    static TSHttpHookID           convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type);
+    static void                   invokePluginForEvent(TransactionPlugin *, TSHttpTxn, TSEvent);
+    static void                   invokePluginForEvent(GlobalPlugin *, TSHttpTxn, TSEvent);
+    static void                   invokePluginForEvent(GlobalPlugin *, TSHttpAltInfo, TSEvent);
+    static HttpVersion            getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc);
+    static void                   initTransactionManagement();
+    static std::string            consumeFromTSIOBufferReader(TSIOBufferReader);
     static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &, TSHttpTxn);
-    static Transaction &getTransaction(TSHttpTxn);
+    static Transaction           &getTransaction(TSHttpTxn);
 
     static AsyncHttpFetchState *
     getAsyncHttpFetchState(AsyncHttpFetch &async_http_fetch)

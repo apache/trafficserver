@@ -40,12 +40,12 @@ public:
   void *operator new(std::size_t)   = delete;
   void *operator new[](std::size_t) = delete;
 
-  T *data() const;
+  T          *data() const;
   std::size_t size() const;
 
 private:
-  T _buf[EstSizeBound];
-  T *const _ptr;
+  T                 _buf[EstSizeBound];
+  T *const          _ptr;
   const std::size_t _size;
 };
 

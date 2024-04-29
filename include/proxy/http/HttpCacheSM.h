@@ -247,7 +247,7 @@ private:
     const OverridableHttpConfigParams *_params = nullptr;
   };
 
-  void do_schedule_in();
+  void    do_schedule_in();
   Action *do_cache_open_read(const HttpCacheKey &);
 
   bool write_retry_done() const;
@@ -256,22 +256,22 @@ private:
   int state_cache_open_write(int event, void *data);
 
   HttpCacheAction captive_action;
-  bool open_read_cb  = false;
-  bool open_write_cb = false;
+  bool            open_read_cb  = false;
+  bool            open_write_cb = false;
 
   // Open read parameters
-  int open_read_tries       = 0;
-  HTTPHdr *read_request_hdr = nullptr;
+  int                    open_read_tries  = 0;
+  HTTPHdr               *read_request_hdr = nullptr;
   HttpConfigAccessorImpl http_params{nullptr};
-  time_t read_pin_in_cache = 0;
+  time_t                 read_pin_in_cache = 0;
 
   // Open write parameters
-  bool retry_write            = true;
-  int open_write_tries        = 0;
+  bool       retry_write      = true;
+  int        open_write_tries = 0;
   ink_hrtime open_write_start = 0; // overrides open_write_tries
 
   // Common parameters
-  URL *lookup_url = nullptr;
+  URL         *lookup_url = nullptr;
   HttpCacheKey cache_key;
 
   // to keep track of multiple cache lookups

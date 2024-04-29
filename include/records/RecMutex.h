@@ -34,9 +34,9 @@
 
 */
 struct RecMutex {
-  size_t nthread_holding;
+  size_t                  nthread_holding;
   std::atomic<ink_thread> thread_holding;
-  ink_mutex the_mutex;
+  ink_mutex               the_mutex;
 };
 
 void rec_mutex_init(RecMutex *m, const char *name = nullptr);

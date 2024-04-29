@@ -165,7 +165,7 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
   if (has_allows()) {
     for (StringContainer::iterator allow_it = allows_.begin(); allow_it != allows_.end(); ++allow_it) {
       const char *match_string = allow_it->c_str();
-      bool exclude             = match_string[0] == '!';
+      bool        exclude      = match_string[0] == '!';
       if (exclude) {
         ++match_string; // skip !
       }
@@ -194,7 +194,7 @@ bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
   string scontent_type(content_type, content_type_length);
-  bool is_match = false;
+  bool   is_match = false;
 
   for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
     const char *match_string = it->c_str();
@@ -285,7 +285,7 @@ Configuration::Parse(const char *path)
 
   trim_if(pathstring, isspace);
 
-  Configuration *c                              = new Configuration();
+  Configuration     *c                          = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
 
   c->add_host_configuration(current_host_configuration);

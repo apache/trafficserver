@@ -39,8 +39,8 @@
 #include "iocore/utils/diags.i"
 
 static const char payload[] = "hello";
-in_port_t port              = 0;
-int pfd[2]; // Pipe used to signal client with transient port.
+in_port_t         port      = 0;
+int               pfd[2]; // Pipe used to signal client with transient port.
 
 /*This implements a standard Unix echo server: just send every udp packet you
   get back to where it came from*/

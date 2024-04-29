@@ -51,7 +51,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       }
 
       if (config->hasRegex()) {
-        int urllen         = 0;
+        int         urllen = 0;
         char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
         if (nullptr != urlstr) {
           bool const shouldslice = config->matchesRegex(urlstr, urllen);
@@ -105,13 +105,13 @@ read_request(TSHttpTxn txnp, Config *const config)
       // is the plugin configured to use a remap host?
       std::string const &newhost = config->m_remaphost;
       if (newhost.empty()) {
-        TSMBuffer urlbuf   = nullptr;
-        TSMLoc urlloc      = nullptr;
-        TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
+        TSMBuffer    urlbuf = nullptr;
+        TSMLoc       urlloc = nullptr;
+        TSReturnCode rcode  = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
 
         if (TS_SUCCESS == rcode) {
           TSMBuffer const newbuf = TSMBufferCreate();
-          TSMLoc newloc          = nullptr;
+          TSMLoc          newloc = nullptr;
           rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
           TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
 
@@ -126,13 +126,13 @@ read_request(TSHttpTxn txnp, Config *const config)
           data->m_urlloc = newloc;
         }
       } else { // grab the effective url, swap out the host and zero the port
-        int len            = 0;
+        int         len    = 0;
         char *const effstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
         if (nullptr != effstr) {
           TSMBuffer const newbuf = TSMBufferCreate();
-          TSMLoc newloc          = nullptr;
-          bool okay              = false;
+          TSMLoc          newloc = nullptr;
+          bool            okay   = false;
 
           if (TS_SUCCESS == TSUrlCreate(newbuf, &newloc)) {
             char const *start = effstr;
@@ -165,7 +165,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       data->m_buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(data->m_txnp); // default of m_buffer_water_mark = 0
 
       if (dbg_ctl.on()) {
-        int len            = 0;
+        int         len    = 0;
         char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &len);
         DEBUG_LOG("slice url: %.*s", len, urlstr);
         TSfree(urlstr);
@@ -173,7 +173,7 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      TSCont const icontp(TSContCreate(intercept_hook, mutex));
+      TSCont const  icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, (void *)data);
 
       // Skip remap and remap rule requirement

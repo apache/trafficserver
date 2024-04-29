@@ -47,9 +47,9 @@ Config::~Config()
 int64_t
 Config::bytesFrom(char const *const valstr)
 {
-  char *endptr          = nullptr;
-  int64_t blockbytes    = strtoll(valstr, &endptr, 10);
-  constexpr int64_t kib = 1024;
+  char             *endptr     = nullptr;
+  int64_t           blockbytes = strtoll(valstr, &endptr, 10);
+  constexpr int64_t kib        = 1024;
 
   if (nullptr != endptr && valstr < endptr) {
     size_t const dist = endptr - valstr;
@@ -98,8 +98,8 @@ Config::fromArgs(int const argc, char const *const argv[])
       std::string_view const val = argstr.substr(spos + 1);
 
       if (!key.empty() && !val.empty()) {
-        char const *const valstr = val.data(); // inherits argv's null
-        int64_t const bytesread  = bytesFrom(valstr);
+        char const *const valstr    = val.data(); // inherits argv's null
+        int64_t const     bytesread = bytesFrom(valstr);
 
         if (blockbytesmin <= bytesread && bytesread <= blockbytesmax) {
           DEBUG_LOG("Found deprecated blockbytes %" PRId64, bytesread);
@@ -160,7 +160,7 @@ Config::fromArgs(int const argc, char const *const argv[])
       }
 
       const char *errptr;
-      int erroffset;
+      int         erroffset;
       m_regexstr = optarg;
       m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
       if (nullptr == m_regex) {
@@ -178,7 +178,7 @@ Config::fromArgs(int const argc, char const *const argv[])
       }
 
       const char *errptr;
-      int erroffset;
+      int         erroffset;
       m_regexstr = optarg;
       m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
       if (nullptr == m_regex) {

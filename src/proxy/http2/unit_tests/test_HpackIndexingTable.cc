@@ -56,11 +56,11 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
   {
     // [RFC 7541] C.2.4. Indexed Header Field
     const static struct {
-      int index;
-      char *raw_name;
-      char *raw_value;
+      int      index;
+      char    *raw_name;
+      char    *raw_value;
       uint8_t *encoded_field;
-      int encoded_field_len;
+      int      encoded_field_len;
     } indexed_test_case[] = {
       {2, (char *)":method", (char *)"GET", (uint8_t *)"\x82", 1},
     };
@@ -87,18 +87,18 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       for (const auto &i : indexed_test_case) {
         std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
         headers->create(HTTP_TYPE_REQUEST);
-        MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+        MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
         MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
         int len = decode_indexed_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
         REQUIRE(len == i.encoded_field_len);
 
-        int name_len;
+        int         name_len;
         const char *name = header.name_get(&name_len);
         REQUIRE(name_len > 0);
         REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
 
-        int actual_value_len;
+        int         actual_value_len;
         const char *actual_value = header.value_get(&actual_value_len);
         REQUIRE(actual_value_len > 0);
         REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
@@ -110,12 +110,12 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
   {
     // [RFC 7541] C.2. Header Field Representation Examples
     const static struct {
-      char *raw_name;
-      char *raw_value;
-      int index;
+      char      *raw_name;
+      char      *raw_value;
+      int        index;
       HpackField type;
-      uint8_t *encoded_field;
-      int encoded_field_len;
+      uint8_t   *encoded_field;
+      int        encoded_field_len;
     } literal_test_case[] = {
       {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
        (uint8_t *)"\x40\x0a"
@@ -150,7 +150,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
        (uint8_t *)"\x10\x08"
                   "password\x06"
                   "secret",                                   17},
- // with Huffman Coding
+      // with Huffman Coding
       {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
        (uint8_t *)"\x40"
                   "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
@@ -189,8 +189,8 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
     SECTION("encoding")
     {
       {
-        uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-        int64_t len;
+        uint8_t            buf[BUFSIZE_FOR_REGRESSION_TEST];
+        int64_t            len;
         HpackIndexingTable indexing_table(4096);
 
         for (unsigned int i = 9; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
@@ -222,18 +222,18 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         for (const auto &i : literal_test_case) {
           std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
           headers->create(HTTP_TYPE_REQUEST);
-          MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+          MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
           MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
           int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
           REQUIRE(len == i.encoded_field_len);
 
-          int name_len;
+          int         name_len;
           const char *name = header.name_get(&name_len);
           REQUIRE(name_len > 0);
           REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
 
-          int actual_value_len;
+          int         actual_value_len;
           const char *actual_value = header.value_get(&actual_value_len);
           REQUIRE(actual_value_len > 0);
           REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
@@ -279,7 +279,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     const static struct {
       uint8_t *encoded_field;
-      int encoded_field_len;
+      int      encoded_field_len;
     } encoded_field_response_test_case[] = {
       {(uint8_t *)"\x48\x82"
                   "\x64\x02"
@@ -312,8 +312,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     const static struct {
       uint32_t size;
-      char *name;
-      char *value;
+      char    *name;
+      char    *value;
     } dynamic_table_response_test_case[][MAX_TEST_FIELD_NUM] = {
       {
        {63, (char *)"location", (char *)"https://www.example.com"},
@@ -337,7 +337,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
       },
     };
 
-    uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+    uint8_t            buf[BUFSIZE_FOR_REGRESSION_TEST];
     HpackIndexingTable indexing_table(4096);
     indexing_table.update_maximum_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
 
@@ -360,7 +360,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
       memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
       uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
-      int64_t len      = hpack_encode_header_block(indexing_table, buf, buf_len, headers.get());
+      int64_t  len     = hpack_encode_header_block(indexing_table, buf, buf_len, headers.get());
 
       REQUIRE(len > 0);
       REQUIRE(len == encoded_field_response_test_case[i].encoded_field_len);
@@ -377,7 +377,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
           break;
         }
 
-        HpackHeaderField expected_header{expected_name, expected_value};
+        HpackHeaderField  expected_header{expected_name, expected_value};
         HpackLookupResult lookupResult = indexing_table.lookup(expected_header);
 
         CHECK(lookupResult.match_type == HpackMatch::EXACT);
@@ -415,7 +415,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     const static struct {
       uint8_t *encoded_field;
-      int encoded_field_len;
+      int      encoded_field_len;
     } encoded_field_request_test_case[] = {
       {(uint8_t *)"\x40"
                   "\x7:method"
@@ -463,7 +463,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
         CHECK(field != nullptr);
 
         if (field) {
-          int actual_value_len;
+          int         actual_value_len;
           const char *actual_value = field->value_get(&actual_value_len);
           CHECK(strncmp(expected_value, actual_value, actual_value_len) == 0);
         }

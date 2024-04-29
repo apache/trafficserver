@@ -73,7 +73,7 @@ TLSSNISupport::perform_sni_action(SSL &ssl)
   }
 
   SNIConfig::scoped_config params;
-  auto const port{this->_get_local_port()};
+  auto const               port{this->_get_local_port()};
   if (auto const &actions = params->get({servername, std::strlen(servername)}, port); !actions.first) {
     Dbg(dbg_ctl_ssl_sni, "%s:%i not available in the map", servername, port);
   } else {
@@ -95,9 +95,9 @@ TLSSNISupport::on_client_hello(const SSL_CLIENT_HELLO *client_hello)
 TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
 #endif
 {
-  const char *servername = nullptr;
+  const char          *servername = nullptr;
   const unsigned char *p;
-  size_t remaining, len;
+  size_t               remaining, len;
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
 #ifdef OPENSSL_IS_BORINGSSL
   if (SSL_early_callback_ctx_extension_get(client_hello, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
@@ -175,7 +175,7 @@ TLSSNISupport::_set_sni_server_name(std::string_view name)
 bool
 TLSSNISupport::would_have_actions_for(const char *servername, IpEndpoint remote, int &enforcement_policy)
 {
-  bool retval = false;
+  bool                     retval = false;
   SNIConfig::scoped_config params;
 
   auto const &actions = params->get(servername, this->_get_local_port());

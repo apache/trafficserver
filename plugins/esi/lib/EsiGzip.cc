@@ -51,7 +51,7 @@ inline int
 runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
 {
   char buf[BUF_SIZE];
-  int deflate_result = Z_OK;
+  int  deflate_result = Z_OK;
   do {
     zstrm.next_out  = reinterpret_cast<Bytef *>(buf);
     zstrm.avail_out = BUF_SIZE;
@@ -125,7 +125,7 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   // want to double count the gzip header bytes, we capture initial_cdata_size
   // here after any possible call to stream_encode above.
   const auto initial_cdata_size = cdata.size();
-  char buf[BUF_SIZE];
+  char       buf[BUF_SIZE];
 
   _zstrm.zalloc = Z_NULL;
   _zstrm.zfree  = Z_NULL;
