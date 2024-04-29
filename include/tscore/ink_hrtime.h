@@ -38,7 +38,7 @@
 #include <cstdlib>
 using ink_hrtime = int64_t;
 
-int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
+int   squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
 char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width = 0,
                    char pad_char = '0');
 
@@ -210,7 +210,7 @@ ink_hrtime_to_timespec(ink_hrtime t)
 static inline struct timeval
 ink_hrtime_to_timeval(ink_hrtime t)
 {
-  int64_t usecs;
+  int64_t        usecs;
   struct timeval tv;
 
   usecs      = ink_hrtime_to_usec(t);

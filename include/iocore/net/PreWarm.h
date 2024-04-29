@@ -40,10 +40,10 @@ namespace PreWarm
 struct Dst {
   Dst(std::string_view h, in_port_t p, SNIRoutingType t, int a) : host(h), port(p), type(t), alpn_index(a) {}
 
-  std::string host;
-  in_port_t port      = 0;
-  SNIRoutingType type = SNIRoutingType::NONE;
-  int alpn_index      = SessionProtocolNameRegistry::INVALID;
+  std::string    host;
+  in_port_t      port       = 0;
+  SNIRoutingType type       = SNIRoutingType::NONE;
+  int            alpn_index = SessionProtocolNameRegistry::INVALID;
 };
 
 using SPtrConstDst = std::shared_ptr<const Dst>;

@@ -24,7 +24,7 @@
 #define LARGE_FILE 10 * 1024 * 1024
 #define SMALL_FILE 10 * 1024
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 #include "main.h"
@@ -76,7 +76,7 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "text/html;charset=utf-8", len) == 0);
   }
@@ -156,7 +156,7 @@ private:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "application/x-javascript", len) == 0);
   }
@@ -169,10 +169,10 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h     = new CacheTestHandler(LARGE_FILE, "http://www.scw11.com");
-    CacheAltTest_L_to_S *ls = new CacheAltTest_L_to_S(SMALL_FILE, "http://www.scw11.com");
-    CacheAltReadAgain *read = new CacheAltReadAgain(LARGE_FILE, "http://www.scw11.com");
-    TerminalTest *tt        = new TerminalTest;
+    CacheTestHandler    *h    = new CacheTestHandler(LARGE_FILE, "http://www.scw11.com");
+    CacheAltTest_L_to_S *ls   = new CacheAltTest_L_to_S(SMALL_FILE, "http://www.scw11.com");
+    CacheAltReadAgain   *read = new CacheAltReadAgain(LARGE_FILE, "http://www.scw11.com");
+    TerminalTest        *tt   = new TerminalTest;
 
     h->add(ls);
     h->add(read); // read again

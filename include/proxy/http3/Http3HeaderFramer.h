@@ -42,21 +42,21 @@ public:
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
+  bool           is_done() const override;
 
 private:
-  Http3Transaction *_transaction       = nullptr;
-  VIO *_source_vio                     = nullptr;
-  QPACK *_qpack                        = nullptr;
-  MIOBuffer *_header_block             = nullptr;
-  IOBufferReader *_header_block_reader = nullptr;
-  uint64_t _header_block_len           = 0;
-  uint64_t _header_block_wrote         = 0;
-  uint64_t _stream_id                  = 0;
-  bool _sent_all_data                  = false;
-  HTTPParser _http_parser;
-  HTTPHdr _header;
-  VersionConverter _hvc;
+  Http3Transaction *_transaction         = nullptr;
+  VIO              *_source_vio          = nullptr;
+  QPACK            *_qpack               = nullptr;
+  MIOBuffer        *_header_block        = nullptr;
+  IOBufferReader   *_header_block_reader = nullptr;
+  uint64_t          _header_block_len    = 0;
+  uint64_t          _header_block_wrote  = 0;
+  uint64_t          _stream_id           = 0;
+  bool              _sent_all_data       = false;
+  HTTPParser        _http_parser;
+  HTTPHdr           _header;
+  VersionConverter  _hvc;
 
   void _generate_header_block();
 };

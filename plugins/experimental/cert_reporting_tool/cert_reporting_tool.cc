@@ -56,16 +56,16 @@ dump_context(const char *ca_path, const char *ck_path)
   if (ctx) {
     SSL *s = SSL_new(reinterpret_cast<SSL_CTX *>(ctx));
     if (s) {
-      char *data  = nullptr;
-      long length = 0;
+      char       *data   = nullptr;
+      long        length = 0;
       std::string subject_s, san_s, serial_s, time_s;
-      X509 *cert = SSL_get_certificate(s);
+      X509       *cert = SSL_get_certificate(s);
       if (cert) {
         // Retrieve state info and write to log object
         // expiration date, serial number, common name, and subject alternative names
-        const ASN1_TIME *not_after = X509_get_notAfter(cert);
-        const ASN1_INTEGER *serial = X509_get_serialNumber(cert);
-        X509_NAME *subject_name    = X509_get_subject_name(cert);
+        const ASN1_TIME    *not_after    = X509_get_notAfter(cert);
+        const ASN1_INTEGER *serial       = X509_get_serialNumber(cert);
+        X509_NAME          *subject_name = X509_get_subject_name(cert);
 
         // Subject name
         BIO *subject_bio = BIO_new(BIO_s_mem());
@@ -146,7 +146,7 @@ dump_context(const char *ca_path, const char *ck_path)
 int
 CB_context_dump(TSCont, TSEvent, void *edata)
 {
-  TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
+  TSPluginMsg                      *msg = static_cast<TSPluginMsg *>(edata);
   static constexpr std::string_view PLUGIN_PREFIX("cert_reporting_tool.");
 
   std::string_view tag(msg->tag, strlen(msg->tag));

@@ -55,12 +55,12 @@ public:
 private:
   int mainEvent(int event, void *netvc) override;
 
-  MIOBuffer *buffer; // XXX do we really need this?
-  Continuation *endpoint;
+  MIOBuffer         *buffer; // XXX do we really need this?
+  Continuation      *endpoint;
   SSLNextProtocolSet protoset;
   SessionProtocolSet protoenabled;
-  bool transparent_passthrough;
-  bool allow_plain;
+  bool               transparent_passthrough;
+  bool               allow_plain;
 
   friend struct SSLNextProtocolTrampoline;
 };

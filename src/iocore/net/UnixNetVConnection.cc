@@ -193,7 +193,7 @@ static void
 read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s = &vc->read;
-  int64_t r   = 0;
+  int64_t   r = 0;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
@@ -230,9 +230,9 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 
   // read data
-  int64_t rattempted = 0, total_read = 0;
+  int64_t  rattempted = 0, total_read = 0;
   unsigned niov = 0;
-  IOVec tiovec[NET_MAX_IOV];
+  IOVec    tiovec[NET_MAX_IOV];
   if (toread) {
     IOBufferBlock *b = buf.writer()->first_write_block();
     do {
@@ -359,7 +359,7 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  NetState *s     = &vc->write;
+  NetState     *s = &vc->write;
   Continuation *c = vc->write.vio.cont;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
@@ -472,7 +472,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  int needs             = 0;
+  int     needs         = 0;
   int64_t total_written = 0;
   int64_t r             = vc->load_buffer_and_write(towrite, buf, total_written, needs);
 
@@ -566,8 +566,8 @@ UnixNetVConnection::get_data(int id, void *data)
 {
   union {
     TSVIO *vio;
-    void *data;
-    int *n;
+    void  *data;
+    int   *n;
   } ptr;
 
   ptr.data = data;
@@ -662,8 +662,8 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
 
-  EThread *t        = this_ethread();
-  bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  EThread *t            = this_ethread();
+  bool     close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
@@ -869,12 +869,12 @@ UnixNetVConnection::net_write_io(NetHandler *nh, EThread *lthread)
 int64_t
 UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
 {
-  int64_t r                  = 0;
-  int64_t try_to_write       = 0;
-  IOBufferReader *tmp_reader = buf.reader()->clone();
+  int64_t         r            = 0;
+  int64_t         try_to_write = 0;
+  IOBufferReader *tmp_reader   = buf.reader()->clone();
 
   do {
-    IOVec tiovec[NET_MAX_IOV];
+    IOVec    tiovec[NET_MAX_IOV];
     unsigned niov = 0;
     try_to_write  = 0;
 
@@ -1015,7 +1015,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 int
 UnixNetVConnection::acceptEvent(int event, Event *e)
 {
-  EThread *t    = (e == nullptr) ? this_ethread() : e->ethread;
+  EThread    *t = (e == nullptr) ? this_ethread() : e->ethread;
   NetHandler *h = get_NetHandler(t);
 
   thread = t;
@@ -1078,10 +1078,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     return EVENT_DONE;
   }
 
-  int signal_event;
-  Continuation *reader_cont     = nullptr;
-  Continuation *writer_cont     = nullptr;
-  ink_hrtime *signal_timeout_at = nullptr;
+  int           signal_event;
+  Continuation *reader_cont       = nullptr;
+  Continuation *writer_cont       = nullptr;
+  ink_hrtime   *signal_timeout_at = nullptr;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1133,7 +1133,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   this->mutex  = c->mutex;
   this->thread = this_ethread();
 
-  EThread *t    = this_ethread();
+  EThread    *t = this_ethread();
   NetHandler *h = get_NetHandler(t);
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);

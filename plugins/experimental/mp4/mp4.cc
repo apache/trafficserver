@@ -19,13 +19,13 @@
 #include "mp4_common.h"
 
 static char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
-static int mp4_handler(TSCont contp, TSEvent event, void *edata);
-static void mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
-static void mp4_read_response(Mp4Context *mc, TSHttpTxn txnp);
-static void mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp);
-static int mp4_transform_entry(TSCont contp, TSEvent event, void *edata);
-static int mp4_transform_handler(TSCont contp, Mp4Context *mc);
-static int mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete);
+static int   mp4_handler(TSCont contp, TSEvent event, void *edata);
+static void  mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
+static void  mp4_read_response(Mp4Context *mc, TSHttpTxn txnp);
+static void  mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp);
+static int   mp4_transform_entry(TSCont contp, TSEvent event, void *edata);
+static int   mp4_transform_handler(TSCont contp, Mp4Context *mc);
+static int   mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete);
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
@@ -64,16 +64,16 @@ TSRemapStatus
 TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   const char *method, *query, *path;
-  int method_len, query_len, path_len;
-  size_t val_len;
+  int         method_len, query_len, path_len;
+  size_t      val_len;
   const char *val;
-  int ret;
-  float start;
-  char buf[1024];
-  int buf_len;
-  int left, right;
-  TSMLoc ae_field, range_field;
-  TSCont contp;
+  int         ret;
+  float       start;
+  char        buf[1024];
+  int         buf_len;
+  int         left, right;
+  TSMLoc      ae_field, range_field;
+  TSCont      contp;
   Mp4Context *mc;
 
   method = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &method_len);
@@ -152,7 +152,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
 static int
 mp4_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp;
+  TSHttpTxn   txnp;
   Mp4Context *mc;
 
   txnp = static_cast<TSHttpTxn>(edata);
@@ -183,12 +183,12 @@ mp4_handler(TSCont contp, TSEvent event, void *edata)
 static void
 mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdrp;
-  TSMLoc cl_field;
+  TSMBuffer    bufp;
+  TSMLoc       hdrp;
+  TSMLoc       cl_field;
   TSHttpStatus code;
-  int obj_status;
-  int64_t n;
+  int          obj_status;
+  int64_t      n;
 
   if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
     TSError("[%s] Couldn't get cache status of object", __FUNCTION__);
@@ -232,11 +232,11 @@ release:
 static void
 mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdrp;
-  TSMLoc cl_field;
+  TSMBuffer    bufp;
+  TSMLoc       hdrp;
+  TSMLoc       cl_field;
   TSHttpStatus status;
-  int64_t n;
+  int64_t      n;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdrp) != TS_SUCCESS) {
     TSError("[%s] could not get request os data", __FUNCTION__);
@@ -291,7 +291,7 @@ mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp)
 static int
 mp4_transform_entry(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  TSVIO input_vio;
+  TSVIO       input_vio;
   Mp4Context *mc = static_cast<Mp4Context *>(TSContDataGet(contp));
 
   if (TSVConnClosedGet(contp)) {
@@ -321,12 +321,12 @@ mp4_transform_entry(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 static int
 mp4_transform_handler(TSCont contp, Mp4Context *mc)
 {
-  TSVConn output_conn;
-  TSVIO input_vio;
-  TSIOBufferReader input_reader;
-  int64_t avail, toread, need, upstream_done;
-  int ret;
-  bool write_down;
+  TSVConn              output_conn;
+  TSVIO                input_vio;
+  TSIOBufferReader     input_reader;
+  int64_t              avail, toread, need, upstream_done;
+  int                  ret;
+  bool                 write_down;
   Mp4TransformContext *mtc;
 
   mtc = mc->mtc;
@@ -439,11 +439,11 @@ trans:
 static int
 mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
 {
-  int ret;
-  int64_t avail, bytes;
+  int             ret;
+  int64_t         avail, bytes;
   TSIOBufferBlock blk;
-  const char *data;
-  Mp4Meta *mm;
+  const char     *data;
+  Mp4Meta        *mm;
 
   mm = &mtc->mm;
 

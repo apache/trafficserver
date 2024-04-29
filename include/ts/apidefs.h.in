@@ -164,9 +164,9 @@ struct TSPluginRegistrationInfo {
 };
 
 struct TSPluginMsg {
-  const char *tag;  ///< Message tag (null terminated).
-  void const *data; ///< Message data (payload)
-  size_t data_size; ///< Amount of message data.
+  const char *tag;       ///< Message tag (null terminated).
+  void const *data;      ///< Message data (payload)
+  size_t      data_size; ///< Amount of message data.
 };
 
 /**
@@ -727,8 +727,8 @@ enum TSRecordDataType {
 
 union TSRecordData {
   int64_t rec_int;
-  float rec_float;
-  char *rec_string;
+  float   rec_float;
+  char   *rec_string;
   int64_t rec_counter;
 };
 
@@ -1078,13 +1078,13 @@ struct TSFetchEvent {
 };
 
 struct TSFetchUrlParams {
-  const char *request;
-  int request_len;
-  int port;
-  struct sockaddr_storage ip;
-  TSCont contp;
-  TSFetchEvent events;
-  TSFetchWakeUpOptions options;
+  const char              *request;
+  int                      request_len;
+  int                      port;
+  struct sockaddr_storage  ip;
+  TSCont                   contp;
+  TSFetchEvent             events;
+  TSFetchWakeUpOptions     options;
   struct TSFetchUrlParams *next;
 };
 using TSFetchUrlParams_t = TSFetchUrlParams;
@@ -1113,14 +1113,14 @@ const int TS_SSL_MAX_SSL_SESSION_ID_LENGTH = 32;
 // This mirrors the internal data structure SSLSessionID
 struct TSSslSessionID {
   size_t len;
-  char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
+  char   bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
 };
 
 struct TSSecretID {
   const char *cert_name;
-  size_t cert_name_len;
+  size_t      cert_name_len;
   const char *key_name;
-  size_t key_name_len;
+  size_t      key_name_len;
 };
 
 enum TSConnectType {
@@ -1130,12 +1130,12 @@ enum TSConnectType {
 };
 
 struct TSHttpConnectOptions {
-  TSConnectType connect_type;
+  TSConnectType          connect_type;
   struct sockaddr const *addr;
-  const char *tag;
-  int64_t id;
-  TSIOBufferSizeIndex buffer_index;
-  TSIOBufferWaterMark buffer_water_mark;
+  const char            *tag;
+  int64_t                id;
+  TSIOBufferSizeIndex    buffer_index;
+  TSIOBufferWaterMark    buffer_water_mark;
 };
 
 /* --------------------------------------------------------------------------
@@ -1519,7 +1519,7 @@ struct TSRPCHandlerOptions {
 struct TSYAMLRecCfgFieldData {
   const char *field_name;  ///< YAML field name. null terminated
   const char *record_name; ///< record name. null terminated
-  TSYaml value_node;       ///< YAML::Node pointer.
+  TSYaml      value_node;  ///< YAML::Node pointer.
 };
 
 typedef enum {
@@ -1540,16 +1540,16 @@ typedef enum {
 ///   but will use the values in this for whether to use the existing
 ///   response or make another request
 struct TSResponseAction {
-  char const *hostname; ///< host for next request (must be null terminated?)
-  size_t hostname_len;  ///< host len for next request (not including null)
-  in_port_t port;       ///< port for next request
-  bool fail;
-  bool is_retry;
-  bool nextHopExists;
-  bool responseIsRetryable;
-  bool goDirect;
-  bool parentIsProxy;
-  bool no_cache;
+  char const *hostname;     ///< host for next request (must be null terminated?)
+  size_t      hostname_len; ///< host len for next request (not including null)
+  in_port_t   port;         ///< port for next request
+  bool        fail;
+  bool        is_retry;
+  bool        nextHopExists;
+  bool        responseIsRetryable;
+  bool        goDirect;
+  bool        parentIsProxy;
+  bool        no_cache;
 };
 
 /* --------------------------------------------------------------------------

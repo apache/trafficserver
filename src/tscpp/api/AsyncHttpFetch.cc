@@ -39,19 +39,19 @@ using std::string;
  * @private
  */
 struct atscppapi::AsyncHttpFetchState : noncopyable {
-  std::shared_ptr<Request> request_;
-  Response response_;
-  string request_body_;
-  AsyncHttpFetch::Result result_;
-  const void *body_;
-  size_t body_size_;
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
+  std::shared_ptr<Request>                     request_;
+  Response                                     response_;
+  string                                       request_body_;
+  AsyncHttpFetch::Result                       result_;
+  const void                                  *body_;
+  size_t                                       body_size_;
+  TSMBuffer                                    hdr_buf_;
+  TSMLoc                                       hdr_loc_;
   std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
-  AsyncHttpFetch::StreamingFlag streaming_flag_;
-  TSFetchSM fetch_sm_;
-  static const size_t BODY_BUFFER_SIZE = 32 * 1024;
-  char body_buffer_[BODY_BUFFER_SIZE];
+  AsyncHttpFetch::StreamingFlag                streaming_flag_;
+  TSFetchSM                                    fetch_sm_;
+  static const size_t                          BODY_BUFFER_SIZE = 32 * 1024;
+  char                                         body_buffer_[BODY_BUFFER_SIZE];
 
   AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body,
                       AsyncHttpFetch::StreamingFlag streaming_flag)
@@ -89,25 +89,25 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
 namespace
 {
 const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
-const int LOCAL_PORT                = 8080;
+const int          LOCAL_PORT       = 8080;
 
 static int
 handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 {
   LOG_DEBUG("Received fetch event = %d, edata = %p", event, edata);
-  AsyncHttpFetch *fetch_provider = static_cast<AsyncHttpFetch *>(TSContDataGet(cont));
-  AsyncHttpFetchState *state     = utils::internal::getAsyncHttpFetchState(*fetch_provider);
+  AsyncHttpFetch      *fetch_provider = static_cast<AsyncHttpFetch *>(TSContDataGet(cont));
+  AsyncHttpFetchState *state          = utils::internal::getAsyncHttpFetchState(*fetch_provider);
 
   if (state->streaming_flag_ == AsyncHttpFetch::STREAMING_DISABLED) {
     if (event == static_cast<int>(AsyncHttpFetch::RESULT_SUCCESS)) {
-      TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-      int data_len;
+      TSHttpTxn   txn = static_cast<TSHttpTxn>(edata);
+      int         data_len;
       const char *data_start = TSFetchRespGet(txn, &data_len);
       if (data_start && (data_len > 0)) {
-        const char *data_end = data_start + data_len;
-        TSHttpParser parser  = TSHttpParserCreate();
-        state->hdr_buf_      = TSMBufferCreate();
-        state->hdr_loc_      = TSHttpHdrCreate(state->hdr_buf_);
+        const char  *data_end = data_start + data_len;
+        TSHttpParser parser   = TSHttpParserCreate();
+        state->hdr_buf_       = TSMBufferCreate();
+        state->hdr_loc_       = TSHttpHdrCreate(state->hdr_buf_);
         TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
         if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
           TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);

@@ -45,14 +45,14 @@ xxcompar(const void *a, const void *b)
 }
 
 using i4_t = uint32_t[4];
-i4_t *xxh;
+i4_t   *xxh;
 double *xf;
 
 TEST_CASE("MMH", "[libts][MMH]")
 {
   union {
     unsigned char hash[16];
-    uint32_t h[4];
+    uint32_t      h[4];
   } h;
 
   xxh = static_cast<i4_t *>(ats_malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS));
@@ -91,7 +91,7 @@ TEST_CASE("MMH", "[libts][MMH]")
   ats_free(xxh);
 
   unsigned char *s        = reinterpret_cast<unsigned char *>(MMH_x);
-  int l                   = sizeof(MMH_x);
+  int            l        = sizeof(MMH_x);
   unsigned char *s1       = static_cast<unsigned char *>(ats_malloc(l + sizeof(uint32_t)));
   unsigned char *free_s1  = s1;
   s1                     += 1;
@@ -115,8 +115,8 @@ TEST_CASE("MMH", "[libts][MMH]")
   ink_code_MMH(s3, l, h.hash);
   printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
 
-  int i = 0;
-  MMH_CTX c;
+  int            i = 0;
+  MMH_CTX        c;
   unsigned char *t = s;
   printf("test chunking\n");
   ink_code_incr_MMH_init(&c);
@@ -131,8 +131,8 @@ TEST_CASE("MMH", "[libts][MMH]")
   printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
 
   FILE *fp = fopen("/dev/urandom", "r");
-  char x[4096];
-  int hist[256];
+  char  x[4096];
+  int   hist[256];
   memset(hist, 0, sizeof(hist));
 
   size_t total = 0;

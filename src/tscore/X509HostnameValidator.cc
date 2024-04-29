@@ -219,13 +219,13 @@ bool
 validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **peername)
 {
   GENERAL_NAMES *gens = nullptr;
-  X509_NAME *name     = nullptr;
-  int i;
-  int alt_type;
-  bool retval = false;
+  X509_NAME     *name = nullptr;
+  int            i;
+  int            alt_type;
+  bool           retval = false;
   ;
   equal_fn equal;
-  size_t hostname_len = strlen((char *)hostname);
+  size_t   hostname_len = strlen((char *)hostname);
 
   if (!is_ip) {
     alt_type = V_ASN1_IA5STRING;
@@ -241,7 +241,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
     // BoringSSL has sk_GENERAL_NAME_num() return size_t.
     for (i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(gens)); i++) {
       GENERAL_NAME *gen;
-      ASN1_STRING *cstr;
+      ASN1_STRING  *cstr;
       gen = sk_GENERAL_NAME_value(gens, i);
 
       if (is_ip && gen->type == GEN_IPADD) {
@@ -267,8 +267,8 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
   name = X509_get_subject_name(x);
 
   while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {
-    ASN1_STRING *str;
-    int astrlen;
+    ASN1_STRING   *str;
+    int            astrlen;
     unsigned char *astr;
     str = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(name, i));
     // Convert to UTF-8

@@ -230,7 +230,7 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
   if (dst.empty() || groups.empty()) {
     return std::string{dst};
   }
-  std::string real_dst;
+  std::string            real_dst;
   std::string::size_type pos{0};
 
   const auto end = std::end(dst);
@@ -244,8 +244,8 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
     }
     if (*c == '$') {
       // find the next '.' so we can get the group number.
-      const auto dot            = dst.find('.', pos);
-      std::string::size_type to = std::string::npos;
+      const auto             dot = dst.find('.', pos);
+      std::string::size_type to  = std::string::npos;
       if (dot != std::string::npos) {
         to = dot - (pos + 1);
       } else {
@@ -361,7 +361,7 @@ SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &serverna
 {
   swoc::TextView content{ip_allow_list};
   if (content && content[0] == '@') {
-    std::error_code ec;
+    std::error_code  ec;
     swoc::file::path path{content.remove_prefix(1)};
     if (path.is_relative()) {
       path = swoc::file::path(Layout::get()->sysconfdir) / path;

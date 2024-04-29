@@ -95,7 +95,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
     if (session_sni) {
       // TS-4468: If the connection matches, make sure the SNI server
       // name (if present) matches the request hostname
-      int len              = 0;
+      int         len      = 0;
       const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
       retval               = strncasecmp(session_sni, req_host, len) == 0;
       Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
@@ -112,7 +112,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char *session_sni       = netvc->get_sni_servername();
+    const char      *session_sni  = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
     Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
         session_sni);
@@ -133,7 +133,7 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char *session_cert       = netvc->options.ssl_client_cert_name;
+    const char      *session_cert  = netvc->options.ssl_client_cert_name;
     std::string_view proposed_cert = sm->get_outbound_cert();
     Dbg(dbg_ctl_http_ss, "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
         session_cert);
@@ -157,10 +157,10 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     Dbg(dbg_ctl_http_ss, "Search for host name only not IP.  Pool size %zu", m_fqdn_pool.count());
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
-    in_port_t port = ats_ip_port_cast(addr);
-    auto range     = m_fqdn_pool.equal_range(hostname_hash);
-    auto iter      = std::make_reverse_iterator(range.end());
-    auto const end = std::make_reverse_iterator(range.begin());
+    in_port_t  port  = ats_ip_port_cast(addr);
+    auto       range = m_fqdn_pool.equal_range(hostname_hash);
+    auto       iter  = std::make_reverse_iterator(range.end());
+    auto const end   = std::make_reverse_iterator(range.begin());
     while (iter != end) {
       Dbg(dbg_ctl_http_ss, "Compare port 0x%x against 0x%x", port, ats_ip_port_cast(iter->get_remote_addr()));
       if (port == ats_ip_port_cast(iter->get_remote_addr()) &&
@@ -183,8 +183,8 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
   } else if (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style) { // matching is not disabled.
     auto range = m_ip_pool.equal_range(addr);
     // We want to access the sessions in LIFO order, so start from the back of the list.
-    auto iter      = std::make_reverse_iterator(range.end());
-    auto const end = std::make_reverse_iterator(range.begin());
+    auto       iter = std::make_reverse_iterator(range.end());
+    auto const end  = std::make_reverse_iterator(range.begin());
     // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn
     // And matches the other constraints as well
     // Note the port is matched as part of the address key so it doesn't need to be checked again.
@@ -245,8 +245,8 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
 int
 ServerSessionPool::eventHandler(int event, void *data)
 {
-  NetVConnection *net_vc = nullptr;
-  PoolableSession *s     = nullptr;
+  NetVConnection  *net_vc = nullptr;
+  PoolableSession *s      = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -265,8 +265,8 @@ ServerSessionPool::eventHandler(int event, void *data)
     return 0;
   }
 
-  sockaddr const *addr = net_vc->get_remote_addr();
-  bool found           = false;
+  sockaddr const *addr  = net_vc->get_remote_addr();
+  bool            found = false;
 
   for (auto spot = m_ip_pool.find(addr); spot != m_ip_pool.end() && spot->_ip_link.equal(addr, spot); ++spot) {
     if ((s = spot)->get_netvc() == net_vc) {
@@ -343,10 +343,10 @@ HttpSessionManager::purge_keepalives()
 HSMresult_t
 HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *hostname, ProxyTransaction *ua_txn)
 {
-  PoolableSession *to_return = nullptr;
+  PoolableSession                *to_return = nullptr;
   TSServerSessionSharingMatchMask match_style =
     static_cast<TSServerSessionSharingMatchMask>(sm->t_state.txn_conf->server_session_sharing_match);
-  CryptoHash hostname_hash;
+  CryptoHash  hostname_hash;
   HSMresult_t retval = HSM_NOT_FOUND;
 
   CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
@@ -430,21 +430,21 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
                                      TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
   PoolableSession *to_return = nullptr;
-  HSMresult_t retval         = HSM_NOT_FOUND;
-  bool acquired              = false;
+  HSMresult_t      retval    = HSM_NOT_FOUND;
+  bool             acquired  = false;
 
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
   // due to a potential parallel network read on the VC with no mutex guarding
   {
     // Now check to see if we have a connection in our shared connection pool
-    EThread *ethread = this_ethread();
+    EThread        *ethread = this_ethread();
     Ptr<ProxyMutex> pool_mutex =
       (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
 
-    MutexLock mlock;
+    MutexLock    mlock;
     MutexTryLock tlock;
-    bool const locked = lockSessionPool(pool_mutex, ethread, pool_type, &mlock, &tlock);
+    bool const   locked = lockSessionPool(pool_mutex, ethread, pool_type, &mlock, &tlock);
 
     if (locked) {
       if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
@@ -517,7 +517,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 HSMresult_t
 HttpSessionManager::release_session(PoolableSession *to_release)
 {
-  EThread *ethread = this_ethread();
+  EThread           *ethread = this_ethread();
   ServerSessionPool *pool =
     TS_SERVER_SESSION_SHARING_POOL_THREAD == to_release->sharing_pool ? ethread->server_session_pool : m_g_pool;
   bool released_p = true;
@@ -525,9 +525,9 @@ HttpSessionManager::release_session(PoolableSession *to_release)
   // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
 
   {
-    MutexLock mlock;
+    MutexLock    mlock;
     MutexTryLock tlock;
-    bool const locked = lockSessionPool(pool->mutex, ethread, this->get_pool_type(), &mlock, &tlock);
+    bool const   locked = lockSessionPool(pool->mutex, ethread, this->get_pool_type(), &mlock, &tlock);
 
     if (locked) {
       pool->releaseSession(to_release);

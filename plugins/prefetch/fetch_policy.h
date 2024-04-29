@@ -44,12 +44,12 @@ public:
   static FetchPolicy *getInstance(const char *name);
   virtual ~FetchPolicy(){};
 
-  virtual bool init(const char *parameters)    = 0;
-  virtual bool acquire(const std::string &url) = 0;
-  virtual bool release(const std::string &url) = 0;
-  virtual const char *name()                   = 0;
-  virtual size_t getSize()                     = 0;
-  virtual size_t getMaxSize()                  = 0;
+  virtual bool        init(const char *parameters)    = 0;
+  virtual bool        acquire(const std::string &url) = 0;
+  virtual bool        release(const std::string &url) = 0;
+  virtual const char *name()                          = 0;
+  virtual size_t      getSize()                       = 0;
+  virtual size_t      getMaxSize()                    = 0;
 
 private:
   FetchPolicy(const FetchPolicy &);

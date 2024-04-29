@@ -38,9 +38,9 @@ const std::string ERROR_LIST_KEY{"errorList"};
 /// record requests.
 ///
 struct RequestRecordElement {
-  std::string recName;       //!< Incoming record name, this is used for a regex as well.
-  bool isRegex{false};       //!< set to true if the lookup should be done by using a regex instead a full name.
-  std::vector<int> recTypes; //!< incoming rec_types
+  std::string      recName;        //!< Incoming record name, this is used for a regex as well.
+  bool             isRegex{false}; //!< set to true if the lookup should be done by using a regex instead a full name.
+  std::vector<int> recTypes;       //!< incoming rec_types
 
   /// @brief test if the requests is intended to use a regex.
   bool

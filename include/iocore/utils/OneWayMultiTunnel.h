@@ -92,7 +92,7 @@ struct OneWayMultiTunnel : public OneWayTunnel {
 
   */
   void init(VConnection *vcSource, VConnection **vcTargets, int n_vcTargets, Continuation *aCont = nullptr,
-            int size_estimate = 0, // 0 == best guess
+            int     size_estimate = 0, // 0 == best guess
             int64_t nbytes = TUNNEL_TILL_DONE, bool asingle_buffer = true, bool aclose_source = true, bool aclose_target = true,
             Transform_fn manipulate_fn = nullptr, int water_mark = 0);
 
@@ -125,10 +125,10 @@ struct OneWayMultiTunnel : public OneWayTunnel {
   void reenable_all() override;
   void close_target_vio(int result, VIO *vio = nullptr) override;
 
-  int n_vioTargets                      = 0;
-  bool source_read_previously_completed = false;
+  int               n_vioTargets                     = 0;
+  bool              source_read_previously_completed = false;
   MIOBufferAccessor topOutBuffer;
-  VIO *vioTargets[ONE_WAY_MULTI_TUNNEL_LIMIT];
+  VIO              *vioTargets[ONE_WAY_MULTI_TUNNEL_LIMIT];
 };
 
 extern ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator;

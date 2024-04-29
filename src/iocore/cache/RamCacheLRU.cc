@@ -27,7 +27,7 @@
 
 struct RamCacheLRUEntry {
   CryptoHash key;
-  uint64_t auxkey;
+  uint64_t   auxkey;
   LINK(RamCacheLRUEntry, lru_link);
   LINK(RamCacheLRUEntry, hash_link);
   Ptr<IOBufferData> data;
@@ -41,9 +41,9 @@ struct RamCacheLRU : public RamCache {
   int64_t objects   = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey must match
-  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
+  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
+  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
+  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Stripe *stripe) override;
@@ -52,11 +52,11 @@ struct RamCacheLRU : public RamCache {
   std::vector<bool> *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
-  int nbuckets                               = 0;
-  int ibuckets                               = 0;
+  int     nbuckets                           = 0;
+  int     ibuckets                           = 0;
   Stripe *stripe                             = nullptr;
 
-  void resize_hashtable();
+  void              resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 };
 
@@ -137,7 +137,7 @@ RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
   if (!max_bytes) {
     return 0;
   }
-  uint32_t i          = key->slice32(3) % nbuckets;
+  uint32_t          i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey == auxkey) {
@@ -163,7 +163,7 @@ RamCacheLRUEntry *
 RamCacheLRU::remove(RamCacheLRUEntry *e)
 {
   RamCacheLRUEntry *ret = e->hash_link.next;
-  uint32_t b            = e->key.slice32(3) % nbuckets;
+  uint32_t          b   = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
@@ -246,7 +246,7 @@ RamCacheLRU::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxk
   if (!max_bytes) {
     return 0;
   }
-  uint32_t i          = key->slice32(3) % nbuckets;
+  uint32_t          i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey == old_auxkey) {

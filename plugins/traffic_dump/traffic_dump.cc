@@ -39,7 +39,7 @@ global_message_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_MSG: {
-    TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
+    TSPluginMsg                      *msg = static_cast<TSPluginMsg *>(edata);
     static constexpr std::string_view PLUGIN_PREFIX("traffic_dump.");
 
     std::string_view tag(msg->tag, strlen(msg->tag));
@@ -86,15 +86,15 @@ TSPluginInit(int argc, char const *argv[])
     return;
   }
 
-  bool dump_body                       = false;
-  bool sensitive_fields_were_specified = false;
+  bool                             dump_body                       = false;
+  bool                             sensitive_fields_were_specified = false;
   traffic_dump::sensitive_fields_t user_specified_fields;
-  swoc::file::path log_dir{traffic_dump::SessionData::default_log_directory};
-  int64_t sample_pool_size = traffic_dump::SessionData::default_sample_pool_size;
-  int64_t max_disk_usage   = traffic_dump::SessionData::default_max_disk_usage;
-  bool enforce_disk_limit  = traffic_dump::SessionData::default_enforce_disk_limit;
-  std::string sni_filter;
-  std::string client_ip_filter;
+  swoc::file::path                 log_dir{traffic_dump::SessionData::default_log_directory};
+  int64_t                          sample_pool_size   = traffic_dump::SessionData::default_sample_pool_size;
+  int64_t                          max_disk_usage     = traffic_dump::SessionData::default_max_disk_usage;
+  bool                             enforce_disk_limit = traffic_dump::SessionData::default_enforce_disk_limit;
+  std::string                      sni_filter;
+  std::string                      client_ip_filter;
 
   /// Commandline options
   static const struct option longopts[] = {

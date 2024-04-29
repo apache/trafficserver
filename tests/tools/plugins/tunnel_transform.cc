@@ -29,7 +29,7 @@
 
 #define PLUGIN_NAME "tunnel_transform"
 static const char PLUGIN_TAG[] = PLUGIN_NAME;
-static DbgCtl plugin_ctl{PLUGIN_TAG};
+static DbgCtl     plugin_ctl{PLUGIN_TAG};
 
 static int stat_ua_bytes_sent = 0; // number of bytes seen by the transform from UA to OS
 static int stat_os_bytes_sent = 0; // number of bytes seen by the transform from OS to UA
@@ -37,8 +37,8 @@ static int stat_error         = 0;
 static int stat_test_done     = 0;
 
 typedef struct {
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
 } MyData;
 
@@ -69,11 +69,11 @@ my_data_destroy(MyData *data)
 static void
 handle_transform(TSCont contp, bool forward)
 {
-  TSVConn output_conn;
+  TSVConn    output_conn;
   TSIOBuffer buf_test;
-  TSVIO input_vio;
-  MyData *data;
-  int64_t towrite;
+  TSVIO      input_vio;
+  MyData    *data;
+  int64_t    towrite;
 
   Dbg(plugin_ctl, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */

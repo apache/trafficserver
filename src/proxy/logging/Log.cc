@@ -58,22 +58,22 @@
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
-LogObject *Log::error_log = nullptr;
-LogFieldList Log::global_field_list;
+LogObject       *Log::error_log = nullptr;
+LogFieldList     Log::global_field_list;
 Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 
 // Flush thread stuff
-EventNotify *Log::preproc_notify;
-EventNotify *Log::flush_notify;
+EventNotify   *Log::preproc_notify;
+EventNotify   *Log::flush_notify;
 InkAtomicList *Log::flush_data_list;
 
 // Log private objects
-int Log::preproc_threads;
-int Log::init_status                  = 0;
-int Log::config_flags                 = 0;
-bool Log::logging_mode_changed        = false;
-bool Log::log_rotate_signal_received  = false;
-uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+int      Log::preproc_threads;
+int      Log::init_status                = 0;
+int      Log::config_flags               = 0;
+bool     Log::logging_mode_changed       = false;
+bool     Log::log_rotate_signal_received = false;
+uint32_t Log::periodic_tasks_interval    = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
 std::unordered_map<std::string, LogField *> Log::field_symbol_hash;
@@ -87,7 +87,7 @@ LogsStatsBlock log_rsb;
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
 
-LogConfig *Log::config       = nullptr;
+LogConfig      *Log::config  = nullptr;
 static unsigned log_configid = 0;
 
 // Downcast from a Ptr<LogFieldAliasTable> to a Ptr<LogFieldAliasMap>.
@@ -1160,9 +1160,9 @@ Log::access(LogAccess *lad)
   ink_assert(init_status & FULLY_INITIALIZED);
   ink_assert(lad != nullptr);
 
-  int ret;
+  int         ret;
   static long sample = 1;
-  long this_sample;
+  long        this_sample;
 
   // See if we're sampling and it is not time for another sample
   //
@@ -1205,7 +1205,7 @@ int
 Log::error(const char *format, ...)
 {
   va_list ap;
-  int ret;
+  int     ret;
 
   va_start(ap, format);
   ret = Log::va_error(format, ap);
@@ -1301,10 +1301,10 @@ Log::preproc_thread_main(void *args)
 void *
 Log::flush_thread_main(void * /* args ATS_UNUSED */)
 {
-  LogBuffer *logbuffer;
-  LogFlushData *fdata;
-  ink_hrtime now, last_time = 0;
-  int len, total_bytes;
+  LogBuffer                                 *logbuffer;
+  LogFlushData                              *fdata;
+  ink_hrtime                                 now, last_time = 0;
+  int                                        len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
 
   Log::flush_notify->lock();
@@ -1325,9 +1325,9 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // process each flush data
     //
     while ((fdata = invert_link.pop())) {
-      char *buf         = nullptr;
-      int bytes_written = 0;
-      LogFile *logfile  = fdata->m_logfile.get();
+      char    *buf           = nullptr;
+      int      bytes_written = 0;
+      LogFile *logfile       = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
         logbuffer                      = static_cast<LogBuffer *>(fdata->m_data);

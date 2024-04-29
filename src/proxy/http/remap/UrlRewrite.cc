@@ -49,7 +49,7 @@ DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 void
 SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 {
-  int fromLen, toLen;
+  int         fromLen, toLen;
   const char *from_path = new_mapping->fromURL.path_get(&fromLen);
   const char *to_path   = new_to_url.path_get(&toLen);
 
@@ -94,8 +94,8 @@ UrlRewrite::load()
   RecGetRecordString("proxy.config.plugin.compiler_path", buf, PATH_NAME_MAX);
   if (strlen(buf) > 0) {
     std::error_code ec;
-    fs::path compilerPath  = fs::path(buf);
-    fs::file_status status = fs::status(compilerPath, ec);
+    fs::path        compilerPath = fs::path(buf);
+    fs::file_status status       = fs::status(compilerPath, ec);
 
     if (ec || !swoc::file::is_regular_file(status)) {
       Error("Configured plugin compiler path '%s' is not a regular file", buf);
@@ -267,9 +267,9 @@ UrlRewrite::_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, i
   if (!h_table) {
     h_table.reset(new URLTable);
   }
-  UrlMappingPathIndex *ht_entry = nullptr;
-  url_mapping *um               = nullptr;
-  int ht_result                 = 0;
+  UrlMappingPathIndex *ht_entry  = nullptr;
+  url_mapping         *um        = nullptr;
+  int                  ht_result = 0;
 
   if (auto it = h_table->find(request_host); it != h_table->end()) {
     ht_result = 1;
@@ -288,10 +288,10 @@ UrlRewrite::_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, i
 void
 url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int method)
 {
-  URL *map_to   = mapping_container.getToURL();
-  URL *map_from = mapping_container.getFromURL();
+  URL        *map_to   = mapping_container.getToURL();
+  URL        *map_from = mapping_container.getFromURL();
   const char *toHost;
-  int toHostLen;
+  int         toHostLen;
 
   toHost = map_to->host_get(&toHostLen);
 
@@ -304,12 +304,12 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
   // the CONNECT request (only host and port is).
   if (HTTP_WKSIDX_CONNECT != method) {
     const char *toScheme;
-    int toSchemeLen;
+    int         toSchemeLen;
     const char *requestPath;
-    int requestPathLen = 0;
-    int fromPathLen    = 0;
+    int         requestPathLen = 0;
+    int         fromPathLen    = 0;
     const char *toPath;
-    int toPathLen;
+    int         toPathLen;
 
     toScheme = map_to->scheme_get(&toSchemeLen);
     request_url->scheme_set(toScheme, toSchemeLen);
@@ -320,7 +320,7 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
 
     // Should be +3, little extra padding won't hurt.
     char newPath[(requestPathLen - fromPathLen) + toPathLen + 8];
-    int newPathLen = 0;
+    int  newPathLen = 0;
 
     *newPath = 0;
     if (toPath) {
@@ -369,17 +369,17 @@ bool
 UrlRewrite::ReverseMap(HTTPHdr *response_header)
 {
   const char *location_hdr;
-  URL location_url;
-  int loc_length;
-  bool remap_found = false;
+  URL         location_url;
+  int         loc_length;
+  bool        remap_found = false;
   const char *host;
-  int host_len;
-  char *new_loc_hdr;
-  int new_loc_length;
-  int i;
+  int         host_len;
+  char       *new_loc_hdr;
+  int         new_loc_length;
+  int         i;
   const struct {
     const char *const field;
-    const int len;
+    const int         len;
   } url_headers[N_URL_HEADERS] = {
     {MIME_FIELD_LOCATION,         MIME_LEN_LOCATION        },
     {MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION},
@@ -448,7 +448,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         } else if (!rp->nonstandard_methods.empty()) {
           method_matches = false;
         } else {
-          int method_str_len;
+          int         method_str_len;
           const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
           method_matches         = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
         }
@@ -559,11 +559,11 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 mapping_type
 UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 {
-  URL *request_url;
+  URL         *request_url;
   mapping_type mappingType;
-  const char *host = nullptr;
-  int host_len = 0, request_port = 0;
-  bool prt, trt; // existence of permanent and temporary redirect tables, respectively
+  const char  *host     = nullptr;
+  int          host_len = 0, request_port = 0;
+  bool         prt, trt; // existence of permanent and temporary redirect tables, respectively
 
   prt = (num_rules_redirect_permanent != 0);
   trt = (num_rules_redirect_temporary != 0);
@@ -591,7 +591,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
   if (host_len == 0 && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
                                              // it goes.  Host header parsing is same as in ::Remap
-    int host_hdr_len;
+    int         host_hdr_len;
     const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_hdr_len);
 
     if (!host_hdr) {
@@ -809,7 +809,7 @@ UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping
   if (!h_table) {
     h_table.reset(new URLTable);
   }
-  char src_host_tmp_buf[1];
+  char                 src_host_tmp_buf[1];
   UrlMappingPathIndex *ht_contents;
 
   if (!src_host) {
@@ -860,9 +860,9 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
   }
   request_host_lower[request_host_len] = 0;
 
-  bool retval          = false;
-  int rank_ceiling     = -1;
-  url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower, request_host_len);
+  bool         retval       = false;
+  int          rank_ceiling = -1;
+  url_mapping *mapping      = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower, request_host_len);
   if (mapping != nullptr) {
     rank_ceiling = mapping->getRank();
     Dbg(dbg_ctl_url_rewrite, "Found 'simple' mapping with rank %d", rank_ceiling);
@@ -932,7 +932,7 @@ bool
 UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, const char *request_host,
                                 int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container)
 {
-  bool retval = false;
+  bool         retval = false;
   RegexMatches matches;
 
   if (rank_ceiling == -1) { // we will now look at all regex mappings
@@ -942,10 +942,10 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     Dbg(dbg_ctl_url_rewrite_regex, "Going to match regexes with rank <= %d", rank_ceiling);
   }
 
-  int request_scheme_len, reg_map_scheme_len;
+  int         request_scheme_len, reg_map_scheme_len;
   const char *request_scheme = request_url->scheme_get(&request_scheme_len), *reg_map_scheme;
 
-  int request_path_len, reg_map_path_len;
+  int         request_path_len, reg_map_path_len;
   const char *request_path = request_url->path_get(&request_path_len), *reg_map_path;
 
   // If the scheme is empty (e.g. because of a CONNECT method), guess it based on port
@@ -996,7 +996,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       mapping_container.set(list_iter->url_map);
 
       char buf[4096];
-      int buf_len;
+      int  buf_len;
 
       // Expand substitutions in the host field from the stored template
       size_t *matches_info = matches.get_ovector_pointer();

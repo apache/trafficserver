@@ -93,8 +93,8 @@ template <>
 void
 loadLine<StringMap>(StringMap &map, const String &line)
 {
-  String key;
-  String value;
+  String             key;
+  String             value;
   std::istringstream ss(line);
   std::getline(ss, key, '=');
   std::getline(ss, value, '=');
@@ -130,7 +130,7 @@ template <typename T>
 static bool
 load(T &container, const String &filename)
 {
-  String line;
+  String            line;
   String::size_type pos;
 
   String path(makeConfigPath(filename));
@@ -313,8 +313,8 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool deny
   String path(makeConfigPath(filename));
 
   std::ifstream ifstr;
-  String regex;
-  unsigned lineno = 0;
+  String        regex;
+  unsigned      lineno = 0;
 
   ifstr.open(path.c_str());
   if (!ifstr) {
@@ -339,7 +339,7 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool deny
   AccessControlDebug("loading multi-pattern '%s' from '%s'", filename.c_str(), path.c_str());
 
   while (std::getline(ifstr, regex)) {
-    Pattern *p;
+    Pattern          *p;
     String::size_type pos;
 
     ++lineno;

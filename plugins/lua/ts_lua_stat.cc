@@ -97,11 +97,11 @@ static int
 ts_lua_stat_create(lua_State *L)
 {
   const char *name;
-  size_t name_len;
-  int type;
-  int persist;
-  int sync;
-  int idp;
+  size_t      name_len;
+  int         type;
+  int         persist;
+  int         sync;
+  int         idp;
 
   name = luaL_checklstring(L, 1, &name_len);
 
@@ -151,8 +151,8 @@ static int
 ts_lua_stat_find(lua_State *L)
 {
   const char *name;
-  size_t name_len;
-  int idp;
+  size_t      name_len;
+  int         idp;
 
   name = luaL_checklstring(L, 1, &name_len);
 

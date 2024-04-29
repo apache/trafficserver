@@ -85,7 +85,7 @@ LogConfig::register_rolled_log_auto_delete(std::string_view logname, int rolling
 void
 LogConfig::read_configuration_variables()
 {
-  int val;
+  int   val;
   char *ptr;
 
   val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_buffer_size"));
@@ -205,7 +205,7 @@ LogConfig::read_configuration_variables()
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    char *configured_name(REC_ConfigReadString("proxy.config.output.logfile.name"));
+    char       *configured_name(REC_ConfigReadString("proxy.config.output.logfile.name"));
     const char *traffic_logname = configured_name ? configured_name : "traffic.out";
     val                         = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
     register_rolled_log_auto_delete(traffic_logname, val);
@@ -511,7 +511,7 @@ LogConfig::space_to_write(int64_t bytes_to_write) const
 {
   int64_t config_space, partition_headroom;
   int64_t logical_space_used, physical_space_left;
-  bool space;
+  bool    space;
 
   config_space       = static_cast<int64_t>(get_max_space_mb()) * LOG_MEGABYTE;
   partition_headroom = static_cast<int64_t>(PARTITION_HEADROOM_MB) * LOG_MEGABYTE;
@@ -552,12 +552,12 @@ LogConfig::update_space_used()
     return;
   }
 
-  int64_t total_space_used, partition_space_left;
-  char path[MAXPATHLEN];
-  int sret;
+  int64_t        total_space_used, partition_space_left;
+  char           path[MAXPATHLEN];
+  int            sret;
   struct dirent *entry;
-  struct stat sbuf;
-  DIR *ld;
+  struct stat    sbuf;
+  DIR           *ld;
 
   // check if logging directory has been specified
   //
@@ -758,7 +758,7 @@ bool
 LogConfig::evaluate_config()
 {
   ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", ts::filename::LOGGING));
-  struct stat sbuf;
+  struct stat    sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
     Warning("logging configuration '%s' doesn't exist", path.get());
     return false;

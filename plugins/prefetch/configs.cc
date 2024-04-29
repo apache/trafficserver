@@ -35,7 +35,7 @@ static void
 commaSeparateString(ContainerType &c, const String &input)
 {
   std::istringstream istr(input);
-  String token;
+  String             token;
 
   while (std::getline(istr, token, ',')) {
     c.insert(c.end(), token);

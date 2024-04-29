@@ -46,8 +46,8 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  char buf[4096];
-  int i;
+  char                     buf[4096];
+  int                      i;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

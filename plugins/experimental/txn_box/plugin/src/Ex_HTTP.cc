@@ -33,11 +33,11 @@
 #include "txn_box/Config.h"
 #include "txn_box/Context.h"
 
-using swoc::TextView;
-using swoc::BufferWriter;
 using swoc::ArenaWriter;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -61,7 +61,7 @@ BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &, URLLocation const &url_loc)
 {
   ts::URL &url{url_loc.url};
-  auto host_name = url.host();
+  auto     host_name = url.host();
   if (!host_name.empty()) {
     auto port = url.port();
     if (port == 0 || url.is_port_canonical()) {
@@ -121,7 +121,7 @@ public:
   static constexpr TextView NAME{"ua-req-url"};
   using Extractor::extract; // declare hidden member function
 
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -152,7 +152,7 @@ class Ex_pre_remap_url : public Extractor
 public:
   static constexpr TextView NAME{"pre-remap-url"};
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -179,7 +179,7 @@ class Ex_remap_target_url : public Extractor
 public:
   static constexpr TextView NAME{"remap-target-url"};
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -211,7 +211,7 @@ public:
   static constexpr TextView NAME{"remap-replacement-url"};
   using Extractor::extract; // declare hidden member function
 
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -242,7 +242,7 @@ class Ex_proxy_req_url : public Extractor
 public:
   static constexpr TextView NAME{"proxy-req-url"};
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -420,7 +420,7 @@ public:
   static constexpr TextView NAME{"ua-req-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &) override;
+  Feature       extract(Context &ctx, Spec const &) override;
 };
 
 Feature
@@ -444,7 +444,7 @@ public:
   static constexpr TextView NAME{"proxy-req-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &) override;
+  Feature       extract(Context &ctx, Spec const &) override;
 };
 
 Feature
@@ -468,7 +468,7 @@ public:
   static constexpr TextView NAME{"pre-remap-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -492,7 +492,7 @@ public:
   static constexpr TextView NAME{"remap-target-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -518,7 +518,7 @@ public:
   static constexpr TextView NAME{"remap-replacement-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -545,7 +545,7 @@ public:
   static constexpr TextView NAME{"ua-req-port"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -573,7 +573,7 @@ public:
   using Extractor::extract; // declare hidden member function
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -601,7 +601,7 @@ public:
   static constexpr TextView NAME{"ua-req-path"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -627,7 +627,7 @@ public:
   static constexpr TextView NAME{"pre-remap-path"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -651,7 +651,7 @@ public:
   static constexpr TextView NAME{"remap-target-path"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -677,7 +677,7 @@ public:
   static constexpr TextView NAME{"remap-replacement-path"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -725,7 +725,7 @@ public:
   static constexpr TextView NAME{"ua-req-fragment"};
   using Extractor::extract; // declare hidden member function
 
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -751,7 +751,7 @@ class Ex_pre_remap_fragment : public StringExtractor
 public:
   static constexpr TextView NAME{"pre-remap-fragment"};
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -776,7 +776,7 @@ public:
   static constexpr TextView NAME{"proxy-req-fragment"};
   using Extractor::extract; // declare hidden member function
 
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -899,7 +899,7 @@ public:
   using Extractor::extract; // declare hidden member function
 
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -925,7 +925,7 @@ public:
   static constexpr TextView NAME{"proxy-req-url-host"};
   using Extractor::extract; // declare hidden member function
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
 };
 
 Feature
@@ -952,7 +952,7 @@ public:
   using Extractor::extract; // declare hidden member function
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -981,7 +981,7 @@ public:
   static constexpr TextView NAME{"proxy-req-url-port"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1010,7 +1010,7 @@ public:
   static constexpr TextView NAME{"pre-remap-port"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1036,7 +1036,7 @@ public:
   static constexpr TextView NAME{"remap-target-port"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1065,7 +1065,7 @@ public:
   using Extractor::extract; // declare hidden member function
 
   Rv<ActiveType> validate(Config &cfg, Spec &spec, swoc::TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1171,7 +1171,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  ts::HttpHeader hdr(Context &ctx) const override;
+  ts::HttpHeader  hdr(Context &ctx) const override;
 };
 
 TextView const &
@@ -1192,7 +1192,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  ts::HttpHeader hdr(Context &ctx) const override;
+  ts::HttpHeader  hdr(Context &ctx) const override;
 };
 
 TextView const &
@@ -1213,7 +1213,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  ts::HttpHeader hdr(Context &ctx) const override;
+  ts::HttpHeader  hdr(Context &ctx) const override;
 };
 
 TextView const &
@@ -1234,7 +1234,7 @@ public:
 
 protected:
   TextView const &key() const override;
-  ts::HttpHeader hdr(Context &ctx) const override;
+  ts::HttpHeader  hdr(Context &ctx) const override;
 };
 
 TextView const &
@@ -1369,7 +1369,7 @@ public:
   static constexpr TextView NAME{"outbound-addr-remote"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1395,7 +1395,7 @@ public:
   static constexpr TextView NAME{"outbound-addr-local"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -1419,70 +1419,70 @@ namespace
 // Extractors aren't constructed, they are always named references to singletons.
 // These are the singletons.
 
-Ex_ua_req_method ua_req_method;
+Ex_ua_req_method    ua_req_method;
 Ex_proxy_req_method proxy_req_method;
 
-Ex_ua_req_scheme ua_req_scheme;
-Ex_pre_remap_scheme pre_remap_scheme;
-Ex_remap_target_scheme remap_target_scheme;
+Ex_ua_req_scheme            ua_req_scheme;
+Ex_pre_remap_scheme         pre_remap_scheme;
+Ex_remap_target_scheme      remap_target_scheme;
 Ex_remap_replacement_scheme remap_replacement_scheme;
-Ex_proxy_req_scheme proxy_req_scheme;
+Ex_proxy_req_scheme         proxy_req_scheme;
 
-Ex_ua_req_url ua_req_url;
-Ex_pre_remap_url pre_remap_url;
-Ex_proxy_req_url proxy_req_url;
+Ex_ua_req_url            ua_req_url;
+Ex_pre_remap_url         pre_remap_url;
+Ex_proxy_req_url         proxy_req_url;
 Ex_remap_replacement_url remap_replacement_url;
-Ex_remap_target_url remap_target_url;
+Ex_remap_target_url      remap_target_url;
 
-Ex_ua_req_loc ua_req_loc;
+Ex_ua_req_loc    ua_req_loc;
 Ex_proxy_req_loc proxy_req_loc;
 
-Ex_ua_req_host ua_req_host;
-Ex_pre_remap_host pre_remap_host;
-Ex_remap_target_host remap_target_host;
+Ex_ua_req_host            ua_req_host;
+Ex_pre_remap_host         pre_remap_host;
+Ex_remap_target_host      remap_target_host;
 Ex_remap_replacement_host remap_replacement_host;
-Ex_proxy_req_host proxy_req_host;
+Ex_proxy_req_host         proxy_req_host;
 
-Ex_ua_req_port ua_req_port;
+Ex_ua_req_port    ua_req_port;
 Ex_proxy_req_port proxy_req_port;
 
-Ex_ua_req_path ua_req_path;
-Ex_pre_remap_path pre_remap_path;
+Ex_ua_req_path            ua_req_path;
+Ex_pre_remap_path         pre_remap_path;
 Ex_remap_replacement_path remap_replacement_path;
-Ex_remap_target_path remap_target_path;
-Ex_proxy_req_path proxy_req_path;
+Ex_remap_target_path      remap_target_path;
+Ex_proxy_req_path         proxy_req_path;
 
-Ex_ua_req_fragment ua_req_fragment;
+Ex_ua_req_fragment    ua_req_fragment;
 Ex_pre_remap_fragment pre_remap_fragment;
 Ex_proxy_req_fragment proxy_req_fragment;
 
-Ex_ua_req_url_host ua_req_url_host;
+Ex_ua_req_url_host    ua_req_url_host;
 Ex_proxy_req_url_host proxy_req_url_host;
 
-Ex_ua_req_url_port ua_req_url_port;
-Ex_proxy_req_url_port proxy_req_url_port;
-Ex_pre_remap_port pre_remap_port;
+Ex_ua_req_url_port        ua_req_url_port;
+Ex_proxy_req_url_port     proxy_req_url_port;
+Ex_pre_remap_port         pre_remap_port;
 Ex_remap_replacement_port remap_replacement_port;
-Ex_remap_target_port remap_target_port;
+Ex_remap_target_port      remap_target_port;
 
-Ex_ua_req_url_loc ua_req_url_loc;
-Ex_proxy_req_url_loc proxy_req_url_loc;
-Ex_pre_remap_loc pre_remap_loc;
+Ex_ua_req_url_loc        ua_req_url_loc;
+Ex_proxy_req_url_loc     proxy_req_url_loc;
+Ex_pre_remap_loc         pre_remap_loc;
 Ex_remap_replacement_loc remap_replacement_loc;
-Ex_remap_target_loc remap_target_loc;
+Ex_remap_target_loc      remap_target_loc;
 
-Ex_ua_req_field ua_req_field;
-Ex_proxy_req_field proxy_req_field;
-Ex_proxy_rsp_field proxy_rsp_field;
+Ex_ua_req_field       ua_req_field;
+Ex_proxy_req_field    proxy_req_field;
+Ex_proxy_rsp_field    proxy_rsp_field;
 Ex_upstream_rsp_field upstream_rsp_field;
 
-Ex_proxy_rsp_status proxy_rsp_status;
-Ex_upstream_rsp_status upstream_rsp_status;
-Ex_proxy_rsp_status_reason proxy_rsp_status_reason;
+Ex_proxy_rsp_status           proxy_rsp_status;
+Ex_upstream_rsp_status        upstream_rsp_status;
+Ex_proxy_rsp_status_reason    proxy_rsp_status_reason;
 Ex_upstream_rsp_status_reason upstream_rsp_status_reason;
-Ex_outbound_txn_count outbound_txn_count;
-Ex_outbound_addr_remote outbound_addr_remote;
-Ex_outbound_addr_local outbound_addr_local;
+Ex_outbound_txn_count         outbound_txn_count;
+Ex_outbound_addr_remote       outbound_addr_remote;
+Ex_outbound_addr_local        outbound_addr_local;
 
 [[maybe_unused]] bool INITIALIZED = []() -> bool {
   Extractor::define(Ex_ua_req_method::NAME, &ua_req_method);

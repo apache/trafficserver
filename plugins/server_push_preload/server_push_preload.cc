@@ -42,7 +42,7 @@ static regex linkRegexp("<([^>]+)>;(.+)");
 namespace
 {
 GlobalPlugin *globalPlugin;
-RemapPlugin *remapPlugin;
+RemapPlugin  *remapPlugin;
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 } // namespace
@@ -70,9 +70,9 @@ public:
       return;
     }
 
-    ClientRequest &request = transaction.getClientRequest();
-    Response &response     = transaction.getClientResponse();
-    Headers &headers       = response.getHeaders();
+    ClientRequest &request  = transaction.getClientRequest();
+    Response      &response = transaction.getClientResponse();
+    Headers       &headers  = response.getHeaders();
 
     const Url &clientUrl = request.getPristineUrl();
 
@@ -89,8 +89,8 @@ public:
           string url = matches[1].str();
           Dbg(dbg_ctl, "Found link header match: %s", url.c_str());
 
-          set<string> params = split(matches[2].str(), ';');
-          auto preload       = params.find(PRELOAD_PARAM);
+          set<string> params  = split(matches[2].str(), ';');
+          auto        preload = params.find(PRELOAD_PARAM);
           if (preload == params.end()) {
             continue;
           }
@@ -102,7 +102,7 @@ public:
           }
 
           Request request(url);
-          Url &linkUrl = request.getUrl();
+          Url    &linkUrl = request.getUrl();
 
           if (linkUrl.getHost().empty()) {
             linkUrl.setHost(clientUrl.getHost());
@@ -125,8 +125,8 @@ public:
   split(const string &params, char delim)
   {
     stringstream ss(params);
-    string s;
-    set<string> tokens;
+    string       s;
+    set<string>  tokens;
     while (getline(ss, s, delim)) {
       s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char c) { return !std::isspace(c); }).base(), s.end()); // trim left
       s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char c) { return !std::isspace(c); }));        // trim right

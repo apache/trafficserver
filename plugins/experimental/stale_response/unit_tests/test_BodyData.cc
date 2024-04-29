@@ -32,8 +32,8 @@ TEST_CASE("Body Data")
   BodyData pBody;
   REQUIRE(pBody.getSize() == 0);
   REQUIRE(pBody.getChunkCount() == 0);
-  char const *pData = 0;
-  int64_t dataLen   = 0;
+  char const *pData   = 0;
+  int64_t     dataLen = 0;
   REQUIRE(pBody.getChunk(0, &pData, &dataLen) == false);
 
   // First chunk.

@@ -34,7 +34,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
   http_init();
   http2_init();
 
-  HTTPParser parser;
+  HTTPParser     parser;
   ts::PostScript parser_defer([&]() -> void { http_parser_clear(&parser); });
   http_parser_init(&parser);
 
@@ -45,7 +45,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
                            "User-Agent: foobar\r\n"
                            "\r\n";
 
-    HTTPHdr hdr_1;
+    HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
     hdr_1.create(HTTP_TYPE_REQUEST, HTTP_2_0);
 
@@ -91,7 +91,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     }
 
     // convert back to HTTP/1.1
-    HTTPHdr hdr_2;
+    HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
     hdr_2.create(HTTP_TYPE_REQUEST);
     hdr_2.copy(&hdr_1);
@@ -99,9 +99,9 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[1024] = {0};
-    int bufindex   = 0;
-    int dumpoffset = 0;
+    char buf[1024]  = {0};
+    int  bufindex   = 0;
+    int  dumpoffset = 0;
 
     hdr_2.print(buf, sizeof(buf), &bufindex, &dumpoffset);
 
@@ -113,7 +113,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // Verify that conversion from HTTP/2 to HTTP/1.1 works correctly when the
     // HTTP/2 request contains a Host header.
-    HTTPHdr hdr_2_with_host;
+    HTTPHdr        hdr_2_with_host;
     ts::PostScript hdr_2_with_host_defer([&]() -> void { hdr_2_with_host.destroy(); });
     hdr_2_with_host.create(HTTP_TYPE_REQUEST);
     hdr_2_with_host.copy(&hdr_1);
@@ -147,7 +147,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
                             "Connection: close\r\n"
                             "\r\n";
 
-    HTTPHdr hdr_1;
+    HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
     hdr_1.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
 
@@ -175,7 +175,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     }
 
     // convert to HTTP/1.1
-    HTTPHdr hdr_2;
+    HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
     hdr_2.create(HTTP_TYPE_REQUEST);
     hdr_2.copy(&hdr_1);
@@ -183,9 +183,9 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[1024] = {0};
-    int bufindex   = 0;
-    int dumpoffset = 0;
+    char buf[1024]  = {0};
+    int  bufindex   = 0;
+    int  dumpoffset = 0;
 
     hdr_2.print(buf, sizeof(buf), &bufindex, &dumpoffset);
 

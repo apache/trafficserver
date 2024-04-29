@@ -226,9 +226,9 @@ OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 int
 OneWayTunnel::startEvent(int event, void *data)
 {
-  VIO *vio   = static_cast<VIO *>(data);
-  int ret    = VC_EVENT_DONE;
-  int result = 0;
+  VIO *vio    = static_cast<VIO *>(data);
+  int  ret    = VC_EVENT_DONE;
+  int  result = 0;
 
 #ifdef TEST
   const char *event_origin = (vio == vioSource ? "source" : "target"), *event_name = get_vc_event_name(event);

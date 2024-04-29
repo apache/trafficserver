@@ -59,7 +59,7 @@ Http09App::~Http09App()
 void
 Http09App::on_stream_open(QUICStream &stream)
 {
-  auto ret   = this->_streams.emplace(stream.id(), stream);
+  auto  ret  = this->_streams.emplace(stream.id(), stream);
   auto &info = ret.first->second;
 
   switch (stream.direction()) {
@@ -91,7 +91,7 @@ Http09App::main_event_handler(int event, Event *data)
 {
   Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
-  VIO *vio                     = reinterpret_cast<VIO *>(data->cookie);
+  VIO                 *vio     = reinterpret_cast<VIO *>(data->cookie);
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
   if (adapter == nullptr) {
@@ -101,8 +101,8 @@ Http09App::main_event_handler(int event, Event *data)
 
   bool is_bidirectional = adapter->stream().is_bidirectional();
 
-  QUICStreamId stream_id = adapter->stream().id();
-  Http09Transaction *txn = static_cast<Http09Transaction *>(this->_ssn->get_transaction(stream_id));
+  QUICStreamId       stream_id = adapter->stream().id();
+  Http09Transaction *txn       = static_cast<Http09Transaction *>(this->_ssn->get_transaction(stream_id));
 
   switch (event) {
   case VC_EVENT_READ_READY:

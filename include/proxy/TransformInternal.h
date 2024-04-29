@@ -43,12 +43,12 @@ public:
 
 public:
   TransformVConnection *m_tvc;
-  VIO m_read_vio;
-  VIO m_write_vio;
-  int m_event_count;
-  int m_deletable;
-  int m_closed;
-  int m_called_user;
+  VIO                   m_read_vio;
+  VIO                   m_write_vio;
+  int                   m_event_count;
+  int                   m_deletable;
+  int                   m_closed;
+  int                   m_called_user;
 };
 
 class TransformVConnection : public TransformVCChain
@@ -72,10 +72,10 @@ public:
   uint64_t backlog(uint64_t limit = UINT64_MAX) override;
 
 public:
-  VConnection *m_transform;
-  Continuation *m_cont;
+  VConnection      *m_transform;
+  Continuation     *m_cont;
   TransformTerminus m_terminus;
-  int m_closed;
+  int               m_closed;
 };
 
 class TransformControl : public Continuation
@@ -86,10 +86,10 @@ public:
   int handle_event(int event, void *edata);
 
 public:
-  APIHooks m_hooks;
-  VConnection *m_tvc         = nullptr;
-  IOBufferReader *m_read_buf = nullptr;
-  MIOBuffer *m_write_buf     = nullptr;
+  APIHooks        m_hooks;
+  VConnection    *m_tvc       = nullptr;
+  IOBufferReader *m_read_buf  = nullptr;
+  MIOBuffer      *m_write_buf = nullptr;
 };
 
 class NullTransform : public INKVConnInternal
@@ -101,9 +101,9 @@ public:
   int handle_event(int event, void *edata);
 
 public:
-  MIOBuffer *m_output_buf;
+  MIOBuffer      *m_output_buf;
   IOBufferReader *m_output_reader;
-  VIO *m_output_vio;
+  VIO            *m_output_vio;
 };
 
 class RangeTransform : public INKVConnInternal
@@ -122,18 +122,18 @@ public:
   void calculate_output_cl();
 
 public:
-  MIOBuffer *m_output_buf;
+  MIOBuffer      *m_output_buf;
   IOBufferReader *m_output_reader;
 
-  HTTPHdr *m_transform_resp;
-  VIO *m_output_vio;
-  int64_t m_range_content_length;
-  int m_num_chars_for_cl;
-  int m_num_range_fields;
-  int m_current_range;
-  const char *m_content_type;
-  int m_content_type_len;
+  HTTPHdr     *m_transform_resp;
+  VIO         *m_output_vio;
+  int64_t      m_range_content_length;
+  int          m_num_chars_for_cl;
+  int          m_num_range_fields;
+  int          m_current_range;
+  const char  *m_content_type;
+  int          m_content_type_len;
   RangeRecord *m_ranges;
-  int64_t m_output_cl;
-  int64_t m_done;
+  int64_t      m_output_cl;
+  int64_t      m_done;
 };

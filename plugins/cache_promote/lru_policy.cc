@@ -27,10 +27,10 @@ static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 bool
 LRUHash::initFromUrl(TSHttpTxn txnp)
 {
-  bool ret     = false;
-  TSMLoc c_url = TS_NULL_MLOC;
+  bool      ret   = false;
+  TSMLoc    c_url = TS_NULL_MLOC;
   TSMBuffer reqp;
-  TSMLoc req_hdr;
+  TSMLoc    req_hdr;
 
   if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqp, &req_hdr)) {
     return false;
@@ -38,8 +38,8 @@ LRUHash::initFromUrl(TSHttpTxn txnp)
 
   if (TS_SUCCESS == TSUrlCreate(reqp, &c_url)) {
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, reqp, c_url)) {
-      int url_len = 0;
-      char *url   = TSUrlStringGet(reqp, c_url, &url_len);
+      int   url_len = 0;
+      char *url     = TSUrlStringGet(reqp, c_url, &url_len);
 
       if (url && url_len > 0) {
         // SHA1() is deprecated on OpenSSL 3, but it's faster than its replacement.
@@ -118,9 +118,9 @@ LRUPolicy::parseOption(int opt, char *optarg)
 bool
 LRUPolicy::doPromote(TSHttpTxn txnp)
 {
-  LRUHash hash;
+  LRUHash          hash;
   LRUMap::iterator map_it;
-  bool ret = false;
+  bool             ret = false;
 
   if (!hash.initFromUrl(txnp)) {
     return false;
@@ -133,9 +133,9 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
   if (_map.end() != map_it) {
     auto &[map_key, map_val]             = *map_it;
     auto &[val_key, val_hits, val_bytes] = *(map_it->second);
-    bool cacheable                       = false;
+    bool      cacheable                  = false;
     TSMBuffer request;
-    TSMLoc req_hdr;
+    TSMLoc    req_hdr;
 
     // This is because compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
     (void)val_key;
@@ -143,8 +143,8 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
     // We check that the request is cacheable, we will still count the request, but if not cacheable, we
     // leave it in the LRU such that a subsequent request that is cacheable can properly promote.
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
-      int method_len     = 0;
-      const char *method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
+      int         method_len = 0;
+      const char *method     = TSHttpHdrMethodGet(request, req_hdr, &method_len);
 
       if (TS_HTTP_METHOD_GET == method) { // Only allow GET requests (for now) to actually do the promotion
         TSMLoc range = TSMimeHdrFieldFind(request, req_hdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
@@ -230,7 +230,7 @@ LRUPolicy::addBytes(TSHttpTxn txnp)
     map_it = _map.find(hash);
     if (_map.end() != map_it) {
       TSMBuffer resp;
-      TSMLoc resp_hdr;
+      TSMLoc    resp_hdr;
 
       if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp, &resp_hdr)) {
         TSMLoc field_loc = TSMimeHdrFieldFind(resp, resp_hdr, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
@@ -257,8 +257,8 @@ bool
 LRUPolicy::stats_add(const char *remap_id)
 
 {
-  std::string_view remap_identifier                 = remap_id;
-  const std::tuple<std::string_view, int *> stats[] = {
+  std::string_view                          remap_identifier = remap_id;
+  const std::tuple<std::string_view, int *> stats[]          = {
     {"cache_hits",     &_cache_hits_id    },
     {"freelist_size",  &_freelist_size_id },
     {"lru_size",       &_lru_size_id      },
@@ -276,7 +276,7 @@ LRUPolicy::stats_add(const char *remap_id)
 
   for (const auto &stat : stats) {
     std::string_view name = std::get<0>(stat);
-    int *id               = std::get<1>(stat);
+    int             *id   = std::get<1>(stat);
     if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
       return false;
     }

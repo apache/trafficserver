@@ -46,9 +46,9 @@
 #define STATE_OUTPUT_DATA 1
 
 struct MyData {
-  int state;
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  int              state;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
 };
 
@@ -80,7 +80,7 @@ my_data_destroy(MyData *data)
 static int
 handle_buffering(TSCont contp, MyData *data)
 {
-  TSVIO write_vio;
+  TSVIO   write_vio;
   int64_t towrite;
 
   /* Get the write VIO for the write operation that was performed on
@@ -175,7 +175,7 @@ static void
 handle_transform(TSCont contp)
 {
   MyData *data;
-  int done;
+  int     done;
 
   /* Get our data structure for this operation. The private data
      structure contains the output VIO and output buffer. If the
@@ -253,10 +253,10 @@ bnull_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 static int
 transformable(TSHttpTxn txnp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpStatus resp_status;
-  int retv = 0;
+  int          retv = 0;
 
   /* We are only interested in transforming "200 OK" responses. */
 
@@ -302,7 +302,7 @@ void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
-  TSMutex mutex = TS_NULL_MUTEX;
+  TSMutex                  mutex = TS_NULL_MUTEX;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

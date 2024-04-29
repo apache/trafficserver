@@ -26,9 +26,9 @@
 #include "api/InkAPIInternal.h"
 
 char traffic_server_version[128] = "";
-int ts_major_version             = 0;
-int ts_minor_version             = 0;
-int ts_patch_version             = 0;
+int  ts_major_version            = 0;
+int  ts_minor_version            = 0;
+int  ts_patch_version            = 0;
 
 /* URL schemes */
 const char *TS_URL_SCHEME_FILE;
@@ -361,7 +361,7 @@ FileImpl::fclose()
 ssize_t
 FileImpl::fread(void *buf, size_t length)
 {
-  size_t amount;
+  size_t  amount;
   ssize_t err;
 
   if ((m_mode != READ) || (m_fd == -1)) {
@@ -415,7 +415,7 @@ ssize_t
 FileImpl::fwrite(const void *buf, size_t length)
 {
   const char *p, *e;
-  size_t avail;
+  size_t      avail;
 
   if ((m_mode != WRITE) || (m_fd == -1)) {
     return -1;
@@ -454,7 +454,7 @@ FileImpl::fwrite(const void *buf, size_t length)
 ssize_t
 FileImpl::fflush()
 {
-  char *p, *e;
+  char   *p, *e;
   ssize_t err = 0;
 
   if ((m_mode != WRITE) || (m_fd == -1)) {
@@ -488,7 +488,7 @@ FileImpl::fflush()
 char *
 FileImpl::fgets(char *buf, size_t length)
 {
-  char *e;
+  char  *e;
   size_t pos;
 
   if (length == 0) {

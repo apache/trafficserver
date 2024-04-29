@@ -70,13 +70,13 @@ static int ts_lua_client_request_client_addr_get_addr(lua_State *L);
 static int ts_lua_client_request_client_addr_get_incoming_port(lua_State *L);
 
 static void ts_lua_inject_client_request_ssl_reused_api(lua_State *L);
-static int ts_lua_client_request_get_ssl_reused(lua_State *L);
+static int  ts_lua_client_request_get_ssl_reused(lua_State *L);
 static void ts_lua_inject_client_request_ssl_cipher_api(lua_State *L);
-static int ts_lua_client_request_get_ssl_cipher(lua_State *L);
+static int  ts_lua_client_request_get_ssl_cipher(lua_State *L);
 static void ts_lua_inject_client_request_ssl_protocol_api(lua_State *L);
-static int ts_lua_client_request_get_ssl_protocol(lua_State *L);
+static int  ts_lua_client_request_get_ssl_protocol(lua_State *L);
 static void ts_lua_inject_client_request_ssl_curve_api(lua_State *L);
-static int ts_lua_client_request_get_ssl_curve(lua_State *L);
+static int  ts_lua_client_request_get_ssl_curve(lua_State *L);
 
 void
 ts_lua_inject_client_request_api(lua_State *L)
@@ -158,11 +158,11 @@ ts_lua_client_request_header_get(lua_State *L)
 {
   const char *key;
   const char *val;
-  int val_len;
-  size_t key_len;
-  int count;
+  int         val_len;
+  size_t      key_len;
+  int         count;
 
-  TSMLoc field_loc, next_field_loc;
+  TSMLoc           field_loc, next_field_loc;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -205,10 +205,10 @@ ts_lua_client_request_header_set(lua_State *L)
 {
   const char *key;
   const char *val;
-  size_t val_len;
-  size_t key_len;
-  int remove;
-  int first;
+  size_t      val_len;
+  size_t      key_len;
+  int         remove;
+  int         first;
 
   TSMLoc field_loc, tmp;
 
@@ -288,11 +288,11 @@ ts_lua_client_request_header_table_get(lua_State *L)
 {
   const char *key;
   const char *val;
-  int val_len;
-  size_t key_len;
-  int count;
+  int         val_len;
+  size_t      key_len;
+  int         count;
 
-  TSMLoc field_loc, next_field_loc;
+  TSMLoc           field_loc, next_field_loc;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -347,12 +347,12 @@ ts_lua_client_request_get_headers(lua_State *L)
 {
   const char *name;
   const char *value;
-  int name_len;
-  int value_len;
-  TSMLoc field_loc;
-  TSMLoc next_field_loc;
+  int         name_len;
+  int         value_len;
+  TSMLoc      field_loc;
+  TSMLoc      next_field_loc;
   const char *tvalue;
-  size_t tvalue_len;
+  size_t      tvalue_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -438,7 +438,7 @@ static int
 ts_lua_client_request_get_url(lua_State *L)
 {
   char *url;
-  int url_len;
+  int   url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -461,10 +461,10 @@ static int
 ts_lua_client_request_get_pristine_url(lua_State *L)
 {
   char *url;
-  int url_len;
+  int   url_len;
 
   TSMBuffer bufp;
-  TSMLoc url_loc;
+  TSMLoc    url_loc;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -493,7 +493,7 @@ static int
 ts_lua_client_request_get_url_host(lua_State *L)
 {
   const char *host;
-  int len = 0;
+  int         len = 0;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -502,9 +502,9 @@ ts_lua_client_request_get_url_host(lua_State *L)
   host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &len);
 
   if (len == 0) {
-    char const *key   = "Host";
-    char const *l_key = "host";
-    int key_len       = 4;
+    char const *key     = "Host";
+    char const *l_key   = "host";
+    int         key_len = 4;
 
     TSMLoc field_loc;
 
@@ -531,7 +531,7 @@ static int
 ts_lua_client_request_set_url_host(lua_State *L)
 {
   const char *host;
-  size_t len;
+  size_t      len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -581,7 +581,7 @@ static int
 ts_lua_client_request_get_url_scheme(lua_State *L)
 {
   const char *scheme;
-  int len;
+  int         len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -598,7 +598,7 @@ static int
 ts_lua_client_request_set_url_scheme(lua_State *L)
 {
   const char *scheme;
-  size_t len;
+  size_t      len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -615,7 +615,7 @@ static int
 ts_lua_client_request_get_uri(lua_State *L)
 {
   const char *path;
-  int path_len;
+  int         path_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -634,7 +634,7 @@ static int
 ts_lua_client_request_set_uri(lua_State *L)
 {
   const char *path;
-  size_t path_len;
+  size_t      path_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -666,7 +666,7 @@ static int
 ts_lua_client_request_get_uri_args(lua_State *L)
 {
   const char *param;
-  int param_len;
+  int         param_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -687,7 +687,7 @@ static int
 ts_lua_client_request_set_uri_args(lua_State *L)
 {
   const char *param;
-  size_t param_len;
+  size_t      param_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -713,7 +713,7 @@ static int
 ts_lua_client_request_get_uri_params(lua_State *L)
 {
   const char *param;
-  int param_len;
+  int         param_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -734,7 +734,7 @@ static int
 ts_lua_client_request_set_uri_params(lua_State *L)
 {
   const char *param;
-  size_t param_len;
+  size_t      param_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -750,8 +750,8 @@ static int
 ts_lua_client_request_client_addr_get_ip(lua_State *L)
 {
   struct sockaddr const *client_ip;
-  char cip[128];
-  ts_lua_http_ctx *http_ctx;
+  char                   cip[128];
+  ts_lua_http_ctx       *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -777,8 +777,8 @@ static int
 ts_lua_client_request_client_addr_get_port(lua_State *L)
 {
   struct sockaddr const *client_ip;
-  ts_lua_http_ctx *http_ctx;
-  int port;
+  ts_lua_http_ctx       *http_ctx;
+  int                    port;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -804,8 +804,8 @@ static int
 ts_lua_client_request_client_addr_get_incoming_port(lua_State *L)
 {
   struct sockaddr const *incoming_addr;
-  ts_lua_http_ctx *http_ctx;
-  int port;
+  ts_lua_http_ctx       *http_ctx;
+  int                    port;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -831,10 +831,10 @@ static int
 ts_lua_client_request_client_addr_get_addr(lua_State *L)
 {
   struct sockaddr const *client_ip;
-  ts_lua_http_ctx *http_ctx;
-  int port;
-  int family;
-  char cip[128];
+  ts_lua_http_ctx       *http_ctx;
+  int                    port;
+  int                    family;
+  char                   cip[128];
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -878,7 +878,7 @@ static int
 ts_lua_client_request_get_method(lua_State *L)
 {
   const char *method;
-  int method_len;
+  int         method_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -899,7 +899,7 @@ static int
 ts_lua_client_request_set_method(lua_State *L)
 {
   const char *method;
-  size_t method_len;
+  size_t      method_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -924,7 +924,7 @@ ts_lua_inject_client_request_body_size_api(lua_State *L)
 static int
 ts_lua_client_request_get_body_size(lua_State *L)
 {
-  int64_t body_size;
+  int64_t          body_size;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -948,9 +948,9 @@ ts_lua_inject_client_request_version_api(lua_State *L)
 static int
 ts_lua_client_request_get_version(lua_State *L)
 {
-  int version;
+  int  version;
   char buf[32];
-  int n;
+  int  n;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -971,8 +971,8 @@ ts_lua_client_request_get_version(lua_State *L)
 static int
 ts_lua_client_request_set_version(lua_State *L)
 {
-  const char *version;
-  size_t len;
+  const char  *version;
+  size_t       len;
   unsigned int major, minor;
 
   ts_lua_http_ctx *http_ctx;
@@ -1000,7 +1000,7 @@ ts_lua_inject_client_request_header_size_api(lua_State *L)
 static int
 ts_lua_client_request_get_header_size(lua_State *L)
 {
-  int header_size;
+  int              header_size;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -1021,10 +1021,10 @@ ts_lua_inject_client_request_ssl_reused_api(lua_State *L)
 static int
 ts_lua_client_request_get_ssl_reused(lua_State *L)
 {
-  int ssl_reused = 0;
+  int              ssl_reused = 0;
   ts_lua_http_ctx *http_ctx;
-  TSHttpSsn ssnp;
-  TSVConn client_conn;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
 
   GET_HTTP_CONTEXT(http_ctx, L);
   ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
@@ -1049,10 +1049,10 @@ ts_lua_inject_client_request_ssl_cipher_api(lua_State *L)
 static int
 ts_lua_client_request_get_ssl_cipher(lua_State *L)
 {
-  const char *ssl_cipher = "-";
+  const char      *ssl_cipher = "-";
   ts_lua_http_ctx *http_ctx;
-  TSHttpSsn ssnp;
-  TSVConn client_conn;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -1078,10 +1078,10 @@ ts_lua_inject_client_request_ssl_protocol_api(lua_State *L)
 static int
 ts_lua_client_request_get_ssl_protocol(lua_State *L)
 {
-  const char *ssl_protocol = "-";
+  const char      *ssl_protocol = "-";
   ts_lua_http_ctx *http_ctx;
-  TSHttpSsn ssnp;
-  TSVConn client_conn;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -1107,10 +1107,10 @@ ts_lua_inject_client_request_ssl_curve_api(lua_State *L)
 static int
 ts_lua_client_request_get_ssl_curve(lua_State *L)
 {
-  const char *ssl_curve = "-";
+  const char      *ssl_curve = "-";
   ts_lua_http_ctx *http_ctx;
-  TSHttpSsn ssnp;
-  TSVConn client_conn;
+  TSHttpSsn        ssnp;
+  TSVConn          client_conn;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 

@@ -41,23 +41,23 @@
 
 namespace ats_wasm
 {
-const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
-const int LOCAL_PORT                = 8080;
-const int FETCH_EVENT_ID_BASE       = 10000;
+const unsigned int LOCAL_IP_ADDRESS    = 0x0100007f;
+const int          LOCAL_PORT          = 8080;
+const int          FETCH_EVENT_ID_BASE = 10000;
 
-using proxy_wasm::ContextBase;
-using proxy_wasm::PluginBase;
-using proxy_wasm::WasmBase;
-using proxy_wasm::WasmResult;
-using proxy_wasm::WasmStreamType;
-using proxy_wasm::BufferInterface;
 using proxy_wasm::BufferBase;
-using proxy_wasm::WasmHeaderMapType;
-using proxy_wasm::Pairs;
+using proxy_wasm::BufferInterface;
+using proxy_wasm::ContextBase;
 using proxy_wasm::GrpcStatusCode;
-using proxy_wasm::WasmBufferType;
 using proxy_wasm::LogLevel;
 using proxy_wasm::MetricType;
+using proxy_wasm::Pairs;
+using proxy_wasm::PluginBase;
+using proxy_wasm::WasmBase;
+using proxy_wasm::WasmBufferType;
+using proxy_wasm::WasmHeaderMapType;
+using proxy_wasm::WasmResult;
+using proxy_wasm::WasmStreamType;
 
 class Wasm;
 
@@ -122,7 +122,7 @@ extern DbgCtl dbg_ctl;
 // local struct representing the transaction header
 struct HeaderMap {
   TSMBuffer bufp{nullptr};
-  TSMLoc hdr_loc{nullptr};
+  TSMLoc    hdr_loc{nullptr};
 
   ~HeaderMap()
   {
@@ -200,7 +200,7 @@ public:
   Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin);
 
   // extend class utility functions
-  Wasm *wasm() const;
+  Wasm    *wasm() const;
   Context *parent_context() const;
   Context *root_context() const;
 
@@ -208,7 +208,7 @@ public:
   void initialize(TSCont cont);
 
   TSHttpTxn txnp();
-  TSCont scheduler_cont();
+  TSCont    scheduler_cont();
 
   void error(std::string_view message) override;
 
@@ -338,25 +338,25 @@ private:
   HeaderMap getHeaderMap(WasmHeaderMapType type);
 
   TSHttpTxn txnp_{nullptr};
-  TSCont scheduler_cont_{nullptr};
+  TSCont    scheduler_cont_{nullptr};
 
   // continue/close stream?
   bool reenable_txn_ = false;
 
   // local reply
-  Pairs local_reply_headers_{};
+  Pairs       local_reply_headers_{};
   std::string local_reply_details_ = "";
-  bool local_reply_                = false;
+  bool        local_reply_         = false;
 
   // buffer for result (don't set to null as default)
   BufferBase buffer_;
 
   // Call result
-  TSEvent cr_result_    = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
-  const void *cr_body_  = nullptr;
-  size_t cr_body_size_  = 0;
-  TSMBuffer cr_hdr_buf_ = nullptr;
-  TSMLoc cr_hdr_loc_    = nullptr;
+  TSEvent     cr_result_    = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
+  const void *cr_body_      = nullptr;
+  size_t      cr_body_size_ = 0;
+  TSMBuffer   cr_hdr_buf_   = nullptr;
+  TSMLoc      cr_hdr_loc_   = nullptr;
 
   // transform result
   Buffer transform_result_;
@@ -370,12 +370,12 @@ struct AsyncInfo {
 
 // local struct representing info for transform
 struct TransformInfo {
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
 
-  TSVIO reserved_vio;
-  TSIOBuffer reserved_buffer;
+  TSVIO            reserved_vio;
+  TSIOBuffer       reserved_buffer;
   TSIOBufferReader reserved_reader;
 
   int64_t upstream_bytes;

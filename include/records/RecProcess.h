@@ -32,7 +32,7 @@
 
 using RecRawStatBlockAllocator = RecRawStatBlock *(*)(int num_stats);
 
-void SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator);
+void             SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator);
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);
 
 int _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
@@ -93,8 +93,8 @@ int RecGetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data);
 int RecGetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data);
 
 RecRawStat *RecGetGlobalRawStatPtr(RecRawStatBlock *rsb, int id);
-int64_t *RecGetGlobalRawStatSumPtr(RecRawStatBlock *rsb, int id);
-int64_t *RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id);
+int64_t    *RecGetGlobalRawStatSumPtr(RecRawStatBlock *rsb, int id);
+int64_t    *RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id);
 
 //-------------------------------------------------------------------------
 // RecIncrRawStatXXX

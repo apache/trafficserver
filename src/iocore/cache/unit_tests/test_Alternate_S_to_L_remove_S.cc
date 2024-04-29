@@ -26,7 +26,7 @@
 
 #include "main.h"
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 // delete dir
@@ -87,7 +87,7 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "application/x-javascript", len) == 0);
   }
@@ -133,7 +133,7 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "text/html;charset=utf-8", len) == 0);
   }
@@ -215,7 +215,7 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int len;
+    int         len;
     const char *value = field->value_get(&len);
     REQUIRE(memcmp(value, "application/x-javascript", len) == 0);
   }
@@ -223,8 +223,8 @@ public:
   void
   delete_earliest_dir(CacheVC *vc)
   {
-    CacheKey key        = {};
-    Dir *last_collision = nullptr;
+    CacheKey key            = {};
+    Dir     *last_collision = nullptr;
     SCOPED_MUTEX_LOCK(lock, vc->stripe->mutex, this->mutex->thread_holding);
     vc->vector.data[0].alternate.object_key_get(&key);
     REQUIRE(dir_probe(&key, vc->stripe, &dir, &last_collision) != 0);
@@ -239,11 +239,11 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheTestHandler *h                = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
-    test_Alternate_S_to_L_remove_S *ls = new test_Alternate_S_to_L_remove_S(LARGE_FILE, "http://www.scw11.com");
-    CacheAltReadAgain *read            = new CacheAltReadAgain(SMALL_FILE, "http://www.scw11.com");
-    CacheAltReadAgain2 *read2          = new CacheAltReadAgain2(LARGE_FILE, "http://www.scw11.com");
-    TerminalTest *tt                   = new TerminalTest;
+    CacheTestHandler               *h     = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
+    test_Alternate_S_to_L_remove_S *ls    = new test_Alternate_S_to_L_remove_S(LARGE_FILE, "http://www.scw11.com");
+    CacheAltReadAgain              *read  = new CacheAltReadAgain(SMALL_FILE, "http://www.scw11.com");
+    CacheAltReadAgain2             *read2 = new CacheAltReadAgain2(LARGE_FILE, "http://www.scw11.com");
+    TerminalTest                   *tt    = new TerminalTest;
 
     h->add(ls);
     h->add(read); // read again

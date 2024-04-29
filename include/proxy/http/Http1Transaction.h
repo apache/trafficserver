@@ -41,7 +41,7 @@ public:
 
   ////////////////////
   // Methods
-  int get_transaction_id() const override;
+  int  get_transaction_id() const override;
   void set_reader(IOBufferReader *reader);
   void set_close_connection(HTTPHdr &hdr) const override;
 

@@ -31,15 +31,15 @@ class QUICVariableInt
 public:
   static size_t size(const uint8_t *src);
   static size_t size(uint64_t src);
-  static int encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src);
-  static int decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len = 8);
+  static int    encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src);
+  static int    decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len = 8);
 };
 
 class QUICIntUtil
 {
 public:
   static uint64_t read_QUICVariableInt(const uint8_t *buf, size_t buf_len);
-  static void write_QUICVariableInt(uint64_t data, uint8_t *buf, size_t *len);
+  static void     write_QUICVariableInt(uint64_t data, uint8_t *buf, size_t *len);
   static uint64_t read_nbytes_as_uint(const uint8_t *buf, uint8_t n);
-  static void write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);
+  static void     write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);
 };

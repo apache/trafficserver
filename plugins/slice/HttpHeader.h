@@ -45,7 +45,7 @@ constexpr std::string_view SLICE_CRR_VAL    = "1";
 */
 struct HttpHeader {
   TSMBuffer const m_buffer;
-  TSMLoc const m_lochdr;
+  TSMLoc const    m_lochdr;
 
   explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr) : m_buffer(buffer), m_lochdr(lochdr) {}
 
@@ -116,9 +116,9 @@ struct HttpHeader {
 
   // retrieves header value as a char*
   bool valueForKey(char const *const keystr, int const keylen,
-                   char *const valstr,  // <-- return string value
-                   int *const vallen,   // <-- pass in capacity, returns len of string
-                   int const index = -1 // retrieves all values
+                   char *const valstr,    // <-- return string value
+                   int *const  vallen,    // <-- pass in capacity, returns len of string
+                   int const   index = -1 // retrieves all values
   ) const;
 
   /**
@@ -153,7 +153,7 @@ struct TxnHdrMgr {
   TxnHdrMgr &operator=(TxnHdrMgr const &) = delete;
 
   TSMBuffer m_buffer{nullptr};
-  TSMLoc m_lochdr{nullptr};
+  TSMLoc    m_lochdr{nullptr};
 
   TxnHdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
   ~TxnHdrMgr()
@@ -191,7 +191,7 @@ struct HdrMgr {
   HdrMgr &operator=(HdrMgr const &) = delete;
 
   TSMBuffer m_buffer{nullptr};
-  TSMLoc m_lochdr{nullptr};
+  TSMLoc    m_lochdr{nullptr};
 
   HdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
   ~HdrMgr()

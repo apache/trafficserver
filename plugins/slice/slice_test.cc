@@ -49,7 +49,7 @@ testContentRange()
   std::string const expstr("bytes 1023-1048575/307232768");
 
   char gotbuf[1024];
-  int gotlen = sizeof(gotbuf);
+  int  gotlen = sizeof(gotbuf);
 
   bool const strstat(exprange.toStringClosed(gotbuf, &gotlen));
 
@@ -67,7 +67,7 @@ testContentRange()
   }
 
   ContentRange gotrange;
-  bool const gotstat(gotrange.fromStringClosed(expstr.c_str()));
+  bool const   gotstat(gotrange.fromStringClosed(expstr.c_str()));
   if (!gotstat) {
     oss << "fail: gotstat from string" << std::endl;
   } else if (gotrange.m_beg != exprange.m_beg || gotrange.m_end != exprange.m_end || gotrange.m_length != exprange.m_length) {
@@ -115,7 +115,7 @@ testParseRange()
     "bytes=17-13" // degenerate
     ,
     "bytes 0-1023/146515" // this should be rejected (Content-range)
-  };                      // invalid
+  }; // invalid
 
   std::vector<Range> const exps = {
     Range{0,   1023 + 1     },
@@ -180,7 +180,7 @@ struct Tests {
   {
     int numfailed(0);
     for (std::pair<TestFunc, char const *> const &namefunc : funcs) {
-      TestFunc const &func   = namefunc.first;
+      TestFunc const   &func = namefunc.first;
       char const *const name = namefunc.second;
 
       std::cerr << name << " : ";

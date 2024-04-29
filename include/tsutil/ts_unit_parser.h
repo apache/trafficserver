@@ -28,10 +28,10 @@
 namespace ts
 {
 
-using swoc::TextView;
-using swoc::Lexicon;
 using swoc::Errata;
+using swoc::Lexicon;
 using swoc::Rv;
+using swoc::TextView;
 
 /** Parse a string that consists of counts and units.
  *
@@ -83,8 +83,8 @@ public:
   Rv<value_type> operator()(swoc::TextView const &src) const noexcept;
 
 protected:
-  bool _unit_required_p = true; ///< Whether unitless values are allowed.
-  Units _units;                 ///< Unit definitions.
+  bool  _unit_required_p = true; ///< Whether unitless values are allowed.
+  Units _units;                  ///< Unit definitions.
 };
 
 inline UnitParser::UnitParser(UnitParser::Units &&units, bool unit_required_p) noexcept

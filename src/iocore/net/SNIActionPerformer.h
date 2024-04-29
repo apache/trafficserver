@@ -185,10 +185,10 @@ private:
   std::string destination;
 
   /// The start position of a tunnel destination variable, such as '{proxy_protocol_port}'.
-  size_t var_start_pos{0};
-  SNIRoutingType type                         = SNIRoutingType::NONE;
+  size_t                       var_start_pos{0};
+  SNIRoutingType               type           = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
-  const std::vector<int> &alpn_ids;
+  const std::vector<int>      &alpn_ids;
 
   /** The indexes of the mapping functions that need to be called. On
   creation, we decide which functions need to be called, add the coressponding
@@ -209,7 +209,7 @@ private:
 
 class VerifyClient : public ActionItem
 {
-  uint8_t mode;
+  uint8_t     mode;
   std::string ca_file;
   std::string ca_dir;
 
@@ -243,10 +243,10 @@ public:
 
 class TLSValidProtocols : public ActionItem
 {
-  bool unset = true;
+  bool          unset = true;
   unsigned long protocol_mask;
-  int min_ver = -1;
-  int max_ver = -1;
+  int           min_ver = -1;
+  int           max_ver = -1;
 
 public:
 #ifdef SSL_OP_NO_TLSv1_3
@@ -264,7 +264,7 @@ public:
 class SNI_IpAllow : public ActionItem
 {
   swoc::IPRangeSet ip_addrs;
-  std::string server_name;
+  std::string      server_name;
 
 public:
   SNI_IpAllow(std::string &ip_allow_list, const std::string &servername);

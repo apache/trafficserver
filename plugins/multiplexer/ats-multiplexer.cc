@@ -112,14 +112,14 @@ DoRemap(const Instance &i, TSHttpTxn t)
   }
   */
   TSMBuffer buffer;
-  TSMLoc location;
+  TSMLoc    location;
 
   CHECK(TSHttpTxnClientReqGet(t, &buffer, &location));
 
   assert(buffer != nullptr);
   assert(location != nullptr);
 
-  int method_length;
+  int               method_length;
   const char *const method = TSHttpHdrMethodGet(buffer, location, &method_length);
 
   Dbg(dbg_ctl, "Method is %s.", std::string(method, method_length).c_str());

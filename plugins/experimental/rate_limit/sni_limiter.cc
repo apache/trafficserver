@@ -67,11 +67,11 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_SSL_CLIENT_HELLO: {
-    int len;
-    const char *server_name = TSVConnSslSniGet(vc, &len);
+    int               len;
+    const char       *server_name = TSVConnSslSniGet(vc, &len);
     const std::string sni_name(server_name, len);
-    SniSelector *selector   = SniSelector::instance();
-    SniRateLimiter *limiter = selector->findLimiter(sni_name);
+    SniSelector      *selector = SniSelector::instance();
+    SniRateLimiter   *limiter  = selector->findLimiter(sni_name);
 
     if (limiter) {
       const sockaddr *sock = TSNetVConnRemoteAddrGet(vc);

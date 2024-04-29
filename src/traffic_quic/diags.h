@@ -31,7 +31,7 @@
 static void
 reconfigure_diags()
 {
-  int i;
+  int              i;
   DiagsConfigState c;
 
   c.enabled(DiagsTagType_Debug, 1);

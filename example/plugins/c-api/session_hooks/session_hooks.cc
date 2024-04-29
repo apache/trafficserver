@@ -86,7 +86,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSCont contp;
+  TSCont                   contp;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;

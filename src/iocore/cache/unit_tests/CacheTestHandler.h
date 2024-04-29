@@ -74,9 +74,9 @@ public:
   virtual void handle_cache_event(int event, CacheTestBase *base);
 
 protected:
-  CacheTestBase *_rt = nullptr;
-  CacheTestBase *_wt = nullptr;
-  bool _expect_fail  = false;
+  CacheTestBase *_rt          = nullptr;
+  CacheTestBase *_wt          = nullptr;
+  bool           _expect_fail = false;
 };
 
 class TerminalTest : public CacheTestHandler

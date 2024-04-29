@@ -180,7 +180,7 @@ ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *por
 int
 ats_ip_pton(const std::string_view &src, sockaddr *ip)
 {
-  int zret = -1;
+  int              zret = -1;
   std::string_view addr, port;
 
   ats_ip_invalidate(ip);
@@ -217,15 +217,15 @@ ats_ip_pton(const std::string_view &src, sockaddr *ip)
 int
 ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
 {
-  int zret = TS_ERROR;
-  IpAddr addr, addr2;
+  int                 zret = TS_ERROR;
+  IpAddr              addr, addr2;
   static const IpAddr ZERO_ADDR4{INADDR_ANY};
   static const IpAddr MAX_ADDR4{INADDR_BROADCAST};
   static const IpAddr ZERO_ADDR6{in6addr_any};
   // I can't find a clean way to static const initialize an IPv6 address to all ones.
   // This is the best I can find that's portable.
   static const uint64_t ones[]{UINT64_MAX, UINT64_MAX};
-  static const IpAddr MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
+  static const IpAddr   MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
 
   auto idx = src.find_first_of("/-"sv);
   if (idx != src.npos) {
@@ -319,7 +319,7 @@ ats_ip_port_hash(sockaddr const *addr)
   if (ats_is_ip4(addr)) {
     return (static_cast<uint64_t>(ats_ip4_addr_cast(addr)) << 16) | (ats_ip_port_cast(addr));
   } else if (ats_is_ip6(addr)) {
-    CryptoHash hash;
+    CryptoHash    hash;
     CryptoContext hash_context;
     hash_context.update(ats_ip_addr8_cast(addr), TS_IP6_SIZE);
     in_port_t port = ats_ip_port_cast(addr);
@@ -369,8 +369,8 @@ int
 IpAddr::load(const char *text)
 {
   IpEndpoint ip;
-  int zret = ats_ip_pton(text, &ip);
-  *this    = ip;
+  int        zret = ats_ip_pton(text, &ip);
+  *this           = ip;
   return zret;
 }
 
@@ -378,7 +378,7 @@ int
 IpAddr::load(std::string_view const &text)
 {
   IpEndpoint ip;
-  int zret = ats_ip_pton(text, &ip.sa);
+  int        zret = ats_ip_pton(text, &ip.sa);
   this->assign(&ip.sa);
   return zret;
 }
@@ -453,7 +453,7 @@ operator==(IpAddr const &lhs, sockaddr const *rhs)
 int
 IpAddr::cmp(self const &that) const
 {
-  int zret       = 0;
+  int      zret  = 0;
   uint16_t rtype = that._family;
   uint16_t ltype = _family;
 
@@ -494,10 +494,10 @@ IpAddr::cmp(self const &that) const
 int
 ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 {
-  int zret = -1;
-  int port = 0; // port value to assign if we find an address.
-  addrinfo ai_hints;
-  addrinfo *ai_result;
+  int              zret = -1;
+  int              port = 0; // port value to assign if we find an address.
+  addrinfo         ai_hints;
+  addrinfo        *ai_result;
   std::string_view addr_text, port_text;
   std::string_view src(host, strlen(host) + 1);
 
@@ -649,9 +649,9 @@ namespace swoc
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr_t addr)
 {
-  uint8_t *ptr = reinterpret_cast<uint8_t *>(&addr);
+  uint8_t  *ptr = reinterpret_cast<uint8_t *>(&addr);
   bwf::Spec local_spec{spec}; // Format for address elements.
-  bool align_p = false;
+  bool      align_p = false;
 
   if (spec._ext.size()) {
     if (spec._ext.front() == '=') {
@@ -684,8 +684,8 @@ BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
 {
   bwf::Spec local_spec{spec}; // Format for address elements and port.
-  bool addr_p{true};
-  bool family_p{false};
+  bool      addr_p{true};
+  bool      family_p{false};
 
   if (spec._ext.size()) {
     if (spec._ext.front() == '=') {
@@ -738,11 +738,11 @@ BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr)
 {
   bwf::Spec local_spec{spec}; // Format for address elements and port.
-  bool port_p{true};
-  bool addr_p{true};
-  bool family_p{false};
-  bool local_numeric_fill_p{false};
-  char local_numeric_fill_char{'0'};
+  bool      port_p{true};
+  bool      addr_p{true};
+  bool      family_p{false};
+  bool      local_numeric_fill_p{false};
+  char      local_numeric_fill_char{'0'};
 
   if (spec._type == 'p' || spec._type == 'P') {
     bwformat(w, spec, static_cast<void const *>(addr));

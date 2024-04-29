@@ -36,8 +36,8 @@ CacheDisk::incrErrors(const AIOCallback *io)
   this->num_errors++;
 
   const char *opname = "unknown";
-  int opcode         = io->aiocb.aio_lio_opcode;
-  int fd             = io->aiocb.aio_fildes;
+  int         opcode = io->aiocb.aio_lio_opcode;
+  int         fd     = io->aiocb.aio_fildes;
   switch (io->aiocb.aio_lio_opcode) {
   case LIO_READ:
     opname = "READ";
@@ -398,9 +398,9 @@ CacheDisk::update_header()
   free_space                 = 0;
 
   for (i = 0; i < header->num_diskvol_blks; i++) {
-    DiskStripeBlockQueue *dpbq = new DiskStripeBlockQueue();
-    bool dpbq_referenced       = false;
-    dpbq->b                    = &header->vol_info[i];
+    DiskStripeBlockQueue *dpbq            = new DiskStripeBlockQueue();
+    bool                  dpbq_referenced = false;
+    dpbq->b                               = &header->vol_info[i];
     if (header->vol_info[i].free) {
       free_blocks->num_volblocks++;
       free_blocks->size += dpbq->b->len;

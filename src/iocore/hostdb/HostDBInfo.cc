@@ -34,8 +34,8 @@ namespace
  * @param ptr Raw data for an address of family @a af.
  */
 void
-ip_addr_set(IpAddr &ip,     ///< Target storage.
-            uint8_t af,     ///< Address format.
+ip_addr_set(IpAddr     &ip, ///< Target storage.
+            uint8_t     af, ///< Address format.
             void const *ptr ///< Raw address data
 )
 {

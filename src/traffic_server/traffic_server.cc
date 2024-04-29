@@ -151,16 +151,16 @@ static int num_of_udp_threads = 0;
 static int num_task_threads   = 0;
 
 static char *http_accept_port_descriptor;
-static bool enable_core_file_p = false; // Enable core file dump?
-static int command_flag        = DEFAULT_COMMAND_FLAG;
-static int command_index       = -1;
-static bool command_valid      = false;
+static bool  enable_core_file_p = false; // Enable core file dump?
+static int   command_flag       = DEFAULT_COMMAND_FLAG;
+static int   command_index      = -1;
+static bool  command_valid      = false;
 // Commands that have special processing / requirements.
 static const char *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
-static int regression_list        = 0;
-static int regression_level       = REGRESSION_TEST_NONE;
+static int  regression_list       = 0;
+static int  regression_level      = REGRESSION_TEST_NONE;
 #endif
 static int auto_clear_hostdb_flag = 0;
 
@@ -169,20 +169,20 @@ static char conf_dir[512]       = "";
 static char bind_stdout[512]    = "";
 static char bind_stderr[512]    = "";
 
-static char error_tags[1024]    = "";
-static char action_tags[1024]   = "";
-static int show_statistics      = 0;
-static DiagsConfig *diagsConfig = nullptr;
+static char             error_tags[1024]  = "";
+static char             action_tags[1024] = "";
+static int              show_statistics   = 0;
+static DiagsConfig     *diagsConfig       = nullptr;
 extern HttpBodyFactory *body_factory;
 
-static int accept_mss           = 0;
-static int poll_timeout         = -1; // No value set.
-static int cmd_disable_freelist = 0;
+static int  accept_mss           = 0;
+static int  poll_timeout         = -1; // No value set.
+static int  cmd_disable_freelist = 0;
 static bool signal_received[NSIG];
 
-static std::mutex pluginInitMutex;
+static std::mutex              pluginInitMutex;
 static std::condition_variable pluginInitCheck;
-static bool plugin_init_done = false;
+static bool                    plugin_init_done = false;
 
 /*
 To be able to attach with a debugger to traffic_server running in an Au test case, temporarily add the
@@ -272,8 +272,8 @@ public:
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    ts::Metrics &metrics = ts::Metrics::instance();
-    static auto drain_id = metrics.lookup("proxy.process.proxy.draining");
+    ts::Metrics &metrics  = ts::Metrics::instance();
+    static auto  drain_id = metrics.lookup("proxy.process.proxy.draining");
 
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
@@ -477,8 +477,8 @@ public:
   }
 
 private:
-  int64_t _memory_limit = 0;
-  struct rusage _usage;
+  int64_t                     _memory_limit = 0;
+  struct rusage               _usage;
   Metrics::Gauge::AtomicType *memory_rss;
 };
 
@@ -540,8 +540,8 @@ static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
   static Event *tracker_event = nullptr;
-  Event *preE;
-  int dump_mem_info_frequency = 0;
+  Event        *preE;
+  int           dump_mem_info_frequency = 0;
 
   // set tracker_event to NULL, and return previous value
   preE = ink_atomic_swap(&tracker_event, static_cast<Event *>(nullptr));
@@ -623,8 +623,8 @@ check_lockfile()
 {
   std::string rundir(RecConfigReadRuntimeDir());
   std::string lockfile;
-  pid_t holding_pid;
-  int err;
+  pid_t       holding_pid;
+  int         err;
 
   lockfile = Layout::relative_to(rundir, SERVER_LOCK);
 
@@ -703,7 +703,7 @@ std::tuple<bool, std::string>
 initialize_jsonrpc_server()
 {
   std::tuple<bool, std::string> ok{true, {}};
-  auto filePath = RecConfigReadConfigPath("proxy.config.jsonrpc.filename", ts::filename::JSONRPC);
+  auto                          filePath = RecConfigReadConfigPath("proxy.config.jsonrpc.filename", ts::filename::JSONRPC);
 
   auto serverConfig = rpc::config::RPCConfig{};
   serverConfig.load_from_file(filePath);
@@ -750,7 +750,7 @@ cmd_list(char * /* cmd ATS_UNUSED */)
   // show cache config information....
 
   Note("Cache Storage:");
-  Store tStore;
+  Store  tStore;
   Result result = tStore.read_config();
 
   if (result.failed()) {
@@ -792,7 +792,7 @@ static void
 CB_After_Cache_Init()
 {
   APIHook *hook;
-  int start;
+  int      start;
 
   start = ink_atomic_swap(&delay_listen_for_cache, -1);
   emit_fully_initialized_message();
@@ -807,7 +807,7 @@ CB_After_Cache_Init()
   }
 
   ts::Metrics &metrics = ts::Metrics::instance();
-  auto id              = metrics.lookup("proxy.process.proxy.cache_ready_time");
+  auto         id      = metrics.lookup("proxy.process.proxy.cache_ready_time");
 
   metrics[id].store(time(nullptr));
 
@@ -1014,8 +1014,8 @@ try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::
 {
   switch (plugin_type) {
   case plugin_type_t::GLOBAL: {
-    void *handle             = nullptr;
-    void *initptr            = nullptr;
+    void      *handle        = nullptr;
+    void      *initptr       = nullptr;
     bool const plugin_loaded = plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
     if (handle != nullptr) {
       dlclose(handle);
@@ -1033,10 +1033,10 @@ try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::
       error = error_os.str();
       return false;
     }
-    const auto runtime_path = temporary_directory / plugin_path.filename();
+    const auto     runtime_path = temporary_directory / plugin_path.filename();
     const fs::path unused_config;
-    auto plugin_info = std::make_unique<RemapPluginInfo>(unused_config, plugin_path, runtime_path);
-    bool loaded      = plugin_info->load(error, unused_config); // ToDo: Will this ever need support for cripts
+    auto           plugin_info = std::make_unique<RemapPluginInfo>(unused_config, plugin_path, runtime_path);
+    bool           loaded      = plugin_info->load(error, unused_config); // ToDo: Will this ever need support for cripts
     if (!fs::remove(temporary_directory, ec)) {
       fprintf(stderr, "ERROR: could not remove temporary directory '%s': %s\n", temporary_directory.c_str(), ec.message().c_str());
     }
@@ -1073,7 +1073,7 @@ verify_plugin_helper(char *args, plugin_type_t plugin_type)
     return CMD_FAILED;
   }
 
-  auto ret = CMD_OK;
+  auto        ret = CMD_OK;
   std::string error;
   if (try_loading_plugin(plugin_type, plugin_path, error)) {
     fprintf(stderr, "NOTE: verifying plugin '%s' Success\n", plugin_filename);
@@ -1196,10 +1196,10 @@ find_cmd_index(const char *p)
   for (unsigned c = 0; c < countof(commands); c++) {
     const char *l = commands[c].n;
     while (l) {
-      const char *s = strchr(l, '/');
-      const char *e = strpbrk(p, " \t\n");
-      int len       = s ? s - l : strlen(l);
-      int lenp      = e ? e - p : strlen(p);
+      const char *s    = strchr(l, '/');
+      const char *e    = strpbrk(p, " \t\n");
+      int         len  = s ? s - l : strlen(l);
+      int         lenp = e ? e - p : strlen(p);
       if ((len == lenp) && !strncasecmp(p, l, len)) {
         return c;
       }
@@ -1300,9 +1300,9 @@ static int
 set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
               void * /* opaque_token ATS_UNUSED */)
 {
-  RecInt size = data.rec_int;
+  RecInt        size = data.rec_int;
   struct rlimit lim;
-  bool failed = false;
+  bool          failed = false;
 
   if (getrlimit(RLIMIT_CORE, &lim) < 0) {
     failed = true;
@@ -1328,7 +1328,7 @@ set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUS
 static void
 init_core_size()
 {
-  bool found;
+  bool   found;
   RecInt coreSize;
   found = (RecGetRecordInt("proxy.config.core_limit", &coreSize) == REC_ERR_OKAY);
 
@@ -1348,8 +1348,8 @@ static void
 adjust_sys_settings()
 {
   struct rlimit lim;
-  int cfg_fds_throttle = -1;
-  rlim_t maxfiles;
+  int           cfg_fds_throttle = -1;
+  rlim_t        maxfiles;
 
   maxfiles = ink_get_max_files();
   if (maxfiles != RLIM_INFINITY) {
@@ -1394,7 +1394,7 @@ struct ShowStats : public Continuation {
 #ifdef ENABLE_TIME_TRACE
   FILE *fp;
 #endif
-  int cycle        = 0;
+  int     cycle    = 0;
   int64_t last_cc  = 0;
   int64_t last_rb  = 0;
   int64_t last_w   = 0;
@@ -1510,8 +1510,8 @@ struct ShowStats : public Continuation {
 static void
 syslog_log_configure()
 {
-  bool found         = false;
-  char sys_var[]     = "proxy.config.syslog_facility";
+  bool  found        = false;
+  char  sys_var[]    = "proxy.config.syslog_facility";
   char *facility_str = REC_readString(sys_var, &found);
 
   if (found) {
@@ -1606,9 +1606,9 @@ chdir_root()
 static int
 adjust_num_of_net_threads(int nthreads)
 {
-  float autoconfig_scale = 1.0;
-  int nth_auto_config    = 1;
-  int num_of_threads_tmp = 1;
+  float autoconfig_scale   = 1.0;
+  int   nth_auto_config    = 1;
+  int   num_of_threads_tmp = 1;
 
   REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig.enabled");
 
@@ -1705,7 +1705,7 @@ change_uid_gid(const char *user)
 void
 bind_outputs(const char *bind_stdout_p, const char *bind_stderr_p)
 {
-  int log_fd;
+  int          log_fd;
   unsigned int flags = O_WRONLY | O_APPEND | O_CREAT | O_SYNC;
 
   if (*bind_stdout_p != 0) {
@@ -1859,7 +1859,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Register stats
   ts::Metrics &metrics = ts::Metrics::instance();
-  int32_t id;
+  int32_t      id;
 
   id = Metrics::Gauge::create("proxy.process.proxy.reconfigure_time");
   metrics[id].store(time(nullptr));
@@ -2323,7 +2323,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 static void
 init_ssl_ctx_callback(void *ctx, bool server)
 {
-  TSEvent event = server ? TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED : TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED;
+  TSEvent  event = server ? TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED : TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED;
   APIHook *hook =
     g_lifecycle_hooks->get(server ? TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK : TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK);
 

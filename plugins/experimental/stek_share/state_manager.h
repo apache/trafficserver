@@ -34,8 +34,8 @@ public:
     // Initial cluster config, read from the list loaded from the configuration file.
     saved_config_ = nuraft::cs_new<nuraft::cluster_config>();
     for (auto const &s : server_list) {
-      int server_id                              = s.first;
-      std::string endpoint                       = s.second;
+      int                             server_id  = s.first;
+      std::string                     endpoint   = s.second;
       nuraft::ptr<nuraft::srv_config> new_server = nuraft::cs_new<nuraft::srv_config>(server_id, endpoint);
       saved_config_->get_servers().push_back(new_server);
     }
@@ -93,10 +93,10 @@ public:
   }
 
 private:
-  int my_id_;
-  std::string my_endpoint_;
-  nuraft::ptr<STEKShareLogStore> cur_log_store_;
-  nuraft::ptr<nuraft::srv_config> my_srv_config_;
+  int                                 my_id_;
+  std::string                         my_endpoint_;
+  nuraft::ptr<STEKShareLogStore>      cur_log_store_;
+  nuraft::ptr<nuraft::srv_config>     my_srv_config_;
   nuraft::ptr<nuraft::cluster_config> saved_config_;
-  nuraft::ptr<nuraft::srv_state> saved_state_;
+  nuraft::ptr<nuraft::srv_state>      saved_state_;
 };

@@ -36,8 +36,8 @@
 #define MT_HASHTABLE_PARTITION_MASK    (MT_HASHTABLE_PARTITIONS - 1)
 #define MT_HASHTABLE_MAX_CHAIN_AVG_LEN 4
 template <class key_t, class data_t> struct HashTableEntry {
-  key_t key;
-  data_t data;
+  key_t           key;
+  data_t          data;
   HashTableEntry *next;
 
   static HashTableEntry *
@@ -70,7 +70,7 @@ template <class key_t, class data_t> class HashTableIteratorState
 {
 public:
   HashTableIteratorState() : ppcur(NULL) {}
-  int cur_buck = -1;
+  int                             cur_buck = -1;
   HashTableEntry<key_t, data_t> **ppcur;
 };
 
@@ -130,10 +130,10 @@ public:
   data_t remove_entry(key_t key);
   data_t lookup_entry(key_t key);
 
-  data_t first_entry(int bucket_id, HashTableIteratorState<key_t, data_t> *s);
+  data_t        first_entry(int bucket_id, HashTableIteratorState<key_t, data_t> *s);
   static data_t next_entry(HashTableIteratorState<key_t, data_t> *s);
   static data_t cur_entry(HashTableIteratorState<key_t, data_t> *s);
-  data_t remove_entry(HashTableIteratorState<key_t, data_t> *s);
+  data_t        remove_entry(HashTableIteratorState<key_t, data_t> *s);
 
   void
   GC()
@@ -169,8 +169,8 @@ public:
   void
   resize(int size)
   {
-    int new_bucket_num                          = size;
-    HashTableEntry<key_t, data_t> **new_buckets = new HashTableEntry<key_t, data_t> *[new_bucket_num];
+    int                             new_bucket_num = size;
+    HashTableEntry<key_t, data_t> **new_buckets    = new HashTableEntry<key_t, data_t> *[new_bucket_num];
     memset(new_buckets, 0, new_bucket_num * sizeof(HashTableEntry<key_t, data_t> *));
 
     for (int i = 0; i < bucket_num; i++) {
@@ -192,8 +192,8 @@ public:
 
 private:
   HashTableEntry<key_t, data_t> **buckets;
-  int cur_size;
-  int bucket_num;
+  int                             cur_size;
+  int                             bucket_num;
   bool (*m_gc_func)(data_t);
   void (*m_pre_gc_func)();
 
@@ -210,7 +210,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
 {
-  int id                             = bucket_id(key);
+  int                            id  = bucket_id(key);
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -245,8 +245,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(key_t key)
 {
-  int id                              = bucket_id(key);
-  data_t ret                          = (data_t)0;
+  int                            id   = bucket_id(key);
+  data_t                         ret  = (data_t)0;
   HashTableEntry<key_t, data_t> *cur  = buckets[id];
   HashTableEntry<key_t, data_t> *prev = NULL;
   while (cur != NULL && cur->key != key) {
@@ -271,8 +271,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::lookup_entry(key_t key)
 {
-  int id                             = bucket_id(key);
-  data_t ret                         = (data_t)0;
+  int                            id  = bucket_id(key);
+  data_t                         ret = (data_t)0;
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -322,7 +322,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(HashTableIteratorState<key_t, data_t> *s)
 {
-  data_t data                           = (data_t)0;
+  data_t                         data   = (data_t)0;
   HashTableEntry<key_t, data_t> *pEntry = *(s->ppcur);
   if (pEntry != NULL) {
     data          = pEntry->data;
@@ -434,7 +434,7 @@ public:
 
 private:
   IMTHashTable<key_t, data_t> *hashTables[MT_HASHTABLE_PARTITIONS];
-  Ptr<ProxyMutex> locks[MT_HASHTABLE_PARTITIONS];
+  Ptr<ProxyMutex>              locks[MT_HASHTABLE_PARTITIONS];
   // MT_ListEntry chain_heads[MT_HASHTABLE_PARTITIONS];
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
   // int32_t cur_items;

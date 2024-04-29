@@ -43,7 +43,7 @@
 
 struct Str {
   const char *str  = nullptr; // string pointer
-  size_t len       = 0;       // length of string (not counting NUL)
+  size_t      len  = 0;       // length of string (not counting NUL)
   struct Str *next = nullptr; // next in list
   struct Str *prev = nullptr; // prev in list
 
@@ -95,7 +95,7 @@ struct StrList {
 public:
   Str *head;
   Str *tail;
-  int count;
+  int  count;
 
 public:
   StrList(bool do_copy_when_adding_string = true);
@@ -118,28 +118,28 @@ private:
 
   void *base_heap_alloc(int size);
   void *alloc(int size);
-  Str *_new_cell(const char *s, int len_not_counting_nul);
+  Str  *_new_cell(const char *s, int len_not_counting_nul);
   void *overflow_heap_alloc(int size);
-  void overflow_heap_clean();
+  void  overflow_heap_clean();
 
-  int base_heap_used;
-  Str base_cells[STRLIST_BASE_CELLS];
-  char base_heap[STRLIST_BASE_HEAP_SIZE];
-  int cells_allocated;
-  int base_heap_size;
+  int              base_heap_used;
+  Str              base_cells[STRLIST_BASE_CELLS];
+  char             base_heap[STRLIST_BASE_HEAP_SIZE];
+  int              cells_allocated;
+  int              base_heap_size;
   StrListOverflow *overflow_current;
   StrListOverflow *overflow_first;
-  bool copy_when_adding_string;
+  bool             copy_when_adding_string;
 };
 
 struct StrListOverflow {
   StrListOverflow *next;
-  int heap_size;
-  int heap_used;
+  int              heap_size;
+  int              heap_used;
 
-  void init();
-  void clean();
-  void *alloc(int size, StrListOverflow **new_heap_ptr);
+  void                    init();
+  void                    clean();
+  void                   *alloc(int size, StrListOverflow **new_heap_ptr);
   static StrListOverflow *create_heap(int user_size);
 };
 
@@ -204,7 +204,7 @@ inline Str *
 StrList::new_cell(const char *s, int len_not_counting_nul)
 {
   Str *cell;
-  int l = len_not_counting_nul;
+  int  l = len_not_counting_nul;
 
   // allocate a cell from the array or heap
   if ((cells_allocated < STRLIST_BASE_CELLS) && (!copy_when_adding_string)) {

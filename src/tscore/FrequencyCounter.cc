@@ -26,9 +26,9 @@
 void
 FrequencyCounter::increment(uint16_t amount)
 {
-  ink_hrtime hrtime_sec = this->_ink_get_hrtime();
-  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
-  uint8_t last_index    = ((this->_last_update % 60) >= 30);
+  ink_hrtime hrtime_sec    = this->_ink_get_hrtime();
+  uint8_t    counter_index = ((hrtime_sec % 60) >= 30);
+  uint8_t    last_index    = ((this->_last_update % 60) >= 30);
 
   if (hrtime_sec - this->_last_update > 60) {
     this->_count[0] = 0;

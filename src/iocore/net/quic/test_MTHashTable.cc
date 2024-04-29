@@ -77,7 +77,7 @@ TEST_CASE("MT_hashtable", "[libts][MT_hashtable]")
 
   INFO("use iterator to list all the elements and delete half of them");
   HashTableIteratorState<long, long> it;
-  int j, new_count = 0;
+  int                                j, new_count = 0;
   for (j = 0; j < MT_HASHTABLE_PARTITIONS; j++) {
     int data = htable->first_entry(j, &it);
     while (data > 0) {

@@ -44,9 +44,9 @@ struct LookupItem {
   const char *name;
   const char *numerator;
   const char *denominator;
-  int type;
+  int         type;
 };
-extern size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
+extern size_t      write_data(void *ptr, size_t size, size_t nmemb, void *stream);
 extern std::string response;
 
 namespace constant
@@ -307,7 +307,7 @@ public:
   getStat(const string &key, double &value, int overrideType = 0)
   {
     string strtmp;
-    int typetmp;
+    int    typetmp;
     getStat(key, value, strtmp, typetmp, overrideType);
   }
 
@@ -520,13 +520,13 @@ private:
     return {}; // no error
   }
 
-  map<string, string> *_stats;
-  map<string, string> *_old_stats;
+  map<string, string>    *_stats;
+  map<string, string>    *_old_stats;
   map<string, LookupItem> lookup_table;
-  string _host;
-  double _old_time;
-  double _now;
-  double _time_diff;
-  struct timeval _time;
-  bool _absolute;
+  string                  _host;
+  double                  _old_time;
+  double                  _now;
+  double                  _time_diff;
+  struct timeval          _time;
+  bool                    _absolute;
 };

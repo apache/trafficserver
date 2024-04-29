@@ -87,8 +87,8 @@ operator_factory(const std::string &op)
 Condition *
 condition_factory(const std::string &cond)
 {
-  Condition *c = nullptr;
-  std::string c_name, c_qual;
+  Condition             *c = nullptr;
+  std::string            c_name, c_qual;
   std::string::size_type pos = cond.find_first_of(':');
 
   if (pos != std::string::npos) {

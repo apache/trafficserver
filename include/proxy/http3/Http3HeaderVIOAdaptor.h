@@ -35,19 +35,19 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
-                              Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
+  Http3ErrorUPtr              handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
+                                           Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   bool is_complete();
-  int event_handler(int event, Event *data);
+  int  event_handler(int event, Event *data);
 
 private:
-  VIO *_sink_vio      = nullptr;
-  QPACK *_qpack       = nullptr;
-  uint64_t _stream_id = 0;
-  bool _is_complete   = false;
+  VIO     *_sink_vio    = nullptr;
+  QPACK   *_qpack       = nullptr;
+  uint64_t _stream_id   = 0;
+  bool     _is_complete = false;
 
-  HTTPHdr _header; ///< HTTP header buffer for decoding
+  HTTPHdr          _header; ///< HTTP header buffer for decoding
   VersionConverter _hvc;
 
   int _on_qpack_decode_complete();

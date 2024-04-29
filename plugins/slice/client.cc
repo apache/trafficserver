@@ -56,11 +56,11 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     // default: whole file (unknown, wait for first server response)
     Range rangebe;
 
-    char rangestr[1024];
-    int rangelen             = sizeof(rangestr);
-    bool const hasRange      = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
-                                                  0); // <-- first range only
-    Config const *const conf = data->m_config;
+    char                rangestr[1024];
+    int                 rangelen = sizeof(rangestr);
+    bool const          hasRange = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
+                                                      0); // <-- first range only
+    Config const *const conf     = data->m_config;
     if (hasRange) {
       // write parsed header into slicer meta tag
       header.setKeyVal(conf->m_skip_header.c_str(), conf->m_skip_header.size(), rangestr, rangelen);
@@ -80,7 +80,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     } else {
       DEBUG_LOG("%p Full content request", data);
       static char const *const valstr = "-";
-      static size_t const vallen      = strlen(valstr);
+      static size_t const      vallen = strlen(valstr);
       header.setKeyVal(conf->m_skip_header.data(), conf->m_skip_header.size(), valstr, vallen);
       data->m_statustype = TS_HTTP_STATUS_OK;
       rangebe            = Range(0, Range::maxval);
@@ -130,7 +130,7 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
     case BlockState::Fail:
     case BlockState::PendingRef:
     case BlockState::ActiveRef: {
-      TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+      TSVIO const   output_vio  = data->m_dnstream.m_write.m_vio;
       int64_t const output_done = TSVIONDoneGet(output_vio);
       int64_t const output_sent = data->m_bytessent;
 
@@ -142,7 +142,7 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 
     case BlockState::Pending: {
       // throttle
-      TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+      TSVIO const   output_vio  = data->m_dnstream.m_write.m_vio;
       int64_t const output_done = TSVIONDoneGet(output_vio);
       int64_t const output_sent = data->m_bytessent;
       int64_t const threshout   = data->m_config->m_blockbytes;

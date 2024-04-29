@@ -61,7 +61,7 @@ private:
   static const std::string EMPTY_STRING;
   static const std::string TRUE_STRING;
 
-  Variables &_variables;
+  Variables  &_variables;
   std::string _value;
 
   // these are arranged in parse priority format indices correspond to op strings array
@@ -80,7 +80,7 @@ private:
 
   struct OperatorString {
     const char *str;
-    int str_len;
+    int         str_len;
     OperatorString(const char *s = nullptr, int s_len = -1) : str(s), str_len(s_len){};
   };
 
@@ -104,7 +104,7 @@ private:
   {
     size_t str_size = str.size();
     if (str_size) {
-      char *endp;
+      char       *endp;
       const char *str_ptr = str.c_str();
       // Solaris is messed up, in that strtod() does not honor C99/SUSv3 mode.
       value = strtold(str_ptr, &endp);

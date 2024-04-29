@@ -76,7 +76,7 @@ extern "C" {
 #define TS_LUA_MAX_STR_LENGTH              32768
 
 #define TS_LUA_MIN_ALIGN         sizeof(void *)
-#define TS_LUA_MEM_ALIGN(size)   (((size) + ((TS_LUA_MIN_ALIGN)-1)) & ~((TS_LUA_MIN_ALIGN)-1))
+#define TS_LUA_MEM_ALIGN(size)   (((size) + ((TS_LUA_MIN_ALIGN) - 1)) & ~((TS_LUA_MIN_ALIGN) - 1))
 #define TS_LUA_ALIGN_COUNT(size) (size / TS_LUA_MIN_ALIGN)
 
 #define TS_LUA_MAKE_VAR_ITEM(X) \
@@ -86,14 +86,14 @@ extern "C" {
 
 /* for http config or cntl var */
 typedef struct {
-  int nvar;
+  int         nvar;
   char const *svar;
 } ts_lua_var_item;
 
 typedef struct {
   char const *content;
-  char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
-  void *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
+  char        script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
+  void       *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
 
   unsigned int _first : 1; // create current instance for 1st ts_lua_main_ctx
   unsigned int _last  : 1; // create current instance for the last ts_lua_main_ctx
@@ -126,21 +126,21 @@ typedef struct {
 
   TSHttpTxn txnp;
   TSMBuffer client_request_bufp;
-  TSMLoc client_request_hdrp;
-  TSMLoc client_request_url;
+  TSMLoc    client_request_hdrp;
+  TSMLoc    client_request_url;
 
   TSMBuffer server_request_bufp;
-  TSMLoc server_request_hdrp;
-  TSMLoc server_request_url;
+  TSMLoc    server_request_hdrp;
+  TSMLoc    server_request_url;
 
   TSMBuffer server_response_bufp;
-  TSMLoc server_response_hdrp;
+  TSMLoc    server_response_hdrp;
 
   TSMBuffer client_response_bufp;
-  TSMLoc client_response_hdrp;
+  TSMLoc    client_response_hdrp;
 
   TSMBuffer cached_response_bufp;
-  TSMLoc cached_response_hdrp;
+  TSMLoc    cached_response_hdrp;
 
   ts_lua_instance_conf *instance_conf;
 
@@ -151,8 +151,8 @@ typedef struct {
 } ts_lua_http_ctx;
 
 typedef struct {
-  TSVIO vio;
-  TSIOBuffer buffer;
+  TSVIO            vio;
+  TSIOBuffer       buffer;
   TSIOBufferReader reader;
 } ts_lua_io_handle;
 
@@ -163,10 +163,10 @@ typedef struct {
   ts_lua_io_handle reserved;
 
   ts_lua_http_ctx *hctx;
-  int64_t upstream_bytes;
-  int64_t upstream_watermark_bytes;
-  int64_t downstream_bytes;
-  int64_t total;
+  int64_t          upstream_bytes;
+  int64_t          upstream_watermark_bytes;
+  int64_t          downstream_bytes;
+  int64_t          total;
 
 } ts_lua_http_transform_ctx;
 
@@ -176,10 +176,10 @@ typedef struct {
   ts_lua_io_handle input;
   ts_lua_io_handle output;
 
-  TSVConn net_vc;
+  TSVConn          net_vc;
   ts_lua_http_ctx *hctx;
 
-  int64_t to_flush;
+  int64_t      to_flush;
   unsigned int reuse         : 1;
   unsigned int recv_complete : 1;
   unsigned int send_complete : 1;

@@ -54,7 +54,7 @@ NVC_test_def netvc_tests_def[] = {
   {"large",    1000000, 1000000, 500000,  500000,  8192,  10, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
   {"large",    500000,  500000,  1000000, 1000000, 8192,  10, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
 
- // Test large block transfers
+  // Test large block transfers
   {"larget",   1000000, 1000000, 500000,  500000,  40000, 10, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
   {"larget",   500000,  500000,  1000000, 1000000, 40000, 10, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
 
@@ -67,11 +67,11 @@ NVC_test_def netvc_tests_def[] = {
   {"itimeout", 6000,    8000,    10,      10,      512,   10, VC_EVENT_READ_COMPLETE, VC_EVENT_INACTIVITY_TIMEOUT},
   {"itimeout", 10,      10,      6000,    8000,    512,   20, VC_EVENT_EOS,           VC_EVENT_WRITE_COMPLETE    },
 
- // Test the small transfer code one byte at a time
+  // Test the small transfer code one byte at a time
   {"smallt",   400,     400,     500,     500,     1,     15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
   {"smallt",   500,     500,     400,     400,     1,     15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE    },
 
- // The purpose of this test is show that stack can over flow if we move too
+  // The purpose of this test is show that stack can over flow if we move too
   //   small of blocks between the buffers.  EVENT_NONE is wild card error event
   //   since which side gets the timeout is unpredictable
   {"overflow", 1000000, 1000000, 50,      50,      1,     20, VC_EVENT_READ_COMPLETE, EVENT_NONE                 },
@@ -159,9 +159,9 @@ NetVCTest::start_test()
 int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
 {
-  char *space = static_cast<char *>(ats_malloc(bytes));
-  char *tmp   = space;
-  int to_add  = bytes;
+  char *space  = static_cast<char *>(ats_malloc(bytes));
+  char *tmp    = space;
+  int   to_add = bytes;
 
   while (bytes > 0) {
     *tmp = *seed;
@@ -180,7 +180,7 @@ int
 NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
 {
   uint8_t *tmp, *end;
-  int b_consumed = 0;
+  int      b_consumed = 0;
 
   if (actual_bytes_read >= bytes_to_read) {
     return 1;

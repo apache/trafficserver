@@ -35,8 +35,8 @@ ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name, const char
 
   if (nullptr != file_name) {
     swoc::file::path file_path{file_name};
-    std::error_code ec;
-    auto timestamp = swoc::file::last_write_time(file_path, ec);
+    std::error_code  ec;
+    auto             timestamp = swoc::file::last_write_time(file_path, ec);
 
     if (!ec) {
       cb_table.emplace(name, std::make_tuple(contp, file_path, timestamp));
@@ -56,7 +56,7 @@ ConfigUpdateCbTable::invoke()
 
     if (!file_path.empty()) {
       std::error_code ec;
-      auto newtime = swoc::file::last_write_time(file_path, ec);
+      auto            newtime = swoc::file::last_write_time(file_path, ec);
 
       if (!ec) {
         if (newtime > timestamp) {

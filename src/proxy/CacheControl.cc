@@ -62,7 +62,7 @@ using CC_table = ControlMatcher<CacheControlRecord, CacheControlResult>;
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-CC_table *CacheControlTable = nullptr;
+CC_table              *CacheControlTable = nullptr;
 
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
@@ -233,11 +233,11 @@ CacheControlRecord::Print() const
 Result
 CacheControlRecord::Init(matcher_line *line_info)
 {
-  int time_in;
+  int         time_in;
   const char *tmp;
-  char *label;
-  char *val;
-  bool d_found = false;
+  char       *label;
+  char       *val;
+  bool        d_found = false;
 
   this->line_num = line_info->line_num;
 
@@ -252,7 +252,7 @@ CacheControlRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
       char *ptr = nullptr;
-      int v     = strtol(val, &ptr, 0);
+      int   v   = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
         return Result::failure("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
       } else {
@@ -350,7 +350,7 @@ CacheControlRecord::Init(matcher_line *line_info)
 void
 CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
 {
-  bool match               = false;
+  bool             match   = false;
   HttpRequestData *h_rdata = (HttpRequestData *)rdata;
 
   switch (this->directive) {

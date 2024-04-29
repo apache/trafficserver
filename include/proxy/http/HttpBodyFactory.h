@@ -88,7 +88,7 @@ public:
   ~HttpBodyTemplate();
 
   void reset();
-  int load_from_file(char *dir, char *file);
+  int  load_from_file(char *dir, char *file);
   bool
   is_sane()
   {
@@ -97,9 +97,9 @@ public:
   char *build_instantiated_buffer(HttpTransact::State *context, int64_t *length_return);
 
   unsigned int magic;
-  int64_t byte_count;
-  char *template_buffer;
-  char *template_pathname;
+  int64_t      byte_count;
+  char        *template_buffer;
+  char        *template_pathname;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -117,10 +117,10 @@ public:
 
   virtual ~HttpBodySetRawData() {}
 
-  unsigned int magic = 0;
-  char *set_name;
-  char *content_language;
-  char *content_charset;
+  unsigned int                   magic = 0;
+  char                          *set_name;
+  char                          *content_language;
+  char                          *content_charset;
   std::unique_ptr<TemplateTable> table_of_pages;
 };
 
@@ -150,7 +150,7 @@ public:
   }
 
   HttpBodyTemplate *get_template_by_name(const char *name);
-  void set_template_by_name(const char *name, HttpBodyTemplate *t);
+  void              set_template_by_name(const char *name, HttpBodyTemplate *t);
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -204,8 +204,8 @@ public:
     return msg;
   }
 
-  void dump_template_tables(FILE *fp = stderr);
-  void reconfigure();
+  void               dump_template_tables(FILE *fp = stderr);
+  void               reconfigure();
   static const char *determine_set_by_language(std::unique_ptr<BodySetTable> &table_of_sets, StrList *acpt_language_list,
                                                StrList *acpt_charset_list, float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr,
                                                int *I_best_ptr);
@@ -217,8 +217,8 @@ private:
                   int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
                   const char **set_return = nullptr);
 
-  const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
-  const char *determine_set_by_host(HttpTransact::State *context);
+  const char       *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
+  const char       *determine_set_by_host(HttpTransact::State *context);
   HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
   bool
   is_sane()
@@ -235,9 +235,9 @@ private:
   ////////////////////////////
   // initialization methods //
   ////////////////////////////
-  void nuke_template_tables();
+  void                          nuke_template_tables();
   std::unique_ptr<BodySetTable> load_sets_from_directory(char *set_dir);
-  HttpBodySet *load_body_set_from_directory(char *set_name, char *tmpl_dir);
+  HttpBodySet                  *load_body_set_from_directory(char *set_name, char *tmpl_dir);
 
   /////////////////////////////////////////////////
   // internal data structure concurrency control //
@@ -256,14 +256,14 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int enable_customizations = 0;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging       = true; // the user wants body factory logging
+  int  enable_customizations = 0;    // 0:no custom,1:custom,2:language-targeted
+  bool enable_logging        = true; // the user wants body factory logging
 
   ////////////////////
   // internal state //
   ////////////////////
-  unsigned int magic = HTTP_BODY_FACTORY_MAGIC; // magic for sanity checks/debugging
-  ink_mutex mutex;                              // prevents reconfig/read races
-  bool callbacks_established = false;           // all config variables present
-  std::unique_ptr<BodySetTable> table_of_sets;  // sets of template hash tables
+  unsigned int                  magic = HTTP_BODY_FACTORY_MAGIC; // magic for sanity checks/debugging
+  ink_mutex                     mutex;                           // prevents reconfig/read races
+  bool                          callbacks_established = false;   // all config variables present
+  std::unique_ptr<BodySetTable> table_of_sets;                   // sets of template hash tables
 };

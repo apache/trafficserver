@@ -127,8 +127,8 @@ public:
   void setPort(const uint16_t);
 
 private:
-  bool isInitialized() const;
-  void init(void *hdr_buf, void *url_loc);
+  bool      isInitialized() const;
+  void      init(void *hdr_buf, void *url_loc);
   UrlState *state_;
   friend class Request;
   friend class ClientRequest;

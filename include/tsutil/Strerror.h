@@ -60,7 +60,7 @@ public:
   }
 
 private:
-  char _buf[256];
+  char        _buf[256];
   char const *_c_str;
 
   // For XSI-compliant strerror_r().

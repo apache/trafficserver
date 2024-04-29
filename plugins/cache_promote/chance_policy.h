@@ -50,8 +50,8 @@ public:
   bool
   stats_add(const char *remap_id) override
   {
-    std::string_view remap_identifier                 = remap_id;
-    const std::tuple<std::string_view, int *> stats[] = {
+    std::string_view                          remap_identifier = remap_id;
+    const std::tuple<std::string_view, int *> stats[]          = {
       {"cache_hits",     &_cache_hits_id    },
       {"promoted",       &_promoted_id      },
       {"total_requests", &_total_requests_id},
@@ -64,7 +64,7 @@ public:
 
     for (int ii = 0; ii < 3; ii++) {
       std::string_view name = std::get<0>(stats[ii]);
-      int *id               = std::get<1>(stats[ii]);
+      int             *id   = std::get<1>(stats[ii]);
 
       if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
         return false;

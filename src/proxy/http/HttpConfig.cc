@@ -68,7 +68,7 @@ public:
 
 /// Data item for enumerated type config value.
 template <typename T> struct ConfigEnumPair {
-  T _value;
+  T           _value;
   const char *_key;
 };
 
@@ -130,8 +130,8 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
   mask = 0;
   // Parse through and build up mask
   std::string_view key_list(key);
-  size_t start  = 0;
-  size_t offset = 0;
+  size_t           start  = 0;
+  size_t           offset = 0;
   Dbg(dbg_ctl_http_config, "enum mask value %s", key);
   do {
     offset = key_list.find(',', start);
@@ -176,11 +176,11 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED, "global_locked"},
 };
 
-int HttpConfig::m_id = 0;
+int              HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
-static int http_config_changes          = 1;
-static HttpConfigCont *http_config_cont = nullptr;
+static int             http_config_changes = 1;
+static HttpConfigCont *http_config_cont    = nullptr;
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
@@ -214,8 +214,8 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 static int
 http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  bool valid_p        = true;
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  bool              valid_p = true;
+  HttpConfigParams *c       = static_cast<HttpConfigParams *>(cookie);
 
   if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
     MgmtByte &match = c->oride.server_session_sharing_match;
@@ -241,13 +241,13 @@ http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, v
 static int
 http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  bool valid_p        = false;
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  bool              valid_p = false;
+  HttpConfigParams *c       = static_cast<HttpConfigParams *>(cookie);
 
   if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
     if (RECD_STRING == dtype) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
       if (!error.size()) {
         c->oride.insert_forwarded = bs;
         valid_p                   = true;
@@ -549,16 +549,16 @@ register_stat_callbacks()
 static bool
 set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
 {
-  bool ret = false;
+  bool             ret = false;
   HttpStatusBitset set;
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
     // parse the list of status codes
     swoc::TextView status_list(data.rec_string, strlen(data.rec_string));
-    auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+    auto           is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
     while (!status_list.ltrim_if(is_sep).empty()) {
       swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
-      auto n = swoc::svtoi(token, &span);
+      auto           n = swoc::svtoi(token, &span);
       if (span.size() != token.size()) {
         Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
       } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
@@ -669,7 +669,7 @@ ConfigDuration HttpDownServerCacheTimeVar{HttpConfig::m_master.oride.down_server
 // without having to export the class definition. Again, the compiler doesn't allow doing this
 // in one line.
 extern MgmtConverter const &HttpDownServerCacheTimeConv;
-MgmtConverter const &HttpDownServerCacheTimeConv = HttpDownServerCacheTimeVar.Conversions;
+MgmtConverter const        &HttpDownServerCacheTimeConv = HttpDownServerCacheTimeVar.Conversions;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -759,7 +759,7 @@ HttpConfig::startup()
 
     if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
@@ -1304,8 +1304,8 @@ HttpConfig::parse_ports_list(char *ports_string)
     ports_list->next = nullptr;
   } else {
     HttpConfigPortRange *pr, *prev;
-    char *start;
-    char *end;
+    char                *start;
+    char                *end;
 
     pr   = nullptr;
     prev = nullptr;
@@ -1377,26 +1377,26 @@ RedirectEnabled::ActionMap *
 HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &self_action)
 {
   using RedirectEnabled::Action;
-  using RedirectEnabled::AddressClass;
   using RedirectEnabled::action_map;
   using RedirectEnabled::address_class_map;
+  using RedirectEnabled::AddressClass;
 
   if (nullptr == input_string) {
     Error("parse_redirect_actions: The configuration value is empty.");
     return nullptr;
   }
-  Tokenizer configTokens(", ");
-  int n_rules = configTokens.Initialize(input_string);
+  Tokenizer                      configTokens(", ");
+  int                            n_rules = configTokens.Initialize(input_string);
   std::map<AddressClass, Action> configMapping;
   for (int i = 0; i < n_rules; i++) {
     const char *rule = configTokens[i];
-    Tokenizer ruleTokens(":");
-    int n_mapping = ruleTokens.Initialize(rule);
+    Tokenizer   ruleTokens(":");
+    int         n_mapping = ruleTokens.Initialize(rule);
     if (2 != n_mapping) {
       Error("parse_redirect_actions: Individual rules must be an address class and an action separated by a colon (:)");
       return nullptr;
     }
-    std::string c_input(ruleTokens[0]), a_input(ruleTokens[1]);
+    std::string  c_input(ruleTokens[0]), a_input(ruleTokens[1]);
     AddressClass c =
       address_class_map.find(ruleTokens[0]) != address_class_map.end() ? address_class_map[ruleTokens[0]] : AddressClass::INVALID;
     Action a = action_map.find(ruleTokens[1]) != action_map.end() ? action_map[ruleTokens[1]] : Action::INVALID;
@@ -1416,7 +1416,7 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     configMapping[AddressClass::DEFAULT] = Action::RETURN;
   }
 
-  auto *ret     = new RedirectEnabled::ActionMap;
+  auto  *ret    = new RedirectEnabled::ActionMap;
   Action action = Action::INVALID;
 
   // PRIVATE

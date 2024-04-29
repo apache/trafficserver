@@ -53,12 +53,12 @@ public:
   referer_info(char *_ref, bool *error_flag = nullptr, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
   ~referer_info();
   referer_info *next;
-  char *referer;
-  int referer_size;
-  bool any;      /* any flag '*' */
-  bool negative; /* negative referer '~' */
-  bool regx_valid;
-  pcre *regx;
+  char         *referer;
+  int           referer_size;
+  bool          any;      /* any flag '*' */
+  bool          negative; /* negative referer '~' */
+  bool          regx_valid;
+  pcre         *regx;
 };
 
 /**
@@ -75,9 +75,9 @@ public:
     chunk_str = nullptr;
   }
 
-  redirect_tag_str *next = nullptr;
-  char *chunk_str        = nullptr;
-  char type              = 0; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
+  redirect_tag_str        *next      = nullptr;
+  char                    *chunk_str = nullptr;
+  char                     type      = 0; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
   static redirect_tag_str *parse_format_redirect_url(char *url);
 };
 
@@ -89,7 +89,7 @@ class url_mapping
 public:
   ~url_mapping();
 
-  bool add_plugin_instance(RemapPluginInst *i);
+  bool             add_plugin_instance(RemapPluginInst *i);
   RemapPluginInst *get_plugin_instance(std::size_t) const;
 
   std::size_t
@@ -98,29 +98,29 @@ public:
     return _plugin_inst_list.size();
   }
 
-  void Print() const;
+  void        Print() const;
   std::string PrintRemapHitCount() const;
 
-  int from_path_len = 0;
-  URL fromURL;
-  URL toURL; // Default TO-URL (from remap.config)
-  bool homePageRedirect              = false;
-  bool unique                        = false; // INKqa11970 - unique mapping
-  bool default_redirect_url          = false;
-  bool optional_referer              = false;
-  bool negative_referer              = false;
-  bool wildcard_from_scheme          = false;   // from url is '/foo', only http or https for now
-  char *tag                          = nullptr; // tag
-  char *filter_redirect_url          = nullptr; // redirect url when referer filtering enabled
-  unsigned int map_id                = 0;
-  referer_info *referer_list         = nullptr;
-  redirect_tag_str *redir_chunk_list = nullptr;
-  bool ip_allow_check_enabled_p      = false;
-  acl_filter_rule *filter            = nullptr; // acl filtering (linked list of rules)
-  LINK(url_mapping, link);                      // For use with the main Queue linked list holding all the mapping
+  int               from_path_len = 0;
+  URL               fromURL;
+  URL               toURL; // Default TO-URL (from remap.config)
+  bool              homePageRedirect         = false;
+  bool              unique                   = false; // INKqa11970 - unique mapping
+  bool              default_redirect_url     = false;
+  bool              optional_referer         = false;
+  bool              negative_referer         = false;
+  bool              wildcard_from_scheme     = false;   // from url is '/foo', only http or https for now
+  char             *tag                      = nullptr; // tag
+  char             *filter_redirect_url      = nullptr; // redirect url when referer filtering enabled
+  unsigned int      map_id                   = 0;
+  referer_info     *referer_list             = nullptr;
+  redirect_tag_str *redir_chunk_list         = nullptr;
+  bool              ip_allow_check_enabled_p = false;
+  acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
+  LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
   std::shared_ptr<NextHopSelectionStrategy> strategy = nullptr;
-  std::string remapKey;
-  std::atomic<uint64_t> _hitCount = 0; // counter can overflow
+  std::string                               remapKey;
+  std::atomic<uint64_t>                     _hitCount = 0; // counter can overflow
 
   int
   getRank() const
@@ -153,7 +153,7 @@ public:
 
 private:
   std::vector<RemapPluginInst *> _plugin_inst_list;
-  int _rank = 0;
+  int                            _rank = 0;
 };
 
 /**
@@ -229,8 +229,8 @@ public:
   UrlMappingContainer &operator=(const UrlMappingContainer &rhs) = delete;
 
 private:
-  url_mapping *_mapping = nullptr;
-  URL *_toURLPtr        = nullptr;
-  URL _toURL;
-  HdrHeap *_heap = nullptr;
+  url_mapping *_mapping  = nullptr;
+  URL         *_toURLPtr = nullptr;
+  URL          _toURL;
+  HdrHeap     *_heap = nullptr;
 };

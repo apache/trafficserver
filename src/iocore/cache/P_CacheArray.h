@@ -31,10 +31,10 @@ template <class T> struct CacheArray {
 
   operator const T *() const;
   operator T *();
-  T &operator[](int idx);
-  T &operator()(int idx);
-  T *detach();
-  int length();
+  T   &operator[](int idx);
+  T   &operator()(int idx);
+  T   *detach();
+  int  length();
   void clear();
   void
   set_length(int i)
@@ -44,11 +44,11 @@ template <class T> struct CacheArray {
 
   void resize(int new_size);
 
-  T *data;
-  T fast_data[FAST_DATA_SIZE];
+  T       *data;
+  T        fast_data[FAST_DATA_SIZE];
   const T *default_val;
-  int size;
-  int pos;
+  int      size;
+  int      pos;
 };
 
 template <class T> CacheArray<T>::CacheArray(const T *val, int initial_size) : data(nullptr), default_val(val), size(0), pos(-1)
@@ -156,7 +156,7 @@ void
 CacheArray<T>::resize(int new_size)
 {
   if (new_size > size) {
-    T *new_data;
+    T  *new_data;
     int i;
 
     if (new_size > FAST_DATA_SIZE) {

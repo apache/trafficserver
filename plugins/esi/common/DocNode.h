@@ -90,9 +90,9 @@ public:
   // Use with care - only types defined above will have valid names
   static const char *type_names_[];
 
-  TYPE type;
+  TYPE        type;
   const char *data;
-  int32_t data_len;
+  int32_t     data_len;
 
   AttributeList attr_list;
 

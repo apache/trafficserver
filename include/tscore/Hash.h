@@ -49,17 +49,17 @@ struct ATSHash : ATSHashBase {
     }
   };
 
-  virtual const void *get() const = 0;
-  virtual size_t size() const     = 0;
-  virtual bool operator==(const ATSHash &) const;
+  virtual const void *get() const  = 0;
+  virtual size_t      size() const = 0;
+  virtual bool        operator==(const ATSHash &) const;
 };
 
 struct ATSHash32 : ATSHashBase {
   virtual uint32_t get() const = 0;
-  virtual bool operator==(const ATSHash32 &) const;
+  virtual bool     operator==(const ATSHash32 &) const;
 };
 
 struct ATSHash64 : ATSHashBase {
   virtual uint64_t get() const = 0;
-  virtual bool operator==(const ATSHash64 &) const;
+  virtual bool     operator==(const ATSHash64 &) const;
 };

@@ -85,17 +85,17 @@ public:
     return continuation;
   }
 
-  void free();
+  void        free();
   static void free(UDPIOEvent *e);
 
 private:
-  void *operator new(size_t size); // undefined
-  int fd           = -1;
-  int err          = 0; // error code
-  struct msghdr *m = nullptr;
-  void *handle     = nullptr; // some extra data for the client handler
-  Ptr<IOBufferBlock> b;       // holds buffer that I/O will go to
-  int bytesTransferred = 0;   // actual bytes transferred
+  void              *operator new(size_t size); // undefined
+  int                fd     = -1;
+  int                err    = 0; // error code
+  struct msghdr     *m      = nullptr;
+  void              *handle = nullptr;     // some extra data for the client handler
+  Ptr<IOBufferBlock> b;                    // holds buffer that I/O will go to
+  int                bytesTransferred = 0; // actual bytes transferred
 };
 
 extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;

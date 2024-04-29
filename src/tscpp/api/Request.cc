@@ -33,15 +33,15 @@ using std::string;
  */
 struct atscppapi::RequestState : noncopyable {
   TSMBuffer hdr_buf_ = nullptr;
-  TSMLoc hdr_loc_    = nullptr;
-  TSMLoc url_loc_    = nullptr;
-  Url url_;
-  Headers headers_;
+  TSMLoc    hdr_loc_ = nullptr;
+  TSMLoc    url_loc_ = nullptr;
+  Url       url_;
+  Headers   headers_;
   /* method and version are stored here for the case of an unbound request */
-  HttpMethod method_   = HTTP_METHOD_UNKNOWN;
-  HttpVersion version_ = HTTP_VERSION_UNKNOWN;
-  bool destroy_buf_    = false;
-  RequestState()       = default;
+  HttpMethod  method_      = HTTP_METHOD_UNKNOWN;
+  HttpVersion version_     = HTTP_VERSION_UNKNOWN;
+  bool        destroy_buf_ = false;
+  RequestState()           = default;
 };
 
 Request::Request()
@@ -111,7 +111,7 @@ HttpMethod
 Request::getMethod() const
 {
   if (state_->hdr_buf_ && state_->hdr_loc_) {
-    int method_len;
+    int         method_len;
     const char *method_str = TSHttpHdrMethodGet(state_->hdr_buf_, state_->hdr_loc_, &method_len);
     if (method_str && method_len) {
       if (method_str == TS_HTTP_METHOD_GET) {

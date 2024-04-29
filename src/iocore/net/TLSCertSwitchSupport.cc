@@ -62,7 +62,7 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
   shared_SSL_CTX ctx = nullptr;
 
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  bool found             = true;
+  bool        found      = true;
 
   Debug("ssl", "set_context_cert ssl=%p server=%s", ssl, servername);
 

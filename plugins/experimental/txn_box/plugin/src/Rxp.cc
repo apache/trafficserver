@@ -34,8 +34,8 @@ using swoc::Rv;
 Rv<Rxp>
 Rxp::parse(TextView const &str, Options const &options)
 {
-  int errc         = 0;
-  size_t err_off   = 0;
+  int      errc    = 0;
+  size_t   err_off = 0;
   uint32_t rxp_opt = 0;
   if (options.f.nc) {
     rxp_opt = PCRE2_CASELESS;
@@ -43,7 +43,7 @@ Rxp::parse(TextView const &str, Options const &options)
   auto result = pcre2_compile(reinterpret_cast<unsigned const char *>(str.data()), str.size(), rxp_opt, &errc, &err_off, nullptr);
   if (nullptr == result) {
     PCRE2_UCHAR err_buff[128];
-    auto err_size = pcre2_get_error_message(errc, err_buff, sizeof(err_buff));
+    auto        err_size = pcre2_get_error_message(errc, err_buff, sizeof(err_buff));
     return Errata(S_ERROR, R"(Failed to parse regular expression - error "{}" [{}] at offset {} in "{}".)",
                   TextView(reinterpret_cast<char const *>(err_buff), err_size), errc, err_off, str);
   }
@@ -59,8 +59,8 @@ Rxp::operator()(swoc::TextView text, pcre2_match_data *match) const
 size_t
 Rxp::capture_count() const
 {
-  uint32_t count = 0;
-  auto result    = pcre2_pattern_info(_rxp.get(), PCRE2_INFO_CAPTURECOUNT, &count);
+  uint32_t count  = 0;
+  auto     result = pcre2_pattern_info(_rxp.get(), PCRE2_INFO_CAPTURECOUNT, &count);
   return result == 0 ? count + 1 : 0; // output doesn't reflect capture group 0, apparently.
 }
 /* ------------------------------------------------------------------------------------ */

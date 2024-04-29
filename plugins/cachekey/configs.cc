@@ -34,7 +34,7 @@ static void
 commaSeparateString(ContainerType &c, const String &input)
 {
   std::istringstream istr(input);
-  String token;
+  String             token;
 
   while (std::getline(istr, token, ',')) {
     c.insert(c.end(), token);
@@ -90,7 +90,7 @@ ConfigElements::setCapture(const String &name, const String &pattern)
 void
 ConfigElements::addCapture(const char *arg)
 {
-  StringView args(arg);
+  StringView            args(arg);
   StringView::size_type pos = args.find_first_of(':');
   if (StringView::npos != pos) {
     String name(args.substr(0, pos));
@@ -300,8 +300,8 @@ Configs::loadClassifiers(const String &args, bool denylist)
   String path(makeConfigPath(filename));
 
   std::ifstream ifstr;
-  String regex;
-  unsigned lineno = 0;
+  String        regex;
+  unsigned      lineno = 0;
 
   ifstr.open(path.c_str());
   if (!ifstr) {
@@ -323,7 +323,7 @@ Configs::loadClassifiers(const String &args, bool denylist)
   CacheKeyDebug("loading classifier '%s' from '%s'", classname.c_str(), path.c_str());
 
   while (std::getline(ifstr, regex)) {
-    Pattern *p;
+    Pattern          *p;
     String::size_type pos;
 
     ++lineno;
@@ -399,7 +399,7 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("key-type"),             optional_argument, nullptr, 'u'},
     {const_cast<char *>("capture-header"),       optional_argument, nullptr, 'v'},
     {const_cast<char *>("canonical-prefix"),     optional_argument, nullptr, 'w'},
- /* reserve 'z' for 'config' files */
+    /* reserve 'z' for 'config' files */
     {nullptr,                                    0,                 nullptr, 0  },
   };
 

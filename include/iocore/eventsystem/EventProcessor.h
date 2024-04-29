@@ -288,13 +288,13 @@ public:
   /// Data kept for each thread group.
   /// The thread group ID is the index into an array of these and so is not stored explicitly.
   struct ThreadGroupDescriptor {
-    std::string _name;                               ///< Name for the thread group.
-    int _count                 = 0;                  ///< # of threads of this type.
-    std::atomic<int> _started  = 0;                  ///< # of started threads of this type.
-    uint64_t _next_round_robin = 0;                  ///< Index of thread to use for events assigned to this group.
-    Que(Event, link) _spawnQueue;                    ///< Events to dispatch when thread is spawned.
-    EThread *_thread[MAX_THREADS_IN_EACH_TYPE] = {}; ///< The actual threads in this group.
-    std::function<void()> _afterStartCallback  = nullptr;
+    std::string      _name;                                       ///< Name for the thread group.
+    int              _count            = 0;                       ///< # of threads of this type.
+    std::atomic<int> _started          = 0;                       ///< # of started threads of this type.
+    uint64_t         _next_round_robin = 0;                       ///< Index of thread to use for events assigned to this group.
+    Que(Event, link) _spawnQueue;                                 ///< Events to dispatch when thread is spawned.
+    EThread              *_thread[MAX_THREADS_IN_EACH_TYPE] = {}; ///< The actual threads in this group.
+    std::function<void()> _afterStartCallback               = nullptr;
   };
 
   /// Storage for per group data.
@@ -317,13 +317,13 @@ public:
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-  Event *schedule(Event *e, EventType etype);
+  Event   *schedule(Event *e, EventType etype);
   EThread *assign_thread(EventType etype);
   EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
-  int n_dthreads       = 0; // No. of dedicated threads
-  int thread_data_used = 0;
+  int      n_dthreads       = 0; // No. of dedicated threads
+  int      thread_data_used = 0;
 
   /// Provide container style access to just the active threads, not the entire array.
   class active_threads_type

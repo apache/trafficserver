@@ -127,43 +127,43 @@ private:
 
   std::string _output_data;
 
-  EsiParser _parser;
+  EsiParser           _parser;
   EsiLib::DocNodeList _node_list;
-  int _n_prescanned_nodes;
-  int _n_processed_nodes;
-  int _n_processed_try_nodes;
-  int _overall_len;
+  int                 _n_prescanned_nodes;
+  int                 _n_processed_nodes;
+  int                 _n_processed_try_nodes;
+  int                 _overall_len;
 
-  HttpDataFetcher &_fetcher;
+  HttpDataFetcher   &_fetcher;
   EsiLib::StringHash _include_urls;
 
   bool _usePackedNodeList;
 
-  bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
-  bool _handleParseComplete();
-  bool _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = nullptr, int *content_len_ptr = nullptr);
-  DataStatus _getIncludeStatus(const EsiLib::DocNode &node);
-  bool _handleVars(const char *str, int str_len);
-  bool _handleChoose(EsiLib::DocNodeList::iterator &curr_node);
-  bool _handleTry(EsiLib::DocNodeList::iterator &curr_node);
-  bool _handleHtmlComment(const EsiLib::DocNodeList::iterator &curr_node);
-  bool _preprocess(EsiLib::DocNodeList &node_list, int &n_prescanned_nodes);
+  bool        _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
+  bool        _handleParseComplete();
+  bool        _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = nullptr, int *content_len_ptr = nullptr);
+  DataStatus  _getIncludeStatus(const EsiLib::DocNode &node);
+  bool        _handleVars(const char *str, int str_len);
+  bool        _handleChoose(EsiLib::DocNodeList::iterator &curr_node);
+  bool        _handleTry(EsiLib::DocNodeList::iterator &curr_node);
+  bool        _handleHtmlComment(const EsiLib::DocNodeList::iterator &curr_node);
+  bool        _preprocess(EsiLib::DocNodeList &node_list, int &n_prescanned_nodes);
   inline bool _isWhitespace(const char *data, int data_len);
-  void _addFooterData();
+  void        _addFooterData();
 
   EsiLib::Variables &_esi_vars;
   EsiLib::Expression _expression;
 
   struct TryBlock {
-    EsiLib::DocNodeList &attempt_nodes;
-    EsiLib::DocNodeList &except_nodes;
+    EsiLib::DocNodeList          &attempt_nodes;
+    EsiLib::DocNodeList          &except_nodes;
     EsiLib::DocNodeList::iterator pos;
     TryBlock(EsiLib::DocNodeList &att, EsiLib::DocNodeList &exc, EsiLib::DocNodeList::iterator p)
       : attempt_nodes(att), except_nodes(exc), pos(p){};
   };
   using TryBlockList = std::list<TryBlock>;
   TryBlockList _try_blocks;
-  int _n_try_blocks_processed;
+  int          _n_try_blocks_processed;
 
   const EsiLib::HandlerManager &_handler_manager;
 

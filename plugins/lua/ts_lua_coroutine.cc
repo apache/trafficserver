@@ -74,7 +74,7 @@ ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_inf
 void
 ts_lua_release_cont_info(ts_lua_cont_info *ci)
 {
-  ts_lua_main_ctx *mctx;
+  ts_lua_main_ctx  *mctx;
   ts_lua_coroutine *crt;
 
   crt  = &ci->routine;

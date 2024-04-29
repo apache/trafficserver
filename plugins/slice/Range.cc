@@ -40,8 +40,8 @@ Range::size() const
 bool
 Range::fromStringClosed(char const *const rangestr)
 {
-  static char const *const BYTESTR = "bytes=";
-  static size_t const BYTESTRLEN   = strlen(BYTESTR);
+  static char const *const BYTESTR    = "bytes=";
+  static size_t const      BYTESTRLEN = strlen(BYTESTR);
 
   m_beg = m_end = -1; // initialize invalid
 
@@ -57,9 +57,9 @@ Range::fromStringClosed(char const *const rangestr)
   }
 
   // rip out any whitespace
-  char rangebuf[1024];
+  char      rangebuf[1024];
   int const rangelen = sizeof(rangebuf);
-  char *pbuf         = rangebuf;
+  char     *pbuf     = rangebuf;
   while ('\0' != *pstr && (pbuf - rangebuf) < rangelen) {
     if (!isblank(*pstr)) {
       *pbuf++ = *pstr;
@@ -73,9 +73,9 @@ Range::fromStringClosed(char const *const rangestr)
   int consumed = 0;
 
   // last 'n' bytes - result in range with negative begin and 0 end
-  int64_t endbytes         = 0;
-  char const *const fmtend = "-%" PRId64 "%n";
-  int const fieldsend      = sscanf(rangebuf, fmtend, &endbytes, &consumed);
+  int64_t           endbytes  = 0;
+  char const *const fmtend    = "-%" PRId64 "%n";
+  int const         fieldsend = sscanf(rangebuf, fmtend, &endbytes, &consumed);
   if (1 == fieldsend) {
     if (rlen == consumed) {
       m_beg = -endbytes;
@@ -88,8 +88,8 @@ Range::fromStringClosed(char const *const rangestr)
 
   // normal range <front>-<back>
   char const *const fmtclosed = "%" PRId64 "-%" PRId64 "%n";
-  int64_t front               = 0;
-  int64_t back                = 0;
+  int64_t           front     = 0;
+  int64_t           back      = 0;
 
   int const fieldsclosed = sscanf(rangebuf, fmtclosed, &front, &back, &consumed);
   if (2 == fieldsclosed) {
@@ -102,9 +102,9 @@ Range::fromStringClosed(char const *const rangestr)
     }
   }
 
-  front                    = 0;
-  char const *const fmtbeg = "%" PRId64 "-%n";
-  int const fieldsbeg      = sscanf(rangebuf, fmtbeg, &front, &consumed);
+  front                       = 0;
+  char const *const fmtbeg    = "%" PRId64 "-%n";
+  int const         fieldsbeg = sscanf(rangebuf, fmtbeg, &front, &consumed);
   if (1 == fieldsbeg) {
     if (rlen == consumed) {
       m_beg = front;
@@ -120,7 +120,7 @@ Range::fromStringClosed(char const *const rangestr)
 
 bool
 Range::toStringClosed(char *const bufstr,
-                      int *const buflen // returns actual bytes used
+                      int *const  buflen // returns actual bytes used
 ) const
 {
   if (!isValid()) {

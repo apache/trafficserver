@@ -141,10 +141,10 @@ DocNodeList::unpack(const char *data, int data_len)
     return false;
   }
   const char *data_start = data;
-  int32_t n_elements;
+  int32_t     n_elements;
   unpackItem(data, n_elements);
   clear();
-  int data_offset = data - data_start, node_size;
+  int     data_offset = data - data_start, node_size;
   DocNode node;
   for (int i = 0; i < n_elements; ++i) {
     if (!node.unpack(data_start + data_offset, data_len - data_offset, node_size)) {

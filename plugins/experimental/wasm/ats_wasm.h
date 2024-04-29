@@ -28,11 +28,11 @@ namespace ats_wasm
 using proxy_wasm::ContextBase;
 using proxy_wasm::PluginBase;
 
-using proxy_wasm::WasmBase;
-using proxy_wasm::WasmVm;
-using proxy_wasm::WasmHandleBase;
-using proxy_wasm::WasmVmFactory;
 using proxy_wasm::AllowedCapabilitiesMap;
+using proxy_wasm::WasmBase;
+using proxy_wasm::WasmHandleBase;
+using proxy_wasm::WasmVm;
+using proxy_wasm::WasmVmFactory;
 using proxy_wasm::WasmVmIntegration;
 
 class Context;
@@ -49,8 +49,8 @@ public:
   bool getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments, proxy_wasm::NullPlugin *plugin,
                          void *ptr_to_function_return) override;
   proxy_wasm::LogLevel getLogLevel() override;
-  void error(std::string_view message) override;
-  void trace(std::string_view message) override;
+  void                 error(std::string_view message) override;
+  void                 trace(std::string_view message) override;
 };
 
 class Wasm : public WasmBase
@@ -77,9 +77,9 @@ public:
   ContextBase *createContext(const std::shared_ptr<PluginBase> &plugin) override;
 
   // functions managing timer
-  bool existsTimerPeriod(uint32_t root_context_id);
+  bool                      existsTimerPeriod(uint32_t root_context_id);
   std::chrono::milliseconds getTimerPeriod(uint32_t root_context_id);
-  void removeTimerPeriod(uint32_t root_context_id);
+  void                      removeTimerPeriod(uint32_t root_context_id);
 
   // override function for reporting error
   void error(std::string_view message) override;

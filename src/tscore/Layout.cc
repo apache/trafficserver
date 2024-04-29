@@ -71,7 +71,7 @@ _relative(char *path, size_t buffsz, std::string_view root, std::string_view fil
 static std::string
 layout_relative(std::string_view root, std::string_view file)
 {
-  char path[PATH_NAME_MAX];
+  char        path[PATH_NAME_MAX];
   std::string ret;
   _relative(path, PATH_NAME_MAX, root, file);
   ret = path;
@@ -153,10 +153,10 @@ Layout::Layout(std::string_view const _prefix)
     prefix.assign(_prefix.data(), _prefix.size());
   } else {
     std::string path;
-    int len;
+    int         len;
     if (getenv("TS_ROOT") != nullptr) {
       const char *const env = getenv("TS_ROOT");
-      std::string env_path(nullptr != env ? env : "");
+      std::string       env_path(nullptr != env ? env : "");
       len = env_path.size();
       if ((len + 1) > PATH_NAME_MAX) {
         ink_fatal("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);

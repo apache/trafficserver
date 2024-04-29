@@ -42,22 +42,22 @@ namespace
 DbgCtl dbg_ctl{"xdebug"};
 
 struct BodyBuilder {
-  atscppapi::TSContUniqPtr transform_connp;
+  atscppapi::TSContUniqPtr     transform_connp;
   atscppapi::TSIOBufferUniqPtr output_buffer;
   // It's important that output_reader comes after output_buffer so it will be deleted first.
   atscppapi::TSIOBufferReaderUniqPtr output_reader;
-  TSVIO output_vio   = nullptr;
-  bool wrote_prebody = false;
-  bool wrote_body    = false;
-  bool hdr_ready     = false;
-  std::atomic_flag wrote_postbody;
+  TSVIO                              output_vio    = nullptr;
+  bool                               wrote_prebody = false;
+  bool                               wrote_body    = false;
+  bool                               hdr_ready     = false;
+  std::atomic_flag                   wrote_postbody;
 
   int64_t nbytes = 0;
 };
 
 struct XDebugTxnAuxData {
   std::unique_ptr<BodyBuilder> body_builder;
-  unsigned xheaders = 0;
+  unsigned                     xheaders = 0;
 };
 
 atscppapi::TxnAuxMgrData mgrData;
@@ -71,7 +71,7 @@ using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
 
 static struct {
   const char *str;
-  int len;
+  int         len;
 } xDebugHeader = {nullptr, 0};
 
 enum {
@@ -110,7 +110,7 @@ constexpr std::string_view HEADER_NAME_ALL              = "all";
 
 constexpr struct XHeader {
   std::string_view name;
-  unsigned int flag;
+  unsigned int     flag;
 } header_flags[] = {
   {HEADER_NAME_X_CACHE_KEY,      XHEADER_X_CACHE_KEY     },
   {HEADER_NAME_X_MILESTONES,     XHEADER_X_MILESTONES    },
@@ -158,7 +158,7 @@ static void
 InjectGenerationHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMgmtInt value;
-  TSMLoc dst = TS_NULL_MLOC;
+  TSMLoc    dst = TS_NULL_MLOC;
 
   if (TSHttpTxnConfigIntGet(txn, TS_CONFIG_HTTP_CACHE_GENERATION, &value) == TS_SUCCESS) {
     dst = FindOrMakeHdrField(buffer, hdr, "X-Cache-Generation", lengthof("X-Cache-Generation"));
@@ -180,7 +180,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   struct {
     char *ptr;
-    int len;
+    int   len;
   } strval = {nullptr, 0};
 
   Dbg(dbg_ctl, "attempting to inject X-Cache-Key header");
@@ -222,8 +222,8 @@ done:
 static void
 InjectCacheInfoHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
-  TSMLoc dst = TS_NULL_MLOC;
-  TSMgmtInt volume;
+  TSMLoc      dst = TS_NULL_MLOC;
+  TSMgmtInt   volume;
   const char *path;
 
   Dbg(dbg_ctl, "attempting to inject X-Cache-Info header");
@@ -258,7 +258,7 @@ static void
 InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc dst = TS_NULL_MLOC;
-  int status;
+  int    status;
 
   static const char *names[] = {
     "miss",      // TS_CACHE_LOOKUP_MISS,
@@ -292,7 +292,7 @@ done:
 
 struct milestone {
   TSMilestonesType mstype;
-  const char *msname;
+  const char      *msname;
 };
 
 static void
@@ -319,14 +319,14 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     {TS_MILESTONE_CACHE_OPEN_WRITE_END,    "CACHE-OPEN-WRITE-END"   },
     {TS_MILESTONE_DNS_LOOKUP_BEGIN,        "DNS-LOOKUP-BEGIN"       },
     {TS_MILESTONE_DNS_LOOKUP_END,          "DNS-LOOKUP-END"         },
- // SM_START is deliberately excluded because as all the times are printed relative to it
-  // it would always be zero.
+    // SM_START is deliberately excluded because as all the times are printed relative to it
+    // it would always be zero.
     {TS_MILESTONE_SM_FINISH,               "SM-FINISH"              },
     {TS_MILESTONE_PLUGIN_ACTIVE,           "PLUGIN-ACTIVE"          },
     {TS_MILESTONE_PLUGIN_TOTAL,            "PLUGIN-TOTAL"           },
   };
 
-  TSMLoc dst = TS_NULL_MLOC;
+  TSMLoc   dst = TS_NULL_MLOC;
   TSHRTime epoch;
 
   // TS_MILESTONE_SM_START is stamped when the HTTP transaction is born. The slow
@@ -342,7 +342,7 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   for (unsigned i = 0; i < countof(milestones); ++i) {
     TSHRTime time = 0;
-    char hdrval[64];
+    char     hdrval[64];
 
     // If we got a milestone (it's in nanoseconds), convert it to seconds relative to
     // the start of the transaction. We don't get milestone values for portions of the
@@ -350,7 +350,7 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     TSHttpTxnMilestoneGet(txn, milestones[i].mstype, &time);
     if (time > 0) {
       double elapsed = static_cast<double>(time - epoch) / 1000000000.0;
-      int len        = snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
+      int    len     = snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
 
       TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, hdrval, len) == TS_SUCCESS);
     }
@@ -400,12 +400,12 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Remap", lengthof("X-Remap"));
 
   if (TS_NULL_MLOC != dst) {
-    int fromUrlStrLen, toUrlStrLen;
+    int         fromUrlStrLen, toUrlStrLen;
     const char *fromUrlStr = getRemapUrlStr(txn, TSRemapFromUrlGet, fromUrlStrLen);
     const char *toUrlStr   = getRemapUrlStr(txn, TSRemapToUrlGet, toUrlStrLen);
 
     char buf[2048];
-    int len = snprintf(buf, sizeof(buf), "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
+    int  len = snprintf(buf, sizeof(buf), "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
 
     if (fromUrlStr != NotFound) {
       TSfree(const_cast<char *>(fromUrlStr));
@@ -424,7 +424,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   struct {
     char *ptr;
-    int len;
+    int   len;
   } strval = {nullptr, 0};
 
   Dbg(dbg_ctl, "attempting to inject X-Effective-URL header");
@@ -435,7 +435,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Effective-URL", lengthof("X-Effective-URL"));
     if (dst != TS_NULL_MLOC) {
       char buf[16 * 1024];
-      int len = snprintf(buf, sizeof(buf), "\"%s\"", strval.ptr);
+      int  len = snprintf(buf, sizeof(buf), "\"%s\"", strval.ptr);
       if (len == strval.len + 2 && len <= static_cast<int>(sizeof(buf)) - 1) { // Only copy back if len expected and within buffer.
         TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
       }
@@ -451,8 +451,8 @@ InjectOriginalContentTypeHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (TS_NULL_MLOC != ct_field) {
-    int original_content_type_len     = 0;
-    const char *original_content_type = TSMimeHdrFieldValueStringGet(buffer, hdr, ct_field, -1, &original_content_type_len);
+    int         original_content_type_len = 0;
+    const char *original_content_type     = TSMimeHdrFieldValueStringGet(buffer, hdr, ct_field, -1, &original_content_type_len);
     if (original_content_type != nullptr) {
       TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Original-Content-Type", lengthof("X-Original-Content-Type"));
       TSReleaseAssert(TS_NULL_MLOC != dst);
@@ -475,9 +475,9 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Transaction-ID", lengthof("X-Transaction-ID"));
 
   if (TS_NULL_MLOC != dst) {
-    char buf[TS_UUID_STRING_LEN + 22]; // Padded for int64_t (20) + 1 ('-') + 1 ('\0')
+    char   buf[TS_UUID_STRING_LEN + 22]; // Padded for int64_t (20) + 1 ('-') + 1 ('\0')
     TSUuid uuid = TSProcessUuidGet();
-    int len     = snprintf(buf, sizeof(buf), "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
+    int    len  = snprintf(buf, sizeof(buf), "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
 
     TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
     TSHandleMLocRelease(buffer, hdr, dst);
@@ -492,7 +492,7 @@ InjectParentSelectionKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   struct {
     char *ptr;
-    int len;
+    int   len;
   } strval = {nullptr, 0};
 
   Dbg(dbg_ctl, "attempting to inject X-ParentSelection-Key header");
@@ -536,7 +536,7 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   TSMBuffer buffer;
-  TSMLoc hdr;
+  TSMLoc    hdr;
 
   TSReleaseAssert(event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
 
@@ -642,8 +642,8 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
   tvVal.remove_prefix(1);
   tvVal.ltrim(httpSpace);
 
-  size_t sz  = tvVal.size();
-  intmax_t i = swoc::svtoi(tvVal, &tvVal);
+  size_t   sz = tvVal.size();
+  intmax_t i  = swoc::svtoi(tvVal, &tvVal);
 
   if ((tvVal.size() != sz) or (i < 0)) {
     // There were crud characters after the number, or the number was negative.
@@ -660,12 +660,12 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
 static int
 XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn     = static_cast<TSHttpTxn>(edata);
-  unsigned xheaders = 0;
-  intmax_t fwdCnt   = 0;
-  TSMLoc field, next;
+  TSHttpTxn txn      = static_cast<TSHttpTxn>(edata);
+  unsigned  xheaders = 0;
+  intmax_t  fwdCnt   = 0;
+  TSMLoc    field, next;
   TSMBuffer buffer;
-  TSMLoc hdr;
+  TSMLoc    hdr;
 
   // Make sure TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE) is called before exiting function.
   //
@@ -686,7 +686,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
     for (int i = 0; i < count; ++i) {
       const char *value;
-      int vsize;
+      int         vsize;
 
       value = TSMimeHdrFieldValueStringGet(buffer, hdr, field, i, &vsize);
       if (value == nullptr || vsize == 0) {
@@ -787,7 +787,7 @@ static int
 XDeleteDebugHdr(TSCont /* contp */, TSEvent event, void *edata)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  TSMLoc hdr, field;
+  TSMLoc    hdr, field;
   TSMBuffer buffer;
 
   // Make sure TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE) is called before exiting function.
@@ -887,7 +887,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // Make xDebugHeader available to other plugins, as a C-style string.
   //
-  int idx  = -1;
+  int  idx = -1;
   auto ret = TSUserArgIndexReserve(TS_USER_ARGS_GLB, "XDebugHeader", "XDebug header name", &idx);
   TSReleaseAssert(ret == TS_SUCCESS);
   TSReleaseAssert(idx >= 0);

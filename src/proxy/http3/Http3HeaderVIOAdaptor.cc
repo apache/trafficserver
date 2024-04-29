@@ -124,9 +124,9 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   // b). Add interface to HTTPHdr to dump data
   //   or
   // c). Add interface to HttpSM to handle HTTPHdr directly
-  int bufindex;
-  int dumpoffset = 0;
-  int done, tmp;
+  int            bufindex;
+  int            dumpoffset = 0;
+  int            done, tmp;
   IOBufferBlock *block;
   do {
     bufindex = 0;

@@ -50,9 +50,9 @@ ts_lua_inject_log_object_creat_api(lua_State *L)
 static int
 ts_lua_log_object_creat(lua_State *L)
 {
-  const char *log_name;
-  size_t name_len;
-  int log_mode;
+  const char  *log_name;
+  size_t       name_len;
+  int          log_mode;
   TSReturnCode error;
 
   log_name = luaL_checklstring(L, -2, &name_len);
@@ -84,7 +84,7 @@ static int
 ts_lua_log_object_write(lua_State *L)
 {
   const char *text;
-  size_t text_len;
+  size_t      text_len;
 
   text = luaL_checklstring(L, 1, &text_len);
   if (ts_log) {

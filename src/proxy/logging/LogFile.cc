@@ -263,7 +263,7 @@ LogFile::close_file()
 struct RolledFile {
   RolledFile(const std::string &name, time_t mtime) : _name(name), _mtime(mtime) {}
   std::string _name;
-  time_t _mtime;
+  time_t      _mtime;
 };
 
 /**
@@ -276,7 +276,7 @@ bool
 LogFile::trim_rolled(size_t rolling_max_count)
 {
   // man: "dirname() may modify the contents of path, so it may be desirable to pass a copy when calling one of these functions."
-  char *name = ats_strdup(m_name);
+  char       *name = ats_strdup(m_name);
   std::string logfile_dir(::dirname((name)));
   ats_free(name);
 
@@ -309,8 +309,8 @@ LogFile::trim_rolled(size_t rolling_max_count)
 
   // Collect the rolled file names from the logging directory that match the specified log file name
   std::vector<RolledFile> rolled;
-  char path[MAXPATHLEN];
-  struct dirent *entry;
+  char                    path[MAXPATHLEN];
+  struct dirent          *entry;
   while ((entry = readdir(ld))) {
     struct stat sbuf;
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir.c_str(), entry->d_name);
@@ -419,7 +419,7 @@ LogFile::reopen_if_moved()
 int
 LogFile::preproc_and_try_delete(LogBuffer *lb)
 {
-  int ret = -1;
+  int              ret = -1;
   LogBufferHeader *buffer_header;
 
   if (lb == nullptr) {
@@ -501,17 +501,17 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
   ink_assert(buffer_header != nullptr);
   ink_assert(fd >= 0);
 
-  char fmt_buf[LOG_MAX_FORMATTED_BUFFER];
-  char fmt_line[LOG_MAX_FORMATTED_LINE];
+  char              fmt_buf[LOG_MAX_FORMATTED_BUFFER];
+  char              fmt_line[LOG_MAX_FORMATTED_LINE];
   LogBufferIterator iter(buffer_header);
-  LogEntryHeader *entry_header;
-  int fmt_buf_bytes  = 0;
-  int fmt_line_bytes = 0;
-  int bytes          = 0;
+  LogEntryHeader   *entry_header;
+  int               fmt_buf_bytes  = 0;
+  int               fmt_line_bytes = 0;
+  int               bytes          = 0;
 
   LogFormatType format_type;
-  char *fieldlist_str;
-  char *printf_str;
+  char         *fieldlist_str;
+  char         *printf_str;
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
@@ -569,15 +569,15 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   ink_assert(buffer_header != nullptr);
 
   LogBufferIterator iter(buffer_header);
-  LogEntryHeader *entry_header;
-  int fmt_entry_count = 0;
-  int fmt_buf_bytes   = 0;
-  int total_bytes     = 0;
+  LogEntryHeader   *entry_header;
+  int               fmt_entry_count = 0;
+  int               fmt_buf_bytes   = 0;
+  int               total_bytes     = 0;
 
   LogFormatType format_type;
-  char *fieldlist_str;
-  char *printf_str;
-  char *ascii_buffer;
+  char         *fieldlist_str;
+  char         *printf_str;
+  char         *ascii_buffer;
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
@@ -715,8 +715,8 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 void
 LogFile::check_fd()
 {
-  static bool failure_last_call    = false;
-  static unsigned stat_check_count = 1;
+  static bool     failure_last_call = false;
+  static unsigned stat_check_count  = 1;
 
   if ((stat_check_count % Log::config->file_stat_frequency) == 0) {
     //

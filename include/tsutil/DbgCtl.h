@@ -46,7 +46,7 @@ public:
                         va_list ap) const              = 0;
 
   static DebugInterface *get_instance();
-  static void set_instance(DebugInterface *);
+  static void            set_instance(DebugInterface *);
 
   // Generate the default diagnostics format string for the given parameters.
   // @return The offset in the format string of the timestamp (in case the caller doesn't want to include that)

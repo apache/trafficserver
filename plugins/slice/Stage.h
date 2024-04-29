@@ -26,8 +26,8 @@
 #include <cinttypes>
 
 struct Channel {
-  TSVIO m_vio{nullptr};
-  TSIOBuffer m_iobuf{nullptr};
+  TSVIO            m_vio{nullptr};
+  TSIOBuffer       m_iobuf{nullptr};
   TSIOBufferReader m_reader{nullptr};
 
   ~Channel()

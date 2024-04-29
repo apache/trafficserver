@@ -45,16 +45,16 @@ class ChunkDecoder
     kUpperBound,
   };
 
-  State state_  = kSize;
-  int64_t size_ = 0;
+  State   state_ = kSize;
+  int64_t size_  = 0;
 
 public:
   /// Default Constructor. Construct to empty state of expected size 0.
   ChunkDecoder() {}
 
   void parseSizeCharacter(const char);
-  int parseSize(const char *, const int64_t);
-  int decode(const TSIOBufferReader &);
+  int  parseSize(const char *, const int64_t);
+  int  decode(const TSIOBufferReader &);
   bool isSizeState() const;
 
   inline bool

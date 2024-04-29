@@ -186,9 +186,9 @@ ats_mlock(caddr_t addr, size_t len)
 {
   size_t pagesize = ats_pagesize();
 
-  caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
-  size_t l  = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
-  int res   = mlock(a, l);
+  caddr_t a   = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
+  size_t  l   = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
+  int     res = mlock(a, l);
   return res;
 }
 

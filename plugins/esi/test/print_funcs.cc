@@ -48,7 +48,7 @@ enableFakeDebugLog()
 void
 DbgCtl::print(const char *tag, const char * /* file */, const char * /* function */, int /* line */, const char *fmt, ...)
 {
-  char buf[LINE_SIZE];
+  char    buf[LINE_SIZE];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buf, LINE_SIZE, fmt, ap);
@@ -109,7 +109,7 @@ DbgCtl::_override_global_on()
 void
 TSError(const char *fmt, ...)
 {
-  char buf[LINE_SIZE];
+  char    buf[LINE_SIZE];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buf, LINE_SIZE, fmt, ap);

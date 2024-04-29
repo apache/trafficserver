@@ -83,12 +83,12 @@ static const unsigned int allowed_flags = (STRIP_FLAG_LEAVE_WHITESP | STRIP_FLAG
 static int
 stripped_core(const char *r, const char *in_end, char **w, const char *out_end, unsigned int flags)
 {
-  int leading        = 1;    /* haven't yet written a non-space */
-  int in_js_entity   = 0;    /* are we inside a javascript entity? */
+  int  leading       = 1;    /* haven't yet written a non-space */
+  int  in_js_entity  = 0;    /* are we inside a javascript entity? */
   char in_quote_char = '\0'; /* in quoted region? which kind: '\'' or '"' */
-  int space          = 0;    /* number of spaces pending */
-  int stripped       = 0;    /* have we stripped since last output? */
-  int in_tag         = 0;    /* are we inside a tag? */
+  int  space         = 0;    /* number of spaces pending */
+  int  stripped      = 0;    /* have we stripped since last output? */
+  int  in_tag        = 0;    /* are we inside a tag? */
 
   /* parse the string, stripping risky characters/sequences */
   for (/* already established */; r < in_end; r++) {
@@ -184,9 +184,9 @@ stripped_core(const char *r, const char *in_end, char **w, const char *out_end, 
 int
 get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned int flags)
 {
-  int retval = STRIP_RESULT_OK;
-  const char *r, *in_end; /* where we read from, read limit */
-  char *w, *out_end;      /* where we write to, write limit */
+  int         retval = STRIP_RESULT_OK;
+  const char *r, *in_end;  /* where we read from, read limit */
+  char       *w, *out_end; /* where we write to, write limit */
 
   /* validate params */
   if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len <= 0 || (out == nullptr && *out_len > 0) ||

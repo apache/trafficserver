@@ -41,7 +41,7 @@ appendEncoded(String &target, const char *s, size_t len)
     return;
   }
 
-  char tmp[len * 3 + 1];
+  char   tmp[len * 3 + 1];
   size_t written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
@@ -105,12 +105,12 @@ static String
 getKeyQuery(const char *query, int length, const ConfigQuery &config)
 {
   std::istringstream istr(String(query, length));
-  String token;
-  T container;
+  String             token;
+  T                  container;
 
   while (std::getline(istr, token, '&')) {
     String::size_type pos(token.find_first_of('='));
-    String param(token.substr(0, pos == String::npos ? token.size() : pos));
+    String            param(token.substr(0, pos == String::npos ? token.size() : pos));
 
     if (config.toBeAdded(param)) {
       ::appendToContainer(container, token);
@@ -149,13 +149,13 @@ static bool
 classifyUserAgent(const Classifier &c, TSMBuffer buf, TSMLoc hdrs, String &classname)
 {
   TSMLoc field;
-  bool matched = false;
+  bool   matched = false;
 
   field = TSMimeHdrFieldFind(buf, hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT);
   while (field != TS_NULL_MLOC && !matched) {
     const char *value;
-    int len;
-    int count = TSMimeHdrFieldValuesCount(buf, hdrs, field);
+    int         len;
+    int         count = TSMimeHdrFieldValuesCount(buf, hdrs, field);
 
     for (int i = 0; i < count; ++i) {
       value = TSMimeHdrFieldValueStringGet(buf, hdrs, field, i, &len);
@@ -176,8 +176,8 @@ classifyUserAgent(const Classifier &c, TSMBuffer buf, TSMLoc hdrs, String &class
 static String
 getUri(TSMBuffer buf, TSMLoc url)
 {
-  String uri;
-  int uriLen;
+  String      uri;
+  int         uriLen;
   const char *uriPtr = TSUrlStringGet(buf, url, &uriLen);
   if (nullptr != uriPtr && 0 != uriLen) {
     uri.assign(uriPtr, uriLen);
@@ -193,8 +193,8 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
 {
   String canonicalUrl;
 
-  String scheme;
-  int schemeLen;
+  String      scheme;
+  int         schemeLen;
   const char *schemePtr = TSUrlSchemeGet(buf, url, &schemeLen);
   if (nullptr != schemePtr && 0 != schemeLen) {
     scheme.assign(schemePtr, schemeLen);
@@ -203,8 +203,8 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
     return canonicalUrl;
   }
 
-  String host;
-  int hostLen;
+  String      host;
+  int         hostLen;
   const char *hostPtr = TSUrlHostGet(buf, url, &hostLen);
   if (nullptr != hostPtr && 0 != hostLen) {
     host.assign(hostPtr, hostLen);
@@ -214,7 +214,7 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
   }
 
   String port;
-  int portInt = TSUrlPortGet(buf, url);
+  int    portInt = TSUrlPortGet(buf, url);
   ::append(port, portInt);
 
   if (canonicalPrefix) {
@@ -438,10 +438,10 @@ void
 CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
 {
   // "true" would mean that the plugin config meant to override the default path.
-  bool customPath = false;
+  bool   customPath = false;
   String path;
 
-  int pathLen;
+  int         pathLen;
   const char *pathPtr = TSUrlPathGet(_buf, _url, &pathLen);
   if (nullptr != pathPtr && 0 != pathLen) {
     path.assign(pathPtr, pathLen);
@@ -492,8 +492,8 @@ CacheKey::processHeader(const String &name, const ConfigHeaders &config, T &dst,
   for (field = TSMimeHdrFieldFind(_buf, _hdrs, name.c_str(), name.size()); field != TS_NULL_MLOC;
        field = ::nextDuplicate(_buf, _hdrs, field)) {
     const char *value;
-    int vlen;
-    int count = TSMimeHdrFieldValuesCount(_buf, _hdrs, field);
+    int         vlen;
+    int         count = TSMimeHdrFieldValuesCount(_buf, _hdrs, field);
 
     for (int i = 0; i < count; ++i) {
       value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &vlen);
@@ -590,7 +590,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
     return;
   }
 
-  TSMLoc field;
+  TSMLoc    field;
   StringSet cset; /* sort and uniquify the cookies list in the cache key */
 
   for (field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE); field != TS_NULL_MLOC;
@@ -599,7 +599,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
 
     for (int i = 0; i < count; ++i) {
       const char *value;
-      int len;
+      int         len;
 
       value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &len);
       if (value == nullptr || len == 0) {
@@ -607,13 +607,13 @@ CacheKey::appendCookies(const ConfigCookies &config)
       }
 
       std::istringstream istr(String(value, len));
-      String cookie;
+      String             cookie;
 
       while (std::getline(istr, cookie, ';')) {
         ::ltrim(cookie); // Trim leading spaces.
 
         String::size_type pos(cookie.find_first_of('='));
-        String name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
+        String            name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
 
         /* We only add it to the cache key it is in the cookie set. */
         if (config.toBeAdded(name)) {
@@ -645,7 +645,7 @@ CacheKey::appendQuery(const ConfigQuery &config)
   }
 
   const char *query;
-  int length;
+  int         length;
 
   query = TSUrlHttpQueryGet(_buf, _url, &length);
   if (query == nullptr || length == 0) {
@@ -688,9 +688,9 @@ CacheKey::appendUaCaptures(Pattern &config)
     return;
   }
 
-  TSMLoc field;
+  TSMLoc      field;
   const char *value;
-  int len;
+  int         len;
 
   field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT);
   if (field == TS_NULL_MLOC) {
@@ -704,7 +704,7 @@ CacheKey::appendUaCaptures(Pattern &config)
    * it was a single header. */
   value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, -1, &len);
   if (value && len) {
-    String val(value, len);
+    String       val(value, len);
     StringVector captures;
 
     if (config.process(val, captures)) {
@@ -727,7 +727,7 @@ bool
 CacheKey::appendUaClass(Classifier &classifier)
 {
   String classname;
-  bool matched = ::classifyUserAgent(classifier, _buf, _hdrs, classname);
+  bool   matched = ::classifyUserAgent(classifier, _buf, _hdrs, classname);
 
   if (matched) {
     append(classname);
@@ -745,7 +745,7 @@ CacheKey::appendUaClass(Classifier &classifier)
 bool
 CacheKey::finalize() const
 {
-  bool res = false;
+  bool   res = false;
   String msg;
 
   CacheKeyDebug("finalizing %s '%s' from a %s plugin", getCacheKeyKeyTypeName(_keyType), _key.c_str(),
@@ -772,7 +772,7 @@ CacheKey::finalize() const
     /* parent selection */
     const char *start = _key.c_str();
     const char *end   = _key.c_str() + _key.length();
-    TSMLoc new_url_loc;
+    TSMLoc      new_url_loc;
     if (TS_SUCCESS == TSUrlCreate(_buf, &new_url_loc)) {
       if (TS_PARSE_DONE == TSUrlParse(_buf, new_url_loc, &start, end)) {
         if (TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(_txn, _buf, new_url_loc)) {
@@ -799,7 +799,7 @@ CacheKey::finalize() const
   if (res) {
     CacheKeyDebug("%.*s", static_cast<int>(msg.length()), msg.c_str());
   } else {
-    int len;
+    int   len;
     char *url = TSHttpTxnEffectiveUrlStringGet(_txn, &len);
     if (nullptr != url) {
       msg.append(" for url ").append(url, len);

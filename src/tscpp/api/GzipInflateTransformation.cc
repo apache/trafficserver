@@ -34,7 +34,7 @@ using std::vector;
 
 namespace
 {
-const int WINDOW_BITS             = 31; // Always use 31 for gzip.
+const int    WINDOW_BITS          = 31; // Always use 31 for gzip.
 unsigned int INFLATE_SCALE_FACTOR = 6;
 } // namespace
 
@@ -42,9 +42,9 @@ unsigned int INFLATE_SCALE_FACTOR = 6;
  * @private
  */
 struct atscppapi::transformations::GzipInflateTransformationState : noncopyable {
-  z_stream z_stream_;
-  bool z_stream_initialized_;
-  int64_t bytes_produced_;
+  z_stream                   z_stream_;
+  bool                       z_stream_initialized_;
+  int64_t                    bytes_produced_;
   TransformationPlugin::Type transformation_type_;
 
   GzipInflateTransformationState(TransformationPlugin::Type type)
@@ -94,9 +94,9 @@ GzipInflateTransformation::consume(std::string_view data)
     return;
   }
 
-  int err                = Z_OK;
-  int iteration          = 0;
-  int inflate_block_size = INFLATE_SCALE_FACTOR * data.size();
+  int          err                = Z_OK;
+  int          iteration          = 0;
+  int          inflate_block_size = INFLATE_SCALE_FACTOR * data.size();
   vector<char> buffer(inflate_block_size);
 
   // Setup the compressed input

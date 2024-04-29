@@ -31,7 +31,7 @@ template <typename T> struct PriorityQueueEntry {
   PriorityQueueEntry(T n) : node(n){};
   PriorityQueueEntry() : node(NULL){};
   uint32_t index = 0;
-  T node;
+  T        node;
 };
 
 template <typename T> struct PriorityQueueLess {
@@ -47,14 +47,14 @@ template <typename T, class Comp = PriorityQueueLess<T>> class PriorityQueue
 public:
   PriorityQueue() {}
   ~PriorityQueue() {}
-  bool empty();
-  bool in(PriorityQueueEntry<T> *entry);
-  PriorityQueueEntry<T> *top();
-  void pop();
-  void push(PriorityQueueEntry<T> *);
-  void update(PriorityQueueEntry<T> *);
-  void update(PriorityQueueEntry<T> *, bool);
-  void erase(PriorityQueueEntry<T> *);
+  bool                                        empty();
+  bool                                        in(PriorityQueueEntry<T> *entry);
+  PriorityQueueEntry<T>                      *top();
+  void                                        pop();
+  void                                        push(PriorityQueueEntry<T> *);
+  void                                        update(PriorityQueueEntry<T> *);
+  void                                        update(PriorityQueueEntry<T> *, bool);
+  void                                        erase(PriorityQueueEntry<T> *);
   const std::vector<PriorityQueueEntry<T> *> &dump() const;
 
 private:

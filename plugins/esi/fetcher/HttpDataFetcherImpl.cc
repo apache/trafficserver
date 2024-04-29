@@ -94,9 +94,9 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     return true;
   }
 
-  char buff[1024];
-  char *http_req;
-  int length;
+  char   buff[1024];
+  char  *http_req;
+  int    length;
   size_t req_buf_size = 0;
 
   length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
@@ -153,8 +153,8 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
   }
 
   UrlToContentMap::iterator &req_entry = _page_entry_lookup[base_event_id];
-  const string &req_str                = req_entry->first;
-  RequestData &req_data                = req_entry->second;
+  const string              &req_str   = req_entry->first;
+  RequestData               &req_data  = req_entry->second;
 
   if (req_data.complete) {
     // can only happen if there's a bug in this or fetch API code
@@ -172,10 +172,10 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
     return true;
   }
 
-  int page_data_len;
+  int         page_data_len;
   const char *page_data = TSFetchRespGet(static_cast<TSHttpTxn>(edata), &page_data_len);
   req_data.response.assign(page_data, page_data_len);
-  bool valid_data_received = false;
+  bool        valid_data_received = false;
   const char *startptr = req_data.response.data(), *endptr = startptr + page_data_len;
 
   req_data.bufp    = TSMBufferCreate();
@@ -246,8 +246,8 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
 
   if (exp_value && exp_value_len) {
     const char *value;
-    int value_len;
-    int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    int         value_len;
+    int         n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
 
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);

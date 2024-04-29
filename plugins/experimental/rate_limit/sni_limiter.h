@@ -82,7 +82,7 @@ public:
   }
 
 private:
-  SniSelector *_selector         = nullptr; // The selector we belong to
-  IpReputation::SieveLru *_iprep = nullptr; // IP reputation for this SNI (if any)
-  List::IP *_exclude             = nullptr; // The list of IPs to exclude (if any). ToDo: belongs in limiter.h :-/.
+  SniSelector            *_selector = nullptr; // The selector we belong to
+  IpReputation::SieveLru *_iprep    = nullptr; // IP reputation for this SNI (if any)
+  List::IP               *_exclude  = nullptr; // The list of IPs to exclude (if any). ToDo: belongs in limiter.h :-/.
 };

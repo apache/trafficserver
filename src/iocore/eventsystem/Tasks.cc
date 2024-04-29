@@ -24,7 +24,7 @@
 #include "iocore/eventsystem/Tasks.h"
 
 // Globals
-EventType ET_TASK = ET_CALL;
+EventType      ET_TASK = ET_CALL;
 TasksProcessor tasksProcessor;
 
 EventType

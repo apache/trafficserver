@@ -65,11 +65,11 @@ public:
 
 private:
   constexpr static uint32_t DEFAULT_MATCHES = 10;
-  static void *malloc(size_t size, void *caller);
-  std::string_view _subject;
-  char _buffer[24 + 96 + 28 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 28 bytes per match.
-  size_t _buffer_bytes_used = 0;
-  int32_t _size             = 0;
+  static void              *malloc(size_t size, void *caller);
+  std::string_view          _subject;
+  char    _buffer[24 + 96 + 28 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 28 bytes per match.
+  size_t  _buffer_bytes_used = 0;
+  int32_t _size              = 0;
 
   /// @internal This effectively wraps a void* so that we can avoid requiring the pcre2.h include for the user of the Regex
   /// API (see Regex.cc).
@@ -182,8 +182,8 @@ public:
 private:
   struct Pattern {
     Pattern(Regex &&rxp, std::string &&s) : _re(std::move(rxp)), _p(std::move(s)) {}
-    Regex _re;      ///< The compile pattern.
-    std::string _p; ///< The original pattern.
+    Regex       _re; ///< The compile pattern.
+    std::string _p;  ///< The original pattern.
   };
 
   /** Compile @a pattern and add it to the pattern set.

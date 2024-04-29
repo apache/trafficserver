@@ -45,14 +45,14 @@ public:
 
   ~StubIncludeHandler();
 
-  static bool includeResult;
+  static bool              includeResult;
   static const char *const DATA_PREFIX;
-  static const int DATA_PREFIX_SIZE;
+  static const int         DATA_PREFIX_SIZE;
 
   static const char *FOOTER;
-  static int FOOTER_SIZE;
+  static int         FOOTER_SIZE;
 
 private:
-  int n_includes;
+  int               n_includes;
   std::list<char *> heap_strings;
 };

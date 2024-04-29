@@ -117,11 +117,11 @@ private:
 
   Blocking_action() = default;
 
-  static int _global_cont_func(TSCont, TSEvent event, void *eventData);
-  static int _txn_cont_func(TSCont, TSEvent event, void *eventData);
+  static int   _global_cont_func(TSCont, TSEvent event, void *eventData);
+  static int   _txn_cont_func(TSCont, TSEvent event, void *eventData);
   static void *_thread_func(void *vba);
 
-  TSContUniqPtr _txn_hook_cont{TSContCreate(_txn_cont_func, TSMutexCreate())};
+  TSContUniqPtr     _txn_hook_cont{TSContCreate(_txn_cont_func, TSMutexCreate())};
   std::atomic<bool> _cont_mutex_locked{false};
 
   TSThreadUniqPtr _checker{TSThreadCreate(&_thread_func, this)};

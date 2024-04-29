@@ -80,14 +80,14 @@ strip_ae_value(swoc::TextView &value)
 void
 normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc)
 {
-  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-  bool deflate = false;
-  bool gzip    = false;
-  bool br      = false;
+  TSMLoc field   = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  bool   deflate = false;
+  bool   gzip    = false;
+  bool   br      = false;
   // remove the accept encoding field(s),
   // while finding out if gzip or deflate is supported.
   while (field) {
-    int val_len;
+    int         val_len;
     const char *values_ = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, -1, &val_len);
     if (values_ && val_len) {
       swoc::TextView values(values_, val_len);
@@ -161,8 +161,8 @@ restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc 
 const char *
 init_hidden_header_name()
 {
-  char *hidden_header_name;
-  const char *var_name = "proxy.config.proxy_name";
+  char        *hidden_header_name;
+  const char  *var_name = "proxy.config.proxy_name";
   TSMgmtString result;
 
   if (TSMgmtStringGet(var_name, &result) != TS_SUCCESS) {

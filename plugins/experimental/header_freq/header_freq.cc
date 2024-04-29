@@ -55,16 +55,16 @@ DbgCtl dbg_ctl_init{DEBUG_TAG_INIT};
 
 // A map from header name to the number of times the header was encountered.
 using CountMap_t = std::unordered_map<std::string, std::atomic<unsigned int>>;
-CountMap_t client_freq;
-CountMap_t origin_freq;
+CountMap_t        client_freq;
+CountMap_t        origin_freq;
 std::shared_mutex map_mutex;
 
 // A vector for when we want to sort the map.
 using CountVector_t = std::vector<std::pair<std::string, unsigned int>>;
 
 // for traffic_ctl, name is a convenient identifier
-const char *ctl_tag              = PLUGIN_NAME;
-const char CONTROL_MSG_LOG[]     = "log"; // log all data
+const char  *ctl_tag             = PLUGIN_NAME;
+const char   CONTROL_MSG_LOG[]   = "log"; // log all data
 const size_t CONTROL_MSG_LOG_LEN = sizeof(CONTROL_MSG_LOG) - 1;
 
 void
@@ -155,7 +155,7 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, CountMap_t &map)
 
   // iterate through all headers
   for (int i = 0; i < n_headers && nullptr != hdr; ++i) {
-    int hdr_len;
+    int         hdr_len;
     const char *hdr_name = TSMimeHdrFieldNameGet(bufp, hdr_loc, hdr, &hdr_len);
     std::string str      = std::string(hdr_name, hdr_len);
 
@@ -196,8 +196,8 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, CountMap_t &map)
 int
 handle_header_event(TSHttpTxn txnp, TSEvent event, CountMap_t &freq_map)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSReturnCode ret;
 
   char const *message_type = nullptr;
@@ -226,8 +226,8 @@ handle_header_event(TSHttpTxn txnp, TSEvent event, CountMap_t &freq_map)
 int
 header_handle_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(edata);
-  int ret_val    = TS_SUCCESS;
+  TSHttpTxn txnp    = reinterpret_cast<TSHttpTxn>(edata);
+  int       ret_val = TS_SUCCESS;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: // count client headers

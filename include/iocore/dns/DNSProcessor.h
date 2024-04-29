@@ -59,17 +59,17 @@ const int DNS_HOSTBUF_SIZE     = MAX_DNS_RESPONSE_LEN;
 
 */
 struct HostEnt : RefCountObj {
-  struct hostent ent = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
-  uint32_t ttl       = 0;
-  int packet_size    = 0;
-  char buf[MAX_DNS_RESPONSE_LEN]         = {0};
-  u_char *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
-  u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
-  u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
-  SRVHosts srv_hosts;
-  bool good = true;
-  bool isNameError();
-  void free() override;
+  struct hostent ent         = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
+  uint32_t       ttl         = 0;
+  int            packet_size = 0;
+  char           buf[MAX_DNS_RESPONSE_LEN]      = {0};
+  u_char        *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
+  u_char        *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
+  u_char         hostbuf[DNS_HOSTBUF_SIZE]      = {0};
+  SRVHosts       srv_hosts;
+  bool           good = true;
+  bool           isNameError();
+  void           free() override;
 };
 
 extern EventType ET_DNS;
@@ -84,7 +84,7 @@ struct DNSHandler;
  */
 union DNSQueryData {
   std::string_view name; ///< Look up a name.
-  IpAddr const *addr;    ///< Reverse DNS lookup.
+  IpAddr const    *addr; ///< Reverse DNS lookup.
 
   DNSQueryData(std::string_view tv) : name(tv) {}
   DNSQueryData(IpAddr const *a) : addr(a) {}
@@ -155,11 +155,11 @@ struct DNSProcessor : public Processor {
 
   // private:
   //
-  EThread *thread     = nullptr;
-  DNSHandler *handler = nullptr;
+  EThread         *thread  = nullptr;
+  DNSHandler      *handler = nullptr;
   ts_imp_res_state l_res;
-  IpEndpoint local_ipv6;
-  IpEndpoint local_ipv4;
+  IpEndpoint       local_ipv6;
+  IpEndpoint       local_ipv4;
 
   /** Internal implementation for all getXbyY methods.
       For host resolution queries pass @c T_A for @a type. It will be adjusted

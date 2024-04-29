@@ -88,7 +88,7 @@ TEST_CASE("esi utils test")
   checkAttributes("test7", attr_list, expected_strs7);
 
   const char *escaped_sequence = R"({\"site-attribute\":\"content=no_expandable; ajax_cert_expandable\"})";
-  string str8(R"(pos="FPM1" spaceid=96584352 extra_mime=")");
+  string      str8(R"(pos="FPM1" spaceid=96584352 extra_mime=")");
   str8.append(escaped_sequence);
   str8.append(R"(" foo=bar a="b")");
   const char *expected_strs8[] = {"pos", "FPM1", "spaceid", "96584352", "extra_mime", escaped_sequence,
@@ -119,7 +119,7 @@ TEST_CASE("esi utils test")
     lines.push_back("allowlistCookie AGE");
     lines.push_back("allowlistCookie GRADE");
     lines.push_back("a b");
-    Utils::KeyValueMap kv;
+    Utils::KeyValueMap     kv;
     Utils::HeaderValueList list;
     Utils::parseKeyValueConfig(lines, kv, list);
     REQUIRE(kv.find("a")->second == "b");

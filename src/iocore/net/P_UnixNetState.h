@@ -43,12 +43,12 @@ class Event;
 class NetEvent;
 
 struct NetState {
-  int enabled = 0;
-  VIO vio;
-  Link<NetEvent> ready_link;
+  int             enabled = 0;
+  VIO             vio;
+  Link<NetEvent>  ready_link;
   SLink<NetEvent> enable_link;
-  int in_enabled_list = 0;
-  int triggered       = 0;
+  int             in_enabled_list = 0;
+  int             triggered       = 0;
 
   NetState() : vio(VIO::NONE) {}
 };

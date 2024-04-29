@@ -29,10 +29,10 @@ class QUICStreamAdapter;
 class QUICTransferProgressProvider
 {
 public:
-  virtual bool is_transfer_goal_set() const  = 0;
-  virtual uint64_t transfer_progress() const = 0;
-  virtual uint64_t transfer_goal() const     = 0;
-  virtual bool is_cancelled() const          = 0;
+  virtual bool     is_transfer_goal_set() const = 0;
+  virtual uint64_t transfer_progress() const    = 0;
+  virtual uint64_t transfer_goal() const        = 0;
+  virtual bool     is_cancelled() const         = 0;
 
   virtual bool
   is_transfer_complete() const
@@ -46,10 +46,10 @@ class QUICTransferProgressProviderSA : public QUICTransferProgressProvider
 public:
   void set_stream_adapter(QUICStreamAdapter *adapter);
 
-  bool is_transfer_goal_set() const override;
+  bool     is_transfer_goal_set() const override;
   uint64_t transfer_progress() const override;
   uint64_t transfer_goal() const override;
-  bool is_cancelled() const override;
+  bool     is_cancelled() const override;
 
 private:
   QUICStreamAdapter *_adapter;
@@ -60,10 +60,10 @@ class QUICTransferProgressProviderVIO : public QUICTransferProgressProvider
 public:
   QUICTransferProgressProviderVIO(VIO &vio) : _vio(vio) {}
 
-  bool is_transfer_goal_set() const override;
+  bool     is_transfer_goal_set() const override;
   uint64_t transfer_progress() const override;
   uint64_t transfer_goal() const override;
-  bool is_cancelled() const override;
+  bool     is_cancelled() const override;
 
 private:
   VIO &_vio;

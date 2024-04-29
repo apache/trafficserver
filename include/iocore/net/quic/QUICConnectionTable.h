@@ -45,7 +45,7 @@ public:
    *
    * Fails if CID is not associated to a specified connection
    */
-  void erase(QUICConnectionId cid, QUICConnection *connection);
+  void            erase(QUICConnectionId cid, QUICConnection *connection);
   QUICConnection *erase(QUICConnectionId cid);
 
   /*

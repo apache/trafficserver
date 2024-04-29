@@ -26,5 +26,5 @@
 #include "operator.h"
 #include "condition.h"
 
-Operator *operator_factory(const std::string &op);
+Operator  *operator_factory(const std::string &op);
 Condition *condition_factory(const std::string &cond);

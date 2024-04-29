@@ -99,7 +99,7 @@ static const char *test_certificate_cn_and_SANs =
 static X509 *
 load_cert_from_string(const char *cert_string)
 {
-  BIO *bio = BIO_new_mem_buf((void *)cert_string, -1);
+  BIO           *bio = BIO_new_mem_buf((void *)cert_string, -1);
   ts::PostScript bio_defer([&]() -> void { BIO_free(bio); });
 
   return PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
@@ -107,8 +107,8 @@ load_cert_from_string(const char *cert_string)
 
 TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
 {
-  char *matching;
-  X509 *x = load_cert_from_string(test_certificate_cn);
+  char          *matching;
+  X509          *x = load_cert_from_string(test_certificate_cn);
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
@@ -120,7 +120,7 @@ TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
 
 TEST_CASE("bad_wildcard_SANs", "[libts][X509HostnameValidator]")
 {
-  X509 *x = load_cert_from_string(test_certificate_bad_sans);
+  X509          *x = load_cert_from_string(test_certificate_bad_sans);
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
@@ -133,8 +133,8 @@ TEST_CASE("bad_wildcard_SANs", "[libts][X509HostnameValidator]")
 
 TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
 {
-  char *matching;
-  X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  char          *matching;
+  X509          *x = load_cert_from_string(test_certificate_cn_and_SANs);
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
@@ -151,8 +151,8 @@ TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
 
 TEST_CASE("IDNA_hostnames", "[libts][X509HostnameValidator]")
 {
-  char *matching;
-  X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  char          *matching;
+  X509          *x = load_cert_from_string(test_certificate_cn_and_SANs);
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);
@@ -166,8 +166,8 @@ TEST_CASE("IDNA_hostnames", "[libts][X509HostnameValidator]")
 
 TEST_CASE("middle_label_match", "[libts][X509HostnameValidator]")
 {
-  char *matching;
-  X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  char          *matching;
+  X509          *x = load_cert_from_string(test_certificate_cn_and_SANs);
   ts::PostScript x_defer([&]() -> void { X509_free(x); });
 
   REQUIRE(x != nullptr);

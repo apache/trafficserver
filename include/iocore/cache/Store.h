@@ -74,13 +74,13 @@ struct span_diskid_t {
 // Those on the same disk should be in a linked list.
 //
 struct Span {
-  int64_t blocks          = 0; // in STORE_BLOCK_SIZE blocks
-  int64_t offset          = 0; // used only if (file == true); in bytes
-  unsigned hw_sector_size = DEFAULT_HW_SECTOR_SIZE;
-  unsigned alignment      = 0;
+  int64_t       blocks         = 0; // in STORE_BLOCK_SIZE blocks
+  int64_t       offset         = 0; // used only if (file == true); in bytes
+  unsigned      hw_sector_size = DEFAULT_HW_SECTOR_SIZE;
+  unsigned      alignment      = 0;
   span_diskid_t disk_id;
-  int forced_volume_num = -1;    ///< Force span in to specific volume.
-  bool file_pathname    = false; // the pathname is a file
+  int           forced_volume_num = -1;    ///< Force span in to specific volume.
+  bool          file_pathname     = false; // the pathname is a file
   // v- used as a magic location for copy constructor.
   // we memcpy everything before this member and do explicit assignment for the rest.
   ats_scoped_str pathname;
@@ -157,7 +157,7 @@ struct Store {
 
   unsigned n_spans_in_config = 0; ///< The number of disks/paths defined in storage.config
   unsigned n_spans           = 0; ///< The number of disks/paths we could actually read and parse
-  Span **spans               = nullptr;
+  Span   **spans             = nullptr;
 
   Result read_config();
 

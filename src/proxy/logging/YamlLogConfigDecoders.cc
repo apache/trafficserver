@@ -109,9 +109,9 @@ convert<std::unique_ptr<LogFilter>>::decode(const Node &node, std::unique_ptr<Lo
   auto action    = node["action"].as<std::string>();
   auto condition = node["condition"].as<std::string>();
 
-  auto action_str       = action.c_str();
-  LogFilter::Action act = LogFilter::REJECT; /* lv: make gcc happy */
-  int i;
+  auto              action_str = action.c_str();
+  LogFilter::Action act        = LogFilter::REJECT; /* lv: make gcc happy */
+  int               i;
   for (i = 0; i < LogFilter::N_ACTIONS; i++) {
     if (strcasecmp(action_str, LogFilter::ACTION_NAME[i]) == 0) {
       act = static_cast<LogFilter::Action>(i);

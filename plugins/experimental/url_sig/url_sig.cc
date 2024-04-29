@@ -49,13 +49,13 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 struct config {
   TSHttpStatus err_status;
-  char *err_url;
-  char keys[MAX_KEY_NUM][MAX_KEY_LEN];
-  pcre *regex;
-  pcre_extra *regex_extra;
-  int pristine_url_flag;
-  char *sig_anchor;
-  bool ignore_expiry;
+  char        *err_url;
+  char         keys[MAX_KEY_NUM][MAX_KEY_LEN];
+  pcre        *regex;
+  pcre_extra  *regex_extra;
+  int          pristine_url_flag;
+  char        *sig_anchor;
+  bool         ignore_expiry;
 };
 
 static void
@@ -92,7 +92,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  char config_filepath_buf[PATH_MAX], *config_file;
+  char           config_filepath_buf[PATH_MAX], *config_file;
   struct config *cfg;
 
   if ((argc < 3) || (argc > 4)) {
@@ -118,8 +118,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   char line[300];
-  int line_no = 0;
-  int keynum;
+  int  line_no = 0;
+  int  keynum;
   bool eat_comment = false;
 
   cfg = TSRalloc<config>();
@@ -199,7 +199,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     } else if (strncmp(line, "excl_regex", 10) == 0) {
       // compile and study regex
       const char *errptr;
-      int erroffset, options = 0;
+      int         erroffset, options = 0;
 
       if (cfg->regex) {
         Dbg(dbg_ctl, "Skipping duplicate excl_regex");
@@ -294,9 +294,9 @@ err_log(const char *url, int url_len, const char *msg)
 static char *
 getAppQueryString(const char *query_string, int query_length)
 {
-  int done = 0;
+  int   done = 0;
   char *p;
-  char buf[MAX_QUERY_LEN + 1];
+  char  buf[MAX_QUERY_LEN + 1];
 
   if (query_length > MAX_QUERY_LEN) {
     Dbg(dbg_ctl, "Cannot process the query string as the length exceeds %d bytes", MAX_QUERY_LEN);
@@ -364,21 +364,21 @@ static char *
 urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg,
          unsigned int signed_seg_len)
 {
-  char *segment[MAX_SEGMENTS];
-  char url[8192]                     = {'\0'};
+  char         *segment[MAX_SEGMENTS];
+  char          url[8192]            = {'\0'};
   unsigned char decoded_string[2048] = {'\0'};
-  char new_url[8192]; /* new_url is not null_terminated */
-  char *p = nullptr, *sig_anchor = nullptr, *saveptr = nullptr;
-  int i = 0, numtoks = 0, sig_anchor_seg = 0;
-  size_t decoded_len = 0;
+  char          new_url[8192]; /* new_url is not null_terminated */
+  char         *p = nullptr, *sig_anchor = nullptr, *saveptr = nullptr;
+  int           i = 0, numtoks = 0, sig_anchor_seg = 0;
+  size_t        decoded_len = 0;
 
   strncat(url, url_in, sizeof(url) - strlen(url) - 1);
 
-  char *new_url_end    = new_url;
-  int new_url_len_left = sizeof(new_url);
+  char *new_url_end      = new_url;
+  int   new_url_len_left = sizeof(new_url);
 
-  char *new_path_seg_end    = new_path_seg;
-  int new_path_seg_len_left = new_path_seg_len;
+  char *new_path_seg_end      = new_path_seg;
+  int   new_path_seg_len_left = new_path_seg_len;
 
   char *skip = strchr(url, ':');
   if (!skip || skip[1] != '/' || skip[2] != '/') {
@@ -532,28 +532,28 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   const struct config *cfg = static_cast<const struct config *>(ih);
 
-  int url_len         = 0;
-  int current_url_len = 0;
-  uint64_t expiration = 0;
-  int algorithm       = -1;
-  int keyindex        = -1;
-  int cmp_res;
-  int rval;
-  unsigned int i       = 0;
-  int j                = 0;
-  unsigned int sig_len = 0;
-  bool has_path_params = false;
+  int          url_len         = 0;
+  int          current_url_len = 0;
+  uint64_t     expiration      = 0;
+  int          algorithm       = -1;
+  int          keyindex        = -1;
+  int          cmp_res;
+  int          rval;
+  unsigned int i               = 0;
+  int          j               = 0;
+  unsigned int sig_len         = 0;
+  bool         has_path_params = false;
 
   /* all strings are locally allocated except url... about 25k per instance */
-  char *const current_url = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &current_url_len);
-  char *url               = current_url;
-  char path_params[8192] = {'\0'}, new_path[8192] = {'\0'};
-  char signed_part[8192]           = {'\0'}; // this initializes the whole array and is needed
-  char urltokstr[8192]             = {'\0'};
-  char client_ip[INET6_ADDRSTRLEN] = {'\0'}; // chose the larger ipv6 size
-  char ipstr[INET6_ADDRSTRLEN]     = {'\0'}; // chose the larger ipv6 size
+  char *const   current_url       = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &current_url_len);
+  char         *url               = current_url;
+  char          path_params[8192] = {'\0'}, new_path[8192] = {'\0'};
+  char          signed_part[8192]           = {'\0'}; // this initializes the whole array and is needed
+  char          urltokstr[8192]             = {'\0'};
+  char          client_ip[INET6_ADDRSTRLEN] = {'\0'}; // chose the larger ipv6 size
+  char          ipstr[INET6_ADDRSTRLEN]     = {'\0'}; // chose the larger ipv6 size
   unsigned char sig[MAX_SIG_SIZE + 1];
-  char sig_string[2 * MAX_SIG_SIZE + 1];
+  char          sig_string[2 * MAX_SIG_SIZE + 1];
 
   if (current_url_len >= MAX_REQ_LEN - 1) {
     err_log(current_url, current_url_len, "Request Url string too long");
@@ -561,8 +561,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   if (cfg->pristine_url_flag) {
-    TSMBuffer mbuf;
-    TSMLoc ul;
+    TSMBuffer    mbuf;
+    TSMLoc       ul;
     TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
     if (rc != TS_SUCCESS) {
       TSError("[url_sig] Failed call to TSHttpTxnPristineUrlGet()");
@@ -581,7 +581,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   if (cfg->regex) {
     const int offset = 0, options = 0;
-    int ovector[30];
+    int       ovector[30];
 
     /* Only search up to the first ? or # */
     const char *base_url_end = url;
@@ -777,7 +777,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
           // Block needed due to goto.
           {
-            char *strtok_r_p;
+            char       *strtok_r_p;
             const char *part = strtok_r(urltokstr, "/", &strtok_r_p);
             while (part != nullptr) {
               if (parts[j] == '1') {

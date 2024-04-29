@@ -59,8 +59,8 @@ namespace compress_ns
 DbgCtl dbg_ctl{TAG};
 }
 
-const int ZLIB_COMPRESSION_LEVEL = 6;
-const char *dictionary           = nullptr;
+const int   ZLIB_COMPRESSION_LEVEL = 6;
+const char *dictionary             = nullptr;
 
 // brotli compression quality 1-11. Testing proved level '6'
 #if HAVE_BROTLI_ENCODE_H
@@ -80,7 +80,7 @@ static Data *
 data_alloc(int compression_type, int compression_algorithms)
 {
   Data *data;
-  int err;
+  int   err;
 
   data                         = static_cast<Data *>(TSmalloc(sizeof(Data)));
   data->downstream_vio         = nullptr;
@@ -164,9 +164,9 @@ static TSReturnCode
 content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_type, int algorithm)
 {
   TSReturnCode ret;
-  TSMLoc ce_loc;
-  const char *value = nullptr;
-  int value_len     = 0;
+  TSMLoc       ce_loc;
+  const char  *value     = nullptr;
+  int          value_len = 0;
   // Delete Content-Encoding if present???
   if (compression_type & COMPRESSION_TYPE_BROTLI && (algorithm & ALGORITHM_BROTLI)) {
     value     = TS_HTTP_VALUE_BROTLI;
@@ -204,7 +204,7 @@ static TSReturnCode
 vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSReturnCode ret;
-  TSMLoc ce_loc;
+  TSMLoc       ce_loc;
 
   ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY);
   if (ce_loc) {
@@ -246,12 +246,12 @@ static TSReturnCode
 etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSReturnCode ret = TS_SUCCESS;
-  TSMLoc ce_loc;
+  TSMLoc       ce_loc;
 
   ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
 
   if (ce_loc) {
-    int strl;
+    int         strl;
     const char *strv = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, ce_loc, -1, &strl);
 
     // do not alter weak etags.
@@ -282,9 +282,9 @@ compress_transform_init(TSCont contp, Data *data)
   // update the vary, content-encoding, and etag response headers
   // prepare the downstream for transforming
 
-  TSVConn downstream_conn;
+  TSVConn   downstream_conn;
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   data->state = transform_state_output;
 
@@ -308,8 +308,8 @@ static void
 gzip_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
   TSIOBufferBlock downstream_blkp;
-  int64_t downstream_length;
-  int err;
+  int64_t         downstream_length;
+  int             err;
   data->zstrm.next_in  = (unsigned char *)upstream_buffer;
   data->zstrm.avail_in = upstream_length;
 
@@ -348,7 +348,7 @@ static bool
 brotli_compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_length, BrotliEncoderOperation op)
 {
   TSIOBufferBlock downstream_blkp;
-  int64_t downstream_length;
+  int64_t         downstream_length;
 
   data->bstrm.next_in  = (uint8_t *)upstream_buffer;
   data->bstrm.avail_in = upstream_length;
@@ -410,7 +410,7 @@ static void
 compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 {
   TSIOBufferBlock downstream_blkp;
-  int64_t upstream_length;
+  int64_t         upstream_length;
   while (amount > 0) {
     downstream_blkp = TSIOBufferReaderStart(upstream_reader);
     if (!downstream_blkp) {
@@ -450,7 +450,7 @@ gzip_transform_finish(Data *data)
 {
   if (data->state == transform_state_output) {
     TSIOBufferBlock downstream_blkp;
-    int64_t downstream_length;
+    int64_t         downstream_length;
 
     data->state = transform_state_finished;
 
@@ -533,8 +533,8 @@ compress_transform_finish(Data *data)
 static void
 compress_transform_do(TSCont contp)
 {
-  TSVIO upstream_vio;
-  Data *data;
+  TSVIO   upstream_vio;
+  Data   *data;
   int64_t upstream_todo;
   int64_t downstream_bytes_written;
 
@@ -629,16 +629,16 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 {
   /* Server response header */
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc field_loc;
+  TSMLoc    hdr_loc;
+  TSMLoc    field_loc;
 
   /* Client request header */
   TSMBuffer cbuf;
-  TSMLoc chdr;
-  TSMLoc cfield, rfield;
+  TSMLoc    chdr;
+  TSMLoc    cfield, rfield;
 
-  const char *value;
-  int len;
+  const char  *value;
+  int          len;
   TSHttpStatus resp_status;
 
   if (server) {
@@ -689,7 +689,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   }
 
   // the only compressible method is currently GET.
-  int method_length;
+  int         method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
 
   if (!((method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
@@ -797,7 +797,7 @@ static void
 compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type, int algorithms)
 {
   TSVConn connp;
-  Data *data;
+  Data   *data;
 
   TSHttpTxnUntransformedRespCache(txnp, 1);
 
@@ -822,9 +822,9 @@ compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type,
 HostConfiguration *
 find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp, Configuration *config)
 {
-  TSMLoc fieldp    = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
-  int strl         = 0;
-  const char *strv = nullptr;
+  TSMLoc             fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+  int                strl   = 0;
+  const char        *strv   = nullptr;
   HostConfiguration *host_configuration;
 
   if (fieldp) {
@@ -842,10 +842,10 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
-  int compress_type     = COMPRESSION_TYPE_DEFAULT;
-  int algorithms        = ALGORITHM_DEFAULT;
-  HostConfiguration *hc = static_cast<HostConfiguration *>(TSContDataGet(contp));
+  TSHttpTxn          txnp          = static_cast<TSHttpTxn>(edata);
+  int                compress_type = COMPRESSION_TYPE_DEFAULT;
+  int                algorithms    = ALGORITHM_DEFAULT;
+  HostConfiguration *hc            = static_cast<HostConfiguration *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -855,7 +855,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       info("reading response headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
-        TSMLoc req_loc;
+        TSMLoc    req_loc;
 
         if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
           restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
@@ -874,7 +874,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       info("preparing send request headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
-        TSMLoc req_loc;
+        TSMLoc    req_loc;
 
         if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
           hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
@@ -928,8 +928,8 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 static void
 handle_request(TSHttpTxn txnp, Configuration *config)
 {
-  TSMBuffer req_buf;
-  TSMLoc req_loc;
+  TSMBuffer          req_buf;
+  TSMLoc             req_loc;
   HostConfiguration *hc;
 
   if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
@@ -942,7 +942,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
 
     if (hc->enabled()) {
       if (hc->has_allows()) {
-        int url_len;
+        int   url_len;
         char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
         allowed   = hc->is_url_allowed(url, url_len);
         TSfree(url);
@@ -987,7 +987,7 @@ transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
 static void
 load_global_configuration(TSCont contp)
 {
-  const char *path         = static_cast<const char *>(TSContDataGet(contp));
+  const char    *path      = static_cast<const char *>(TSContDataGet(contp));
   Configuration *newconfig = Configuration::Parse(path);
   Configuration *oldconfig = __sync_lock_test_and_set(&cur_config, newconfig);
 

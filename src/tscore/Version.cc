@@ -60,7 +60,7 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   } else {
     // Construct the BldNumStr from the build date and time.
     char month_name[8];
-    int year, month, day, hour, minute, second;
+    int  year, month, day, hour, minute, second;
     bool invalid_datetime;
 
     static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"};

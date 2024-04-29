@@ -60,17 +60,17 @@ struct SSLMultiCertConfigParams {
     REC_ReadConfigInt32(session_ticket_number, "proxy.config.ssl.server.session_ticket.number");
   }
 
-  int session_ticket_enabled;   ///< session ticket enabled
-  int session_ticket_number;    ///< amount of session tickets to issue for new TLSv1.3 connections
-  ats_scoped_str addr;          ///< IPv[64] address to match
-  ats_scoped_str cert;          ///< certificate
-  ats_scoped_str first_cert;    ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
-  ats_scoped_str ca;            ///< CA public certificate
-  ats_scoped_str key;           ///< Private key
-  ats_scoped_str ocsp_response; ///< prefetched OCSP response
-  ats_scoped_str dialog;        ///< Private key dialog
-  ats_scoped_str servername;    ///< Destination server
-  SSLCertContextOption opt;     ///< SSLCertContext special handling option
+  int                  session_ticket_enabled; ///< session ticket enabled
+  int                  session_ticket_number;  ///< amount of session tickets to issue for new TLSv1.3 connections
+  ats_scoped_str       addr;                   ///< IPv[64] address to match
+  ats_scoped_str       cert;                   ///< certificate
+  ats_scoped_str       first_cert;             ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str       ca;                     ///< CA public certificate
+  ats_scoped_str       key;                    ///< Private key
+  ats_scoped_str       ocsp_response;          ///< prefetched OCSP response
+  ats_scoped_str       dialog;                 ///< Private key dialog
+  ats_scoped_str       servername;             ///< Destination server
+  SSLCertContextOption opt;                    ///< SSLCertContext special handling option
 };
 
 struct ssl_ticket_key_t {
@@ -80,7 +80,7 @@ struct ssl_ticket_key_t {
 };
 
 struct ssl_ticket_key_block {
-  unsigned num_keys;
+  unsigned         num_keys;
   ssl_ticket_key_t keys[];
 };
 
@@ -102,7 +102,7 @@ using shared_ssl_ticket_key_block     = std::shared_ptr<ssl_ticket_key_block>;
 struct SSLCertContext {
 private:
   mutable std::mutex ctx_mutex;
-  shared_SSL_CTX ctx;
+  shared_SSL_CTX     ctx;
 
 public:
   SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr) {}
@@ -127,13 +127,13 @@ public:
 
   /// Threadsafe Functions to get and set shared SSL_CTX pointer
   shared_SSL_CTX getCtx();
-  void setCtx(shared_SSL_CTX sc);
-  void release();
+  void           setCtx(shared_SSL_CTX sc);
+  void           release();
 
-  SSLCertContextType ctx_type                = SSLCertContextType::GENERIC;
-  SSLCertContextOption opt                   = SSLCertContextOption::OPT_NONE; ///< Special handling option.
+  SSLCertContextType              ctx_type   = SSLCertContextType::GENERIC;
+  SSLCertContextOption            opt        = SSLCertContextOption::OPT_NONE; ///< Special handling option.
   shared_SSLMultiCertConfigParams userconfig = nullptr;                        ///< User provided settings
-  shared_ssl_ticket_key_block keyblock       = nullptr;                        ///< session keys associated with this address
+  shared_ssl_ticket_key_block     keyblock   = nullptr;                        ///< session keys associated with this address
 };
 
 struct SSLCertLookup : public ConfigInfo {
@@ -141,7 +141,7 @@ struct SSLCertLookup : public ConfigInfo {
   SSLContextStorage *ec_storage;
 
   shared_SSL_CTX ssl_default;
-  bool is_valid = true;
+  bool           is_valid = true;
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint &address, SSLCertContext const &cc);
@@ -166,7 +166,7 @@ struct SSLCertLookup : public ConfigInfo {
     return ssl_default.get();
   }
 
-  unsigned count(SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
+  unsigned        count(SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
   SSLCertContext *get(unsigned i, SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
 
   void register_cert_secrets(std::vector<std::string> const &cert_secrets, std::set<std::string> &lookup_names);
@@ -180,7 +180,7 @@ private:
   std::unordered_map<std::string, std::vector<std::string>> cert_secret_registry;
 };
 
-void ticket_block_free(void *ptr);
+void                  ticket_block_free(void *ptr);
 ssl_ticket_key_block *ticket_block_alloc(unsigned count);
 ssl_ticket_key_block *ticket_block_create(char *ticket_key_data, int ticket_key_len);
 ssl_ticket_key_block *ssl_create_ticket_keyblock(const char *ticket_key_path);

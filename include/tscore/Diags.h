@@ -61,7 +61,7 @@ class DiagsPtr
 {
 public:
   friend Diags *diags();
-  static void set(Diags *new_ptr);
+  static void   set(Diags *new_ptr);
 
 private:
   static Diags *_diags_ptr;
@@ -79,7 +79,7 @@ diags()
 #define DiagsError(LEVEL, ...)                                          \
   do {                                                                  \
     static const SourceLocation DiagsError_loc = MakeSourceLocation();  \
-    static LogMessage DiagsError_log_message;                           \
+    static LogMessage           DiagsError_log_message;                 \
     DiagsError_log_message.message(LEVEL, DiagsError_loc, __VA_ARGS__); \
   } while (false)
 
@@ -105,7 +105,7 @@ diags()
 #define SiteThrottledDiagsError(LEVEL, ...)                      \
   do {                                                           \
     static const SourceLocation STDE_loc = MakeSourceLocation(); \
-    static LogMessage STDE_log_message{IS_THROTTLED};            \
+    static LogMessage           STDE_log_message{IS_THROTTLED};  \
     STDE_log_message.message(LEVEL, STDE_loc, __VA_ARGS__);      \
   } while (false)
 
@@ -123,7 +123,7 @@ diags()
 #define DiagsErrorV(LEVEL, FMT, AP)                                      \
   do {                                                                   \
     static const SourceLocation DiagsErrorV_loc = MakeSourceLocation();  \
-    static LogMessage DiagsErrorV_log_message;                           \
+    static LogMessage           DiagsErrorV_log_message;                 \
     DiagsErrorV_log_message.message_va(LEVEL, DiagsErrorV_loc, FMT, AP); \
   } while (false)
 
@@ -140,7 +140,7 @@ diags()
 #define SiteThrottledDiagsErrorV(LEVEL, FMT, AP)                  \
   do {                                                            \
     static const SourceLocation STDEV_loc = MakeSourceLocation(); \
-    static LogMessage STDEV_log_message{IS_THROTTLED};            \
+    static LogMessage           STDEV_log_message{IS_THROTTLED};  \
     STDEV_log_message.message_va(LEVEL, STDEV_loc, FMT, AP);      \
   } while (false)
 
@@ -159,7 +159,7 @@ diags()
   do {                                                             \
     if (unlikely(diags()->on())) {                                 \
       static const SourceLocation Diag_loc = MakeSourceLocation(); \
-      static LogMessage Diag_log_message;                          \
+      static LogMessage           Diag_log_message;                \
       Diag_log_message.diag(TAG, Diag_loc, __VA_ARGS__);           \
     }                                                              \
   } while (false)

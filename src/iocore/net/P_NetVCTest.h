@@ -64,7 +64,7 @@ struct NVC_test_def {
   int expected_write_term;
 };
 
-extern NVC_test_def netvc_tests_def[];
+extern NVC_test_def   netvc_tests_def[];
 extern const unsigned num_netvc_tests;
 
 class NetTestDriver : public Continuation
@@ -76,8 +76,8 @@ public:
   int errors = 0;
 
 protected:
-  RegressionTest *r = nullptr;
-  int *pstatus      = nullptr;
+  RegressionTest *r       = nullptr;
+  int            *pstatus = nullptr;
 };
 
 class NetVCTest : public Continuation
@@ -87,7 +87,7 @@ public:
   ~NetVCTest() override;
   NetVcTestType_t test_cont_type = NET_VC_TEST_ACTIVE;
 
-  int main_handler(int event, void *data);
+  int  main_handler(int event, void *data);
   void read_handler(int event);
   void write_handler(int event);
   void cleanup();
@@ -95,8 +95,8 @@ public:
   void init_test(NetVcTestType_t n_type, NetTestDriver *driver, NetVConnection *nvc, RegressionTest *robj, NVC_test_def *my_def,
                  const char *module_name_arg, const char *debug_tag_arg);
   void start_test();
-  int fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes);
-  int consume_and_check_bytes(IOBufferReader *r, uint8_t *seed);
+  int  fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes);
+  int  consume_and_check_bytes(IOBufferReader *r, uint8_t *seed);
 
   void write_finished();
   void read_finished();
@@ -105,7 +105,7 @@ public:
 
   NetVConnection *test_vc = nullptr;
   RegressionTest *regress = nullptr;
-  NetTestDriver *driver   = nullptr;
+  NetTestDriver  *driver  = nullptr;
 
   VIO *read_vio  = nullptr;
   VIO *write_vio = nullptr;

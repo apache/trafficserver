@@ -68,8 +68,8 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   SECTION("Span allocation")
   {
     ts::Metrics::IdType span_id;
-    auto fooid = m.lookup("foo");
-    auto span  = Metrics::Counter::createSpan(17, &span_id);
+    auto                fooid = m.lookup("foo");
+    auto                span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
     REQUIRE(fooid == 1);

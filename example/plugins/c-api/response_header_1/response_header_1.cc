@@ -58,7 +58,7 @@ static char *mimehdr2_name;
 static char *mimehdr1_value;
 
 static TSMBuffer hdr_bufp;
-static TSMLoc hdr_loc;
+static TSMLoc    hdr_loc;
 
 static TSMLoc field_loc;
 static TSMLoc value_loc;
@@ -66,16 +66,16 @@ static TSMLoc value_loc;
 static void
 modify_header(TSHttpTxn txnp)
 {
-  TSMBuffer resp_bufp;
-  TSMBuffer cached_bufp;
-  TSMLoc resp_loc;
-  TSMLoc cached_loc;
+  TSMBuffer    resp_bufp;
+  TSMBuffer    cached_bufp;
+  TSMLoc       resp_loc;
+  TSMLoc       cached_loc;
   TSHttpStatus resp_status;
-  TSMLoc new_field_loc;
-  TSMLoc cached_field_loc;
+  TSMLoc       new_field_loc;
+  TSMLoc       cached_field_loc;
 
   const char *chkptr;
-  int chklength;
+  int         chklength;
 
   int num_refreshes = 0;
 

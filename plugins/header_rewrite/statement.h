@@ -151,7 +151,7 @@ public:
 protected:
   virtual void initialize_hooks();
 
-  UrlQualifiers parse_url_qualifier(const std::string &q) const;
+  UrlQualifiers     parse_url_qualifier(const std::string &q) const;
   NextHopQualifiers parse_next_hop_qualifier(const std::string &q) const;
 
   void
@@ -163,8 +163,8 @@ protected:
   Statement *_next = nullptr; // Linked list
 
 private:
-  ResourceIDs _rsrc  = RSRC_NONE;
-  bool _initialized  = false;
-  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
+  ResourceIDs               _rsrc        = RSRC_NONE;
+  bool                      _initialized = false;
+  TSHttpHookID              _hook        = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
 };

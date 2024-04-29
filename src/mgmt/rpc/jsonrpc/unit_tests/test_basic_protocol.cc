@@ -60,7 +60,7 @@ struct JsonRpcUnitTest : rpc::JsonRPCManager {
 enum class TestErrors { ERR1 = 9999, ERR2 };
 static const std::error_code ERR1{ts::make_errno_code(9999)};
 static const std::error_code ERR2{ts::make_errno_code(10000)};
-static std::string_view err{"Just an error message to add more meaning to the failure"};
+static std::string_view      err{"Just an error message to add more meaning to the failure"};
 
 inline swoc::Rv<YAML::Node>
 test_callback_ok_or_error(std::string_view const &id, YAML::Node const &params)
@@ -351,7 +351,7 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
 
   SECTION("A RPC object and a custom class")
   {
-    JsonRpcUnitTest rpc;
+    JsonRpcUnitTest        rpc;
     TestMemberFunctionCall tmfc;
 
     REQUIRE(tmfc.register_member_function_as_callback(rpc) == true);
@@ -376,7 +376,7 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
 TEST_CASE("Test Dispatcher rpc method", "[dispatcher]")
 {
   JsonRpcUnitTest rpc;
-  const auto response = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "show_registered_handlers", "id": "AbC"})");
+  const auto      response = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "show_registered_handlers", "id": "AbC"})");
   REQUIRE(*response ==
           R"({"jsonrpc": "2.0", "result": {"methods": ["get_service_descriptor", "show_registered_handlers"]}, "id": "AbC"})");
 }
@@ -387,8 +387,8 @@ subtract(std::string_view const &id, YAML::Node const &numbers)
   swoc::Rv<YAML::Node> res;
 
   if (numbers.Type() == YAML::NodeType::Sequence) {
-    auto it   = numbers.begin();
-    int total = it->as<int>();
+    auto it    = numbers.begin();
+    int  total = it->as<int>();
     ++it;
     for (; it != numbers.end(); ++it) {
       total -= it->as<int>();
@@ -408,7 +408,7 @@ subtract(std::string_view const &id, YAML::Node const &numbers)
 sum(std::string_view const &id, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> res;
-  int total{0};
+  int                  total{0};
   for (auto n : params) {
     total += n.as<int>();
   }
@@ -517,7 +517,7 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
   SECTION("rpc call with an empty Array")
   {
     JsonRpcUnitTest rpc;
-    const auto resp = rpc.handle_call(R"([])");
+    const auto      resp = rpc.handle_call(R"([])");
     REQUIRE(resp);
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})";
     REQUIRE(*resp == expected);
@@ -525,7 +525,7 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
   SECTION("rpc call with an invalid Batch")
   {
     JsonRpcUnitTest rpc;
-    const auto resp = rpc.handle_call(R"([1])");
+    const auto      resp = rpc.handle_call(R"([1])");
     REQUIRE(resp);
     std::string_view expected = R"([{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}}])";
     REQUIRE(*resp == expected);
@@ -533,7 +533,7 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
   SECTION("rpc call with invalid Batch")
   {
     JsonRpcUnitTest rpc;
-    const auto resp = rpc.handle_call(R"([1,2,3])");
+    const auto      resp = rpc.handle_call(R"([1,2,3])");
     REQUIRE(resp);
     std::string expected = R"([{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})"
                            R"(, {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})"
@@ -561,7 +561,7 @@ TEST_CASE("Handle un-handle handler's error", "[throw]")
                                    [](std::string_view const &id, const YAML::Node &params) -> swoc::Rv<YAML::Node> {
                                      throw std::runtime_error("Oops, I did it again");
                                    }));
-    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "oops_i_did_it_again", "id": "1"})");
+    const auto       resp     = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "oops_i_did_it_again", "id": "1"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution"}, "id": "1"})";
     REQUIRE(*resp == expected);
   }
@@ -576,7 +576,7 @@ TEST_CASE("Call registered method with no ID", "[no-id]")
                                    [](std::string_view const &id, const YAML::Node &params) -> swoc::Rv<YAML::Node> {
                                      throw std::runtime_error("Oops, I did it again");
                                    }));
-    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_no_id"})");
+    const auto       resp     = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_no_id"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})";
     REQUIRE(*resp == expected);
   }
@@ -589,7 +589,7 @@ TEST_CASE("Call registered notification with ID", "[notification_and_id]")
   {
     REQUIRE(rpc.add_notification_handler(
       "call_me_with_id", [](const YAML::Node &params) -> void { throw std::runtime_error("Oops, I did it again"); }));
-    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_id", "id": "1"})");
+    const auto       resp     = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_id", "id": "1"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": "1"})";
     REQUIRE(*resp == expected);
   }
@@ -600,9 +600,9 @@ TEST_CASE("Call method with invalid ID", "[invalid_id]")
   JsonRpcUnitTest rpc;
   SECTION("Basic test, invalid ids")
   {
-    std::string req = R"([{"id": "", "jsonrpc": "2.0", "method": "will_not_pass_the_validation"},)"
-                      R"({"id": {}, "jsonrpc": "2.0", "method": "will_not_pass_the_validation"}])";
-    auto resp       = rpc.handle_call(req);
+    std::string req  = R"([{"id": "", "jsonrpc": "2.0", "method": "will_not_pass_the_validation"},)"
+                       R"({"id": {}, "jsonrpc": "2.0", "method": "will_not_pass_the_validation"}])";
+    auto        resp = rpc.handle_call(req);
     std::string expected =
       R"([{"jsonrpc": "2.0", "error": {"code": 11, "message": "Use of an empty string as id is discouraged"}}, )"
       R"({"jsonrpc": "2.0", "error": {"code": 7, "message": "Invalid id type"}}])";

@@ -50,9 +50,9 @@ public:
   void operator=(const RuleSet &) = delete;
 
   // No reason to inline these
-  void append(RuleSet *rule);
-  bool add_condition(Parser &p, const char *filename, int lineno);
-  bool add_operator(Parser &p, const char *filename, int lineno);
+  void        append(RuleSet *rule);
+  bool        add_condition(Parser &p, const char *filename, int lineno);
+  bool        add_operator(Parser &p, const char *filename, int lineno);
   ResourceIDs get_all_resource_ids() const;
 
   bool
@@ -111,12 +111,12 @@ public:
   RuleSet *next = nullptr; // Linked list
 
 private:
-  Condition *_cond   = nullptr;                        // First pre-condition (linked list)
-  Operator *_oper    = nullptr;                        // First operator (linked list)
+  Condition   *_cond = nullptr;                        // First pre-condition (linked list)
+  Operator    *_oper = nullptr;                        // First operator (linked list)
   TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
 
   // State values (updated when conds / operators are added)
-  ResourceIDs _ids        = RSRC_NONE;
+  ResourceIDs   _ids      = RSRC_NONE;
   OperModifiers _opermods = OPER_NONE;
-  bool _last              = false;
+  bool          _last     = false;
 };

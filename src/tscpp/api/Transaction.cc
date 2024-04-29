@@ -41,27 +41,27 @@ using namespace atscppapi;
  * @private
  */
 struct atscppapi::TransactionState : noncopyable {
-  TSHttpTxn txn_;
-  TSEvent event_; ///< Current event being dispatched.
-  std::list<TransactionPlugin *> plugins_;
-  TSMBuffer client_request_hdr_buf_;
-  TSMLoc client_request_hdr_loc_;
-  ClientRequest client_request_;
-  TSMBuffer server_request_hdr_buf_;
-  TSMLoc server_request_hdr_loc_;
-  Request server_request_;
-  TSMBuffer server_response_hdr_buf_;
-  TSMLoc server_response_hdr_loc_;
-  Response server_response_;
-  TSMBuffer client_response_hdr_buf_;
-  TSMLoc client_response_hdr_loc_;
-  Response client_response_;
-  TSMBuffer cached_response_hdr_buf_;
-  TSMLoc cached_response_hdr_loc_;
-  Response cached_response_;
-  TSMBuffer cached_request_hdr_buf_;
-  TSMLoc cached_request_hdr_loc_;
-  Request cached_request_;
+  TSHttpTxn                                               txn_;
+  TSEvent                                                 event_; ///< Current event being dispatched.
+  std::list<TransactionPlugin *>                          plugins_;
+  TSMBuffer                                               client_request_hdr_buf_;
+  TSMLoc                                                  client_request_hdr_loc_;
+  ClientRequest                                           client_request_;
+  TSMBuffer                                               server_request_hdr_buf_;
+  TSMLoc                                                  server_request_hdr_loc_;
+  Request                                                 server_request_;
+  TSMBuffer                                               server_response_hdr_buf_;
+  TSMLoc                                                  server_response_hdr_loc_;
+  Response                                                server_response_;
+  TSMBuffer                                               client_response_hdr_buf_;
+  TSMLoc                                                  client_response_hdr_loc_;
+  Response                                                client_response_;
+  TSMBuffer                                               cached_response_hdr_buf_;
+  TSMLoc                                                  cached_response_hdr_loc_;
+  Response                                                cached_response_;
+  TSMBuffer                                               cached_request_hdr_buf_;
+  TSMLoc                                                  cached_request_hdr_loc_;
+  Request                                                 cached_request_;
   map<string, std::shared_ptr<Transaction::ContextValue>> context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
@@ -86,7 +86,7 @@ Transaction::Transaction(void *raw_txn)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(raw_txn);
   TSMBuffer hdr_buf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
   (void)TSHttpTxnClientReqGet(txn, &hdr_buf, &hdr_loc);
   if (!hdr_buf || !hdr_loc) {
     LOG_ERROR("TSHttpTxnClientReqGet tshttptxn=%p returned a null hdr_buf=%p or hdr_loc=%p.", txn, hdr_buf, hdr_loc);
@@ -142,8 +142,8 @@ bool
 Transaction::configStringGet(TSOverridableConfigKey conf, std::string &value)
 {
   const char *svalue;
-  int length;
-  bool zret = TS_SUCCESS == TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue, &length);
+  int         length;
+  bool        zret = TS_SUCCESS == TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue, &length);
   if (zret) {
     value.assign(svalue, length);
   } else {
@@ -231,7 +231,7 @@ Transaction::addPlugin(TransactionPlugin *plugin)
 std::shared_ptr<Transaction::ContextValue>
 Transaction::getContextValue(const std::string &key)
 {
-  std::shared_ptr<Transaction::ContextValue> return_context_value;
+  std::shared_ptr<Transaction::ContextValue>                        return_context_value;
   map<string, std::shared_ptr<Transaction::ContextValue>>::iterator iter = state_->context_values_.find(key);
   if (iter != state_->context_values_.end()) {
     return_context_value = iter->second;
@@ -257,8 +257,8 @@ string
 Transaction::getEffectiveUrl()
 {
   string ret_val;
-  int length = 0;
-  char *buf  = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
+  int    length = 0;
+  char  *buf    = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
   if (buf && length) {
     ret_val.assign(buf, length);
   }

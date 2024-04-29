@@ -44,25 +44,25 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   // Implement ProxySession interface
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
-  void start() override;
-  void destroy() override;
-  void release(ProxyTransaction *trans) override;
-  void free() override;
-  bool is_protocol_framed() const override;
+  void     new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void     start() override;
+  void     destroy() override;
+  void     release(ProxyTransaction *trans) override;
+  void     free() override;
+  bool     is_protocol_framed() const override;
   uint64_t get_received_frame_count(uint64_t type) const override;
 
   ////////////////////
   // Accessors
   sockaddr const *get_remote_addr() const override;
   sockaddr const *get_local_addr() override;
-  int get_transact_count() const override;
-  const char *get_protocol_string() const override;
-  int populate_protocol(std::string_view *result, int size) const override;
-  const char *protocol_contains(std::string_view prefix) const override;
-  HTTPVersion get_version(HTTPHdr &hdr) const override;
-  void increment_current_active_connections_stat() override;
-  void decrement_current_active_connections_stat() override;
+  int             get_transact_count() const override;
+  const char     *get_protocol_string() const override;
+  int             populate_protocol(std::string_view *result, int size) const override;
+  const char     *protocol_contains(std::string_view prefix) const override;
+  HTTPVersion     get_version(HTTPHdr &hdr) const override;
+  void            increment_current_active_connections_stat() override;
+  void            decrement_current_active_connections_stat() override;
 
   void set_no_activity_timeout() override;
 

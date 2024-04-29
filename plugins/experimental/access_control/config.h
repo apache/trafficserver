@@ -54,17 +54,17 @@ public:
   TSHttpStatus _internalError = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   KvpAccessTokenConfig _kvpAccessTokenConfig;
-  bool _debugLevel = false;
+  bool                 _debugLevel = false;
 
   String _cookieName = "cdn_auth"; /** @brief name of the cookie containing the token to be verified */
 
   AccessTokenFactory *_tokenFactory = nullptr;
 
-  bool _rejectRequestsWithInvalidTokens = false; /** reject versa forward to the origin if access token is invalid */
-  String _respTokenHeaderName;   /** @brief name of header used by origin to provide the access token in its response */
-  String _extrSubHdrName;        /** @brief header name to extract the token subject content, if empty => no extraction */
-  String _extrTokenIdHdrName;    /** @brief header name to extract the token id, if empty => no extraction */
-  String _extrValidationHdrName; /** @brief header name to extract the token validation status, if empty => no extraction */
-  bool _useRedirects = false;    /** @brief true - use redirect to set the access token cookie, @todo not used yet */
+  bool       _rejectRequestsWithInvalidTokens = false; /** reject versa forward to the origin if access token is invalid */
+  String     _respTokenHeaderName;   /** @brief name of header used by origin to provide the access token in its response */
+  String     _extrSubHdrName;        /** @brief header name to extract the token subject content, if empty => no extraction */
+  String     _extrTokenIdHdrName;    /** @brief header name to extract the token id, if empty => no extraction */
+  String     _extrValidationHdrName; /** @brief header name to extract the token validation status, if empty => no extraction */
+  bool       _useRedirects = false;  /** @brief true - use redirect to set the access token cookie, @todo not used yet */
   Classifier _uriPathScope; /**< @brief denylist (exclude) and allow-list (include) which path should have the access control */
 };

@@ -50,8 +50,8 @@ const char parseRulesCTypeToLower[256] = {
 int64_t
 ink_atoi64(const char *str, const char **end)
 {
-  int64_t num  = 0;
-  int negative = 0;
+  int64_t num      = 0;
+  int     negative = 0;
 
   while (*str && ParseRules::is_wslfcr(*str)) {
     str += 1;
@@ -142,8 +142,8 @@ ink_atoui64(const char *str)
 int64_t
 ink_atoi64(const char *str, int len)
 {
-  int64_t num  = 0;
-  int negative = 0;
+  int64_t num      = 0;
+  int     negative = 0;
 
   while (len > 0 && *str && ParseRules::is_wslfcr(*str)) {
     str += 1;

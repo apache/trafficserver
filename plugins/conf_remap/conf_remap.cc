@@ -43,9 +43,9 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 struct RemapConfigs {
   struct Item {
     TSOverridableConfigKey _name;
-    TSRecordDataType _type;
-    TSRecordData _data;
-    int _data_len; // Used when data is a string
+    TSRecordDataType       _type;
+    TSRecordData           _data;
+    int                    _data_len; // Used when data is a string
   };
 
   RemapConfigs() { memset(_items, 0, sizeof(_items)); };
@@ -53,7 +53,7 @@ struct RemapConfigs {
   bool parse_inline(const char *arg);
 
   Item _items[MAX_OVERRIDABLE_CONFIGS];
-  int _current = 0;
+  int  _current = 0;
 };
 
 // Helper function for the parser
@@ -86,7 +86,7 @@ RemapConfigs::parse_inline(const char *arg)
   std::string value;
 
   TSOverridableConfigKey name;
-  TSRecordDataType type;
+  TSRecordDataType       type;
 
   // Each token should be a configuration variable then a value, separated by '='.
   sep = strchr(arg, '=');
@@ -148,17 +148,17 @@ try_deduce_type(YAML::Node node)
 /// @brief Context class used to pass information to the TSYAMLRecNodeHandler as the data obj.
 struct Context {
   RemapConfigs::Item *items;
-  int *current;
+  int                *current;
 };
 
 TSReturnCode
 scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
 {
   TSOverridableConfigKey name;
-  TSRecordDataType expected_type;
-  std::string text;
+  TSRecordDataType       expected_type;
+  std::string            text;
 
-  auto &ctx        = *static_cast<Context *>(data);
+  auto      &ctx   = *static_cast<Context *>(data);
   YAML::Node value = *reinterpret_cast<YAML::Node *>(cfg->value_node);
 
   if (TSHttpTxnConfigFind(cfg->record_name, strlen(cfg->record_name), &name, &expected_type) != TS_SUCCESS) {
@@ -335,7 +335,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 {
   if (nullptr != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
-    TSHttpTxn txnp     = static_cast<TSHttpTxn>(rh);
+    TSHttpTxn     txnp = static_cast<TSHttpTxn>(rh);
     for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {
       case TS_RECORDDATATYPE_INT:

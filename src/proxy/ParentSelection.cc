@@ -37,9 +37,9 @@
 using P_table = ControlMatcher<ParentRecord, ParentResult>;
 
 // Global Vars for Parent Selection
-static const char modulePrefix[]                             = "[ParentSelection]";
+static const char                         modulePrefix[]     = "[ParentSelection]";
 static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
-static int self_detect                                       = 2;
+static int                                self_detect        = 2;
 
 // Config var names
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
@@ -47,9 +47,9 @@ static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
 
-DbgCtl ParentResult::dbg_ctl_parent_select{"parent_select"};
+DbgCtl         ParentResult::dbg_ctl_parent_select{"parent_select"};
 static DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
-static DbgCtl dbg_ctl_parent_config{"parent_config"};
+static DbgCtl  dbg_ctl_parent_config{"parent_config"};
 
 //
 //  Config Callback Prototypes
@@ -105,7 +105,7 @@ ParentConfigParams::apiParentExists(HttpRequestData *rdata)
 void
 ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
 {
-  P_table *tablePtr        = parent_table;
+  P_table      *tablePtr   = parent_table;
   ParentRecord *defaultPtr = DefaultParent;
   ParentRecord *rec;
 
@@ -230,9 +230,9 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 bool
 ParentConfigParams::parentExists(HttpRequestData *rdata)
 {
-  P_table *tablePtr = parent_table;
-  ParentRecord *rec = nullptr;
-  ParentResult result;
+  P_table      *tablePtr = parent_table;
+  ParentRecord *rec      = nullptr;
+  ParentResult  result;
 
   // Initialize the result structure;
   result.reset();
@@ -329,7 +329,7 @@ ParentConfig::print()
 UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
 {
   Tokenizer pTok(", \t\r");
-  int numTok = 0, c;
+  int       numTok = 0, c;
 
   if (val == nullptr) {
     Warning("UnavailableServerResponseCodes - unavailable_server_retry_responses is null loading default 503 code.");
@@ -358,7 +358,7 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
 SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
 {
   Tokenizer pTok(", \t\r");
-  int numTok = 0, c;
+  int       numTok = 0, c;
 
   if (val == nullptr) {
     Warning("SimpleRetryResponseCodes - simple_server_retry_responses is null loading default 404 code.");
@@ -387,12 +387,12 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
 void
 ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, size_t len)
 {
-  char *_val                      = ats_strndup(val, strlen(val));
-  char fqdn[TS_MAX_HOST_NAME_LEN] = {0}, *nm, *token, *savePtr;
-  std::string str;
-  Machine *machine                   = Machine::instance();
+  char          *_val                       = ats_strndup(val, strlen(val));
+  char           fqdn[TS_MAX_HOST_NAME_LEN] = {0}, *nm, *token, *savePtr;
+  std::string    str;
+  Machine       *machine             = Machine::instance();
   constexpr char PARENT_DELIMITERS[] = ";, ";
-  HostStatus &hs                     = HostStatus::instance();
+  HostStatus    &hs                  = HostStatus::instance();
 
   token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
@@ -449,13 +449,13 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
 const char *
 ParentRecord::ProcessParents(char *val, bool isPrimary)
 {
-  Tokenizer pTok(",; \t\r");
-  int numTok          = 0;
+  Tokenizer   pTok(",; \t\r");
+  int         numTok  = 0;
   const char *current = nullptr;
-  int port            = 0;
-  char *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
+  int         port    = 0;
+  char       *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
   const char *errPtr = nullptr;
-  float weight       = DEFAULT_PARENT_WEIGHT;
+  float       weight = DEFAULT_PARENT_WEIGHT;
 
   if (parents != nullptr && isPrimary == true) {
     return "Can not specify more than one set of parents";
@@ -605,7 +605,7 @@ bool
 ParentRecord::DefaultInit(char *val)
 {
   const char *errPtr;
-  char *errBuf;
+  char       *errBuf;
 
   this->go_direct       = true;
   this->ignore_query    = false;
@@ -641,13 +641,13 @@ ParentRecord::Init(matcher_line *line_info)
 {
   const char *errPtr = nullptr;
   const char *tmp;
-  char *label;
-  char *val;
-  char parent_buf[16384] = {0};
-  bool used              = false;
-  ParentRR_t round_robin = P_NO_ROUND_ROBIN;
-  char buf[128];
-  RecInt rec_self_detect = 2;
+  char       *label;
+  char       *val;
+  char        parent_buf[16384] = {0};
+  bool        used              = false;
+  ParentRR_t  round_robin       = P_NO_ROUND_ROBIN;
+  char        buf[128];
+  RecInt      rec_self_detect = 2;
 
   this->line_num = line_info->line_num;
   this->scheme   = nullptr;
@@ -911,7 +911,7 @@ createDefaultParent(char *val)
 // ParentConfig equivalent functions for SocksServerConfig
 //
 
-int SocksServerConfig::m_id = 0;
+int                    SocksServerConfig::m_id = 0;
 static Ptr<ProxyMutex> socks_server_reconfig_mutex;
 void
 SocksServerConfig::startup()
@@ -931,8 +931,8 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
   for (int j = 0; j < len; j++) {
     rec_arr[j].go_direct = false;
 
-    pRecord *pr   = rec_arr[j].parents;
-    int n_parents = rec_arr[j].num_parents;
+    pRecord *pr        = rec_arr[j].parents;
+    int      n_parents = rec_arr[j].num_parents;
 
     for (int i = 0; i < n_parents; i++) {
       IpEndpoint ip4, ip6;
@@ -957,8 +957,8 @@ SocksServerConfig::reconfigure()
   Note("%s loading ...", ts::filename::SOCKS);
 
   char *default_val = nullptr;
-  int retry_time    = 30;
-  int fail_threshold;
+  int   retry_time  = 30;
+  int   fail_threshold;
 
   ParentConfigParams *params = nullptr;
 
@@ -1049,16 +1049,16 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 {
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
-  ParentConfig config;
-  P_table *ParentTable       = nullptr;
-  ParentConfigParams *params = nullptr;
+  ParentConfig        config;
+  P_table            *ParentTable = nullptr;
+  ParentConfigParams *params      = nullptr;
   passes = fails = 0;
   config.startup();
-  char tbl[2048];
-  HttpRequestData *request    = nullptr;
-  ParentResult *result        = nullptr;
-  unsigned int fail_threshold = 1;
-  unsigned int retry_time     = 5;
+  char             tbl[2048];
+  HttpRequestData *request        = nullptr;
+  ParentResult    *result         = nullptr;
+  unsigned int     fail_threshold = 1;
+  unsigned int     retry_time     = 5;
 
 #define T(x)                          \
   do {                                \

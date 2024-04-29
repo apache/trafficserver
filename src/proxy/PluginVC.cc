@@ -130,12 +130,12 @@ PluginVC::main_handler(int event, void *data)
   ink_assert(!deletable);
   ink_assert(data != nullptr);
 
-  Event *call_event   = static_cast<Event *>(data);
+  Event   *call_event = static_cast<Event *>(data);
   EThread *my_ethread = mutex->thread_holding;
   ink_release_assert(my_ethread != nullptr);
 
-  bool read_mutex_held             = false;
-  bool write_mutex_held            = false;
+  bool            read_mutex_held  = false;
+  bool            write_mutex_held = false;
   Ptr<ProxyMutex> read_side_mutex  = read_state.vio.mutex;
   Ptr<ProxyMutex> write_side_mutex = write_state.vio.mutex;
 
@@ -493,9 +493,9 @@ PluginVC::process_write_side()
     return;
   }
 
-  IOBufferReader *reader = write_state.vio.get_reader();
-  int64_t bytes_avail    = reader->read_avail();
-  int64_t act_on         = std::min(bytes_avail, ntodo);
+  IOBufferReader *reader      = write_state.vio.get_reader();
+  int64_t         bytes_avail = reader->read_avail();
+  int64_t         act_on      = std::min(bytes_avail, ntodo);
 
   Dbg(dbg_ctl_pvc, "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -538,7 +538,7 @@ PluginVC::process_write_side()
 
   // Bytes available, setting up other side read state writer
   MIOBuffer *output_buffer = other_side->read_state.vio.get_writer();
-  int64_t water_mark       = output_buffer->water_mark;
+  int64_t    water_mark    = output_buffer->water_mark;
   water_mark               = std::max<int64_t>(water_mark, core_obj->buffer_size);
   int64_t buf_space        = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
@@ -1214,7 +1214,7 @@ public:
 
   void start_tests(RegressionTest *r_arg, int *pstatus_arg);
   void run_next_test();
-  int main_handler(int event, void *data);
+  int  main_handler(int event, void *data);
 
 private:
   unsigned i                    = 0;
@@ -1262,8 +1262,8 @@ PVCTestDriver::run_next_test()
 
   Dbg(dbg_ctl_pvc_test, "Starting test %s", netvc_tests_def[a_index].test_name);
 
-  NetVCTest *p       = new NetVCTest;
-  NetVCTest *a       = new NetVCTest;
+  NetVCTest    *p    = new NetVCTest;
+  NetVCTest    *a    = new NetVCTest;
   PluginVCCore *core = PluginVCCore::alloc(p, BUFFER_SIZE_INDEX_32K);
 
   p->init_test(NET_VC_TEST_PASSIVE, this, nullptr, r, &netvc_tests_def[p_index], "PluginVC", "pvc_test_detail");

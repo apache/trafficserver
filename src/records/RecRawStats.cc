@@ -57,7 +57,7 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   int err = REC_ERR_OKAY;
 
   RecRecord *r;
-  RecData data_default;
+  RecData    data_default;
   memset(&data_default, 0, sizeof(RecData));
 
   // register the record
@@ -123,7 +123,7 @@ int
 RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
   RecRawStat total;
-  RecFloat avg = 0.0f;
+  RecFloat   avg = 0.0f;
 
   Debug("stats", "raw sync:avg for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
@@ -140,7 +140,7 @@ int
 RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
   RecRawStat total;
-  RecFloat r;
+  RecFloat   r;
 
   Debug("stats", "raw sync:hr-timeavg for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
@@ -162,7 +162,7 @@ int
 RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
   RecRawStat total;
-  RecFloat r;
+  RecFloat   r;
 
   Debug("stats", "raw sync:seconds for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
@@ -364,7 +364,7 @@ int
 RecExecRawStatSyncCbs()
 {
   RecRecord *r;
-  int i, num_records;
+  int        i, num_records;
 
   // Call the new sync callbacks, needed for the new Metrics. ToDo: This should move
   // once the old sync thread and events are completely removed.

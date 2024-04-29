@@ -74,8 +74,8 @@ std::string const DEFAULT_URL_PATH = "_stats";
 // and '9' is 'Best compression'. Testing has proved level '6'
 // to be about the best level to use in an HTTP Server.
 
-const int ZLIB_COMPRESSION_LEVEL = 6;
-const char *dictionary           = nullptr;
+const int   ZLIB_COMPRESSION_LEVEL = 6;
+const char *dictionary             = nullptr;
 
 // zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
 static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
@@ -95,57 +95,57 @@ static bool integer_counters = false;
 static bool wrap_counters    = false;
 
 struct config_t {
-  unsigned int recordTypes;
-  std::string stats_path;
+  unsigned int     recordTypes;
+  std::string      stats_path;
   swoc::IPRangeSet addrs;
 };
 struct config_holder_t {
-  char *config_path;
+  char           *config_path;
   volatile time_t last_load;
-  config_t *config;
+  config_t       *config;
 };
 
 enum output_format { JSON_OUTPUT, CSV_OUTPUT };
 enum encoding_format { NONE, DEFLATE, GZIP, BR };
 
-int configReloadRequests = 0;
-int configReloads        = 0;
-time_t lastReloadRequest = 0;
-time_t lastReload        = 0;
-time_t astatsLoad        = 0;
+int    configReloadRequests = 0;
+int    configReloads        = 0;
+time_t lastReloadRequest    = 0;
+time_t lastReload           = 0;
+time_t astatsLoad           = 0;
 
-static int free_handler(TSCont cont, TSEvent event, void *edata);
-static int config_handler(TSCont cont, TSEvent event, void *edata);
-static config_t *get_config(TSCont cont);
+static int              free_handler(TSCont cont, TSEvent event, void *edata);
+static int              config_handler(TSCont cont, TSEvent event, void *edata);
+static config_t        *get_config(TSCont cont);
 static config_holder_t *new_config_holder(const char *path);
-static bool is_ipmap_allowed(const config_t *config, const struct sockaddr *addr);
+static bool             is_ipmap_allowed(const config_t *config, const struct sockaddr *addr);
 
 #if HAVE_BROTLI_ENCODE_H
 struct b_stream {
   BrotliEncoderState *br;
-  uint8_t *next_in;
-  size_t avail_in;
-  uint8_t *next_out;
-  size_t avail_out;
-  size_t total_in;
-  size_t total_out;
+  uint8_t            *next_in;
+  size_t              avail_in;
+  uint8_t            *next_out;
+  size_t              avail_out;
+  size_t              total_in;
+  size_t              total_out;
 };
 #endif
 
 struct stats_state {
   TSVConn net_vc;
-  TSVIO read_vio;
-  TSVIO write_vio;
+  TSVIO   read_vio;
+  TSVIO   write_vio;
 
-  TSIOBuffer req_buffer;
-  TSIOBuffer resp_buffer;
+  TSIOBuffer       req_buffer;
+  TSIOBuffer       resp_buffer;
   TSIOBufferReader resp_reader;
 
-  int output_bytes;
-  int body_written;
-  output_format output;
+  int             output_bytes;
+  int             body_written;
+  output_format   output;
   encoding_format encoding;
-  z_stream zstrm;
+  z_stream        zstrm;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
@@ -440,7 +440,7 @@ json_out_stats(stats_state *my_state)
 static void
 br_out_stats(stats_state *my_state)
 {
-  size_t outputsize = BrotliEncoderMaxCompressedSize(my_state->output_bytes);
+  size_t  outputsize = BrotliEncoderMaxCompressedSize(my_state->output_bytes);
   uint8_t inputbuf[my_state->output_bytes];
   uint8_t outputbuf[outputsize];
 
@@ -567,15 +567,15 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 static int
 stats_origin(TSCont contp, TSEvent event, void *edata)
 {
-  TSCont icontp;
+  TSCont       icontp;
   stats_state *my_state;
-  config_t *config;
-  TSHttpTxn txnp = (TSHttpTxn)edata;
-  TSMBuffer reqp;
-  TSMLoc hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
-  TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
-  int path_len     = 0;
-  const char *path = nullptr;
+  config_t    *config;
+  TSHttpTxn    txnp = (TSHttpTxn)edata;
+  TSMBuffer    reqp;
+  TSMLoc       hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
+  TSEvent      reenable = TS_EVENT_HTTP_CONTINUE;
+  int          path_len = 0;
+  const char  *path     = nullptr;
 
   Dbg(dbg_ctl, "in the read stuff");
   config = get_config(contp);
@@ -617,7 +617,7 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
   my_state->output = JSON_OUTPUT; // default to json output
   // accept header exists, use it to determine response type
   if (accept_field != TS_NULL_MLOC) {
-    int len         = -1;
+    int         len = -1;
     const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
 
     // Parse the Accept header, default to JSON output unless its another supported format
@@ -632,7 +632,7 @@ stats_origin(TSCont contp, TSEvent event, void *edata)
   accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   my_state->encoding    = NONE;
   if (accept_encoding_field != TS_NULL_MLOC) {
-    int len         = -1;
+    int         len = -1;
     const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
     if (len >= TS_HTTP_LEN_DEFLATE && strstr(str, TS_HTTP_VALUE_DEFLATE) != nullptr) {
       Dbg(dbg_ctl, "Saw deflate in accept encoding");
@@ -681,13 +681,13 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  static const char usage[]             = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [PATH]";
   static const struct option longopts[] = {
     {(char *)("integer-counters"), no_argument, nullptr, 'i'},
     {(char *)("wrap-counters"),    no_argument, nullptr, 'w'},
     {nullptr,                      0,           nullptr, 0  }
   };
-  TSCont main_cont, config_cont;
+  TSCont           main_cont, config_cont;
   config_holder_t *config_holder;
 
   info.plugin_name   = PLUGIN_NAME;
@@ -858,10 +858,10 @@ static void
 load_config_file(config_holder_t *config_holder)
 {
   std::fstream fh;
-  struct stat s;
+  struct stat  s;
 
   config_t *newconfig, *oldconfig;
-  TSCont free_cont;
+  TSCont    free_cont;
 
   configReloadRequests++;
   lastReloadRequest = time(nullptr);

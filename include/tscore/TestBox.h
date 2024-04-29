@@ -34,9 +34,9 @@ namespace
     be passed repeated.
 */
 struct TestBox {
-  using self = TestBox;  ///< Self reference type.
-  RegressionTest *_test; ///< The test object.
-  int *_status;          ///< Current status pointer.
+  using self = TestBox;    ///< Self reference type.
+  RegressionTest *_test;   ///< The test object.
+  int            *_status; ///< Current status pointer.
 
   /// Construct from @a test object and @a status pointer.
   TestBox(RegressionTest *test, int *status) : _test(test), _status(status) {}
@@ -59,8 +59,8 @@ TestBox::check(bool result, char const *fmt, ...)
 {
   if (!result) {
     static size_t const N = 1 << 16;
-    char buffer[N]; // just stack, go big.
-    va_list ap;
+    char                buffer[N]; // just stack, go big.
+    va_list             ap;
     va_start(ap, fmt);
     vsnprintf(buffer, N, fmt, ap);
     va_end(ap);

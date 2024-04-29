@@ -45,7 +45,7 @@ using Node = Http2DependencyTree::Node;
  */
 TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D");
 
   tree->add(0, 1, 0, false, &b);
@@ -85,7 +85,7 @@ TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -124,7 +124,7 @@ TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -156,7 +156,7 @@ TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A");
   tree->add(0, 1, 0, false, &a);
 
@@ -184,7 +184,7 @@ TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_5", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 15, false, &a);
@@ -480,7 +480,7 @@ TEST_CASE("Http2DependencyTree_remove_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D");
 
   Node *B = tree->add(0, 1, 0, false, &b);
@@ -509,7 +509,7 @@ TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
   Node *A = tree->add(0, 7, 70, false, &a);
@@ -545,7 +545,7 @@ TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -587,7 +587,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -631,7 +631,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -675,7 +675,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -787,7 +787,7 @@ TEST_CASE("Http2DependencyTree_shadow_reprioritize", "[http2][Http2DependencyTre
  */
 TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
   tree->add(0, 3, 20, false, &a);
@@ -825,7 +825,7 @@ TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Htt
  */
 TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
   // P1 node
@@ -866,7 +866,7 @@ TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyT
  */
 TEST_CASE("Http2DependencyTree_reprioritize_shadow_node", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 20, false, &a);
@@ -900,7 +900,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_shadow_node", "[http2][Http2Dependen
 
 TEST_CASE("Http2DependencyTree_missing_parent", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 20, false, &a);
@@ -925,7 +925,7 @@ TEST_CASE("Http2DependencyTree_missing_parent", "[http2][Http2DependencyTree]")
 
 TEST_CASE("Http2DependencyTree_max_depth", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  Tree  *tree = new Tree(100);
   string a("A");
   for (int i = 0; i < 100; ++i) {
     tree->add(i, i + 1, 16, false, &a);

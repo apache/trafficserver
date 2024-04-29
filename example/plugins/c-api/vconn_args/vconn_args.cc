@@ -26,9 +26,9 @@
 
 #include "ts/ts.h"
 
-const char *PLUGIN_NAME = "vconn_arg_test";
+const char   *PLUGIN_NAME = "vconn_arg_test";
 static DbgCtl dbg_ctl{PLUGIN_NAME};
-static int last_arg = 0;
+static int    last_arg = 0;
 
 static int
 vconn_arg_handler(TSCont contp, TSEvent event, void *edata)

@@ -118,7 +118,7 @@ int
 cb_test_3a(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   RecString rec_result;
-  int rec_status = RecGetRecordString_Xmalloc(name, &rec_result);
+  int       rec_status = RecGetRecordString_Xmalloc(name, &rec_result);
 
   if ((rec_status == REC_ERR_OKAY) && (cookie == (void *)0x12344321) && (strcmp(rec_result, "cb_test_3__changed") == 0)) {
     ink_assert(strcmp(rec_result, data.rec_string) == 0);

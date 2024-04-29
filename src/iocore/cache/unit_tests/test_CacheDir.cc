@@ -29,7 +29,7 @@
 #include "tscore/Random.h"
 
 // Required by main.h
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 namespace
@@ -56,7 +56,7 @@ regress_rand_CacheKey(const CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, Stripe *stripe)
 {
-  int l    = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
+  int  l   = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
   Dir *e   = b;
   Dir *seg = stripe->dir_segment(s);
   for (int i = 0; i < l; i++) {
@@ -80,7 +80,7 @@ public:
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
     REQUIRE(gnstripes >= 1);
 
-    Stripe *stripe  = gstripes[0];
+    Stripe  *stripe = gstripes[0];
     EThread *thread = this_ethread();
     MUTEX_TRY_LOCK(lock, stripe->mutex, thread);
     if (!lock.is_locked()) {
@@ -102,7 +102,7 @@ public:
     CacheKey key;
     rand_CacheKey(&key);
 
-    int s    = key.slice32(0) % stripe->segments, i, j;
+    int  s   = key.slice32(0) % stripe->segments, i, j;
     Dir *seg = stripe->dir_segment(s);
 
     // test insert

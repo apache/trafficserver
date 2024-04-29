@@ -58,9 +58,9 @@ STEKShareLogStore::start_index() const
 nuraft::ptr<nuraft::log_entry>
 STEKShareLogStore::last_entry() const
 {
-  uint64_t next_idx = next_slot();
+  uint64_t                    next_idx = next_slot();
   std::lock_guard<std::mutex> l(logs_lock_);
-  auto entry = logs_.find(next_idx - 1);
+  auto                        entry = logs_.find(next_idx - 1);
   if (entry == logs_.end()) {
     entry = logs_.find(0);
   }
@@ -74,8 +74,8 @@ STEKShareLogStore::append(nuraft::ptr<nuraft::log_entry> &entry)
   nuraft::ptr<nuraft::log_entry> clone = make_clone(entry);
 
   std::lock_guard<std::mutex> l(logs_lock_);
-  size_t idx = start_idx_ + logs_.size() - 1;
-  logs_[idx] = clone;
+  size_t                      idx = start_idx_ + logs_.size() - 1;
+  logs_[idx]                      = clone;
   return idx;
 }
 
@@ -86,7 +86,7 @@ STEKShareLogStore::write_at(uint64_t index, nuraft::ptr<nuraft::log_entry> &entr
 
   // Discard all logs equal to or greater than "index".
   std::lock_guard<std::mutex> l(logs_lock_);
-  auto itr = logs_.lower_bound(index);
+  auto                        itr = logs_.lower_bound(index);
   while (itr != logs_.end()) {
     itr = logs_.erase(itr);
   }
@@ -104,7 +104,7 @@ STEKShareLogStore::log_entries(uint64_t start, uint64_t end)
     nuraft::ptr<nuraft::log_entry> src = nullptr;
     {
       std::lock_guard<std::mutex> l(logs_lock_);
-      auto entry = logs_.find(i);
+      auto                        entry = logs_.find(i);
       if (entry == logs_.end()) {
         entry = logs_.find(0);
         assert(0);
@@ -130,7 +130,7 @@ STEKShareLogStore::log_entries_ext(uint64_t start, uint64_t end, int64_t batch_s
     nuraft::ptr<nuraft::log_entry> src = nullptr;
     {
       std::lock_guard<std::mutex> l(logs_lock_);
-      auto entry = logs_.find(i);
+      auto                        entry = logs_.find(i);
       if (entry == logs_.end()) {
         entry = logs_.find(0);
         assert(0);
@@ -152,7 +152,7 @@ STEKShareLogStore::entry_at(uint64_t index)
   nuraft::ptr<nuraft::log_entry> src = nullptr;
   {
     std::lock_guard<std::mutex> l(logs_lock_);
-    auto entry = logs_.find(index);
+    auto                        entry = logs_.find(index);
     if (entry == logs_.end()) {
       entry = logs_.find(0);
     }
@@ -167,7 +167,7 @@ STEKShareLogStore::term_at(uint64_t index)
   uint64_t term = 0;
   {
     std::lock_guard<std::mutex> l(logs_lock_);
-    auto entry = logs_.find(index);
+    auto                        entry = logs_.find(index);
     if (entry == logs_.end()) {
       entry = logs_.find(0);
     }
@@ -213,8 +213,8 @@ STEKShareLogStore::apply_pack(uint64_t index, nuraft::buffer &pack)
   int32_t num_logs = pack.get_int();
 
   for (int32_t i = 0; i < num_logs; ++i) {
-    uint64_t cur_idx = index + i;
-    int32_t buf_size = pack.get_int();
+    uint64_t cur_idx  = index + i;
+    int32_t  buf_size = pack.get_int();
 
     nuraft::ptr<nuraft::buffer> buf_local = nuraft::buffer::alloc(buf_size);
     pack.get(buf_local);
@@ -228,7 +228,7 @@ STEKShareLogStore::apply_pack(uint64_t index, nuraft::buffer &pack)
 
   {
     std::lock_guard<std::mutex> l(logs_lock_);
-    auto entry = logs_.upper_bound(0);
+    auto                        entry = logs_.upper_bound(0);
     if (entry != logs_.end()) {
       start_idx_ = entry->first;
     } else {

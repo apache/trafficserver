@@ -45,8 +45,8 @@ static void
 replace_header(TSHttpTxn txnp)
 {
   TSMBuffer resp_bufp;
-  TSMLoc resp_loc;
-  TSMLoc field_loc;
+  TSMLoc    resp_loc;
+  TSMLoc    field_loc;
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve server response header", PLUGIN_NAME);

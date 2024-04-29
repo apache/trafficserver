@@ -28,7 +28,7 @@
 
 #include "main.h"
 
-int cache_vols            = 1;
+int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
 namespace
@@ -59,7 +59,7 @@ public:
   }
 
   void handle_cache_event(int event, CacheTestBase *e) override;
-  int start_test(int event, void *e);
+  int  start_test(int event, void *e);
 
   virtual void process_read_event(int event, CacheTestBase *base);
   virtual void process_write_event(int event, CacheTestBase *base);
@@ -88,12 +88,12 @@ public:
 
 protected:
   // start at 1 framgents
-  int64_t _latest_fragments = 1;
-  size_t _size              = 0;
-  Event *_read_event        = nullptr;
-  bool _is_read_start       = false;
-  CacheTestBase *_rt        = nullptr;
-  CacheTestBase *_wt        = nullptr;
+  int64_t        _latest_fragments = 1;
+  size_t         _size             = 0;
+  Event         *_read_event       = nullptr;
+  bool           _is_read_start    = false;
+  CacheTestBase *_rt               = nullptr;
+  CacheTestBase *_wt               = nullptr;
 };
 
 int
@@ -399,10 +399,10 @@ public:
   int
   cache_init_success_callback(int event, void *e) override
   {
-    CacheRWWTest *crww        = new CacheRWWTest(LARGE_FILE);
-    CacheRWWErrorTest *crww_l = new CacheRWWErrorTest(LARGE_FILE, "http://www.scw22.com/");
-    CacheRWWEOSTest *crww_eos = new CacheRWWEOSTest(LARGE_FILE, "ttp://www.scw44.com/");
-    TerminalTest *tt          = new TerminalTest();
+    CacheRWWTest      *crww     = new CacheRWWTest(LARGE_FILE);
+    CacheRWWErrorTest *crww_l   = new CacheRWWErrorTest(LARGE_FILE, "http://www.scw22.com/");
+    CacheRWWEOSTest   *crww_eos = new CacheRWWEOSTest(LARGE_FILE, "ttp://www.scw44.com/");
+    TerminalTest      *tt       = new TerminalTest();
 
     crww->add(crww_l);
     crww->add(crww_eos);

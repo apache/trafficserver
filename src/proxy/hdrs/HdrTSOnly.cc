@@ -50,7 +50,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   const char *start;
   const char *tmp;
   const char *end;
-  int used;
+  int         used;
 
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -91,7 +91,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   const char *start;
   const char *tmp;
   const char *end;
-  int used;
+  int         used;
 
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);

@@ -39,24 +39,24 @@ public:
   void init(int the_fd);
   void setEthread(EThread *e);
   void errorAndDie(int e);
-  int callbackHandler(int event, void *data);
+  int  callbackHandler(int event, void *data);
 
   SLINK(UnixUDPConnection, newconn_alink);
   LINK(UnixUDPConnection, callback_link);
 
   // Incoming UDP Packet Queue
   ASLL(UDPPacket, alink) inQueue;
-  int onCallbackQueue    = 0;
-  Action *callbackAction = nullptr;
-  EThread *ethread       = nullptr;
+  int        onCallbackQueue = 0;
+  Action    *callbackAction  = nullptr;
+  EThread   *ethread         = nullptr;
   UDPEventIO ep;
 
   UnixUDPConnection(int the_fd);
   ~UnixUDPConnection() override;
 
 private:
-  int m_errno = 0;
-  void UDPConnection_is_abstract() override{};
+  int  m_errno = 0;
+  void UDPConnection_is_abstract() override {};
 };
 
 TS_INLINE

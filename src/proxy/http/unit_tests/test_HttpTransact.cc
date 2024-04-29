@@ -41,14 +41,14 @@ TEST_CASE("HttpTransact", "[http]")
   {
     SECTION("Basic")
     {
-      HTTPHdr hdr1;
-      HTTPHdr hdr2;
+      HTTPHdr        hdr1;
+      HTTPHdr        hdr2;
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;
@@ -129,14 +129,14 @@ TEST_CASE("HttpTransact", "[http]")
 
     SECTION("Have comon headers")
     {
-      HTTPHdr hdr1;
-      HTTPHdr hdr2;
+      HTTPHdr        hdr1;
+      HTTPHdr        hdr2;
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;
@@ -210,14 +210,14 @@ TEST_CASE("HttpTransact", "[http]")
 
     SECTION("Have dup headers")
     {
-      HTTPHdr hdr1;
-      HTTPHdr hdr2;
+      HTTPHdr        hdr1;
+      HTTPHdr        hdr2;
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;
@@ -291,14 +291,14 @@ TEST_CASE("HttpTransact", "[http]")
 
     SECTION("Have dup headers 2")
     {
-      HTTPHdr hdr1;
-      HTTPHdr hdr2;
+      HTTPHdr        hdr1;
+      HTTPHdr        hdr2;
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;
@@ -372,14 +372,14 @@ TEST_CASE("HttpTransact", "[http]")
 
     SECTION("Have common and dup headers")
     {
-      HTTPHdr hdr1;
-      HTTPHdr hdr2;
+      HTTPHdr        hdr1;
+      HTTPHdr        hdr2;
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;
@@ -463,14 +463,14 @@ TEST_CASE("HttpTransact", "[http]")
     }
     SECTION("Response has superset")
     {
-      HTTPHdr cached_headers;
-      HTTPHdr response_headers;
+      HTTPHdr        cached_headers;
+      HTTPHdr        response_headers;
       ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
       ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
 
-      MIMEField *field;
+      MIMEField  *field;
       const char *str;
-      int len;
+      int         len;
 
       struct header {
         std::string_view name;

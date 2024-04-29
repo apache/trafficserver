@@ -157,8 +157,8 @@ int
 CookieJar::verify_value(char *val, int val_len)
 {
   char *buf;
-  char *data_ptr      = nullptr;
-  char data_buf[1024] = {
+  char *data_ptr       = nullptr;
+  char  data_buf[1024] = {
     0,
   };
   int buf_len;

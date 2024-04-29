@@ -54,15 +54,15 @@ static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
 static int
 transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 {
-  TSVConn output_conn;
-  TSVIO input_vio;
+  TSVConn          output_conn;
+  TSVIO            input_vio;
   TSIOBufferReader input_reader;
-  TSIOBufferBlock blk;
-  int64_t toread, towrite, blk_len, upstream_done, input_avail;
-  const char *start;
-  const char *res;
-  size_t res_len;
-  bool eos, write_down, empty_input;
+  TSIOBufferBlock  blk;
+  int64_t          toread, towrite, blk_len, upstream_done, input_avail;
+  const char      *start;
+  const char      *res;
+  size_t           res_len;
+  bool             eos, write_down, empty_input;
 
   ats_wasm::Context *c;
 
@@ -258,8 +258,8 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 static int
 transform_entry(TSCont contp, TSEvent ev, void *edata)
 {
-  int event;
-  TSVIO input_vio;
+  int                      event;
+  TSVIO                    input_vio;
   ats_wasm::TransformInfo *ti;
 
   event = static_cast<int>(ev);
@@ -320,7 +320,7 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
     std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
     if (wbp.get() == old_wasm) {
       found                    = true;
-      auto *wasm               = static_cast<ats_wasm::Wasm *>(c->wasm());
+      auto    *wasm            = static_cast<ats_wasm::Wasm *>(c->wasm());
       uint32_t root_context_id = c->id();
       if (wasm->existsTimerPeriod(root_context_id)) {
         Dbg(ats_wasm::dbg_ctl, "[%s] reschedule continuation", __FUNCTION__);
@@ -334,8 +334,8 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
   }
 
   if (!found) {
-    std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
-    uint32_t root_context_id             = c->id();
+    std::shared_ptr<ats_wasm::Wasm> temp            = nullptr;
+    uint32_t                        root_context_id = c->id();
     old_wasm->removeTimerPeriod(root_context_id);
 
     if (old_wasm->readyShutdown()) {
@@ -374,7 +374,7 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 static int
 http_event_handler(TSCont contp, TSEvent event, void *data)
 {
-  int result     = -1;
+  int   result   = -1;
   auto *context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
   auto *old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
 
@@ -382,11 +382,11 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
 
   TSMutexLock(old_wasm->mutex());
   std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
-  auto *txnp                           = static_cast<TSHttpTxn>(data);
+  auto                           *txnp = static_cast<TSHttpTxn>(data);
 
-  TSMBuffer buf  = nullptr;
-  TSMLoc hdr_loc = nullptr;
-  int count      = 0;
+  TSMBuffer buf     = nullptr;
+  TSMLoc    hdr_loc = nullptr;
+  int       count   = 0;
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
@@ -536,9 +536,9 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
 {
   auto *txnp = static_cast<TSHttpTxn>(data);
   for (auto it = wasm_config->configs.begin(); it != wasm_config->configs.end(); it++) {
-    std::shared_ptr<ats_wasm::Wasm> wbp         = it->first;
-    std::shared_ptr<proxy_wasm::PluginBase> plg = it->second;
-    auto *wasm                                  = wbp.get();
+    std::shared_ptr<ats_wasm::Wasm>         wbp  = it->first;
+    std::shared_ptr<proxy_wasm::PluginBase> plg  = it->second;
+    auto                                   *wasm = wbp.get();
     TSMutexLock(wasm->mutex());
     auto *rootContext = wasm->getRootContext(plg, false);
     auto *context     = new ats_wasm::Context(wasm, rootContext->id(), plg);
@@ -620,24 +620,24 @@ read_configuration()
     std::string name          = "";
     std::string root_id       = "";
     std::string configuration = "";
-    bool fail_open            = true;
+    bool        fail_open     = true;
 
     // WasmBase parameters
-    std::string runtime          = "";
-    std::string vm_id            = "";
-    std::string vm_configuration = "";
-    std::string wasm_filename    = "";
-    bool allow_precompiled       = true;
+    std::string runtime           = "";
+    std::string vm_id             = "";
+    std::string vm_configuration  = "";
+    std::string wasm_filename     = "";
+    bool        allow_precompiled = true;
 
-    proxy_wasm::AllowedCapabilitiesMap cap_maps;
+    proxy_wasm::AllowedCapabilitiesMap           cap_maps;
     std::unordered_map<std::string, std::string> envs;
 
     try {
       YAML::Node config = YAML::LoadFile(cfn);
 
       for (YAML::const_iterator it = config.begin(); it != config.end(); ++it) {
-        const std::string &node_name = it->first.as<std::string>();
-        YAML::NodeType::value type   = it->second.Type();
+        const std::string    &node_name = it->first.as<std::string>();
+        YAML::NodeType::value type      = it->second.Type();
 
         if (node_name != "config" || type != YAML::NodeType::Map) {
           TSError(
@@ -674,7 +674,7 @@ read_configuration()
               const YAML::Node ac_node = second["allowed_capabilities"];
               if (ac_node.IsSequence()) {
                 for (const auto &i : ac_node) {
-                  auto ac = i.as<std::string>();
+                  auto                           ac = i.as<std::string>();
                   proxy_wasm::SanitizationConfig sc;
                   cap_maps[ac] = sc;
                 }
@@ -830,8 +830,8 @@ read_configuration()
       return false;
     }
 
-    TSCont contp      = TSContCreate(schedule_handler, TSMutexCreate());
-    auto *rootContext = wasm->start(plugin, contp);
+    TSCont contp       = TSContCreate(schedule_handler, TSMutexCreate());
+    auto  *rootContext = wasm->start(plugin, contp);
 
     if (!wasm->configure(rootContext, plugin)) {
       TSError("[wasm][%s] Failed to configure Wasm", __FUNCTION__);
@@ -847,7 +847,7 @@ read_configuration()
   wasm_config->configs = new_configs;
 
   for (auto it = old_configs.begin(); it != old_configs.end(); it++) {
-    std::shared_ptr<ats_wasm::Wasm> old_wasm           = it->first;
+    std::shared_ptr<ats_wasm::Wasm>         old_wasm   = it->first;
     std::shared_ptr<proxy_wasm::PluginBase> old_plugin = it->second;
 
     if (old_wasm != nullptr) {

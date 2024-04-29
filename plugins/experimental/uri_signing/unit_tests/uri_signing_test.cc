@@ -148,9 +148,9 @@ bool
 jwt_parsing_helper(const char *jwt_string)
 {
   fprintf(stderr, "Parsing JWT from string: %s\n", jwt_string);
-  bool resp;
-  json_error_t jerr             = {};
-  size_t pt_ct                  = strlen(jwt_string);
+  bool                 resp;
+  json_error_t         jerr     = {};
+  size_t               pt_ct    = strlen(jwt_string);
   struct json_t *const jwk_json = json_loadb(jwt_string, pt_ct, 0, &jerr);
   if (!jwk_json) {
     return false;
@@ -170,10 +170,10 @@ jwt_parsing_helper(const char *jwt_string)
 bool
 normalize_uri_helper(const char *uri, const char *expected_normal)
 {
-  size_t uri_ct = strlen(uri);
-  int buff_size = uri_ct + 2;
-  int err;
-  char *uri_normal = static_cast<char *>(malloc(buff_size));
+  size_t uri_ct    = strlen(uri);
+  int    buff_size = uri_ct + 2;
+  int    err;
+  char  *uri_normal = static_cast<char *>(malloc(buff_size));
   memset(uri_normal, 0, buff_size);
 
   err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
@@ -198,7 +198,7 @@ remove_dot_helper(const char *path, const char *expected_path)
   fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
   size_t path_ct = strlen(path);
   path_ct++;
-  int new_ct;
+  int  new_ct;
   char path_buffer[path_ct];
   memset(path_buffer, 0, path_ct);
 
@@ -216,7 +216,7 @@ remove_dot_helper(const char *path, const char *expected_path)
 bool
 jws_parsing_helper(const char *uri, const char *paramName, const char *expected_strip)
 {
-  bool resp;
+  bool   resp;
   size_t uri_ct   = strlen(uri);
   size_t strip_ct = 0;
 
@@ -781,7 +781,7 @@ jws_validation_helper(const char *url, const char *package, struct config *cfg)
 {
   size_t url_ct   = strlen(url);
   size_t strip_ct = 0;
-  char uri_strip[url_ct + 1];
+  char   uri_strip[url_ct + 1];
   memset(uri_strip, 0, sizeof uri_strip);
   cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip, url_ct, &strip_ct);
   if (!jws) {

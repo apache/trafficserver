@@ -44,7 +44,7 @@ struct HostFile {
 
   HostDBRecord::Handle lookup(const HostDBHash &hash);
 
-  ts_seconds ttl;
+  ts_seconds         ttl;
   HostFileForwardMap forward;
   HostFileReverseMap reverse;
 };

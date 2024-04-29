@@ -79,7 +79,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           DDbg(dbg_ctl_cache_evac, "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0),
                evac->earliest_key.slice32(0));
           EvacuationBlock *eblock = nullptr;
-          Dir dir_tmp;
+          Dir              dir_tmp;
           dir_lookaside_probe(&evac->earliest_key, this->stripe, &dir_tmp, &eblock);
           if (eblock) {
             CacheEvacuateDocVC *earliest_evac  = eblock->earliest_evacuator;
@@ -146,7 +146,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
   // The evacuator vc shares the lock with the volition mutex
   ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   cancel_trigger();
-  Doc *doc                     = reinterpret_cast<Doc *>(this->buf->data());
+  Doc           *doc           = reinterpret_cast<Doc *>(this->buf->data());
   CacheHTTPInfo *alternate_tmp = nullptr;
   if (!io.ok()) {
     goto Ldone;

@@ -41,16 +41,16 @@ enum class ProxyProtocolData {
 };
 
 struct ProxyProtocol {
-  ProxyProtocolVersion version = ProxyProtocolVersion::UNDEFINED;
-  uint16_t ip_family           = AF_UNSPEC;
-  IpEndpoint src_addr          = {};
-  IpEndpoint dst_addr          = {};
+  ProxyProtocolVersion version   = ProxyProtocolVersion::UNDEFINED;
+  uint16_t             ip_family = AF_UNSPEC;
+  IpEndpoint           src_addr  = {};
+  IpEndpoint           dst_addr  = {};
 };
 
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
 const size_t PPv2_CONNECTION_HEADER_LEN     = 16;
 
-extern size_t proxy_protocol_parse(ProxyProtocol *pp_info, swoc::TextView tv);
-extern size_t proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info,
-                                   ProxyProtocolVersion force_version = ProxyProtocolVersion::UNDEFINED);
+extern size_t               proxy_protocol_parse(ProxyProtocol *pp_info, swoc::TextView tv);
+extern size_t               proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info,
+                                                 ProxyProtocolVersion force_version = ProxyProtocolVersion::UNDEFINED);
 extern ProxyProtocolVersion proxy_protocol_version_cast(int i);

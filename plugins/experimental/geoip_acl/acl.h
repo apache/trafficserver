@@ -61,7 +61,7 @@ public:
   virtual ~Acl() {}
   // These have to be implemented for each ACL type
   virtual void read_regex(const char *fn, int &tokens)             = 0;
-  virtual int process_args(int argc, char *argv[])                 = 0;
+  virtual int  process_args(int argc, char *argv[])                = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
   virtual void add_token(const std::string &str)                   = 0;
 
@@ -90,8 +90,8 @@ public:
 
 protected:
   std::string _html;
-  bool _allow       = true;
-  int _added_tokens = 0;
+  bool        _allow        = true;
+  int         _added_tokens = 0;
 
   // Class members
   static GeoDBHandle _geoip;
@@ -133,12 +133,12 @@ public:
   bool parse_line(const char *filename, const std::string &line, int lineno, int &tokens);
 
 private:
-  bool compile(const std::string &str, const char *filename, int lineno);
+  bool        compile(const std::string &str, const char *filename, int lineno);
   std::string _regex_s;
-  pcre *_rex;
+  pcre       *_rex;
   pcre_extra *_extra;
-  RegexAcl *_next;
-  Acl *_acl;
+  RegexAcl   *_next;
+  Acl        *_acl;
 };
 
 // ACLs based on ISO country codes.
@@ -147,11 +147,11 @@ class CountryAcl : public Acl
 public:
   CountryAcl() { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
   void read_regex(const char *fn, int &tokens) override;
-  int process_args(int argc, char *argv[]) override;
+  int  process_args(int argc, char *argv[]) override;
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const override;
   void add_token(const std::string &str) override;
 
 private:
-  bool _iso_country_codes[NUM_ISO_CODES];
+  bool      _iso_country_codes[NUM_ISO_CODES];
   RegexAcl *_regexes = nullptr;
 };

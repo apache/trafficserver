@@ -30,7 +30,7 @@
 TEST_CASE("Mime", "[proxy][mime]")
 {
   MIMEField *field;
-  MIMEHdr hdr;
+  MIMEHdr    hdr;
   hdr.create(NULL);
 
   hdr.field_create("Test1", 5);
@@ -70,9 +70,9 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
 
   const char *header_value;
   const char *host;
-  int host_len;
+  int         host_len;
   const char *port;
-  int port_len;
+  int         port_len;
 
   header_value = "host";
   hdr.value_set("Host", 4, header_value, strlen(header_value));
@@ -200,7 +200,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
 TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
 {
   const char *end;
-  int value;
+  int         value;
 
   static const std::vector<std::pair<const char *, int>> tests = {
     {"0",             0         },
