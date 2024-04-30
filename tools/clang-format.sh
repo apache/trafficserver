@@ -19,7 +19,7 @@
 #  limitations under the License.
 
 # Update the PKGDATE with the new version date when making a new clang-format binary package.
-PKGDATE="20240419"
+PKGDATE="20240430"
 
 function main() {
   set -e # exit on error
@@ -75,7 +75,7 @@ function main() {
     ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
     ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
     cat > ${ROOT}/sha256 << EOF
-a569e8f6da82aa3af00fc3e746c5ca351715e4c54e23c4a14b9bc66554d6d690  ${ARCHIVE}
+1a42578eab04aa697fa90537decc840c11d36d351249c1c8ded0197c2f9bdd7b  ${ARCHIVE}
 EOF
     ${SHASUM} -c ${ROOT}/sha256
     chmod +x ${FORMAT}
