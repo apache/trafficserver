@@ -138,7 +138,7 @@
       "inherits": ["ci"],
       "generator": "Unix Makefiles",
       "cacheVariables": {
-        "ENABLE_CRIPTS": true
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -152,7 +152,7 @@
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
-        "ENABLE_QUICHE": true
+        "ENABLE_QUICHE": "ON"
       }
     },
     {
@@ -165,7 +165,7 @@
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
-        "ENABLE_CRIPTS": true
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -177,7 +177,8 @@
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
-        "CMAKE_CXX_STANDARD": "20"
+        "CMAKE_CXX_STANDARD": "20",
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -192,7 +193,7 @@
         "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
-        "ENABLE_QUICHE": true
+        "ENABLE_QUICHE": "ON"
       }
     },
     {
@@ -307,7 +308,7 @@
         "nuraft_ROOT": "/opt/nuraft-boringssl",
         "OPENSSL_ROOT_DIR": "/opt/boringssl",
         "quiche_ROOT": "/opt/quiche",
-        "ENABLE_QUICHE": true
+        "ENABLE_QUICHE": "ON"
       }
     },
     {
