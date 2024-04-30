@@ -61,7 +61,7 @@
 
 // The default size for http header buffers when we don't
 //   need to include extra space for the document
-static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;
 
 // We want to use a larger buffer size when reading response
 //   headers from the origin server since we want to get

@@ -50,7 +50,7 @@ proto_is_http2(IOBufferReader *reader)
 
 struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
   static const size_t   minimum_read_size = 1;
-  static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  static const unsigned buffer_size_index = BUFFER_SIZE_INDEX_4K;
   IOBufferReader       *reader;
 
   explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, Ptr<ProxyMutex> &mutex, MIOBuffer *buffer,

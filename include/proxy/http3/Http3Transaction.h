@@ -94,7 +94,7 @@ protected:
 
   EThread *_thread = nullptr;
 
-  MIOBuffer                    _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  MIOBuffer                    _read_vio_buf = BUFFER_SIZE_INDEX_4K;
   QUICStreamVCAdapter::IOInfo &_info;
 
   size_t _sent_bytes = 0;
