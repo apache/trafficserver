@@ -4869,7 +4869,6 @@ HttpSM::do_range_setup_if_necessary()
           // If only one range entry and pread is capable, no need transform range
           t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
         } else {
-          Dbg(dbg_ctl_http_range, "Well, we are here...");
           do_transform = true;
         }
       }
