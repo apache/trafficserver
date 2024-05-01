@@ -41,8 +41,15 @@
 #include "proxy/http3/Http3SettingsHandler.h"
 #include "proxy/http3/Http3SettingsFramer.h"
 
-static constexpr char debug_tag[]   = "http3";
-static constexpr char debug_tag_v[] = "v_http3";
+namespace
+{
+constexpr char debug_tag[]   = "http3";
+constexpr char debug_tag_v[] = "v_http3";
+
+DbgCtl dbg_ctl{debug_tag};
+DbgCtl dbg_ctl_v{debug_tag_v};
+
+} // end anonymous namespace
 
 Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
                    const HttpSessionAccept::Options &options)
@@ -130,13 +137,13 @@ Http3App::on_stream_close(QUICStream &stream)
 int
 Http3App::main_event_handler(int event, Event *data)
 {
-  Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
+  Dbg(dbg_ctl_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
   VIO                 *vio     = reinterpret_cast<VIO *>(data->cookie);
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
   if (adapter == nullptr) {
-    Debug(debug_tag, "[%s] Unknown Stream", this->_qc->cids().data());
+    Dbg(dbg_ctl, "[%s] Unknown Stream", this->_qc->cids().data());
     return -1;
   }
 
@@ -203,9 +210,9 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
   if (error == nullptr) {
     this->_local_uni_stream_map.insert(std::make_pair(new_stream_id, type));
 
-    Debug("http3", "[%" PRIu64 "] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
+    Dbg(dbg_ctl, "[%" PRIu64 "] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
   } else {
-    Debug("http3", "Could not create %s stream", Http3DebugNames::stream_type(type));
+    Dbg(dbg_ctl, "Could not create %s stream", Http3DebugNames::stream_type(type));
   }
 
   return error;
@@ -224,7 +231,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     vio->get_reader()->read(&buf, 1);
     type = Http3Stream::type(&buf);
 
-    Debug("http3", "[%" PRIu64 "] %s stream is opened", adapter->stream().id(), Http3DebugNames::stream_type(type));
+    Dbg(dbg_ctl, "[%" PRIu64 "] %s stream is opened", adapter->stream().id(), Http3DebugNames::stream_type(type));
 
     auto ret = this->_remote_uni_stream_map.insert(std::make_pair(adapter->stream().id(), type));
     if (!ret.second) {
@@ -242,13 +249,13 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     } else if (this->_control_stream_id != adapter->stream().id()) {
       error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR,
                                            "Only one control stream per peer is permitted");
-      Debug("http3", "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
+      Dbg(dbg_ctl, "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
       break;
     }
     uint64_t nread = 0;
     error          = this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
     if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-      Debug("http3", "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
+      Dbg(dbg_ctl, "CONTROL stream [%" PRIu64 "] error: %hu, %s", this->_control_stream_id, error->get_code(), error->msg);
     }
     // The sender MUST NOT close the control stream, and the receiver MUST NOT request that the sender close the control stream.
     // If either control stream is closed at any point, this MUST be treated as a connection error of type
@@ -258,7 +265,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   case Http3StreamType::PUSH: {
     error =
       std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
-    Debug("http3", "PUSH stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    Dbg(dbg_ctl, "PUSH stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
     // if a server receives a client-initiated push stream, this MUST be treated as a connection error of type
     // H3_STREAM_CREATION_ERROR
     break;
@@ -273,7 +280,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     // processing. If reading is aborted, the recipient SHOULD use the H3_STREAM_CREATION_ERROR error code or a reserved error code
     // (Section 8.1). The recipient MUST NOT consider unknown stream types to be a connection error of any kind.
     error = std::make_unique<Http3Error>(Http3ErrorClass::STREAM, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Stream type unkown");
-    Debug("http3", "UNKNOWN stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    Dbg(dbg_ctl, "UNKNOWN stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
     break;
   }
   default:

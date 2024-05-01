@@ -41,11 +41,13 @@
 #include "../iocore/cache/P_Cache.h"
 #include "tsutil/Regex.h"
 
-static const char modulePrefix[] = "[CacheControl]";
+namespace
+{
+const char modulePrefix[] = "[CacheControl]";
 
 #define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
 
-static const char *CC_directive_str[CC_NUM_TYPES] = {
+const char *CC_directive_str[CC_NUM_TYPES] = {
   "INVALID",
   "REVALIDATE_AFTER",
   "NEVER_CACHE",
@@ -58,11 +60,17 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
   // "CACHE_AUTH_CONTENT"
 };
 
-using CC_table = ControlMatcher<CacheControlRecord, CacheControlResult>;
+Ptr<ProxyMutex> reconfig_mutex;
+
+DbgCtl dbg_ctl_v_http3{"v_http3"};
+DbgCtl dbg_ctl_http3{"http3"};
+DbgCtl dbg_ctl_cache_control{"cache_control"};
+
+} // end anonymous namespace
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex;
-CC_table              *CacheControlTable = nullptr;
+using CC_table              = ControlMatcher<CacheControlRecord, CacheControlResult>;
+CC_table *CacheControlTable = nullptr;
 
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
@@ -75,7 +83,7 @@ struct CC_FreerContinuation : public Continuation {
   int
   freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    Debug("cache_control", "Deleting old table");
+    Dbg(dbg_ctl_cache_control, "Deleting old table");
     delete p;
     delete this;
     return EVENT_DONE;
@@ -144,7 +152,7 @@ reloadCacheControl()
 
   CC_table *newTable;
 
-  Debug("cache_control", "%s updated, reloading", ts::filename::CACHE);
+  Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CALL);
   newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
@@ -437,6 +445,6 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       crtc_debug[0] = 0;
     }
 
-    Debug("cache_control", "Matched with for %s at line %d%s", CC_directive_str[this->directive], this->line_num, crtc_debug);
+    Dbg(dbg_ctl_cache_control, "Matched with for %s at line %d%s", CC_directive_str[this->directive], this->line_num, crtc_debug);
   }
 }

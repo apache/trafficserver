@@ -23,6 +23,12 @@
 
 #include "proxy/ParentSelection.h"
 
+namespace
+{
+DbgCtl dbg_ctl_parent_select{"parent_select"};
+
+} // end anonymous namespace
+
 void
 ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
 {
@@ -83,7 +89,7 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
       old_count = pRec->failCount.fetch_add(1, std::memory_order_relaxed);
     }
 
-    Debug("parent_select", "Parent fail count increased to %d for %s:%d", old_count + 1, pRec->hostname, pRec->port);
+    Dbg(dbg_ctl_parent_select, "Parent fail count increased to %d for %s:%d", old_count + 1, pRec->hostname, pRec->port);
     new_fail_count = old_count + 1;
   }
 
@@ -91,8 +97,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
     Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down with request: %s", new_fail_count,
          fail_threshold, pRec->hostname, pRec->port, result->url);
     pRec->available = false;
-    Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port,
-          pRec->available.load());
+    Dbg(dbg_ctl_parent_select, "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port,
+        pRec->available.load());
   }
 }
 
