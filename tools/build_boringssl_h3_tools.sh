@@ -237,7 +237,7 @@ fi
 ./configure \
   --prefix=${BASE} \
   PKG_CONFIG_PATH=${BASE}/lib/pkgconfig \
-  CFLAGS="${CFLAGS}" \
+  CFLAGS="${CFLAGS} -I${BORINGSSL_PATH}/include" \
   CXXFLAGS="${CXXFLAGS} -I${BORINGSSL_PATH}/include" \
   LDFLAGS="${LDFLAGS}" \
   OPENSSL_LIBS="-lcrypto -lssl -L${BORINGSSL_LIB_PATH}" \
