@@ -45,6 +45,9 @@
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
 #include "P_UnixNet.h"
+#ifdef HAVE_SO_TXTIME
+#include <linux/net_tstamp.h>
+#endif
 
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.
@@ -80,7 +83,8 @@ UDPPacket::new_UDPPacket()
 }
 
 UDPPacket *
-UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size)
+UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size,
+                         struct timespec *send_at_hint)
 {
   UDPPacket *p = udpPacketAllocator.alloc();
 
@@ -91,6 +95,11 @@ UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBuffe
     ats_ip_copy(&p->to, to);
   p->p.chain        = buf;
   p->p.segment_size = segment_size;
+#ifdef HAVE_SO_TXTIME
+  if (send_at_hint) {
+    memcpy(&p->p.send_at, &send_at_hint, sizeof(struct timespec));
+  }
+#endif
   return p;
 }
 
@@ -1208,6 +1217,15 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   }
 #endif
 
+#ifdef HAVE_SO_TXTIME
+  struct sock_txtime sk_txtime;
+
+  sk_txtime.clockid = CLOCK_MONOTONIC;
+  sk_txtime.flags   = 0;
+  if (setsockopt(fd, SOL_SOCKET, SO_TXTIME, &sk_txtime, sizeof(sk_txtime)) == -1) {
+    Dbg(dbg_ctl_udpnet, "Failed to setsockopt SO_TXTIME. errno=%d", errno);
+  }
+#endif
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
     if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
@@ -1423,6 +1441,34 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
   msg.msg_name       = reinterpret_cast<caddr_t>(&p->to.sa);
   msg.msg_namelen    = ats_ip_size(p->to);
 
+#if defined(SOL_UDP) || defined(HAVE_SO_TXTIME) // to avoid unused variables compiler warning.
+  struct cmsghdr *cm = nullptr;
+  uint8_t         msg_ctrl[0
+#ifdef SOL_UDP
+                   + CMSG_SPACE(sizeof(uint16_t))
+#endif
+#ifdef HAVE_SO_TXTIME
+                   + CMSG_SPACE(sizeof(uint64_t))
+#endif
+  ];
+  memset(msg_ctrl, 0, sizeof(msg_ctrl));
+#endif // defined(SOL_UDP) || defined(HAVE_SO_TXTIME)
+
+#ifdef HAVE_SO_TXTIME
+  if (p->p.send_at.tv_sec > 0) {
+    msg.msg_control    = msg_ctrl;
+    msg.msg_controllen = CMSG_SPACE(sizeof(uint64_t));
+    cm                 = CMSG_FIRSTHDR(&msg);
+
+    cm->cmsg_level = SOL_SOCKET;
+    cm->cmsg_type  = SCM_TXTIME;
+    cm->cmsg_len   = CMSG_LEN(sizeof(uint64_t));
+
+    // Convert struct timespec to nanoseconds.
+    *((uint64_t *)CMSG_DATA(cm)) = p->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + p->p.send_at.tv_nsec;
+  }
+#endif
+
   if (p->p.segment_size > 0) {
     ink_assert(p->p.chain->next == nullptr);
     msg.msg_iov    = iov;
@@ -1436,10 +1482,16 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
         char           buf[CMSG_SPACE(sizeof(uint16_t))];
         struct cmsghdr align;
       } u;
-      msg.msg_control    = u.buf;
-      msg.msg_controllen = sizeof(u.buf);
 
-      struct cmsghdr *cm           = CMSG_FIRSTHDR(&msg);
+      if (cm == nullptr) {
+        msg.msg_control    = msg_ctrl;
+        msg.msg_controllen = sizeof(u.buf);
+        cm                 = CMSG_FIRSTHDR(&msg);
+
+      } else {
+        msg.msg_controllen += sizeof(u.buf);
+        cm                  = CMSG_NXTHDR(&msg, cm);
+      }
       cm->cmsg_level               = SOL_UDP;
       cm->cmsg_type                = UDP_SEGMENT;
       cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
@@ -1564,9 +1616,23 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   } else {
     msgvec_size = sizeof(struct mmsghdr) * n * 64;
   }
+
 #else
   msgvec_size = sizeof(struct mmsghdr) * n * 64;
 #endif
+
+#if defined(SOL_UDP) || defined(HAVE_SO_TXTIME) // to avoid unused variables compiler warning.
+  uint8_t msg_ctrl[0
+#ifdef SOL_UDP
+                   + CMSG_SPACE(sizeof(uint16_t))
+#endif
+#ifdef HAVE_SO_TXTIME
+                   + CMSG_SPACE(sizeof(uint64_t))
+#endif
+  ];
+  memset(msg_ctrl, 0, sizeof(msg_ctrl));
+#endif // defined(SOL_UDP) || defined(HAVE_SO_TXTIME)
+
   // The sizeof(struct msghdr) is 56 bytes or so. It can be too big to stack (alloca).
   IOBufferBlock *tmp = new_IOBufferBlock();
   tmp->alloc(iobuffer_size_to_index(msgvec_size, BUFFER_SIZE_INDEX_1M));
@@ -1592,6 +1658,26 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
     packet                               = p[i];
     packet->p.conn->lastSentPktStartTime = packet->p.delivery_time;
     ink_assert(packet->p.conn->getFd() == fd);
+#if defined(SOL_UDP) || defined(HAVE_SO_TXTIME)
+    struct cmsghdr *cm = nullptr;
+#endif
+#ifdef HAVE_SO_TXTIME
+    if (packet->p.send_at.tv_sec > 0) { // if set?
+      msg                 = &msgvec[vlen].msg_hdr;
+      msg->msg_controllen = CMSG_SPACE(sizeof(uint64_t));
+      msg->msg_control    = msg_ctrl;
+      cm                  = CMSG_FIRSTHDR(msg);
+
+      cm->cmsg_level = SOL_SOCKET;
+      cm->cmsg_type  = SCM_TXTIME;
+      cm->cmsg_len   = CMSG_LEN(sizeof(uint64_t));
+
+      // Convert struct timespec to nanoseconds.
+      *((uint64_t *)CMSG_DATA(cm)) = packet->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + packet->p.send_at.tv_nsec;
+      ;
+    }
+#endif
+
     if (packet->p.segment_size > 0) {
       // Presumes one big super buffer is given
       ink_assert(packet->p.chain->next == nullptr);
@@ -1602,17 +1688,24 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
         msg->msg_namelen = ats_ip_size(packet->to);
 
         union udp_segment_hdr *u;
-        u                   = static_cast<union udp_segment_hdr *>(alloca(sizeof(union udp_segment_hdr)));
-        msg->msg_control    = u->buf;
-        msg->msg_controllen = sizeof(u->buf);
-        iov                 = &iovec[iovec_used++];
-        iov_len             = 1;
-        iov->iov_base       = packet->p.chain.get()->start();
-        iov->iov_len        = packet->p.chain.get()->size();
-        msg->msg_iov        = iov;
-        msg->msg_iovlen     = iov_len;
+        u = static_cast<union udp_segment_hdr *>(alloca(sizeof(union udp_segment_hdr)));
 
-        struct cmsghdr *cm           = CMSG_FIRSTHDR(msg);
+        iov             = &iovec[iovec_used++];
+        iov_len         = 1;
+        iov->iov_base   = packet->p.chain.get()->start();
+        iov->iov_len    = packet->p.chain.get()->size();
+        msg->msg_iov    = iov;
+        msg->msg_iovlen = iov_len;
+
+        if (cm == nullptr) {
+          msg->msg_control    = u->buf;
+          msg->msg_controllen = sizeof(u->buf);
+          cm                  = CMSG_FIRSTHDR(msg);
+        } else {
+          msg->msg_controllen += sizeof(u->buf);
+          cm                   = CMSG_NXTHDR(msg, cm);
+        }
+
         cm->cmsg_level               = SOL_UDP;
         cm->cmsg_type                = UDP_SEGMENT;
         cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));

@@ -40,7 +40,8 @@ public:
   QUICPacketHandler();
   virtual ~QUICPacketHandler();
 
-  void send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size = 0);
+  void send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size = 0,
+                   struct timespec *send_at_hint = nullptr);
   void close_connection(QUICNetVConnection *conn);
 
 protected:

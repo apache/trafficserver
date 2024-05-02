@@ -407,6 +407,15 @@ if(TS_USE_HWLOC)
   )
 endif()
 
+check_symbol_exists(SO_TXTIME "sys/socket.h" SO_TXTIME_FOUND)
+set(CMAKE_EXTRA_INCLUDE_FILES "linux/net_tstamp.h")
+check_type_size("struct sock_txtime" STRUCT_SOCK_TXTIME_FOUND)
+unset(CMAKE_EXTRA_INCLUDE_FILES)
+
+if(SO_TXTIME_FOUND AND STRUCT_SOCK_TXTIME_FOUND)
+  set(HAVE_SO_TXTIME TRUE)
+endif()
+
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
 if(HAVE_IOURING AND USE_IOURING)
   message(STATUS "Using io_uring")

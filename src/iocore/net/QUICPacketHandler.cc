@@ -80,9 +80,10 @@ QUICPacketHandler::close_connection(QUICNetVConnection *conn)
 }
 
 void
-QUICPacketHandler::send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size)
+QUICPacketHandler::send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size,
+                               struct timespec *send_at_hint)
 {
-  UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload, segment_size);
+  UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload, segment_size, send_at_hint);
 
   if (dbg_ctl_v.on()) {
     ip_port_text_buffer ipb;
