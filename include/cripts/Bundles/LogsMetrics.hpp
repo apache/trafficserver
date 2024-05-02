@@ -76,10 +76,10 @@ public:
   void doRemap(Cript::Context *context) override;
 
 private:
-  Cript::Instance *_inst;       // This Bundle needs the instance for access to the instance metrics
-  Cript::string _label = "";    // Propstats label
-  int _log_sample      = 0;     // Log sampling
-  bool _tcpinfo        = false; // Turn on TCP info logging
+  Cript::Instance *_inst;               // This Bundle needs the instance for access to the instance metrics
+  Cript::string    _label      = "";    // Propstats label
+  int              _log_sample = 0;     // Log sampling
+  bool             _tcpinfo    = false; // Turn on TCP info logging
 };
 
 } // namespace Bundle

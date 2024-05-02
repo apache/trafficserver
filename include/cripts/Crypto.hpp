@@ -96,7 +96,7 @@ namespace detail
   protected:
     // Size for the bigest digest
     unsigned char _hash[EVP_MAX_MD_SIZE] = {};
-    size_t _length                       = EVP_MAX_MD_SIZE;
+    size_t        _length                = EVP_MAX_MD_SIZE;
 
   }; // End class Crypto::Digest;
 
@@ -110,7 +110,7 @@ namespace detail
 
     ~Cipher() { EVP_CIPHER_CTX_free(_ctx); }
 
-    virtual void encrypt(Cript::string_view str);
+    virtual void               encrypt(Cript::string_view str);
     virtual Cript::string_view finalize();
 
     operator Cript::string_view() const { return {_message}; }
@@ -134,12 +134,12 @@ namespace detail
     Cipher(const unsigned char *key, int len) : _key_len(len) { memcpy(_key, key, len); }
     virtual void _initialize();
 
-    Cript::string _message;
-    unsigned char _key[EVP_MAX_KEY_LENGTH];
-    int _key_len              = 0;
-    int _length               = 0;
-    EVP_CIPHER_CTX *_ctx      = nullptr;
-    const EVP_CIPHER *_cipher = nullptr;
+    Cript::string     _message;
+    unsigned char     _key[EVP_MAX_KEY_LENGTH];
+    int               _key_len = 0;
+    int               _length  = 0;
+    EVP_CIPHER_CTX   *_ctx     = nullptr;
+    const EVP_CIPHER *_cipher  = nullptr;
 
   }; // End class Cipher
 

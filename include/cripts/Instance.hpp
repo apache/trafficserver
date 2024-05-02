@@ -112,19 +112,19 @@ public:
     }
   }
 
-  std::array<DataType, 32> data;
-  Cript::string to_url;
-  Cript::string from_url;
-  Cript::string plugin_debug_tag;
+  std::array<DataType, 32>                       data;
+  Cript::string                                  to_url;
+  Cript::string                                  from_url;
+  Cript::string                                  plugin_debug_tag;
   std::unordered_map<std::string, Plugin::Remap> plugins;
-  Cript::MetricStorage metrics{8};
-  std::vector<Cript::Bundle::Base *> bundles;
+  Cript::MetricStorage                           metrics{8};
+  std::vector<Cript::Bundle::Base *>             bundles;
 
 private:
-  size_t _size        = 0;
-  bool _failed        = false;
+  size_t   _size      = 0;
+  bool     _failed    = false;
   unsigned _callbacks = 0;
-  DbgCtl dbg_ctl_cript;
+  DbgCtl   dbg_ctl_cript;
 }; // End class Instance
 
 // A little wrapper / hack to make the do_create_instance take what looks like a context.

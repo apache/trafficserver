@@ -100,11 +100,11 @@ public:
   }
 
   // These fields are preserving the parameters as setup in DoRemap()
-  Cript::Transaction state;
+  Cript::Transaction                       state;
   std::array<DataType, CONTEXT_DATA_SLOTS> data;
-  TSCont default_cont     = nullptr;
-  TSRemapRequestInfo *rri = nullptr;
-  Cript::Instance &p_instance; // p_ == public_, since we can't use "instance"
+  TSCont                                   default_cont = nullptr;
+  TSRemapRequestInfo                      *rri          = nullptr;
+  Cript::Instance                         &p_instance; // p_ == public_, since we can't use "instance"
 
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
@@ -131,20 +131,20 @@ private:
 
   // These are "pre-allocated", but not initialized. They will be initialized
   // when used via a factory.
-  Client::Response _client_resp_header;
-  Client::Request _client_req_header;
+  Client::Response   _client_resp_header;
+  Client::Request    _client_req_header;
   Client::Connection _client_conn;
-  Client::URL _client_url;
-  Pristine::URL _pristine_url;
-  Server::Response _server_resp_header;
-  Server::Request _server_req_header;
+  Client::URL        _client_url;
+  Pristine::URL      _pristine_url;
+  Server::Response   _server_resp_header;
+  Server::Request    _server_req_header;
   Server::Connection _server_conn;
-  Cache::URL _cache_url;
-  Parent::URL _parent_url;
+  Cache::URL         _cache_url;
+  Parent::URL        _parent_url;
 
   // For the thread_local freelist
   static thread_local self_type *_contexts;
-  self_type *_next = nullptr;
+  self_type                     *_next = nullptr;
 }; // End class Context
 
 } // namespace Cript
