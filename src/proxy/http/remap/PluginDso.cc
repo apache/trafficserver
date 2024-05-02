@@ -28,7 +28,7 @@
  */
 
 #include "proxy/http/remap/PluginDso.h"
-#include "../../../iocore/eventsystem/P_Freer.h"
+#include "iocore/eventsystem/Freer.h"
 #include "../../../iocore/eventsystem/P_EventSystem.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"

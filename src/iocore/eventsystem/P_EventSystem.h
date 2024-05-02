@@ -34,12 +34,12 @@
 #include "tscore/ink_platform.h"
 
 #include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Freer.h"
 
 #include "P_Thread.h"
 #include "P_VIO.h"
 #include "P_IOBuffer.h"
 #include "P_VConnection.h"
-#include "P_Freer.h"
 #include "P_UnixEvent.h"
 #include "P_UnixEThread.h"
 #include "P_ProtectedQueue.h"
