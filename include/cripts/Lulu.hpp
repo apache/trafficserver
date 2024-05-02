@@ -391,12 +391,12 @@ template <std::size_t N> struct isStatic<char[N]> : std::true_type {
 };
 
 // Some helper functions, in the Cript:: generic namespace
-int random(int max);
+int                             random(int max);
 std::vector<Cript::string_view> splitter(Cript::string_view input, char delim);
-Cript::string hex(const Cript::string &str);
-Cript::string hex(Cript::string_view sv);
-Cript::string unhex(const Cript::string &str);
-Cript::string unhex(Cript::string_view sv);
+Cript::string                   hex(const Cript::string &str);
+Cript::string                   hex(Cript::string_view sv);
+Cript::string                   unhex(const Cript::string &str);
+Cript::string                   unhex(Cript::string_view sv);
 
 } // namespace Cript
 
@@ -435,10 +435,10 @@ class Control
 
 public:
   Cache cache;
-  Base logging{TS_HTTP_CNTL_LOGGING_MODE};
-  Base intercept{TS_HTTP_CNTL_INTERCEPT_RETRY_MODE};
-  Base debug{TS_HTTP_CNTL_TXN_DEBUG};
-  Base remap{TS_HTTP_CNTL_SKIP_REMAPPING};
+  Base  logging{TS_HTTP_CNTL_LOGGING_MODE};
+  Base  intercept{TS_HTTP_CNTL_INTERCEPT_RETRY_MODE};
+  Base  debug{TS_HTTP_CNTL_TXN_DEBUG};
+  Base  remap{TS_HTTP_CNTL_SKIP_REMAPPING};
 
 }; // End class Control
 

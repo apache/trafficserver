@@ -52,13 +52,13 @@ public:
   // This is crucial, we have to get the Txn pointer early on and preserve it.
   TSHttpTxn txnp;
   TSHttpSsn ssnp;
-  Error error;
-  Context *context; // Back to the owning context
+  Error     error;
+  Context  *context; // Back to the owning context
 
   // Keep track of which hook we're currently in. ToDo: Do we still need this with the
   // tests being moved out to the linter?
-  TSHttpHookID hook      = TS_HTTP_LAST_HOOK;
-  unsigned enabled_hooks = 0; // Which hooks are enabled, other than the mandatory ones
+  TSHttpHookID hook          = TS_HTTP_LAST_HOOK;
+  unsigned     enabled_hooks = 0; // Which hooks are enabled, other than the mandatory ones
 
   [[nodiscard]] bool
   aborted() const
