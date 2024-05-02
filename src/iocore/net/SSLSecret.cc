@@ -26,6 +26,7 @@
 #include "P_SSLConfig.h"
 
 #include <utility>
+#include <openssl/evp.h>
 
 namespace
 {
@@ -34,6 +35,20 @@ DbgCtl dbg_ctl_ssl_secret{"ssl_secret"};
 DbgCtl dbg_ctl_ssl_secret_err{"ssl_secret_err"};
 
 } // end anonymous namespace
+
+static void
+get_hash_str(const std::string &input, char hash_str[EVP_MAX_MD_SIZE * 2], unsigned int *hash_len)
+{
+  unsigned char hash[EVP_MAX_MD_SIZE];
+  EVP_Digest(input.c_str(), input.length(), hash, hash_len, EVP_md5(), nullptr);
+  for (unsigned int i = 0; i < *hash_len; i++) {
+    hash_str[i * 2]      = hash[i] >> 4;
+    hash_str[i * 2]     += hash_str[i * 2] < 10 ? '0' : 'a' - 10;
+    hash_str[i * 2 + 1]  = hash[i] & 0x0F;
+    hash_str[i * 2 + 1] += hash_str[i * 2 + 1] < 10 ? '0' : 'a' - 10;
+  }
+  *hash_len = *hash_len * 2;
+}
 
 // NOTE: The secret_map_mutex should not be held by the caller of this
 // function. The implementation of this function may call a plugin's
@@ -82,7 +97,13 @@ SSLSecret::loadFile(const std::string &name)
     Dbg(dbg_ctl_ssl_secret, "Loading file: %s failed ", name.c_str());
     return std::string{};
   }
-  Dbg(dbg_ctl_ssl_secret, "Secret data: %.50s", data.c_str());
+  if (is_debug_tag_set("ssl_secret")) {
+    char         hash_str[EVP_MAX_MD_SIZE * 2];
+    unsigned int hash_len;
+    get_hash_str(data, hash_str, &hash_len);
+    Dbg(dbg_ctl_ssl_secret, "Secret hash: %.*s", hash_len, hash_str);
+    Dbg(dbg_ctl_ssl_secret, "Secret data: %.50s", data.c_str());
+  }
   if (SSLConfigParams::load_ssl_file_cb) {
     SSLConfigParams::load_ssl_file_cb(name.c_str());
   }
@@ -112,7 +133,12 @@ SSLSecret::getSecret(const std::string &name) const
     return std::string{};
   }
   // The full secret data can be sensitive. Print only the first 50 bytes.
-  Dbg(dbg_ctl_ssl_secret, "Get secret for %s: %.50s", name.c_str(), iter->second.c_str());
+  if (is_debug_tag_set("ssl_secret")) {
+    char         hash_str[EVP_MAX_MD_SIZE * 2];
+    unsigned int hash_len;
+    get_hash_str(iter->second, hash_str, &hash_len);
+    Dbg(dbg_ctl_ssl_secret, "Get secret for %s: hash=%.*s %.50s", name.c_str(), hash_len, hash_str, iter->second.c_str());
+  }
   return iter->second;
 }
 
