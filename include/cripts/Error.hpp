@@ -113,6 +113,6 @@ public:
 
 private:
   Message _message;
-  Status _status;
-  bool _failed = false;
+  Status  _status;
+  bool    _failed = false;
 };

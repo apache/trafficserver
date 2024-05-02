@@ -70,9 +70,9 @@ public:
   void doRemap(Cript::Context *context) override;
 
 private:
-  Cript::string _cc = "";
-  int _dscp         = 0;
-  bool _force_cc    = false;
+  Cript::string _cc       = "";
+  int           _dscp     = 0;
+  bool          _force_cc = false;
 };
 
 } // namespace Bundle

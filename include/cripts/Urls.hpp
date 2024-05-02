@@ -142,8 +142,8 @@ class Url
 
   protected:
     mutable Cript::string_view _data;
-    Url *_owner  = nullptr;
-    bool _loaded = false;
+    Url                       *_owner  = nullptr;
+    bool                       _loaded = false;
 
   }; // End class Url::Component
 
@@ -160,7 +160,7 @@ public:
   public:
     Scheme() = default;
     Cript::string_view getSV() override;
-    self_type operator=(Cript::string_view scheme);
+    self_type          operator=(Cript::string_view scheme);
 
   }; // End class Url::Scheme
 
@@ -174,7 +174,7 @@ public:
   public:
     Host() = default;
     Cript::string_view getSV() override;
-    self_type operator=(Cript::string_view host);
+    self_type          operator=(Cript::string_view host);
 
   }; // End class Url::Host
 
@@ -199,8 +199,8 @@ public:
     self_type
     operator=(Cript::string_view str)
     {
-      uint32_t port = 80;
-      auto result   = std::from_chars(str.data(), str.data() + str.size(), port);
+      uint32_t port   = 80;
+      auto     result = std::from_chars(str.data(), str.data() + str.size(), port);
 
       if (result.ec != std::errc::invalid_argument) {
         return *this;
@@ -210,8 +210,8 @@ public:
     }
 
   private:
-    Url *_owner   = nullptr;
-    integer _port = -1;
+    Url    *_owner = nullptr;
+    integer _port  = -1;
   }; // End class Url::Port
 
   class Path : public Component
@@ -273,8 +273,8 @@ public:
         _ix    = ix;
       }
 
-      Path *_owner            = nullptr;
-      Segments::size_type _ix = 0;
+      Path               *_owner = nullptr;
+      Segments::size_type _ix    = 0;
 
     }; // End class Url::Path::String
 
@@ -286,9 +286,9 @@ public:
     void reset() override;
 
     Cript::string_view getSV() override;
-    Cript::string operator+=(Cript::string_view add);
-    self_type operator=(Cript::string_view path);
-    String operator[](Segments::size_type ix);
+    Cript::string      operator+=(Cript::string_view add);
+    self_type          operator=(Cript::string_view path);
+    String             operator[](Segments::size_type ix);
 
     void
     erase(Segments::size_type ix)
@@ -325,9 +325,9 @@ public:
   private:
     void _parser();
 
-    bool _modified = false;
-    Segments _segments;                 // Lazy loading on this
-    Cript::string _storage;             // Used when recombining the segments into a full path
+    bool                     _modified = false;
+    Segments                 _segments; // Lazy loading on this
+    Cript::string            _storage;  // Used when recombining the segments into a full path
     Cript::string::size_type _size = 0; // Mostly a guestimate for managing _storage
 
   }; // End class Url::Path
@@ -402,7 +402,7 @@ public:
         _owner = owner;
       }
 
-      Query *_owner = nullptr;
+      Query             *_owner = nullptr;
       Cript::string_view _name;
 
     }; // End class Url::Query::Parameter
@@ -422,10 +422,10 @@ public:
     void reset() override;
 
     Cript::string_view getSV() override;
-    self_type operator=(Cript::string_view query);
-    Cript::string operator+=(Cript::string_view add);
-    Parameter operator[](Cript::string_view param);
-    void erase(Cript::string_view param);
+    self_type          operator=(Cript::string_view query);
+    Cript::string      operator+=(Cript::string_view add);
+    Parameter          operator[](Cript::string_view param);
+    void               erase(Cript::string_view param);
 
     void
     erase(std::initializer_list<Cript::string_view> list)
@@ -469,9 +469,9 @@ public:
   private:
     void _parser();
 
-    bool _modified = false;
+    bool          _modified = false;
     OrderedParams _ordered;             // Ordered vector of all parameters, can be sorted etc.
-    HashParams _hashed;                 // Unordered map to go from "name" to the query parameter
+    HashParams    _hashed;              // Unordered map to go from "name" to the query parameter
     Cript::string _storage;             // Used when recombining the query params into a
                                         // full query string
     Cript::string::size_type _size = 0; // Mostly a guesttimate
@@ -519,11 +519,11 @@ public:
   // Getters / setters for the full URL
   Cript::string url() const;
 
-  Host host;
+  Host   host;
   Scheme scheme;
-  Path path;
-  Query query;
-  Port port;
+  Path   path;
+  Query  query;
+  Port   port;
 
 protected:
   void
@@ -533,13 +533,13 @@ protected:
     host._owner = path._owner = scheme._owner = query._owner = port._owner = this;
   }
 
-  TSMBuffer _bufp = nullptr;            // These two gets setup via initializing, pointing
-                                        // to appropriate headers
-  TSMLoc _hdr_loc            = nullptr; // Do not release any of this within the URL classes!
-  TSMLoc _urlp               = nullptr; // This is owned by us.
-  Cript::Transaction *_state = nullptr; // Pointer into the owning Context's State
-  bool _modified             = false;   // We have pending changes on the path components or
-                                        // query parameters?
+  TSMBuffer _bufp = nullptr;               // These two gets setup via initializing, pointing
+                                           // to appropriate headers
+  TSMLoc              _hdr_loc  = nullptr; // Do not release any of this within the URL classes!
+  TSMLoc              _urlp     = nullptr; // This is owned by us.
+  Cript::Transaction *_state    = nullptr; // Pointer into the owning Context's State
+  bool                _modified = false;   // We have pending changes on the path components or
+                                           // query parameters?
 
 }; // End class Url
 
@@ -582,7 +582,7 @@ public:
   }
 
   static URL &_get(Cript::Context *context);
-  bool _update(Cript::Context *context);
+  bool        _update(Cript::Context *context);
 
 private:
   void _initialize(Cript::Context *context);
@@ -604,7 +604,7 @@ public:
   void operator=(const URL &) = delete;
 
   static URL &_get(Cript::Context *context);
-  bool _update(Cript::Context *context);
+  bool        _update(Cript::Context *context);
 
 private:
   void
@@ -633,7 +633,7 @@ public:
   void operator=(const URL &) = delete;
 
   static URL &_get(Cript::Context *context);
-  bool _update(Cript::Context *context);
+  bool        _update(Cript::Context *context);
 
 private:
   void

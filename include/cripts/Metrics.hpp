@@ -108,8 +108,8 @@ protected:
 
 private:
   ts::Metrics::AtomicType *_metric = nullptr;
-  Cript::string _name              = "unknown";
-  detail::MetricID _id             = ts::Metrics::NOT_FOUND;
+  Cript::string            _name   = "unknown";
+  detail::MetricID         _id     = ts::Metrics::NOT_FOUND;
 }; // class BaseMetrics
 
 } // namespace detail
@@ -146,7 +146,7 @@ public:
   create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
-    auto id   = ts::Metrics::Counter::create(name);
+    auto  id  = ts::Metrics::Counter::create(name);
 
     ret->_initialize(id);
 
@@ -167,7 +167,7 @@ public:
   create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
-    auto id   = ts::Metrics::Gauge::create(name);
+    auto  id  = ts::Metrics::Gauge::create(name);
 
     ret->_initialize(id);
 

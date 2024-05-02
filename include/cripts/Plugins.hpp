@@ -54,7 +54,7 @@ public:
 
 private:
   RemapPluginInst *_plugin = nullptr;
-  bool _valid              = false;
+  bool             _valid  = false;
 }; // End class Plugin::Remap
 
 } // namespace Plugin

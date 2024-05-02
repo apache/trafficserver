@@ -60,7 +60,7 @@ namespace Line
     }
 
   private:
-    File::Path _path;
+    File::Path    _path;
     std::ifstream _stream;
   }; // namespace Reader
 
