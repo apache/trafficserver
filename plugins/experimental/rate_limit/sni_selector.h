@@ -41,7 +41,7 @@ public:
   using IPReputations = std::vector<IpReputation::SieveLru *>;
   using Lists         = std::vector<List::IP *>;
 
-  SniSelector() = default;
+  SniSelector() { Dbg(dbg_ctl, "Creating SNI selector"); }
 
   SniSelector(self_type &&)               = delete;
   self_type &operator=(const self_type &) = delete;
@@ -49,6 +49,7 @@ public:
 
   virtual ~SniSelector()
   {
+    Dbg(dbg_ctl, "Destroying SNI selector");
     if (_queue_action) {
       TSActionCancel(_queue_action);
     }

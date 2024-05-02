@@ -26,8 +26,11 @@
 class TxnRateLimiter : public RateLimiter<TSHttpTxn>
 {
 public:
+  TxnRateLimiter() { Dbg(dbg_ctl, "Creating txn rate limiter"); }
+
   ~TxnRateLimiter() override
   {
+    Dbg(dbg_ctl, "Destroying txn rate limiter");
     if (_action) {
       TSActionCancel(_action);
     }

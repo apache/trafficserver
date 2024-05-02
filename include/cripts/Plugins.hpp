@@ -31,14 +31,25 @@ class Remap
   using self_type = Remap;
 
 public:
-  Remap()              = default;
-  Remap(Remap &&)      = default;
+  Remap() = default;
+
+  Remap(Remap &&other)
+  {
+    _plugin       = other._plugin;
+    _valid        = other._valid;
+    other._plugin = nullptr;
+  }
+
   Remap(const Remap &) = delete;
+
+  ~Remap() { cleanup(); }
 
   Remap &operator=(Remap &&)      = default;
   Remap &operator=(const Remap &) = delete;
 
   void _runRemap(Cript::Context *context);
+
+  void cleanup();
 
   [[nodiscard]] bool
   valid() const
