@@ -72,6 +72,15 @@ Plugin::Remap::create(const std::string &tag, const std::string &plugin, const C
 }
 
 void
+Plugin::Remap::cleanup()
+{
+  if (_plugin) {
+    _plugin->done();
+    _plugin = nullptr;
+  }
+}
+
+void
 Plugin::Remap::_runRemap(Cript::Context *context)
 {
   _plugin->doRemap(context->state.txnp, context->rri);

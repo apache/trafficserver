@@ -450,6 +450,8 @@ TSRemapDeleteInstance(void *ih)
     wrap_delete_instance(&context, true, CaseArg);
   }
 
+  inst->debug("Deleted an instance for Cript = {}", inst->plugin_debug_tag);
+
   delete inst;
 }
 
