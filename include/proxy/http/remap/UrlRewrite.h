@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "iocore/eventsystem/Freer.h"
 #include "tscore/ink_config.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
