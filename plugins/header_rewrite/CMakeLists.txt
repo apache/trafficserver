@@ -38,7 +38,7 @@ target_link_libraries(header_rewrite_parser PUBLIC libswoc::libswoc)
 
 target_link_libraries(
   header_rewrite
-  PRIVATE PCRE::PCRE
+  PRIVATE ts::tscore PCRE::PCRE
   PUBLIC libswoc::libswoc
 )
 
@@ -52,7 +52,7 @@ if(BUILD_TESTING)
   add_executable(test_header_rewrite header_rewrite_test.cc)
   add_test(NAME test_header_rewrite COMMAND $<TARGET_FILE:test_header_rewrite>)
 
-  target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser)
+  target_link_libraries(test_header_rewrite PRIVATE header_rewrite_parser ts::inkevent ts::tscore)
 
   if(maxminddb_FOUND)
     target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)

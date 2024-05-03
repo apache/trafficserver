@@ -75,6 +75,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetBody();
   } else if (op == "set-http-cntl") {
     o = new OperatorSetHttpCntl();
+  } else if (op == "run-plugin") {
+    o = new OperatorRunPlugin();
 
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());

@@ -775,6 +775,14 @@ changing the remapped destination, ``<part>`` should be used to indicate the
 component that is being modified (see `URL Parts`_). Currently the only valid
 parts for rm-destination are QUERY, PATH, and PORT.
 
+run-plugin
+~~~~~~~~~~~~~~
+::
+
+  run-plugin <plugin-name>.so "<plugin-argument> ..."
+
+This allows to run an existing remap plugin, conditionally, from within a
+header rewrite rule.
 
 set-header
 ~~~~~~~~~~
@@ -1350,3 +1358,13 @@ the client where the requested data was served from.::
    cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
    cond %{CACHE} ="hit-fresh"
    set-header ATS-SRVR-UUID %{ID:UNIQUE}
+
+Apply rate limiting for some select requests
+------------------------------------
+
+This rule will conditiionally, based on the client request headers, apply rate
+limiting to the request.::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
+   run-plugin rate_limit.so "--limit=300 --error=429"
