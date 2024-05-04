@@ -35,6 +35,8 @@ namespace
 
 DbgCtl dbg_ctl_iocore_net{"iocore_net"};
 DbgCtl dbg_ctl_iocore_net_accept_start{"iocore_net_accept_start"};
+DbgCtl dbg_ctl_iocore_net_accepts{"iocore_net_accepts"};
+DbgCtl dbg_ctl_iocore_net_accept{"iocore_net_accept"};
 
 /** Check and handle if the number of client connections exceeds the configured max.
  *
@@ -56,7 +58,7 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
       inbound_tracker.release();
       inbound_tracker.blocked();
       inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, addr,
-                                   is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
+                                   dbg_ctl_iocore_net_accept.on() ? &dbg_ctl_iocore_net_accept : nullptr);
       Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
       return false;
     }
@@ -176,7 +178,7 @@ Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  Dbg(dbg_ctl_iocore_net_accepts, "exited accept loop - count: %d, limit: %d", count, additional_accepts);
   if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(na);
   }
@@ -601,7 +603,7 @@ Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  Dbg(dbg_ctl_iocore_net_accepts, "exited accept loop - count: %d, limit: %d", count, additional_accepts);
   if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(this);
   }

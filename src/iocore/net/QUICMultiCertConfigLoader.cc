@@ -32,9 +32,6 @@
 #include "tscore/Filenames.h"
 // #include "iocore/net/quic/QUICGlobals.h"
 
-#define QUICConfDebug(fmt, ...)         Debug("quic_conf", fmt, ##__VA_ARGS__)
-#define QUICGlobalQCDebug(qc, fmt, ...) Debug("quic_global", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
-
 int QUICCertConfig::_config_id = 0;
 
 //

@@ -2237,7 +2237,7 @@ SSLNetVConnection::_getNetProcessor()
 void
 SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t)
 {
-  Debug("ssl", "allow-plain, handshake buffer ready to read=%" PRId64, this->handShakeHolder->read_avail());
+  Dbg(dbg_ctl_ssl, "allow-plain, handshake buffer ready to read=%" PRId64, this->handShakeHolder->read_avail());
   // Take ownership of the handShake buffer
   this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
   NetState *s              = &target->read;
@@ -2287,7 +2287,7 @@ SSLNetVConnection::_migrateFromSSL()
   ink_assert(newvc != nullptr);
   if (newvc != nullptr && newvc->populate(hold_con, this->read.vio.cont, nullptr) != EVENT_DONE) {
     newvc->do_io_close();
-    Debug("ssl", "Failed to populate unixvc for allow-plain");
+    Dbg(dbg_ctl_ssl, "Failed to populate unixvc for allow-plain");
     newvc = nullptr;
   }
   if (newvc != nullptr) {
@@ -2295,7 +2295,7 @@ SSLNetVConnection::_migrateFromSSL()
     newvc->set_is_transparent(this->is_transparent);
     newvc->set_context(get_context());
     newvc->options = this->options;
-    Debug("ssl", "Move to unixvc for allow-plain");
+    Dbg(dbg_ctl_ssl, "Move to unixvc for allow-plain");
     this->_propagateHandShakeBuffer(newvc, t);
   }
 

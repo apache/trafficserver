@@ -45,6 +45,12 @@
 
 ClassAllocator<OneWayTunnel> OneWayTunnelAllocator("OneWayTunnelAllocator");
 
+namespace
+{
+DbgCtl dbg_ctl_one_way_tunnel{"one_way_tunnel"};
+
+} // end anonymous namespace
+
 inline void
 transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 {
@@ -131,7 +137,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
     size_index = BUFFER_SIZE_INDEX_32K;
   }
 
-  Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
+  Dbg(dbg_ctl_one_way_tunnel, "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
 
   // enqueue read request on vcSource.
   MIOBuffer *buf1 = new_MIOBuffer(size_index);

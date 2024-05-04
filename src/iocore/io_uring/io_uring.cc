@@ -37,6 +37,12 @@ using ts::Metrics;
 
 std::atomic<int> main_wq_fd;
 
+namespace
+{
+DbgCtl dbg_ctl_io_uring{"io_uring"};
+
+} // end anonymous namespace
+
 IOUringConfig IOUringContext::config;
 
 struct IOUringStatsBlock {
@@ -78,12 +84,12 @@ IOUringContext::IOUringContext()
   int ret = io_uring_queue_init_params(config.queue_entries, &ring, &p);
   if (ret < 0) {
     char *err = strerror(-ret);
-    Debug("io_uring", "io_uring_queue_init_params failed: (%d) %s", -ret, err);
+    Dbg(dbg_ctl_io_uring, "io_uring_queue_init_params failed: (%d) %s", -ret, err);
     ring.ring_fd = -1;
   } else {
     /* no sharing for non-fixed either */
     if (config.sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
-      Debug("io_uring", "No SQPOLL sharing with nonfixed");
+      Dbg(dbg_ctl_io_uring, "No SQPOLL sharing with nonfixed");
     }
   }
 

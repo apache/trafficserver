@@ -62,6 +62,10 @@ constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 
 const swoc::bwf::Spec ADDR_ONLY_FMT{"::a"};
 
+DbgCtl dbg_ctl_proxyprotocol_v1{"proxyprotocol_v1"};
+DbgCtl dbg_ctl_proxyprotocol_v2{"proxyprotocol_v2"};
+DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
+
 struct PPv2Hdr {
   uint8_t  sig[12]; ///< preface
   uint8_t  ver_cmd; ///< protocol version and command
@@ -103,12 +107,12 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   // Find the terminating newline
   swoc::TextView::size_type pos = hdr.find('\n');
   if (pos == hdr.npos) {
-    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: LF not found");
+    Dbg(dbg_ctl_proxyprotocol_v1, "ssl_has_proxy_v1: LF not found");
     return 0;
   }
 
   if (hdr[pos - 1] != '\r') {
-    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: CR not found");
+    Dbg(dbg_ctl_proxyprotocol_v1, "ssl_has_proxy_v1: CR not found");
     return 0;
   }
 
@@ -119,15 +123,15 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   // The header should begin with the PROXY preface
   token = hdr.split_prefix_at(' ');
   if (0 == token.size() || token != PPv1_CONNECTION_PREFACE) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: header [%.*s] does not start with preface [%.*s]", static_cast<int>(hdr.size()),
-          hdr.data(), static_cast<int>(PPv1_CONNECTION_PREFACE.size()), PPv1_CONNECTION_PREFACE.data());
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: header [%.*s] does not start with preface [%.*s]",
+        static_cast<int>(hdr.size()), hdr.data(), static_cast<int>(PPv1_CONNECTION_PREFACE.size()), PPv1_CONNECTION_PREFACE.data());
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = PREFACE", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = PREFACE", static_cast<int>(token.size()), token.data());
 
   // The INET protocol family - TCP4, TCP6 or UNKNOWN
   if (hdr.starts_with(PPv1_PROTO_UNKNOWN)) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: [UNKNOWN] = INET Family");
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [UNKNOWN] = INET Family");
 
     // Ignore anything presented before the CRLF
     pp_info->version = ProxyProtocolVersion::V1;
@@ -150,7 +154,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   } else {
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = INET Family", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = INET Family", static_cast<int>(token.size()), token.data());
 
   // Next up is the layer 3 source address
   // - 255.255.255.255 or ffff:f...f:ffff ffff:f...f:fff
@@ -158,7 +162,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   if (0 == token.size()) {
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Source Address", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Source Address", static_cast<int>(token.size()), token.data());
   if (0 != ats_ip_pton(token, &pp_info->src_addr)) {
     return 0;
   }
@@ -169,7 +173,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   if (0 == token.size()) {
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Destination Address", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Destination Address", static_cast<int>(token.size()), token.data());
   if (0 != ats_ip_pton(token, &pp_info->dst_addr)) {
     return 0;
   }
@@ -179,12 +183,12 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   if (0 == token.size()) {
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Source Port", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Source Port", static_cast<int>(token.size()), token.data());
 
   in_port_t src_port = swoc::svtoi(token);
   if (src_port == 0) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", src_port,
-          static_cast<int>(token.size()), token.data());
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", src_port,
+        static_cast<int>(token.size()), token.data());
     return 0;
   }
   pp_info->src_addr.network_order_port() = htons(src_port);
@@ -195,12 +199,12 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   if (0 == token.size() || token.find(0x20) != token.npos) {
     return 0;
   }
-  Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Destination Port", static_cast<int>(token.size()), token.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Destination Port", static_cast<int>(token.size()), token.data());
 
   in_port_t dst_port = swoc::svtoi(token);
   if (dst_port == 0) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", dst_port,
-          static_cast<int>(token.size()), token.data());
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", dst_port,
+        static_cast<int>(token.size()), token.data());
     return 0;
   }
   pp_info->dst_addr.network_order_port() = htons(dst_port);
@@ -354,7 +358,7 @@ proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
     bw.commit(len);
   }
 
-  Debug("proxyprotocol_v1", "Proxy Protocol v1: %.*s", static_cast<int>(bw.size()), bw.data());
+  Dbg(dbg_ctl_proxyprotocol_v1, "Proxy Protocol v1: %.*s", static_cast<int>(bw.size()), bw.data());
   bw.write("\r\n");
 
   return bw.size();
@@ -440,7 +444,7 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
   // Set len field (number of following bytes part of the header) in the hdr
   uint16_t len = htons(bw.size() - PPv2_CONNECTION_HEADER_LEN);
   memcpy(buf + len_field_offset, &len, sizeof(uint16_t));
-  Debug("proxyprotocol_v2", "Proxy Protocol v2 of %zu bytes", bw.size());
+  Dbg(dbg_ctl_proxyprotocol_v2, "Proxy Protocol v2 of %zu bytes", bw.size());
   return bw.size();
 }
 
@@ -463,7 +467,7 @@ proxy_protocol_parse(ProxyProtocol *pp_info, swoc::TextView tv)
   } else {
     // if we don't have the PROXY preface, we don't have a ProxyProtocol header
     // TODO: print hexdump of buffer safely
-    Debug("proxyprotocol", "failed to find ProxyProtocol preface in the first %zu bytes", tv.size());
+    Dbg(dbg_ctl_proxyprotocol, "failed to find ProxyProtocol preface in the first %zu bytes", tv.size());
   }
 
   return len;

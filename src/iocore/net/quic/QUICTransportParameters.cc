@@ -73,7 +73,7 @@ QUICTransportParameters::Value::len() const
 QUICTransportParameters::QUICTransportParameters(const uint8_t *buf, size_t len, QUICVersion version)
 {
   this->_load(buf, len, version);
-  if (is_debug_tag_set(tag)) {
+  if (dbg_ctl_tag.on()) {
     this->_print();
   }
 }
@@ -140,7 +140,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion versi
   // Validate parameters
   int res = this->_validate_parameters(version);
   if (res < 0) {
-    Debug(tag, "Transport parameter is not valid (err=%d)", res);
+    Dbg(dbg_ctl, "Transport parameter is not valid (err=%d)", res);
     this->_valid = false;
   } else {
     this->_valid = true;
@@ -262,7 +262,7 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 
   *len = (p - buf);
 
-  if (is_debug_tag_set(tag)) {
+  if (dbg_ctl_tag.on()) {
     this->_print();
   }
 }
@@ -272,17 +272,18 @@ QUICTransportParameters::_print() const
 {
   for (auto &p : this->_parameters) {
     if (p.second->len() == 0) {
-      Debug(tag, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
+      Dbg(dbg_ctl, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
     } else if (p.second->len() <= 8) {
       uint64_t int_value;
       size_t   int_value_len;
       QUICVariableInt::decode(int_value, int_value_len, p.second->data(), p.second->len());
-      Debug(tag, "%s (%" PRIu32 "): 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
-            static_cast<uint16_t>(p.first), int_value, int_value);
+      Dbg(dbg_ctl, "%s (%" PRIu32 "): 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
+          static_cast<uint16_t>(p.first), int_value, int_value);
     } else if (p.second->len() <= 24) {
       char hex_str[65];
       to_hex_str(hex_str, sizeof(hex_str), p.second->data(), p.second->len());
-      Debug(tag, "%s (%" PRIu32 "): %s", QUICDebugNames::transport_parameter_id(p.first), static_cast<uint16_t>(p.first), hex_str);
+      Dbg(dbg_ctl, "%s (%" PRIu32 "): %s", QUICDebugNames::transport_parameter_id(p.first), static_cast<uint16_t>(p.first),
+          hex_str);
     } else if (QUICTransportParameterId::PREFERRED_ADDRESS == p.first) {
       QUICPreferredAddress pref_addr(p.second->data(), p.second->len());
       char                 token_hex_str[QUICStatelessResetToken::LEN * 2 + 1];
@@ -291,11 +292,11 @@ QUICTransportParameters::_print() const
       to_hex_str(token_hex_str, sizeof(token_hex_str), pref_addr.token().buf(), QUICStatelessResetToken::LEN);
       ats_ip_nptop(pref_addr.endpoint_ipv4(), ep_ipv4_hex_str, sizeof(ep_ipv4_hex_str));
       ats_ip_nptop(pref_addr.endpoint_ipv6(), ep_ipv6_hex_str, sizeof(ep_ipv6_hex_str));
-      Debug(tag, "%s: Endpoint(IPv4)=%s, Endpoint(IPv6)=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first),
-            ep_ipv4_hex_str, ep_ipv6_hex_str, pref_addr.cid().hex().c_str(), token_hex_str);
+      Dbg(dbg_ctl, "%s: Endpoint(IPv4)=%s, Endpoint(IPv6)=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first),
+          ep_ipv4_hex_str, ep_ipv6_hex_str, pref_addr.cid().hex().c_str(), token_hex_str);
     } else {
-      Debug(tag, "%s (%" PRIu32 "): (%u byte data)", QUICDebugNames::transport_parameter_id(p.first),
-            static_cast<uint16_t>(p.first), p.second->len());
+      Dbg(dbg_ctl, "%s (%" PRIu32 "): (%u byte data)", QUICDebugNames::transport_parameter_id(p.first),
+          static_cast<uint16_t>(p.first), p.second->len());
     }
   }
 }

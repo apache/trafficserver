@@ -86,15 +86,15 @@ NetVCTest::~NetVCTest()
   mutex = nullptr;
 
   if (read_buffer) {
-    Debug(debug_tag, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
-          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+    Dbg(dbg_ctl, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
+        (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
   }
 
   if (write_buffer) {
-    Debug(debug_tag, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
-          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+    Dbg(dbg_ctl, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
+        (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
     free_MIOBuffer(write_buffer);
     write_buffer = nullptr;
   }
@@ -109,7 +109,7 @@ NetVCTest::init_test(NetVcTestType_t c_type, NetTestDriver *driver_arg, NetVConn
   test_vc        = nvc;
   regress        = robj;
   module_name    = module_name_arg;
-  debug_tag      = debug_tag_arg;
+  dbg_ctl        = DbgCtl{debug_tag_arg};
 
   bytes_to_send = my_def->bytes_to_send;
   bytes_to_read = my_def->bytes_to_read;
@@ -206,7 +206,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
       }
     }
 
-    Debug(debug_tag, "consume_&_check: read %d, to_read %d", actual_bytes_read, bytes_to_read);
+    Dbg(dbg_ctl, "consume_&_check: read %d, to_read %d", actual_bytes_read, bytes_to_read);
     r->consume(b_consumed);
   }
 
@@ -270,7 +270,7 @@ NetVCTest::finished()
 void
 NetVCTest::write_handler(int event)
 {
-  Debug(debug_tag, "write_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+  Dbg(dbg_ctl, "write_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
 
   switch (event) {
   case VC_EVENT_WRITE_READY:
@@ -303,7 +303,7 @@ NetVCTest::write_handler(int event)
 void
 NetVCTest::read_handler(int event)
 {
-  Debug(debug_tag, "read_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+  Dbg(dbg_ctl, "read_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
 
   switch (event) {
   case VC_EVENT_READ_READY:

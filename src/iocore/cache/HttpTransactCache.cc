@@ -36,12 +36,20 @@
 #include "tscore/InkErrno.h"
 #include "tscore/ink_time.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http_match{"http_match"};
+DbgCtl dbg_ctl_http_seq{"http_seq"};
+DbgCtl dbg_ctl_http_alts{"http_alts"};
+DbgCtl dbg_ctl_http_alternate{"http_alternate"};
+DbgCtl dbg_ctl_http_age{"http_age"};
+
 /**
   Find the pointer and length of an etag, after stripping off any leading
   "W/" prefix, and surrounding double quotes.
 
 */
-inline static const char *
+inline const char *
 find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
 {
   const char *quote;
@@ -72,7 +80,7 @@ find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
   string field_to_match, using strong rules.
 
 */
-inline static bool
+inline bool
 do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
                           int comma_sep_tag_list_len)
 {
@@ -112,7 +120,7 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
   string field_to_match, using weak rules.
 
 */
-inline static bool
+inline bool
 do_strings_match_weakly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
                         int comma_sep_tag_list_len)
 {
@@ -143,17 +151,19 @@ do_strings_match_weakly(const char *raw_tag_field, int raw_tag_field_len, const 
   return false;
 }
 
-inline static bool
+inline bool
 is_asterisk(char *s)
 {
   return ((s[0] == '*') && (s[1] == NUL));
 }
 
-inline static bool
+inline bool
 is_empty(char *s)
 {
   return (s[0] == NUL);
 }
+
+} // end anonymous namespace
 
 /**
   Given a set of alternates, select the best match.
@@ -182,9 +192,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     return -1;
   }
 
-  Debug("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
-  Debug("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
-  if (is_debug_tag_set("http_alts")) {
+  Dbg(dbg_ctl_http_match, "[SelectFromAlternates] # alternates = %d", alt_count);
+  Dbg(dbg_ctl_http_seq, "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
+  if (dbg_ctl_http_alts.on()) {
     fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
   }
 
@@ -220,7 +230,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
         current_age = static_cast<time_t>(0);
       }
 
-      if (is_debug_tag_set("http_alts")) {
+      if (dbg_ctl_http_alts.on()) {
         fprintf(stderr, "[alts] ---- alternate #%d (Q = %g) has these request/response hdrs:\n", i + 1, Q);
         char b[4096];
         int  used, tmp, offset;
@@ -254,8 +264,8 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
       }
     }
   }
-  Debug("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
-  if (is_debug_tag_set("http_alts")) {
+  Dbg(dbg_ctl_http_seq, "[SelectFromAlternates] Chosen alternate # %d", best_index);
+  if (dbg_ctl_http_alts.on()) {
     fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index);
   }
 
@@ -347,7 +357,7 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
 
       // absence in both requests counts as exact match
       if (accept_field == nullptr && cached_accept_field == nullptr) {
-        Debug("http_alternate", "Exact match for ACCEPT CHARSET (not in request nor cache)");
+        Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT CHARSET (not in request nor cache)");
         q[1] = 1.001; // slightly higher weight to this guy
       } else {
         q[1] = calculate_quality_of_accept_charset_match(accept_field, content_field, cached_accept_field);
@@ -366,7 +376,7 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
 
         // absence in both requests counts as exact match
         if (accept_field == nullptr && cached_accept_field == nullptr) {
-          Debug("http_alternate", "Exact match for ACCEPT ENCODING (not in request nor cache)");
+          Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT ENCODING (not in request nor cache)");
           q[2] = 1.001; // slightly higher weight to this guy
         } else {
           q[2] = calculate_quality_of_accept_encoding_match(accept_field, content_field, cached_accept_field);
@@ -385,7 +395,7 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
 
           // absence in both requests counts as exact match
           if (accept_field == nullptr && cached_accept_field == nullptr) {
-            Debug("http_alternate", "Exact match for ACCEPT LANGUAGE (not in request nor cache)");
+            Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT LANGUAGE (not in request nor cache)");
             q[3] = 1.001; // slightly higher weight to this guy
           } else {
             q[3] = calculate_quality_of_accept_language_match(accept_field, content_field, cached_accept_field);
@@ -398,24 +408,24 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
   // final quality is minimum Q, or -1, if some match failed //
   Q = ((q[0] < 0) || (q[1] < 0) || (q[2] < 0) || (q[3] < 0)) ? -1.0 : q[0] * q[1] * q[2] * q[3];
 
-  Debug("http_match", "    CalcQualityOfMatch: Accept match = %g", q[0]);
-  Debug("http_seq", "    CalcQualityOfMatch: Accept match = %g", q[0]);
-  Debug("http_alternate", "Content-Type and Accept %f", q[0]);
+  Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: Accept match = %g", q[0]);
+  Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: Accept match = %g", q[0]);
+  Dbg(dbg_ctl_http_alternate, "Content-Type and Accept %f", q[0]);
 
-  Debug("http_match", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
-  Debug("http_seq", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
-  Debug("http_alternate", "Content-Type and Accept-Charset %f", q[1]);
+  Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
+  Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
+  Dbg(dbg_ctl_http_alternate, "Content-Type and Accept-Charset %f", q[1]);
 
-  Debug("http_match", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
-  Debug("http_seq", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
-  Debug("http_alternate", "Content-Encoding and Accept-Encoding %f", q[2]);
+  Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
+  Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
+  Dbg(dbg_ctl_http_alternate, "Content-Encoding and Accept-Encoding %f", q[2]);
 
-  Debug("http_match", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
-  Debug("http_seq", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
-  Debug("http_alternate", "Content-Language and Accept-Language %f", q[3]);
+  Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
+  Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
+  Dbg(dbg_ctl_http_alternate, "Content-Language and Accept-Language %f", q[3]);
 
-  Debug("http_alternate", "Mult's Quality Factor: %f", Q);
-  Debug("http_alternate", "----------End of Alternate----------");
+  Dbg(dbg_ctl_http_alternate, "Mult's Quality Factor: %f", Q);
+  Dbg(dbg_ctl_http_alternate, "----------End of Alternate----------");
 
   int force_alt = 0;
 
@@ -463,10 +473,10 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
       Q = -1.0;
     }
 
-    Debug("http_match", "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
-    Debug("http_seq", "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
-    Debug("http_match", "    CalcQualityOfMatch: Returning final Q = %g", Q);
-    Debug("http_seq", "    CalcQualityOfMatch: Returning final Q = %g", Q);
+    Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
+    Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
+    Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: Returning final Q = %g", Q);
+    Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: Returning final Q = %g", Q);
   }
 
   return Q;
@@ -550,7 +560,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
     char a_type[32], a_subtype[32];
     HttpCompat::parse_mime_type(a_param->str, a_type, a_subtype, sizeof(a_type), sizeof(a_subtype));
 
-    Debug("http_match", "matching Content-type; '%s/%s' with Accept value '%s/%s'\n", c_type, c_subtype, a_type, a_subtype);
+    Dbg(dbg_ctl_http_match, "matching Content-type; '%s/%s' with Accept value '%s/%s'\n", c_type, c_subtype, a_type, a_subtype);
 
     bool wildcard_found = true;
     // Only do wildcard checks if the content type is not image/webp
@@ -646,17 +656,17 @@ HttpTransactCache::calculate_document_age(ink_time_t request_time, ink_time_t re
     current_age            = corrected_initial_age + resident_time;
   }
 
-  Debug("http_age", "[calculate_document_age] age_value:              %" PRId64, (int64_t)age_value);
-  Debug("http_age", "[calculate_document_age] date_value:             %" PRId64, (int64_t)date_value);
-  Debug("http_age", "[calculate_document_age] response_time:          %" PRId64, (int64_t)response_time);
-  Debug("http_age", "[calculate_document_age] now:                    %" PRId64, (int64_t)now);
-  Debug("http_age", "[calculate_document_age] now (fixed):            %" PRId64, (int64_t)now_value);
-  Debug("http_age", "[calculate_document_age] apparent_age:           %" PRId64, (int64_t)apparent_age);
-  Debug("http_age", "[calculate_document_age] corrected_received_age: %" PRId64, (int64_t)corrected_received_age);
-  Debug("http_age", "[calculate_document_age] response_delay:         %" PRId64, (int64_t)response_delay);
-  Debug("http_age", "[calculate_document_age] corrected_initial_age:  %" PRId64, (int64_t)corrected_initial_age);
-  Debug("http_age", "[calculate_document_age] resident_time:          %" PRId64, (int64_t)resident_time);
-  Debug("http_age", "[calculate_document_age] current_age:            %" PRId64, (int64_t)current_age);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] age_value:              %" PRId64, (int64_t)age_value);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] date_value:             %" PRId64, (int64_t)date_value);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] response_time:          %" PRId64, (int64_t)response_time);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] now:                    %" PRId64, (int64_t)now);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] now (fixed):            %" PRId64, (int64_t)now_value);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] apparent_age:           %" PRId64, (int64_t)apparent_age);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] corrected_received_age: %" PRId64, (int64_t)corrected_received_age);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] response_delay:         %" PRId64, (int64_t)response_delay);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] corrected_initial_age:  %" PRId64, (int64_t)corrected_initial_age);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] resident_time:          %" PRId64, (int64_t)resident_time);
+  Dbg(dbg_ctl_http_age, "[calculate_document_age] current_age:            %" PRId64, (int64_t)current_age);
 
   return current_age;
 }
@@ -705,7 +715,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     a_raw  = accept_field->value_get(&a_raw_len);
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
-      Debug("http_alternate", "Exact match for ACCEPT CHARSET");
+      Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT CHARSET");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
@@ -917,7 +927,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
     a_raw  = accept_field->value_get(&a_raw_len);
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
-      Debug("http_alternate", "Exact match for ACCEPT ENCODING");
+      Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT ENCODING");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
@@ -928,8 +938,8 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   }
   // if no Content-Encoding, treat as "identity" //
   if (!content_field) {
-    Debug("http_match", "[calculate_quality_accept_encoding_match]: "
-                        "response hdr does not have content-encoding.");
+    Dbg(dbg_ctl_http_match, "[calculate_quality_accept_encoding_match]: "
+                            "response hdr does not have content-encoding.");
     is_identity_encoding = true;
   } else {
     // TODO: Should we check the return value (count) here?
@@ -1143,7 +1153,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_
     a_raw  = accept_field->value_get(&a_raw_len);
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
-      Debug("http_alternate", "Exact match for ACCEPT LANGUAGE");
+      Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT LANGUAGE");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
@@ -1159,8 +1169,8 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_
     if (match_accept_content_language("identity", accept_field, &wildcard_present, &wildcard_q, &q, &a_range_length)) {
       goto language_wildcard;
     }
-    Debug("http_match", "[calculate_quality_accept_language_match]: "
-                        "response hdr does not have content-language.");
+    Dbg(dbg_ctl_http_match, "[calculate_quality_accept_language_match]: "
+                            "response hdr does not have content-language.");
     return (1.0);
   }
 
@@ -1213,8 +1223,8 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
     StrList vary_list;
 
     if (obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list) > 0) {
-      if (is_debug_tag_set("http_match") && vary_list.head) {
-        Debug("http_match", "Vary list of %d elements", vary_list.count);
+      if (dbg_ctl_http_match.on() && vary_list.head) {
+        DbgPrint(dbg_ctl_http_match, "Vary list of %d elements", vary_list.count);
         vary_list.dump(stderr);
       }
 
@@ -1230,9 +1240,9 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
         // but currently we just treat it equivalent to a '*'.     //
         /////////////////////////////////////////////////////////////
 
-        Debug("http_match", "Vary: %s", field->str);
+        Dbg(dbg_ctl_http_match, "Vary: %s", field->str);
         if (((field->str[0] == '*') && (field->str[1] == NUL))) {
-          Debug("http_match", "Wildcard variability --- object not served from cache");
+          Dbg(dbg_ctl_http_match, "Wildcard variability --- object not served from cache");
           variability = VARIABILITY_ALL;
           break;
         }
