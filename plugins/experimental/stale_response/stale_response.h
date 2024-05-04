@@ -26,6 +26,7 @@
 #include "ts/apidefs.h"
 #include "ts_wrap.h"
 #include "ts/ts.h"
+#include "BodyData.h"
 
 #include <cstdint>
 #include <map>
@@ -51,6 +52,18 @@ struct LogInfo {
 
 struct ConfigInfo {
   ConfigInfo() : body_data{new UintBodyMap()}, body_data_mutex(TSMutexCreate()) {}
+  ~ConfigInfo()
+  {
+    if (this->body_data) {
+      for (auto &it : *this->body_data) {
+        delete it.second;
+      }
+      delete this->body_data;
+    }
+    if (this->body_data_mutex) {
+      TSMutexDestroy(this->body_data_mutex);
+    }
+  }
   UintBodyMap *body_data = nullptr;
   TSMutex      body_data_mutex;
   int64_t      body_data_memory_usage = 0;
