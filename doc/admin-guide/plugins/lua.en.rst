@@ -727,8 +727,8 @@ ts.ctx
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This table can be used to store per-request Lua context data and has a life time identical to the
-current request.
+**description:** This table can be used to store data in do_remap/do_os_response or do_global_* functions and can be 
+retrieved from handler functions hooked from these global functions. 
 
 Here is an example:
 
@@ -2179,17 +2179,19 @@ ts.server_request.server_addr.set_outgoing_addr
 -----------------------------------------------
 **syntax:** *ts.server_request.server_addr.set_outgoing_addr()*
 
-**context:** earlier than or inside function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+**context:** earlier than or inside function @ TS_LUA_HOOK_POST_REMAP hook point
 
 **description**: This function can be used to set outgoing socket address for the request to origin.
 
 The ts.server_request.server_addr.set_outgoing_addr function requires three inputs, ip is a string, port and family is number.
 
+This will not be effective if called in the hook for sending request headers.
+
 Here is an example:
 
 ::
 
-    function do_global_send_request()
+    function do_global_post_remap()
         ts.server_request.server_addr.set_outgoing_addr("192.168.231.17", 80, TS_LUA_AF_INET)
     end
 
