@@ -727,8 +727,8 @@ ts.ctx
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This table can be used to store data in do_remap/do_os_response or do_global_* functions and can be 
-retrieved from handler functions hooked from these global functions. 
+**description:** This table can be used to store data in do_remap/do_os_response or do_global_* functions and can be
+retrieved from handler functions hooked from these global functions.
 
 Here is an example:
 
