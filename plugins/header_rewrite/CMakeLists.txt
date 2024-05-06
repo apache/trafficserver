@@ -38,7 +38,7 @@ target_link_libraries(header_rewrite_parser PUBLIC libswoc::libswoc)
 
 target_link_libraries(
   header_rewrite
-  PRIVATE ts::tscore PCRE::PCRE
+  PRIVATE PCRE::PCRE
   PUBLIC libswoc::libswoc
 )
 
