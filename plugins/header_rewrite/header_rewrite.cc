@@ -42,10 +42,9 @@ namespace header_rewrite_ns
 DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
 DbgCtl pi_dbg_ctl{PLUGIN_NAME};
 
-PluginFactory plugin_factory;
+std::once_flag initHRWLibs;
+PluginFactory  plugin_factory;
 } // namespace header_rewrite_ns
-
-static std::once_flag initHRWLibs;
 
 static void
 initHRWLibraries(const std::string &dbPath)
