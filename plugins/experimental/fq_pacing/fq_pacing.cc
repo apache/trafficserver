@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 static const char *PLUGIN_NAME = "fq_pacing";
 
