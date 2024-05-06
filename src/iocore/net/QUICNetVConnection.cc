@@ -187,6 +187,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
 
+  if (this->closed != 1 && (quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con))) {
+    this->_schedule_closing_event();
+  }
+
   return EVENT_DONE;
 }
 
@@ -223,6 +227,11 @@ QUICNetVConnection::state_established(int event, Event *data)
     QUICConDebug("Unhandled event: %d", event);
     break;
   }
+
+  if (this->closed != 1 && (quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con))) {
+    this->_schedule_closing_event();
+  }
+
   return EVENT_DONE;
 }
 
@@ -509,10 +518,8 @@ QUICNetVConnection::is_handshake_completed() const
 void
 QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
-  if (quiche_conn_is_readable(this->_quiche_con)) {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    this->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
-  }
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
 }
 
 int64_t
@@ -602,6 +609,32 @@ QUICNetVConnection::_close_quiche_timeout(Event *data)
 }
 
 void
+QUICNetVConnection::_schedule_closing_event()
+{
+  QUICConDebug("Scheduling closing event");
+  if (quiche_conn_is_timed_out(this->_quiche_con)) {
+    QUICConDebug("QUIC Idle timeout detected");
+    this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
+    return;
+  }
+
+  bool           is_app;
+  uint64_t       error_code;
+  const uint8_t *reason;
+  size_t         reason_len;
+  bool           has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
+                   quiche_conn_local_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len);
+  if (has_error && error_code != static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR)) {
+    QUICConDebug("is_app=%d error_code=%" PRId64 " reason=%.*s", is_app, error_code, static_cast<int>(reason_len), reason);
+    this->thread->schedule_imm(this, VC_EVENT_ERROR);
+    return;
+  }
+
+  // If it's not timeout nor error, it's probably eos
+  this->thread->schedule_imm(this, VC_EVENT_EOS);
+}
+
+void
 QUICNetVConnection::_handle_read_ready()
 {
   quiche_stream_iter *readable = quiche_conn_readable(this->_quiche_con);
@@ -674,27 +707,7 @@ QUICNetVConnection::_handle_interval()
   quiche_conn_on_timeout(this->_quiche_con);
 
   if (quiche_conn_is_closed(this->_quiche_con)) {
-    if (quiche_conn_is_timed_out(this->_quiche_con)) {
-      QUICConDebug("QUIC Idle timeout detected");
-      this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
-      return;
-    }
-
-    bool           is_app;
-    uint64_t       error_code;
-    const uint8_t *reason;
-    size_t         reason_len;
-    bool           has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
-                     quiche_conn_local_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len);
-    if (has_error && error_code != static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR)) {
-      QUICConDebug("is_app=%d error_code=%" PRId64 " reason=%.*s", is_app, error_code, static_cast<int>(reason_len), reason);
-      this->thread->schedule_imm(this, VC_EVENT_ERROR);
-      return;
-    }
-
-    // If it's not timeout nor error, it's probably eos
-    this->thread->schedule_imm(this, VC_EVENT_EOS);
-
+    this->_schedule_closing_event();
   } else {
     // Just schedule timeout event again if the connection is still open
     this->_schedule_quiche_timeout();
