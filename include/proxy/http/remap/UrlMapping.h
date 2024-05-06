@@ -26,15 +26,8 @@
 
 #include <vector>
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
-
 #include "tscore/ink_config.h"
+#include "tsutil/Regex.h"
 #include "proxy/http/remap/AclFiltering.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
@@ -45,20 +38,21 @@
 class NextHopSelectionStrategy;
 
 /**
- * Used to store http referer strings (and/or regexp)
+ * Used to store http referrer strings (and/or regexp)
  **/
 class referer_info
 {
 public:
-  referer_info(char *_ref, bool *error_flag = nullptr, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
+  referer_info(const char *_ref, bool *error_flag, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
   ~referer_info();
-  referer_info *next;
-  char         *referer;
-  int           referer_size;
-  bool          any;      /* any flag '*' */
-  bool          negative; /* negative referer '~' */
-  bool          regx_valid;
-  pcre         *regx;
+
+  referer_info *next         = nullptr;
+  char         *referer      = nullptr;
+  int           referer_size = 0;
+  bool          any          = false; /* any flag '*' */
+  bool          negative     = false; /* negative referer '~' */
+  bool          regex_valid  = false;
+  Regex         regex;
 };
 
 /**
