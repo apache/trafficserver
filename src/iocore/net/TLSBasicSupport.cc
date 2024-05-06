@@ -27,6 +27,12 @@
 
 int TLSBasicSupport::_ex_data_index = -1;
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 void
 TLSBasicSupport::initialize()
 {
@@ -166,6 +172,6 @@ TLSBasicSupport::_record_tls_handshake_end_time()
   this->_tls_handshake_end_time       = ink_get_hrtime();
   const ink_hrtime ssl_handshake_time = this->_tls_handshake_end_time - this->_tls_handshake_begin_time;
 
-  Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
+  Dbg(dbg_ctl_ssl, "ssl handshake time:%" PRId64, ssl_handshake_time);
   Metrics::Counter::increment(ssl_rsb.total_handshake_time, ssl_handshake_time);
 }

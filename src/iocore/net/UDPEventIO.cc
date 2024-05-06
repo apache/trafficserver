@@ -24,6 +24,12 @@
 #include "iocore/net/UDPEventIO.h"
 #include "P_UDPNet.h"
 
+namespace
+{
+DbgCtl dbg_ctl_iocore_udp_main{"iocore_udp_main"};
+
+} // end anonymous namespace
+
 int
 UDPEventIO::start(EventLoop l, UnixUDPConnection *uc, UDPNetHandler *uh, int events)
 {
@@ -47,6 +53,6 @@ UDPEventIO::process_event(int flags)
       udpNetInternal.udp_read_from_net(_uh, _uc);
     }
   } else {
-    Debug("iocore_udp_main", "Unhandled epoll event: 0x%04x", flags);
+    Dbg(dbg_ctl_iocore_udp_main, "Unhandled epoll event: 0x%04x", flags);
   }
 }

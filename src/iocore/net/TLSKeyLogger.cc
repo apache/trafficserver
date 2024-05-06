@@ -30,6 +30,12 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+namespace
+{
+DbgCtl dbg_ctl_ssl_keylog{"ssl_keylog"};
+
+} // end anonymous namespace
+
 // The caller of this function is responsible to acquire a unique_lock for
 // _mutex.
 void
@@ -48,11 +54,11 @@ void
 TLSKeyLogger::enable_keylogging_internal(const char *keylog_file)
 {
 #if TS_HAS_TLS_KEYLOGGING
-  Debug("ssl_keylog", "Enabling TLS key logging to: %s.", keylog_file);
+  Dbg(dbg_ctl_ssl_keylog, "Enabling TLS key logging to: %s.", keylog_file);
   std::unique_lock lock{_mutex};
   if (keylog_file == nullptr) {
     close_keylog_file();
-    Debug("ssl_keylog", "Received a nullptr for keylog_file: disabling keylogging.");
+    Dbg(dbg_ctl_ssl_keylog, "Received a nullptr for keylog_file: disabling keylogging.");
     return;
   }
 
@@ -76,7 +82,7 @@ TLSKeyLogger::disable_keylogging_internal()
     Note("Disabling TLS key logging.");
   }
   close_keylog_file();
-  Debug("ssl_keylog", "TLS keylogging is disabled.");
+  Dbg(dbg_ctl_ssl_keylog, "TLS keylogging is disabled.");
 }
 
 void

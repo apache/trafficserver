@@ -5483,7 +5483,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       ct_state.blocked();
       Metrics::Counter::increment(http_rsb.origin_connections_throttled);
       ct_state.Warn_Blocked(server_max, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
-                            debug_on && dbg_ctl_http.on() ? "http" : nullptr);
+                            debug_on && dbg_ctl_http.on() ? &dbg_ctl_http : nullptr);
       send_origin_throttled_response();
       return;
     } else {

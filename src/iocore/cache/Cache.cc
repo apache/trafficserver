@@ -1938,7 +1938,7 @@ ink_cache_init(ts::ModuleVersion v)
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
   REC_EstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
-  Debug("cache_init", "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
   if (cache_config_persist_bad_disks) {
     std::filesystem::path localstatedir{Layout::get()->localstatedir};
     std::filesystem::path bad_disks_path{localstatedir / ts::filename::BAD_DISKS};

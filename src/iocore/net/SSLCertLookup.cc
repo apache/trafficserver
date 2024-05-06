@@ -40,6 +40,12 @@
 #include <vector>
 #include <openssl/rand.h>
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip)
   {
@@ -117,7 +123,7 @@ private:
     void
     Print() const
     {
-      Debug("ssl", "Item=%p SSL_CTX=#%d", this, idx);
+      Dbg(dbg_ctl_ssl, "Item=%p SSL_CTX=#%d", this, idx);
     }
     int idx = -1;           ///< Index in the context store.
     LINK(ContextRef, link); ///< Require by @c Trie
@@ -171,7 +177,7 @@ ticket_block_create(char *ticket_key_data, int ticket_key_len)
     Error("SSL session ticket key is too short (>= 48 bytes are required)");
     goto fail;
   }
-  Debug("ssl", "Create %d ticket key blocks", num_ticket_keys);
+  Dbg(dbg_ctl_ssl, "Create %d ticket key blocks", num_ticket_keys);
 
   keyblock = ticket_block_alloc(num_ticket_keys);
 
@@ -466,22 +472,22 @@ SSLContextStorage::insert(const char *name, int idx)
     }
     if (subdomain) {
       if (auto it = this->wilddomains.find(subdomain); it != this->wilddomains.end()) {
-        Debug("ssl", "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
-              idx);
+        Dbg(dbg_ctl_ssl, "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name,
+            it->second, idx);
         idx = -1;
       } else {
         this->wilddomains.emplace(subdomain, idx);
-        Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
+        Dbg(dbg_ctl_ssl, "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
       }
     }
   } else {
     if (auto it = this->hostnames.find(lower_case_name); it != this->hostnames.end() && idx != it->second) {
-      Debug("ssl", "previously indexed '%s' with SSL_CTX %d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
-            idx);
+      Dbg(dbg_ctl_ssl, "previously indexed '%s' with SSL_CTX %d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
+          idx);
       idx = -1;
     } else {
       this->hostnames.emplace(lower_case_name, idx);
-      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
+      Dbg(dbg_ctl_ssl, "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
     }
   }
   return idx;
@@ -491,7 +497,7 @@ void
 SSLContextStorage::printWildDomains() const
 {
   for (auto &&it : this->wilddomains) {
-    Debug("ssl", "Stored wilddomain %s", it.first.c_str());
+    Dbg(dbg_ctl_ssl, "Stored wilddomain %s", it.first.c_str());
   }
 }
 

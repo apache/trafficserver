@@ -43,6 +43,15 @@
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT  32000
 
+namespace
+{
+DbgCtl dbg_ctl_http_tproxy{"http_tproxy"};
+DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
+DbgCtl dbg_ctl_iocore_net_server{"iocore_net_server"};
+DbgCtl dbg_ctl_connection{"connection"};
+
+} // end anonymous namespace
+
 int
 get_listen_backlog()
 {
@@ -82,10 +91,10 @@ Server::accept(Connection *c)
     return res;
   }
   c->fd = res;
-  if (is_debug_tag_set("iocore_net_server")) {
+  if (dbg_ctl_iocore_net_server.on()) {
     ip_port_text_buffer ipb1, ipb2;
-    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
-          ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
+    DbgPrint(dbg_ctl_iocore_net_server, "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
+             ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
 
 #ifdef SEND_BUF_SIZE
@@ -250,7 +259,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   if (opt.f_inbound_transparent) {
 #if TS_USE_TPROXY
-    Debug("http_tproxy", "Listen port inbound transparency enabled.");
+    Dbg(dbg_ctl_http_tproxy, "Listen port inbound transparency enabled.");
     if (setsockopt_on(fd, SOL_IP, TS_IP_TRANSPARENT) < 0) {
       Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
@@ -260,7 +269,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
   if (opt.f_proxy_protocol) {
-    Debug("proxyprotocol", "Proxy Protocol enabled.");
+    Dbg(dbg_ctl_proxyprotocol, "Proxy Protocol enabled.");
   }
 
 #if defined(TCP_MAXSEG)
@@ -347,7 +356,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 
   if (opt.f_mptcp) {
-    Debug("connection", "Define socket with MPTCP");
+    Dbg(dbg_ctl_connection, "Define socket with MPTCP");
     prot = IPPROTO_MPTCP;
   }
 

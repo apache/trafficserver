@@ -139,5 +139,5 @@ public:
 
   const char *test_name   = nullptr;
   const char *module_name = nullptr;
-  const char *debug_tag   = nullptr;
+  DbgCtl      dbg_ctl;
 };

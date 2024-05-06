@@ -32,6 +32,12 @@
 SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 // ToDo: This gets called once per global sync, for now at least.
 void
 SSLPeriodicMetricsUpdate()
@@ -43,7 +49,7 @@ SSLPeriodicMetricsUpdate()
   int64_t misses   = 0;
   int64_t timeouts = 0;
 
-  Debug("ssl", "Starting to update the new session metrics");
+  Dbg(dbg_ctl_ssl, "Starting to update the new session metrics");
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
@@ -74,7 +80,7 @@ add_cipher_stat(const char *cipherName, const std::string &statName)
     Metrics::Counter::AtomicType *metric = Metrics::Counter::createPtr(statName);
 
     cipher_map.emplace(cipherName, metric);
-    Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
+    Dbg(dbg_ctl_ssl, "registering SSL cipher metric '%s'", statName.c_str());
   }
 }
 

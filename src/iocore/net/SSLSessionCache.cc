@@ -37,11 +37,22 @@
 #define PRINT_BUCKET(x)
 #endif
 
+namespace
+{
+DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
+DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
+DbgCtl dbg_ctl_ssl_session_cache_bucket{"ssl.session_cache.bucket"};
+DbgCtl dbg_ctl_ssl_session_cache_get{"ssl.session_cache.get"};
+DbgCtl dbg_ctl_ssl_session_cache_insert{"ssl.session_cache.insert"};
+DbgCtl dbg_ctl_ssl_session_cache_remove{"ssl.session_cache.remove"};
+
+} // end anonymous namespace
+
 /* Session Cache */
 SSLSessionCache::SSLSessionCache() : nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
-  Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
-        SSLConfigParams::session_cache_max_bucket_size);
+  Dbg(dbg_ctl_ssl_session_cache, "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
+      SSLConfigParams::session_cache_max_bucket_size);
 
   session_bucket = new SSLSessionBucket[nbuckets];
 }
@@ -68,11 +79,11 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_ses
   uint64_t          target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
-  if (is_debug_tag_set("ssl.session_cache")) {
+  if (dbg_ctl_ssl_session_cache.on()) {
     char buf[sid.len * 2 + 1];
     sid.toString(buf, sizeof(buf));
-    Debug("ssl.session_cache.get", "SessionCache looking in bucket %" PRId64 " (%p) for session '%s' (hash: %" PRIX64 ").",
-          target_bucket, bucket, buf, hash);
+    DbgPrint(dbg_ctl_ssl_session_cache_get, "SessionCache looking in bucket %" PRId64 " (%p) for session '%s' (hash: %" PRIX64 ").",
+             target_bucket, bucket, buf, hash);
   }
 
   return bucket->getSession(sid, sess, data);
@@ -85,11 +96,12 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
   uint64_t          target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
-  if (is_debug_tag_set("ssl.session_cache")) {
+  if (dbg_ctl_ssl_session_cache_remove.on()) {
     char buf[sid.len * 2 + 1];
     sid.toString(buf, sizeof(buf));
-    Debug("ssl.session_cache.remove", "SessionCache using bucket %" PRId64 " (%p): Removing session '%s' (hash: %" PRIX64 ").",
-          target_bucket, bucket, buf, hash);
+    DbgPrint(dbg_ctl_ssl_session_cache_remove,
+             "SessionCache using bucket %" PRId64 " (%p): Removing session '%s' (hash: %" PRIX64 ").", target_bucket, bucket, buf,
+             hash);
   }
   Metrics::Counter::increment(ssl_rsb.session_cache_eviction);
 
@@ -103,11 +115,12 @@ SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *
   uint64_t          target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket        = &session_bucket[target_bucket];
 
-  if (is_debug_tag_set("ssl.session_cache")) {
+  if (dbg_ctl_ssl_session_cache_insert.on()) {
     char buf[sid.len * 2 + 1];
     sid.toString(buf, sizeof(buf));
-    Debug("ssl.session_cache.insert", "SessionCache using bucket %" PRId64 " (%p): Inserting session '%s' (hash: %" PRIX64 ").",
-          target_bucket, bucket, buf, hash);
+    DbgPrint(dbg_ctl_ssl_session_cache_insert,
+             "SessionCache using bucket %" PRId64 " (%p): Inserting session '%s' (hash: %" PRIX64 ").", target_bucket, bucket, buf,
+             hash);
   }
 
   bucket->insertSession(sid, sess, ssl);
@@ -135,14 +148,15 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
   if (len > static_cast<size_t>(SSL_MAX_SESSION_SIZE)) {
-    Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
+    Dbg(dbg_ctl_ssl_session_cache, "Unable to save SSL session because size of %zd exceeds the max of %d", len,
+        SSL_MAX_SESSION_SIZE);
     return;
   }
 
-  if (is_debug_tag_set("ssl.session_cache")) {
+  if (dbg_ctl_ssl_session_cache.on()) {
     char buf[id.len * 2 + 1];
     id.toString(buf, sizeof(buf));
-    Debug("ssl.session_cache", "Inserting session '%s' to bucket %p.", buf, this);
+    DbgPrint(dbg_ctl_ssl_session_cache, "Inserting session '%s' to bucket %p.", buf, this);
   }
 
   Ptr<IOBufferData> buf;
@@ -214,11 +228,11 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_ses
 {
   char buf[id.len * 2 + 1];
   buf[0] = '\0'; // just to be safe.
-  if (is_debug_tag_set("ssl.session_cache")) {
+  if (dbg_ctl_ssl_session_cache.on()) {
     id.toString(buf, sizeof(buf));
   }
 
-  Debug("ssl.session_cache", "Looking for session with id '%s' in bucket %p", buf, this);
+  Dbg(dbg_ctl_ssl_session_cache, "Looking for session with id '%s' in bucket %p", buf, this);
 
   std::shared_lock lock(mutex, std::try_to_lock);
   if (!lock.owns_lock()) {
@@ -233,7 +247,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_ses
 
   auto entry = bucket_map.find(id);
   if (entry == bucket_map.end()) {
-    Debug("ssl.session_cache", "Session with id '%s' not found in bucket %p.", buf, this);
+    Dbg(dbg_ctl_ssl_session_cache, "Session with id '%s' not found in bucket %p.", buf, this);
     return false;
   }
   const unsigned char *loc = reinterpret_cast<const unsigned char *>(entry->second->asn1_data->data());
@@ -248,7 +262,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_ses
 void inline SSLSessionBucket::print(const char *ref_str) const
 {
   /* NOTE: This method assumes you're already holding the bucket lock */
-  if (!is_debug_tag_set("ssl.session_cache.bucket")) {
+  if (!dbg_ctl_ssl_session_cache_bucket.on()) {
     return;
   }
 
@@ -323,20 +337,18 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 
   /* do not cache a session that's too big. */
   if (len > static_cast<size_t>(SSL_MAX_ORIG_SESSION_SIZE)) {
-    Debug("ssl.origin_session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len,
-          SSL_MAX_ORIG_SESSION_SIZE);
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size of %zd exceeds the max of %d", len,
+        SSL_MAX_ORIG_SESSION_SIZE);
     return;
   } else if (len == 0) {
-    Debug("ssl.origin_session_cache", "Unable to save SSL session because size is 0");
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size is 0");
     return;
   }
 
   // Duplicate the session from the connection, we'll be keeping track the ref-count with a shared pointer ourself
   SSL_SESSION *sess_ptr = SSLSessionDup(sess);
 
-  if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
-  }
+  Dbg(dbg_ctl_ssl_origin_session_cache, "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
 
   // Create the shared pointer to the session, with the custom deleter
   std::shared_ptr<SSL_SESSION>      shared_sess(sess_ptr, SSLSessDeleter);
@@ -348,17 +360,13 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
   auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
-            node->shared_sess.get(), sess_ptr);
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
+        node->shared_sess.get(), sess_ptr);
     orig_sess_que.remove(node);
     orig_sess_map.erase(entry);
     delete node;
   } else if (orig_sess_map.size() >= SSLConfigParams::origin_session_cache_size) {
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "origin session cache full, removing oldest session");
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "origin session cache full, removing oldest session");
     remove_oldest_session(lock);
   }
 
@@ -369,9 +377,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 std::shared_ptr<SSL_SESSION>
 SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *curve)
 {
-  if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "get session: %s", lookup_key.c_str());
-  }
+  Dbg(dbg_ctl_ssl_origin_session_cache, "get session: %s", lookup_key.c_str());
 
   std::shared_lock lock(mutex);
   auto             entry = orig_sess_map.find(lookup_key);
@@ -394,9 +400,7 @@ SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<ts::shared_m
 
   while (orig_sess_que.head && orig_sess_que.size >= static_cast<int>(SSLConfigParams::origin_session_cache_size)) {
     auto node = orig_sess_que.pop();
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "remove oldest session: %s, session ptr: %p", node->key.c_str(), node->shared_sess.get());
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "remove oldest session: %s, session ptr: %p", node->key.c_str(), node->shared_sess.get());
     orig_sess_map.erase(node->key);
     delete node;
   }
@@ -410,9 +414,7 @@ SSLOriginSessionCache::remove_session(const std::string &lookup_key)
   auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
     orig_sess_que.remove(node);
     orig_sess_map.erase(entry);
     delete node;

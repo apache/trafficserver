@@ -195,7 +195,7 @@ public:
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
      */
-    void Warn_Blocked(int max_connections, int64_t id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+    void Warn_Blocked(int max_connections, int64_t id, int count, const sockaddr *addr, DbgCtl *debug_tag = nullptr);
   };
 
   /** Get or create the @c Group for the specified inbound session properties.
@@ -238,8 +238,8 @@ public:
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb);
 
-  /// Tag used for debugging output.
-  static constexpr char const *const DEBUG_TAG{"conn_track"};
+  /// Debug control used for debugging output.
+  static inline DbgCtl dbg_ctl{"conn_track"};
 
   /** Convert a string to a match type.
    *

@@ -34,9 +34,15 @@
 
 #include <openssl/ssl.h>
 
-#define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)
+#define QUICGlobalDebug(fmt, ...) Dbg(dbg_ctl_quic_global, fmt, ##__VA_ARGS__)
 
 QuicStatsBlock quic_rsb;
+
+namespace
+{
+DbgCtl dbg_ctl_quic_global{"quic_global"};
+
+} // end anonymous namespace
 
 int QUIC::ssl_quic_qc_index  = -1;
 int QUIC::ssl_quic_tls_index = -1;

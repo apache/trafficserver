@@ -24,7 +24,11 @@
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
 
-static void
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+void
 send_plugin_event(Continuation *plugin, int event, void *edata)
 {
   if (plugin->mutex) {
@@ -35,7 +39,7 @@ send_plugin_event(Continuation *plugin, int event, void *edata)
   }
 }
 
-static SSLNetVConnection *
+SSLNetVConnection *
 ssl_netvc_cast(int event, void *edata)
 {
   union {
@@ -57,6 +61,8 @@ ssl_netvc_cast(int event, void *edata)
     return nullptr;
   }
 }
+
+} // end anonymous namespace
 
 // SSLNextProtocolTrampoline is the receiver of the I/O event generated when we perform a 0-length read on the new SSL
 // connection. The 0-length read forces the SSL handshake, which allows us to bind an endpoint that is selected by the
@@ -134,7 +140,7 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
 {
   SSLNetVConnection *netvc = ssl_netvc_cast(event, edata);
 
-  Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
+  Dbg(dbg_ctl_ssl, "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);

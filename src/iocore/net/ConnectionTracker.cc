@@ -256,10 +256,10 @@ ConnectionTracker::Group::equal(const Key &lhs, const Key &rhs)
     }
   }
 
-  if (is_debug_tag_set(DEBUG_TAG)) {
+  if (dbg_ctl.on()) {
     swoc::LocalBufferWriter<256> w;
     w.print("Comparing {} to {} -> {}\0", lhs, rhs, zret ? "match" : "fail");
-    Debug(DEBUG_TAG, "%s", w.data());
+    DbgPrint(dbg_ctl, "%s", w.data());
   }
 
   return zret;
@@ -423,26 +423,26 @@ ConnectionTracker::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
     swoc::LocalBufferWriter<256> w;
     w.print("Peer unblocked: [{}] count={} limit={} group=({}) blocked={} peer={}\0", swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv),
             count, config->server_max, *_g, blocked, addr);
-    Debug(DEBUG_TAG, "%s", w.data());
+    Dbg(dbg_ctl, "%s", w.data());
     Note("%s", w.data());
   }
 }
 
 void
-ConnectionTracker::TxnState::Warn_Blocked(int max_connections, int64_t id, int count, sockaddr const *addr, char const *debug_tag)
+ConnectionTracker::TxnState::Warn_Blocked(int max_connections, int64_t id, int count, sockaddr const *addr, DbgCtl *dbg_ctl_p)
 {
   bool alert_p = _g->should_alert();
   auto blocked = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();
 
-  if (alert_p || debug_tag) {
+  if (alert_p || dbg_ctl_p) {
     swoc::LocalBufferWriter<256> w;
     if (id > 1) {
       w.print("[{}] ", id);
     }
     w.print("too many connections: count={} limit={} group=({}) blocked={} peer={}\0", count, max_connections, *_g, blocked, addr);
 
-    if (debug_tag) {
-      Debug(debug_tag, "%s", w.data());
+    if (dbg_ctl_p) {
+      Dbg(*dbg_ctl_p, "%s", w.data());
     }
     if (alert_p) {
       Warning("%s", w.data());

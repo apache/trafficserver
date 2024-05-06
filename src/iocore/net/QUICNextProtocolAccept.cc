@@ -23,7 +23,11 @@
 
 #include "P_QUICNextProtocolAccept.h"
 
-static QUICNetVConnection *
+namespace
+{
+DbgCtl dbg_ctl_v_quic{"v_quic"};
+
+QUICNetVConnection *
 quic_netvc_cast(int event, void *edata)
 {
   union {
@@ -46,12 +50,14 @@ quic_netvc_cast(int event, void *edata)
   }
 }
 
+} // namespace
+
 int
 QUICNextProtocolAccept::mainEvent(int event, void *edata)
 {
   QUICNetVConnection *netvc = quic_netvc_cast(event, edata);
 
-  Debug("v_quic", "[%s] event %d netvc %p", netvc->cids().data(), event, netvc);
+  Dbg(dbg_ctl_v_quic, "[%s] event %d netvc %p", netvc->cids().data(), event, netvc);
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);

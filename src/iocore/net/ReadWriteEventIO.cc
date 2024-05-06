@@ -25,6 +25,12 @@
 #include "iocore/net/ReadWriteEventIO.h"
 #include "iocore/net/NetHandler.h"
 
+namespace
+{
+DbgCtl dbg_ctl_iocore_net_main{"iocore_net_main"};
+
+} // end anonymous namespace
+
 int
 ReadWriteEventIO::start(EventLoop l, NetEvent *ne, NetHandler *nh, int events)
 {
@@ -64,7 +70,7 @@ ReadWriteEventIO::process_event(int flags)
       _nh->write_ready_list.enqueue(_ne);
     }
   } else if (!(flags & (EVENTIO_READ))) {
-    Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
+    Dbg(dbg_ctl_iocore_net_main, "Unhandled epoll event: 0x%04x", flags);
     // In practice we sometimes see EPOLLERR and EPOLLHUP through there
     // Anything else would be surprising
     ink_assert((flags & ~(EVENTIO_ERROR)) == 0);
