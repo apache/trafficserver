@@ -243,10 +243,11 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
     NextHopStrategyFactory                    nhf(TS_SRC_DIR "/round-robin-tests.yaml");
-    strategy = nhf.strategyInstance("rr-ip");
-    sockaddr_in sa1, sa2;
-    sa1.sin_port   = 10000;
-    sa1.sin_family = AF_INET;
+    strategy        = nhf.strategyInstance("rr-ip");
+    sockaddr_in sa1 = {};
+    sockaddr_in sa2 = {};
+    sa1.sin_port    = 10000;
+    sa1.sin_family  = AF_INET;
     inet_pton(AF_INET, "192.168.1.1", &(sa1.sin_addr));
     sa2.sin_port   = 10001;
     sa2.sin_family = AF_INET;
