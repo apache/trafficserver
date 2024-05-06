@@ -85,7 +85,15 @@ bool           SSLConfigParams::server_allow_early_data_params = false;
 int   SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file        = nullptr;
 
-static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
+namespace
+{
+std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
+
+DbgCtl dbg_ctl_ssl_load{"ssl_load"};
+DbgCtl dbg_ctl_ssl_config_updateCTX{"ssl_config_updateCTX"};
+DbgCtl dbg_ctl_ssl_client_ctx{"ssl_client_ctx"};
+
+} // end anonymous namespace
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -196,10 +204,10 @@ UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS
   SSLConfigParams *params        = SSLConfig::acquire();
   char            *verify_server = data.rec_string;
   if (params != nullptr && verify_server != nullptr) {
-    Debug("ssl_load", "New Server Policy %s", verify_server);
+    Dbg(dbg_ctl_ssl_load, "New Server Policy %s", verify_server);
     params->SetServerPolicy(verify_server);
   } else {
-    Debug("ssl_load", "Failed to load new Server Policy %p %p", verify_server, params);
+    Dbg(dbg_ctl_ssl_load, "Failed to load new Server Policy %p %p", verify_server, params);
   }
   return 0;
 }
@@ -596,7 +604,7 @@ SSLConfig::startup()
 void
 SSLConfig::reconfigure()
 {
-  Debug("ssl_load", "Reload SSLConfig");
+  Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
   // start loading the next config
@@ -655,7 +663,7 @@ SSLCertificateConfig::reconfigure()
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
-    Debug("ssl_load", "delaying certificate reload by %d secs", secs);
+    Dbg(dbg_ctl_ssl_load, "delaying certificate reload by %d secs", secs);
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
@@ -735,7 +743,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
     struct stat sdata;
     if (last_load_time && (stat(ticket_key_filename, &sdata) >= 0)) {
       if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
-        Debug("ssl_load", "ticket key %s has not changed", ticket_key_filename);
+        Dbg(dbg_ctl_ssl_load, "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
         return true;
       }
@@ -757,7 +765,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   default_global_keyblock = keyblock;
   load_time               = time(nullptr);
 
-  Debug("ssl_load", "ticket key reloaded from %s", ticket_key_filename);
+  Dbg(dbg_ctl_ssl_load, "ticket key reloaded from %s", ticket_key_filename);
 #endif
   return true;
 }
@@ -849,25 +857,26 @@ cleanup_bio(BIO *&biop)
 void
 SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 {
-  Debug("ssl_config_updateCTX", "Update cert %s, %p", cert_secret_name.c_str(), this);
+  Dbg(dbg_ctl_ssl_config_updateCTX, "Update cert %s, %p", cert_secret_name.c_str(), this);
 
   // Instances of SSLConfigParams should access by one thread at a time only.  secret_for_updateCTX is accessed
   // atomically as a fail-safe.
   //
   char const *expected = nullptr;
   if (!secret_for_updateCTX.compare_exchange_strong(expected, cert_secret_name.c_str())) {
-    if (is_debug_tag_set("ssl_config_updateCTX")) {
+    if (dbg_ctl_ssl_config_updateCTX.on()) {
       // As a fail-safe, handle it if secret_for_updateCTX doesn't or no longer points to a null-terminated string.
       //
       char const *s{expected};
       for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {}
-      Debug("ssl_config_updateCTX", "Update cert, indirect recusive call caused by call for %.*s", int(s - expected), expected);
+      DbgPrint(dbg_ctl_ssl_config_updateCTX, "Update cert, indirect recusive call caused by call for %.*s", int(s - expected),
+               expected);
     }
     return;
   }
 
   // Clear the corresponding client CTXs.  They will be lazy loaded later
-  Debug("ssl_load", "Update cert %s", cert_secret_name.c_str());
+  Dbg(dbg_ctl_ssl_load, "Update cert %s", cert_secret_name.c_str());
   this->clearCTX(cert_secret_name);
 
   // Update the server cert
@@ -885,7 +894,7 @@ SSLConfigParams::clearCTX(const std::string &client_cert) const
     auto ctx_iter = ctx_map_iter->second.find(client_cert);
     if (ctx_iter != ctx_map_iter->second.end()) {
       ctx_iter->second = nullptr;
-      Debug("ssl_load", "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
+      Dbg(dbg_ctl_ssl_load, "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
     }
   }
   ink_mutex_release(&ctxMapLock);
@@ -907,7 +916,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   ctx_key = client_cert;
   swoc::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
-  Debug("ssl_client_ctx", "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
+  Dbg(dbg_ctl_ssl_client_ctx, "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
 
   ink_mutex_acquire(&ctxMapLock);
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
@@ -924,7 +933,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   EVP_PKEY *key  = nullptr;
   // Create context if doesn't exists
   if (!client_ctx) {
-    Debug("ssl_client_ctx", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
+    Dbg(dbg_ctl_ssl_client_ctx, "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
     client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
 
     // Upon configuration, elevate file access to be able to read root-only

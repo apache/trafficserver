@@ -33,6 +33,14 @@
 #include "P_QUICNetVConnection.h"
 #endif
 
+namespace
+{
+#if TS_USE_QUIC == 1
+DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
+#endif
+
+} // end anonymous namespace
+
 int
 ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
 {
@@ -49,7 +57,7 @@ ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
   if (dbg_ctl_ssl_sni.on()) {
     if (auto snis = TLSSNISupport::getInstance(&ssl)) {
       const char *servername = snis->get_sni_server_name();
-      Dbg(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
+      DbgPrint(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
     }
   }
 
@@ -185,7 +193,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
   const char *servername = snis->get_sni_server_name();
   if (fnArrIndexes.empty()) {
     tuns->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
-    Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
+    Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
   } else {
     bool port_is_dynamic = false;
     auto fixed_dst{destination};
@@ -195,7 +203,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
       fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
     }
     tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
-    Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
+    Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
   }
 
   if (type == SNIRoutingType::BLIND) {

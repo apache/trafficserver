@@ -27,6 +27,12 @@
 
 int ALPNSupport::_ex_data_index = -1;
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 void
 ALPNSupport::initialize()
 {
@@ -103,7 +109,7 @@ ALPNSupport::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned 
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
     if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
-      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
+      Dbg(dbg_ctl_ssl, "selected ALPN protocol %.*s", (int)(*outlen), *out);
       retval = SSL_TLSEXT_ERR_OK;
     } else {
       *out    = nullptr;

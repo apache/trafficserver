@@ -31,10 +31,17 @@
 #include <netinet/in.h>
 #include <quiche.h>
 
-static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
+namespace
+{
+constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
 
-#define QUICConDebug(fmt, ...)  Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
-#define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+DbgCtl dbg_ctl_quic_net{"quic_net"};
+DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
+
+} // end anonymous namespace
+
+#define QUICConDebug(fmt, ...)  Dbg(dbg_ctl_quic_net, "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICConVDebug(fmt, ...) Dbg(dbg_ctl_v_quic_net, "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 

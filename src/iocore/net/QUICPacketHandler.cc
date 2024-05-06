@@ -35,14 +35,21 @@
 
 #include "swoc/BufferWriter.h"
 
-static constexpr char debug_tag[]   = "quic_sec";
-static constexpr char v_debug_tag[] = "v_quic_sec";
+namespace
+{
+constexpr char debug_tag[]   = "quic_sec";
+constexpr char v_debug_tag[] = "v_quic_sec";
 
-#define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
-#define QUICPHDebug(dcid, scid, fmt, ...) \
-  Debug(debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+DbgCtl dbg_ctl{debug_tag};
+DbgCtl dbg_ctl_v{v_debug_tag};
+DbgCtl dbg_ctl_quic_sec{"quic_sec"};
+
+} // end anonymous namespace
+
+#define QUICDebug(fmt, ...)               Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
+#define QUICPHDebug(dcid, scid, fmt, ...) Dbg(dbg_ctl, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 #define QUICVPHDebug(dcid, scid, fmt, ...) \
-  Debug(v_debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+  Dbg(dbg_ctl_v, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 
 QUICPacketHandler::QUICPacketHandler()
 {
@@ -77,7 +84,7 @@ QUICPacketHandler::send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOB
 {
   UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload, segment_size);
 
-  if (is_debug_tag_set(v_debug_tag)) {
+  if (dbg_ctl_v.on()) {
     ip_port_text_buffer ipb;
     QUICConnectionId    dcid = QUICConnectionId::ZERO();
     QUICConnectionId    scid = QUICConnectionId::ZERO();
@@ -263,7 +270,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICConnectionId original_cid = {dcid, static_cast<uint8_t>(dcid_len)};
     QUICConnectionId peer_cid     = {scid, static_cast<uint8_t>(scid_len)};
 
-    if (is_debug_tag_set("quic_sec")) {
+    if (dbg_ctl_quic_sec.on()) {
       QUICPHDebug(peer_cid, original_cid, "client initial dcid=%s", original_cid.hex().c_str());
     }
 

@@ -35,6 +35,12 @@
 #include "P_Net.h"
 #include "ts/apidefs.h"
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 ////
 // NetVConnection
 //
@@ -83,7 +89,7 @@ NetVConnection::has_proxy_protocol(char *buffer, int64_t *bytes_r)
   if (*bytes_r <= 0) {
     *bytes_r = -EAGAIN;
   } else {
-    Debug("ssl", "Moving %" PRId64 " characters remaining in the buffer from %p to %p", *bytes_r, buffer + len, buffer);
+    Dbg(dbg_ctl_ssl, "Moving %" PRId64 " characters remaining in the buffer from %p to %p", *bytes_r, buffer + len, buffer);
     memmove(buffer, buffer + len, *bytes_r);
   }
 

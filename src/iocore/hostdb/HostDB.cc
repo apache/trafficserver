@@ -1418,7 +1418,7 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
     // Check and update RR if it's time - this always yields a valid target if there is one.
     if (now > ntime && rr_ctime.compare_exchange_strong(ctime, ntime)) {
       best_alive = best_any = this->select_next_rr(now, fail_window);
-      Debug("hostdb", "Round robin timed interval expired - index %d", this->index_of(best_alive));
+      Dbg(dbg_ctl_hostdb, "Round robin timed interval expired - index %d", this->index_of(best_alive));
     } else { // pick the current index, which may be down.
       best_any = &info[this->rr_idx()];
     }

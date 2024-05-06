@@ -53,13 +53,14 @@
 #include <algorithm>
 #include <functional>
 
-static constexpr int OVECSIZE{30};
-
-static DbgCtl dbg_ctl_ssl{"ssl"};
-static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
-
 namespace
 {
+constexpr int OVECSIZE{30};
+
+DbgCtl dbg_ctl_ssl{"ssl"};
+DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
+DbgCtl dbg_ctl_sni{"sni"};
+
 bool
 is_port_in_the_ranges(const std::vector<ts::port_range_t> &port_ranges, in_port_t port)
 {
@@ -217,11 +218,11 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
   ts::transform_lower(servername, lower_case_name);
 
-  Debug("sni", "lower_case_name=%s", lower_case_name);
+  Dbg(dbg_ctl_sni, "lower_case_name=%s", lower_case_name);
 
   auto range = sni_action_map.equal_range(lower_case_name);
   for (auto it = range.first; it != range.second; ++it) {
-    Debug("sni", "match with %s", it->first.c_str());
+    Dbg(dbg_ctl_sni, "match with %s", it->first.c_str());
 
     if (!is_port_in_the_ranges(it->second.inbound_port_ranges, dest_incoming_port)) {
       continue;
