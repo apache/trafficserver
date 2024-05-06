@@ -38,7 +38,6 @@ TEST_CASE("bwprint basics", "[bwprint]") {
   swoc::LocalBufferWriter<256> bw;
   std::string_view fmt1{"Some text"sv};
   swoc::bwf::Format fmt2("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
-  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
   static const swoc::bwf::Format bad_arg_fmt{"{{BAD_ARG_INDEX:{} of {}}}"};
 
   bw.print(fmt1);
