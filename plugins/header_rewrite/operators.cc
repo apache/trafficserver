@@ -22,8 +22,10 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <algorithm>
+#include <iomanip>
 
 #include "ts/ts.h"
+#include "swoc/swoc_file.h"
 
 #include "operators.h"
 #include "ts/apidefs.h"
@@ -1092,6 +1094,7 @@ OperatorSetHttpCntl::initialize_hooks()
 static const char *const HttpCntls[] = {
   "LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP",
 };
+
 void
 OperatorSetHttpCntl::exec(const Resources &res) const
 {
@@ -1101,5 +1104,75 @@ OperatorSetHttpCntl::exec(const Resources &res) const
   } else {
     TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
     Dbg(pi_dbg_ctl, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+  }
+}
+
+void
+OperatorRunPlugin::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  auto plugin_name = p.get_arg();
+  auto plugin_args = p.get_value();
+
+  if (plugin_name.empty()) {
+    TSError("[%s] missing plugin name", PLUGIN_NAME);
+    return;
+  }
+
+  std::vector<std::string> tokens;
+  std::istringstream       iss(plugin_args);
+  std::string              token;
+
+  while (iss >> std::quoted(token)) {
+    tokens.push_back(token);
+  }
+
+  // Create argc and argv
+  int    argc = tokens.size() + 2;
+  char **argv = new char *[argc];
+
+  argv[0] = p.from_url();
+  argv[1] = p.to_url();
+
+  for (int i = 0; i < argc; ++i) {
+    argv[i + 2] = const_cast<char *>(tokens[i].c_str());
+  }
+
+  std::string error;
+
+  // We have to escalate access while loading these plugins, just as done when loading remap.config
+  {
+    uint32_t elevate_access = 0;
+
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
+                                            isPluginDynamicReloadEnabled());
+  } // done elevating access
+
+  delete[] argv;
+
+  if (!_plugin) {
+    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+  }
+}
+
+void
+OperatorRunPlugin::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS); // Need this for the txnp
+}
+
+void
+OperatorRunPlugin::exec(const Resources &res) const
+{
+  TSReleaseAssert(_plugin != nullptr);
+
+  if (res._rri && res.txnp) {
+    _plugin->doRemap(res.txnp, res._rri);
   }
 }

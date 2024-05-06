@@ -443,3 +443,35 @@ private:
   bool           _flag = false;
   TSHttpCntlType _cntl_qual;
 };
+
+class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
+
+class OperatorRunPlugin : public Operator
+{
+public:
+  OperatorRunPlugin() { Dbg(dbg_ctl, "Calling CTOR for OperatorRunPlugin"); }
+
+  // This one is special, since we have to remove the old plugin from the factory.
+  ~OperatorRunPlugin() override
+  {
+    Dbg(dbg_ctl, "Calling DTOR for OperatorRunPlugin");
+
+    if (_plugin) {
+      _plugin->done();
+      _plugin = nullptr;
+    }
+  }
+
+  // noncopyable
+  OperatorRunPlugin(const OperatorRunPlugin &) = delete;
+  void operator=(const OperatorRunPlugin &)    = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  void exec(const Resources &res) const override;
+
+private:
+  RemapPluginInst *_plugin = nullptr;
+};
