@@ -200,6 +200,8 @@ private:
   void   _close_quiche_timeout(Event *data);
   Event *_quiche_timeout = nullptr;
 
+  void _schedule_closing_event();
+
   void _handle_read_ready();
   void _handle_write_ready();
   void _handle_interval();
