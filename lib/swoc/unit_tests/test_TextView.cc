@@ -22,10 +22,8 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]") {
   static const std::string base = "Evil Dave Rulez!";
   unsigned ux                   = base.size();
   TextView tv(base);
-  TextView a{"Evil Dave Rulez"};
   TextView b{base.data(), base.size()};
   TextView c{std::string_view(base)};
-  constexpr TextView d{"Grigor!"sv};
   TextView e{base.data(), 15};
   TextView f(base.data(), 15);
   TextView u{base.data(), ux};
@@ -188,7 +186,6 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]") {
   TextView tv3 = "abcdefg:gfedcba";
   left         = tv3;
   right        = left.split_suffix_at(";:,");
-  TextView pre{tv3}, post{pre.split_suffix(7)};
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");
