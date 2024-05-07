@@ -317,7 +317,7 @@
       "inherits": ["branch"],
       "cacheVariables": {
         "ENABLE_AUTEST": "ON",
-        "nuraft_ROOT": "/opt/nuraft-boringssl",
+        "nuraft_ROOT": "/opt",
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic/",
         "quiche_ROOT": "/opt/quiche",
         "ENABLE_QUICHE": "ON"
